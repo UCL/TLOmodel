@@ -813,7 +813,7 @@ class Tb(Module):
     def initialise_simulation(self, sim):
         """
         * 1) Schedule the regular TB events
-        * 2) Schedule the scenario change
+        * 2) schedule logging
         * 3) Define the DxTests and treatment options
         """
 
