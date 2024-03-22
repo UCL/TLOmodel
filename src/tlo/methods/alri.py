@@ -24,7 +24,7 @@ import types
 from collections import defaultdict
 from itertools import chain
 from pathlib import Path
-from typing import Any, Dict, List, NamedTuple, Tuple, Union
+from typing import Dict, List, NamedTuple, Tuple, Union
 
 import numpy as np
 import pandas as pd

@@ -5,9 +5,21 @@ specification for parameters and properties, and the base Module class for
 disease modules.
 """
 from __future__ import annotations
+
 import json
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Set, TypeAlias, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    NamedTuple,
+    Optional,
+    Set,
+    TypeAlias,
+    Union,
+)
 
 import numpy as np
 import pandas as pd
@@ -15,8 +27,8 @@ import pandas as pd
 if TYPE_CHECKING:
     from numpy.random import RandomState
 
-    from tlo.simulation import Simulation
     from tlo.methods.healthsystem import HealthSystem
+    from tlo.simulation import Simulation
 
 DiagnosisFunction: TypeAlias = Callable[[str, bool, bool], Any]
 ConsumablesChecker: TypeAlias = Callable[
@@ -398,7 +410,7 @@ class Module:
         random_state: Optional[RandomState] = None,
     ) -> IndividualPropertyUpdates:
         """
-        Actions to be take during a NON-emergency generic HSI. TODO: UPDATE BOTH NOW RETURN TUPES HAVE BEEN CHANGED
+        Actions to be take during a NON-emergency generic HSI.
 
         Derived classes should overwrite this method so that they are
         compatible with the HealthSystem module, and can schedule HSI
@@ -411,20 +423,18 @@ class Module:
         when looping over all disease modules and running their generic
         HSI methods.
 
-        Return values should be provided in the following order.
+        HSI_Events should be scheduled by the Module implementing this
+        method using the :py:meth:`Module.healthsystem.schedule_hsi` method.
+        However, they should not write updates back to the population
+        DataFrame in this method - these values should be returned as a
+        dictionary as described below:
 
-        1. The first returned value should be a list of tuples.
-        Each of these tuples should be of the form (event, options_dict) where:
-          - event is a HSI_Event instance corresponding to an event to schedule.
-          - options_dict is a dictionary of key-word arguments to be passed to
-          HealthSystem.schedule_hsi when scheduling the event.
-        If no events are to be scheduled, return an empty list.
-        For each event, if no optional arguments are to be specified, return an
-        empty dictionary as the second element of the tuple.
-
-        2. A dictionary containing any changes that need to be made to the individual's
+        The return value of this function should be a dictionary
+        containing any changes that need to be made to the individual's
         row in the population DataFrame.
-        Key/value pairs should be the column name and the new value to assign to the patient.
+        Key/value pairs should be the column name and the new value to
+        assign to the patient.
+        In the event no updates are required, return an empty dictionary.
 
         :param patient_id: Row index (ID) of the individual target of the HSI event in the population DataFrame.
         :param patient_details: Patient details as provided in the population DataFrame.

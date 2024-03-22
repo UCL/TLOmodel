@@ -4,8 +4,8 @@ from typing import Dict, List, NamedTuple
 import pandas as pd
 
 from tlo import Module, Parameter, Property, Types, logging
-from tlo.core import ConsumablesChecker, IndividualPropertyUpdates
 from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
+from tlo.core import ConsumablesChecker, IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
