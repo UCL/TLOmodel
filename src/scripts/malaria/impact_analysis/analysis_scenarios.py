@@ -42,8 +42,8 @@ class EffectOfProgrammes(BaseScenario):
         self.seed = 0
         self.start_date = Date(2010, 1, 1)  # todo update these for full runs
         self.end_date = Date(2014, 1, 1)  # todo update these for full runs
-        self.pop_size = 6000  # todo update these for full runs
-        self.number_of_draws = 9  # todo update these for full runs
+        self.pop_size = 10_000  # todo update these for full runs
+        self.number_of_draws = 1  # todo update these for full runs
         self.runs_per_draw = 1  # todo update these for full runs
 
         self.treatment_effects = pd.read_excel(
@@ -105,18 +105,22 @@ class EffectOfProgrammes(BaseScenario):
 
         return {
             'HealthSystem': {
-                'Service_Availability': [service_availability['Everything'], service_availability['Everything'],
-                                         service_availability['Everything'], service_availability['Everything'],
-                                         service_availability['Everything'],
-                                         service_availability['No_Hiv_*'], service_availability['No_Tb_*'],
-                                         service_availability['No_Malaria_*'], service_availability['No_HTM']][
-                    draw_number],
+                # 'Service_Availability': [service_availability['Everything'], service_availability['Everything'],
+                #                          service_availability['Everything'], service_availability['Everything'],
+                #                          service_availability['Everything'],
+                #                          service_availability['No_Hiv_*'], service_availability['No_Tb_*'],
+                #                          service_availability['No_Malaria_*'], service_availability['No_HTM']][
+                #     draw_number],
+                'Service_Availability': service_availability['Everything'],
                 'use_funded_or_actual_staffing': 'funded',
                 'mode_appt_constraints': 1,
                 'policy_name': 'Naive',
             },
+            # 'Hiv': {
+            #     'scenario': [0, 1, 2, 3, 5, 0, 0, 3, 3][draw_number],
+            # },
             'Hiv': {
-                'scenario': [0, 1, 2, 3, 5, 0, 0, 3, 3][draw_number],
+                'scenario': 2,
             },
         }
 
