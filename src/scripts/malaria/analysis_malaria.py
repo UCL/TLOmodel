@@ -84,7 +84,7 @@ sim.register(
     )
 )
 
-sim.modules["Hiv"].parameters["scenario"] = 3
+sim.modules["Hiv"].parameters["scenario"] = 0
 
 
 # Run the simulation and flush the logger

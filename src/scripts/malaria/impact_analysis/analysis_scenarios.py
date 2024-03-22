@@ -42,8 +42,8 @@ class EffectOfProgrammes(BaseScenario):
         self.seed = 0
         self.start_date = Date(2010, 1, 1)  # todo update these for full runs
         self.end_date = Date(2014, 1, 1)  # todo update these for full runs
-        self.pop_size = 10_000  # todo update these for full runs
-        self.number_of_draws = 1  # todo update these for full runs
+        self.pop_size = 15_000  # todo update these for full runs
+        self.number_of_draws = 2  # todo update these for full runs
         self.runs_per_draw = 1  # todo update these for full runs
 
         self.treatment_effects = pd.read_excel(
@@ -120,7 +120,7 @@ class EffectOfProgrammes(BaseScenario):
             #     'scenario': [0, 1, 2, 3, 5, 0, 0, 3, 3][draw_number],
             # },
             'Hiv': {
-                'scenario': 2,
+                'scenario': [0, 2][draw_number],
             },
         }
 
