@@ -2552,6 +2552,7 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Hiv_Prevention_Prep"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"PharmDispensing": 1, "VCTNegative": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.counter_for_drugs_not_available = 0
 
     def apply(self, person_id, squeeze_factor):
         """Start PrEP for this person; or continue them on PrEP for 3 more months"""
