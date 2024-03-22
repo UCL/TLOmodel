@@ -9,7 +9,7 @@ Persons can be on ART -
     - with viral suppression: when the person with not develop AIDS, or if they have already, it is relieved and they
         will not die of AIDS; and the person is not infectious
     - without viral suppression: when there is no benefit in avoiding AIDS and infectiousness is unchanged.
-Maintenance on ART and PrEP is re-assessed at periodic 'Decision Events', at which is it is determined if the person
+Maintenance on ART and PrEP is re-assessed at periodic 'Decision Events', at which it is determined if the person
   will attend the "next" HSI for continuation of the service; and if not, they are removed from that service and "stop
   treatment". If a stock-out or non-availability of health system resources prevent treatment continuation, the person
   "stops treatment". Stopping treatment leads to a new AIDS Event being scheduled. Persons can restart treatment. If a
@@ -667,9 +667,9 @@ class Hiv(Module):
         )
         # this needs to be series of True/False
         infec = (
-            self.rng.random_sample(len(p["overall_prob_of_infec"]))
-            < p["overall_prob_of_infec"]
-        ) & df.is_alive
+                    self.rng.random_sample(len(p["overall_prob_of_infec"]))
+                    < p["overall_prob_of_infec"]
+                ) & df.is_alive
 
         # Assign the designated person as infected in the population.props dataframe:
         df.loc[infec, "hv_inf"] = True
@@ -715,7 +715,7 @@ class Hiv(Module):
         rr_art = pd.Series(1, index=df.index)
         rr_art.loc[
             df.is_alive & (df.hv_date_inf < (self.sim.date - pd.DateOffset(years=10)))
-        ] = params["rel_probability_art_baseline_aids"]
+            ] = params["rel_probability_art_baseline_aids"]
 
         # Rescale relative probability of infection so that its average is 1.0 within each age/sex group
         p = pd.DataFrame(
@@ -739,7 +739,7 @@ class Hiv(Module):
 
         art_idx = df.index[
             (random_draw < p["overall_prob_of_art"]) & df.is_alive & df.hv_inf
-        ]
+            ]
 
         # 2) Determine adherence levels for those currently on ART, for each of adult men, adult women and children
         adult_f_art_idx = df.loc[
@@ -834,7 +834,7 @@ class Hiv(Module):
             # sample number_deficit from remaining undiagnosed pop
             adult_undiagnosed = df.loc[
                 df.is_alive & df.hv_inf & ~df.hv_diagnosed & (df.age_years >= 15)
-            ].index
+                ].index
 
             adult_test_index = self.rng.choice(
                 adult_undiagnosed, size=number_deficit, replace=False
@@ -858,7 +858,7 @@ class Hiv(Module):
         if hiv_test_deficit > 0:
             child_undiagnosed = df.loc[
                 df.is_alive & df.hv_inf & ~df.hv_diagnosed & (df.age_years < 15)
-            ].index
+                ].index
 
             child_test_index = self.rng.choice(
                 child_undiagnosed, size=number_deficit, replace=False
@@ -901,7 +901,7 @@ class Hiv(Module):
             & df.hv_inf
             & ((self.sim.date - df.hv_date_inf).dt.days > 10 * 365)
             & (df.hv_art == "not")
-        ].index
+            ].index
 
         # Those that are in neither category are "before AIDS" (will have AIDS Onset Event scheduled)
         before_aids_idx = (
@@ -936,6 +936,7 @@ class Hiv(Module):
         # If any days_since_infection >= days_infection_to_aids are negative resample
         # these values until all are positive
         days_until_aids_is_negative = days_since_infection >= days_infection_to_aids
+
         while np.any(days_until_aids_is_negative):
             days_infection_to_aids[days_until_aids_is_negative] = (
                 self.sample_time_from_infection_to_aids_given_parameters(
@@ -1046,6 +1047,7 @@ class Hiv(Module):
         self.item_codes_for_consumables_required["First-line ART regimen: adult"] = {
             hs.get_item_code_from_item_name("First-line ART regimen: adult"): 1
         }
+        # Note incorrect spelling of Cotrimoxazole in consumables resourcefile - matched here
         self.item_codes_for_consumables_required[
             "First-line ART regimen: adult: cotrimoxazole"
         ] = {hs.get_item_code_from_item_name("Cotrimoxizole, 960mg pppy"): 1}
@@ -1165,7 +1167,7 @@ class Hiv(Module):
             # usually performed by care_of_women_during_pregnancy module
             if not mother.hv_diagnosed and \
                 mother.is_alive and (
-                self.rng.random_sample() < p["prob_hiv_test_at_anc_or_delivery"]):
+                    self.rng.random_sample() < p["prob_hiv_test_at_anc_or_delivery"]):
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_TestAndRefer(
                         person_id=abs(mother_id),  # Pass mother's id, whether from true or direct birth
@@ -1190,7 +1192,7 @@ class Hiv(Module):
             )
 
             if "newborn_outcomes" not in self.sim.modules and (
-                self.rng.random_sample() < p['prob_hiv_test_for_newborn_infant']):
+                    self.rng.random_sample() < p['prob_hiv_test_for_newborn_infant']):
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_TestAndRefer(
                         person_id=child_id,
@@ -1384,9 +1386,9 @@ class Hiv(Module):
 
         # use iloc to index by position as index will change by year
         return_prob = (prob_art.loc[
-                          (prob_art.year == current_year) &
-                          (prob_art.age == "adults"),
-                          "prob_art_if_dx"].values[0] * self.parameters["treatment_initiation_adjustment"])
+                           (prob_art.year == current_year) &
+                           (prob_art.age == "adults"),
+                           "prob_art_if_dx"].values[0] * self.parameters["treatment_initiation_adjustment"])
 
         return return_prob
 
@@ -1483,7 +1485,7 @@ class Hiv(Module):
         df = self.sim.population.props
 
         if not df.at[person_id, 'hv_diagnosed'] and (
-            self.rng.random_sample() < self.parameters['prob_hiv_test_at_anc_or_delivery']):
+                self.rng.random_sample() < self.parameters['prob_hiv_test_at_anc_or_delivery']):
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Hiv_TestAndRefer(
@@ -1512,12 +1514,8 @@ class Hiv(Module):
             not df.at[child_id, "hv_diagnosed"]
             and df.at[mother_id, "hv_diagnosed"]
             and (df.at[child_id, "nb_pnc_check"] == 1)
-            and (
-                self.rng.random_sample()
-                < self.parameters["prob_hiv_test_for_newborn_infant"]
-            )
+            and (self.rng.random_sample() < self.parameters["prob_hiv_test_for_newborn_infant"])
         ):
-
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Hiv_TestAndRefer(
                     person_id=child_id,
@@ -1625,7 +1623,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                     & df.hv_inf
                     & (df.hv_art != "on_VL_suppressed")
                     & (df.sex == from_sex)
-                ]
+                    ]
             )
 
             if n_infectious > 0:
@@ -1636,7 +1634,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                     & ~df.hv_inf
                     & df.age_years.between(15, 80)
                     & (df.sex == to_sex)
-                ].index
+                    ].index
                 n_susceptible = len(susc_idx)
 
                 # Compute chance that each susceptible person becomes infected:
@@ -1668,7 +1666,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                         & df.li_is_sexworker
                         & ~df.hv_is_on_prep
                         & df.age_years.between(15, 80)
-                    ].index
+                        ].index
 
                     #  - probability of infection - relative risk applies only to fsw
                     p_infection_fsw = (
@@ -1725,7 +1723,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
             )
             adult_tests_idx = df.loc[
                 df.is_alive & (df.age_years >= 15) & (random_draw < overall_prob_test)
-            ].index
+                ].index
 
             idx_will_test = adult_tests_idx
 
@@ -1743,8 +1741,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                     ),
                     priority=1,
                     topen=date_test,
-                    tclose=date_test
-                    + pd.DateOffset(
+                    tclose=date_test + pd.DateOffset(
                         months=self.frequency.months
                     ),  # (to occur before next polling)
                 )
@@ -1759,7 +1756,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 & df.age_years.between(15, 30)
                 & (df.sex == "F")
                 & ~df.hv_is_on_prep
-            ].index
+                ].index
 
             rr_of_infection_in_agyw = self.module.lm["rr_of_infection"].predict(
                 df.loc[agyw_idx]
@@ -1802,7 +1799,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                     & (df.sex == "M")
                     & (df.age_years < 15)
                     & (~df.li_is_circ)
-                ],
+                    ],
                 self.module.rng,
                 year=self.sim.date.year,
             )
@@ -1864,7 +1861,7 @@ class HivInfectionEvent(Event, IndividualScopeEventMixin):
         # Consider mother-to-child-transmission (MTCT) from this person to their children:
         children_of_this_person_being_breastfed = df.loc[
             (df.mother_id == person_id) & (df.nb_breastfeeding_status != "none")
-        ].index
+            ].index
         # - Do the MTCT routine for each child:
         for child_id in children_of_this_person_being_breastfed:
             self.module.mtct_during_breastfeeding(person_id, child_id)
@@ -1930,7 +1927,7 @@ class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
 
         # need to delay onset of AIDS (non-tb) to compensate for AIDS-TB
         if (self.cause == "AIDS_non_TB") and (
-            self.sim.modules["Hiv"].rng.rand() < self.sim.modules["Hiv"].parameters["prop_delayed_aids_onset"]):
+                self.sim.modules["Hiv"].rng.rand() < self.sim.modules["Hiv"].parameters["prop_delayed_aids_onset"]):
 
             # redraw time to aids and reschedule
             months_to_aids = int(
@@ -2040,12 +2037,12 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
         # Do nothing if person is now on ART and VL suppressed (non VL suppressed has no effect)
         # only if no current TB infection
         if (df.at[person_id, "hv_art"] == "on_VL_suppressed") and (
-            df.at[person_id, "tb_inf"] != "active"):
+                df.at[person_id, "tb_inf"] != "active"):
             return
 
         # off ART, no TB infection
         if (df.at[person_id, "hv_art"] != "on_VL_suppressed") and (
-            df.at[person_id, "tb_inf"] != "active"):
+                df.at[person_id, "tb_inf"] != "active"):
             # cause is HIV (no TB)
             self.sim.modules["Demography"].do_death(
                 individual_id=person_id,
@@ -2246,7 +2243,7 @@ class Hiv_DecisionToContinueTreatment(Event, IndividualScopeEventMixin):
 
 class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
     """
-    The is the Test-and-Refer HSI. Individuals may seek an HIV test at any time. From this, they can be referred on to
+    This is the Test-and-Refer HSI. Individuals may seek an HIV test at any time. From this, they can be referred on to
     other services.
     This event is scheduled by:
         * the main event poll,
@@ -2500,7 +2497,7 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
 
         # if breastfeeding has ceased or child >18 months, no further prophylaxis required
         if (df.at[person_id, "nb_breastfeeding_status"] == "none") \
-            or (df.at[person_id, "age_years"] >= 1.5):
+                or (df.at[person_id, "age_years"] >= 1.5):
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         # Check that infant prophylaxis is available and if it is, initiate:
@@ -2608,7 +2605,6 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
                 self.counter_for_drugs_not_available
                 <= self.module.parameters["hiv_healthseekingbehaviour_cap"]
             ):
-
                 # Schedule repeat visit for one week's time
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     self,
@@ -2650,7 +2646,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         # check whether person had Rx at least 3 months ago and is now due repeat prescription
         # alternate routes into testing/tx may mean person already has recent ARV dispensation
         if person['hv_date_last_ART'] >= (
-            self.sim.date - pd.DateOffset(months=self.module.parameters['dispensation_period_months'])):
+                self.sim.date - pd.DateOffset(months=self.module.parameters['dispensation_period_months'])):
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         if art_status_at_beginning_of_hsi == "not":
@@ -2955,6 +2951,7 @@ class HSI_Hiv_EndOfLifeCare(HSI_Event, IndividualScopeEventMixin):
             key="message",
             data=f"HSI_Hiv_EndOfLifeCare: inpatient admission for {person_id}",
         )
+
 
 # ---------------------------------------------------------------------------
 #   Logging

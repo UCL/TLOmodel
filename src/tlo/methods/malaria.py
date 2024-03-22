@@ -459,7 +459,7 @@ class Malaria(Module):
             )
             # get the monthly incidence probabilities for these individuals
             monthly_prob = curr_inc.loc[district_age_lookup, _col]
-            # update the index so it"s the same as the original population dataframe for these individuals
+            # update the index so it's the same as the original population dataframe for these individuals
             monthly_prob = monthly_prob.set_axis(df.index[_where])
 
             # the linear models only apply to clinical and severe malaria risk
@@ -723,7 +723,7 @@ class Malaria(Module):
         df.at[child_id, "ma_tx_counter"] = 0
         df.at[child_id, "ma_iptp"] = False
 
-        # reset mother"s IPTp status to False
+        # reset mother's IPTp status to False
         if mother_id >= 0:  # exclude direct births
             df.at[mother_id, "ma_iptp"] = False
 

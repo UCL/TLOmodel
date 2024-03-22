@@ -15,7 +15,6 @@ from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, hiv
 from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
-from tlo.methods.healthsystem import HealthSystemChangeParameters, HSI_Event
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date
@@ -1317,7 +1316,7 @@ class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
 
         inc_estimates = p["who_incidence_estimates"]
         incidence_year = (inc_estimates.loc[
-            (inc_estimates.year == self.sim.date.year), "incidence_per_100k"
+            (inc_estimates.year == current_year), "incidence_per_100k"
         ].values[0]) / 100000
 
         prop_untreated_ds = self.module.calculate_untreated_proportion(population, strain="ds")
@@ -1561,7 +1560,7 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
 
 class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
     """
-    The is the Screening-and-Refer HSI.
+    This is the Screening-and-Refer HSI.
     A positive outcome from symptom-based screening will prompt referral to tb tests (sputum/xpert/xray)
     no consumables are required for screening (4 clinical questions)
 
@@ -1980,7 +1979,7 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
 
 class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
     """
-    The is the x-ray HSI performed at level 2
+    This is the x-ray HSI performed at level 2
     usually used for testing children unable to produce sputum
     positive result will prompt referral to start treatment
     """
@@ -2196,7 +2195,6 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             else:
                 # treatment for reinfection ds-tb: child
                 treatment_regimen = "tb_retx_child"
-
 
         return treatment_regimen
 
