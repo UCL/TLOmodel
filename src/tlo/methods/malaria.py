@@ -793,7 +793,7 @@ class Malaria(Module):
                         person_id=patient_id, module=self,
                     )
                     self.healthsystem.schedule_hsi_event(
-                        event, priority=0, tclose=self.sim.date
+                        event, priority=0, topen=self.sim.date
                     )
         return df_updates
 
