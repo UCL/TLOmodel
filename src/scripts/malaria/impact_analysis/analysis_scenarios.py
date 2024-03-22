@@ -40,7 +40,7 @@ class EffectOfProgrammes(BaseScenario):
     def __init__(self):
         super().__init__()
         self.seed = 0
-        self.start_date = Date(2010, 1, 1)  # todo update these for full runs
+        self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2014, 1, 1)  # todo update these for full runs
         self.pop_size = 15_000  # todo update these for full runs
         self.number_of_draws = 2  # todo update these for full runs
