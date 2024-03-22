@@ -948,26 +948,32 @@ class Tb(Module):
         """
         df = population.props
 
-        # sum active tb cases
-        num_active_tb_cases = len(df[(df.tb_inf == "active") &
-                                     (df.tb_strain == strain) &
-                                     df.is_alive])
+        # if running scenarios, need to modify impact of treatment
+        p_hiv = self.sim.modules["Hiv"].parameters
+        if (p_hiv['scenario'] == 2) or (p_hiv['scenario'] == 5):
+            prop_untreated = 1
 
-        # sum treated active tb cases
-        # if mdr-tb must be on mdr treatment, otherwise consider as untreated case
-        if strain == "mdr":
-            num_treated_tb_cases = len(df[(df.tb_inf == "active") &
-                                          (df.tb_strain == strain) &
-                                          df.tb_on_treatment &
-                                          (df.tb_treatment_regimen == "tb_mdrtx") &
-                                          df.is_alive])
         else:
-            num_treated_tb_cases = len(df[(df.tb_inf == "active") &
-                                          (df.tb_strain == strain) &
-                                          df.tb_on_treatment &
-                                          df.is_alive])
+            # sum active tb cases
+            num_active_tb_cases = len(df[(df.tb_inf == "active") &
+                                         (df.tb_strain == strain) &
+                                         df.is_alive])
 
-        prop_untreated = 1 - (num_treated_tb_cases / num_active_tb_cases) if num_active_tb_cases else 1
+            # sum treated active tb cases
+            # if mdr-tb must be on mdr treatment, otherwise consider as untreated case
+            if strain == "mdr":
+                num_treated_tb_cases = len(df[(df.tb_inf == "active") &
+                                              (df.tb_strain == strain) &
+                                              df.tb_on_treatment &
+                                              (df.tb_treatment_regimen == "tb_mdrtx") &
+                                              df.is_alive])
+            else:
+                num_treated_tb_cases = len(df[(df.tb_inf == "active") &
+                                              (df.tb_strain == strain) &
+                                              df.tb_on_treatment &
+                                              df.is_alive])
+
+            prop_untreated = 1 - (num_treated_tb_cases / num_active_tb_cases) if num_active_tb_cases else 1
 
         return prop_untreated
 
