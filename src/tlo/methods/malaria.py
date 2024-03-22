@@ -666,7 +666,7 @@ class Malaria(Module):
     def check_if_fever_is_caused_by_malaria(
         self,
         true_malaria_infection_type: str,
-        diagnosis_fn: Callable[[str], Any],
+        diagnosis_function: Callable[[str], Any],
         patient_id: int = None,
         fever_is_a_symptom: bool = True,
         patient_age: Union[int, float] = None,
@@ -681,7 +681,7 @@ class Malaria(Module):
         and are not needed in the diagnosis.
         """
         # Call the DxTest RDT to diagnose malaria
-        dx_result = diagnosis_fn('malaria_rdt')
+        dx_result = diagnosis_function('malaria_rdt')
 
         # Log the test: line-list of summary information about each test
         logger.info(
@@ -709,7 +709,7 @@ class Malaria(Module):
         patient_id: int,
         patient_details: NamedTuple = None,
         symptoms: List[str] = None,
-        diagnosis_fn: Callable[[str, bool, bool], Any] = None,
+        diagnosis_function: Callable[[str, bool, bool], Any] = None,
         facility_level: str = None,
         treatment_id: str = None,
         **kwargs,
@@ -730,7 +730,7 @@ class Malaria(Module):
         ):
             malaria_test_result = self.check_if_fever_is_caused_by_malaria(
                 true_malaria_infection_type=patient_details.ma_inf_type,
-                diagnosis_fn=diagnosis_fn,
+                diagnosis_function=diagnosis_function,
                 patient_id=patient_id,
                 fever_is_a_symptom="fever" in symptoms,
                 patient_age=patient_details.age_years,
@@ -766,7 +766,7 @@ class Malaria(Module):
         patient_id: int,
         patient_details: NamedTuple = None,
         symptoms: List[str] = None,
-        diagnosis_fn: Callable[[str, bool, bool], Any] = None,
+        diagnosis_function: Callable[[str, bool, bool], Any] = None,
         facility_level: str = None,
         treatment_id: str = None,
         **kwargs,
@@ -783,7 +783,7 @@ class Malaria(Module):
                 # Check if malaria parasitaemia:
                 malaria_test_result = self.check_if_fever_is_caused_by_malaria(
                     true_malaria_infection_type=patient_details.ma_inf_type,
-                    diagnosis_fn=diagnosis_fn,
+                    diagnosis_function=diagnosis_function,
                     patient_id=patient_id,
                     fever_is_a_symptom="fever" in symptoms,
                     patient_age=patient_details.age_years,

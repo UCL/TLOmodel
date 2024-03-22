@@ -406,7 +406,7 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration(seed):
     )
     patient_details = namedtuple("PatientDetails", df.columns)(*df.loc[person_id])
 
-    def diagnosis_fn(tests, use_dict: bool = False, report_tried: bool = False):
+    def diagnosis_function(tests, use_dict: bool = False, report_tried: bool = False):
         return generic_hsi.healthcare_system.dx_manager.run_dx_test(
             tests,
             hsi_event=generic_hsi,
@@ -418,7 +418,7 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration(seed):
     sim.modules['HealthSystem'].reset_queue()
     sim.modules['Diarrhoea'].parameters['prob_hospitalization_on_danger_signs'] = 1.0
     event_info, _ = sim.modules["Diarrhoea"].do_at_generic_first_appt(
-        patient_id=person_id, patient_details=patient_details, diagnosis_fn=diagnosis_fn
+        patient_id=person_id, patient_details=patient_details, diagnosis_function=diagnosis_function
     )
 
     assert 1 == len(event_info)
@@ -428,7 +428,7 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration(seed):
     sim.modules['HealthSystem'].reset_queue()
     sim.modules['Diarrhoea'].parameters['prob_hospitalization_on_danger_signs'] = 0.0
     event_info, _ = sim.modules["Diarrhoea"].do_at_generic_first_appt(
-        patient_id=person_id, patient_details=patient_details, diagnosis_fn=diagnosis_fn
+        patient_id=person_id, patient_details=patient_details, diagnosis_function=diagnosis_function
     )
     assert 1 == len(event_info)
     assert isinstance(event_info[0][0], HSI_Diarrhoea_Treatment_Outpatient)
@@ -490,7 +490,7 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration_dxtest_notfuncti
         module=sim.modules['HealthSeekingBehaviour'], person_id=person_id)
     patient_details = namedtuple("PatientDetails", df.columns)(*df.loc[person_id])
 
-    def diagnosis_fn(tests, use_dict: bool = False, report_tried: bool = False):
+    def diagnosis_function(tests, use_dict: bool = False, report_tried: bool = False):
         return generic_hsi.healthcare_system.dx_manager.run_dx_test(
             tests,
             hsi_event=generic_hsi,
@@ -502,7 +502,7 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration_dxtest_notfuncti
     sim.modules['Diarrhoea'].parameters['prob_hospitalization_on_danger_signs'] = 0.0
     sim.modules['HealthSystem'].reset_queue()
     event_info, _ = sim.modules["Diarrhoea"].do_at_generic_first_appt(
-        patient_id=person_id, patient_details=patient_details, diagnosis_fn=diagnosis_fn
+        patient_id=person_id, patient_details=patient_details, diagnosis_function=diagnosis_function
     )
     assert 1 == len(event_info)
     assert isinstance(event_info[0][0], HSI_Diarrhoea_Treatment_Outpatient)
@@ -563,7 +563,7 @@ def test_do_when_presentation_with_diarrhoea_non_severe_dehydration(seed):
         module=sim.modules['HealthSeekingBehaviour'], person_id=person_id)
     patient_details = namedtuple("PatientDetails", df.columns)(*df.loc[person_id])
 
-    def diagnosis_fn(tests, use_dict: bool = False, report_tried: bool = False):
+    def diagnosis_function(tests, use_dict: bool = False, report_tried: bool = False):
         return generic_hsi.healthcare_system.dx_manager.run_dx_test(
             tests,
             hsi_event=generic_hsi,
@@ -574,7 +574,7 @@ def test_do_when_presentation_with_diarrhoea_non_severe_dehydration(seed):
     # 1) Outpatient HSI should be created
     sim.modules['HealthSystem'].reset_queue()
     event_info, _ = sim.modules["Diarrhoea"].do_at_generic_first_appt(
-        patient_id=person_id, patient_details=patient_details, diagnosis_fn=diagnosis_fn
+        patient_id=person_id, patient_details=patient_details, diagnosis_function=diagnosis_function
     )
 
     assert 1 == len(event_info)

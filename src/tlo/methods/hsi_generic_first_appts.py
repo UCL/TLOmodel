@@ -39,7 +39,7 @@ class HSI_BaseGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
     def _diagnosis_fn(self, tests, use_dict: bool = False, report_tried: bool = False) -> Any:
         """
         Passed to modules when determining HSI_Events to be scheduled based on
-        this generic appointment. Intended as the diagnosis_fn argument to the
+        this generic appointment. Intended as the diagnosis_function argument to the
         Module.do_at_generic_{non_}_emergency.
 
         Class-level definition avoids the need to redefine this method each time
@@ -79,7 +79,7 @@ class HSI_BaseGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
                 patient_id=self.target,
                 patient_details=patient_details,
                 symptoms=symptoms,
-                diagnosis_fn=self._diagnosis_fn,
+                diagnosis_function=self._diagnosis_fn,
                 consumables_checker=self.get_consumables,
                 facility_level=self.ACCEPTED_FACILITY_LEVEL,
                 treatment_id=self.TREATMENT_ID,

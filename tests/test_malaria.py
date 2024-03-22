@@ -270,7 +270,7 @@ def test_dx_algorithm_for_malaria_outcomes_clinical(
 
     assert "fever" in sim.modules["SymptomManager"].has_what(person_id)
 
-    def diagnosis_fn(tests, use_dict: bool = False, report_tried: bool = False):
+    def diagnosis_function(tests, use_dict: bool = False, report_tried: bool = False):
         return hsi_event.healthcare_system.dx_manager.run_dx_test(
             tests,
             hsi_event=hsi_event,
@@ -280,7 +280,7 @@ def test_dx_algorithm_for_malaria_outcomes_clinical(
 
     assert sim.modules['Malaria'].check_if_fever_is_caused_by_malaria(
         true_malaria_infection_type = df.at[person_id, "ma_inf_type"],
-        diagnosis_fn = diagnosis_fn,
+        diagnosis_function = diagnosis_function,
         patient_id=person_id,
     ) == expected_diagnosis
 
@@ -348,7 +348,7 @@ def test_dx_algorithm_for_non_malaria_outcomes(seed):
 
     assert "fever" in sim.modules["SymptomManager"].has_what(person_id)
 
-    def diagnosis_fn(tests, use_dict: bool = False, report_tried: bool = False):
+    def diagnosis_function(tests, use_dict: bool = False, report_tried: bool = False):
         return hsi_event.healthcare_system.dx_manager.run_dx_test(
             tests,
             hsi_event=hsi_event,
@@ -361,7 +361,7 @@ def test_dx_algorithm_for_non_malaria_outcomes(seed):
             true_malaria_infection_type=sim.population.props.at[
                 person_id, "ma_inf_type"
             ],
-            diagnosis_fn=diagnosis_fn,
+            diagnosis_function=diagnosis_function,
             patient_id=person_id,
         )
         == "negative_malaria_test"

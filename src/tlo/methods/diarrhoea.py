@@ -938,7 +938,7 @@ class Diarrhoea(Module):
         self,
         patient_id: int,
         patient_details: NamedTuple = None,
-        diagnosis_fn: Callable[[str, bool, bool], Any] = None,
+        diagnosis_function: Callable[[str, bool, bool], Any] = None,
         **kwargs,
     ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
         # This routine is called when Diarrhoea is a symptom for a child
@@ -950,7 +950,7 @@ class Diarrhoea(Module):
         event_info = []
 
         # 1) Assessment of danger signs
-        danger_signs = diagnosis_fn(
+        danger_signs = diagnosis_function(
             "imci_severe_dehydration_visual_inspection"
         )
 
