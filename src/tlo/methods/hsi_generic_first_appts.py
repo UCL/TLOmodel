@@ -6,6 +6,7 @@ This file contains the HSI events that represent the first contact with the Heal
 the onset of symptoms. Non-emergency symptoms lead to `HSI_GenericFirstApptAtFacilityLevel0` and emergency symptoms
 lead to `HSI_GenericEmergencyFirstApptAtFacilityLevel1`.
 """
+from __future__ import annotations
 from collections import namedtuple
 from typing import TYPE_CHECKING, Any, Iterable, List, Literal, OrderedDict
 
@@ -15,6 +16,7 @@ from tlo.methods.hsi_event import HSI_Event
 
 if TYPE_CHECKING:
     from tlo import Module
+    from tlo.methods.dxmanager import DiagnosisTestReturnType
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -94,7 +96,9 @@ class HSI_BaseGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
             {}
         )
 
-    def _diagnosis_fn(self, tests, use_dict: bool = False, report_tried: bool = False) -> Any:
+    def _diagnosis_function(
+        self, tests, use_dict: bool = False, report_tried: bool = False
+    ) -> DiagnosisTestReturnType:
         """
         Passed to modules when determining HSI_Events to be scheduled based on
         this generic appointment. Intended as the diagnosis_function argument to the
@@ -139,7 +143,7 @@ class HSI_BaseGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
                 patient_id=self.target,
                 patient_details=patient_details,
                 symptoms=symptoms,
-                diagnosis_function=self._diagnosis_fn,
+                diagnosis_function=self._diagnosis_function,
                 consumables_checker=self.get_consumables,
                 facility_level=self.ACCEPTED_FACILITY_LEVEL,
                 treatment_id=self.TREATMENT_ID,
