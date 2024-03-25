@@ -147,7 +147,6 @@ class HSI_BaseGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
                 consumables_checker=self.get_consumables,
                 facility_level=self.ACCEPTED_FACILITY_LEVEL,
                 treatment_id=self.TREATMENT_ID,
-                random_state=self.module.rng,
             )
             # Record any requested DataFrame updates, but do not implement yet
             # NOTE: |= syntax is only available in Python >=3.9
