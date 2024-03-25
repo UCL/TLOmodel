@@ -184,4 +184,17 @@ def test_hsi_does_not_run_if_essential_equipment_is_not_available(seed, tmpdir):
     )
 
 
+def test_lookup_equipment_item_code_from_item_name():
+    pass
+
+def test_lookup_equipment_item_code_from_pkg_name():
+    pass
+
+def test_lookup_item_availability_by_hsi_event():
+    pass
+
+def test_change_equipment_availability():
+    """Test that we can change the availability of equipment midway through the simulation."""
+    pass
+
 
