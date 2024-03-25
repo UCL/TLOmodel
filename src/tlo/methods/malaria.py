@@ -587,36 +587,64 @@ class Malaria(Module):
         self.item_codes_for_consumables_required['malaria_rdt'] = get_item_code('Malaria test kit (RDT)')
 
         # malaria treatment uncomplicated children <15kg
-        self.item_codes_for_consumables_required['malaria_uncomplicated_young_children'] = get_item_code(
+        # one tablet twice daily, 3 days
+        self.item_codes_for_consumables_required['malaria_uncomplicated_young_child'] = get_item_code(
             'Lumefantrine 120mg/Artemether 20mg,  30x18_540_CMST')
 
+        # 2.5ml, 4 times a day, 3 days
         self.item_codes_for_consumables_required['paracetamol_syrup'] = get_item_code(
             'Paracetamol syrup 120mg/5ml_0.0119047619047619_CMST')
 
         # malaria treatment uncomplicated children >15kg
-        self.item_codes_for_consumables_required['malaria_uncomplicated_older_children'] = get_item_code(
+        # 2 tablets, twice daily, 3 days
+        self.item_codes_for_consumables_required['malaria_uncomplicated_older_child'] = get_item_code(
             'Lumefantrine 120mg/Artemether 20mg,  30x18_540_CMST')
 
         # malaria treatment uncomplicated adults >36kg
+        # 4 tablets, twice daily, 3 days
         self.item_codes_for_consumables_required['malaria_uncomplicated_adult'] = get_item_code(
             'Lumefantrine 120mg/Artemether 20mg,  30x18_540_CMST')
 
-        self.item_codes_for_consumables_required['paracetamol'] = get_item_code('Paracetamol 500mg_1000_CMST')
+        # 2 tablets, 4 times daily, 3 days
+        self.item_codes_for_consumables_required['paracetamol'] = get_item_code(
+            'Paracetamol 500mg_1000_CMST')
 
-        # malaria treatment complicated - same consumables for adults and children
-        self.item_codes_for_consumables_required['malaria_complicated'] = get_item_code('Injectable artesunate')
+        # malaria treatment complicated young children <15kg
+        # average 10kg body weight, dose 3mg/kg BW, 24 hours
+        self.item_codes_for_consumables_required['malaria_complicated_young_child'] = get_item_code(
+            'Injectable artesunate')
 
-        self.item_codes_for_consumables_required['malaria_complicated_optional_items'] = [
-            get_item_code('Malaria test kit (RDT)'),
-            get_item_code('Cannula iv  (winged with injection pot) 18_each_CMST'),
-            get_item_code('Disposables gloves, powder free, 100 pieces per box'),
-            get_item_code('Gauze, absorbent 90cm x 40m_each_CMST'),
-            get_item_code('Water for injection, 10ml_Each_CMST')
-        ]
+        # malaria treatment complicated older children 15-25kg
+        # average 20kg body weight, dose 2.4mg/kg BW, 24 hours
+        self.item_codes_for_consumables_required['malaria_complicated_older_child'] = get_item_code(
+            'Injectable artesunate')
+
+        # malaria treatment complicated adults >36kg
+        # average 60kg body weight, dose 2.4mg/kg BW, 24 hours
+        self.item_codes_for_consumables_required['malaria_complicated_adult'] = get_item_code(
+            'Injectable artesunate')
+
+        # optional item codes
+        self.item_codes_for_consumables_required['malaria_optional_cannula'] = get_item_code(
+            'Cannula iv  (winged with injection pot) 18_each_CMST')
+
+        self.item_codes_for_consumables_required['malaria_optional_gloves'] = get_item_code(
+            'Disposables gloves, powder free, 100 pieces per box')
+
+        self.item_codes_for_consumables_required['malaria_optional_gauze'] = get_item_code(
+            'Gauze, swabs 8-ply 10cm x 10cm_100_FF010800_CMST')
+
+        self.item_codes_for_consumables_required['malaria_optional_water'] = get_item_code(
+            'Water for injection, 10ml_Each_CMST')  # assume 100ml for 24 hour period
 
         # malaria IPTp for pregnant women
+        # this is cotrimoxazole
+        # self.item_codes_for_consumables_required['malaria_iptp'] = get_item_code(
+        #     'Sulfamethoxazole + trimethropin, tablet 400 mg + 80 mg')
+        #
+        # 3 tablets in total, each tablet 500mg/25mg SP
         self.item_codes_for_consumables_required['malaria_iptp'] = get_item_code(
-            'Sulfamethoxazole + trimethropin, tablet 400 mg + 80 mg')
+            'Fansidar (sulphadoxine / pyrimethamine tab)')
 
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
@@ -1100,29 +1128,37 @@ class HSI_Malaria_Treatment(HSI_Event, IndividualScopeEventMixin):
         Helper function to get treatment according to the age of the person being treated. Returns bool to indicate
         whether drugs were available"""
 
+        cons = self.module.item_codes_for_consumables_required
+
         # non-complicated malaria
         if age_of_person < 5:
             # Formulation for young children
             drugs_available = self.get_consumables(
-                item_codes=self.module.item_codes_for_consumables_required['malaria_uncomplicated_young_children'],
-                optional_item_codes=[self.module.item_codes_for_consumables_required['paracetamol_syrup'],
-                                     self.module.item_codes_for_consumables_required['malaria_rdt']]
+                item_codes={cons['malaria_uncomplicated_young_child']: 6},
+                optional_item_codes={
+                    cons['paracetamol_syrup']: 30,
+                    cons['malaria_rdt']: 1
+                }
             )
 
         elif 5 <= age_of_person <= 15:
             # Formulation for older children
             drugs_available = self.get_consumables(
-                item_codes=self.module.item_codes_for_consumables_required['malaria_uncomplicated_older_children'],
-                optional_item_codes=[self.module.item_codes_for_consumables_required['paracetamol_syrup'],
-                                     self.module.item_codes_for_consumables_required['malaria_rdt']]
+                item_codes={cons['malaria_uncomplicated_older_child']: 12},
+                optional_item_codes={
+                    cons['paracetamol_syrup']: 30,
+                    cons['malaria_rdt']: 1
+                }
             )
 
         else:
             # Formulation for adults
             drugs_available = self.get_consumables(
-                item_codes=self.module.item_codes_for_consumables_required['malaria_uncomplicated_adult'],
-                optional_item_codes=[self.module.item_codes_for_consumables_required['paracetamol'],
-                                     self.module.item_codes_for_consumables_required['malaria_rdt']]
+                item_codes={cons['malaria_uncomplicated_adult']: 24},
+                optional_item_codes={
+                    cons['paracetamol']: 24,
+                    cons['malaria_rdt']: 1
+                }
             )
 
         return drugs_available
@@ -1151,19 +1187,20 @@ class HSI_Malaria_Treatment_Complicated(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
 
         df = self.sim.population.props
+        person = df.loc[person_id]
 
         # if person is not on treatment and still alive
-        if (df.at[person_id, 'ma_tx'] == 'none') and df.at[person_id, 'is_alive']:
+        if (person['ma_tx'] == 'none') and person['is_alive']:
 
             logger.debug(key='message',
                          data=f'HSI_Malaria_Treatment_Complicated: requesting complicated malaria treatment for '
                               f' {person_id}')
 
-            if self.get_consumables(
-                item_codes=self.module.item_codes_for_consumables_required['malaria_complicated'],
-                optional_item_codes=self.module.item_codes_for_consumables_required[
-                    'malaria_complicated_optional_items']
-            ):
+            # Check if drugs are available, and provide drugs:
+            drugs_available = self.get_drugs(age_of_person=person['age_years'])
+
+            if drugs_available:
+
                 logger.debug(key='message',
                              data=f'HSI_Malaria_Treatment_Complicated: giving complicated malaria treatment for '
                                   f' {person_id}')
@@ -1184,6 +1221,67 @@ class HSI_Malaria_Treatment_Complicated(HSI_Event, IndividualScopeEventMixin):
                     'called_by': self.TREATMENT_ID
                 }
                 logger.info(key='rdt_log', data=person_details_for_test)
+
+    def get_drugs(self, age_of_person):
+        """
+        :param age_of_person:
+        :return:
+
+        Helper function to get treatment according to the age of the person being treated. Returns bool to indicate
+        whether drugs were available
+        First treatment with complicated malaria regimen (24 hours),
+        then full course of uncomplicated treatment
+        """
+
+        cons = self.module.item_codes_for_consumables_required
+
+        # non-complicated malaria
+        if age_of_person < 5:
+            # Formulation for young children
+            drugs_available = self.get_consumables(
+                item_codes={
+                    cons['malaria_complicated_young_child']: 0.5,
+                    cons['malaria_uncomplicated_young_child']: 6
+                },
+                optional_item_codes={
+                    cons['malaria_optional_cannula']: 1,
+                    cons['malaria_optional_gloves']: 2,
+                    cons['malaria_optional_gauze']: 1,
+                    cons['malaria_optional_water']: 10,
+                }
+            )
+
+        elif 5 <= age_of_person <= 15:
+            # Formulation for older children
+            drugs_available = self.get_consumables(
+                item_codes={
+                    cons['malaria_complicated_older_child']: 0.8,
+                    cons['malaria_uncomplicated_older_child']: 12
+                },
+                optional_item_codes={
+                    cons['malaria_optional_cannula']: 1,
+                    cons['malaria_optional_gloves']: 2,
+                    cons['malaria_optional_gauze']: 1,
+                    cons['malaria_optional_water']: 10,
+                }
+            )
+
+        else:
+            # Formulation for adults
+            drugs_available = self.get_consumables(
+                item_codes={
+                    cons['malaria_complicated_adult']: 2.4,
+                    cons['malaria_uncomplicated_adult']: 24
+                },
+                optional_item_codes={
+                    cons['malaria_optional_cannula']: 1,
+                    cons['malaria_optional_gloves']: 2,
+                    cons['malaria_optional_gauze']: 1,
+                    cons['malaria_optional_water']: 10,
+                }
+            )
+
+        return drugs_available
 
     def did_not_run(self):
         logger.debug(key='message',
