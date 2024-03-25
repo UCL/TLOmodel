@@ -62,7 +62,7 @@ class EffectOfProgrammes(BaseScenario):
                 'tlo.methods.malaria': logging.INFO,
                 'tlo.methods.demography': logging.INFO,
                 'tlo.methods.healthsystem.summary': logging.INFO,
-                'tlo.methods.healthsystem': logging.INFO,
+                # 'tlo.methods.healthsystem': logging.INFO,
                 'tlo.methods.healthburden': logging.INFO
             }
         }

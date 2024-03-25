@@ -29,10 +29,10 @@ from tlo.analysis.utils import (
     make_age_grp_types,
 )
 
-outputspath = Path("./outputs")
+outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
 
 # Find results_folder associated with a given batch_file (and get most recent [-1])
-results_folder = get_scenario_outputs("effect_of_treatment_packages-2024-03-22.py", outputspath)[-1]
+results_folder = get_scenario_outputs("effect_of_treatment_packages", outputspath)[-1]
 # results_folder = get_scenario_outputs("exclude_HTM_services.py", outputspath)[-1]
 
 # Declare path for output graphs from this script
