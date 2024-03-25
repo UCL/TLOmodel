@@ -7,7 +7,7 @@ from collections import Counter, defaultdict
 from collections.abc import Iterable
 from itertools import repeat
 from pathlib import Path
-from typing import Dict, List, NamedTuple, Optional, Tuple
+from typing import Dict, List, NamedTuple, Optional, Set, Tuple
 
 import numpy as np
 import pandas as pd
@@ -193,6 +193,13 @@ class HealthSystem(Module):
             "Availability of beds. If 'default' then use the availability specified in the ResourceFile; if "
             "'none', then let no beds be  ever be available; if 'all', then all beds are always available. NB. This "
             "parameter is over-ridden if an argument is provided to the module initialiser."),
+        'Equipment': Parameter(
+            Types.DATA_FRAME, "Data on equipment items, packages, and availability probabilities by facility level."),
+        'equip_availability': Parameter(
+            Types.STRING,
+            "Availability of equipment. If 'default' then use the availability specified in the ResourceFile;"
+            " if 'none', then let no equipment ever be available; if 'all', then all equipment is always available. NB."
+            " This parameter is over-ridden if an argument is provided to the module initialiser."),
 
         # Service Availability
         'Service_Availability': Parameter(
@@ -305,6 +312,7 @@ class HealthSystem(Module):
         mode_appt_constraints: Optional[int] = None,
         cons_availability: Optional[str] = None,
         beds_availability: Optional[str] = None,
+        equip_availability: Optional[str] = None,
         randomise_queue: bool = True,
         ignore_priority: bool = False,
         policy_name: Optional[str] = None,
@@ -329,6 +337,8 @@ class HealthSystem(Module):
         or 'none', requests for consumables are not logged.
         :param beds_availability: If 'default' then use the availability specified in the ResourceFile; if 'none', then
         let no beds be ever be available; if 'all', then all beds are always available.
+        :param equip_availability: If 'default' then use the availability specified in the ResourceFile; if 'none', then
+        let no equipment ever be available; if 'all', then all equipment is always available.
         :param randomise_queue ensure that the queue is not model-dependent, i.e. properly randomised for equal topen
             and priority
         :param ignore_priority: If ``True`` do not use the priority information in HSI
@@ -393,7 +403,6 @@ class HealthSystem(Module):
                                        'LCOA_EHP']
         self.arg_policy_name = policy_name
 
-
         self.tclose_overwrite = None
         self.tclose_days_offset_overwrite = None
 
@@ -422,12 +431,16 @@ class HealthSystem(Module):
         self.HSI_EVENT_QUEUE = []
         self.hsi_event_queue_counter = 0  # Counter to help with the sorting in the heapq
 
-        # Store the argument provided for cons_availability
+        # Store the arguments provided for cons/beds/equip_availability
         assert cons_availability in (None, 'default', 'all', 'none')
         self.arg_cons_availability = cons_availability
 
         assert beds_availability in (None, 'default', 'all', 'none')
         self.arg_beds_availability = beds_availability
+
+        assert equip_availability in (None, 'default', 'all', 'none')
+        self.arg_equip_availability = equip_availability
+        self.equip_availability = 'all'  # provided so that there is a default even before simulation is run
 
         # `compute_squeeze_factor_to_district_level` is a Boolean indicating whether the computation of squeeze_factors
         # should be specific to each district (when `True`), or if the computation of squeeze_factors should be on the
@@ -477,6 +490,13 @@ class HealthSystem(Module):
                 "'year', 'simulation' or None."
             )
 
+        self._hsi_event_names_missing_ess_equip = set()  # The names of HSI events for which the settings of essential
+        #                                                   equipment is missing.
+        self._equip_items_missing_in_RF = dict()  # The equipment item names called for an HSI event, but are missing in
+        #                                           the RF_Equipment.
+        self._equip_pkgs_missing_in_RF = dict()  # The equipment pkg names called for an HSI event, but are missing in
+        #                                           the RF_Equipment.
+
     def read_parameters(self, data_folder):
 
         path_to_resourcefiles_for_healthsystem = Path(self.resourcefilepath) / 'healthsystem'
@@ -519,6 +539,10 @@ class HealthSystem(Module):
         # Data on the number of beds available of each type by facility_id
         self.parameters['BedCapacity'] = pd.read_csv(
             path_to_resourcefiles_for_healthsystem / 'infrastructure_and_equipment' / 'ResourceFile_Bed_Capacity.csv')
+
+        # Read in ResourceFile_Equipment
+        self.parameters['Equipment'] = pd.read_csv(
+            path_to_resourcefiles_for_healthsystem / 'infrastructure_and_equipment' / 'ResourceFile_Equipment.csv')
 
         # Data on the priority of each Treatment_ID that should be adopted in the queueing system according to different
         # priority policies. Load all policies at this stage, and decide later which one to adopt.
@@ -568,7 +592,6 @@ class HealthSystem(Module):
         # Ensure that a value for the year at the start of the simulation is provided.
         assert all(2010 in sheet['year'].values for sheet in self.parameters['yearly_HR_scaling'].values())
 
-
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
 
@@ -599,6 +622,9 @@ class HealthSystem(Module):
             rng=rng_for_consumables,
             availability=self.get_cons_availability()
         )
+
+        # Determine equip_availability
+        self.equip_availability = self.get_equip_availability()
 
         self.tclose_overwrite = self.parameters['tclose_overwrite']
         self.tclose_days_offset_overwrite = self.parameters['tclose_days_offset_overwrite']
@@ -672,7 +698,9 @@ class HealthSystem(Module):
         self.bed_days.on_birth(self.sim.population.props, mother_id, child_id)
 
     def on_simulation_end(self):
-        """Put out to the log the information from the tracker of the last day of the simulation"""
+        """Put out to the log the information from the tracker of the last day of the simulation.
+        Raise warning and enter to log the set of hsi event names which were initialised but the settings of essential
+        equipment is missing."""
         self.bed_days.on_simulation_end()
         self.consumables.on_simulation_end()
         if self._hsi_event_count_log_period == "simulation":
@@ -697,6 +725,47 @@ class HealthSystem(Module):
                     }
                 }
             )
+
+        if self._hsi_event_names_missing_ess_equip:
+            hsi_event_names_missing_ess_equip = sorted(self._hsi_event_names_missing_ess_equip)
+            warnings.warn(UserWarning(f"Missing settings of essential equipment for HSI events:/n"
+                                      f"{hsi_event_names_missing_ess_equip}"))
+            logger_summary.info(
+                key="hsi_event_names_missing_ess_equip",
+                data={"event_names": hsi_event_names_missing_ess_equip}
+            )
+            # TODO: smt odd is going on, some hsi events were logged, according to my equipment_catalogue script,
+            #  for which the essential equipment is not define, but they are not included in this warning.
+            #  E.g. HSI_BladderCancer_Investigation_Following_Blood_Urine, HSI_BladderCancer_StartTreatment,
+            #  HSI_BreastCancer_Investigation_Following_breast_lump_discernible, ...
+
+        def sort_dict_for_print(dict_to_sort: Dict) -> Dict:
+            sorted_list = sorted(dict_to_sort.items())
+            sorted_dict = {}
+            for key, value in sorted_list:
+                sorted_dict[key] = sorted(value)
+            return sorted_dict
+
+        if self._equip_items_missing_in_RF:
+            sorted_equip_items_missing_in_RF = sort_dict_for_print(self._equip_items_missing_in_RF)
+            warnings.warn(UserWarning(f"Equipment item names were not recognised:/n"
+                                      f"{sorted_equip_items_missing_in_RF}"))
+
+            for _hsi_event_name, _item_names in sorted_equip_items_missing_in_RF.items():
+                logger_summary.info(
+                    key="equip_items_missing_in_RF",
+                    data={_hsi_event_name: _item_names}
+                )
+
+        if self._equip_pkgs_missing_in_RF:
+            sorted_equip_pkgs_missing_in_RF = sort_dict_for_print(self._equip_pkgs_missing_in_RF)
+            warnings.warn(UserWarning(f"Equipment pkg names were not recognised:/n"
+                                      f"{sorted_equip_pkgs_missing_in_RF}"))
+            for _hsi_event_name, _pkg_names in sorted_equip_pkgs_missing_in_RF.items():
+                logger_summary.info(
+                    key="equip_pkgs_missing_in_RF",
+                    data={_hsi_event_name: _pkg_names}
+                )
 
     def setup_priority_policy(self):
 
@@ -723,8 +792,6 @@ class HealthSystem(Module):
 
     def process_human_resources_files(self, use_funded_or_actual_staffing: str):
         """Create the data-structures needed from the information read into the parameters."""
-
-
 
         # * Define Facility Levels
         self._facility_levels = set(self.parameters['Master_Facilities_List']['Facility_Level']) - {'5'}
@@ -1005,6 +1072,42 @@ class HealthSystem(Module):
                     )
 
         return _beds_availability
+
+    def get_equip_availability(self) -> str:
+        """Returns equipment availability. (Should be equal to what is specified by the parameter, but overwrite with
+        what was provided in argument if an argument was specified -- provided for backward compatibility/debugging.)"""
+
+        if self.arg_equip_availability is None:
+            _equip_availability = self.parameters['equip_availability']
+        else:
+            _equip_availability = self.arg_equip_availability
+
+        # Log the equip_availability
+        logger.info(key="message",
+                    data=f"Running Health System With the Following Equipment Availability: "
+                         f"{_equip_availability}"
+                    )
+
+        return _equip_availability
+
+    def get_equip_item_availability(self, equip_item_code: str) -> bool:
+        # TODO: update with implementation of essential equipment availability for the HSI event to run
+        #  for now, always available
+        if equip_item_code in [243, 41]:  # 243 = Pulse oximeter, 41 = 'Lamp, Anglepoise'
+            return False
+        return True  # True of False
+
+    def get_essential_equip_availability(self, essential_equip_set: Set[int]) -> bool:
+        if self.equip_availability == 'all':
+            # Always all equipment available
+            return True
+        elif self.equip_availability == 'default':
+            # True if all items of essential equipment available; False if any unavailable
+            return all(self.get_equip_item_availability(item_code) for item_code in essential_equip_set)
+        else:  # self.equip_availability == 'none':
+            # True if no essential equipment requested, otherwise False as assumed no equipment available
+            # TODO: Should no equipment be logged then?
+            return not bool(essential_equip_set)
 
     def schedule_to_call_never_ran_on_date(self, hsi_event: 'HSI_Event', tdate: datetime.datetime):
         """Function to schedule never_ran being called on a given date"""
@@ -1535,6 +1638,7 @@ class HealthSystem(Module):
                 squeeze_factor=_squeeze_factor,
                 did_run=did_run,
                 priority=priority,
+                equipment=hsi_event.EQUIPMENT,
             )
 
     def write_to_hsi_log(
@@ -1545,6 +1649,7 @@ class HealthSystem(Module):
         squeeze_factor: float,
         did_run: bool,
         priority: int,
+        equipment: set,
     ):
         """Write the log `HSI_Event` and add to the summary counter."""
         logger.debug(
@@ -1559,6 +1664,7 @@ class HealthSystem(Module):
                 'did_run': did_run,
                 'Facility_Level': event_details.facility_level if event_details.facility_level is not None else -99,
                 'Facility_ID': facility_id if facility_id is not None else -99,
+                'equipment': equipment,
             },
             description="record of each HSI event"
         )
@@ -1831,8 +1937,7 @@ class HealthSystem(Module):
 
                 # Mode 0: All HSI Event run, with no squeeze
                 # Mode 1: All HSI Events run with squeeze provided latter is not inf
-                ok_to_run = True
-
+                ok_to_run = self.get_essential_equip_availability(event.ESSENTIAL_EQUIPMENT)
                 if self.mode_appt_constraints == 1 and squeeze_factor == float('inf'):
                     ok_to_run = False
 
@@ -2170,18 +2275,25 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         # based on queue information, and we assume no squeeze ever takes place.
                         squeeze_factor = 0.
 
-                        # Check if any of the officers required have run out.
-                        out_of_resources = False
-                        for officer, call in original_call.items():
-                            # If any of the officers are not available, then out of resources
-                            if officer not in set_capabilities_still_available:
-                                out_of_resources = True
+                        # Check if all essential equipment available and the officers required available.
+                        ok_to_run = \
+                            self.module.sim.modules['HealthSystem'].get_essential_equip_availability(
+                                next_event_tuple.hsi_event.ESSENTIAL_EQUIPMENT
+                            )  # True if all essential equipment available
+
+                        if ok_to_run:
+                            for officer, call in original_call.items():
+                                # If any of the officers are not available, we are out of resources, hence not ok_to_run
+                                if officer not in set_capabilities_still_available:
+                                    ok_to_run = False
+                                    if not ok_to_run:
+                                        break
                         # If officers still available, run event. Note: in current logic, a little
                         # overtime is allowed to run last event of the day. This seems more realistic
                         # than medical staff leaving earlier than
                         # planned if seeing another patient would take them into overtime.
 
-                        if out_of_resources:
+                        if not ok_to_run:
 
                             # Do not run,
                             # Call did_not_run for the hsi_event
@@ -2206,7 +2318,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                 priority=_priority
                             )
 
-                        # Have enough capabilities left to run event
+                        # Have enough capabilities left to run event, ie ok_to_run
                         else:
                             # Notes-to-self: Shouldn't this be done after checking the footprint?
                             # Compute the bed days that are allocated to this HSI and provide this
@@ -2389,13 +2501,15 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         treatment_id='Inpatient_Care',
                         facility_level=self.module._facility_by_facility_id[_fac_id].level,
                         appt_footprint=tuple(sorted(_inpatient_appts.items())),
-                        beddays_footprint=()
+                        beddays_footprint=(),
+                        equipment=()  # TODO: what should be in here?
                     ),
                     person_id=-1,
                     facility_id=_fac_id,
                     squeeze_factor=0.0,
                     priority=-1,
                     did_run=True,
+                    equipment=set(),  # TODO: explore more, should it be non-empty in some cases?
                 )
 
         # Restart the total footprint of all calls today, beginning with those due to existing in-patients.
@@ -2555,6 +2669,7 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
         * `capabilities_coefficient`
         * `cons_availability`
         * `beds_availability`
+        * `equip_availability`
     Note that no checking is done here on the suitability of values of each parameter."""
 
     def __init__(self, module: HealthSystem, parameters: Dict):
@@ -2580,6 +2695,9 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
 
         if 'beds_availability' in self._parameters:
             self.module.bed_days.availability = self._parameters['beds_availability']
+
+        if 'equip_availability' in self._parameters:
+            self.module.equip_availability = self._parameters['equip_availability']
 
 
 class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
