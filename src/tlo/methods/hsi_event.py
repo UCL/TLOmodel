@@ -334,14 +334,21 @@ class HSI_Event:
         else:
             self.ESSENTIAL_EQUIPMENT = set()
 
+    # todo add function to set essential equipment
+
     def add_equipment(self, set_of_equip: Set[str]) -> None:
         """Helper function to update equipment.
 
         Should be passed a set of equipment item names (strings).
         """
         # Update EQUIPMENT if the given set_of_equip in correct format, ie a non-empty set of strings
-        if not isinstance(set_of_equip, set) or any(not isinstance(item, str) for item in set_of_equip) or \
-           (set_of_equip in [set(), None, {''}]):
+        if (
+            (not isinstance(set_of_equip, set))
+            or
+            any(not isinstance(item, str) for item in set_of_equip)
+            or
+            (set_of_equip in [set(), None, {''}])
+        ):
             raise ValueError(
                 "Argument to add_equipment should be a non-empty set of strings of "
                 "equipment item names from ResourceFile_Equipment.csv."
