@@ -2317,7 +2317,8 @@ class Labour(Module):
                 event = HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(
                     module=self,
                     person_id=patient_id,
-                    facility_level_of_this_hsi=random_state.choice(["1a", "1b"]),
+                    # facility_level_of_this_hsi=random_state.choice(["1a", "1b"]),
+                    facility_level_of_this_hsi=self.rng.choice(["1a", "1b"]),
                 )
                 self.healthsystem.schedule_hsi_event(
                     event,
