@@ -30,10 +30,10 @@ class ImpactOfHealthSystemMode(BaseScenario):
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
         self.end_date = self.start_date + pd.DateOffset(years=31) #CHECK
-        self.pop_size = 50 #100_000
+        self.pop_size = 100_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 1 #10
+        self.runs_per_draw = 2
 
     def log_configuration(self):
         return {
@@ -68,22 +68,22 @@ class ImpactOfHealthSystemMode(BaseScenario):
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario.
         """
         return {
-         #   "No growth":
-         #       mix_scenarios(
-         ##           get_parameters_for_status_quo(),
-         #           {
-         #           # MUST ADD SWITCH TO PERFECT CONSUMABLE AVAILABILITY IN 2018
-         #            "HealthSystem": {
-         #               "yearly_HR_scaling_mode": "no_scaling",
-         #               "year_mode_switch": 2018#,
-         #               "mode_appt_constraints_postSwitch": 2,
-         #               "policy_name": "Naive",
-         #               "tclose_overwrite": 1,
-         #               "tclose_days_offset_overwrite": 7,
-         #               "use_funded_or_actual_staffing": "actual"#,
-         #             },
-         #           }
-         #       ),
+            "No growth":
+                mix_scenarios(
+                    get_parameters_for_status_quo(),
+                    {
+                    # MUST ADD SWITCH TO PERFECT CONSUMABLE AVAILABILITY IN 2018
+                     "HealthSystem": {
+                        "yearly_HR_scaling_mode": "no_scaling",
+                        "year_mode_switch": 2018#,
+                        "mode_appt_constraints_postSwitch": 2,
+                        "policy_name": "Naive",
+                        "tclose_overwrite": 1,
+                        "tclose_days_offset_overwrite": 7,
+                        "use_funded_or_actual_staffing": "actual"#,
+                      },
+                    }
+                ),
                 
             "GDP growth":
                 mix_scenarios(
@@ -164,7 +164,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                       },
                     }
                 ),
-                                                  
+            """
             "GDP growth FL case 1 const tot inv":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
@@ -228,6 +228,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                       },
                     }
                 ),
+                """g
         }
 
 
