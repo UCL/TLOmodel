@@ -172,7 +172,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                         "tclose_days_offset_overwrite": 7,
                         "use_funded_or_actual_staffing": "actual",
                         "year_cons_availability_switch": 2019,
-                        "cons_availability_postSwitch": "all",g
+                        "cons_availability_postSwitch": "all",
                       },
                     }
                 ),
