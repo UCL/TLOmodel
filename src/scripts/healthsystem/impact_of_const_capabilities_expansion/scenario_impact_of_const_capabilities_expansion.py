@@ -75,7 +75,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     # MUST ADD SWITCH TO PERFECT CONSUMABLE AVAILABILITY IN 2018
                      "HealthSystem": {
                         "yearly_HR_scaling_mode": "no_scaling",
-                        "year_mode_switch": 2018,
+                        "year_mode_switch": 2019,
                         "mode_appt_constraints_postSwitch": 2,
                         "policy_name": "Naive",
                         "tclose_overwrite": 1,
@@ -91,7 +91,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     {
                      "HealthSystem": {
                         "yearly_HR_scaling_mode": "GDP_growth",
-                        "year_mode_switch": 2018,
+                        "year_mode_switch": 2019,
                         "mode_appt_constraints_postSwitch": 2,
                         "policy_name": "Naive",
                         "tclose_overwrite": 1,
@@ -107,7 +107,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     {
                      "HealthSystem": {
                         "yearly_HR_scaling_mode": "GDP_growth_fHE_case1",
-                        "year_mode_switch": 2018,
+                        "year_mode_switch": 2019,
                         "mode_appt_constraints_postSwitch": 2,
                         "policy_name": "Naive",
                         "tclose_overwrite": 1,
@@ -123,7 +123,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     {
                      "HealthSystem": {
                         "yearly_HR_scaling_mode": "GDP_growth_fHE_case3",
-                        "year_mode_switch": 2018,
+                        "year_mode_switch": 2019,
                         "mode_appt_constraints_postSwitch": 2,
                         "policy_name": "Naive",
                         "tclose_overwrite": 1,
@@ -139,7 +139,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     {
                      "HealthSystem": {
                         "yearly_HR_scaling_mode": "GDP_growth_fHE_case4",
-                        "year_mode_switch": 2018,
+                        "year_mode_switch": 2019,
                         "mode_appt_constraints_postSwitch": 2,
                         "policy_name": "Naive",
                         "tclose_overwrite": 1,
@@ -155,7 +155,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     {
                      "HealthSystem": {
                         "yearly_HR_scaling_mode": "GDP_growth_fHE_case6",
-                        "year_mode_switch": 2018,
+                        "year_mode_switch": 2019,
                         "mode_appt_constraints_postSwitch": 2,
                         "policy_name": "Naive",
                         "tclose_overwrite": 1,
