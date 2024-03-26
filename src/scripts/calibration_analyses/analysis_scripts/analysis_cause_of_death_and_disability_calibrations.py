@@ -474,3 +474,9 @@ if __name__ == "__main__":
         output_folder=args.results_folder,
         resourcefilepath=Path('./resources')
     )
+
+    # apply(
+    #     results_folder=Path("outputs/long_run_all_diseases-2024-03-05T114732Z"),
+    #     output_folder=Path("outputs/long_run_all_diseases-2024-03-05T114732Z"),
+    #     resourcefilepath=Path('./resources')
+    # )

@@ -421,6 +421,7 @@ def test_record_of_appt_of_tb_start_treatment_hsi(tmpdir, seed):
 
     # 1) If consumables available, the HSI will only be run once and the appt footprint should be TBNew:
     assert [{'TBNew': 1}] == get_appt_footprints(_consumables_availability='all')
+
     # 2) If consumables not available, there should be multiple footprints where the first is TBNew
     # and the rest is PharmDispensing
     appt_list = get_appt_footprints(_consumables_availability='none')
@@ -431,8 +432,8 @@ def test_record_of_appt_of_tb_start_treatment_hsi(tmpdir, seed):
 
 def test_treatment_failure(seed):
     """
-    test treatment failure occurs and
-    retreatment properties / follow-up occurs correctly
+    test treatment failure occurs and properties set correctly
+    treatment failure will schedule referral for xpert test at level 2
     """
 
     popsize = 10
@@ -504,26 +505,30 @@ def test_treatment_failure(seed):
     # check referral for screening/testing again
     # screen and test person_id
     screening_appt = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id,
-                                                 module=sim.modules['Tb'])
+                                                 module=sim.modules['Tb'],
+                                                 facility_level="1a")
     test = screening_appt.apply(person_id=person_id, squeeze_factor=0.0)
 
-    # should schedule xpert - if available
-    # check that the event returned a footprint for an xpert test
+    # should schedule a referral for xpert testing at facility level 2
+    # check that the event returned a footprint Over5OPD
     assert test == screening_appt.make_appt_footprint({'Over5OPD': 1})
 
-    # start treatment
-    tx_start = tb.HSI_Tb_StartTreatment(person_id=person_id,
-                                        module=sim.modules['Tb'])
-    tx_start.apply(person_id=person_id, squeeze_factor=0.0)
-
-    # clinical monitoring
-    # check tb.HSI_Tb_FollowUp scheduled
-    followup_event = [
+    # check tb.HSI_Tb_ScreeningAndRefer scheduled
+    followup_test = [
         ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
-        isinstance(ev[1], tb.HSI_Tb_FollowUp)
+        isinstance(ev[1], tb.HSI_Tb_ScreeningAndRefer)
     ][-1]
 
-    assert followup_event[0] > sim.date
+    assert followup_test[0] > sim.date
+
+    # schedule follow-up test at level 2 to get xpert
+    screening_appt = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id,
+                                                 module=sim.modules['Tb'],
+                                                 facility_level="2")
+    test = screening_appt.apply(person_id=person_id, squeeze_factor=0.0)
+
+    # assert now should be diagnosed as active TB again
+    assert df.at[person_id, 'tb_diagnosed']
 
 
 def test_children_referrals(seed):
@@ -783,7 +788,8 @@ def test_mdr(seed):
 
     # next screening should pick up case as retreatment / mdr
     screening_appt = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id,
-                                                 module=sim.modules['Tb'])
+                                                 module=sim.modules['Tb'],
+                                                 facility_level='2')
     screening_appt.apply(person_id=person_id, squeeze_factor=0.0)
 
     assert df.at[person_id, 'tb_diagnosed_mdr']
@@ -791,7 +797,8 @@ def test_mdr(seed):
     # schedule mdr treatment start
     # this calls clinical_monitoring which should schedule all follow-up appts
     tx_start = tb.HSI_Tb_StartTreatment(person_id=person_id,
-                                        module=sim.modules['Tb'])
+                                        module=sim.modules['Tb'],
+                                        facility_level='2')
     tx_start.apply(person_id=person_id, squeeze_factor=0.0)
 
     # check treatment appropriate for mdr-tb
@@ -1124,13 +1131,24 @@ def test_hsi_scheduling(seed):
     hsi_event = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id, module=sim.modules['Tb'])
     hsi_event.run(squeeze_factor=0)
 
+    # person is HIV+ and will be referred for xpert - only available at level 2
+    # Check person_id has a further testing event scheduled
+    date_event, event = [
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+        isinstance(ev[1], tb.HSI_Tb_ScreeningAndRefer)
+    ][0]
+    assert date_event >= sim.date
+
+    # run testing event for xpert
+    hsi_event = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id,
+                                            module=sim.modules['Tb'],
+                                            facility_level='2')
+    hsi_event.run(squeeze_factor=0)
+
+    # person should now have treatment event scheduled
     # Check person_id has a treatment event scheduled
     date_event, event = [
         ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
         isinstance(ev[1], tb.HSI_Tb_StartTreatment)
     ][0]
     assert date_event == sim.date
-
-    # check this is the only event scheduled
-    tmp = sim.modules['HealthSystem'].find_events_for_person(person_id)
-    assert len(tmp) == 1
