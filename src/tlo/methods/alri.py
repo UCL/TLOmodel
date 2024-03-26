@@ -2981,12 +2981,16 @@ class AlriPropertiesOfOtherModules(Module):
                                                    categories=['MAM', 'SAM', 'well']),
     }
 
+    ASSUMED_PREVALENCE_OF_HIV = 0.00
+
     def read_parameters(self, data_folder):
         pass
 
     def initialise_population(self, population):
         df = population.props
-        df.loc[df.is_alive, 'hv_inf'] = False
+        df.loc[df.is_alive, 'hv_inf'] = (
+            np.random.random_sample(len(df.loc[df.is_alive])) < self.ASSUMED_PREVALENCE_OF_HIV
+        )
         df.loc[df.is_alive, 'hv_art'] = 'not'
         df.loc[df.is_alive, 'nb_low_birth_weight_status'] = 'normal_birth_weight'
         df.loc[df.is_alive, 'nb_breastfeeding_status'] = 'non_exclusive'
@@ -3000,7 +3004,7 @@ class AlriPropertiesOfOtherModules(Module):
 
     def on_birth(self, mother, child):
         df = self.sim.population.props
-        df.at[child, 'hv_inf'] = False
+        df.at[child, 'hv_inf'] = np.random.random_sample() < self.ASSUMED_PREVALENCE_OF_HIV
         df.at[child, 'hv_art'] = 'not'
         df.at[child, 'nb_low_birth_weight_status'] = 'normal_birth_weight'
         df.at[child, 'nb_breastfeeding_status'] = 'non_exclusive'
