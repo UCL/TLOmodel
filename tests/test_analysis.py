@@ -222,6 +222,7 @@ def test_colormap_coarse_appts():
     assert all(map(lambda x: x in colors_in_matplotlib(), colors))  # All colors recognised
 
 
+@pytest.mark.slow
 def test_get_treatment_ids(tmpdir):
     """Check the function that generates the list of TREATMENT_IDs defined in the model."""
 
@@ -237,6 +238,7 @@ def test_get_treatment_ids(tmpdir):
     assert len(y) < len(x)
 
 
+@pytest.mark.slow
 def test_colormap_short_treatment_id():
     """Check the function that allocates a unique colour to each shortened TREATMENT_ID (i.e. each module)"""
 
@@ -249,6 +251,7 @@ def test_colormap_short_treatment_id():
     assert all(map(lambda x: x in colors_in_matplotlib(), colors))  # All colors recognised
 
 
+@pytest.mark.slow
 def test_colormap_cause_of_death_label(seed):
     """Check that all the Cause-of-Deaths labels defined in the full model are assigned to a unique colour when
      plotting."""
@@ -420,6 +423,7 @@ def test_mix_scenarios():
     }
 
 
+@pytest.mark.slow
 def test_scenario_switcher(seed):
     """Check the `ScenarioSwitcher` module can update parameter values in a manner similar to them being changed
     directly after registration in the simulation (as would be done by the Scenario class)."""

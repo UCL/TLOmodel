@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from tlo import Date, Module, Simulation, logging
 from tlo.analysis.utils import parse_log_file
@@ -102,6 +103,7 @@ def test_control_of_ordering_in_the_day(seed, tmpdir):
         assert order_on_day_one == tuple(events.loc[events['date'] == day, 'id'])
 
 
+@pytest.mark.slow
 def test_control_of_ordering_in_full_model(seed, tmpdir):
     """Check that the ordering of regular events in the full_model is as expected, i.e.
     * Second-to-last in the day is: `HealthSeekingBehaviourPoll`

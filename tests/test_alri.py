@@ -1147,7 +1147,6 @@ def test_treatment_pathway_if_all_consumables_severe_case(seed, tmpdir):
         "Problem when child is older than 2months old and treatment does not work"
 
 
-@pytest.mark.slow
 def test_treatment_pathway_if_no_consumables_mild_case(seed, tmpdir):
     """Examine the treatment pathway for a person with a particular category of disease if consumables are available."""
     # Mild case (fast_breathing_pneumonia) and not available consumables --> successive referrals up to level 2,
@@ -1165,7 +1164,6 @@ def test_treatment_pathway_if_no_consumables_mild_case(seed, tmpdir):
                                       treatment_effect='perfectly_ineffective')
 
 
-@pytest.mark.slow
 def test_treatment_pathway_if_no_consumables_severe_case(seed, tmpdir):
     """Examine the treatment pathway for a person with a particular category of disease if consumables are available."""
     # Severe case and not available consumables --> successive referrals up to level 2, following emergency

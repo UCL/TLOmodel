@@ -344,6 +344,7 @@ def test_routine_assessment_for_chronic_undernutrition_if_not_stunted(seed):
     assert 0 == len(hsi_event_scheduled)
 
 
+@pytest.mark.slow
 def test_math_of_incidence_calcs(seed):
     """Check that incidence of new stunting happens at the rate that is intended"""
     popsize = 50_000

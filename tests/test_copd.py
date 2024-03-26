@@ -291,6 +291,7 @@ def test_severe_exacerbation():
     assert df.loc[person_id, "ch_has_inhaler"]
 
 
+@pytest.mark.slow
 def test_death_rate():
     """A function that is testing death rate logic. What we want to test;
             i)   Zero death rate should lead to No death

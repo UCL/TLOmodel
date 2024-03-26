@@ -35,6 +35,7 @@ def check_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
+@pytest.mark.slow
 def test_run_dtypes_and_mothers_female(simulation):
     simulation.make_initial_population(n=popsize)
     simulation.simulate(end_date=end_date)
@@ -157,7 +158,6 @@ def test_cause_of_death_being_registered(tmpdir, seed):
                                                     )
 
 
-@pytest.mark.slow
 def test_calc_of_scaling_factor(tmpdir, seed):
     """Test that the scaling factor is computed and put out to the log"""
     rfp = Path(os.path.dirname(__file__)) / '../resources'
@@ -321,6 +321,7 @@ def test_py_calc_w_mask(simulation):
     np.testing.assert_almost_equal(1.0, df_py['M'][19])
 
 
+@pytest.mark.slow
 def test_max_age_initial(seed):
     """Check that the parameter in the `Demography` module, `max_age_initial`, works as expected
      * `max_age_initial=X`: only persons up to and including age_years (age in whole years) up to X are included in the
@@ -356,6 +357,7 @@ def test_max_age_initial(seed):
         max_age_in_sim_with_max_age_initial_argument(MAX_AGE + 1)
 
 
+@pytest.mark.slow
 def test_ageing_of_old_people_up_to_max_age(simulation):
     """Check persons can age naturally up to MAX_AGE and are then assumed to die with cause 'Other'."""
 

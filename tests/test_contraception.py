@@ -306,6 +306,7 @@ def test_pregnancies_and_births_occurring(tmpdir, seed):
             set(births.loc[after9months, 'mother'] < 0)).issubset(set(pregs['woman_id']))
 
 
+@pytest.mark.slow
 def test_woman_starting_contraceptive_after_birth(tmpdir, seed):
     """Check that woman re-start the same contraceptive after birth."""
     sim = run_sim(tmpdir=tmpdir, seed=seed, run=False)
@@ -413,6 +414,7 @@ def test_occurrence_of_HSI_for_maintaining_on_and_switching_to_methods(tmpdir, s
     assert not len(sim.modules['HealthSystem'].find_events_for_person(person_id))
 
 
+@pytest.mark.slow
 def test_record_of_appt_footprint_for_switching_to_methods(tmpdir, seed):
     """Check that the APPT_FOOTPRINTS recorded by the HealthSystem match the expectation: specifically, that the
     appointment depends on the nature of the switch and whether it is a reoccurrence."""
@@ -744,6 +746,7 @@ def test_outcomes_same_if_using_or_not_using_healthsystem(tmpdir, seed):
         )
 
 
+@pytest.mark.slow
 def test_correct_number_of_live_births_created(tmpdir, seed):
     """Check that the actual number of births simulated (in one month) matches expectations"""
 
@@ -793,6 +796,7 @@ def test_correct_number_of_live_births_created(tmpdir, seed):
     )
 
 
+@pytest.mark.slow
 def test_initial_distribution_of_contraception(tmpdir, seed):
     """Check that the initial population distribution has the expected distribution of use of contraceptive methods."""
 
@@ -816,6 +820,7 @@ def test_initial_distribution_of_contraception(tmpdir, seed):
     assert (abs(actual - expected_by_age_range) < 0.03).all().all()
 
 
+@pytest.mark.slow
 def test_contraception_coverage_with_use_healthsystem(tmpdir, seed):
     """Check that the same patterns (approximately) of usage of contraception is achieved when `use_healthsystem=True`
     as when `use_healthsystem=False` (despite the possibility of consumables not being always available when using the

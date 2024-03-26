@@ -6,6 +6,7 @@ from typing import Iterable, List, Optional
 
 import numpy as np
 import pandas as pd
+import pytest
 from pandas import DateOffset
 
 from tlo import Date, Module, Simulation, logging
@@ -1319,6 +1320,7 @@ def test_care_seeking_from_symptoms_with_intermediate_level_of_care_seeking_and_
     #                                      than one appt.
 
 
+@pytest.mark.slow
 def test_care_seeking_from_symptoms_with_different_levels_of_prob_emergency(seed):
     """Check that a symptom with a high degree of healthcare-seeking and probability of emergency care of p%, leads to
      all having some care, and p% having emergency care, and (1-p)% having non-emergency care."""
@@ -1498,6 +1500,7 @@ def test_persons_have_maximum_of_one_hsi_scheduled(seed):
     #                                      than one appt.
 
 
+@pytest.mark.slow
 def test_non_emergency_first_appt_can_be_levels_0_1a_1b_2(seed):
     """Check that the parameter `prob_non_emergency_care_seeking_by_level` can control the facility_level at which
     non-emergency care is sought."""

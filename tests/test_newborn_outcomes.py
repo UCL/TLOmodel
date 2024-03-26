@@ -85,6 +85,7 @@ def test_run_and_check_dtypes(tmpdir, seed):
     assert 'error' not in output['tlo.methods.newborn_outcomes']
 
 
+@pytest.mark.slow
 def test_care_seeking_for_babies_delivered_at_home_who_develop_complications(seed):
     """Test that babies that are born at home and develop complications will have care sought for them as expected
     """
@@ -126,6 +127,7 @@ def test_care_seeking_for_babies_delivered_at_home_who_develop_complications(see
     assert newborn_outcomes.HSI_NewbornOutcomes_ReceivesPostnatalCheck in hsi_events
 
 
+@pytest.mark.slow
 def test_twin_and_single_twin_still_birth_logic_for_twins(seed):
     """Test that for women who experience a single twin stillbirth only produce one newborn child as expected"""
     sim = Simulation(start_date=start_date, seed=seed)
@@ -168,6 +170,7 @@ def test_twin_and_single_twin_still_birth_logic_for_twins(seed):
     assert (mni[mother_id]['twin_count'] == 1)
 
 
+@pytest.mark.slow
 def test_care_seeking_for_twins_delivered_at_home_who_develop_complications(seed):
     """Test that for twin births, if both develop a complication and care is sought for one twin, care will be received
     by both"""

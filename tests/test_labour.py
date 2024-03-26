@@ -491,6 +491,7 @@ def test_logic_within_death_and_still_birth_events(seed):
     # todo: seperate test for the BirthPostnatal event?
 
 
+@pytest.mark.slow
 def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_constraints_via_functions(seed):
     """This test checks that interventions delivered during the primary delivery HSI are correctly administered and
     effect death/outcome in the way that is expected """
@@ -643,6 +644,7 @@ def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_const
     # assert mni[mother_id]['referred_for_blood']
     # assert mni[mother_id]['referred_for_surgery']
 
+@pytest.mark.slow
 def test_cemonc_event_and_treatments_are_delivered_correct_with_no_cons_or_quality_constraints(seed):
     """This test checks that interventions delivered during the CEmONC HSI are correctly administered and
     effect death/outcome in the way that is expected """

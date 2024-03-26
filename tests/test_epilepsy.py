@@ -48,6 +48,7 @@ def test_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
+@pytest.mark.slow
 def test_epilepsy_treatment(simulation):
     """Run simulation in which HSI occur, due to high risk of onset of epilepsy with frequent seizures."""
     params = simulation.modules['Epilepsy'].parameters

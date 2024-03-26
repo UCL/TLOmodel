@@ -147,6 +147,7 @@ def test_all_doses_properties(seed):
 
 
 # check distribution of facility levels for vaccines
+@pytest.mark.slow
 def test_facility_level_distribution(tmpdir, seed):
     log_config = {
         'filename': 'test_log',

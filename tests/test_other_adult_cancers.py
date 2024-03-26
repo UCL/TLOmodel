@@ -329,6 +329,7 @@ def test_that_there_is_no_treatment_without_the_hsi_running(seed):
     assert not (df.oac_date_palliative_care > start_date).any()
 
 
+@pytest.mark.slow
 def test_check_progression_through_stages_is_blocked_by_treatment(seed):
     """Put all people into the first stage but on treatment, let progression happen, and check that people do move into
     a late stage or die"""

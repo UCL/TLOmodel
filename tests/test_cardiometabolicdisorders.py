@@ -560,6 +560,7 @@ def test_symptoms(seed):
     assert who_has_chronic_kidney_disease == who_has_chronic_kidney_disease_symptoms
 
 
+@pytest.mark.slow
 def test_hsi_investigation_not_following_symptoms(seed):
     """Create a person and check if the functions in `HSI_CardioMetabolicDisorders_Investigations`
     create the correct HSI"""

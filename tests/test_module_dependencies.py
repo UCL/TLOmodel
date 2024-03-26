@@ -178,6 +178,7 @@ def test_get_dependencies_and_initialise_excluded_modules(dependent_module_chain
 
 
 @parameterize_module_class
+@pytest.mark.slow
 def test_module_dependencies_allow_initialisation(sim, module_class):
     """Check declared dependencies are sufficient for successful initialisation"""
     try:
@@ -253,6 +254,7 @@ def test_module_dependencies_complete(sim, module_class):
     ],
     ids=lambda pair: f"{pair[0].__name__}, {pair[1].__name__}"
 )
+@pytest.mark.slow
 def test_module_dependencies_all_required(sim, module_and_dependency_pair):
     """Check that declared dependencies are required for successful simulation.
 
