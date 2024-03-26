@@ -53,7 +53,9 @@ class HorizontalAndVerticalPrograms(BaseScenario):
     def _get_scenarios(self) -> Dict[str, Dict]:
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
 
-        self.YEAR_OF_CHANGE = 2025
+        self.YEAR_OF_CHANGE = 2019
+        # <-- baseline year of Human Resources for Health is 2018, and this is consistent with calibration during
+        # 2015-2019 period.
 
         return {
             "Baseline": self._baseline(),
@@ -90,26 +92,36 @@ class HorizontalAndVerticalPrograms(BaseScenario):
                     self._baseline(),
                     {
                         'HealthSystem': {
-                            'yearly_HR_scaling_mode': f'pop_growth_from_{self.YEAR_OF_CHANGE}',
-                            # todo - create the scenario in that spreadsheet
+                            'yearly_HR_scaling_mode': f'scaling_by_pop_growth_after2018',
+                            # This is in-line with population growth after 2018 (baseline year for HRH)
                         }
                     }
                 ),
 
-            "HRH Increases Above Population Growth":
+            "HRH Increases at GDP Growth":
                 mix_scenarios(
                     self._baseline(),
                     {
                         'HealthSystem': {
-                            'yearly_HR_scaling_mode': f'expansion_from_{self.YEAR_OF_CHANGE}',
-                            # todo - create the scenario in that spreadsheet
+                            'yearly_HR_scaling_mode': 'GDP_growth',
+                            # This is GDP growth after 2018 (baseline year for HRH)
+                        }
+                    }
+                ),
+
+            "HRH Increases above GDP Growth":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                        'HealthSystem': {
+                            'yearly_HR_scaling_mode': 'GDP_growth_fHE_case5',
+                            # This is above-GDP growth after 2018 (baseline year for HRH)
                         }
                     }
                 ),
 
 
             # - - - Quality of Care - - -
-
             "Perfect Clinical Practice":
                 mix_scenarios(
                     self._baseline(),
@@ -140,6 +152,7 @@ class HorizontalAndVerticalPrograms(BaseScenario):
                     # todo - this could be inside health system: a new option none/default/all/all-diagnostics/all-medicines // ....would have to combin with issue about RF generation.
                 ),
 
+
             # ***************************
             # VERTICAL PROGRAMS
             # ***************************
@@ -167,7 +180,6 @@ class HorizontalAndVerticalPrograms(BaseScenario):
 
                     # todo MALARIA
                 ),
-
         }
 
     def _baseline(self) -> Dict:
