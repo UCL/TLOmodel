@@ -53,33 +53,75 @@ class HorizontalAndVerticalPrograms(BaseScenario):
     def _get_scenarios(self) -> Dict[str, Dict]:
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
 
+        YEAR_OF_CHANGE = 2025
+
         return {
             "Baseline": self._baseline(),
 
-            "Double Capacity at Primary Care":
+            # - - - Human Resource for Health - - -
+
+            "Reduced Absense":
                 mix_scenarios(
                     self._baseline(),
-                    {'HealthSystem', }
+                    {
+                        'HealthSystem': {
+                            'year_HR_scaling_by_level_and_officer_type': YEAR_OF_CHANGE,
+                            'HR_scaling_by_level_and_officer_type_mode': 'reduced_absence',
+                            # todo - create the scenario in that spreadsheet
+                        }
+                    }
+                ),
+
+            "+ Double Capacity at Primary Care":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                        'HealthSystem': {
+                            'yearly_HR_scaling_mode': 'double_capacity_at_primary_care',
+                            # todo - create the scenario in that spreadsheet
+                        }
+                    }
+                ),
+
+            "+ Keep Pace with Population Growth":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                        'HealthSystem': {
+                            'yearly_HR_scaling_mode': 'double_capacity_at_primary_care_and_pop_growth',
+                            # todo - create the scenario in that spreadsheet
+                        }
+                    }
+                ),
+
+            # - - - Quality of Care - - -
+
+            "Perfect Clinical Practice":
+                mix_scenarios(
+                    self._baseline(),
+                    {'ScenarioSwitcher': {'max_healthsystem_function': True}},
+                    # todo - make this change happen on a specific year
                 ),
 
             "Perfect Healthcare Seeking":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {'ScenarioSwitcher': {'max_healthsystem_function': False, 'max_healthcare_seeking': True}},
+                    # todo - make this change happen on a specific year
                 ),
 
-            "+ Perfect Clinical Practice":
-                mix_scenarios(
-                    get_parameters_for_status_quo(),
-                    {'ScenarioSwitcher': {'max_healthsystem_function': True, 'max_healthcare_seeking': True}},
-                ),
+
+
 
             "+ Perfect Consumables Availability":
                 mix_scenarios(
-                    get_parameters_for_status_quo(),
-                    {'ScenarioSwitcher': {'max_healthsystem_function': False, 'max_healthcare_seeking': True}},
+                    self._baseline(),
                     {'HealthSystem': {'cons_availability': 'all'}}
                 ),
+
+
+
+
         }
 
     def _baseline(self) -> Dict:
