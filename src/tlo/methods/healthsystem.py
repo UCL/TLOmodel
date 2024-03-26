@@ -1088,7 +1088,7 @@ class HealthSystem(Module):
 
         return _equip_availability
 
-    def get_equip_item_availability(self, equip_item_code: str) -> bool:
+    def get_equip_item_availability(self, equip_item_code: int) -> bool:
         # TODO: update with implementation of essential equipment availability for the HSI event to run
         #  for now, always available
         if equip_item_code in [243, 41]:  # 243 = Pulse oximeter, 41 = 'Lamp, Anglepoise'
@@ -1096,16 +1096,22 @@ class HealthSystem(Module):
         return True  # True of False
 
     def get_essential_equip_availability(self, essential_equip_set: Set[int]) -> bool:
+        if not isinstance(essential_equip_set, set) or any(not isinstance(item, int) for item in essential_equip_set):
+            raise ValueError(
+                "Argument to get_essential_equip_availability should be a set of integers."
+            )
         if self.equip_availability == 'all':
             # Always all equipment available
             return True
         elif self.equip_availability == 'default':
             # True if all items of essential equipment available; False if any unavailable
             return all(self.get_equip_item_availability(item_code) for item_code in essential_equip_set)
-        else:  # self.equip_availability == 'none':
+        elif self.equip_availability == 'none':
             # True if no essential equipment requested, otherwise False as assumed no equipment available
             # TODO: Should no equipment be logged then?
             return not bool(essential_equip_set)
+        else:
+            raise ValueError("Value for self.equip_availability invalid, it should be 'all', 'default', or 'none'.")
 
     def schedule_to_call_never_ran_on_date(self, hsi_event: 'HSI_Event', tdate: datetime.datetime):
         """Function to schedule never_ran being called on a given date"""
