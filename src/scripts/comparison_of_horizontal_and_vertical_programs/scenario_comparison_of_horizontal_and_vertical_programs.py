@@ -53,46 +53,60 @@ class HorizontalAndVerticalPrograms(BaseScenario):
     def _get_scenarios(self) -> Dict[str, Dict]:
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
 
-        YEAR_OF_CHANGE = 2025
+        self.YEAR_OF_CHANGE = 2025
 
         return {
             "Baseline": self._baseline(),
 
+            # ***************************
+            # HEALTH SYSTEM STRENGTHENING
+            # ***************************
+
             # - - - Human Resource for Health - - -
-
-            "Reduced Absense":
+            "Reduced Absence":
                 mix_scenarios(
                     self._baseline(),
                     {
                         'HealthSystem': {
-                            'year_HR_scaling_by_level_and_officer_type': YEAR_OF_CHANGE,
-                            'HR_scaling_by_level_and_officer_type_mode': 'reduced_absence',
+                            'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE,
+                            'HR_scaling_by_level_and_officer_type_mode': 'no_absence',
+                        }
+                    }
+                ),
+
+            "Reduced Absence + Double Capacity at Primary Care":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                        'HealthSystem': {
+                            'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE,
+                            'HR_scaling_by_level_and_officer_type_mode': 'no_absence_&_x2_fac0+1',
+                        }
+                    }
+                ),
+
+            "HRH Keeps Pace with Population Growth":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                        'HealthSystem': {
+                            'yearly_HR_scaling_mode': f'pop_growth_from_{self.YEAR_OF_CHANGE}',
                             # todo - create the scenario in that spreadsheet
                         }
                     }
                 ),
 
-            "+ Double Capacity at Primary Care":
+            "HRH Increases Above Population Growth":
                 mix_scenarios(
                     self._baseline(),
                     {
                         'HealthSystem': {
-                            'yearly_HR_scaling_mode': 'double_capacity_at_primary_care',
+                            'yearly_HR_scaling_mode': f'expansion_from_{self.YEAR_OF_CHANGE}',
                             # todo - create the scenario in that spreadsheet
                         }
                     }
                 ),
 
-            "+ Keep Pace with Population Growth":
-                mix_scenarios(
-                    self._baseline(),
-                    {
-                        'HealthSystem': {
-                            'yearly_HR_scaling_mode': 'double_capacity_at_primary_care_and_pop_growth',
-                            # todo - create the scenario in that spreadsheet
-                        }
-                    }
-                ),
 
             # - - - Quality of Care - - -
 
@@ -100,37 +114,82 @@ class HorizontalAndVerticalPrograms(BaseScenario):
                 mix_scenarios(
                     self._baseline(),
                     {'ScenarioSwitcher': {'max_healthsystem_function': True}},
-                    # todo - make this change happen on a specific year
+                    # todo - make this change happen on a specific year???
                 ),
 
             "Perfect Healthcare Seeking":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
-                    {'ScenarioSwitcher': {'max_healthsystem_function': False, 'max_healthcare_seeking': True}},
-                    # todo - make this change happen on a specific year
+                    {'ScenarioSwitcher': {'max_healthcare_seeking': True}},
+                    # todo - make this change happen on a specific year???
                 ),
 
-
-
-
-            "+ Perfect Consumables Availability":
+            "Perfect Availability of Diagnostics":
                 mix_scenarios(
                     self._baseline(),
                     {'HealthSystem': {'cons_availability': 'all'}}
+                    # todo - Margherita currently developing functionality inside the HealthSystem by which this can happen
+                    # todo - this could be inside health system: a new option none/default/all/all-diagnostics/all-medicines // ....would have to combin with issue about RF generation.
                 ),
 
+            "Perfect Availability of Medicines & other Consumables":
+                mix_scenarios(
+                    self._baseline(),
+                    {'HealthSystem': {'cons_availability': 'all'}}
+                    # todo - Margherita currently developing functionality inside the HealthSystem by which this can happen
+                    # todo - this could be inside health system: a new option none/default/all/all-diagnostics/all-medicines // ....would have to combin with issue about RF generation.
+                ),
 
+            # ***************************
+            # VERTICAL PROGRAMS
+            # ***************************
 
+            # - - - HIV - - -
+            "HIV Programs Scale-up":
+                mix_scenarios(
+                    self._baseline(),
+
+                    # todo HIV
+                ),
+
+            # - - - TB - - -
+            "TB Programs Scale-up":
+                mix_scenarios(
+                    self._baseline(),
+
+                    # todo TB
+                ),
+
+            # - - - MALARIA - - -
+            "Malaria Programs Scale-up":
+                mix_scenarios(
+                    self._baseline(),
+
+                    # todo MALARIA
+                ),
 
         }
 
     def _baseline(self) -> Dict:
-        """Return the Dict with values for the parameters changes that define the baseline scenario. """
-        # todo Make this to be either with a shift into mode2 when other thigns chnage, or with the effective
-        #  capacity applied throughout
+        """Return the Dict with values for the parameter changes that define the baseline scenario. """
         return mix_scenarios(
             get_parameters_for_status_quo(),
-            {"HealthSystem": {"mode_appt_constraints": 2, "policy_name": "Naive",}},
+            {
+                "HealthSystem": {
+                    "mode_appt_constraints": 1,                 # <-- Mode 1 prior to change to preserve calibration
+                    "mode_appt_constraints_postSwitch": 2,      # <-- Mode 2 post-change to show effects of HRH
+                    "year_mode_switch": self.YEAR_OF_CHANGE,
+
+                    # Baseline scenario is with absence of HCW
+                    'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE,
+                    'HR_scaling_by_level_and_officer_type_mode': 'with_absence',
+
+                    # Normalize the behaviour of Mode 2
+                    "policy_name": "Naive",
+                    "tclose_overwrite": 1,
+                    "tclose_days_offset_overwrite": 7,
+                }
+            },
         ),
 
 if __name__ == '__main__':
