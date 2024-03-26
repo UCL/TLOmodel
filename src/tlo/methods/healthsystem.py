@@ -203,8 +203,8 @@ class HealthSystem(Module):
             Types.STRING, "Name of priority policy adopted"),
         'year_mode_switch': Parameter(
             Types.INT, "Year in which mode switch is enforced"),
-        'year_consumables_switch': Parameter(
-            Types.INT, "Year in which consumables switch is enforced"),
+        'year_cons_availability_switch': Parameter(
+            Types.INT, "Year in which consumable availability switch is enforced"),
         'priority_rank': Parameter(
             Types.DICT, "Data on the priority ranking of each of the Treatment_IDs to be adopted by "
                         " the queueing system under different policies, where the lower the number the higher"
@@ -290,8 +290,8 @@ class HealthSystem(Module):
         ),
         'mode_appt_constraints_postSwitch': Parameter(
             Types.INT, 'Mode considered after a mode switch in year_mode_switch.'),
-        'consumables_postSwitch': Parameter(
-            Types.STRING, 'Consumables availability after switch in year_consumables_switch.')
+        'cons_availability_postSwitch': Parameter(
+            Types.STRING, 'Consumables availability after switch in year_cons_availability_switch.')
     }
 
     PROPERTIES = {
@@ -657,9 +657,9 @@ class HealthSystem(Module):
                            Date(self.parameters["year_mode_switch"], 1, 1))
         
         # Schedule a consumables availability switch
-        new_parameters = {'cons_availability' : self.parameters['consumables_postSwitch']}
+        new_parameters = {'cons_availability' : self.parameters['cons_availability_postSwitch']}
         sim.schedule_event(HealthSystemChangeParameters(self, parameters=new_parameters),
-                           Date(self.parameters["year_consumables_switch"], 1, 1))
+                           Date(self.parameters["year_cons_availability_switch"], 1, 1))
 
         # Schedule a one-off rescaling of _daily_capabilities broken down by officer type and level.
         # This occurs on 1st January of the year specified in the parameters.
