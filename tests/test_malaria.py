@@ -20,7 +20,7 @@ from tlo.methods import (
     symptommanager,
     tb,
 )
-from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.hsi_event import HSI_Event
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 12, 31)
