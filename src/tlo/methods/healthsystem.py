@@ -636,7 +636,6 @@ class HealthSystem(Module):
         # Set up framework for considering a priority policy
         self.setup_priority_policy()
 
-
     def initialise_population(self, population):
         self.bed_days.initialise_population(population.props)
 
