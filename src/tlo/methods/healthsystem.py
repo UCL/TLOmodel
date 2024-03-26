@@ -659,9 +659,15 @@ class HealthSystem(Module):
                            Date(self.parameters["year_mode_switch"], 1, 1))
 
         # Schedule a consumables availability switch
-        new_parameters = {'cons_availability' : self.parameters['cons_availability_postSwitch']}
-        sim.schedule_event(HealthSystemChangeParameters(self, parameters=new_parameters),
-                           Date(self.parameters["year_cons_availability_switch"], 1, 1))
+        sim.schedule_event(
+            HealthSystemChangeParameters(
+                self,
+                parameters={
+                    'cons_availability': self.parameters['cons_availability_postSwitch']
+                }
+            ),
+            Date(self.parameters["year_cons_availability_switch"], 1, 1)
+        )
 
         # Schedule a one-off rescaling of _daily_capabilities broken down by officer type and level.
         # This occurs on 1st January of the year specified in the parameters.
