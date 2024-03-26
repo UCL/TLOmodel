@@ -440,7 +440,6 @@ class HealthSystem(Module):
 
         assert equip_availability in (None, 'default', 'all', 'none')
         self.arg_equip_availability = equip_availability
-        self.equip_availability = 'all'  # provided so that there is a default even before simulation is run
 
         # `compute_squeeze_factor_to_district_level` is a Boolean indicating whether the computation of squeeze_factors
         # should be specific to each district (when `True`), or if the computation of squeeze_factors should be on the
