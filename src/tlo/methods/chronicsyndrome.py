@@ -1,7 +1,10 @@
+from typing import List
+
 import numpy as np
 import pandas as pd
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
@@ -275,6 +278,20 @@ class ChronicSyndrome(Module):
 
         return health_values
 
+    def do_at_generic_first_appt_emergency(
+        self,
+        patient_id: int,
+        symptoms: List[str] = None,
+        **kwargs,
+    ) -> IndividualPropertyUpdates:
+        """Example for CHRONIC SYNDROME"""
+        if "craving_sandwiches" in symptoms:
+            event = HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(
+                module=self,
+                person_id=patient_id,
+            )
+            self.healthsystem.schedule_hsi_event(event, topen=self.sim.date, priority=1)
+        return {}
 
 class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
 

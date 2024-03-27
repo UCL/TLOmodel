@@ -8,10 +8,12 @@ Limitations to note:
 """
 
 from pathlib import Path
+from typing import List, NamedTuple
 
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import IndividualPropertyUpdates
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -564,6 +566,22 @@ class OesophagealCancer(Module):
             ] = self.daly_wts['stage4_palliative_care']
 
         return disability_series_for_alive_persons
+
+    def do_at_generic_first_appt(
+        self,
+        patient_id: int,
+        patient_details: NamedTuple = None,
+        symptoms: List[str] = None,
+        **kwargs,
+    ) -> IndividualPropertyUpdates:
+        # If the symptoms include dysphagia, and the patient is not a child,
+        # begin investigation for Oesophageal Cancer:
+        if patient_details.age_years > 5 and "dysphagia" in symptoms:
+            event = HSI_OesophagealCancer_Investigation_Following_Dysphagia(
+                person_id=patient_id, module=self
+            )
+            self.healthsystem.schedule_hsi_event(event, priority=0, topen=self.sim.date)
+        return {}
 
 
 # ---------------------------------------------------------------------------------------------------------

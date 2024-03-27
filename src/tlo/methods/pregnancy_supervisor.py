@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import NamedTuple
 
 import numpy as np
 import pandas as pd
@@ -15,9 +16,14 @@ from tlo import (
     logging,
     util,
 )
+from tlo.core import IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel
 from tlo.methods import Metadata, labour, pregnancy_helper_functions, pregnancy_supervisor_lm
+from tlo.methods.care_of_women_during_pregnancy import (
+    HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement,
+    HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy,
+)
 from tlo.methods.causes import Cause
 from tlo.util import BitsetHandler
 
@@ -1659,6 +1665,40 @@ class PregnancySupervisor(Module):
             for s in [late_initiation_anc4.loc[late_initiation_anc4],
                       early_initiation_anc_below_4.loc[~early_initiation_anc_below_4]]:
                 schedule_late_visit(s)
+
+    def do_at_generic_first_appt_emergency(
+        self,
+        patient_id: int,
+        patient_details: NamedTuple = None,
+        **kwargs,
+    ) -> IndividualPropertyUpdates:
+        scheduling_options = {
+                "priority": 0,
+                "topen": self.sim.date,
+                "tclose": self.sim.date + pd.DateOffset(days=1),
+            }
+
+        # -----  ECTOPIC PREGNANCY  -----
+        if patient_details.ps_ectopic_pregnancy != 'none':
+            event = HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(
+                module=self.sim.modules["CareOfWomenDuringPregnancy"],
+                person_id=patient_id,
+            )
+            self.healthsystem.schedule_hsi_event(event, **scheduling_options)
+
+        # -----  COMPLICATIONS OF ABORTION  -----
+        abortion_complications = self.sim.modules[
+            "PregnancySupervisor"
+        ].abortion_complications
+        if abortion_complications.has_any(
+            [patient_id], "sepsis", "injury", "haemorrhage", first=True
+        ):
+            event = HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(
+                module=self.sim.modules["CareOfWomenDuringPregnancy"],
+                person_id=patient_id,
+            )
+            self.healthsystem.schedule_hsi_event(event, **scheduling_options)
+        return {}
 
 
 class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):

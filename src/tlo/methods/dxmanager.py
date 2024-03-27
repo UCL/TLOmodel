@@ -3,7 +3,7 @@ The is the Diagnostic Tests Manager (DxManager). It simplifies the process of co
 See https://github.com/UCL/TLOmodel/wiki/Diagnostic-Tests-(DxTest)-and-the-Diagnostic-Tests-Manager-(DxManager)
 """
 import json
-from typing import Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, TypeAlias, Union
 
 import numpy as np
 import pandas as pd
@@ -11,6 +11,8 @@ from pandas.api.types import is_bool_dtype, is_categorical_dtype, is_float_dtype
 
 from tlo import logging
 from tlo.events import IndividualScopeEventMixin
+
+DiagnosisTestReturnType: TypeAlias = Tuple[Union[Any, Dict[str, Any]]]
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -89,7 +91,13 @@ class DxManager:
         for dx_test in self.dx_tests:
             self.print_info_about_dx_test(dx_test)
 
-    def run_dx_test(self, dx_tests_to_run, hsi_event, use_dict_for_single=False, report_dxtest_tried=False):
+    def run_dx_test(
+        self,
+        dx_tests_to_run,
+        hsi_event,
+        use_dict_for_single=False,
+        report_dxtest_tried=False,
+    ) -> DiagnosisTestReturnType:
         from tlo.methods.hsi_event import HSI_Event
 
         # Check that the thing passed to hsi_event is usable as an hsi_event

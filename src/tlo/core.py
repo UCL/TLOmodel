@@ -4,13 +4,41 @@ This contains things that didn't obviously go in their own file, such as
 specification for parameters and properties, and the base Module class for
 disease modules.
 """
+from __future__ import annotations
+
 import json
-import typing
 from enum import Enum, auto
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    NamedTuple,
+    Optional,
+    Set,
+    TypeAlias,
+    Union,
+)
 
 import numpy as np
 import pandas as pd
 
+if TYPE_CHECKING:
+    from numpy.random import RandomState
+
+    from tlo.methods.healthsystem import HealthSystem
+    from tlo.simulation import Simulation
+
+DiagnosisFunction: TypeAlias = Callable[[str, bool, bool], Any]
+ConsumablesChecker: TypeAlias = Callable[
+    [
+        Union[None, np.integer, int, List, Set, Dict],
+        Union[None, np.integer, int, List, Set, Dict],
+    ],
+    Union[bool, Dict],
+]
+IndividualPropertyUpdates: TypeAlias = Dict[str, Any]
 
 class Types(Enum):
     """Possible types for parameters and properties.
@@ -231,6 +259,10 @@ class Module:
     # parameters created from the PARAMETERS specification.
     __slots__ = ('name', 'parameters', 'rng', 'sim')
 
+    @property
+    def healthsystem(self) -> HealthSystem:
+        return self.sim.modules["HealthSystem"]
+
     def __init__(self, name=None):
         """Construct a new disease module ready to be included in a simulation.
 
@@ -240,9 +272,9 @@ class Module:
         :param name: the name to use for this module. Defaults to the concrete subclass' name.
         """
         self.parameters = {}
-        self.rng: typing.Optional[np.random.RandomState] = None
+        self.rng: Optional[np.random.RandomState] = None
         self.name = name or self.__class__.__name__
-        self.sim = None
+        self.sim: Simulation = None
 
     def load_parameters_from_dataframe(self, resource: pd.DataFrame):
         """Automatically load parameters from resource dataframe, updating the class parameter dictionary
@@ -365,3 +397,74 @@ class Module:
     def on_simulation_end(self):
         """This is called after the simulation has ended.
         Modules do not need to declare this."""
+
+    def do_at_generic_first_appt(
+        self,
+        patient_id: int,
+        patient_details: Optional[NamedTuple] = None,
+        symptoms: Optional[List[str]] = None,
+        diagnosis_function: Optional[DiagnosisFunction] = None,
+        consumables_checker: Optional[ConsumablesChecker] = None,
+        facility_level: Optional[str] = None,
+        treatment_id: Optional[str] = None,
+        random_state: Optional[RandomState] = None,
+    ) -> IndividualPropertyUpdates:
+        """
+        Actions to be take during a NON-emergency generic HSI.
+
+        Derived classes should overwrite this method so that they are
+        compatible with the HealthSystem module, and can schedule HSI
+        events when a patient presents symptoms indicative of the
+        corresponding illness or condition.
+
+        When overwriting, arguments that are not required can be left out
+        of the definition.
+        If done so, the method MUST take a **kwargs input to avoid errors
+        when looping over all disease modules and running their generic
+        HSI methods.
+
+        HSI_Events should be scheduled by the Module implementing this
+        method using the :py:meth:`Module.healthsystem.schedule_hsi` method.
+        However, they should not write updates back to the population
+        DataFrame in this method - these values should be returned as a
+        dictionary as described below:
+
+        The return value of this function should be a dictionary
+        containing any changes that need to be made to the individual's
+        row in the population DataFrame.
+        Key/value pairs should be the column name and the new value to
+        assign to the patient.
+        In the event no updates are required, return an empty dictionary.
+
+        :param patient_id: Row index (ID) of the individual target of the HSI event in the population DataFrame.
+        :param patient_details: Patient details as provided in the population DataFrame.
+        :param symptoms: List of symptoms the patient is experiencing.
+        :param diagnosis_function: A function that can run diagnosis tests based on the patient's symptoms.
+        :param consumables_checker: A function that can query the HealthSystem to check for available consumables.
+        :param facility_level: The level of the facility that the patient presented at.
+        :param treatment_id: The treatment id of the HSI event triggering the generic appointment.
+        :param random_state: Random number generator to be used when making random choices during event creation.
+        """
+        return {}
+
+    def do_at_generic_first_appt_emergency(
+        self,
+        patient_id: int,
+        patient_details: Optional[NamedTuple] = None,
+        symptoms: Optional[List[str]] = None,
+        diagnosis_function: Optional[DiagnosisFunction] = None,
+        consumables_checker: Optional[ConsumablesChecker] = None,
+        facility_level: Optional[str] = None,
+        treatment_id: Optional[str] = None,
+        random_state: Optional[RandomState] = None,
+    ) -> IndividualPropertyUpdates:
+        """
+        Actions to be take during an EMERGENCY generic HSI.
+        Call signature and return values are identical to the
+        :py:meth:`~Module.do_at_generic_first_appt` method.
+        Derived classes should overwrite this method so that they are
+        compatible with the HealthSystem module, and can schedule HSI
+        events when a patient presents symptoms indicative of the
+        corresponding illness or condition.
+        """
+        return {}

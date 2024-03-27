@@ -7,10 +7,12 @@ Limitations to note:
 """
 
 from pathlib import Path
+from typing import List, NamedTuple
 
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import IndividualPropertyUpdates
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -569,6 +571,33 @@ class BladderCancer(Module):
         ] = self.daly_wts['metastatic_palliative_care']
 
         return disability_series_for_alive_persons
+
+    def do_at_generic_first_appt(
+        self,
+        patient_id: int,
+        patient_details: NamedTuple = None,
+        symptoms: List[str] = None,
+        **kwargs,
+    ) -> IndividualPropertyUpdates:
+        # Only investigate if the patient is not a child
+        if patient_details.age_years > 5:
+            # Begin investigation if symptoms are present.
+            if "blood_urine" in symptoms:
+                event = HSI_BladderCancer_Investigation_Following_Blood_Urine(
+                    person_id=patient_id, module=self
+                )
+                self.healthsystem.schedule_hsi_event(
+                    event, topen=self.sim.date, priority=0
+                )
+
+            if "pelvic_pain" in symptoms:
+                event = HSI_BladderCancer_Investigation_Following_pelvic_pain(
+                    person_id=patient_id, module=self
+                )
+                self.healthsystem.schedule_hsi_event(
+                    event, topen=self.sim.date, priority=0
+                )
+        return {}
 
 
 # ---------------------------------------------------------------------------------------------------------
