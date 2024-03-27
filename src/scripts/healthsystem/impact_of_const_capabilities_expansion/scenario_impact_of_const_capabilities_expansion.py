@@ -29,7 +29,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = self.start_date + pd.DateOffset(years=31) #CHECK
+        self.end_date = self.start_date + pd.DateOffset(years=31)
         self.pop_size = 100_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
@@ -72,7 +72,6 @@ class ImpactOfHealthSystemMode(BaseScenario):
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
-                    # MUST ADD SWITCH TO PERFECT CONSUMABLE AVAILABILITY IN 2018
                      "HealthSystem": {
                         "yearly_HR_scaling_mode": "no_scaling",
                         "year_mode_switch": 2019,
