@@ -16,8 +16,13 @@ def merge_dicts(dicts: Iterable[Dict]):
         result.update(dictionary)
     return result
 
+# todo - let it happen at a particular time and change from thing to the other,
+# todo - make sure it's backward compatible
+# todo - explain in docstring that it's only needed because we have to change a whole TONNE of parameters, some of which are pd.DataFrames and pd.Series, and that these span multiple modules.
+#   ... and it is isn't trying to "eat the Scenario class's lunch".
 
-class ScenarioSwitcher(Module):
+
+class ImprovedHealthSystemAndCareSeekingScenarioSwitcher(Module):
     """The ScenarioSwitcher module.
     A "Switch" is basically a way of changing a bunch of parameters, including complex parameters (like DataFrames) at
      once through a simple type (e.g. bool) that can be done via the Scenario class.
@@ -60,17 +65,6 @@ class ScenarioSwitcher(Module):
             Types.LIST, "If True, over-writes parameters that define maximal healthcare-seeking behaviour. "
                         "Parameter passed through to `get_parameters_for_improved_healthsystem_and_healthcare_seeking`."
         ),
-        "switch_all_equipment_available": Parameter(Types.LIST, "-"),               # <-- Dummy
-        "switch_inf_beds_available": Parameter(Types.LIST, "_"),                    # <-- Dummy
-        "switch_alL_consumables_available": Parameter(Types.LIST, "-"),             # <-- Dummy
-        "switch_inf_chw_available": Parameter(Types.LIST, "-"),                     # <-- Dummy
-        "switch_inf_hrh_available": Parameter(Types.LIST, "-"),                     # <-- Dummy
-
-        # -- Vertical Programme Scale-up Switches
-        "switch_scaleup_hiv": Parameter(Types.LIST, "-"),                           # <-- Dummy
-        "switch_scaleup_tb": Parameter(Types.LIST, "-"),                            # <-- Dummy
-        "switch_scaleup_malaria": Parameter(Types.LIST, "-"),                       # <-- Dummy
-        "switch_scaleup_epi": Parameter(Types.LIST, "-"),                           # <-- Dummy
 
         # This parameter specifies the year in which the state changes. The change occurs on 1st January of that year.
         # If there should not be any switch, then this year can be set to a year that is beyond the end of the
@@ -85,37 +79,11 @@ class ScenarioSwitcher(Module):
     def read_parameters(self, data_folder):
         """Read-in parameters and process them into the internal storage structures required."""
 
-        # Parameters are hard-coded. The expectation is that some of these are over-written by the Scenario class.
-        self.parameters["switch_max_healthsystem_function"] = [False, False]
-        self.parameters["switch_max_healthcare_seeking"] = [False, False]
-        self.parameters["switch_all_equipment_available"] = [False, False]
-        self.parameters["switch_inf_beds_available"] = [False, False]
-        self.parameters["switch_alL_consumables_available"] = [False, False]
-        self.parameters["switch_inf_chw_available"] = [False, False]
-        self.parameters["switch_inf_hrh_available"] = [False, False]
-        self.parameters["switch_scaleup_hiv"] = [False, False]
-        self.parameters["switch_scaleup_tb"] = [False, False]
-        self.parameters["switch_scaleup_malaria"] = [False, False]
-        self.parameters["switch_scaleup_epi"] = [False, False]
-        self.parameters["year_of_switch"] = 2020
-
-        self._process_parameters()
-
-    def _process_parameters(self):
-        """Construct the internal storage of the parameters (`self.parameters_first_phase` and
-         `self.parameters_second_phase`). Note that this will throw errors for any incorrectly specified parameters.
-         """
-
-        # Get list of parameters which encode the change of state (i.e. have prefix of "swtich_").
-        self.switches = [k for k in self.parameters.keys() if k.startswith('switch_')]
-
-        # Check that each identified parameter is a list of two bools.
-        for sw in self.switches:
-            p = self.parameters[sw]
-            assert isinstance(p, list)
-            assert 2 == len(p)
-            assert isinstance(p[0], bool) and isinstance(p[1], bool)
-
+        # Parameters are hard-coded for this module to not make any changes.
+        # The expectation is that some of these are over-written by the Scenario class.
+        self.parameters["max_healthsystem_function"] = [False] * 2  # (No use of the "max" scenarios)
+        self.parameters["max_healthcare_seeking"] = [False] * 2
+        self.parameters["year_of_switch"] = 2100  # (Any change occurs very far in the future)
 
     def pre_initialise_population(self):
         """Set the parameters for the first period of the simulation.
@@ -139,6 +107,7 @@ class ScenarioSwitcher(Module):
 
     def initialise_simulation(self, sim):
         """Schedule an event at which the parameters are changed."""
+
         date_of_switch_event = Date(self.parameters["year_of_switch"], 1, 1)  # 1st January of the year specified.
 
         switch_states_in_second_phase = {
@@ -178,21 +147,6 @@ class ScenarioSwitcher(Module):
                 max_healthcare_seeking=switches["switch_max_healthcare_seeking"],
             ),
             # todo put in the switches for other HSS as other functions, or as part of the func. above?
-
-            # -- Vertical Program Switches
-            get_parameters_for_vertical_program_scale_up_hiv_and_tb(
-                resourcefilepath=self.resourcefilepath,
-                switch_scaleup_hiv=switches["switch_scaleup_hiv"],
-                switch_scaleup_tb=switches["switch_scaleup_tb"],
-            ),
-            get_parameters_for_vertical_program_scale_up_malaria(
-                resourcefilepath=self.resourcefilepath,
-                switch_scaleup_malaria=switches["switch_scaleup_malaria"],
-            ),
-            get_parameters_for_vertical_program_scale_up_epi(
-                resourcefilepath=self.resourcefilepath,
-                switch_scaleup_epi=switches["switch_scaleup_epi"],
-            ),
         ])
 
     @staticmethod
@@ -320,71 +274,30 @@ def get_parameters_for_improved_healthsystem_and_healthcare_seeking(
     return params
 
 
-# --- VERTICAL PROGRAMS
-# N.B. Note that these can be separate functions, or one big functions.
-# N.B. These functions could be on the ScenarioSwitcher class itself.
-def get_parameters_for_vertical_program_scale_up_hiv_and_tb(
-    resourcefilepath: Path,
-    switch_scaleup_hiv: bool,
-    switch_scaleup_tb: bool,
-) -> Dict:
-    """
-    Returns a dictionary of parameters and their updated values to indicate
-    the possible scale-up for HIV and TB programs.
 
-    The return dict is in the form:
-    e.g. {
-            'Depression': {
-                'pr_assessed_for_depression_for_perinatal_female': 1.0,
-                'pr_assessed_for_depression_in_generic_appt_level1': 1.0
-                },
-            'Hiv': {
-                'prob_start_art_or_vs': <<the dataframe named in the corresponding cell in the ResourceFile>>
-                }
-         }
-    """
-    return {}
-
-
-def get_parameters_for_vertical_program_scale_up_malaria(
-    resourcefilepath: Path,
-    switch_scaleup_malaria: bool,
-) -> Dict:
-    """
-    Returns a dictionary of parameters and their updated values to indicate
-    the possible scale-up for Malaria programs.
-
-    The return dict is in the form:
-    e.g. {
-            'Depression': {
-                'pr_assessed_for_depression_for_perinatal_female': 1.0,
-                'pr_assessed_for_depression_in_generic_appt_level1': 1.0
-                },
-            'Hiv': {
-                'prob_start_art_or_vs': <<the dataframe named in the corresponding cell in the ResourceFile>>
-                }
-         }
-    """
-    return {}
-
-def get_parameters_for_vertical_program_scale_up_epi(
-    resourcefilepath: Path,
-    switch_scaleup_epi: bool,
-) -> Dict:
-    """
-    Returns a dictionary of parameters and their updated values to indicate
-    the possible scale-up for EPI programs.
-
-    The return dict is in the form:
-    e.g. {
-            'Depression': {
-                'pr_assessed_for_depression_for_perinatal_female': 1.0,
-                'pr_assessed_for_depression_in_generic_appt_level1': 1.0
-                },
-            'Hiv': {
-                'prob_start_art_or_vs': <<the dataframe named in the corresponding cell in the ResourceFile>>
-                }
-         }
-    """
-    return {}
-
+# # POSSIBLE WAY OF ELABORATING THIS FOR OTHER THINGS....
+# # --- VERTICAL PROGRAMS
+# # N.B. Note that these can be separate functions, or one big functions.
+# # N.B. These functions could be on the ScenarioSwitcher class itself.
+# def get_parameters_for_vertical_program_scale_up_hiv_and_tb(
+#     resourcefilepath: Path,
+#     switch_scaleup_hiv: bool,
+#     switch_scaleup_tb: bool,
+# ) -> Dict:
+#     """
+#     Returns a dictionary of parameters and their updated values to indicate
+#     the possible scale-up for HIV and TB programs.
+#
+#     The return dict is in the form:
+#     e.g. {
+#             'Depression': {
+#                 'pr_assessed_for_depression_for_perinatal_female': 1.0,
+#                 'pr_assessed_for_depression_in_generic_appt_level1': 1.0
+#                 },
+#             'Hiv': {
+#                 'prob_start_art_or_vs': <<the dataframe named in the corresponding cell in the ResourceFile>>
+#                 }
+#          }
+#     """
+#     return {}
+#

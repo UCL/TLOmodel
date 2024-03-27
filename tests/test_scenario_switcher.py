@@ -5,18 +5,22 @@ from tlo import Simulation, Date
 from tlo.analysis.utils import get_parameters_for_status_quo
 from tlo.methods.fullmodel import fullmodel
 from tlo.methods.scenario_switcher import get_parameters_for_improved_healthsystem_and_healthcare_seeking, \
-    ScenarioSwitcher
+    ImprovedHealthSystemAndCareSeekingScenarioSwitcher
 
 
 
 def test_scenario_switcher(seed):
-    """Check the `ScenarioSwitcher` module can update parameter values in a manner similar to them being changed
-    directly after registration in the simulation (as would be done by the Scenario class)."""
+    """Check the `ImprovedHealthSystemAndCareSeekingScenarioSwitcher` module can update parameter values in a manner
+    similar to them being changed directly after registration in the simulation (as would be done by the Scenario
+    class)."""
 
     sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
-    sim.register(*(
-        fullmodel(resourcefilepath=resourcefilepath) + [ScenarioSwitcher(resourcefilepath=resourcefilepath)]
-    ))
+    sim.register(
+        *(
+            fullmodel(resourcefilepath=resourcefilepath)
+            + [ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=resourcefilepath)]
+        )
+    )
 
     # Check that the 'ScenarioSwitcher` is the first registered module.
     assert 'ScenarioSwitcher' == list(sim.modules.keys())[0]
@@ -128,4 +132,8 @@ def test_get_parameter_functions(seed):
                     assert is_list_same_size_and_dtype(original, updated_value), \
                         print(f"List/tuple is not of the expected size and containing elements of expected type: "
                               f"{module}:{name} >> {updated_value=}, {type(original)=}, {type(updated_value)=}")
+
+
+
+# todo --- test that we can make the change happen in a specific later year.
 

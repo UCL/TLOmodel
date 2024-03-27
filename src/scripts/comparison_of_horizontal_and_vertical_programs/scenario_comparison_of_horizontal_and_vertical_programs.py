@@ -15,7 +15,7 @@ from typing import Dict
 from tlo import Date, logging
 from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios
 from tlo.methods.fullmodel import fullmodel
-from tlo.methods.scenario_switcher import ScenarioSwitcher
+from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScenarioSwitcher
 from tlo.scenario import BaseScenario
 
 
@@ -44,7 +44,10 @@ class HorizontalAndVerticalPrograms(BaseScenario):
         }
 
     def modules(self):
-        return fullmodel(resourcefilepath=self.resources) + [ScenarioSwitcher(resourcefilepath=self.resources)]
+        return (
+            fullmodel(resourcefilepath=self.resources)
+            + [ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=self.resources)]
+        )
 
     def draw_parameters(self, draw_number, rng):
         if draw_number < len(self._scenarios):
@@ -125,15 +128,23 @@ class HorizontalAndVerticalPrograms(BaseScenario):
             "Perfect Clinical Practice":
                 mix_scenarios(
                     self._baseline(),
-                    {'ScenarioSwitcher': {'max_healthsystem_function': True}},
-                    # todo - make this change happen on a specific year???
+                    {
+                        'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
+                            'max_healthsystem_function': [False, True],  # <-- switch from False to True mid-way
+                            'year_of_switch': self.YEAR_OF_CHANGE,
+                        }
+                    },
                 ),
 
             "Perfect Healthcare Seeking":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
-                    {'ScenarioSwitcher': {'max_healthcare_seeking': True}},
-                    # todo - make this change happen on a specific year???
+                    {
+                        'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
+                            'max_healthcare_seeking': [False, True],
+                            'year_of_switch': self.YEAR_OF_CHANGE,
+                        }
+                    },
                 ),
 
             "Perfect Availability of Diagnostics":
