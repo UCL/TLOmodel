@@ -8,7 +8,7 @@ tlo batch-submit src/scripts/healthsystem/impact_of_policy/scenario_impact_of_co
 
 or locally using:
 ```
-tlo scenario-run src/scripts/healthsystem/impact_of_policy/scenario_impact_of_const_capabilities_expanion.y.py
+tlo scenario-run src/scripts/healthsystem/impact_of_policy/scenario_impact_of_const_capabilities_expanion.py
 ```
 
 """
