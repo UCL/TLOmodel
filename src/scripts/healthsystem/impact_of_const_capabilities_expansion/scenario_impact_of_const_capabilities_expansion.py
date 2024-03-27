@@ -1,14 +1,14 @@
-"""This Scenario file run the model under different assumptions for the HealthSystem Mode in order to estimate the
-impact that is achieved under each (relative to there being no health system).
+"""This Scenario file run the model under different assumptions for HR capabilities expansion in order to estimate the
+impact that is achieved under each.
 
 Run on the batch system using:
 ```
-tlo batch-submit src/scripts/healthsystem/impact_of_policy/scenario_impact_of_policy.py
+tlo batch-submit src/scripts/healthsystem/impact_of_policy/scenario_impact_of_const_capabilities_expanion.py
 ```
 
 or locally using:
 ```
-tlo scenario-run src/scripts/healthsystem/impact_of_policy/scenario_impact_of_policy.py
+tlo scenario-run src/scripts/healthsystem/impact_of_policy/scenario_impact_of_const_capabilities_expanion.y.py
 ```
 
 """
