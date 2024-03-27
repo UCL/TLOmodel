@@ -770,8 +770,8 @@ class Tb(Module):
             hs.get_item_code_from_item_name("Isoniazid/Pyridoxine, tablet 300 mg")
 
         # todo not yet on consumables database
-        # self.item_codes_for_consumables_required['tb_3HP'] = {
-        #     hs.get_item_code_from_item_name("Isoniazid/Rifapentine"): 1}
+        self.item_codes_for_consumables_required['tb_3HP'] = {
+            hs.get_item_code_from_item_name("Isoniazid/Rifapentine"): 1}
 
     def initialise_population(self, population):
 
