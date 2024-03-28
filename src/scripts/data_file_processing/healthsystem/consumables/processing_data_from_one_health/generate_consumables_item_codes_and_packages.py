@@ -21,7 +21,8 @@ import pandas as pd
 
 # Set local Dropbox source
 path_to_dropbox = Path(  # <-- point to the TLO dropbox locally
-    '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE')
+   # '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE'
+    '/Users/sm2511/Dropbox/Thanzi La Onse')
 
 resourcefilepath = Path("./resources")
 path_for_new_resourcefiles = resourcefilepath / "healthsystem/consumables"
@@ -245,7 +246,7 @@ Added by TM,Misc,-99,Pre-exposure prophlaxis for HIV,2674,1.0,0.0,0.85,0.9,0.95,
 
 def add_record(df: pd.DataFrame, record: Dict):
     """Add a row to the bottom of the dataframe, where the row is specified by a dict keyed by the target columns."""
-    assert list(df.columns) == list(record.keys())
+    assert set(df.columns) == set(record.keys())
     return pd.concat([df, pd.DataFrame.from_records([record])], ignore_index=True)
 
 
@@ -323,6 +324,19 @@ cons = add_record(
         'Intervention_Pkg_Code': -99,
         'Items': "Pre-exposure prophlaxis for HIV",
         'Item_Code': 2674,
+        'Expected_Units_Per_Case': 1.0,
+        'Unit_Cost': 1.0
+    },
+)
+
+cons = add_record(
+    cons,
+    {
+        'Intervention_Cat': "Added by SM (Recommended by TM)",
+        'Intervention_Pkg': "Misc",
+        'Intervention_Pkg_Code': -99,
+        'Items': "Isoniazid/Rifapentine",
+        'Item_Code': 2675,
         'Expected_Units_Per_Case': 1.0,
         'Unit_Cost': 1.0
     },
