@@ -547,3 +547,51 @@ def test_summarize():
         ),
         summarize(results_one_draw, collapse_columns=True)
     )
+
+
+def test_control_loggers_from_same_module_independently(seed, tmpdir):
+    """Check that detailed/summary loggers in the same module can configured independently."""
+
+    # Check that the simulation can be set-up to get only the usual demography logger and *not* the detailed
+    #  logger, when providing the config_log information when the simulation is initialised."""
+
+    log_config = {
+        'filename': 'temp',
+        'directory': tmpdir,
+        'custom_levels': {
+            "*": logging.WARNING,
+            # 'tlo.methods.demography.detail': logging.WARNING,  # <-- Don't explicitly turn off the detailed logger
+            'tlo.methods.demography': logging.INFO,  # <-- Turning on the normal logger
+        }
+    }
+
+    def run_simulation_and_cause_one_death(sim):
+        """Register demography in the simulations, runs it and causes one death; return the resulting log."""
+        sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+        sim.make_initial_population(n=100)
+        sim.simulate(end_date=sim.start_date)
+        # Cause one death to occur
+        sim.modules['Demography'].do_death(
+            individual_id=0,
+            originating_module=sim.modules['Demography'],
+            cause='Other'
+        )
+        return parse_log_file(sim.log_filepath)
+
+    def check_log(log):
+        """Check the usual `tlo.methods.demography' log is created and that check persons have died (which would be
+        when the detailed logger would be used)."""
+        assert 'tlo.methods.demography' in log.keys()
+        assert 1 == len(log['tlo.methods.demography']['death'])
+
+        # Check that the detailed logger is not created.
+        assert 'tlo.methods.demography.detail' not in log.keys()
+
+    # 1) Provide custom_logs argument when creating Simulation object
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, log_config=log_config)
+    check_log(run_simulation_and_cause_one_death(sim))
+
+    # 2) Set-up custom-logs after the Simulation object is created
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
+    sim.configure_logging(**log_config)
+    check_log(run_simulation_and_cause_one_death(sim))
