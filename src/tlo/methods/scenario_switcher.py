@@ -180,7 +180,7 @@ class ScenarioSwitchEvent(RegularEvent, PopulationScopeEventMixin):
 # ========================================================
 
 # --- HEALTH SYSTEM STRENGTHENING
-
+#todo - this should be inside the class defined above
 def get_parameters_for_improved_healthsystem_and_healthcare_seeking(
     resourcefilepath: Path,
     max_healthsystem_function: Optional[bool] = False,
