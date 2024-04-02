@@ -1,23 +1,9 @@
 import warnings
-from collections import defaultdict
-from pathlib import Path
-from typing import Optional, Dict, Iterable
+from typing import Dict
 
-import pandas as pd
-
-from tlo import Module, Parameter, Types, Date, Simulation
+from tlo import Module, Parameter, Types, Date
 from tlo.events import RegularEvent, PopulationScopeEventMixin
-
-
-def merge_dicts(dicts: Iterable[Dict]):
-    """Returns a merge of the dicts given in the iterable."""
-    result = {}
-    for dictionary in dicts:
-        result.update(dictionary)
-    return result
-
-# todo - explain in docstring that it's only needed because we have to change a whole TONNE of parameters, some of which are pd.DataFrames and pd.Series, and that these span multiple modules.
-#   ... and it is isn't trying to "eat the Scenario class's lunch".
+from tlo.analysis.utils import get_parameters_for_improved_healthsystem_and_healthcare_seeking
 
 
 class ImprovedHealthSystemAndCareSeekingScenarioSwitcher(Module):
@@ -46,8 +32,6 @@ class ImprovedHealthSystemAndCareSeekingScenarioSwitcher(Module):
     PARAMETERS = {
         # Each of these parameter is a list of two booleans -- [bool, bool] -- which represent (i) the state during the
         # period before the date of a switch in state, (ii) the state at the date of switch and the period thereafter.
-        # These parameters are distinguished from other parameters by the prefix "switch_": parameter names that do not
-        # have that prefix will not work as expected.
 
         # -- Health System Strengthening Switches
         "switch_max_healthsystem_function": Parameter(
@@ -123,99 +107,6 @@ class ImprovedHealthSystemAndCareSeekingScenarioSwitcher(Module):
     def on_birth(self, mother_id, child_id):
         pass
 
-
-
-def get_parameters_for_improved_healthsystem_and_healthcare_seeking(
-    resourcefilepath: Path,
-    max_healthsystem_function: Optional[bool] = False,
-    max_healthcare_seeking: Optional[bool] = False,
-) -> Dict:
-    """
-    This returns the parameters to be updated to represent certain Health System Strengthening Interventions.
-
-    It reads an Excel workbook to find the parameters that should be updated. Linked sheets in the Excel workbook
-    specify updated pd.Series and pd.DataFrames.
-
-    Returns a dictionary of parameters and their updated values to indicate
-    an ideal healthcare system in terms of maximum health system function, and/or
-    maximum healthcare seeking.
-
-    The return dict is in the form:
-    e.g. {
-            'Depression': {
-                'pr_assessed_for_depression_for_perinatal_female': 1.0,
-                'pr_assessed_for_depression_in_generic_appt_level1': 1.0
-                },
-            'Hiv': {
-                'prob_start_art_or_vs': <<the dataframe named in the corresponding cell in the ResourceFile>>
-                }
-         }
-    """
-
-    def read_value(_value):
-        """Returns the value, or a dataframe if the value point to a different sheet in the workbook, or a series if the
-        value points to sheet in the workbook with only two columns (which become the index and the values)."""
-        drop_extra_columns = lambda df: df.dropna(how='all', axis=1)  # noqa E731
-        squeeze_single_col_df_to_series = lambda df: \
-            df.set_index(df[df.columns[0]])[df.columns[1]] if len(df.columns) == 2 else df  # noqa E731
-
-        def construct_multiindex_if_implied(df):
-            """Detect if a multi-index is implied (by the first column header having a "/" in it) and construct this."""
-            if isinstance(df, pd.DataFrame) and (len(df.columns) > 1) and ('/' in df.columns[0]):
-                idx = df[df.columns[0]].str.split('/', expand=True)
-                idx.columns = tuple(df.columns[0].split('/'))
-
-                # Make the dtype as `int` if possible
-                for col in idx.columns:
-                    try:
-                        idx[col] = idx[col].astype(int)
-                    except ValueError:
-                        pass
-
-                df.index = pd.MultiIndex.from_frame(idx)
-                return df.drop(columns=df.columns[0])
-            else:
-                return df
-
-        if isinstance(_value, str) and _value.startswith("#"):
-            sheet_name = _value.lstrip("#").split('!')[0]
-            return \
-                squeeze_single_col_df_to_series(
-                    drop_extra_columns(
-                        construct_multiindex_if_implied(
-                            pd.read_excel(workbook, sheet_name=sheet_name))))
-
-        elif isinstance(_value, str) and _value.startswith("["):
-            # this looks like its intended to be a list
-            return eval(_value)
-        else:
-            return _value
-
-    workbook = pd.ExcelFile(
-        resourcefilepath / 'ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking.xlsx')
-    # todo - the read-in off this file _might_ be better placed in the calling module, TBD
-
-    # Load the ResourceFile for the list of parameters that may change
-    mainsheet = pd.read_excel(workbook, 'main').set_index(['Module', 'Parameter'])
-
-    # Select which columns for parameter changes to extract
-    cols = []
-    if max_healthsystem_function:
-        cols.append('max_healthsystem_function')
-
-    if max_healthcare_seeking:
-        cols.append('max_healthcare_seeking')
-
-    # Collect parameters that will be changed (collecting the first encountered non-NAN value)
-    params_to_change = mainsheet[cols].dropna(axis=0, how='all')\
-                                      .apply(lambda row: [v for v in row if not pd.isnull(v)][0], axis=1)
-
-    # Convert to dictionary
-    params = defaultdict(lambda: defaultdict(dict))
-    for idx, value in params_to_change.items():
-        params[idx[0]][idx[1]] = read_value(value)
-
-    return params
 
 class ScenarioSwitchEvent(RegularEvent, PopulationScopeEventMixin):
 
