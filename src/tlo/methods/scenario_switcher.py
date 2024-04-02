@@ -16,33 +16,26 @@ def merge_dicts(dicts: Iterable[Dict]):
         result.update(dictionary)
     return result
 
-# todo - let it happen at a particular time and change from thing to the other,
-# todo - make sure it's backward compatible
 # todo - explain in docstring that it's only needed because we have to change a whole TONNE of parameters, some of which are pd.DataFrames and pd.Series, and that these span multiple modules.
 #   ... and it is isn't trying to "eat the Scenario class's lunch".
 
 
 class ImprovedHealthSystemAndCareSeekingScenarioSwitcher(Module):
-    """The ScenarioSwitcher module.
-    A "Switch" is basically a way of changing a bunch of parameters, including complex parameters (like DataFrames) at
-     once through a simple type (e.g. bool) that can be done via the Scenario class.
-    This module has parameters that specify the position of the switches in two phases of the simulation - before and
-     after a change in the state of the simulation (e.g., before and after some intervention). For each phase, it
-     works out the values of the module parameters that are consistent with the configuration of switches in that phase.
-    It relies on helper function that provide the values of the parameters that are consistent with the value of a
-    particular switch (or switches).
-    e.g. This module might have a parameter, 'switch_mega_change' = [False, True] to represent that the change happens
-     part-way through the simulation. There would be a helper function defined with signature
-     `get_params_for_mega_change(switch_mega_change: bool) -> Dict` which would returns the parameters in the modules
-     needed for that value of `switch_mega_change`, of the form `{Disease_Module: {Parameter_Name: Parameter_Value}}`.
+    """This is the `ImprovedHealthSystemAndCareSeekingScenarioSwitcher` module.
+    It provides switches that can used by the `Scenario` class to control the overall performance of the HealthSystem
+    and healthcare seeking, which are mediated by many parameters across many modules, and which are of the types
+    `pd.Series` and `pd.DataFrame`, which cannot be changed via the `Scenario` class (see
+    https://github.com/UCL/TLOmodel/issues/988).
+    It does this by loading a ResourceFile that contains parameter value to be updated,
+    and makes these changes at the point `pre_initialise_population`. As this module is declared as an (Optional)
+    dependency of the module that would be loaded first in the simulation (i.e. `Demography`), this module is
+    registered first and so this module's `pre_initialise_population` method is called before any other. This provides
+    a close approximation to what would happen if the parameters were being changed by the `Scenario` class.
     """
 
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
-        self.switches = []  # (Will be list of the switches.).
-        self.switches_first_phase = {}
-        self.switches_second_phase = {}
 
     INIT_DEPENDENCIES = set()
 
@@ -79,8 +72,9 @@ class ImprovedHealthSystemAndCareSeekingScenarioSwitcher(Module):
     def read_parameters(self, data_folder):
         """Read-in parameters and process them into the internal storage structures required."""
 
-        # Parameters are hard-coded for this module to not make any changes.
-        # The expectation is that some of these are over-written by the Scenario class.
+        # Parameters are hard-coded for this module to not make any changes. (The expectation is that some of these
+        # are over-written by the Scenario class.)
+        # The first value in the list is used before the year of change, and the second value is used after.
         self.parameters["max_healthsystem_function"] = [False] * 2  # (No use of the "max" scenarios)
         self.parameters["max_healthcare_seeking"] = [False] * 2
         self.parameters["year_of_switch"] = 2100  # (Any change occurs very far in the future)
@@ -92,15 +86,30 @@ class ImprovedHealthSystemAndCareSeekingScenarioSwitcher(Module):
          method is the first to be called as this module is declared as an (Optional) dependency of the module that is
          loaded first in the simulation (i.e. `Demography`). This provides a close approximation to what would happen if
          the parameters were being changed by the `Scenario` class."""
-        # todo check whether this is actually needed, or if could happen at initialise simulation.
+        self.update_parameters()
 
-        switch_states_in_first_phase = {
-            sw: self.parameters[sw][0]  # <-- pick up first entry in list
-            for sw in self.switches
-        }
+    def update_parameters(self):
+        """Update the parameters in the simulation's modules."""
 
-        params_to_update = self._get_parameters_to_change(switch_states_in_first_phase)
-        self._do_change_in_parameters(self.sim, params_to_update)
+        # Check whether we are currently in the first or second phase of the simulation (i.e., before or after the
+        # time of the change, which is at the beginning of the year `year_of_switch`.)
+        phase_of_simulation = 0 if self.sim.date.year < self.parameters["year_of_switch"] else 1
+
+        params_to_update = get_parameters_for_improved_healthsystem_and_healthcare_seeking(
+            resourcefilepath=self.resourcefilepath,
+            max_healthsystem_function=self.parameters['max_healthsystem_function'][phase_of_simulation],
+            max_healthcare_seeking=self.parameters['max_healthcare_seeking'][phase_of_simulation],
+        )
+
+        for module, params in params_to_update.items():
+            for name, updated_value in params.items():
+                try:
+                    self.sim.modules[module].parameters[name] = updated_value
+                except KeyError:
+                    warnings.warn(
+                        f"A parameter could not be updated by the `ScenarioSwitcher` module: "
+                        f"module={module}, name={name}.",
+                    )
 
     def initialise_population(self, population):
         pass
@@ -109,78 +118,13 @@ class ImprovedHealthSystemAndCareSeekingScenarioSwitcher(Module):
         """Schedule an event at which the parameters are changed."""
 
         date_of_switch_event = Date(self.parameters["year_of_switch"], 1, 1)  # 1st January of the year specified.
-
-        switch_states_in_second_phase = {
-            sw: self.parameters[sw][1]  # <-- pick up second entry in list for the second phase of the simulation
-            for sw in self.switches
-        }
-        parameters_to_update = self._get_parameters_to_change(switch_states_in_second_phase)
-
-        sim.schedule_event(
-            ScenarioSwitchEvent(
-                module=self,
-                parameters_to_update=parameters_to_update),
-            date_of_switch_event,
-        )
+        sim.schedule_event(ScenarioSwitchEvent(module=self), date_of_switch_event)
 
     def on_birth(self, mother_id, child_id):
         pass
 
-    def _get_parameters_to_change(self, switches: Dict) -> Dict:
-        """Return the parameters in the modules to be updated for this configuration of switches.
-        The returned Dict is of the form, e.g.
-        {
-            'Depression': {
-                'pr_assessed_for_depression_for_perinatal_female': 1.0,
-                'pr_assessed_for_depression_in_generic_appt_level1': 1.0
-                },
-            'Hiv': {
-                'prob_start_art_or_vs': <<the dataframe named in the corresponding cell in the ResourceFile>>
-                }
-         }
-         """
-        return merge_dicts([
-            # -- Health System Strengthening Switches
-            get_parameters_for_improved_healthsystem_and_healthcare_seeking(
-                resourcefilepath=self.resourcefilepath,
-                max_healthsystem_function=switches["switch_max_healthsystem_function"],
-                max_healthcare_seeking=switches["switch_max_healthcare_seeking"],
-            ),
-            # todo put in the switches for other HSS as other functions, or as part of the func. above?
-        ])
-
-    @staticmethod
-    def _do_change_in_parameters(sim: Simulation, params_to_update: Dict):
-        """Make the changes to the parameters values held currently in the modules of the simulation."""
-        for module, params in params_to_update.items():
-            for name, updated_value in params.items():
-                try:
-                    sim.modules[module].parameters[name] = updated_value
-                except KeyError:
-                    warnings.warn(
-                        f"A parameter could not be updated by the `ScenarioSwitcher` module: "
-                        f"module={module}, name={name}.",
-                    )
 
 
-class ScenarioSwitchEvent(RegularEvent, PopulationScopeEventMixin):
-
-    def __init__(self, module, parameters_to_update: Dict):
-        super().__init__(module)
-        self.parameters_to_update = parameters_to_update
-
-    def apply(self, population):
-        """Change the parameters in the registered simulation models to those specified."""
-        self.module._do_change_in_params(self.sim, self.parameters_to_update)
-
-
-
-# ========================================================
-# HELPER FUNCTION THAT PROVIDE THE PARAMETERS TO BE UPDATED
-# ========================================================
-
-# --- HEALTH SYSTEM STRENGTHENING
-#todo - this should be inside the class defined above
 def get_parameters_for_improved_healthsystem_and_healthcare_seeking(
     resourcefilepath: Path,
     max_healthsystem_function: Optional[bool] = False,
@@ -273,31 +217,14 @@ def get_parameters_for_improved_healthsystem_and_healthcare_seeking(
 
     return params
 
+class ScenarioSwitchEvent(RegularEvent, PopulationScopeEventMixin):
+
+    def __init__(self, module, parameters_to_update: Dict):
+        super().__init__(module)
+        self.parameters_to_update = parameters_to_update
+
+    def apply(self, population):
+        """Run the function that updates the simulation parameters."""
+        self.module.update_parameters()
 
 
-# # POSSIBLE WAY OF ELABORATING THIS FOR OTHER THINGS....
-# # --- VERTICAL PROGRAMS
-# # N.B. Note that these can be separate functions, or one big functions.
-# # N.B. These functions could be on the ScenarioSwitcher class itself.
-# def get_parameters_for_vertical_program_scale_up_hiv_and_tb(
-#     resourcefilepath: Path,
-#     switch_scaleup_hiv: bool,
-#     switch_scaleup_tb: bool,
-# ) -> Dict:
-#     """
-#     Returns a dictionary of parameters and their updated values to indicate
-#     the possible scale-up for HIV and TB programs.
-#
-#     The return dict is in the form:
-#     e.g. {
-#             'Depression': {
-#                 'pr_assessed_for_depression_for_perinatal_female': 1.0,
-#                 'pr_assessed_for_depression_in_generic_appt_level1': 1.0
-#                 },
-#             'Hiv': {
-#                 'prob_start_art_or_vs': <<the dataframe named in the corresponding cell in the ResourceFile>>
-#                 }
-#          }
-#     """
-#     return {}
-#

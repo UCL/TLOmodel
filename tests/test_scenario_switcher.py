@@ -23,12 +23,14 @@ def test_scenario_switcher(seed):
     )
 
     # Check that the 'ScenarioSwitcher` is the first registered module.
-    assert 'ScenarioSwitcher' == list(sim.modules.keys())[0]
+    assert 'ImprovedHealthSystemAndCareSeekingScenarioSwitcher' == list(sim.modules.keys())[0]
 
     # Change the parameters for max_healthsystem_function and max_healthcare_seeking via the ScenarioSwitcher
     # (making them True for the whole simulation; by default they would be False).
-    sim.modules['ScenarioSwitcher'].parameters['switch_max_healthsystem_function'] = [True, True]
-    sim.modules['ScenarioSwitcher'].parameters['switch_max_healthcare_seeking'] = [True, True]
+    sim.modules['ImprovedHealthSystemAndCareSeekingScenarioSwitcher'].parameters['switch_max_healthsystem_function'] \
+        = [True, True]
+    sim.modules['ImprovedHealthSystemAndCareSeekingScenarioSwitcher'].parameters['switch_max_healthcare_seeking'] \
+        = [True, True]
 
     # Initialise the population
     sim.make_initial_population(n=100)
@@ -132,8 +134,3 @@ def test_get_parameter_functions(seed):
                     assert is_list_same_size_and_dtype(original, updated_value), \
                         print(f"List/tuple is not of the expected size and containing elements of expected type: "
                               f"{module}:{name} >> {updated_value=}, {type(original)=}, {type(updated_value)=}")
-
-
-
-# todo --- test that we can make the change happen in a specific later year.
-
