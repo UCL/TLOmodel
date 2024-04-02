@@ -422,48 +422,66 @@ def test_mix_scenarios():
 
 def test_improved_healthsystem_and_care_seeking_scenario_switcher(seed):
     """Check the `ScenarioSwitcher` module can update parameter values in a manner similar to them being changed
-    directly after registration in the simulation (as would be done by the Scenario class)."""
+    directly after registration in the simulation (as would be done by the Scenario class).
+    And check that these parameters can be changed mid-way through the simulation."""
 
     sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
     sim.register(*(
-        fullmodel(resourcefilepath=resourcefilepath) + [ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=resourcefilepath)]
+        fullmodel(resourcefilepath=resourcefilepath) +
+        [ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=resourcefilepath)]
     ))
 
-    # Check that the 'ScenarioSwitcher` is the first registered module.
+    # Check that the 'ImprovedHealthSystemAndCareSeekingScenarioSwitcher` is the first registered module.
     assert 'ImprovedHealthSystemAndCareSeekingScenarioSwitcher' == list(sim.modules.keys())[0]
+    module = sim.modules['ImprovedHealthSystemAndCareSeekingScenarioSwitcher']
 
     # Change the parameters for max_healthsystem_function and max_healthcare_seeking via the ScenarioSwitcher
-    sim.modules['ImprovedHealthSystemAndCareSeekingScenarioSwitcher'].parameters['max_healthsystem_function'] = [True] * 2
-    sim.modules['ImprovedHealthSystemAndCareSeekingScenarioSwitcher'].parameters['max_healthcare_seeking'] = [True] * 2
+    max_healthsystem_function = [False, True]
+    max_healthcare_seeking = [False, True]
+    year_of_change = sim.date.year + 1
+
+    module.parameters['year_of_switch'] = year_of_change
+    module.parameters['max_healthsystem_function'] = max_healthsystem_function
+    module.parameters['max_healthcare_seeking'] = max_healthcare_seeking
 
     # Initialise the population
     sim.make_initial_population(n=100)
 
-    # Check that all the parameter values in the simulation are updated to be the value expected.
-    updated_values = get_parameters_for_improved_healthsystem_and_healthcare_seeking(
-        resourcefilepath=resourcefilepath,
-        max_healthsystem_function=True,
-        max_healthcare_seeking=True
-    )
+    def check_parameters(sim, phase_of_simulation) -> None:
+        """Check that the paramter values in the simulation currently match expectation of that phase of the
+        simulation (0=first phase before the change, 1=second phase after the change)."""
 
-    for module, param in updated_values.items():
-        for name, target_value in param.items():
+        updated_values = get_parameters_for_improved_healthsystem_and_healthcare_seeking(
+            resourcefilepath=resourcefilepath,
+            max_healthsystem_function=max_healthsystem_function[phase_of_simulation],
+            max_healthcare_seeking=max_healthcare_seeking[phase_of_simulation]
+        )
 
-            actual = sim.modules[module].parameters[name]
+        for module, param in updated_values.items():
+            for name, target_value in param.items():
 
-            if isinstance(target_value, pd.Series):
-                pd.testing.assert_series_equal(target_value, actual)
-            elif isinstance(target_value, pd.DataFrame):
-                pd.testing.assert_frame_equal(target_value, actual)
-            elif isinstance(target_value, list):
-                assert all([t == v for t, v in zip(target_value, actual)])
-            else:
-                assert target_value == actual
+                actual = sim.modules[module].parameters[name]
 
-    # Spot check for health care seeking being forced to occur for all symptoms
-    hcs = sim.modules['HealthSeekingBehaviour'].force_any_symptom_to_lead_to_healthcareseeking
-    assert isinstance(hcs, bool) and hcs
+                if isinstance(target_value, pd.Series):
+                    pd.testing.assert_series_equal(target_value, actual)
+                elif isinstance(target_value, pd.DataFrame):
+                    pd.testing.assert_frame_equal(target_value, actual)
+                elif isinstance(target_value, list):
+                    assert all([t == v for t, v in zip(target_value, actual)])
+                else:
+                    assert target_value == actual
 
+        # Spot check for health care seeking being forced to occur for all symptoms
+        hcs = sim.modules["HealthSeekingBehaviour"].force_any_symptom_to_lead_to_healthcareseeking
+        assert isinstance(hcs, bool) and (hcs is max_healthcare_seeking[phase_of_simulation])
+
+    # Check that all the parameter values in the simulation are updated to be the value expected at the beginning of
+    # the simulation.
+    check_parameters(sim, 0)
+
+    # Run the simulation until after the date of the change and then check the values have been updated.
+    sim.simulate(end_date=Date(year_of_change, 2, 1))
+    check_parameters(sim, 1)
 
 def test_summarize():
     """Check that the summarize utility function works as expected."""

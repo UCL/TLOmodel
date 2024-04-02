@@ -2,7 +2,7 @@ import warnings
 from typing import Dict
 
 from tlo import Module, Parameter, Types, Date
-from tlo.events import RegularEvent, PopulationScopeEventMixin
+from tlo.events import Event, PopulationScopeEventMixin
 from tlo.analysis.utils import get_parameters_for_improved_healthsystem_and_healthcare_seeking
 
 
@@ -34,11 +34,11 @@ class ImprovedHealthSystemAndCareSeekingScenarioSwitcher(Module):
         # period before the date of a switch in state, (ii) the state at the date of switch and the period thereafter.
 
         # -- Health System Strengthening Switches
-        "switch_max_healthsystem_function": Parameter(
+        "max_healthsystem_function": Parameter(
             Types.LIST, "If True, over-writes parameters that define maximal health system function."
                         "Parameter passed through to `get_parameters_for_improved_healthsystem_and_healthcare_seeking`."
         ),
-        "switch_max_healthcare_seeking": Parameter(
+        "max_healthcare_seeking": Parameter(
             Types.LIST, "If True, over-writes parameters that define maximal healthcare-seeking behaviour. "
                         "Parameter passed through to `get_parameters_for_improved_healthsystem_and_healthcare_seeking`."
         ),
@@ -108,11 +108,10 @@ class ImprovedHealthSystemAndCareSeekingScenarioSwitcher(Module):
         pass
 
 
-class ScenarioSwitchEvent(RegularEvent, PopulationScopeEventMixin):
+class ScenarioSwitchEvent(Event, PopulationScopeEventMixin):
 
-    def __init__(self, module, parameters_to_update: Dict):
+    def __init__(self, module):
         super().__init__(module)
-        self.parameters_to_update = parameters_to_update
 
     def apply(self, population):
         """Run the function that updates the simulation parameters."""
