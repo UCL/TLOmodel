@@ -1,5 +1,4 @@
-"""This Scenario file run the model under different assumptions for the HealthSystem in order to estimate the
-impact that is achieved under each, relative to there being no health system.
+"""This Scenario file run the model under different assumptions for the HealthSystem and Vertical Program Scale-up
 
 Run on the batch system using:
 ```
