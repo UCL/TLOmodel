@@ -22,7 +22,7 @@ you prefer, you can carry out the setup using the command line:
 
 ::
 
-    conda create -n tlo python=3.8
+    conda create -n tlo python=3.11
     conda activate tlo
     pip install -r requirements/dev.txt
     pip install -e .
