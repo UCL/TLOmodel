@@ -1,9 +1,9 @@
 import warnings
 from typing import Dict
 
-from tlo import Module, Parameter, Types, Date
-from tlo.events import Event, PopulationScopeEventMixin
+from tlo import Date, Module, Parameter, Types
 from tlo.analysis.utils import get_parameters_for_improved_healthsystem_and_healthcare_seeking
+from tlo.events import Event, PopulationScopeEventMixin
 
 
 class ImprovedHealthSystemAndCareSeekingScenarioSwitcher(Module):

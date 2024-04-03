@@ -186,7 +186,8 @@ class HealthSystem(Module):
             "Availability of consumables. If 'default' then use the availability specified in the ResourceFile; if "
             "'none', then let no consumable be  ever be available; if 'all', then all consumables are always available."
             " When using 'all' or 'none', requests for consumables are not logged. NB. This parameter is over-ridden"
-            "if an argument is provided to the module initialiser."),
+            "if an argument is provided to the module initialiser."
+            "Note that other options are also available: see the `Consumables` class."),
 
         # Infrastructure and Equipment
         'BedCapacity': Parameter(
