@@ -95,7 +95,7 @@ class HorizontalAndVerticalPrograms(BaseScenario):
                     self._baseline(),
                     {
                         'HealthSystem': {
-                            'yearly_HR_scaling_mode': f'scaling_by_pop_growth_after2018',
+                            'yearly_HR_scaling_mode': 'scaling_by_pop_growth_after2018',
                             # This is in-line with population growth after 2018 (baseline year for HRH)
                         }
                     }
@@ -150,17 +150,54 @@ class HorizontalAndVerticalPrograms(BaseScenario):
             "Perfect Availability of Diagnostics":
                 mix_scenarios(
                     self._baseline(),
-                    {'HealthSystem': {'cons_availability': 'all'}}
-                    # todo - Margherita currently developing functionality inside the HealthSystem by which this can happen
-                    # todo - this could be inside health system: a new option none/default/all/all-diagnostics/all-medicines // ....would have to combin with issue about RF generation.
+                    {
+                        'HealthSystem': {
+                            'year_cons_availability_switch': self.YEAR_OF_CHANGE,
+                            'cons_availability_postSwitch': 'all_diagnostics_available',
+                        }
+                    }
                 ),
+
+            "Perfect Availability of Medicines":
+            mix_scenarios(
+                self._baseline(),
+                {
+                    'HealthSystem': {
+                        'year_cons_availability_switch': self.YEAR_OF_CHANGE,
+                        'cons_availability_postSwitch': 'all_medicines_available',
+                    }
+                }
+            ),
 
             "Perfect Availability of Medicines & other Consumables":
                 mix_scenarios(
                     self._baseline(),
-                    {'HealthSystem': {'cons_availability': 'all'}}
-                    # todo - Margherita currently developing functionality inside the HealthSystem by which this can happen
-                    # todo - this could be inside health system: a new option none/default/all/all-diagnostics/all-medicines // ....would have to combin with issue about RF generation.
+                    {
+                        'HealthSystem': {
+                            'year_cons_availability_switch': self.YEAR_OF_CHANGE,
+                            'cons_availability_postSwitch': 'all_medicines_and_other_available',
+                        }
+                    }
+                ),
+
+            # - - - FULL PACKAGE OF HEALTH SYSTEM STRENGTHENING - - -
+            "Perfect Clinical Practice":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                        'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
+                            'max_healthsystem_function': [False, True],  # <-- switch from False to True mid-way
+                            'max_healthcare_seeking': [False, True],  # <-- switch from False to True mid-way
+                            'year_of_switch': self.YEAR_OF_CHANGE
+                        },
+                        'HealthSystem': {
+                            'year_cons_availability_switch': self.YEAR_OF_CHANGE,
+                            'cons_availability_postSwitch': 'all',
+                            'yearly_HR_scaling_mode': 'GDP_growth_fHE_case5',
+                            'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE,
+                            'HR_scaling_by_level_and_officer_type_mode': 'no_absence_&_x2_fac0+1',
+                        }
+                    },
                 ),
 
 
@@ -168,29 +205,26 @@ class HorizontalAndVerticalPrograms(BaseScenario):
             # VERTICAL PROGRAMS
             # ***************************
 
-            # - - - HIV - - -
-            "HIV Programs Scale-up":
-                mix_scenarios(
-                    self._baseline(),
-
-                    # todo HIV
-                ),
-
-            # - - - TB - - -
-            "TB Programs Scale-up":
-                mix_scenarios(
-                    self._baseline(),
-
-                    # todo TB
-                ),
-
-            # - - - MALARIA - - -
-            "Malaria Programs Scale-up":
-                mix_scenarios(
-                    self._baseline(),
-
-                    # todo MALARIA
-                ),
+            # # - - - HIV - - -
+            # "HIV Programs Scale-up":
+            #     mix_scenarios(
+            #         self._baseline(),
+            #         # todo HIV
+            #     ),
+            #
+            # # - - - TB - - -
+            # "TB Programs Scale-up":
+            #     mix_scenarios(
+            #         self._baseline(),
+            #         # todo TB
+            #     ),
+            #
+            # # - - - MALARIA - - -
+            # "Malaria Programs Scale-up":
+            #     mix_scenarios(
+            #         self._baseline(),
+            #         # todo MALARIA
+            #     ),
         }
 
     def _baseline(self) -> Dict:
