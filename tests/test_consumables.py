@@ -54,7 +54,7 @@ def test_using_recognised_item_codes(seed):
     date = datetime.datetime(2010, 1, 1)
 
     # Initiate Consumables class
-    cons = Consumables(data=data, rng=rng)
+    cons = Consumables(availability_data=data, rng=rng)
 
     # Start a new day (this trigger is usually called by the event `HealthSystemScheduler`).
     cons.on_start_of_day(date=date)
@@ -81,7 +81,7 @@ def test_unrecognised_item_code_is_recorded(seed):
     date = datetime.datetime(2010, 1, 1)
 
     # Initiate Consumables class
-    cons = Consumables(data=data, rng=rng)
+    cons = Consumables(availability_data=data, rng=rng)
 
     # Start a new day (this trigger usually called by the event `HealthSystemScheduler`).
     cons.on_start_of_day(date=date)
@@ -124,7 +124,7 @@ def test_consumables_availability_options(seed):
 
     # Check that for each option for `availability` the result is as expected.
     for _cons_availability_option, _expected_result in options_and_expected_results.items():
-        cons = Consumables(data=data, rng=rng, availability=_cons_availability_option)
+        cons = Consumables(availability_data=data, rng=rng, availability=_cons_availability_option)
         cons.on_start_of_day(date=date)
 
         assert _expected_result == cons._request_consumables(
@@ -162,7 +162,7 @@ def test_override_cons_availability(seed):
     for _availability in ('default', 'all', 'none'):
 
         # Create consumables class
-        cons = Consumables(data=data, rng=rng, availability=_availability)
+        cons = Consumables(availability_data=data, rng=rng, availability=_availability)
 
         # Check before overriding availability
         for _ in range(1000):
@@ -241,7 +241,7 @@ def test_consumables_available_at_right_frequency(seed):
     date = datetime.datetime(2010, 1, 1)
 
     # Initiate Consumables class
-    cons = Consumables(data=data, rng=rng)
+    cons = Consumables(availability_data=data, rng=rng)
 
     # Make requests for consumables (which would normally come from an instance of `HSI_Event`).
     n_trials = 10_000
@@ -553,3 +553,44 @@ def test_get_item_codes_from_package_name():
             pd.Series(_item_codes).sort_index(),
             check_names=False
         )
+
+
+def test_consumables_availability_modes_that_depend_on_designations(seed):
+    """Test that consumables availability can be manipulated in a manner than depends on the designations of
+    consumables."""
+
+    sim = Simulation(
+        start_date=Date(2010, 1, 1),
+        seed=seed,
+    )
+
+    # Register the core modules
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+    )
+
+    # Manipulate consumables availability: to be all medicines being available
+    sim.modules['HealthSystem'].parameters['cons_availability'] = 'all_medicines_available'
+
+    # Initialise the simulation
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=sim.start_date)
+
+    # Check the availability of consumables
+
+    # Get the relevant item_codes for diagnostic
+    hs = sim.modules['HealthSystem']
+    consumables = hs.consumables
+
+    designations = hs.parameters['consumables_item_designations']
+    items_medicines = set(designations.index[designations['is_medicine']]).intersection(consumables.item_codes)
+    items_diagnostics = set(designations.index[designations['is_diagnostic']]).intersection(consumables.item_codes)
+
+    # All medicines always available
+    assert (consumables._prob_item_codes_available.loc[(slice(None), slice(None), list(items_medicines))] == 1.0).all()
+
+    # But not all diagnostics always available
+    assert not (
+        (consumables._prob_item_codes_available.loc[(slice(None), slice(None), list(items_diagnostics))] == 1.0).all()
+    )

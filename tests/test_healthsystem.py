@@ -846,7 +846,7 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
     all_fac_ids = set(mfl.loc[mfl.Facility_Level != '5'].Facility_ID)
 
     sim.modules['HealthSystem'].consumables = Consumables(
-        data=create_dummy_data_for_cons_availability(
+        availability_data=create_dummy_data_for_cons_availability(
             intrinsic_availability={0: 0.5, 1: 0.5},
             months=list(range(1, 13)),
             facility_ids=list(all_fac_ids)),

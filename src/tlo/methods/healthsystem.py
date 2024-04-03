@@ -176,6 +176,9 @@ class HealthSystem(Module):
         # Consumables
         'item_and_package_code_lookups': Parameter(
             Types.DATA_FRAME, 'Data imported from the OneHealth Tool on consumable items, packages and costs.'),
+        'consumables_item_designations': Parameter(
+            Types.DATA_FRAME, 'Look-up table for the designations of consumables (whether diagnostic, medicine, or '
+                              'other'),
         'availability_estimates': Parameter(
             Types.DATA_FRAME, 'Estimated availability of consumables in the LMIS dataset.'),
         'cons_availability': Parameter(
@@ -518,6 +521,10 @@ class HealthSystem(Module):
         # Read in ResourceFile_Consumables
         self.parameters['item_and_package_code_lookups'] = pd.read_csv(
             path_to_resourcefiles_for_healthsystem / 'consumables' / 'ResourceFile_Consumables_Items_and_Packages.csv')
+        self.parameters['consumables_item_designations'] = pd.read_csv(
+            path_to_resourcefiles_for_healthsystem / "consumables" / "ResourceFile_Consumables_Item_Designations.csv",
+            dtype={'Item_Code': int, 'is_diagnostic': bool, 'is_medicine': bool, 'is_other': bool}
+        ).set_index('Item_Code')
         self.parameters['availability_estimates'] = pd.read_csv(
             path_to_resourcefiles_for_healthsystem / 'consumables' / 'ResourceFile_Consumables_availability_small.csv')
 
@@ -599,8 +606,9 @@ class HealthSystem(Module):
 
         # Initialise the Consumables class
         self.consumables = Consumables(
-            data=self.update_consumables_availability_to_represent_merging_of_levels_1b_and_2(
+            availability_data=self.update_consumables_availability_to_represent_merging_of_levels_1b_and_2(
                 self.parameters['availability_estimates']),
+            item_code_designations=self.parameters['consumables_item_designations'],
             rng=rng_for_consumables,
             availability=self.get_cons_availability()
         )
@@ -2589,9 +2597,12 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
             self.module.capabilities_coefficient = self._parameters['capabilities_coefficient']
 
         if 'cons_availability' in self._parameters:
-            self.module.consumables = Consumables(data=self.module.parameters['availability_estimates'],
-                                                  rng=self.module.rng,
-                                                  availability=self._parameters['cons_availability'])
+            self.module.consumables = Consumables(
+                availability_data=self.module.parameters['availability_estimates'],
+                rng=self.module.rng,
+                item_code_designations=self.parameters["consumables_item_designations"],
+                availability=self._parameters['cons_availability']
+            )
             self.module.consumables.on_start_of_day(self.module.sim.date)
 
         if 'beds_availability' in self._parameters:
