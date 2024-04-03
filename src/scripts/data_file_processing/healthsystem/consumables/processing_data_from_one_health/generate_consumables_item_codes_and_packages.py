@@ -333,10 +333,10 @@ cons = add_record(
     cons,
     {
         'Intervention_Cat': "Added by SM (Recommended by TM)",
-        'Intervention_Pkg': "Misc",
-        'Intervention_Pkg_Code': -99,
+        'Intervention_Pkg': "Isoniazid preventative therapy for HIV+ no TB",
+        'Intervention_Pkg_Code': 82,
         'Items': "Isoniazid/Rifapentine",
-        'Item_Code': 2675,
+        'Item_Code': 2678,
         'Expected_Units_Per_Case': 1.0,
         'Unit_Cost': 1.0
     },
