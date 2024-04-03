@@ -231,6 +231,15 @@ class Simulation:
             if date >= end_date:
                 self.date = end_date
                 break
+                
+            #if event.target != self.population:
+            #    print("Event: ", event)
+
+            if event.module == self.modules['RTI']:
+                 print("RTI event ", event)
+                 print("   target ", event.target)
+                 if event.target != self.population:
+                    self.population.props.at[event.tar]
             self.fire_single_event(event, date)
 
         # The simulation has ended.
