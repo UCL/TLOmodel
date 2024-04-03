@@ -24,11 +24,11 @@ class HorizontalAndVerticalPrograms(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2020, 1, 1)
+        self.end_date = Date(2031, 1, 1)
         self.pop_size = 100_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 10
+        self.runs_per_draw = 5
 
     def log_configuration(self):
         return {
@@ -39,6 +39,7 @@ class HorizontalAndVerticalPrograms(BaseScenario):
                 'tlo.methods.demography': logging.INFO,
                 'tlo.methods.demography.detail': logging.WARNING,
                 'tlo.methods.healthburden': logging.INFO,
+                'tlo.methods.healthsystem': logging.WARNING,
                 'tlo.methods.healthsystem.summary': logging.INFO,
             }
         }
@@ -199,7 +200,6 @@ class HorizontalAndVerticalPrograms(BaseScenario):
                         }
                     },
                 ),
-
 
             # ***************************
             # VERTICAL PROGRAMS
