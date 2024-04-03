@@ -71,8 +71,9 @@ class Consumables:
         """
         self.item_codes = set(availability_data.item_code)  # Record all consumables identified
 
-        # Set the probability of availabilty for each item, based on the data passed it.
-        self._prob_item_codes_available = availability_data.set_index(['month', 'Facility_ID', 'item_code'])['available_prop']
+        # Set the probability of availability for each item, based on the data passed it.
+        self._prob_item_codes_available = \
+            availability_data.set_index(['month', 'Facility_ID', 'item_code'])['available_prop']
 
         # Over-ride the data according to parameter for `availability`
         if self.cons_availability == 'default':

@@ -48,7 +48,8 @@ class ImpactOfHealthSystemAssumptions(BaseScenario):
         }
 
     def modules(self):
-        return fullmodel(resourcefilepath=self.resources) + [ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=self.resources)]
+        return fullmodel(resourcefilepath=self.resources) + [
+            ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=self.resources)]
 
     def draw_parameters(self, draw_number, rng):
         if draw_number < len(self._scenarios):

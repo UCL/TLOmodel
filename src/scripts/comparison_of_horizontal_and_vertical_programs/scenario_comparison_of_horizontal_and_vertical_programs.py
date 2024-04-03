@@ -181,7 +181,7 @@ class HorizontalAndVerticalPrograms(BaseScenario):
                 ),
 
             # - - - FULL PACKAGE OF HEALTH SYSTEM STRENGTHENING - - -
-            "Perfect Clinical Practice":
+            "FULL PACKAGE":
                 mix_scenarios(
                     self._baseline(),
                     {
