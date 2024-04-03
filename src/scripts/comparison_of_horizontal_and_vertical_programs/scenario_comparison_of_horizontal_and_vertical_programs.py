@@ -246,7 +246,7 @@ class HorizontalAndVerticalPrograms(BaseScenario):
                     "tclose_days_offset_overwrite": 7,
                 }
             },
-        ),
+        )
 
 if __name__ == '__main__':
     from tlo.cli import scenario_run
