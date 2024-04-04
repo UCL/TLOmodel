@@ -708,11 +708,11 @@ class Malaria(Module):
     def do_at_generic_first_appt(
         self,
         patient_id: int,
-        patient_details: NamedTuple = None,
-        symptoms: List[str] = None,
-        diagnosis_function: DiagnosisFunction = None,
-        facility_level: str = None,
-        treatment_id: str = None,
+        patient_details: NamedTuple,
+        symptoms: List[str],
+        diagnosis_function: DiagnosisFunction,
+        facility_level: str,
+        treatment_id: str,
         **kwargs,
     ) -> IndividualPropertyUpdates:
         df_updates = {}
@@ -740,7 +740,6 @@ class Malaria(Module):
             # Treat / refer based on diagnosis
             if malaria_test_result == "severe_malaria":
                 df_updates["ma_dx_counter"] = patient_details.ma_dx_counter + 1
-                # df.at[person_id, "ma_dx_counter"] += 1
                 event = HSI_Malaria_Treatment_Complicated(person_id=patient_id, module=self)
                 self.healthsystem.schedule_hsi_event(
                     event, priority=0, topen=self.sim.date
@@ -758,11 +757,11 @@ class Malaria(Module):
     def do_at_generic_first_appt_emergency(
         self,
         patient_id: int,
-        patient_details: NamedTuple = None,
-        symptoms: List[str] = None,
-        diagnosis_function: DiagnosisFunction = None,
-        facility_level: str = None,
-        treatment_id: str = None,
+        patient_details: NamedTuple,
+        symptoms: List[str],
+        diagnosis_function: DiagnosisFunction,
+        facility_level: str,
+        treatment_id: str,
         **kwargs,
     ) -> IndividualPropertyUpdates:
         # This is called for a person (of any age) that attends an

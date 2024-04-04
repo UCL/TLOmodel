@@ -575,8 +575,8 @@ class BladderCancer(Module):
     def do_at_generic_first_appt(
         self,
         patient_id: int,
-        patient_details: NamedTuple = None,
-        symptoms: List[str] = None,
+        patient_details: NamedTuple,
+        symptoms: List[str],
         **kwargs,
     ) -> IndividualPropertyUpdates:
         # Only investigate if the patient is not a child

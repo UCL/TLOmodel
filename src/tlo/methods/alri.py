@@ -1422,9 +1422,9 @@ class Alri(Module):
     def do_at_generic_first_appt(
         self,
         patient_id: int,
-        patient_details: NamedTuple = None,
-        symptoms: List[str] = None,
-        facility_level: str = None,
+        patient_details: NamedTuple,
+        symptoms: List[str],
+        facility_level: str,
         **kwargs,
     ) -> IndividualPropertyUpdates:
         # Action taken when a child (under 5 years old) presents at a

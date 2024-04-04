@@ -1669,7 +1669,7 @@ class PregnancySupervisor(Module):
     def do_at_generic_first_appt_emergency(
         self,
         patient_id: int,
-        patient_details: NamedTuple = None,
+        patient_details: NamedTuple,
         **kwargs,
     ) -> IndividualPropertyUpdates:
         scheduling_options = {

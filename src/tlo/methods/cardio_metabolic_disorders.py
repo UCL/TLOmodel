@@ -809,8 +809,8 @@ class CardioMetabolicDisorders(Module):
     def do_at_generic_first_appt(
         self,
         patient_id: int,
-        patient_details: NamedTuple = None,
-        symptoms: List[str] = None,
+        patient_details: NamedTuple,
+        symptoms: List[str],
         **kwargs
     ) -> IndividualPropertyUpdates:
         # This is called by the HSI generic first appts module whenever a

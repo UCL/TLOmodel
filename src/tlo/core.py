@@ -25,8 +25,6 @@ import numpy as np
 import pandas as pd
 
 if TYPE_CHECKING:
-    from numpy.random import RandomState
-
     from tlo.methods.healthsystem import HealthSystem
     from tlo.simulation import Simulation
 
@@ -274,7 +272,7 @@ class Module:
         self.parameters = {}
         self.rng: Optional[np.random.RandomState] = None
         self.name = name or self.__class__.__name__
-        self.sim: Simulation = None
+        self.sim: Optional[Simulation] = None
 
     def load_parameters_from_dataframe(self, resource: pd.DataFrame):
         """Automatically load parameters from resource dataframe, updating the class parameter dictionary
@@ -407,7 +405,6 @@ class Module:
         consumables_checker: Optional[ConsumablesChecker] = None,
         facility_level: Optional[str] = None,
         treatment_id: Optional[str] = None,
-        random_state: Optional[RandomState] = None,
     ) -> IndividualPropertyUpdates:
         """
         Actions to be take during a NON-emergency generic HSI.
@@ -456,7 +453,6 @@ class Module:
         consumables_checker: Optional[ConsumablesChecker] = None,
         facility_level: Optional[str] = None,
         treatment_id: Optional[str] = None,
-        random_state: Optional[RandomState] = None,
     ) -> IndividualPropertyUpdates:
         """
         Actions to be take during an EMERGENCY generic HSI.
