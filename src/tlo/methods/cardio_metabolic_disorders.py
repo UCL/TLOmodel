@@ -208,13 +208,6 @@ class CardioMetabolicDisorders(Module):
                   'nc_risk_score': Property(Types.INT, 'score to represent number of risk conditions the person has')
                   }
 
-    @staticmethod
-    def is_next_test_due(current_date, date_of_last_test):
-        return (
-            pd.isnull(date_of_last_test)
-            or (current_date - date_of_last_test).days > DAYS_IN_YEAR / 2
-        )
-
     def __init__(self, name=None, resourcefilepath=None, do_log_df: bool = False, do_condition_combos: bool = False):
 
         super().__init__(name)
@@ -831,9 +824,12 @@ class CardioMetabolicDisorders(Module):
         for condition in self.conditions:
             is_already_diagnosed = getattr(patient_details, f"nc_{condition}_ever_diagnosed")
             has_symptom = f"{condition}_symptoms" in symptoms
-            next_test_due = self.is_next_test_due(
-                current_date=self.sim.date,
-                date_of_last_test=getattr(patient_details, f"nc_{condition}_date_last_test"),
+            date_of_last_test = getattr(
+                patient_details, f"nc_{condition}_date_last_test"
+            )
+            next_test_due = (
+                pd.isnull(date_of_last_test)
+                or (self.sim.date - date_of_last_test).days > DAYS_IN_YEAR / 2
             )
             p_assess_if_no_symptom = self.parameters[f"{condition}_hsi"].get(
                 "pr_assessed_other_symptoms"
