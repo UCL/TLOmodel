@@ -158,4 +158,4 @@ class Population:
         :param patient_index: Row index of the DataFrame row to extract.
         :returns: DataFrame row values for the requested row.
         """
-        return self._patient_details_readonly_type(self.props.loc[patient_index])
+        return self._patient_details_readonly_type(*self.props.loc[patient_index])
