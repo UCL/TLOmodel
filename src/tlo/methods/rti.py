@@ -2490,7 +2490,7 @@ class RTI(Module):
     def _common_first_appt_steps(
         self,
         patient_id: int,
-        patient_details: NamedTuple = None,
+        patient_details: NamedTuple,
     ) -> IndividualPropertyUpdates:
         """
         Shared logic steps that are used by the RTI module when a generic HSI
@@ -2560,8 +2560,8 @@ class RTI(Module):
     def do_at_generic_first_appt(
         self,
         patient_id: int,
-        patient_details: NamedTuple = None,
-        symptoms: List[str] = None,
+        patient_details: NamedTuple,
+        symptoms: List[str],
         **kwargs
     ) -> IndividualPropertyUpdates:
         if "injury" in symptoms:
@@ -2573,8 +2573,8 @@ class RTI(Module):
     def do_at_generic_first_appt_emergency(
         self,
         patient_id: int,
-        patient_details: NamedTuple = None,
-        symptoms: List[str] = None,
+        patient_details: NamedTuple,
+        symptoms: List[str],
         **kwargs
     ) -> IndividualPropertyUpdates:
         # Same process is followed for emergency and non emergency appointments, except the

@@ -208,7 +208,7 @@ class Measles(Module):
     def do_at_generic_first_appt(
         self,
         patient_id: int,
-        symptoms: List[str] = None,
+        symptoms: List[str],
         **kwargs,
     ) -> IndividualPropertyUpdates:
         if "rash" in symptoms:

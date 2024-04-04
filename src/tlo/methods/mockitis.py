@@ -291,7 +291,7 @@ class Mockitis(Module):
     def do_at_generic_first_appt_emergency(
         self,
         patient_id: int,
-        symptoms: List[str] = None,
+        symptoms: List[str],
         **kwargs,
     ) -> IndividualPropertyUpdates:
         # Example for mockitis

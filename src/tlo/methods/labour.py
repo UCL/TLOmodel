@@ -2300,8 +2300,8 @@ class Labour(Module):
     def do_at_generic_first_appt_emergency(
         self,
         patient_id: int,
-        patient_details: NamedTuple = None,
-        random_state: RandomState = None,
+        patient_details: NamedTuple,
+        random_state: RandomState,
         **kwargs,
     ) -> IndividualPropertyUpdates:
         mni = self.sim.modules["PregnancySupervisor"].mother_and_newborn_info

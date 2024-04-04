@@ -554,8 +554,8 @@ class OtherAdultCancer(Module):
     def do_at_generic_first_appt(
         self,
         patient_id: int,
-        patient_details: NamedTuple = None,
-        symptoms: List[str] = None,
+        patient_details: NamedTuple,
+        symptoms: List[str],
         **kwargs
     ) -> IndividualPropertyUpdates:
         if patient_details.age_years > 5 and "early_other_adult_ca_symptom" in symptoms:

@@ -284,7 +284,7 @@ class Stunting(Module):
     def do_at_generic_first_appt(
         self,
         patient_id: int,
-        patient_details: NamedTuple = None,
+        patient_details: NamedTuple,
         **kwargs,
     ) -> IndividualPropertyUpdates:
         # This is called by the a generic HSI event for every child aged

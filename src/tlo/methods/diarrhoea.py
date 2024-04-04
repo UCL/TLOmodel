@@ -938,8 +938,8 @@ class Diarrhoea(Module):
     def do_at_generic_first_appt(
         self,
         patient_id: int,
-        patient_details: NamedTuple = None,
-        diagnosis_function: DiagnosisFunction = None,
+        patient_details: NamedTuple,
+        diagnosis_function: DiagnosisFunction,
         **kwargs,
     ) -> IndividualPropertyUpdates:
         # This routine is called when Diarrhoea is a symptom for a child
@@ -952,21 +952,18 @@ class Diarrhoea(Module):
         danger_signs = diagnosis_function(
             "imci_severe_dehydration_visual_inspection"
         )
-        scheduling_options = {
-            "priority": 0,
-            "topen": self.sim.date,
-        }
 
         # 2) Determine which HSI to use:
-        if danger_signs and (
+        is_inpatient = (   # Danger signs and hospitalized --> In-patient
+            danger_signs and
             self.rng.rand() < self.parameters["prob_hospitalization_on_danger_signs"]
-        ):
-            # Danger signs and hospitalized --> In-patient
-            event = HSI_Diarrhoea_Treatment_Inpatient(person_id=patient_id, module=self)
-        else:
-            # No danger signs or otherwise not hospitalized --> Out-patient
-            event = HSI_Diarrhoea_Treatment_Outpatient(person_id=patient_id, module=self)
-        self.healthsystem.schedule_hsi_event(event, **scheduling_options)
+        )
+        hsi_event_class = (
+            HSI_Diarrhoea_Treatment_Inpatient if is_inpatient else 
+            HSI_Diarrhoea_Treatment_Outpatient
+        )
+        event = hsi_event_class(person_id=patient_id, module=self)
+        self.healthsystem.schedule_hsi_event(event, priority=0, topen=self.sim.date)
         return {}
 
 

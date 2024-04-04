@@ -1506,7 +1506,7 @@ class Hiv(Module):
     def do_at_generic_first_appt(
         self,
         patient_id: int,
-        symptoms: List[str] = None,
+        symptoms: List[str],
         **kwargs,
     ) -> IndividualPropertyUpdates:
         # 'Automatic' testing for HIV for everyone attending care with AIDS symptoms:

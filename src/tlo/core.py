@@ -274,7 +274,7 @@ class Module:
         self.parameters = {}
         self.rng: Optional[np.random.RandomState] = None
         self.name = name or self.__class__.__name__
-        self.sim: Simulation = None
+        self.sim: Optional[Simulation] = None
 
     def load_parameters_from_dataframe(self, resource: pd.DataFrame):
         """Automatically load parameters from resource dataframe, updating the class parameter dictionary
@@ -401,13 +401,13 @@ class Module:
     def do_at_generic_first_appt(
         self,
         patient_id: int,
-        patient_details: Optional[NamedTuple] = None,
-        symptoms: Optional[List[str]] = None,
-        diagnosis_function: Optional[DiagnosisFunction] = None,
-        consumables_checker: Optional[ConsumablesChecker] = None,
-        facility_level: Optional[str] = None,
-        treatment_id: Optional[str] = None,
-        random_state: Optional[RandomState] = None,
+        patient_details: NamedTuple],
+        symptoms: List[str],
+        diagnosis_function: DiagnosisFunction,
+        consumables_checker: ConsumablesChecker,
+        facility_level: str,
+        treatment_id: str,
+        random_state: RandomState,
     ) -> IndividualPropertyUpdates:
         """
         Actions to be take during a NON-emergency generic HSI.

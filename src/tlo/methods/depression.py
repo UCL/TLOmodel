@@ -624,7 +624,7 @@ class Depression(Module):
 
     def do_at_generic_first_appt(
         self,
-        patient_details: NamedTuple = None,
+        patient_details: NamedTuple,
         **kwargs
     ) -> IndividualPropertyUpdates:
         if patient_details.age_years <= 5:
@@ -638,10 +638,10 @@ class Depression(Module):
     def do_at_generic_first_appt_emergency(
         self,
         patient_id: int,
-        patient_details: NamedTuple = None,
-        symptoms: List[str] = None,
-        diagnosis_function: DiagnosisFunction = None,
-        treatment_id: str = None,
+        patient_details: NamedTuple,
+        symptoms: List[str],
+        diagnosis_function: DiagnosisFunction,
+        treatment_id: str,
         **kwargs,
     ) -> IndividualPropertyUpdates:
         if self._check_for_suspected_depression(

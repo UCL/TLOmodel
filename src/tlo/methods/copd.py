@@ -217,14 +217,14 @@ class Copd(Module):
         * If severe --> give the inhaler and schedule the HSI for Treatment
         * Otherwise --> just give inhaler.
         """
-        df_updates = {}
+        patient_details_updates = {}
 
         if ('breathless_moderate' in symptoms) or ('breathless_severe' in symptoms):
             # Give inhaler if patient does not already have one
             if not patient_details.ch_has_inhaler and consumables_checker(
                 self.item_codes["bronchodilater_inhaler"]
             ):
-                df_updates["ch_has_inhaler"] = True
+                patient_details_updates["ch_has_inhaler"] = True
 
             if "breathless_severe" in symptoms:
                 event = HSI_Copd_TreatmentOnSevereExacerbation(
@@ -233,14 +233,14 @@ class Copd(Module):
                 self.healthsystem.schedule_hsi_event(
                     event, topen=self.sim.date, priority=0
                 )
-        return df_updates
+        return patient_details_updates
 
     def do_at_generic_first_appt(
         self,
         patient_id: int,
-        patient_details: NamedTuple = None,
-        symptoms: List[str] = None,
-        consumables_checker: ConsumablesChecker = None,
+        patient_details: NamedTuple,
+        symptoms: List[str],
+        consumables_checker: ConsumablesChecker,
         **kwargs,
     ) -> IndividualPropertyUpdates:
         # Non-emergency appointments are only forwarded if
@@ -258,9 +258,9 @@ class Copd(Module):
     def do_at_generic_first_appt_emergency(
         self,
         patient_id: int,
-        patient_details: NamedTuple = None,
-        symptoms: List[str] = None,
-        consumables_checker: ConsumablesChecker = None,
+        patient_details: NamedTuple,
+        symptoms: List[str],
+        consumables_checker: ConsumablesChecker,
         **kwargs,
     ) -> IndividualPropertyUpdates:
         return self._common_first_appt(
