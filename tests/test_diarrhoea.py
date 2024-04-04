@@ -2,7 +2,6 @@
 Basic tests for the Diarrhoea Module
 """
 import os
-from collections import namedtuple
 from itertools import product
 from pathlib import Path
 
@@ -404,7 +403,7 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration(seed):
     generic_hsi = HSI_GenericNonEmergencyFirstAppt(
         module=sim.modules["HealthSeekingBehaviour"], person_id=person_id
     )
-    patient_details = namedtuple("PatientDetails", df.columns)(*df.loc[person_id])
+    patient_details = sim.population.row_in_readonly_form(person_id)
 
     def diagnosis_fn(tests, use_dict: bool = False, report_tried: bool = False):
         return generic_hsi.healthcare_system.dx_manager.run_dx_test(
@@ -493,7 +492,7 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration_dxtest_notfuncti
     df.loc[person_id, props_new.keys()] = props_new.values()
     generic_hsi = HSI_GenericNonEmergencyFirstAppt(
         module=sim.modules['HealthSeekingBehaviour'], person_id=person_id)
-    patient_details = namedtuple("PatientDetails", df.columns)(*df.loc[person_id])
+    patient_details = sim.population.row_in_readonly_form(person_id)
 
     def diagnosis_fn(tests, use_dict: bool = False, report_tried: bool = False):
         return generic_hsi.healthcare_system.dx_manager.run_dx_test(
@@ -569,7 +568,7 @@ def test_do_when_presentation_with_diarrhoea_non_severe_dehydration(seed):
     df.loc[person_id, props_new.keys()] = props_new.values()
     generic_hsi = HSI_GenericNonEmergencyFirstAppt(
         module=sim.modules['HealthSeekingBehaviour'], person_id=person_id)
-    patient_details = namedtuple("PatientDetails", df.columns)(*df.loc[person_id])
+    patient_details = sim.population.row_in_readonly_form(person_id)
 
     def diagnosis_fn(tests, use_dict: bool = False, report_tried: bool = False):
         return generic_hsi.healthcare_system.dx_manager.run_dx_test(

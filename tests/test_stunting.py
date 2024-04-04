@@ -1,4 +1,3 @@
-from collections import namedtuple
 import os
 from pathlib import Path
 
@@ -237,7 +236,7 @@ def test_routine_assessment_for_chronic_undernutrition_if_stunted_and_correctly_
     df.loc[person_id, 'age_years'] = 2
     df.loc[person_id, 'age_exact_year'] = 2.0
     df.loc[person_id, "un_HAZ_category"] = "-3<=HAZ<-2"
-    patient_details = namedtuple("PatientDetails", df.columns)(*df.loc[person_id])
+    patient_details = sim.population.row_in_readonly_form(person_id)
 
     # Make the probability of stunting checking/diagnosis as 1.0
     sim.modules['Stunting'].parameters['prob_stunting_diagnosed_at_generic_appt'] = 1.0
@@ -305,7 +304,7 @@ def test_routine_assessment_for_chronic_undernutrition_if_stunted_but_no_checkin
     df.loc[person_id, 'age_years'] = 2
     df.loc[person_id, 'age_exact_year'] = 2.0
     df.loc[person_id, "un_HAZ_category"] = "HAZ<-3"
-    patient_details = namedtuple("PatientDetails", df.columns)(*df.loc[person_id])
+    patient_details = sim.population.row_in_readonly_form(person_id)
 
     # Make the probability of stunting checking/diagnosis as 0.0
     sim.modules['Stunting'].parameters['prob_stunting_diagnosed_at_generic_appt'] = 0.0
@@ -350,7 +349,7 @@ def test_routine_assessment_for_chronic_undernutrition_if_not_stunted(seed):
     df.loc[person_id, 'age_years'] = 2
     df.loc[person_id, 'age_exact_year'] = 2.0
     df.loc[person_id, 'un_HAZ_category'] = 'HAZ>=-2'
-    patient_details = namedtuple("PatientDetails", df.columns)(*df.loc[person_id])
+    patient_details = sim.population.row_in_readonly_form(person_id)
 
     # Subject the person to `do_at_generic_first_appt`
     sim.modules["Stunting"].do_at_generic_first_appt(patient_id=person_id, patient_details=patient_details)

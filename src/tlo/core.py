@@ -14,7 +14,6 @@ from typing import (
     Callable,
     Dict,
     List,
-    NamedTuple,
     Optional,
     Set,
     TypeAlias,
@@ -26,6 +25,7 @@ import pandas as pd
 
 if TYPE_CHECKING:
     from tlo.methods.healthsystem import HealthSystem
+    from tlo.population import PatientDetails
     from tlo.simulation import Simulation
 
 DiagnosisFunction: TypeAlias = Callable[[str, bool, bool], Any]
@@ -399,7 +399,7 @@ class Module:
     def do_at_generic_first_appt(
         self,
         patient_id: int,
-        patient_details: Optional[NamedTuple] = None,
+        patient_details: Optional[PatientDetails] = None,
         symptoms: Optional[List[str]] = None,
         diagnosis_function: Optional[DiagnosisFunction] = None,
         consumables_checker: Optional[ConsumablesChecker] = None,
@@ -457,7 +457,7 @@ class Module:
     def do_at_generic_first_appt_emergency(
         self,
         patient_id: int,
-        patient_details: Optional[NamedTuple] = None,
+        patient_details: Optional[PatientDetails] = None,
         symptoms: Optional[List[str]] = None,
         diagnosis_function: Optional[DiagnosisFunction] = None,
         consumables_checker: Optional[ConsumablesChecker] = None,
