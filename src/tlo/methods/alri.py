@@ -1445,7 +1445,6 @@ class Alri(Module):
                 tclose=self.sim.date + pd.DateOffset(days=1),
                 priority=1,
             )
-        return {}
 
     def do_at_generic_first_appt_emergency(
         self,

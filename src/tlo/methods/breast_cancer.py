@@ -576,7 +576,6 @@ class BreastCancer(Module):
                 module=self,
             )
             self.healthsystem.schedule_hsi_event(event, topen=self.sim.date, priority=0)
-        return {}
 
 
 # ---------------------------------------------------------------------------------------------------------

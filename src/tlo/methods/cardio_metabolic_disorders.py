@@ -860,7 +860,6 @@ class CardioMetabolicDisorders(Module):
                 has_any_cmd_symptom=has_any_cmd_symptom,
             )
             self.healthsystem.schedule_hsi_event(event, topen=self.sim.date, priority=0)
-        return {}
 
     def do_at_generic_first_appt_emergency(
         self,
@@ -896,7 +895,6 @@ class CardioMetabolicDisorders(Module):
                 events_to_investigate=ev_to_investigate,
             )
             self.healthsystem.schedule_hsi_event(event, topen=self.sim.date, priority=1)
-        return {}
 
 
 class Tracker:

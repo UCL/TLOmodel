@@ -217,9 +217,8 @@ class Copd(Module):
         * If severe --> give the inhaler and schedule the HSI for Treatment
         * Otherwise --> just give inhaler.
         """
-        patient_details_updates = {}
-
         if ('breathless_moderate' in symptoms) or ('breathless_severe' in symptoms):
+            patient_details_updates = {}
             # Give inhaler if patient does not already have one
             if not patient_details.ch_has_inhaler and consumables_checker(
                 self.item_codes["bronchodilater_inhaler"]
@@ -233,7 +232,7 @@ class Copd(Module):
                 self.healthsystem.schedule_hsi_event(
                     event, topen=self.sim.date, priority=0
                 )
-        return patient_details_updates
+            return patient_details_updates
 
     def do_at_generic_first_appt(
         self,
@@ -252,8 +251,6 @@ class Copd(Module):
                 symptoms=symptoms,
                 consumables_checker=consumables_checker,
             )
-        else:
-            return {}
 
     def do_at_generic_first_appt_emergency(
         self,

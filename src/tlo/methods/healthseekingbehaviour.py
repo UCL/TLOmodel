@@ -265,7 +265,6 @@ class HealthSeekingBehaviour(Module):
                 person_id=patient_id,
             )
             self.healthsystem.schedule_hsi_event(event, priority=0, topen=self.sim.date)
-        return {}
 
 # ---------------------------------------------------------------------------------------------------------
 #   REGULAR POLLING EVENT

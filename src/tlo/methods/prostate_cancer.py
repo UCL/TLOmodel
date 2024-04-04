@@ -604,7 +604,6 @@ class ProstateCancer(Module):
                     person_id=patient_id, module=self
                 )
                 self.healthsystem.schedule_hsi_event(event, **scheduling_options)
-        return {}
 
 
 # ---------------------------------------------------------------------------------------------------------

@@ -301,7 +301,6 @@ class Mockitis(Module):
                 person_id=patient_id,
             )
             self.healthsystem.schedule_hsi_event(event, priority=1, topen=self.sim.date)
-        return {}
 
 class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
     """
