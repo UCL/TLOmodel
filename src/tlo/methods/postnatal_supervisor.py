@@ -8,7 +8,7 @@ from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMix
 from tlo.lm import LinearModel
 from tlo.methods import Metadata, postnatal_supervisor_lm, pregnancy_helper_functions
 from tlo.methods.causes import Cause
-from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.hsi_event import HSI_Event
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

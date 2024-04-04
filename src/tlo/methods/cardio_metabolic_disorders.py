@@ -26,7 +26,7 @@ from tlo.methods import Metadata
 from tlo.methods import demography as de
 from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
-from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date
 
@@ -1151,7 +1151,11 @@ class CardioMetabolicDisordersWeightLossEvent(Event, IndividualScopeEventMixin):
             return
         else:
             if self.module.rng.random_sample() < self.module.parameters['pr_bmi_reduction']:
-                df.at[person_id, 'li_bmi'] -= 1
+                # for bmi equal to 1, we decrease it to np.nan to avoid a new category error
+                if not df.at[person_id, 'li_bmi'] > 1:
+                    df.at[person_id, 'li_bmi'] = np.nan
+                else:
+                    df.at[person_id, 'li_bmi'] -= 1
                 df.at[person_id, 'nc_weight_loss_worked'] = True
 
 
