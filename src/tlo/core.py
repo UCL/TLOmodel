@@ -401,7 +401,7 @@ class Module:
     def do_at_generic_first_appt(
         self,
         patient_id: int,
-        patient_details: NamedTuple],
+        patient_details: NamedTuple,
         symptoms: List[str],
         diagnosis_function: DiagnosisFunction,
         consumables_checker: ConsumablesChecker,
