@@ -39,20 +39,26 @@ jobs:
       profiling-on-sha: ${{ steps.determine-correct-sha.outputs.result }}
       profiling-event-trigger: ${{ steps.set-github-info.outputs.event }}
     steps:
+      - id: determine-if-pr-comment
+        name: Determine if this is a PR comment
+        run: |
+          if ! [ -z "${{ github.event.issue.pull_request }}" ]; then echo "is-pr=true" >> "${GITHUB_OUTPUT}"; else echo "is-pr=false" >> "${GITHUB_OUTPUT}"; fi
+
       - id: determine-correct-sha
+        name: Determine the SHA to run profiling on
         uses: actions/github-script@v7
         with:
           result-encoding: string
           script: |
-            if (!context.payload.issue.pull_request) {
-              return context.sha;
+            if ("${{ steps.determine-if-pr-comment.outputs.is-pr }}" === "true") {
+              const { data: pr } = await github.rest.pulls.get({
+                owner: context.issue.owner,
+                repo: context.issue.repo,
+                pull_number: context.issue.number,
+              });
+              return pr.head.sha;
             };
-            const { data: pr } = await github.rest.pulls.get({
-              owner: context.issue.owner,
-              repo: context.issue.repo,
-              pull_number: context.issue.number,
-            });
-            return pr.head.sha;
+            return context.sha;
 
       - id: set-profiling-filename
         name: Set profiling output file name
