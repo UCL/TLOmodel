@@ -291,7 +291,6 @@ class ChronicSyndrome(Module):
                 person_id=patient_id,
             )
             self.healthsystem.schedule_hsi_event(event, topen=self.sim.date, priority=1)
-        return {}
 
 class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
 

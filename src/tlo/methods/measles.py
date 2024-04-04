@@ -214,7 +214,6 @@ class Measles(Module):
         if "rash" in symptoms:
             event = HSI_Measles_Treatment(person_id=patient_id, module=self)
             self.healthsystem.schedule_hsi_event(event, priority=0, topen=self.sim.date)
-        return {}
 
 
 class MeaslesEvent(RegularEvent, PopulationScopeEventMixin):

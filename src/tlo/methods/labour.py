@@ -2326,7 +2326,6 @@ class Labour(Module):
                     topen=self.sim.date,
                     tclose=self.sim.date + pd.DateOffset(days=1),
                 )
-        return {}
 
 class LabourOnsetEvent(Event, IndividualScopeEventMixin):
     """

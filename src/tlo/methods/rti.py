@@ -2568,7 +2568,6 @@ class RTI(Module):
             return self._common_first_appt_steps(
                 patient_id=patient_id, patient_details=patient_details
             )
-        return {}
 
     def do_at_generic_first_appt_emergency(
         self,
@@ -2584,7 +2583,6 @@ class RTI(Module):
                 patient_id=patient_id,
                 patient_details=patient_details
             )
-        return {}
 
 
 # ---------------------------------------------------------------------------------------------------------

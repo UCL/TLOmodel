@@ -402,7 +402,6 @@ class Epilepsy(Module):
         if "seizures" in symptoms:
             event = HSI_Epilepsy_Start_Anti_Epileptic(person_id=patient_id, module=self)
             self.healthsystem.schedule_hsi_event(event, priority=0, topen=self.sim.date)
-        return {}
 
 
 class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):

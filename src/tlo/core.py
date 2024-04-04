@@ -408,7 +408,7 @@ class Module:
         facility_level: str,
         treatment_id: str,
         random_state: RandomState,
-    ) -> IndividualPropertyUpdates:
+    ) -> Union[IndividualPropertyUpdates, None]:
         """
         Actions to be take during a NON-emergency generic HSI.
 
@@ -434,7 +434,17 @@ class Module:
         row in the population DataFrame.
         Key/value pairs should be the column name and the new value to
         assign to the patient.
-        In the event no updates are required, return an empty dictionary.
+        In the event no updates are required; return an object that evaluates
+        to False when cast to a bool. Your options are:
+        - Omit a return statement and value (preferred).
+        - Return an empty dictionary. Use this case when patient details
+        might need updating conditionally, on EG patient symptoms or consumable
+        availability. In which case, an empty dictionary should be created and
+        key-value pairs added to this dictionary as such conditionals are checked.
+        If no conditionals are met, the empty dictionary will be returned.
+        - Use a return statement with no values (use if the logic of your
+        module-specific method necessitates the explicit return).
+        - Return None (not recommended, use "return" on its own, as above).
 
         :param patient_id: Row index (ID) of the individual target of the HSI event in the population DataFrame.
         :param patient_details: Patient details as provided in the population DataFrame.
@@ -445,7 +455,7 @@ class Module:
         :param treatment_id: The treatment id of the HSI event triggering the generic appointment.
         :param random_state: Random number generator to be used when making random choices during event creation.
         """
-        return {}
+        return None
 
     def do_at_generic_first_appt_emergency(
         self,
@@ -457,7 +467,7 @@ class Module:
         facility_level: Optional[str] = None,
         treatment_id: Optional[str] = None,
         random_state: Optional[RandomState] = None,
-    ) -> IndividualPropertyUpdates:
+    ) -> Union[IndividualPropertyUpdates, None]:
         """
         Actions to be take during an EMERGENCY generic HSI.
         Call signature and return values are identical to the
@@ -467,4 +477,4 @@ class Module:
         events when a patient presents symptoms indicative of the
         corresponding illness or condition.
         """
-        return {}
+        return None

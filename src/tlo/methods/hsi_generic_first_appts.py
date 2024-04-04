@@ -91,7 +91,11 @@ class HSI_BaseGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
             )
             # Record any requested DataFrame updates, but do not implement yet
             # NOTE: |= syntax is only available in Python >=3.9
-            proposed_patient_details_updates = {**proposed_patient_details_updates, **module_patient_updates}
+            if module_patient_updates:
+                proposed_patient_details_updates = {
+                    **proposed_patient_details_updates,
+                    **module_patient_updates,
+                }
 
         # Perform any DataFrame updates that were requested, all in one go.
         df.loc[self.target, proposed_patient_details_updates.keys()] = proposed_patient_details_updates.values()

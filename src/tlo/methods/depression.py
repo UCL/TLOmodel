@@ -621,9 +621,7 @@ class Depression(Module):
         patient_details: NamedTuple,
         **kwargs
     ) -> IndividualPropertyUpdates:
-        if patient_details.age_years <= 5:
-            return {}
-        else:
+        if patient_details.age_years > 5:
             return self.do_at_generic_first_appt_emergency(
                 patient_details=patient_details,
                 **kwargs,
@@ -645,7 +643,6 @@ class Depression(Module):
                 person_id=patient_id,
                 diagnosis_function=diagnosis_function,
             )
-        return {}
 
 
 # ---------------------------------------------------------------------------------------------------------

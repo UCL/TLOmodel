@@ -1521,7 +1521,6 @@ class Hiv(Module):
                 do_not_refer_if_neg=True,
             )
             self.healthsystem.schedule_hsi_event(event, priority=0, topen=self.sim.date)
-        return {}
 
 # ---------------------------------------------------------------------------
 #   Main Polling Event

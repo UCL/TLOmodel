@@ -1698,8 +1698,6 @@ class PregnancySupervisor(Module):
                 person_id=patient_id,
             )
             self.healthsystem.schedule_hsi_event(event, **scheduling_options)
-        return {}
-
 
 class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
     """ This is the PregnancySupervisorEvent, it is a weekly event which has four primary functions.

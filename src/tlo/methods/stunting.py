@@ -311,7 +311,6 @@ class Stunting(Module):
                     priority=2,  # <-- lower priority that for wasting and most other HSI
                     topen=self.sim.date,
                 )
-        return {}
 
 class Models:
     def __init__(self, module):

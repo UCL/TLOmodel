@@ -564,7 +564,6 @@ class OtherAdultCancer(Module):
                 module=self,
             )
             self.healthsystem.schedule_hsi_event(event, priority=0, topen=self.sim.date)
-        return {}
 
 
 # ---------------------------------------------------------------------------------------------------------
