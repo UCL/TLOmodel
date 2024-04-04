@@ -6,7 +6,7 @@ including the malaria RDT using DxTest
 """
 
 from pathlib import Path
-from typing import List, Literal, NamedTuple, Union
+from typing import List, Literal, NamedTuple, Optional, Union
 
 import pandas as pd
 
@@ -668,11 +668,11 @@ class Malaria(Module):
         self,
         true_malaria_infection_type: str,
         diagnosis_function: DiagnosisFunction,
-        patient_id: int,
-        fever_is_a_symptom: bool,
-        patient_age: Union[int, float],
-        facility_level: str,
-        treatment_id: str,
+        patient_id: Optional[int] = None,
+        fever_is_a_symptom: Optional[bool] = True,
+        patient_age: Optional[Union[int, float]] = None,
+        facility_level: Optional[str] = None,
+        treatment_id: Optional[str] = None,
     ) -> Literal["severe_malaria", "clinical_malaria", "negative_malaria_test"]:
         """
         Run by an HSI when an adult presents with fever.
