@@ -134,12 +134,12 @@ class HSI_BaseGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         patient_details = namedtuple("PatientDetails", df.columns)(*df.loc[self.target])
 
-        proposed_df_updates = {}
+        proposed_patient_details_updates = {}
 
         module_order = self._module_order(modules.keys())
         for name in module_order:
             module = modules[name]
-            df_updates = getattr(module, self.MODULE_METHOD_ON_APPLY)(
+            module_patient_updates = getattr(module, self.MODULE_METHOD_ON_APPLY)(
                 patient_id=self.target,
                 patient_details=patient_details,
                 symptoms=symptoms,
@@ -150,10 +150,10 @@ class HSI_BaseGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
             )
             # Record any requested DataFrame updates, but do not implement yet
             # NOTE: |= syntax is only available in Python >=3.9
-            proposed_df_updates = {**proposed_df_updates, **df_updates}
+            proposed_patient_details_updates = {**proposed_patient_details_updates, **module_patient_updates}
 
         # Perform any DataFrame updates that were requested, all in one go.
-        df.loc[self.target, proposed_df_updates.keys()] = proposed_df_updates.values()
+        df.loc[self.target, proposed_patient_details_updates.keys()] = proposed_patient_details_updates.values()
 
     def _module_order(self, module_list: Iterable[str]) -> List[str]:
         """"""
