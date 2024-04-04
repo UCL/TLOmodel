@@ -2,7 +2,7 @@
 This is the Depression Module.
 """
 from pathlib import Path
-from typing import List, NamedTuple
+from typing import List, NamedTuple, Optional
 
 import numpy as np
 import pandas as pd
@@ -546,29 +546,25 @@ class Depression(Module):
         """
         This member function is called when a person is in an HSI,
         and there may need to be screening for depression.
-        
-        Key differences from the generic HSI appointments are that any HSI events
-        that are to be opened as a result of this check are scheduled immediately,
-        and updates to the population are applied immediately to reflect this.
         """
         if self._check_for_suspected_depression(
             self.sim.modules["SymptomManager"].has_what(person_id),
             hsi_event.TREATMENT_ID,
             self.sim.population.props.at[person_id, "de_ever_diagnosed_depression"],
         ):
-            df_updates = self.do_when_suspected_depression(
+            patient_details_updates = self.do_when_suspected_depression(
                 person_id=person_id, hsi_event=hsi_event
             )
-            self.sim.population.props.loc[person_id, df_updates.keys()] = (
-                df_updates.values()
+            self.sim.population.props.loc[person_id, patient_details_updates.keys()] = (
+                patient_details_updates.values()
             )
         return
 
     def do_when_suspected_depression(
         self,
         person_id: int,
-        diagnosis_function: DiagnosisFunction = None,
-        hsi_event: HSI_Event = None,
+        diagnosis_function: Optional[DiagnosisFunction] = None,
+        hsi_event: Optional[HSI_Event] = None,
     ) -> IndividualPropertyUpdates:
         """
         This is called by any HSI event when depression is suspected or otherwise investigated.
@@ -585,14 +581,14 @@ class Depression(Module):
         :param hsi_event: The HSI_Event that triggered this call.
         :returns: Values as per the output of do_at_generic_first_appt().
         """
-        df_updates = {}
+        patient_details_updates = {}
 
         if diagnosis_function is None:
             assert isinstance(
                 hsi_event, HSI_Event
             ), "No diagnosis test function, nor HSI_Event instance, supplied."
 
-            def tmp_dx_fn(tests, use_dict: bool = False, report_tried: bool = False):
+            def diagnosis_function(tests, use_dict: bool = False, report_tried: bool = False):
                 return hsi_event.healthcare_system.dx_manager.run_dx_test(
                     tests,
                     hsi_event=hsi_event,
@@ -600,12 +596,10 @@ class Depression(Module):
                     report_dxtest_tried=report_tried,
                 )
 
-            diagnosis_function = tmp_dx_fn
-
         # Assess for depression and initiate treatments for depression if positive diagnosis
         if diagnosis_function('assess_depression'):
             # If depressed: diagnose the person with depression
-            df_updates['de_ever_diagnosed_depression'] = True
+            patient_details_updates['de_ever_diagnosed_depression'] = True
 
             scheduling_options = {"priority": 0, "topen": self.sim.date}
             # Provide talking therapy
@@ -620,7 +614,7 @@ class Depression(Module):
                 HSI_Depression_Start_Antidepressant(module=self, person_id=person_id),
                 **scheduling_options,
             )
-        return df_updates
+        return patient_details_updates
 
     def do_at_generic_first_appt(
         self,

@@ -2496,7 +2496,7 @@ class RTI(Module):
         Shared logic steps that are used by the RTI module when a generic HSI
         event is to be scheduled.
         """
-        df_updates = {}
+        patient_details_updates = {}
         # Things to do upon a person presenting at a Non-Emergency Generic
         # HSI if they have an injury.
         persons_injuries = [
@@ -2515,7 +2515,7 @@ class RTI(Module):
                         topen=self.sim.date + DateOffset(days=1),
                         tclose=self.sim.date + DateOffset(days=15),
                     )
-            df_updates["rt_diagnosed"] = True
+            patient_details_updates["rt_diagnosed"] = True
 
             # The injured person has been diagnosed in A&E and needs to progress further
             # through the health system.
@@ -2555,7 +2555,7 @@ class RTI(Module):
                     topen=self.sim.date + DateOffset(days=1),
                     tclose=self.sim.date + DateOffset(days=15),
                 )
-        return df_updates
+        return patient_details_updates
 
     def do_at_generic_first_appt(
         self,

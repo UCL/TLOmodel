@@ -715,7 +715,7 @@ class Malaria(Module):
         treatment_id: str,
         **kwargs,
     ) -> IndividualPropertyUpdates:
-        df_updates = {}
+        patient_details_updates = {}
 
         malaria_associated_symptoms = {
             "fever",
@@ -739,7 +739,7 @@ class Malaria(Module):
             )
             # Treat / refer based on diagnosis
             if malaria_test_result == "severe_malaria":
-                df_updates["ma_dx_counter"] = patient_details.ma_dx_counter + 1
+                patient_details_updates["ma_dx_counter"] = patient_details.ma_dx_counter + 1
                 event = HSI_Malaria_Treatment_Complicated(person_id=patient_id, module=self)
                 self.healthsystem.schedule_hsi_event(
                     event, priority=0, topen=self.sim.date
@@ -747,12 +747,12 @@ class Malaria(Module):
 
             # return type 'clinical_malaria' includes asymptomatic infection
             elif malaria_test_result == "clinical_malaria":
-                df_updates["ma_dx_counter"] = patient_details.ma_dx_counter + 1
+                patient_details_updates["ma_dx_counter"] = patient_details.ma_dx_counter + 1
                 event = HSI_Malaria_Treatment(person_id=patient_id, module=self)
                 self.healthsystem.schedule_hsi_event(
                     event, priority=1, topen=self.sim.date
                 )
-        return df_updates
+        return patient_details_updates
 
     def do_at_generic_first_appt_emergency(
         self,
@@ -768,7 +768,7 @@ class Malaria(Module):
         # emergency generic HSI and has a fever.
         # (Quick diagnosis algorithm - just perfectly recognises the
         # symptoms of severe malaria.)
-        df_updates = {}
+        patient_details_updates = {}
 
         if 'severe_malaria' in symptoms:
             if patient_details.ma_tx == 'none':
@@ -785,7 +785,7 @@ class Malaria(Module):
 
                 # if any symptoms indicative of malaria and they have parasitaemia (would return a positive rdt)
                 if malaria_test_result in ('severe_malaria', 'clinical_malaria'):
-                    df_updates['ma_dx_counter'] = patient_details.ma_dx_counter + 1
+                    patient_details_updates['ma_dx_counter'] = patient_details.ma_dx_counter + 1
 
                     # Launch the HSI for treatment for Malaria, HSI_Malaria_Treatment will determine correct treatment
                     event = HSI_Malaria_Treatment_Complicated(
@@ -794,7 +794,7 @@ class Malaria(Module):
                     self.healthsystem.schedule_hsi_event(
                         event, priority=0, topen=self.sim.date
                     )
-        return df_updates
+        return patient_details_updates
 
 class MalariaPollingEventDistrict(RegularEvent, PopulationScopeEventMixin):
     """
