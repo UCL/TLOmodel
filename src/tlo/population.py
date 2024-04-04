@@ -1,7 +1,7 @@
 """The Person and Population classes."""
 
-from collections import namedtuple
 import math
+from collections import namedtuple
 from typing import Any, Tuple, Type, TypeAlias
 
 import pandas as pd
