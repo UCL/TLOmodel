@@ -299,7 +299,6 @@ class Stunting(Module):
         if (
             (patient_details.age_years <= 5)
             and is_stunted
-            and (p_stunting_diagnosed > self.rng.random_sample())
         ):
             # Schedule the HSI for provision of treatment based on the
             # probability of stunting diagnosis
