@@ -8,7 +8,6 @@ lead to `HSI_GenericEmergencyFirstApptAtFacilityLevel1`.
 """
 from __future__ import annotations
 
-from collections import namedtuple
 from typing import TYPE_CHECKING, Literal, OrderedDict
 
 from tlo import logging
@@ -74,7 +73,7 @@ class HSI_BaseGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
         # Dynamically create immutable container with the target's details stored.
         # This will avoid repeat DataFrame reads when we call the module-level functions.
         df = self.sim.population.props
-        patient_details = namedtuple("PatientDetails", df.columns)(*df.loc[self.target])
+        patient_details = self.sim.population.row_in_readonly_form(self.target)
 
         proposed_patient_details_updates = {}
 
