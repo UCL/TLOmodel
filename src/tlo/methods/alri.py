@@ -19,12 +19,13 @@ of the complications.
 Health care seeking is prompted by the onset of the symptom. The individual can be treated; if successful the risk of
 death is lowered and the person is "cured" (symptom resolved) some days later.
 """
+from __future__ import annotations
 
 import types
 from collections import defaultdict
 from itertools import chain
 from pathlib import Path
-from typing import Dict, List, NamedTuple, Tuple, Union
+from typing import TYPE_CHECKING, Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -38,6 +39,9 @@ from tlo.methods.causes import Cause
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date, sample_outcome
+
+if TYPE_CHECKING:
+    from tlo.population import PatientDetails
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -1422,7 +1426,7 @@ class Alri(Module):
     def do_at_generic_first_appt(
         self,
         patient_id: int,
-        patient_details: NamedTuple,
+        patient_details: PatientDetails,
         symptoms: List[str],
         facility_level: str,
         **kwargs,

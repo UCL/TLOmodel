@@ -1,8 +1,10 @@
 """
 This is the Depression Module.
 """
+from __future__ import annotations
+
 from pathlib import Path
-from typing import Any, Callable, List, NamedTuple, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -16,6 +18,9 @@ from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.symptommanager import Symptom
+
+if TYPE_CHECKING:
+    from tlo.population import PatientDetails
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -624,9 +629,9 @@ class Depression(Module):
     def do_at_generic_first_appt(
         self,
         patient_id: int,
-        patient_details: NamedTuple,
+        patient_details: PatientDetails,
         symptoms: List[str],
-        diagnosis_function: Callable[[str, bool, bool], Any],
+        diagnosis_function: DiagnosisFunction,
         treatment_id: str,
         **kwargs,
     ) -> IndividualPropertyUpdates:
@@ -643,7 +648,7 @@ class Depression(Module):
     def do_at_generic_first_appt_emergency(
         self,
         patient_id: int,
-        patient_details: NamedTuple,
+        patient_details: PatientDetails,
         symptoms: List[str],
         diagnosis_function: DiagnosisFunction,
         treatment_id: str,

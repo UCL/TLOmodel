@@ -10,11 +10,12 @@ The joint Cardio-Metabolic Disorders model determines onset, outcome and treatme
 And:
 * Chronic Lower Back Pain
 """
+from __future__ import annotations
 
 import math
 from itertools import combinations
 from pathlib import Path
-from typing import List, NamedTuple
+from typing import TYPE_CHECKING, List
 
 import numpy as np
 import pandas as pd
@@ -30,6 +31,9 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date
+
+if TYPE_CHECKING:
+    from tlo.population import PatientDetails
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
@@ -802,7 +806,7 @@ class CardioMetabolicDisorders(Module):
     def do_at_generic_first_appt(
         self,
         patient_id: int,
-        patient_details: NamedTuple,
+        patient_details: PatientDetails,
         symptoms: List[str],
         **kwargs
     ) -> IndividualPropertyUpdates:
@@ -864,7 +868,7 @@ class CardioMetabolicDisorders(Module):
     def do_at_generic_first_appt_emergency(
         self,
         patient_id: int,
-        patient_details: NamedTuple = None,
+        patient_details: PatientDetails = None,
         symptoms: List[str] = None,
         **kwargs,
     ) -> IndividualPropertyUpdates:

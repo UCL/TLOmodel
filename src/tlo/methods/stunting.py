@@ -8,10 +8,11 @@ every month and determines the risk of onset of non-severe stunting, progression
 recovery. The Generic HSI calls do_at_generic_first_appt for any HSI with a child under 5 years old:
 if they have any stunting they are provided with an intervention - `HSI_Stunting_ComplementaryFeeding`.
 """
+from __future__ import annotations
 
 from collections import namedtuple
 from pathlib import Path
-from typing import NamedTuple, Union
+from typing import TYPE_CHECKING, Union
 
 import numpy as np
 import pandas as pd
@@ -23,6 +24,9 @@ from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, Reg
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods.hsi_event import HSI_Event
+
+if TYPE_CHECKING:
+    from tlo.population import PatientDetails
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -284,7 +288,7 @@ class Stunting(Module):
     def do_at_generic_first_appt(
         self,
         patient_id: int,
-        patient_details: NamedTuple,
+        patient_details: PatientDetails,
         **kwargs,
     ) -> IndividualPropertyUpdates:
         # This is called by the a generic HSI event for every child aged

@@ -4,9 +4,10 @@ it also holds the hsi events pertaining to malaria testing and treatment
 including the malaria RDT using DxTest
 
 """
+from __future__ import annotations
 
 from pathlib import Path
-from typing import List, Literal, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, List, Literal, Optional, Union
 
 import pandas as pd
 
@@ -20,6 +21,9 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date
+
+if TYPE_CHECKING:
+    from tlo.population import PatientDetails
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -708,7 +712,7 @@ class Malaria(Module):
     def do_at_generic_first_appt(
         self,
         patient_id: int,
-        patient_details: NamedTuple,
+        patient_details: PatientDetails,
         symptoms: List[str],
         diagnosis_function: DiagnosisFunction,
         facility_level: str,
@@ -757,7 +761,7 @@ class Malaria(Module):
     def do_at_generic_first_appt_emergency(
         self,
         patient_id: int,
-        patient_details: NamedTuple,
+        patient_details: PatientDetails,
         symptoms: List[str],
         diagnosis_function: DiagnosisFunction,
         facility_level: str,

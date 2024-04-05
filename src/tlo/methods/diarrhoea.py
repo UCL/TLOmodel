@@ -16,9 +16,11 @@ Health care seeking is prompted by the onset of the symptom diarrhoea. The indiv
  * See todo
 
 """
+from __future__ import annotations
+
 from collections.abc import Iterable
 from pathlib import Path
-from typing import List, NamedTuple
+from typing import TYPE_CHECKING, List
 
 import numpy as np
 import pandas as pd
@@ -32,6 +34,9 @@ from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
 from tlo.util import random_date, sample_outcome
+
+if TYPE_CHECKING:
+    from tlo.population import PatientDetails
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -938,7 +943,7 @@ class Diarrhoea(Module):
     def do_at_generic_first_appt(
         self,
         patient_id: int,
-        patient_details: NamedTuple,
+        patient_details: PatientDetails,
         symptoms: List[str],
         diagnosis_function: DiagnosisFunction,
         **kwargs,
