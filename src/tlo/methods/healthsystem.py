@@ -203,6 +203,10 @@ class HealthSystem(Module):
             Types.STRING, "Name of priority policy adopted"),
         'year_mode_switch': Parameter(
             Types.INT, "Year in which mode switch is enforced"),
+         'scale_to_effective_capabilities': Parameter(
+            Types.BOOL, "In year in which mode switch takes place, will rescale available capabilities to match those"
+                        "that were effectively used (on average) in the past year if this is set to True. This way,"
+                        "we can approximate overtime and rushing of appts even in mode 2."),
         'year_cons_availability_switch': Parameter(
             Types.INT, "Year in which consumable availability switch is enforced. The change happens"
                        "on 1st January of that year.)"),
@@ -453,7 +457,7 @@ class HealthSystem(Module):
         self.healthsystemscheduler = None
 
         # Create pointer to the `HealthSystemSummaryCounter` helper class
-        self._summary_counter = HealthSystemSummaryCounter()
+        self._summary_counter = HealthSystemSummaryCounter(self)
 
         # Create counter for the running total of footprint of all the HSIs being run today
         self.running_total_footprint: Counter = Counter()
@@ -1687,6 +1691,11 @@ class HealthSystem(Module):
             summary_by_officer['Minutes_Used'] / summary_by_officer['Total_Minutes_Per_Day']
         ).replace([np.inf, -np.inf, np.nan], 0.0)
         summary_by_officer.index.names = ['Officer_Type', 'Facility_Level']
+        
+        # Store information on fraction of time used, broken down by officer type and level
+        summary_by_officer['OfficerType_FacilityLevel'] = summary_by_officer.index.get_level_values('Officer_Type') + '_' + summary_by_officer.index.get_level_values('Facility_Level')
+        for index, row in summary_by_officer.iterrows():
+            self._summary_counter._frac_time_used_by_officer_type_and_level[row['OfficerType_FacilityLevel']] += float(row['Fraction_Time_Used'])
 
         logger.info(key='Capacity',
                     data={
@@ -2456,7 +2465,9 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 class HealthSystemSummaryCounter:
     """Helper class to keep running counts of HSI and the state of the HealthSystem and logging summaries."""
 
-    def __init__(self):
+    def __init__(self, module: HealthSystem):
+        self.module = module
+        #super().__init__(module)
         self._reset_internal_stores()
 
     def _reset_internal_stores(self) -> None:
@@ -2473,6 +2484,8 @@ class HealthSystemSummaryCounter:
         self._never_ran_appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
 
         self._frac_time_used_overall = []  # Running record of the usage of the healthcare system
+        self._frac_time_used_by_officer_type_and_level = Counter()
+        
         self._squeeze_factor_by_hsi_event_name = defaultdict(list)  # Running record the squeeze-factor applying to each
         #                                                           treatment_id. Key is of the form:
         #                                                           "<TREATMENT_ID>:<HSI_EVENT_NAME>"
@@ -2523,6 +2536,31 @@ class HealthSystemSummaryCounter:
 
     def write_to_log_and_reset_counters(self):
         """Log summary statistics reset the data structures."""
+        
+        # If we are at the end of the year preceeding the mode switch, and if wanted to rescale capabilities to capture effective availability as was recorded, on
+        # average, in the past year, do so here.
+        # Notice that capabilities will only be expanded through this process (i.e. won't reduce available capabilities if these were under-used in the last year).
+        if self.module.sim.date.year == (self.module.parameters['year_mode_switch']-1) and self.module.parameters['scale_to_effective_capabilities']:
+        
+            pattern = r"FacilityID_(\w+)_Officer_(\w+)"
+            
+            # Calculate the average fraction of time used by officer type and level over the past year.
+            # Use len(self._frac_time_used_overall) as proxy for number of days in past year.
+            for key in self._frac_time_used_by_officer_type_and_level:
+                self._frac_time_used_by_officer_type_and_level[key] /= float(len(self._frac_time_used_overall))
+            
+            for officer in self.module._daily_capabilities.keys():
+                matches = re.match(pattern, officer)
+                # Extract ID and officer type from
+                facility_id = int(matches.group(1))
+                officer_type = matches.group(2)
+                level = self.module._facility_by_facility_id[facility_id].level
+                # Only rescale if rescaling factor is greater than 1 (i.e. don't reduce available capabilities
+                # if these were under-used in last year).
+                if self._frac_time_used_by_officer_type_and_level[officer_type + "_" + level] > 1:
+                    self.module._daily_capabilities[officer] *= \
+                        self._frac_time_used_by_officer_type_and_level[officer_type + "_" + level]
+
 
         logger_summary.info(
             key="HSI_Event",
