@@ -137,76 +137,83 @@ for _, row in _df.iterrows():
         counts_of_available[item] += num
 
 # Load consumables cost data
-unit_price_consumable = workbook_cost["consumables"][['Item_Code', 'Chosen_price_per_unit (USD)']]
+unit_price_consumable = workbook_cost["consumables"]
+unit_price_consumable = unit_price_consumable.rename(columns=unit_price_consumable.iloc[0])
+unit_price_consumable = unit_price_consumable[['Item_Code', 'Final_price_per_chosen_unit (USD, 2023)']].reset_index(drop=True).iloc[1:]
+unit_price_consumable = unit_price_consumable[unit_price_consumable['Item_Code'].notna()]
 unit_price_consumable = unit_price_consumable.set_index('Item_Code').to_dict(orient='index')
 
 # Multiply number of items needed by cost of consumable
-cost_of_consumables_dispensed = dict(zip(unit_price_consumable, (unit_price_consumable[key]['Chosen_price_per_unit (USD)'] *
+cost_of_consumables_dispensed = dict(zip(unit_price_consumable, (unit_price_consumable[key]['Final_price_per_chosen_unit (USD, 2023)'] *
                                                 counts_of_available[key] for key in unit_price_consumable)))
 total_cost_of_consumables_dispensed = sum(value for value in cost_of_consumables_dispensed.values() if not np.isnan(value))
 
 # Cost of consumables stocked
 # Estimate the stock to dispensed ratio from OpenLMIS data
 lmis_consumable_usage = pd.read_csv(path_for_new_resourcefiles / "ResourceFile_Consumables_availability_and_usage.csv")
-# Collapse by item_code
-lmis_consumable_usage_by_item = lmis_consumable_usage.groupby(['item_code'])[['closing_bal', 'dispensed']].sum()
-lmis_consumable_usage_by_item['stock_to_dispensed_ratio'] = lmis_consumable_usage_by_item['closing_bal']/lmis_consumable_usage_by_item['dispensed']
-# Trim top and bottom 5 percentile value for stock_to_dispensed_ratio
-percentile_5 = lmis_consumable_usage_by_item['stock_to_dispensed_ratio'].quantile(0.05)
-percentile_95 = lmis_consumable_usage_by_item['stock_to_dispensed_ratio'].quantile(0.95)
-lmis_consumable_usage_by_item.loc[lmis_consumable_usage_by_item['stock_to_dispensed_ratio'] > percentile_95, 'stock_to_dispensed_ratio'] = percentile_95
-lmis_consumable_usage_by_item.loc[lmis_consumable_usage_by_item['stock_to_dispensed_ratio'] < percentile_5, 'stock_to_dispensed_ratio'] = percentile_5
-lmis_stock_to_dispensed_ratio_by_item = lmis_consumable_usage_by_item['stock_to_dispensed_ratio']
-lmis_stock_to_dispensed_ratio_by_item.to_dict()
-average_stock_to_dispensed_ratio = lmis_stock_to_dispensed_ratio_by_item.mean()
+# Collapse individual facilities
+lmis_consumable_usage_by_item_level_month = lmis_consumable_usage.groupby(['category', 'item_code', 'district', 'fac_type_tlo', 'month'])[['closing_bal', 'dispensed', 'received']].sum()
+df = lmis_consumable_usage_by_item_level_month # Drop rows where monthly OpenLMIS data wasn't available
+df = df.loc[df.index.get_level_values('month') != "Aggregate"]
+opening_bal_january = df.loc[df.index.get_level_values('month') == 'January', 'closing_bal'] + \
+                      df.loc[df.index.get_level_values('month') == 'January', 'dispensed'] - \
+                      df.loc[df.index.get_level_values('month') == 'January', 'received']
+closing_bal_december = df.loc[df.index.get_level_values('month') == 'December', 'closing_bal']
+total_consumables_inflow_during_the_year = df.loc[df.index.get_level_values('month') != 'January', 'received'].groupby(level=[0,1,2,3]).sum() +\
+                                         opening_bal_january.reset_index(level='month', drop=True) -\
+                                         closing_bal_december.reset_index(level='month', drop=True)
+total_consumables_outflow_during_the_year  = df['dispensed'].groupby(level=[0,1,2,3]).sum()
+inflow_to_outflow_ratio = total_consumables_inflow_during_the_year.div(total_consumables_outflow_during_the_year, fill_value=1)
+inflow_to_outflow_ratio.to_dict()
+
+# Edit outlier ratios
+inflow_to_outflow_ratio.loc[inflow_to_outflow_ratio < 1] = 1 # Ratio can't be less than 1
+inflow_to_outflow_ratio.loc[inflow_to_outflow_ratio > inflow_to_outflow_ratio.quantile(0.95)] = inflow_to_outflow_ratio.quantile(0.95) # Trim values greater than the 95th percentile
+average_inflow_to_outflow_ratio_ratio = inflow_to_outflow_ratio.mean()
+#inflow_to_outflow_ratio.loc[inflow_to_outflow_ratio.isna()] = average_inflow_to_outflow_ratio_ratio # replace missing with average
 
 # Multiply number of items needed by cost of consumable
-cost_of_consumables_stocked = dict(zip(unit_price_consumable, (unit_price_consumable[key]['Chosen_price_per_unit (USD)'] *
+inflow_to_outflow_ratio_by_consumable = inflow_to_outflow_ratio.groupby(level='item_code').mean()
+# TODO Consider whether a more disaggregated version of the ratio dictionary should be applied
+cost_of_consumables_stocked = dict(zip(unit_price_consumable, (unit_price_consumable[key]['Final_price_per_chosen_unit (USD, 2023)'] *
                                                 counts_of_available[key] *
-                                                lmis_stock_to_dispensed_ratio_by_item.get(key, average_stock_to_dispensed_ratio)
+                                                inflow_to_outflow_ratio_by_consumable.get(key, average_inflow_to_outflow_ratio_ratio)
                                                 for key in counts_of_available)))
 total_cost_of_consumables_stocked = sum(value for value in cost_of_consumables_stocked.values() if not np.isnan(value))
 
 scenario_cost_financial['Consumables'] = total_cost_of_consumables_stocked
 
-# Explore the ratio of dispensed drugs to drug stock
-####################################################
-# Collapse monthly data
-lmis_consumable_usage_by_district_and_level = lmis_consumable_usage.groupby(['district', 'fac_type_tlo','category', 'item_code'])[['closing_bal', 'dispensed']].sum()
-lmis_consumable_usage_by_district_and_level.reset_index()
-lmis_consumable_usage_by_district_and_level['stock_to_dispensed_ratio'] = lmis_consumable_usage_by_district_and_level['closing_bal']/lmis_consumable_usage_by_district_and_level['dispensed']
 
+# Explore the ratio of consumable inflows to outflows
+######################################################
 # TODO: Only consider the months for which original OpenLMIS data was available for closing_stock and dispensed
-def plot_stock_to_dispensed(_df, plot_var, groupby_var, outlier_percentile):
-    # Exclude the top x percentile (outliers) from the plot
-    percentile_excluded = _df[plot_var].quantile(outlier_percentile)
-    _df_without_outliers = _df[_df[plot_var] <= percentile_excluded]
+def plot_inflow_to_outflow_ratio(_dict, groupby_var):
+    # Convert Dict to dataframe
+    flattened_data = [(level1, level2, level3, level4, value) for (level1, level2, level3, level4), value in
+                      inflow_to_outflow_ratio.items()] # Flatten dictionary into a list of tuples
+    _df = pd.DataFrame(flattened_data, columns=['category', 'item_code', 'district', 'fac_type_tlo', 'inflow_to_outflow_ratio']) # Convert flattened data to DataFrame
 
     # Plot the bar plot
     plt.figure(figsize=(10, 6))
-    sns.barplot(data=_df_without_outliers, x=groupby_var, y=plot_var, ci=None)
+    sns.barplot(data=_df , x=groupby_var, y= 'inflow_to_outflow_ratio', errorbar=None)
 
     # Add points representing the distribution of individual values
-    sns.stripplot(data=_df_without_outliers, x=groupby_var, y=plot_var, color='black', size=5, alpha=0.2)
+    sns.stripplot(data=_df, x=groupby_var, y='inflow_to_outflow_ratio', color='black', size=5, alpha=0.2)
 
     # Set labels and title
     plt.xlabel(groupby_var)
-    plt.ylabel('Stock to Dispensed Ratio')
-    plt.title('Average Stock to Dispensed Ratio by ' + f'{groupby_var}')
+    plt.ylabel('Inflow to Outflow Ratio')
+    plt.title('Average Inflow to Outflow Ratio by ' + f'{groupby_var}')
     plt.xticks(rotation=45)
 
     # Show plot
     plt.tight_layout()
-    plt.savefig(costing_outputs_folder / 'stock_to_dispensed_ratio_by' f'{groupby_var}' )
+    plt.savefig(costing_outputs_folder / 'inflow_to_outflow_ratio_by' f'{groupby_var}' )
 
-plot_stock_to_dispensed(lmis_consumable_usage_by_district_and_level, 'stock_to_dispensed_ratio',
-                        'fac_type_tlo', 0.95)
-plot_stock_to_dispensed(lmis_consumable_usage_by_district_and_level, 'stock_to_dispensed_ratio',
-                        'district', 0.95)
-plot_stock_to_dispensed(lmis_consumable_usage_by_district_and_level, 'stock_to_dispensed_ratio',
-                        'category', 0.95)
-plot_stock_to_dispensed(lmis_consumable_usage_by_district_and_level, 'stock_to_dispensed_ratio',
-                        'item_code', 0.95)
+plot_inflow_to_outflow_ratio(inflow_to_outflow_ratio, 'fac_type_tlo')
+plot_inflow_to_outflow_ratio(inflow_to_outflow_ratio, 'district')
+plot_inflow_to_outflow_ratio(inflow_to_outflow_ratio, 'item_code')
+plot_inflow_to_outflow_ratio(inflow_to_outflow_ratio, 'category')
 
 # Compare financial costs with actual budget data
 ####################################################
