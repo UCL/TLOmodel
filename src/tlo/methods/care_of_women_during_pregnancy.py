@@ -2481,7 +2481,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalD
 
                     days = est_length_preg * 10
                     updated_cons = {k: v * days for (k, v) in
-                                    self.item_codes_preg_consumables['oral_diabetic_treatment'].items()}
+                                    self.module.item_codes_preg_consumables['oral_diabetic_treatment'].items()}
 
                     avail = pregnancy_helper_functions.return_cons_avail(
                         self.module, self,  cons=updated_cons, opt_cons=None)
@@ -2505,7 +2505,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalD
                     required_vials = np.ceil(required_units_per_preg/1000)
 
                     updated_cons = {k: v * required_vials for (k, v) in
-                                    self.item_codes_preg_consumables['insulin_treatment'].items()}
+                                    self.module.item_codes_preg_consumables['insulin_treatment'].items()}
 
                     avail = pregnancy_helper_functions.return_cons_avail(
                         self.module, self, cons=updated_cons, opt_cons=None)
