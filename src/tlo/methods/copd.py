@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from pathlib import Path
-from typing import Dict, List, NamedTuple
+from typing import TYPE_CHECKING, Dict, List
 
 import pandas as pd
 
@@ -13,6 +15,9 @@ from tlo.methods.causes import Cause
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date
+
+if TYPE_CHECKING:
+    from tlo.population import PatientDetails
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -208,7 +213,7 @@ class Copd(Module):
     def _common_first_appt(
         self,
         patient_id: int,
-        patient_details: NamedTuple,
+        patient_details: PatientDetails,
         symptoms: List[str],
         consumables_checker: ConsumablesChecker,
     ):
@@ -237,7 +242,7 @@ class Copd(Module):
     def do_at_generic_first_appt(
         self,
         patient_id: int,
-        patient_details: NamedTuple,
+        patient_details: PatientDetails,
         symptoms: List[str],
         consumables_checker: ConsumablesChecker,
         **kwargs,
@@ -255,7 +260,7 @@ class Copd(Module):
     def do_at_generic_first_appt_emergency(
         self,
         patient_id: int,
-        patient_details: NamedTuple,
+        patient_details: PatientDetails,
         symptoms: List[str],
         consumables_checker: ConsumablesChecker,
         **kwargs,

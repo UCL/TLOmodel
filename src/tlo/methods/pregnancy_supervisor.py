@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from pathlib import Path
-from typing import NamedTuple
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
@@ -26,6 +28,9 @@ from tlo.methods.care_of_women_during_pregnancy import (
 )
 from tlo.methods.causes import Cause
 from tlo.util import BitsetHandler
+
+if TYPE_CHECKING:
+    from tlo.population import PatientDetails
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -1669,7 +1674,7 @@ class PregnancySupervisor(Module):
     def do_at_generic_first_appt_emergency(
         self,
         patient_id: int,
-        patient_details: NamedTuple,
+        patient_details: PatientDetails,
         **kwargs,
     ) -> IndividualPropertyUpdates:
         scheduling_options = {

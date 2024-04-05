@@ -2,8 +2,10 @@
 Road traffic injury module.
 
 """
+from __future__ import annotations
+
 from pathlib import Path
-from typing import List, NamedTuple
+from typing import TYPE_CHECKING, List
 
 import numpy as np
 import pandas as pd
@@ -16,6 +18,9 @@ from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.symptommanager import Symptom
+
+if TYPE_CHECKING:
+    from tlo.population import PatientDetails
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
@@ -2490,7 +2495,7 @@ class RTI(Module):
     def _common_first_appt_steps(
         self,
         patient_id: int,
-        patient_details: NamedTuple,
+        patient_details: PatientDetails,
     ) -> IndividualPropertyUpdates:
         """
         Shared logic steps that are used by the RTI module when a generic HSI
@@ -2560,7 +2565,7 @@ class RTI(Module):
     def do_at_generic_first_appt(
         self,
         patient_id: int,
-        patient_details: NamedTuple,
+        patient_details: PatientDetails,
         symptoms: List[str],
         **kwargs
     ) -> IndividualPropertyUpdates:
@@ -2572,7 +2577,7 @@ class RTI(Module):
     def do_at_generic_first_appt_emergency(
         self,
         patient_id: int,
-        patient_details: NamedTuple,
+        patient_details: PatientDetails,
         symptoms: List[str],
         **kwargs
     ) -> IndividualPropertyUpdates:

@@ -6,9 +6,10 @@ Limitations to note:
 * Perhaps need to add (i) wood burning fire / indoor pollution (ii) white maize flour in diet (both risk factors)
 * Footprints of HSI -- pending input from expert on resources required.
 """
+from __future__ import annotations
 
 from pathlib import Path
-from typing import List, NamedTuple
+from typing import TYPE_CHECKING, List
 
 import pandas as pd
 
@@ -22,6 +23,9 @@ from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.symptommanager import Symptom
+
+if TYPE_CHECKING:
+    from tlo.population import PatientDetails
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -570,7 +574,7 @@ class OesophagealCancer(Module):
     def do_at_generic_first_appt(
         self,
         patient_id: int,
-        patient_details: NamedTuple,
+        patient_details: PatientDetails,
         symptoms: List[str],
         **kwargs,
     ) -> IndividualPropertyUpdates:

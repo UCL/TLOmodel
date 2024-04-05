@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, NamedTuple
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
@@ -20,6 +20,9 @@ from tlo.util import BitsetHandler
 
 if TYPE_CHECKING:
     from numpy.random import RandomState
+
+    from tlo.population import PatientDetails
+
 
 # Standard logger
 logger = logging.getLogger(__name__)
@@ -2300,7 +2303,7 @@ class Labour(Module):
     def do_at_generic_first_appt_emergency(
         self,
         patient_id: int,
-        patient_details: NamedTuple,
+        patient_details: PatientDetails,
         random_state: RandomState,
         **kwargs,
     ) -> IndividualPropertyUpdates:
