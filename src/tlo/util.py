@@ -141,8 +141,8 @@ class BitsetHandler:
             assert column in population.props.columns, (
                 'Column not found in population dataframe'
             )
-            assert population.props[column].dtype == np.int64, (
-                'Column must be of int64 type'
+            assert population.props[column].dtype == np.uint64, (
+                'Column must be of uint64 type'
             )
         self._column = column
 
@@ -150,11 +150,11 @@ class BitsetHandler:
     def df(self) -> pd.DataFrame:
         return self._population.props
 
-    def element_repr(self, *elements: str) -> np.int64:
+    def element_repr(self, *elements: str) -> np.uint64:
         """Returns integer representation of the specified element(s)"""
-        return np.int64(sum(self._element_to_int_map[el] for el in elements))
+        return np.uint64(sum(self._element_to_int_map[el] for el in elements))
 
-    def to_strings(self, integer: np.int64) -> Set[str]:
+    def to_strings(self, integer: np.uint64) -> Set[str]:
         """Given an integer value, returns the corresponding set of strings.
 
         :param integer: The integer value for the bitset.

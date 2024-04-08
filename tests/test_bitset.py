@@ -13,9 +13,9 @@ from tlo.util import BitsetHandler
 def dataframe():
     return pd.DataFrame(
         data={
-            'symptoms': pd.Series(0, index=range(5), dtype=np.dtype('int64')),
-            'sy_stomachache': pd.Series(0, index=range(5), dtype=np.dtype('int64')),
-            'sy_injury':  pd.Series(0, index=range(5), dtype=np.dtype('int64')),
+            'symptoms': pd.Series(0, index=range(5), dtype=np.dtype('uint64')),
+            'sy_stomachache': pd.Series(0, index=range(5), dtype=np.dtype('uint64')),
+            'sy_injury':  pd.Series(0, index=range(5), dtype=np.dtype('uint64')),
             'is_alive': pd.Series(True, index=range(5), dtype=np.dtype('bool')),
             'age': pd.Series([5, 10, 20, 30, 40], index=range(5), dtype=np.dtype('int'))
         }
@@ -65,7 +65,7 @@ def test_error_on_too_many_elements(population):
 
 
 def test_error_on_incorrect_column_dtype(population):
-    with pytest.raises(AssertionError, match='int64'):
+    with pytest.raises(AssertionError, match='uint64'):
         BitsetHandler(population, 'is_alive', [str(i) for i in range(8)])
 
 
@@ -338,12 +338,14 @@ def test_linearmodel_with_bitset(dataframe, symptoms):
 
     out = lm.predict(dataframe)
     assert pytest.approx(21.0) == out.loc[3]
+    
+    vomitting_element_repr = symptoms.element_repr('vomiting')
 
     # has specific symptoms - vomiting
     lm = LinearModel(
         LinearModelType.ADDITIVE,
         0.0,
-        Predictor('symptoms').apply(lambda x: 2.0 if x & symptoms.element_repr('vomiting') else 20.0)
+        Predictor('symptoms').apply(lambda x: 2.0 if np.uint64(x) & symptoms.element_repr('vomiting') else 20.0)
     )
 
     out = lm.predict(dataframe)
@@ -351,8 +353,8 @@ def test_linearmodel_with_bitset(dataframe, symptoms):
 
     # put more complex rules in its own function
     def symptom_coeff_calc(bitset):
-        if bitset & symptoms.element_repr('fever'):
-            if bitset & symptoms.element_repr('vomiting'):
+        if np.uint64(bitset) & symptoms.element_repr('fever'):
+            if np.uint64(bitset) & symptoms.element_repr('vomiting'):
                 return 1
             else:
                 return 2
