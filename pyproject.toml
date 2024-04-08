@@ -58,6 +58,7 @@ dev = [
     "pylint",
     "ruff",
     # Profiling
+    "ansi2html",
     "psutil",
     "pyinstrument>=4.3",
     # Building requirements files
