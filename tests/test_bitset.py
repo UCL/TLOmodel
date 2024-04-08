@@ -338,8 +338,6 @@ def test_linearmodel_with_bitset(dataframe, symptoms):
 
     out = lm.predict(dataframe)
     assert pytest.approx(21.0) == out.loc[3]
-    
-    vomitting_element_repr = symptoms.element_repr('vomiting')
 
     # has specific symptoms - vomiting
     lm = LinearModel(
