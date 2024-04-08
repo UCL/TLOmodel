@@ -442,7 +442,6 @@ class Module:
         :param treatment_id: The treatment id of the HSI event triggering the generic appointment.
         :param random_state: Random number generator to be used when making random choices during event creation.
         """
-        return None
 
     def do_at_generic_first_appt_emergency(
         self,
@@ -463,4 +462,3 @@ class Module:
         events when a patient presents symptoms indicative of the
         corresponding illness or condition.
         """
-        return None
