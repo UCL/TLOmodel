@@ -69,7 +69,7 @@ class Specifiable:
         Types.DATA_FRAME: object,
         Types.STRING: object,
         Types.DICT: object,
-        Types.BITSET: 'uint64',
+        Types.BITSET: np.uint64,
     }
 
     # Map our Types to Python types
@@ -141,7 +141,7 @@ class Property(Specifiable):
         float: float("nan"),
         "category": float("nan"),
         object: float("nan"),
-        "uint64": 0,
+        np.uint64: 0,
     }
 
     def __init__(self, type_, description, categories=None, *, ordered=False):

@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from pandas import DateOffset
 
-from tlo import Population
+from tlo import Population, Property, Types
 
 # Default mother_id value, assigned to individuals initialised as adults at the start of the simulation.
 DEFAULT_MOTHER_ID = -1e7
@@ -118,6 +118,9 @@ def sample_outcome(probs: pd.DataFrame, rng: np.random.RandomState):
     return outcome.loc[outcome != '_'].to_dict()
 
 
+BitsetDType = Property.PANDAS_TYPE_MAP[Types.BITSET]
+
+
 class BitsetHandler:
     """Provides methods to operate on int column(s) in the population dataframe as a bitset"""
 
@@ -141,8 +144,8 @@ class BitsetHandler:
             assert column in population.props.columns, (
                 'Column not found in population dataframe'
             )
-            assert population.props[column].dtype == np.uint64, (
-                'Column must be of uint64 type'
+            assert population.props[column].dtype == BitsetDType, (
+                f'Column must be of {BitsetDType} type'
             )
         self._column = column
 
@@ -150,11 +153,11 @@ class BitsetHandler:
     def df(self) -> pd.DataFrame:
         return self._population.props
 
-    def element_repr(self, *elements: str) -> np.uint64:
+    def element_repr(self, *elements: str) -> BitsetDType:
         """Returns integer representation of the specified element(s)"""
-        return np.uint64(sum(self._element_to_int_map[el] for el in elements))
+        return BitsetDType(sum(self._element_to_int_map[el] for el in elements))
 
-    def to_strings(self, integer: np.uint64) -> Set[str]:
+    def to_strings(self, integer: BitsetDType) -> Set[str]:
         """Given an integer value, returns the corresponding set of strings.
 
         :param integer: The integer value for the bitset.
