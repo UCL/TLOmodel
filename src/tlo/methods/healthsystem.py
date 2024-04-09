@@ -203,7 +203,7 @@ class HealthSystem(Module):
             Types.STRING, "Name of priority policy adopted"),
         'year_mode_switch': Parameter(
             Types.INT, "Year in which mode switch is enforced"),
-         'scale_to_effective_capabilities': Parameter(
+        'scale_to_effective_capabilities': Parameter(
             Types.BOOL, "In year in which mode switch takes place, will rescale available capabilities to match those"
                         "that were effectively used (on average) in the past year if this is set to True. This way,"
                         "we can approximate overtime and rushing of appts even in mode 2."),
