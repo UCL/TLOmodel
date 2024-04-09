@@ -234,7 +234,6 @@ def test_routine_assessment_for_chronic_undernutrition_if_stunted_and_correctly_
     df = sim.population.props
     person_id = 0
     df.loc[person_id, 'age_years'] = 2
-    df.loc[person_id, 'age_exact_year'] = 2.0
     df.loc[person_id, "un_HAZ_category"] = "-3<=HAZ<-2"
     patient_details = sim.population.row_in_readonly_form(person_id)
 
@@ -302,7 +301,6 @@ def test_routine_assessment_for_chronic_undernutrition_if_stunted_but_no_checkin
     df = sim.population.props
     person_id = 0
     df.loc[person_id, 'age_years'] = 2
-    df.loc[person_id, 'age_exact_year'] = 2.0
     df.loc[person_id, "un_HAZ_category"] = "HAZ<-3"
     patient_details = sim.population.row_in_readonly_form(person_id)
 
@@ -347,7 +345,6 @@ def test_routine_assessment_for_chronic_undernutrition_if_not_stunted(seed):
     df = sim.population.props
     person_id = 0
     df.loc[person_id, 'age_years'] = 2
-    df.loc[person_id, 'age_exact_year'] = 2.0
     df.loc[person_id, 'un_HAZ_category'] = 'HAZ>=-2'
     patient_details = sim.population.row_in_readonly_form(person_id)
 
