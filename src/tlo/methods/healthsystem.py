@@ -1724,9 +1724,10 @@ class HealthSystem(Module):
         
         # Store information on fraction of time used, broken down by officer type and level
         summary_by_officer['OfficerType_FacilityLevel'] = summary_by_officer.index.get_level_values('Officer_Type') + '_' + summary_by_officer.index.get_level_values('Facility_Level')
+        
         for index, row in summary_by_officer.iterrows():
             self._summary_counter._frac_time_used_by_officer_type_and_level[row['OfficerType_FacilityLevel']] += float(row['Fraction_Time_Used'])
-
+ 
         logger.info(key='Capacity',
                     data={
                         'Frac_Time_Used_Overall': fraction_time_used_overall,
@@ -2574,13 +2575,12 @@ class HealthSystemSummaryCounter:
         # this may eventually come into conflict with the Switcher functions.
         if (self.module.sim.date.year == self.module.year_mode_switch-1) and self.module.scale_to_effective_capabilities:
 
-            print("I AM RESCALING CAPABILITIES----------------")
             pattern = r"FacilityID_(\w+)_Officer_(\w+)"
             # Calculate the average fraction of time used by officer type and level over the past year.
             # Use len(self._frac_time_used_overall) as proxy for number of days in past year.
             for key in self._frac_time_used_by_officer_type_and_level:
                 self._frac_time_used_by_officer_type_and_level[key] /= float(len(self._frac_time_used_overall))
-            
+
             for officer in self.module._daily_capabilities.keys():
                 matches = re.match(pattern, officer)
                 # Extract ID and officer type from
@@ -2588,13 +2588,10 @@ class HealthSystemSummaryCounter:
                 officer_type = matches.group(2)
                 level = self.module._facility_by_facility_id[facility_id].level
                 # Only rescale if rescaling factor is greater than 1 (i.e. don't reduce available capabilities
-                # if these were under-used in last year).
+                # if these were under-used the previous year).
                 if self._frac_time_used_by_officer_type_and_level[officer_type + "_" + level] > 1:
-                    print("For officer ", officer)
-                    print(self.module._daily_capabilities[officer])
                     self.module._daily_capabilities[officer] *= \
                         self._frac_time_used_by_officer_type_and_level[officer_type + "_" + level]
-                    print("After", self.module._daily_capabilities[officer])
 
         logger_summary.info(
             key="HSI_Event",
@@ -2707,7 +2704,7 @@ class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
         # ... If requested, also do the scaling for the population growth that has occurred since the last year
         if config['scale_HR_by_popsize']:
             self.module._daily_capabilities *= this_year_pop_size / self.last_year_pop_size
-
+                        
         # Save current population size as that for 'last year'.
         self.last_year_pop_size = this_year_pop_size
 
