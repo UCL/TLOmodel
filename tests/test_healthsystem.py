@@ -396,6 +396,77 @@ def test_run_in_mode_1_with_capacity(tmpdir, seed):
 
 
 @pytest.mark.slow
+def test_rescaling_capabilities_based_on_squeeze_factors(tmpdir, seed):
+    # Capabilities should increase if considering HealthSystem set-up which leads to
+    # high squeeze factors
+
+    # Establish the simulation object
+    sim = Simulation(
+        start_date=start_date,
+        seed=seed,
+        log_config={
+            "filename": "log",
+            "directory": tmpdir,
+            "custom_levels": {
+                "tlo.methods.healthsystem": logging.DEBUG,
+            }
+        }
+    )
+
+    # Define the service availability
+    service_availability = ['*']
+
+    # Register the core modules
+    # Set the year in which mode is changed to start_date + 1 year, and mode after that still 1.
+    # Check that in second year, squeeze factor is smaller on average.
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=service_availability,
+                                           capabilities_coefficient=0.0000001,  # This will mean that capabilities are
+                                                                                # very close to 0 everywhere.
+                                                                                # (If the value was 0, then it would
+                                                                                # be interpreted as the officers NEVER
+                                                                                # being available at a facility,
+                                                                                # which would mean the HSIs should not
+                                                                                # run (as opposed to running with
+                                                                                # a very high squeeze factor)).
+                                           year_mode_switch = start_date.year + 1,
+                                           scale_to_effective_capabilities = True,
+                                           mode_appt_constraints=1),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 mockitis.Mockitis(),
+                 chronicsyndrome.ChronicSyndrome()
+                 )
+
+    # Run the simulation
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=end_date)
+    check_dtypes(sim)
+
+    # read the results
+    output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
+
+    # Do the checks
+    assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
+    hsi_events = output['tlo.methods.healthsystem']['HSI_Event']
+    hsi_events['date'] = pd.to_datetime(hsi_events['date']).dt.year
+    # assert hsi_events['did_run'].all()
+
+    # Check that all squeeze factors were high in 2010, but not all were high in 2011 thanks to rescaling of capabilities
+    assert (
+        hsi_events.loc[(hsi_events['Person_ID'] >= 0) & (hsi_events['Number_By_Appt_Type_Code'] != {}) & (hsi_events['date'] == 2010),
+                       'Squeeze_Factor'] >= 100.0
+    ).all()  # All the events that had a non-blank footprint experienced high squeezing.
+    assert not (
+        hsi_events.loc[(hsi_events['Person_ID'] >= 0) & (hsi_events['Number_By_Appt_Type_Code'] != {}) & (hsi_events['date'] == 2011),
+                       'Squeeze_Factor'] >= 100.0
+    ).all()  # All the events that had a non-blank footprint experienced high squeezing.
+
+
+@pytest.mark.slow
 def test_run_in_mode_1_with_almost_no_capacity(tmpdir, seed):
     # Events should run but (for those with non-blank footprints) with high squeeze factors
     # (Mode 1 -> elastic constraints)

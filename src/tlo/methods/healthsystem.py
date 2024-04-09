@@ -312,6 +312,8 @@ class HealthSystem(Module):
         resourcefilepath: Optional[Path] = None,
         service_availability: Optional[List[str]] = None,
         mode_appt_constraints: Optional[int] = None,
+        year_mode_switch: Optional[int] = None,
+        scale_to_effective_capabilities: Optional[bool] = None,
         cons_availability: Optional[str] = None,
         beds_availability: Optional[str] = None,
         randomise_queue: bool = True,
@@ -333,6 +335,8 @@ class HealthSystem(Module):
             all HSI events run with no squeeze factor, 1: elastic constraints, all HSI
             events run with squeeze factor, 2: hard constraints, only HSI events with
             no squeeze factor run.
+        :param year_mode_switch: Year in which mode_appt_constraints switch is enforced
+        :param scale_to_effective_capabilities: Before switching mode, if True this rescales capabilities based on squeeze factors
         :param cons_availability: If 'default' then use the availability specified in the ResourceFile; if 'none', then
         let no consumable be ever be available; if 'all', then all consumables are always available. When using 'all'
         or 'none', requests for consumables are not logged.
@@ -383,6 +387,12 @@ class HealthSystem(Module):
         if mode_appt_constraints is not None:
             assert mode_appt_constraints in {0, 1, 2}
         self.arg_mode_appt_constraints = mode_appt_constraints
+        
+        self.year_mode_switch = None
+        self.arg_year_mode_switch = year_mode_switch
+        
+        self.scale_to_effective_capabilities = None
+        self.arg_scale_to_effective_capabilities = scale_to_effective_capabilities
 
         self.rng_for_hsi_queue = None  # Will be a dedicated RNG for the purpose of randomising the queue
         self.rng_for_dx = None  # Will be a dedicated RNG for the purpose of determining Dx Test results
@@ -588,6 +598,12 @@ class HealthSystem(Module):
 
         # Determine mode_appt_constraints
         self.mode_appt_constraints = self.get_mode_appt_constraints()
+        
+        # Determine year mode switch
+        self.year_mode_switch = self.get_year_mode_switch()
+
+        # Determine year mode switch
+        self.scale_to_effective_capabilities = self.get_scale_to_effective_capabilities()
 
         # Determine service_availability
         self.service_availability = self.get_service_availability()
@@ -1036,6 +1052,20 @@ class HealthSystem(Module):
         return self.parameters['mode_appt_constraints'] \
             if self.arg_mode_appt_constraints is None \
             else self.arg_mode_appt_constraints
+            
+    def get_year_mode_switch(self) -> int:
+        """Returns `year_mode_switch`. (Should be equal to what is specified by the parameter, but overwrite with
+        what was provided in argument if an argument was specified -- provided for backward compatibility/debugging.)"""
+        return self.parameters['year_mode_switch'] \
+            if self.arg_year_mode_switch is None \
+            else self.arg_year_mode_switch
+
+    def get_scale_to_effective_capabilities(self) -> int:
+        """Returns `scale_to_effective_capabilities`. (Should be equal to what is specified by the parameter, but overwrite with
+        what was provided in argument if an argument was specified -- provided for backward compatibility/debugging.)"""
+        return self.parameters['scale_to_effective_capabilities'] \
+            if self.arg_scale_to_effective_capabilities is None \
+            else self.arg_scale_to_effective_capabilities
 
     def get_use_funded_or_actual_staffing(self) -> str:
         """Returns `use_funded_or_actual_staffing`. (Should be equal to what is specified by the parameter, but
@@ -2540,10 +2570,12 @@ class HealthSystemSummaryCounter:
         # If we are at the end of the year preceeding the mode switch, and if wanted to rescale capabilities to capture effective availability as was recorded, on
         # average, in the past year, do so here.
         # Notice that capabilities will only be expanded through this process (i.e. won't reduce available capabilities if these were under-used in the last year).
-        if self.module.sim.date.year == (self.module.parameters['year_mode_switch']-1) and self.module.parameters['scale_to_effective_capabilities']:
-        
+        # Note: Currently relying on module variable rather than parameter for scale_to_effective_capabilities, in order to facilitate testing. However
+        # this may eventually come into conflict with the Switcher functions.
+        if (self.module.sim.date.year == self.module.year_mode_switch-1) and self.module.scale_to_effective_capabilities:
+
+            print("I AM RESCALING CAPABILITIES----------------")
             pattern = r"FacilityID_(\w+)_Officer_(\w+)"
-            
             # Calculate the average fraction of time used by officer type and level over the past year.
             # Use len(self._frac_time_used_overall) as proxy for number of days in past year.
             for key in self._frac_time_used_by_officer_type_and_level:
@@ -2558,9 +2590,11 @@ class HealthSystemSummaryCounter:
                 # Only rescale if rescaling factor is greater than 1 (i.e. don't reduce available capabilities
                 # if these were under-used in last year).
                 if self._frac_time_used_by_officer_type_and_level[officer_type + "_" + level] > 1:
+                    print("For officer ", officer)
+                    print(self.module._daily_capabilities[officer])
                     self.module._daily_capabilities[officer] *= \
                         self._frac_time_used_by_officer_type_and_level[officer_type + "_" + level]
-
+                    print("After", self.module._daily_capabilities[officer])
 
         logger_summary.info(
             key="HSI_Event",
