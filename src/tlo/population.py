@@ -28,6 +28,7 @@ class Population:
     """
 
     __slots__ = (
+        "_patient_details_readonly_type",
         "props",
         "sim",
         "initial_size",
@@ -35,21 +36,6 @@ class Population:
         "next_person_id",
         "new_rows",
     )
-
-    @property
-    def _patient_details_readonly_type(self) -> PatientDetailsType:
-        """
-        Return a tuple-like CLASS that stores the details of a single patient
-        (one row in the population dataframe) in read-only format.
-
-        Properties can be accessed via attribute reference,
-        EG patient_details.age_years.
-
-        See the namedtuple documentation,
-        https://docs.python.org/3/library/collections.html#collections.namedtuple
-        for details on the output type.
-        """
-        return namedtuple("PatientDetails", self.props.columns)
 
     def __init__(self, sim, initial_size: int, append_size: int = None):
         """Create a new population.
@@ -85,6 +71,12 @@ class Population:
 
         # use the person_id of the next person to be added to the dataframe to increase capacity
         self.next_person_id = initial_size
+
+        # create the PatientDetails type now the DataFrame rows have been fixed.
+        # This saves reconstructing the PatientDetailsType each time we want to read a row.
+        self._patient_details_readonly_type: PatientDetailsType = namedtuple(
+            "PatientDetails", self.props.columns
+        )
 
     def _create_props(self, size):
         """Internal helper function to create a properties dataframe.
