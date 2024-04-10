@@ -32,8 +32,8 @@ from tlo.analysis.utils import (
 outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
 
 # Find results_folder associated with a given batch_file (and get most recent [-1])
-results_folder = get_scenario_outputs("effect_of_treatment_packages", outputspath)[-1]
-# results_folder = get_scenario_outputs("exclude_HTM_services.py", outputspath)[-1]
+# results_folder = get_scenario_outputs("effect_of_treatment_packages", outputspath)[-1]
+results_folder = get_scenario_outputs("exclude_services_Mar2024.py", outputspath)[-1]
 
 # Declare path for output graphs from this script
 make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
@@ -436,7 +436,7 @@ ax3.set(title='Malaria',
         ylabel='Malaria Incidence, per 1000')
 ax3.set_xticks(xvals_for_ticks)
 ax3.set_xticklabels("")
-ax3.set_ylim(0, 600)
+ax3.set_ylim(0, 900)
 
 # empty plot
 ax4.axis('off')
@@ -502,7 +502,7 @@ ax7.legend(loc='upper right',
 # empty plot
 ax8.axis('off')
 
-fig.savefig(outputspath / "Epi_outputs_excl_htm.png")
+# fig.savefig(outputspath / "Epi_outputs_excl_htm.png")
 
 plt.show()
 
