@@ -183,6 +183,25 @@ total_cost_of_consumables_stocked = sum(value for value in cost_of_consumables_s
 
 scenario_cost_financial['Consumables'] = total_cost_of_consumables_stocked
 
+# 3. Equipment cost
+# Total cost of equipment required as per SEL (HSSP-III) only at facility IDs where it been used in the simulation
+unit_cost_equipment = workbook_cost["equipment"]
+unit_cost_equipment =   unit_cost_equipment.rename(columns=unit_cost_equipment.iloc[7]).reset_index(drop=True).iloc[8:]
+# Calculate necessary costs based on HSSP-III assumptions
+unit_cost_equipment['service_fee_annual'] = unit_cost_equipment.apply(lambda row: row['unit_purchase_cost'] * 0.8 / 8 if row['unit_purchase_cost'] > 1000 else 0, axis=1) # 80% of the value of the item over 8 years
+unit_cost_equipment['spare_parts_annual'] = unit_cost_equipment.apply(lambda row: row['unit_purchase_cost'] * 0.2 / 8 if row['unit_purchase_cost'] > 1000 else 0, axis=1) # 20% of the value of the item over 8 years
+unit_cost_equipment['upfront_repair_cost_annual'] = unit_cost_equipment.apply(lambda row: row['unit_purchase_cost'] * 0.2 * 0.2 / 8 if row['unit_purchase_cost'] < 250000 else 0, axis=1) # 20% of the value of 20% of the items over 8 years
+unit_cost_equipment['replacement_cost_annual'] = unit_cost_equipment.apply(lambda row: row['unit_purchase_cost'] * 0.1 / 8 if row['unit_purchase_cost'] < 250000 else 0, axis=1) # 10% of the items over 8 years
+
+# TODO From the log, extract the facility IDs which use any equipment item
+# TODO Collapse facility IDs by level of care to get the total number of facilities at each level using an item
+# TODO Multiply number of facilities by level with the quantity needed of each equipment and collapse to get total number of equipment (nationally)
+# TODO Multiply quantity needed with cost per item (this is the repair, replacement, and maintenance cost)
+# TODO Which equipment needs to be newly purchased (currently no assumption made for equipment with cost > $250,000)
+
+
+# 4. Facility running costs
+# Average running costs by facility level and district times the number of facilities in the simulation
 
 # Explore the ratio of consumable inflows to outflows
 ######################################################
