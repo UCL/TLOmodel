@@ -1,4 +1,4 @@
-<div style="text-align: center">
+<div style="text-align: center" align="center">
 <img src="docs/thanzi-la-onse.png" alt="Thanzi La Onze" />
 <br />
 <h1>Thanzi la Onse model</h1>
