@@ -968,7 +968,7 @@ class Hiv(Module):
 
         # First - line ART for adults(age > "ART_age_cutoff_older_child")
         # TDF/3TC/DTG 120/60/50mg, 1 tablet per day
-        # cotrim adult tablet, 1 tablet per day
+        # cotrim adult tablet, 1 tablet per day, units specified in mg * dispensation days
         self.item_codes_for_consumables_required['First-line ART regimen: adult'] = \
             hs.get_item_code_from_item_name("First-line ART regimen: adult")
         self.item_codes_for_consumables_required['First-line ART regimen: adult: cotrimoxazole'] = \
@@ -976,7 +976,7 @@ class Hiv(Module):
 
         # ART for older children aged ("ART_age_cutoff_younger_child" < age <= "ART_age_cutoff_older_child"):
         # ABC/3TC/DTG 120/60/50mg, 3 tablets per day
-        # cotrim paediatric tablet, 4 tablets per day
+        # cotrim paediatric tablet, 4 tablets per day, units specified in mg * dispensation days
         self.item_codes_for_consumables_required['First line ART regimen: older child'] = \
             hs.get_item_code_from_item_name("First line ART regimen: older child")
         self.item_codes_for_consumables_required['First line ART regimen: older child: cotrimoxazole'] = \
@@ -984,7 +984,7 @@ class Hiv(Module):
 
         # ART for younger children aged (age < "ART_age_cutoff_younger_child"):
         # ABC/3TC/DTG 120/60/10mg, 2 tablets per day
-        # cotrim paediatric tablet, 2 tablets per day
+        # cotrim paediatric tablet, 2 tablets per day, units specified in mg * dispensation days
         self.item_codes_for_consumables_required['First line ART regimen: young child'] = \
             hs.get_item_code_from_item_name("First line ART regimen: young child")
         self.item_codes_for_consumables_required['First line ART regimen: young child: cotrimoxazole'] = \
@@ -2643,7 +2643,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 item_codes={self.module.item_codes_for_consumables_required[
                                 'First line ART regimen: young child']: dispensation_days * 2},
                 optional_item_codes={self.module.item_codes_for_consumables_required[
-                                         'First line ART regimen: young child: cotrimoxazole']: dispensation_days * 2},
+                                         'First line ART regimen: young child: cotrimoxazole']: dispensation_days * 240},
                 return_individual_results=True)
 
         elif age_of_person <= p["ART_age_cutoff_older_child"]:
@@ -2652,7 +2652,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 item_codes={self.module.item_codes_for_consumables_required[
                                 'First line ART regimen: older child']: dispensation_days * 3},
                 optional_item_codes={self.module.item_codes_for_consumables_required[
-                    'First line ART regimen: older child: cotrimoxazole']: dispensation_days * 4},
+                    'First line ART regimen: older child: cotrimoxazole']: dispensation_days * 480},
                 return_individual_results=True)
 
         else:
@@ -2661,7 +2661,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 item_codes={self.module.item_codes_for_consumables_required[
                                 'First-line ART regimen: adult']: dispensation_days},
                 optional_item_codes={self.module.item_codes_for_consumables_required[
-                    'First-line ART regimen: adult: cotrimoxazole']: dispensation_days},
+                    'First-line ART regimen: adult: cotrimoxazole']: dispensation_days * 960},
                 return_individual_results=True)
 
         # add drug names to dict
