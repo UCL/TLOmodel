@@ -769,7 +769,7 @@ class Tb(Module):
         self.item_codes_for_consumables_required['tb_isoniazid'] = \
             hs.get_item_code_from_item_name("Isoniazid/Pyridoxine, tablet 300 mg")
 
-        # todo not yet on consumables database
+        # 3hp
         self.item_codes_for_consumables_required['tb_3HP'] = {
             hs.get_item_code_from_item_name("Isoniazid/Rifapentine"): 1}
 
@@ -2489,7 +2489,6 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
                     item_codes={self.module.item_codes_for_consumables_required["tb_ipt"]: 180})
 
             # for all others
-            # todo check 3HP listed in database
             else:
                 # 12 weeks dispensation, once weekly
                 drugs_available = self.get_consumables(
