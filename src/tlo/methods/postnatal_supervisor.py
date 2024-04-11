@@ -1278,8 +1278,8 @@ class HSI_PostnatalSupervisor_TreatmentForObstetricFistula(HSI_Event, Individual
 
         of_repair_cons = \
             {ic('Scalpel blade size 22 (individually wrapped)_100_CMST'): 1,
-             ic('Halothane (fluothane)_250ml_CMST'): 1,  # todo: dose
-             ic('Ceftriaxone 1g, PFR_each_CMST'): 1,  # todo: dose
+             ic('Halothane (fluothane)_250ml_CMST'): 100,  # todo: dose
+             ic('Ceftriaxone 1g, PFR_each_CMST'): 2,  # todo: dose
              ic('Metronidazole 200mg_1000_CMST'): 1,  # todo: dose
              ic('Cannula iv  (winged with injection pot) 18_each_CMST'): 1,
              ic('Paracetamol, tablet, 500 mg'): 8000,
@@ -1289,7 +1289,7 @@ class HSI_PostnatalSupervisor_TreatmentForObstetricFistula(HSI_Event, Individual
              ic("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 2000,
              ic('Sodium chloride, injectable solution, 0,9 %, 500 ml'): 2000,
              ic('Giving set iv administration + needle 15 drops/ml_each_CMST'): 1,
-             ic('Chlorhexidine 1.5% solution_5_CMST'): 1,  # todo: dose
+             ic('Chlorhexidine 1.5% solution_5_CMST'): 50,  # todo: dose
              }
 
         self.get_consumables(item_codes=of_repair_cons)

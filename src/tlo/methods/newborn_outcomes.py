@@ -396,17 +396,17 @@ class NewbornOutcomes(Module):
 
         # -------------------------------------------- VITAMIN K ------------------------------------------
         self.item_codes_nb_consumables['vitamin_k'] = \
-            {ic('vitamin K1  (phytomenadione) 1 mg/ml, 1 ml, inj._100_IDA'): 1}  # todo: dose
+            {ic('vitamin K1  (phytomenadione) 1 mg/ml, 1 ml, inj._100_IDA'): 1}
 
         # -------------------------------------------- EYE CARE  ------------------------------------------
         self.item_codes_nb_consumables['eye_care'] = \
-            {ic('Tetracycline eye ointment, 1 %, tube 5 mg'): 1}  # todo: dose
+            {ic('Tetracycline eye ointment, 1 %, tube 5 mg'): 5}
 
         # ------------------------------------- SEPSIS - FULL SUPPORTIVE CARE ---------------------------------------
         self.item_codes_nb_consumables['sepsis_supportive_care_core'] = \
             {ic('Benzylpenicillin 1g (1MU), PFR_Each_CMST'): 1,  # todo: dose
              ic('Gentamicin 40mg/ml, 2ml_each_CMST'): 1,  # todo: dose
-             ic('Oxygen, 1000 liters, primarily with oxygen cylinders'): 1  # todo: dose
+             ic('Oxygen, 1000 liters, primarily with oxygen cylinders'): 5760  # todo: dose
              }
 
         self.item_codes_nb_consumables['sepsis_supportive_care_optional'] = \

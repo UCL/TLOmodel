@@ -729,7 +729,7 @@ class Labour(Module):
              ic('Foley catheter'): 1,
              ic('Bag, urine, collecting, 2000 ml'): 1,
              ic('Paracetamol, tablet, 500 mg'): 8000,
-             ic('Declofenac injection_1_CMST'): 2,
+             ic('Declofenac injection_each_CMST'): 2,
              ic("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 2000,
              }
 
