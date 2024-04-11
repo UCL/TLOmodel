@@ -305,7 +305,8 @@ class Epi(Module):
         self.cons_item_codes['td'] = get_item_code_from_item_name("Tetanus toxoid, injection")
         self.cons_item_codes['syringes'] = [
             get_item_code_from_item_name("Syringe, Autodisable SoloShot IX "),
-            get_item_code_from_item_name("Safety box for used syringes/needles, 5 liter")]
+            get_item_code_from_item_name("Safety box for used syringes/needles, 5 liter"),
+            get_item_code_from_item_name("Disposables gloves, powder free, 100 pieces per box")]
 
 
 # ---------------------------------------------------------------------------------
