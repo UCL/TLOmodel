@@ -1277,7 +1277,7 @@ class HSI_PostnatalSupervisor_TreatmentForObstetricFistula(HSI_Event, Individual
         ic = self.sim.modules['HealthSystem'].get_item_code_from_item_name
 
         of_repair_cons = \
-            {ic('Scalpel blade size 22 (individually wrapped)_100_CMS'): 1,
+            {ic('Scalpel blade size 22 (individually wrapped)_100_CMST'): 1,
              ic('Halothane (fluothane)_250ml_CMST'): 1,  # todo: dose
              ic('Ceftriaxone 1g, PFR_each_CMST'): 1,  # todo: dose
              ic('Metronidazole 200mg_1000_CMST'): 1,  # todo: dose
