@@ -25,7 +25,7 @@ from tlo.methods import (
 # will seed the random number generators for each module when they are registered.
 # If a seed argument is not given, one is generated. It is output in the log and can be
 # used to reproduce results of a run
-seed = 100
+seed = 200
 
 log_config = {
     "filename": "measles_analysis",   # The name of the output file (a timestamp will be appended).
