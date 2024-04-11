@@ -703,11 +703,11 @@ class Labour(Module):
         # assuming CDK has blade, soap, cord tie
         self.item_codes_lab_consumables['delivery_core'] = \
             {ic('Clean delivery kit'): 1,
-             ic('Chlorhexidine 1.5% solution_5_CMST'): 1,  # todo: dose
+             ic('Chlorhexidine 1.5% solution_5_CMST'): 20,
              }
 
         self.item_codes_lab_consumables['delivery_optional'] = \
-            {ic('Gauze, absorbent 90cm x 40m_each_CMST'): 1,
+            {ic('Gauze, absorbent 90cm x 40m_each_CMST'): 30,
              ic('Cannula iv  (winged with injection pot) 18_each_CMST'): 1,
              ic('Disposables gloves, powder free, 100 pieces per box'): 1,
              ic('Paracetamol, tablet, 500 mg'): 8000
@@ -715,9 +715,9 @@ class Labour(Module):
 
         # -------------------------------------------- CAESAREAN DELIVERY ------------------------------------------
         self.item_codes_lab_consumables['caesarean_delivery_core'] = \
-            {ic('Halothane (fluothane)_250ml_CMST'): 1,  # todo: dose
-             ic('Ceftriaxone 1g, PFR_each_CMST'): 1,  # todo: dose
-             ic('Metronidazole 200mg_1000_CMST'): 1,  # todo: dose
+            {ic('Halothane (fluothane)_250ml_CMST'): 100,
+             ic('Ceftriaxone 1g, PFR_each_CMST'): 2,
+             ic('Metronidazole 200mg_1000_CMST'): 1,  # todo: replace
              }
 
         self.item_codes_lab_consumables['caesarean_delivery_optional'] = \
@@ -729,15 +729,15 @@ class Labour(Module):
              ic('Foley catheter'): 1,
              ic('Bag, urine, collecting, 2000 ml'): 1,
              ic('Paracetamol, tablet, 500 mg'): 8000,
-             ic('Declofenac injection_each_CMST'): 1,   # todo: dose
+             ic('Declofenac injection_1_CMST'): 2,
              ic("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 2000,
              }
 
         # -------------------------------------------- OBSTETRIC SURGERY ----------------------------------------------
         self.item_codes_lab_consumables['obstetric_surgery_core'] = \
-            {ic('Halothane (fluothane)_250ml_CMST'): 1,  # todo: dose
-             ic('Ceftriaxone 1g, PFR_each_CMST'): 1,  # todo: dose
-             ic('Metronidazole 200mg_1000_CMST'): 1,  # todo: dose
+            {ic('Halothane (fluothane)_250ml_CMST'): 100,
+             ic('Ceftriaxone 1g, PFR_each_CMST'): 2,
+             ic('Metronidazole 200mg_1000_CMST'): 1,  # todo: replace
              }
 
         self.item_codes_lab_consumables['obstetric_surgery_optional'] = \
@@ -749,39 +749,37 @@ class Labour(Module):
              ic('Foley catheter'): 1,
              ic('Bag, urine, collecting, 2000 ml'): 1,
              ic('Paracetamol, tablet, 500 mg'): 8000,
-             ic('Declofenac injection_each_CMST'): 1,  # todo: dose
+             ic('Declofenac injection_each_CMST'): 2,
              ic("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 2000,
              }
 
         # -------------------------------------------- ABX FOR PROM -------------------------------------------------
         self.item_codes_lab_consumables['abx_for_prom'] = \
-            {ic('Benzathine benzylpenicillin, powder for injection, 2.4 million IU'): 1}  # todo: dose
+            {ic('Benzathine benzylpenicillin, powder for injection, 2.4 million IU'): 8}
 
         # -------------------------------------------- ANTENATAL STEROIDS ---------------------------------------------
 
         self.item_codes_lab_consumables['antenatal_steroids'] = \
-            {ic('Dexamethasone 5mg/ml, 5ml_each_CMST'): 1}  # todo: dose
+            {ic('Dexamethasone 5mg/ml, 5ml_each_CMST'): 12}
 
         # -------------------------------------  INTRAVENOUS ANTIHYPERTENSIVES ---------------------------------------
         self.item_codes_lab_consumables['iv_antihypertensives'] = \
-            {ic('Hydralazine, powder for injection, 20 mg ampoule'): 1}  # todo: dose
+            {ic('Hydralazine, powder for injection, 20 mg ampoule'): 1}
 
         # --------------------------------------- ORAL ANTIHYPERTENSIVES ---------------------------------------------
         self.item_codes_lab_consumables['oral_antihypertensives'] = \
-            {ic('Hydralazine, powder for injection, 20 mg ampoule'): 1}  # todo: dose
+            {ic('Hydralazine, powder for injection, 20 mg ampoule'): 1}
 
         # ----------------------------------  SEVERE PRE-ECLAMPSIA/ECLAMPSIA  -----------------------------------------
         self.item_codes_lab_consumables['magnesium_sulfate'] = \
             {ic('Magnesium sulfate, injection, 500 mg/ml in 10-ml ampoule'): 2}
 
         self.item_codes_lab_consumables['eclampsia_management_optional'] = \
-            {ic('Misoprostol, tablet, 200 mcg'): 1,  # todo: dose
-             ic('Oxytocin, injection, 10 IU in 1 ml ampoule'): 1,  # todo: dose
-             ic('Sodium chloride, injectable solution, 0,9 %, 500 ml'): 2000,
+            {ic('Sodium chloride, injectable solution, 0,9 %, 500 ml'): 2000,
              ic('Cannula iv  (winged with injection pot) 18_each_CMST'): 1,
              ic('Giving set iv administration + needle 15 drops/ml_each_CMST'): 1,
              ic('Disposables gloves, powder free, 100 pieces per box'): 1,
-             ic('Oxygen, 1000 liters, primarily with oxygen cylinders'): 1,  # todo: dose
+             ic('Oxygen, 1000 liters, primarily with oxygen cylinders'): 23_040,
              ic('Complete blood count'): 1,
              ic('Blood collecting tube, 5 ml'): 1,
              ic('Foley catheter'): 1,
@@ -789,9 +787,9 @@ class Labour(Module):
              }
         # -------------------------------------  OBSTRUCTED LABOUR  ---------------------------------------------------
         self.item_codes_lab_consumables['obstructed_labour'] = \
-            {ic('Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml'): 1,  # todo: dose
-             ic('Benzylpenicillin 3g (5MU), PFR_each_CMST'): 1,    # todo: dose
-             ic('Gentamycin, injection, 40 mg/ml in 2 ml vial'): 1,  # todo: dose
+            {ic('Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml'): 1,
+             ic('Benzathine benzylpenicillin, powder for injection, 2.4 million IU'): 8,
+             ic('Gentamycin, injection, 40 mg/ml in 2 ml vial'): 6,
              ic('Sodium chloride, injectable solution, 0,9 %, 500 ml'): 2000,
              ic('Cannula iv  (winged with injection pot) 18_each_CMST'): 1,
              ic('Giving set iv administration + needle 15 drops/ml_each_CMST'): 1,
@@ -801,8 +799,8 @@ class Labour(Module):
              ic('Foley catheter'): 1,
              ic('Bag, urine, collecting, 2000 ml'): 1,
              ic('Paracetamol, tablet, 500 mg'): 8000,
-             ic('Pethidine, 50 mg/ml, 2 ml ampoule'): 1,  # todo: dose
-             ic('Gauze, absorbent 90cm x 40m_each_CMST'): 1,
+             ic('Pethidine, 50 mg/ml, 2 ml ampoule'): 6,
+             ic('Gauze, absorbent 90cm x 40m_each_CMST'): 30,
              ic('Suture pack'): 1,
              }
         # -------------------------------------  OBSTETRIC VACUUM   ---------------------------------------------------
@@ -810,13 +808,13 @@ class Labour(Module):
 
         # -------------------------------------  MATERNAL SEPSIS  -----------------------------------------------------
         self.item_codes_lab_consumables['maternal_sepsis_core'] = \
-            {ic('Benzylpenicillin 3g (5MU), PFR_each_CMST'): 1,  # todo: dose
-             ic('Gentamycin, injection, 40 mg/ml in 2 ml vial'): 1,  # todo: dose
+            {ic('Benzylpenicillin 3g (5MU), PFR_each_CMST'): 8,
+             ic('Gentamycin, injection, 40 mg/ml in 2 ml vial'): 6,
              }
 
         self.item_codes_lab_consumables['maternal_sepsis_optional'] = \
             {ic('Cannula iv  (winged with injection pot) 18_each_CMST'): 1,
-             ic('Oxygen, 1000 liters, primarily with oxygen cylinders'): 1,  # todo: dose
+             ic('Oxygen, 1000 liters, primarily with oxygen cylinders'): 23_040,
              ic('Paracetamol, tablet, 500 mg'): 8000,
              ic('Giving set iv administration + needle 15 drops/ml_each_CMST'): 1,
              ic('Foley catheter'): 1,
@@ -825,16 +823,16 @@ class Labour(Module):
              ic('Complete blood count'): 1,
              }
         # -------------------------------------  ACTIVE MANAGEMENT THIRD STAGE  ---------------------------------------
-        self.item_codes_lab_consumables['amtsl'] = {ic('Oxytocin, injection, 10 IU in 1 ml ampoule'): 1}  # todo: dose
+        self.item_codes_lab_consumables['amtsl'] = {ic('Oxytocin, injection, 10 IU in 1 ml ampoule'): 1}
 
         # -------------------------------------  POSTPARTUM HAEMORRHAGE  ---------------------------------------
         self.item_codes_lab_consumables['pph_core'] = \
-            {ic('Oxytocin, injection, 10 IU in 1 ml ampoule'): 1}  # todo: dose
+            {ic('Oxytocin, injection, 10 IU in 1 ml ampoule'): 5}
 
         self.item_codes_lab_consumables['pph_optional'] = \
-            {ic('Misoprostol, tablet, 200 mcg'): 1,  # todo: dose
-             ic('Pethidine, 50 mg/ml, 2 ml ampoule'): 1,  # todo: dose
-             ic('Oxygen, 1000 liters, primarily with oxygen cylinders'): 1,  # todo: dose
+            {ic('Misoprostol, tablet, 200 mcg'): 600,
+             ic('Pethidine, 50 mg/ml, 2 ml ampoule'): 6,
+             ic('Oxygen, 1000 liters, primarily with oxygen cylinders'): 23_040,
              ic('Giving set iv administration + needle 15 drops/ml_each_CMST'): 1,
              ic('Cannula iv  (winged with injection pot) 18_each_CMST'): 1,
              ic('Foley catheter'): 1,
