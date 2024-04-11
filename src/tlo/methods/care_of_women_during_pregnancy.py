@@ -308,7 +308,7 @@ class CareOfWomenDuringPregnancy(Module):
 
         # ------------------------------------------- SYPHILIS TREATMENT ----------------------------------------------
         self.item_codes_preg_consumables['syphilis_treatment'] =\
-            {ic('Benzathine benzylpenicillin, powder for injection, 2.4 million IU'): 8}
+            {ic('Benzathine benzylpenicillin, powder for injection, 2.4 million IU'): 1}
 
         # ----------------------------------------------- GDM TEST ----------------------------------------------------
         self.item_codes_preg_consumables['gdm_test'] = {ic('Blood glucose level test'): 1}
