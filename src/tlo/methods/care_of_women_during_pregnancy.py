@@ -222,15 +222,15 @@ class CareOfWomenDuringPregnancy(Module):
 
         # -------------------------------------------- ECTOPIC PREGNANCY ---------------------------------------------
         self.item_codes_preg_consumables['ectopic_pregnancy_core'] = \
-            {ic('Halothane (fluothane)_250ml_CMST'): 1}  # TODO: dose
+            {ic('Halothane (fluothane)_250ml_CMST'): 100}
 
         self.item_codes_preg_consumables['ectopic_pregnancy_optional'] = \
             {ic('Scalpel blade size 22 (individually wrapped)_100_CMST'): 1,
              ic('Sodium chloride, injectable solution, 0,9 %, 500 ml'): 2000,
              ic('Paracetamol, tablet, 500 mg'): 8000,
-             ic('Pethidine, 50 mg/ml, 2 ml ampoule'): 1,  # todo: dose
+             ic('Pethidine, 50 mg/ml, 2 ml ampoule'): 6,
              ic('Suture pack'): 1,
-             ic('Gauze, absorbent 90cm x 40m_each_CMST'): 1,
+             ic('Gauze, absorbent 90cm x 40m_each_CMST'): 30,
              ic('Cannula iv  (winged with injection pot) 18_each_CMST'): 1,
              ic('Giving set iv administration + needle 15 drops/ml_each_CMST'): 1,
              ic('Disposables gloves, powder free, 100 pieces per box'): 1,
@@ -238,13 +238,13 @@ class CareOfWomenDuringPregnancy(Module):
 
         # ------------------------------------------- POST ABORTION CARE - GENERAL  -----------------------------------
         self.item_codes_preg_consumables['post_abortion_care_core'] = \
-            {ic('Misoprostol, tablet, 200 mcg'): 1}  # TODO: dose
+            {ic('Misoprostol, tablet, 200 mcg'): 600}
 
         self.item_codes_preg_consumables['post_abortion_care_optional'] = \
             {ic('Complete blood count'): 1,
              ic('Blood collecting tube, 5 ml'): 1,
              ic('Paracetamol, tablet, 500 mg'): 8000,
-             ic('Gauze, absorbent 90cm x 40m_each_CMST'): 1,
+             ic('Gauze, absorbent 90cm x 40m_each_CMST'): 30,
              ic('Cannula iv  (winged with injection pot) 18_each_CMST'): 1,
              ic('Giving set iv administration + needle 15 drops/ml_each_CMST'): 1,
              ic('Disposables gloves, powder free, 100 pieces per box'): 1,
@@ -252,8 +252,8 @@ class CareOfWomenDuringPregnancy(Module):
 
         # ------------------------------------------- POST ABORTION CARE - SEPSIS -------------------------------------
         self.item_codes_preg_consumables['post_abortion_care_sepsis_core'] = \
-            {ic('Benzylpenicillin 3g (5MU), PFR_each_CMST'): 1,  # TODO: dose
-             ic('Gentamycin, injection, 40 mg/ml in 2 ml vial'): 1,  # TODO: dose
+            {ic('Benzathine benzylpenicillin, powder for injection, 2.4 million IU'): 8,
+             ic('Gentamycin, injection, 40 mg/ml in 2 ml vial'): 6,
              }
 
         self.item_codes_preg_consumables['post_abortion_care_sepsis_optional'] = \
@@ -261,13 +261,13 @@ class CareOfWomenDuringPregnancy(Module):
              ic('Cannula iv  (winged with injection pot) 18_each_CMST'): 1,
              ic('Giving set iv administration + needle 15 drops/ml_each_CMST'): 1,
              ic('Disposables gloves, powder free, 100 pieces per box'): 1,
-             ic('Oxygen, 1000 liters, primarily with oxygen cylinders'): 1,  # TODO: dose
+             ic('Oxygen, 1000 liters, primarily with oxygen cylinders'): 23_040,
              }
 
         # ------------------------------------------- POST ABORTION CARE - SHOCK ------------------------------------
         self.item_codes_preg_consumables['post_abortion_care_shock'] = \
             {ic('Sodium chloride, injectable solution, 0,9 %, 500 ml'): 2000,
-             ic('Oxygen, 1000 liters, primarily with oxygen cylinders'): 1,  # TODO: dose
+             ic('Oxygen, 1000 liters, primarily with oxygen cylinders'): 23_040,
              }
 
         self.item_codes_preg_consumables['post_abortion_care_shock_optional'] = \
@@ -308,7 +308,7 @@ class CareOfWomenDuringPregnancy(Module):
 
         # ------------------------------------------- SYPHILIS TREATMENT ----------------------------------------------
         self.item_codes_preg_consumables['syphilis_treatment'] =\
-            {ic('Benzathine benzylpenicillin, powder for injection, 2.4 million IU'): 1}
+            {ic('Benzathine benzylpenicillin, powder for injection, 2.4 million IU'): 8}
 
         # ----------------------------------------------- GDM TEST ----------------------------------------------------
         self.item_codes_preg_consumables['gdm_test'] = {ic('Blood glucose level test'): 1}
@@ -333,13 +333,11 @@ class CareOfWomenDuringPregnancy(Module):
 
         # ---------------------------------------- MANAGEMENT OF ECLAMPSIA --------------------------------------------
         self.item_codes_preg_consumables['eclampsia_management_optional'] = \
-            {ic('Misoprostol, tablet, 200 mcg'): 1,  # todo: dose
-             ic('Oxytocin, injection, 10 IU in 1 ml ampoule'): 1,  # todo: dose
-             ic('Sodium chloride, injectable solution, 0,9 %, 500 ml'): 2000,
+            {ic('Sodium chloride, injectable solution, 0,9 %, 500 ml'): 2000,
              ic('Cannula iv  (winged with injection pot) 18_each_CMST'): 1,
              ic('Giving set iv administration + needle 15 drops/ml_each_CMST'): 1,
              ic('Disposables gloves, powder free, 100 pieces per box'): 1,
-             ic('Oxygen, 1000 liters, primarily with oxygen cylinders'): 1,  # todo: dose
+             ic('Oxygen, 1000 liters, primarily with oxygen cylinders'): 23_040,
              ic('Complete blood count'): 1,
              ic('Blood collecting tube, 5 ml'): 1,
              ic('Foley catheter'): 1,
@@ -348,7 +346,7 @@ class CareOfWomenDuringPregnancy(Module):
 
         # -------------------------------------- ANTIBIOTICS FOR PROM ------------------------------------------------
         self.item_codes_preg_consumables['abx_for_prom'] = \
-            {ic('Benzathine benzylpenicillin, powder for injection, 2.4 million IU'): 1}  # todo: dose
+            {ic('Benzathine benzylpenicillin, powder for injection, 2.4 million IU'): 8}
 
         # ----------------------------------- ORAL DIABETIC MANAGEMENT -----------------------------------------------
         # Dose changes at run time
