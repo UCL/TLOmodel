@@ -775,7 +775,7 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
                     f'Average Cause-specific {title_data[1]} Mortality {title_data[2]} by Scenario (2023-2030)')
                 ax.set_xticks(x)
                 ax.set_xticklabels(labels)
-                plt.xticks(rotation=90, size=7)
+                plt.xticks(rotation=90, size=10)
                 plt.gca().set_ylim(bottom=0, top=top)
                 ax.legend(loc='upper right')
                 fig.tight_layout()
