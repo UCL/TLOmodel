@@ -310,6 +310,37 @@ class Schisto(Module):
         """Look-up the item code for Praziquantel"""
         return self.sim.modules['HealthSystem'].get_item_code_from_item_name("Praziquantel 600mg_1000_CMST")
 
+    def _get_praziquantel_dose_by_weight(self, person_id) -> int:
+        """get the recommended dose of praziquantel using average weight to age
+        using WHO growth charts for African child
+        PSAC ages 0-4: average weight 2 yr old 10.3-11.3kg (boys/girls)
+        SAC ages 5-14: average weight 10 yr old 25-40kg
+        Adult: average weight 65kg
+
+        dose is 20mg per kg body-weight, given 3 times per day for 1 day
+        """
+
+        def get_average_weight(age_gp):
+            if age_gp == 'PSAC':
+                return 12.2
+            elif age_gp == 'SAC':
+                return 32.0
+            elif age_gp == 'Adults':
+                return 65.0
+            else:
+                return None  # If age group is not found
+
+        df = self.sim.population.props
+
+        # find age-group of person
+        age_grp = pd.Series(df.at[person_id, "age_years"]).map(self.age_group_mapper)
+        weight = get_average_weight(age_grp.values[0])
+
+        # calculate dose, 20mg per kg, 3 times per day, 1 day
+        dose = weight * 20 * 3
+
+        return int(dose)
+
     def _schedule_mda_events(self) -> None:
         """Schedule MDA events, historical and prognosed."""
 
@@ -960,7 +991,11 @@ class HSI_Schisto_TreatmentFollowingDiagnosis(HSI_Event, IndividualScopeEventMix
 
     def apply(self, person_id, squeeze_factor):
         """Do the treatment for this person."""
-        if self.get_consumables(item_codes=self.module.item_code_for_praziquantel):
+
+        # find appropriate dose in mg
+        dose = self.sim.modules['Schisto']._get_praziquantel_dose_by_weight(person_id=person_id)
+
+        if self.get_consumables(item_codes={self.module.item_code_for_praziquantel: dose}):
             self.module.do_effect_of_treatment(person_id=person_id)
 
 
