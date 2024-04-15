@@ -305,6 +305,17 @@ mean_deaths_by_cause_lower = num_deaths_by_cause_label.xs('lower', level=1, axis
 mean_deaths_by_cause_upper = num_deaths_by_cause_label.xs('upper', level=1, axis=1)
 
 
+deaths_by_cause_by_run = extract_results(
+        results_folder,
+        module='tlo.methods.demography',
+        key='death',
+        custom_generate_series=get_num_deaths_by_cause_label,
+        do_scaling=True
+    )
+
+deaths_by_cause_by_run.to_csv(outputspath / "Mar2024_HTMresults/deaths_by_cause_by_run.csv")
+
+
 # Function to round to the nearest 1000
 def round_to_nearest_100(value):
     return round(value, -2)
@@ -318,40 +329,6 @@ rounded_deaths_upper = mean_deaths_by_cause_upper.applymap(round_to_nearest_100)
 sum_deaths = mean_deaths_by_cause.sum(axis=0)
 
 rounded_deaths.to_csv(outputspath / "Mar2024_HTMresults/deaths_by_cause_excl_htm.csv")
-
-
-# # plot AIDS deaths by yr
-# def summarise_aids_deaths(results_folder):
-#     """ returns mean AIDS deaths for each year
-#     aggregated across all runs of each draw
-#     AIDS_TB and AIDS_non_TB are combined into one count
-#     """
-#
-#     results_deaths = extract_results(
-#         results_folder,
-#         module="tlo.methods.demography",
-#         key="death",
-#         custom_generate_series=(
-#             lambda df: df.assign(year=df["date"].dt.year).groupby(
-#                 ["year", "label"])["person_id"].count()
-#         ),
-#         do_scaling=True,
-#     )
-#     # removes multi-index
-#     results_deaths = results_deaths.reset_index()
-#
-#     # select only cause AIDS_TB and AIDS_non_TB
-#     tmp = results_deaths.loc[
-#         (results_deaths.cause == "AIDS_TB") | (results_deaths.cause == "AIDS_non_TB")
-#         ]
-#
-#     # group deaths by year
-#     tmp = pd.DataFrame(tmp.groupby(["year"]).sum())
-#
-#     # get mean for each draw
-#     mean_aids_deaths = pd.concat({'mean': tmp.groupby(level=0, axis=1).mean()}, axis=1).swaplevel(axis=1)
-#
-#     return mean_aids_deaths
 
 
 def summarise_deaths_for_one_cause(results_folder, label):

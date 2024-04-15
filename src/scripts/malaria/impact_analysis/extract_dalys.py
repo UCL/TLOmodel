@@ -79,7 +79,7 @@ daly_summary = summarize(
 
 daly_summary = round_to_nearest_100(daly_summary)
 daly_summary = daly_summary.astype(int)
-daly_summary.to_csv(outputspath / ('dalys_excl_htm' + '.csv'))
+daly_summary.to_csv(outputspath / ('Mar2024_HTMresults/dalys_excl_htm' + '.csv'))
 
 daly_full = extract_results(
         results_folder,
@@ -91,7 +91,7 @@ daly_full = extract_results(
 
 daly_full = round_to_nearest_100(daly_full)
 daly_full = daly_full.astype(int)
-daly_full.to_csv(outputspath / ('dalys_excl_htm_full' + '.csv'))
+daly_full.to_csv(outputspath / ('Mar2024_HTMresults/dalys_excl_htm_full' + '.csv'))
 
 
 
@@ -119,5 +119,5 @@ total_daly_summary = summarize(
 
 total_daly_summary = round_to_nearest_100(total_daly_summary)
 total_daly_summary = total_daly_summary.astype(int)
-total_daly_summary.to_csv(outputspath / ('total_dalys_excl_htm' + '.csv'))
+total_daly_summary.to_csv(outputspath / ('Mar2024_HTMresults/total_dalys_excl_htm' + '.csv'))
 

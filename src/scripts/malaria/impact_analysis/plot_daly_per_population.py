@@ -64,10 +64,11 @@ results = extract_results(
 )
 # indices are year/label
 results.index = results.index.set_names('label', level=1)
+results.to_csv(outputspath / ('Mar2024_HTMresults/dalys_by_cause_yr_run' + '.csv'))
 
-median_dalys = results.groupby(level=0, axis=1).median(0.5)
-lower_dalys = results.groupby(level=0, axis=1).quantile(0.025)
-upper_dalys = results.groupby(level=0, axis=1).quantile(0.975)
+# median_dalys = results.groupby(level=0, axis=1).median(0.5)
+# lower_dalys = results.groupby(level=0, axis=1).quantile(0.025)
+# upper_dalys = results.groupby(level=0, axis=1).quantile(0.975)
 
 
 # person-years (total) mean by year
@@ -91,18 +92,73 @@ def get_person_years(_df):
     return py
 
 
-person_years = summarize(
-    extract_results(
+person_years = extract_results(
         results_folder,
         module="tlo.methods.demography",
         key="person_years",
         custom_generate_series=get_person_years,
         do_scaling=True
-    ),
-    only_mean=True, collapse_columns=False
-)
+    )
 
 person_years.index = person_years.index.year
+person_years.to_csv(outputspath / ('Mar2024_HTMresults/py_by_cause_yr_run' + '.csv'))
+
+
+# get dalys per person_year over the whole simulation
+py_totals = person_years.sum(axis=0)
+# divide each value in first column by first value in py_totals
+
+
+tmp = daly_full.div(py_totals, axis=1)
+tmp.to_csv(outputspath / ('Mar2024_HTMresults/dalys_per_py_run' + '.csv'))
+
+median_dalys_per_py = tmp.groupby(level=0, axis=1).median()
+median_dalys_per_py.to_csv(outputspath / ('Mar2024_HTMresults/median_dalys_per_py' + '.csv'))
+
+min_dalys_per_py = tmp.groupby(level=0, axis=1).min()
+new_columns = {col: f"{i}_min" for i, col in enumerate(min_dalys_per_py.columns)}
+min_dalys_per_py = min_dalys_per_py.rename(columns=new_columns)
+
+max_dalys_per_py = tmp.groupby(level=0, axis=1).max()
+new_columns = {col: f"{i}_max" for i, col in enumerate(max_dalys_per_py.columns)}
+max_dalys_per_py = max_dalys_per_py.rename(columns=new_columns)
+
+
+
+dalys_range = pd.concat([min_dalys_per_py, max_dalys_per_py], axis=1)
+
+# Create new column names
+new_columns = [f"{i}_{ext}" for i in range(len(dalys_range.columns)//2) for ext in ['min', 'max']]
+
+# Reindex the DataFrame with the new column names
+dalys_range = dalys_range.reindex(columns=new_columns)
+dalys_range.to_csv(outputspath / ('Mar2024_HTMresults/range_dalys_per_py' + '.csv'))
+
+df=dalys_range
+# Plotting
+# Plotting
+fig, ax = plt.subplots(figsize=(12, 8))
+
+# Plotting vertical lines for each row
+for i, row in enumerate(df.index):
+    ax.plot([i-0.1, i-0.1], [df.loc[row, '0_min'], df.loc[row, '0_max']], color='blue')
+    ax.plot([i+0.1, i+0.1], [df.loc[row, '1_min'], df.loc[row, '1_max']], color='red')
+
+ax.set_xticks(range(len(df.index)))
+ax.set_xticklabels(df.index, rotation=90)
+ax.set_xlabel('Draw')
+ax.set_ylabel('Values')
+ax.set_title('')
+ax.legend(['0', '1'])
+
+plt.tight_layout()
+plt.show()
+
+
+
+
+
+
 
 
 # # calculate DALYs per 100,000 population by year
