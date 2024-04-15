@@ -97,7 +97,10 @@ class HSI_BaseGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
                 }
 
         # Perform any DataFrame updates that were requested, all in one go.
-        df.loc[self.target, proposed_patient_details_updates.keys()] = proposed_patient_details_updates.values()
+        if proposed_patient_details_updates:
+            df.loc[
+                self.target, proposed_patient_details_updates.keys()
+            ] = proposed_patient_details_updates.values()
 
     def apply(self, person_id, squeeze_factor=0.) -> None:
         """
