@@ -20,10 +20,9 @@ class PatientDetails:
         self._property_cache: Dict[str, Any] = {}
         
     def __getitem__(self, key: str) -> Any:
-        cached_value = self._property_cache.get(key)
-        if cached_value is not None:
-            return cached_value
-        else:
+        try:
+            return self._property_cache[key]
+        except KeyError:
             value = self._population_dataframe.at[self._person_id, key]
             self._property_cache[key] = value
             return value     
