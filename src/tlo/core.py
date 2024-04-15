@@ -69,7 +69,7 @@ class Specifiable:
         Types.DATA_FRAME: object,
         Types.STRING: object,
         Types.DICT: object,
-        Types.BITSET: np.uint64,
+        Types.BITSET: np.uint32,
     }
 
     # Map our Types to Python types
@@ -141,6 +141,7 @@ class Property(Specifiable):
         float: float("nan"),
         "category": float("nan"),
         object: float("nan"),
+        np.uint32: 0,
         np.uint64: 0,
     }
 
