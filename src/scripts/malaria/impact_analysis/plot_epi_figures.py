@@ -238,7 +238,7 @@ results_deaths = extract_results(
         )
 )
 
-results_deaths.to_csv(outputspath / "full_deaths.csv")
+results_deaths.to_csv(outputspath / "Mar2024_HTMresults/full_deaths.csv")
 
 
 
@@ -502,7 +502,7 @@ ax7.legend(loc='upper right',
 # empty plot
 ax8.axis('off')
 
-# fig.savefig(outputspath / "Epi_outputs_excl_htm.png")
+fig.savefig(outputspath / "Mar2024_HTMresults/Epi_outputs_excl_htm.png")
 
 plt.show()
 

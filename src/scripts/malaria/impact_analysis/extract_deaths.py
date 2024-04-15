@@ -81,9 +81,13 @@ def summarise_total_deaths(results_folder, do_scaling=True):
     ),
         only_mean=False)
 
+
+def round_to_nearest_100(x):
+    return 100 * round(x / 100)
+
+
 total_deaths = summarise_total_deaths(results_folder)
 rounded_total_deaths = total_deaths.applymap(round_to_nearest_100)
-
 
 
 def plot_summarized_total_deaths(summarized_total_deaths, scenario_info, mean_deaths_difference_by_run):
@@ -244,7 +248,7 @@ def barplot_summarized_deaths_by_age(deaths_summarized_by_age, proportion):
     plt.ylabel("Total deaths")
     plt.xlabel("")
     plt.subplots_adjust(bottom=0.2, left=0.15)
-    plt.savefig(outputspath / "Deaths_by_age_barplot_excl_htm.png")
+    plt.savefig(outputspath / "Mar2024_HTMresults/Deaths_by_age_barplot_excl_htm.png")
 
     plt.show()
 
@@ -266,7 +270,7 @@ plt.show()
 
 # Plot the total deaths across scenarios by age
 fig_1, ax_1 = plot_summarized_deaths_by_age(deaths_summarized_by_age)
-fig_1.savefig(outputspath / "Deaths_by_age_excl_htm.png")
+fig_1.savefig(outputspath / "Mar2024_HTMresults/Deaths_by_age_excl_htm.png")
 plt.show()
 
 
@@ -313,45 +317,44 @@ rounded_deaths_upper = mean_deaths_by_cause_upper.applymap(round_to_nearest_100)
 # Apply the rounding function to the entire DataFrame
 sum_deaths = mean_deaths_by_cause.sum(axis=0)
 
-rounded_deaths.to_csv(outputspath / "deaths_by_cause_excl_htm.csv")
+rounded_deaths.to_csv(outputspath / "Mar2024_HTMresults/deaths_by_cause_excl_htm.csv")
 
 
+# # plot AIDS deaths by yr
+# def summarise_aids_deaths(results_folder):
+#     """ returns mean AIDS deaths for each year
+#     aggregated across all runs of each draw
+#     AIDS_TB and AIDS_non_TB are combined into one count
+#     """
+#
+#     results_deaths = extract_results(
+#         results_folder,
+#         module="tlo.methods.demography",
+#         key="death",
+#         custom_generate_series=(
+#             lambda df: df.assign(year=df["date"].dt.year).groupby(
+#                 ["year", "label"])["person_id"].count()
+#         ),
+#         do_scaling=True,
+#     )
+#     # removes multi-index
+#     results_deaths = results_deaths.reset_index()
+#
+#     # select only cause AIDS_TB and AIDS_non_TB
+#     tmp = results_deaths.loc[
+#         (results_deaths.cause == "AIDS_TB") | (results_deaths.cause == "AIDS_non_TB")
+#         ]
+#
+#     # group deaths by year
+#     tmp = pd.DataFrame(tmp.groupby(["year"]).sum())
+#
+#     # get mean for each draw
+#     mean_aids_deaths = pd.concat({'mean': tmp.groupby(level=0, axis=1).mean()}, axis=1).swaplevel(axis=1)
+#
+#     return mean_aids_deaths
 
-# plot AIDS deaths by yr
-def summarise_aids_deaths(results_folder):
-    """ returns mean AIDS deaths for each year
-    aggregated across all runs of each draw
-    AIDS_TB and AIDS_non_TB are combined into one count
-    """
 
-    results_deaths = extract_results(
-        results_folder,
-        module="tlo.methods.demography",
-        key="death",
-        custom_generate_series=(
-            lambda df: df.assign(year=df["date"].dt.year).groupby(
-                ["year", "cause"])["person_id"].count()
-        ),
-        do_scaling=True,
-    )
-    # removes multi-index
-    results_deaths = results_deaths.reset_index()
-
-    # select only cause AIDS_TB and AIDS_non_TB
-    tmp = results_deaths.loc[
-        (results_deaths.cause == "AIDS_TB") | (results_deaths.cause == "AIDS_non_TB")
-        ]
-
-    # group deaths by year
-    tmp = pd.DataFrame(tmp.groupby(["year"]).sum())
-
-    # get mean for each draw
-    mean_aids_deaths = pd.concat({'mean': tmp.groupby(level=0, axis=1).mean()}, axis=1).swaplevel(axis=1)
-
-    return mean_aids_deaths
-
-
-def summarise_deaths_for_one_cause(results_folder, cause):
+def summarise_deaths_for_one_cause(results_folder, label):
     """ returns mean deaths for each year of the simulation
     values are aggregated across the runs of each draw
     for the specified cause
@@ -363,7 +366,7 @@ def summarise_deaths_for_one_cause(results_folder, cause):
         key="death",
         custom_generate_series=(
             lambda df: df.assign(year=df["date"].dt.year).groupby(
-                ["year", "cause"])["person_id"].count()
+                ["year", "label"])["person_id"].count()
         ),
         do_scaling=True,
     )
@@ -372,20 +375,20 @@ def summarise_deaths_for_one_cause(results_folder, cause):
 
     # select only cause specified
     tmp = results_deaths.loc[
-        (results_deaths.cause == cause)
+        (results_deaths.label == label)
     ]
 
     # group deaths by year
     tmp = pd.DataFrame(tmp.groupby(["year"]).sum())
 
     # get mean for each draw
-    mean_deaths = pd.concat({'mean': tmp.groupby(level=0, axis=1).mean()}, axis=1).swaplevel(axis=1)
+    mean_deaths = pd.concat({'mean': tmp.iloc[:, 1:].groupby(level=0, axis=1).mean()}, axis=1).swaplevel(axis=1)
 
     return mean_deaths
 
 
-aids_deaths = summarise_aids_deaths(results_folder)
-tb_deaths = summarise_deaths_for_one_cause(results_folder, 'TB')
+aids_deaths = summarise_deaths_for_one_cause(results_folder, 'AIDS')
+tb_deaths = summarise_deaths_for_one_cause(results_folder, 'TB (non-AIDS)')
 malaria_deaths = summarise_deaths_for_one_cause(results_folder, 'Malaria')
 
 
@@ -596,6 +599,6 @@ ax2.legend(
     bbox_to_anchor=(1.2, 1)
 )
 
-fig.savefig(outputspath / "Death_life_expect_exclHTM.png")
+fig.savefig(outputspath / "Mar2024_HTMresults/Death_life_expect_exclHTM.png")
 
 plt.show()
