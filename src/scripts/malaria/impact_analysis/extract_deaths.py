@@ -474,25 +474,29 @@ upper_deaths_for_plot = [mean_deaths_by_cause_upper.loc['AIDS', 0],
 
 # Convert lists to numpy arrays
 array1 = np.array(deaths_for_plot)
-array2 = np.array(lower_deaths_for_plot)
-array3 = np.array(upper_deaths_for_plot)
+array2 = array1 - np.array(lower_deaths_for_plot)
+array3 = np.array(upper_deaths_for_plot) - array1
 
 
 
 
+target_period = (datetime.date(2019, 1, 1), datetime.date(2020, 1, 1))
 
 # life expectancy
-test = produce_life_expectancy_estimates(results_folder, median=True)
-
+# use file tlo/analysis/life_expectancy.py
+le_estimates = get_life_expectancy_estimates(
+    results_folder,
+    target_period=target_period,
+    summary=True)
 
 
 xvals = np.arange(1, 21)
 
-median_le = test.loc[:, test.columns.get_level_values(1) == 'median']
+median_le = le_estimates.loc[:, le_estimates.columns.get_level_values(1) == 'mean']
 median_le.columns = median_le.columns.get_level_values(0)
-lower_le = test.loc[:, test.columns.get_level_values(1) == 'lower']
+lower_le = le_estimates.loc[:, le_estimates.columns.get_level_values(1) == 'lower']
 lower_le.columns = lower_le.columns.get_level_values(0)
-upper_le = test.loc[:, test.columns.get_level_values(1) == 'upper']
+upper_le = le_estimates.loc[:, le_estimates.columns.get_level_values(1) == 'upper']
 upper_le.columns = upper_le.columns.get_level_values(0)
 
 
@@ -561,13 +565,14 @@ bars = ax2.bar(
     deaths_for_plot,
     color=colours
 )
+
 for bar, neg_err, pos_err, color in zip(bars,
                                         array2,
                                         array3, colours*5):
     plt.errorbar(x=bar.get_x() + bar.get_width() / 2,
-                 y=bar.get_y() + bar.get_height() / 2,
+                 y=bar.get_y() + bar.get_height(),
                  yerr=[[neg_err], [pos_err]],
-                 color=color,  # Set error bar color to the same as the bars
+                 color='black',  # Set error bar color to the same as the bars
                  capsize=5)
 
 ax2.set_yscale('log')

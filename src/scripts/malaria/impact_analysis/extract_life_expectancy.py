@@ -236,9 +236,9 @@ def _aggregate_person_years_by_age(results_folder, target_period):
                 # convert single age years to float for mapping
                 py_by_single_age_years['age'] = py_by_single_age_years['age'].astype(float)
                 # map single age bands to age-groups
-                py_by_single_age_years['age_group'] = map_age_to_age_group(py_by_single_age_years)
+                py_by_single_age_years['age_group'] = _map_age_to_age_group(py_by_single_age_years)
 
-                summary = py_by_single_age_years.groupby(["age_group"])["person_years"].sum() * get_multiplier(_draw=draw,
+                summary = py_by_single_age_years.groupby(["age_group"])["person_years"].sum() * _get_multiplier(_draw=draw,
                                                                                                            _run=run)
                 tmp[sex] = summary
 
@@ -299,7 +299,7 @@ def _estimate_life_expectancy(_person_years_at_risk, _number_of_deaths_in_interv
         probability_of_dying_in_interval = pd.Series(index=number_of_deaths_by_sex.index, dtype=float)
         probability_of_dying_in_interval[condition] = 1
         probability_of_dying_in_interval[~condition] = interval_width * death_rate_in_interval / (
-            1 + interval_width * (1 - fraction_of_last_age_survived) * death_rate_in_interval)
+            (1 + interval_width) * (1 - fraction_of_last_age_survived) * death_rate_in_interval)
         # all those surviving to final interval die during this interval
         probability_of_dying_in_interval.loc['90'] = 1
 
@@ -409,7 +409,8 @@ def produce_life_expectancy_estimates(results_folder, target_period: Tuple[datet
         return summary
 
 
-test = produce_life_expectancy_estimates(results_folder, median=True, target_period=(Date(2019, 1, 1), Date(2020, 1, 1)))
+test = produce_life_expectancy_estimates(results_folder, median=True,
+                                         target_period=(Date(2019, 1, 1), Date(2020, 1, 1)))
 
 
 # # output death rates by age-group

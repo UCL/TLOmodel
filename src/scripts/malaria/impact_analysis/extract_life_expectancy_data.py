@@ -93,6 +93,7 @@ deaths_m = deaths_m.set_index('Age_Grp')
 baseline_deaths_m = deaths_m.iloc[:, 1]
 excl_htm_deaths_m = deaths_m.iloc[:, 5]
 
+
 # get person-years by age-group for target period
 # use demography.age_range_m for pop size
 # select target years
@@ -151,130 +152,23 @@ df = pd.concat([pop_baseline_m, baseline_deaths_m,
 df.columns = ['index', 'pop_baseline_m', 'baseline_deaths_m',
               'pop_baseline_f', 'baseline_deaths_f']
 
-df.to_csv(outputspath /'baseline_life_expectancy.csv')
+df.to_csv(outputspath /'Mar2024_HTMresults/baseline_life_expectancy.csv')
 
 df1 = pd.concat([pop_exclHTM_m, excl_htm_deaths_m,
                   pop_exclHTM_f, excl_htm_deaths_f], axis=1).reset_index()
 df1.columns = ['index', 'pop_exclHTM_m', 'excl_htm_deaths_m',
               'pop_exclHTM_f', 'excl_htm_deaths_f']
 
-df1.to_csv(outputspath /'exclHTM_life_expectancy.csv')
+df1.to_csv(outputspath /'Mar2024_HTMresults/exclHTM_life_expectancy.csv')
+
+
+TARGET_PERIOD = (datetime.date(2020, 1, 1), datetime.date(2019, 1, 1))
+
+test = get_life_expectancy_estimates(results_folder, summary=True,
+                                         target_period=TARGET_PERIOD)
 
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-# --------------------------------------------------------------------
-# LIFE EXPECTANCY FOR MALES AND FEMALES - SIMPLE METHOD
-
-# get deaths for males and females for the target time period
-def get_num_deaths_by_sex(_df):
-    """Return total number of Deaths by sex (total within the TARGET_PERIOD)
-    """
-    return _df \
-        .loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)] \
-        .groupby(_df['sex']) \
-        .size()
-
-
-deaths_by_sex = extract_results(
-        results_folder,
-        module="tlo.methods.demography",
-        key="death",
-        custom_generate_series=get_num_deaths_by_sex,
-        do_scaling=True
-)
-
-
-
-# get person-years for same time-period
-def get_person_years_M(_df):
-    """ extract person-years for each draw/run
-    men and women calculated separately
-    will skip column if particular run has failed
-    """
-    years = pd.to_datetime(_df["date"]).dt.year
-    # create empty series
-    py_M = pd.Series(dtype="int64", index=years)
-
-    for year in years:
-        tot_m = (
-            (_df.loc[pd.to_datetime(_df["date"]).dt.year == year]["M"]).apply(pd.Series)
-        ).transpose()
-        py_M[year] = tot_m.sum().values[0]
-
-    return py_M
-
-
-def get_person_years_F(_df):
-    """ extract person-years for each draw/run
-    men and women calculated separately
-    will skip column if particular run has failed
-    """
-    years = pd.to_datetime(_df["date"]).dt.year
-    # create empty series
-    py_F = pd.Series(dtype="int64", index=years)
-
-    for year in years:
-        tot_f = (
-            (_df.loc[pd.to_datetime(_df["date"]).dt.year == year]["F"]).apply(pd.Series)
-        ).transpose()
-        py_F[year] = tot_f.sum().values[0]
-
-    return py_F
-
-py_M = extract_results(
-    results_folder,
-    module="tlo.methods.demography",
-    key="person_years",
-    custom_generate_series=get_person_years_M,
-    do_scaling=True
-)
-
-py_F = extract_results(
-    results_folder,
-    module="tlo.methods.demography",
-    key="person_years",
-    custom_generate_series=get_person_years_F,
-    do_scaling=True
-)
-
-# calculate life expectancy for 2019
-
-
-
-# %%:  ---------------------------------- DALYS ---------------------------------- #
-
-def num_dalys_by_cause(_df):
-    """Return total number of DALYS (Stacked) (total by age-group within the TARGET_PERIOD)"""
-    return _df \
-        .loc[_df.year.between(*[i.year for i in TARGET_PERIOD])] \
-        .drop(columns=['date', 'sex', 'age_range', 'year']) \
-        .sum()
-
-
-# extract dalys by cause with mean and upper/lower intervals
-# With 'collapse_columns', if number of draws is 1, then collapse columns multi-index:
-
-daly_summary = summarize(
-    extract_results(
-        results_folder,
-        module="tlo.methods.healthburden",
-        key="dalys_stacked",
-        custom_generate_series=num_dalys_by_cause,
-        do_scaling=True,
-    ),
-    only_mean=True,
-    collapse_columns=False,
-)
-daly_summary = daly_summary.astype(int)
