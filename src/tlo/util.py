@@ -125,7 +125,7 @@ class BitsetHandler:
     """Provides methods to operate on int column(s) in the population dataframe as a bitset"""
 
     def __init__(self, population: Population, column: Optional[str], elements: List[str]):
-        """""
+        """
         :param population: The TLO Population object (not the props dataframe).
         :param column: The integer property column that will be used as a bitset. If
             set to ``None`` then the optional `columns` argument to methods which act
@@ -136,7 +136,10 @@ class BitsetHandler:
         assert isinstance(population, Population), (
             'First argument is the population object (not the `props` dataframe)'
         )
-        assert len(elements) <= 64, 'A maximum of 64 elements are supported'
+        dtype_bitwidth = BitsetDType(0).nbytes * 8
+        assert len(elements) <= dtype_bitwidth, (
+            f"A maximum of {dtype_bitwidth} elements are supported"
+        )
         self._elements = elements
         self._element_to_int_map = {el: 2 ** i for i, el in enumerate(elements)}
         self._population = population
