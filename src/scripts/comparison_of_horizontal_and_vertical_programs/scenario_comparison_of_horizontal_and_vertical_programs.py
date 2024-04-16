@@ -61,7 +61,7 @@ class HorizontalAndVerticalPrograms(BaseScenario):
         # 2015-2019 period.
 
         return {
-            "Baseline": self._baseline(),
+            # "Baseline": self._baseline(),
 
             # ***************************
             # HEALTH SYSTEM STRENGTHENING
@@ -69,137 +69,137 @@ class HorizontalAndVerticalPrograms(BaseScenario):
 
             # - - - Human Resource for Health - - -
             
-            # "Reduced Absence":
-            #    mix_scenarios(
-            #        self._baseline(),
-            #        {
-            #            'HealthSystem': {
-            #                'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE,
-            #                'HR_scaling_by_level_and_officer_type_mode': 'no_absence',
-            #            }
-            #        }
-            #    ),
+             "Reduced Absence":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                        'HealthSystem': {
+                            'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE,
+                            'HR_scaling_by_level_and_officer_type_mode': 'no_absence',
+                        }
+                    }
+                ),
             
-            #"Reduced Absence + Double Capacity at Primary Care":
-            #    mix_scenarios(
-            #        self._baseline(),
-            #        {
-            #            'HealthSystem': {
-            #                'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE,
-            #                'HR_scaling_by_level_and_officer_type_mode': 'no_absence_&_x2_fac0+1',
-            #            }
-            #        }
-            #    ),
+            "Reduced Absence + Double Capacity at Primary Care":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                        'HealthSystem': {
+                            'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE,
+                            'HR_scaling_by_level_and_officer_type_mode': 'no_absence_&_x2_fac0+1',
+                        }
+                    }
+                ),
 
-            #"HRH Keeps Pace with Population Growth":
-            #    mix_scenarios(
-            #        self._baseline(),
-            #        {
-            #            'HealthSystem': {
-            #                'yearly_HR_scaling_mode': 'scaling_by_pop_growth_after2018',
-            #                # This is in-line with population growth after 2018 (baseline year for HRH)
-            #            }
-            #        }
-            #    ),
+            "HRH Keeps Pace with Population Growth":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                        'HealthSystem': {
+                            'yearly_HR_scaling_mode': 'scaling_by_pop_growth_after2018',
+                            # This is in-line with population growth after 2018 (baseline year for HRH)
+                        }
+                    }
+                ),
 
-            #"HRH Increases at GDP Growth":
-            #    mix_scenarios(
-            #        self._baseline(),
-            #        {
-            #            'HealthSystem': {
-            #                'yearly_HR_scaling_mode': 'GDP_growth',
-            #                # This is GDP growth after 2018 (baseline year for HRH)
-            #            }
-            #        }
-            #    ),
+            "HRH Increases at GDP Growth":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                        'HealthSystem': {
+                            'yearly_HR_scaling_mode': 'GDP_growth',
+                            # This is GDP growth after 2018 (baseline year for HRH)
+                        }
+                    }
+                ),
 
-            #"HRH Increases above GDP Growth":
-            #    mix_scenarios(
-            #        self._baseline(),
-            #        {
-            #            'HealthSystem': {
-            #                'yearly_HR_scaling_mode': 'GDP_growth_fHE_case5',
-            #                # This is above-GDP growth after 2018 (baseline year for HRH)
-            #            }
-            #        }
-            #    ),
+            "HRH Increases above GDP Growth":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                        'HealthSystem': {
+                            'yearly_HR_scaling_mode': 'GDP_growth_fHE_case5',
+                            # This is above-GDP growth after 2018 (baseline year for HRH)
+                        }
+                    }
+                ),
 
 
             # - - - Quality of Care - - -
-            #"Perfect Clinical Practice":
-            #    mix_scenarios(
-            #        self._baseline(),
-            #        {
-            #            'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
-            #                'max_healthsystem_function': [False, True],  # <-- switch from False to True mid-way
-            #                'year_of_switch': self.YEAR_OF_CHANGE,
-            #            }
-            #        },
-            #    ),
-            
-            "Perfect Healthcare Seeking":
+            "Perfect Clinical Practice":
                 mix_scenarios(
-                    get_parameters_for_status_quo(),
+                    self._baseline(),
                     {
                         'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
-                            'max_healthcare_seeking': [False, True],
+                            'max_healthsystem_function': [False, True],  # <-- switch from False to True mid-way
                             'year_of_switch': self.YEAR_OF_CHANGE,
                         }
                     },
                 ),
             
-            #"Perfect Availability of Diagnostics":
+            # "Perfect Healthcare Seeking":
             #    mix_scenarios(
-            #        self._baseline(),
-            #        {
-            #            'HealthSystem': {
-            #                'year_cons_availability_switch': self.YEAR_OF_CHANGE,
-            #                'cons_availability_postSwitch': 'all_diagnostics_available',
-            #            }
-            #        }
-            #    ),
-            
-            #"Perfect Availability of Medicines":
-            #mix_scenarios(
-            #    self._baseline(),
-            #    {
-            #        'HealthSystem': {
-            #            'year_cons_availability_switch': self.YEAR_OF_CHANGE,
-            #            'cons_availability_postSwitch': 'all_medicines_available',
-            #        }
-            #    }
-            #),
-
-            #"Perfect Availability of Medicines & other Consumables":
-            #    mix_scenarios(
-            #        self._baseline(),
-            #        {
-            #            'HealthSystem': {
-            #                'year_cons_availability_switch': self.YEAR_OF_CHANGE,
-            #                'cons_availability_postSwitch': 'all_medicines_and_other_available',
-            #            }
-            #        }
-            #    ),
-            
-            # - - - FULL PACKAGE OF HEALTH SYSTEM STRENGTHENING - - -
-            #"FULL PACKAGE":
-            #    mix_scenarios(
-            #        self._baseline(),
+            #        get_parameters_for_status_quo(),
             #        {
             #            'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
-            #                'max_healthsystem_function': [False, True],  # <-- switch from False to True mid-way
-            #                'max_healthcare_seeking': [False, True],  # <-- switch from False to True mid-way
-            #                'year_of_switch': self.YEAR_OF_CHANGE
-            #            },
-            #            'HealthSystem': {
-            #                'year_cons_availability_switch': self.YEAR_OF_CHANGE,
-            #                'cons_availability_postSwitch': 'all',
-            #                'yearly_HR_scaling_mode': 'GDP_growth_fHE_case5',
-            #                'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE,
-            #                'HR_scaling_by_level_and_officer_type_mode': 'no_absence_&_x2_fac0+1',
+            #                'max_healthcare_seeking': [False, True],
+            #                'year_of_switch': self.YEAR_OF_CHANGE,
             #            }
             #        },
             #    ),
+            
+            "Perfect Availability of Diagnostics":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                        'HealthSystem': {
+                            'year_cons_availability_switch': self.YEAR_OF_CHANGE,
+                            'cons_availability_postSwitch': 'all_diagnostics_available',
+                        }
+                    }
+                ),
+            
+            "Perfect Availability of Medicines":
+            mix_scenarios(
+                self._baseline(),
+                {
+                    'HealthSystem': {
+                        'year_cons_availability_switch': self.YEAR_OF_CHANGE,
+                        'cons_availability_postSwitch': 'all_medicines_available',
+                    }
+                }
+            ),
+
+            "Perfect Availability of Medicines & other Consumables":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                        'HealthSystem': {
+                            'year_cons_availability_switch': self.YEAR_OF_CHANGE,
+                            'cons_availability_postSwitch': 'all_medicines_and_other_available',
+                        }
+                    }
+                ),
+            
+            # - - - FULL PACKAGE OF HEALTH SYSTEM STRENGTHENING - - -
+            "FULL PACKAGE":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                        'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
+                            'max_healthsystem_function': [False, True],  # <-- switch from False to True mid-way
+                            'max_healthcare_seeking': [False, True],  # <-- switch from False to True mid-way
+                            'year_of_switch': self.YEAR_OF_CHANGE
+                        },
+                        'HealthSystem': {
+                            'year_cons_availability_switch': self.YEAR_OF_CHANGE,
+                            'cons_availability_postSwitch': 'all',
+                            'yearly_HR_scaling_mode': 'GDP_growth_fHE_case5',
+                            'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE,
+                            'HR_scaling_by_level_and_officer_type_mode': 'no_absence_&_x2_fac0+1',
+                        }
+                    },
+                ),
 
             # ***************************
             # VERTICAL PROGRAMS
