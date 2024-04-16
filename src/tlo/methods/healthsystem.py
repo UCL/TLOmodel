@@ -2601,7 +2601,7 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
             self.module.consumables = Consumables(
                 availability_data=self.module.parameters['availability_estimates'],
                 rng=self.module.rng,
-                item_code_designations=self.parameters["consumables_item_designations"],
+                item_code_designations=self.module.parameters["consumables_item_designations"],
                 availability=self._parameters['cons_availability']
             )
             self.module.consumables.on_start_of_day(self.module.sim.date)
