@@ -406,7 +406,7 @@ class NewbornOutcomes(Module):
         self.item_codes_nb_consumables['sepsis_supportive_care_core'] = \
             {ic('Benzylpenicillin 1g (1MU), PFR_Each_CMST'): 1,  # todo: dose
              ic('Gentamicin 40mg/ml, 2ml_each_CMST'): 1,  # todo: dose
-             ic('Oxygen, 1000 liters, primarily with oxygen cylinders'): 5760  # todo: dose
+             ic('Oxygen, 1000 liters, primarily with oxygen cylinders'): 5760  #
              }
 
         self.item_codes_nb_consumables['sepsis_supportive_care_optional'] = \
