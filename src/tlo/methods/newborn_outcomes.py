@@ -403,9 +403,11 @@ class NewbornOutcomes(Module):
             {ic('Tetracycline eye ointment, 1 %, tube 5 mg'): 5}
 
         # ------------------------------------- SEPSIS - FULL SUPPORTIVE CARE ---------------------------------------
+        # Whilst abx for newborns are weight based the maximum dose does not exceed the minimum unit for the costing
+        # model
         self.item_codes_nb_consumables['sepsis_supportive_care_core'] = \
-            {ic('Benzylpenicillin 1g (1MU), PFR_Each_CMST'): 1,  # todo: dose
-             ic('Gentamicin 40mg/ml, 2ml_each_CMST'): 1,  # todo: dose
+            {ic('Benzylpenicillin 1g (1MU), PFR_Each_CMST'): 1,
+             ic('Gentamicin 40mg/ml, 2ml_each_CMST'): 1,
              ic('Oxygen, 1000 liters, primarily with oxygen cylinders'): 5760  #
              }
 
@@ -419,8 +421,8 @@ class NewbornOutcomes(Module):
 
         # ---------------------------------------- SEPSIS - ANTIBIOTICS ---------------------------------------------
         self.item_codes_nb_consumables['sepsis_abx'] = \
-            {ic('Benzylpenicillin 1g (1MU), PFR_Each_CMST'): 1,  # todo: dose
-             ic('Gentamicin 40mg/ml, 2ml_each_CMST'): 1,  # todo: dose
+            {ic('Benzylpenicillin 1g (1MU), PFR_Each_CMST'): 1,
+             ic('Gentamicin 40mg/ml, 2ml_each_CMST'): 1,
              }
 
     def initialise_simulation(self, sim):
