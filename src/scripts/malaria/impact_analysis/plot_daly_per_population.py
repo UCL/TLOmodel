@@ -66,6 +66,7 @@ results = extract_results(
 results.index = results.index.set_names('label', level=1)
 results.to_csv(outputspath / ('Mar2024_HTMresults/dalys_by_cause_yr_run' + '.csv'))
 
+
 # median_dalys = results.groupby(level=0, axis=1).median(0.5)
 # lower_dalys = results.groupby(level=0, axis=1).quantile(0.025)
 # upper_dalys = results.groupby(level=0, axis=1).quantile(0.975)
@@ -93,25 +94,45 @@ def get_person_years(_df):
 
 
 person_years = extract_results(
-        results_folder,
-        module="tlo.methods.demography",
-        key="person_years",
-        custom_generate_series=get_person_years,
-        do_scaling=True
-    )
+    results_folder,
+    module="tlo.methods.demography",
+    key="person_years",
+    custom_generate_series=get_person_years,
+    do_scaling=True
+)
 
 person_years.index = person_years.index.year
 person_years.to_csv(outputspath / ('Mar2024_HTMresults/py_by_cause_yr_run' + '.csv'))
-
 
 # get dalys per person_year over the whole simulation
 py_totals = person_years.sum(axis=0)
 # divide each value in first column by first value in py_totals
 
+# get total DALYs by cause for each run divided by person-years
+TARGET_PERIOD = (Date(2010, 1, 1), Date(2020, 1, 1))
 
+
+def num_dalys_by_cause(_df):
+    """Return total number of DALYS (Stacked) (total by age-group within the TARGET_PERIOD)"""
+    return _df \
+        .loc[_df.year.between(*[i.year for i in TARGET_PERIOD])] \
+        .drop(columns=['date', 'sex', 'age_range', 'year']) \
+        .sum()
+
+
+daly_full = extract_results(
+        results_folder,
+        module="tlo.methods.healthburden",
+        key="dalys_stacked",
+        custom_generate_series=num_dalys_by_cause,
+        do_scaling=True,
+    )
+
+# divide total dalys per cause over simulation by total person-years for each run
 tmp = daly_full.div(py_totals, axis=1)
 tmp.to_csv(outputspath / ('Mar2024_HTMresults/dalys_per_py_run' + '.csv'))
 
+# get median dalys per person-year by cause
 median_dalys_per_py = tmp.groupby(level=0, axis=1).median()
 median_dalys_per_py.to_csv(outputspath / ('Mar2024_HTMresults/median_dalys_per_py' + '.csv'))
 
@@ -123,26 +144,23 @@ max_dalys_per_py = tmp.groupby(level=0, axis=1).max()
 new_columns = {col: f"{i}_max" for i, col in enumerate(max_dalys_per_py.columns)}
 max_dalys_per_py = max_dalys_per_py.rename(columns=new_columns)
 
-
-
 dalys_range = pd.concat([min_dalys_per_py, max_dalys_per_py], axis=1)
 
 # Create new column names
-new_columns = [f"{i}_{ext}" for i in range(len(dalys_range.columns)//2) for ext in ['min', 'max']]
+new_columns = [f"{i}_{ext}" for i in range(len(dalys_range.columns) // 2) for ext in ['min', 'max']]
 
 # Reindex the DataFrame with the new column names
 dalys_range = dalys_range.reindex(columns=new_columns)
 dalys_range.to_csv(outputspath / ('Mar2024_HTMresults/range_dalys_per_py' + '.csv'))
 
-df=dalys_range
-# Plotting
-# Plotting
+# --------------------------------- Plotting
+df = dalys_range
 fig, ax = plt.subplots(figsize=(12, 8))
 
 # Plotting vertical lines for each row
 for i, row in enumerate(df.index):
-    ax.plot([i-0.1, i-0.1], [df.loc[row, '0_min'], df.loc[row, '0_max']], color='blue')
-    ax.plot([i+0.1, i+0.1], [df.loc[row, '1_min'], df.loc[row, '1_max']], color='red')
+    ax.plot([i - 0.1, i - 0.1], [df.loc[row, '0_min'], df.loc[row, '0_max']], color='blue')
+    ax.plot([i + 0.1, i + 0.1], [df.loc[row, '1_min'], df.loc[row, '1_max']], color='red')
 
 ax.set_xticks(range(len(df.index)))
 ax.set_xticklabels(df.index, rotation=90)
@@ -154,16 +172,57 @@ ax.legend(['0', '1'])
 plt.tight_layout()
 plt.show()
 
+# --------------------------------- DALYS by HTM or other causes
+# separate out the DALYs incurred due to HTM separately, and other
+# other includes all causes not in HTM
+# then divide these values by person-years
+# do this by run, then summarise
+
+# Define disease categories
+diseases = ['AIDS', 'TB (non-AIDS)', 'Malaria']
+
+def g(df, diseases):
+  """
+  This function takes a DataFrame and a list of diseases as input.
+  It creates a new DataFrame with 4 rows ('aids', 'tb', 'malaria', 'other')
+  and 15 columns as in the original DataFrame.
+  For each column, it retrieves the value where the row index matches a disease in the list,
+  otherwise it sums the values excluding the disease rows.
+
+  Args:
+      df: The input DataFrame.
+      diseases: A list of disease names.
+
+  Returns:
+      A new DataFrame with the specified format.
+  """
+  result = pd.DataFrame(columns=df.columns, index=['AIDS', 'TB (non-AIDS)', 'Malaria', 'other'])
+  for col in df.columns:
+    for disease in diseases:
+        if disease in df.index:  # Check if disease is in the index string
+            result.loc[disease, col] = df[col][disease]
+    else:
+      # Exclude disease rows when summing other values (boolean indexing)
+      disease_mask = ~df.index.isin(diseases)
+      result.loc['other', col] = df[col][disease_mask].sum()
+  return result
+
+dalys_broad_categories_by_run = g(daly_full.copy(), diseases.copy())
+print(dalys_broad_categories_by_run)
+
+# divide compiled DALYs by person-years
+tmp2 = dalys_broad_categories_by_run.div(py_totals, axis=1)
+
+# get summary stats of DALYs per py for broad cause categories
+median_dalys_broad_categories_per_py = tmp2.groupby(level=0, axis=1).median()
+lower_dalys_broad_categories_per_py = tmp2.groupby(level=0, axis=1).quantile(0.025)
+upper_dalys_broad_categories_per_py = tmp2.groupby(level=0, axis=1).median()
 
 
 
-
-
-
-
+#-----------------------------------------------------------------------------------------------------
 # # calculate DALYs per 100,000 population by year
 def edit_data_for_plotting(draw):
-
     median = median_dalys.loc[:, draw].reset_index(0)
     median = median.reset_index(0)
     median = median.rename({draw: 'dalys'}, axis=1)
@@ -189,8 +248,8 @@ def edit_data_for_plotting(draw):
     upper['py'] = upper['year'].map(py.set_index('year')['py'])
     upper['dalys_per_100_000_upper'] = (upper['dalys_upper'] / upper['py']) * 100_000
 
-    new_df = pd.merge(median, lower,  how='left', on=['label', 'year'])
-    new_df = pd.merge(new_df, upper,  how='left', on=['label', 'year'])
+    new_df = pd.merge(median, lower, how='left', on=['label', 'year'])
+    new_df = pd.merge(new_df, upper, how='left', on=['label', 'year'])
 
     return new_df
 
@@ -205,10 +264,9 @@ sns.set(style="whitegrid")
 # Define a color palette with 6 colors
 colors = sns.color_palette("husl", 6)
 
-
 fig, ((ax1, ax2, ax3), (ax4, ax5, ax6)) = plt.subplots(nrows=2, ncols=3,
-                                    constrained_layout=True,
-                                    figsize=(16, 8))
+                                                       constrained_layout=True,
+                                                       figsize=(16, 8))
 fig.suptitle('')
 
 # ALRI
@@ -232,7 +290,6 @@ ax1.set_ylim(0, 9000)
 ax1.set(title='ALRI',
         ylabel='DALYs per 100,000',
         xlabel='Year')
-
 
 # Diarrhoea
 d0 = dalys0.loc[(dalys0.label == 'Childhood Diarrhoea') & (dalys0.year < 2020)]
@@ -300,7 +357,6 @@ ax4.set(title='Neonatal disorders',
         ylabel='DALYs per 100,000',
         xlabel='Year')
 
-
 # Heart disease
 d0 = dalys0.loc[(dalys0.label == 'Heart Disease') & (dalys0.year < 2020)]
 
@@ -348,8 +404,6 @@ ax6.set(title='Kidney Disease',
 fig.savefig(outputspath / "DALYs_per_100k.png")
 
 plt.show()
-
-
 
 ####################
 # add column totals
