@@ -1,0 +1,245 @@
+{
+  "scenario_script_path": "src/scripts/malaria/impact_analysis/analysis_scenarios.py",
+  "scenario_seed": 0,
+  "runs_per_draw": 5,
+  "draws": [
+    {
+      "draw_number": 0,
+      "parameters": {
+        "HealthSystem": {
+          "Service_Availability": [
+            "*"
+          ],
+          "use_funded_or_actual_staffing": "funded",
+          "mode_appt_constraints": 1,
+          "policy_name": "Naive"
+        },
+        "Hiv": {
+          "scenario": 0
+        }
+      }
+    },
+    {
+      "draw_number": 1,
+      "parameters": {
+        "HealthSystem": {
+          "Service_Availability": [
+            "*"
+          ],
+          "use_funded_or_actual_staffing": "funded",
+          "mode_appt_constraints": 1,
+          "policy_name": "Naive"
+        },
+        "Hiv": {
+          "scenario": 1
+        }
+      }
+    },
+    {
+      "draw_number": 2,
+      "parameters": {
+        "HealthSystem": {
+          "Service_Availability": [
+            "*"
+          ],
+          "use_funded_or_actual_staffing": "funded",
+          "mode_appt_constraints": 1,
+          "policy_name": "Naive"
+        },
+        "Hiv": {
+          "scenario": 2
+        }
+      }
+    },
+    {
+      "draw_number": 3,
+      "parameters": {
+        "HealthSystem": {
+          "Service_Availability": [
+            "*"
+          ],
+          "use_funded_or_actual_staffing": "funded",
+          "mode_appt_constraints": 1,
+          "policy_name": "Naive"
+        },
+        "Hiv": {
+          "scenario": 3
+        }
+      }
+    },
+    {
+      "draw_number": 4,
+      "parameters": {
+        "HealthSystem": {
+          "Service_Availability": [
+            "*"
+          ],
+          "use_funded_or_actual_staffing": "funded",
+          "mode_appt_constraints": 1,
+          "policy_name": "Naive"
+        },
+        "Hiv": {
+          "scenario": 5
+        }
+      }
+    },
+    {
+      "draw_number": 5,
+      "parameters": {
+        "HealthSystem": {
+          "Service_Availability": [
+            "Alri_*",
+            "AntenatalCare_*",
+            "BladderCancer_*",
+            "BreastCancer_*",
+            "CardioMetabolicDisorders_*",
+            "Contraception_*",
+            "Copd_*",
+            "DeliveryCare_*",
+            "Depression_*",
+            "Diarrhoea_*",
+            "Epi_*",
+            "Epilepsy_*",
+            "FirstAttendance_*",
+            "Malaria_*",
+            "Measles_*",
+            "OesophagealCancer_*",
+            "OtherAdultCancer_*",
+            "PostnatalCare_*",
+            "ProstateCancer_*",
+            "Rti_*",
+            "Schisto_*",
+            "Tb_*",
+            "Undernutrition_*",
+            "Hiv_PalliativeCare"
+          ],
+          "use_funded_or_actual_staffing": "funded",
+          "mode_appt_constraints": 1,
+          "policy_name": "Naive"
+        },
+        "Hiv": {
+          "scenario": 0
+        }
+      }
+    },
+    {
+      "draw_number": 6,
+      "parameters": {
+        "HealthSystem": {
+          "Service_Availability": [
+            "Alri_*",
+            "AntenatalCare_*",
+            "BladderCancer_*",
+            "BreastCancer_*",
+            "CardioMetabolicDisorders_*",
+            "Contraception_*",
+            "Copd_*",
+            "DeliveryCare_*",
+            "Depression_*",
+            "Diarrhoea_*",
+            "Epi_*",
+            "Epilepsy_*",
+            "FirstAttendance_*",
+            "Hiv_*",
+            "Malaria_*",
+            "Measles_*",
+            "OesophagealCancer_*",
+            "OtherAdultCancer_*",
+            "PostnatalCare_*",
+            "ProstateCancer_*",
+            "Rti_*",
+            "Schisto_*",
+            "Undernutrition_*",
+            "Tb_PalliativeCare"
+          ],
+          "use_funded_or_actual_staffing": "funded",
+          "mode_appt_constraints": 1,
+          "policy_name": "Naive"
+        },
+        "Hiv": {
+          "scenario": 0
+        }
+      }
+    },
+    {
+      "draw_number": 7,
+      "parameters": {
+        "HealthSystem": {
+          "Service_Availability": [
+            "Alri_*",
+            "AntenatalCare_*",
+            "BladderCancer_*",
+            "BreastCancer_*",
+            "CardioMetabolicDisorders_*",
+            "Contraception_*",
+            "Copd_*",
+            "DeliveryCare_*",
+            "Depression_*",
+            "Diarrhoea_*",
+            "Epi_*",
+            "Epilepsy_*",
+            "FirstAttendance_*",
+            "Hiv_*",
+            "Measles_*",
+            "OesophagealCancer_*",
+            "OtherAdultCancer_*",
+            "PostnatalCare_*",
+            "ProstateCancer_*",
+            "Rti_*",
+            "Schisto_*",
+            "Tb_*",
+            "Undernutrition_*",
+            "Malaria_Treatment_Complicated"
+          ],
+          "use_funded_or_actual_staffing": "funded",
+          "mode_appt_constraints": 1,
+          "policy_name": "Naive"
+        },
+        "Hiv": {
+          "scenario": 3
+        }
+      }
+    },
+    {
+      "draw_number": 8,
+      "parameters": {
+        "HealthSystem": {
+          "Service_Availability": [
+            "Alri_*",
+            "AntenatalCare_*",
+            "BladderCancer_*",
+            "BreastCancer_*",
+            "CardioMetabolicDisorders_*",
+            "Contraception_*",
+            "Copd_*",
+            "DeliveryCare_*",
+            "Depression_*",
+            "Diarrhoea_*",
+            "Epi_*",
+            "Epilepsy_*",
+            "FirstAttendance_*",
+            "Measles_*",
+            "OesophagealCancer_*",
+            "OtherAdultCancer_*",
+            "PostnatalCare_*",
+            "ProstateCancer_*",
+            "Rti_*",
+            "Schisto_*",
+            "Undernutrition_*",
+            "Hiv_PalliativeCare",
+            "Tb_PalliativeCare",
+            "Malaria_Treatment_Complicated"
+          ],
+          "use_funded_or_actual_staffing": "funded",
+          "mode_appt_constraints": 1,
+          "policy_name": "Naive"
+        },
+        "Hiv": {
+          "scenario": 3
+        }
+      }
+    }
+  ],
+  "commit": "bc91bdca536aace9c51a36b72628d532ef172019",
+  "github": "https://github.com/UCL/TLOmodel/tree/bc91bdca536aace9c51a36b72628d532ef172019"
+}

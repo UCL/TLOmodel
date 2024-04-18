@@ -740,6 +740,7 @@ class Tb(Module):
         )
 
         # 4) -------- Define the treatment options --------
+        # treatment supplied as full kits for duration of treatment
         # adult treatment - primary
         self.item_codes_for_consumables_required['tb_tx_adult'] = \
             hs.get_item_code_from_item_name("Cat. I & III Patient Kit A")
@@ -761,12 +762,16 @@ class Tb(Module):
             hs.get_item_code_from_item_name("Cat. II Patient Kit A2")
 
         # mdr treatment
-        self.item_codes_for_consumables_required['tb_mdrtx'] = {
-            hs.get_item_code_from_item_name("Treatment: second-line drugs"): 1}
+        self.item_codes_for_consumables_required['tb_mdrtx'] = \
+            hs.get_item_code_from_item_name("Treatment: second-line drugs")
 
         # ipt
-        self.item_codes_for_consumables_required['tb_ipt'] = {
-            hs.get_item_code_from_item_name("Isoniazid/Pyridoxine, tablet 300 mg"): 1}
+        self.item_codes_for_consumables_required['tb_isoniazid'] = \
+            hs.get_item_code_from_item_name("Isoniazid/Pyridoxine, tablet 300 mg")
+
+        # 3hp
+        self.item_codes_for_consumables_required['tb_3HP'] = {
+            hs.get_item_code_from_item_name("Isoniazid/Rifapentine"): 1}
 
     def initialise_population(self, population):
 
@@ -2192,8 +2197,9 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         treatment_regimen = self.select_treatment(person_id)
+        # treatment supplied in kits, one kit per treatment course
         treatment_available = self.get_consumables(
-            item_codes=self.module.item_codes_for_consumables_required[treatment_regimen]
+            item_codes={self.module.item_codes_for_consumables_required[treatment_regimen]: 1}
         )
 
         if treatment_available:
@@ -2432,8 +2438,9 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
     * HIV.HSI_Hiv_StartOrContinueTreatment for PLHIV, diagnosed and on ART
     * Tb.HSI_Tb_StartTreatment for up to 5 contacts of diagnosed active TB case
 
-    if person referred by ART initiation (HIV+), IPT given for 36 months
-    paediatric IPT is 6-9 months
+    Isoniazid preventive therapy for HIV-infected children : 6 months, 180 doses
+    3HP (Isoniazid/Rifapentine) for adults: 12 weeks, 12 doses
+    3HP for children ages >2 yrs hiv-
     """
 
     def __init__(self, module, person_id):
@@ -2473,10 +2480,22 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
 
         else:
             # Check/log use of consumables, and give IPT if available
-            # if not available, reschedule IPT start
-            if self.get_consumables(
-                item_codes=self.module.item_codes_for_consumables_required["tb_ipt"]
-            ):
+
+            # if child and HIV+ or child under 2 yrs
+            if ((person["age_years"] <= 15) and person["hv_inf"]) or (person["age_years"] <= 2):
+
+                # 6 months dispensation, once daily
+                drugs_available = self.get_consumables(
+                    item_codes={self.module.item_codes_for_consumables_required["tb_ipt"]: 180})
+
+            # for all others
+            else:
+                # 12 weeks dispensation, once weekly
+                drugs_available = self.get_consumables(
+                    item_codes={self.module.item_codes_for_consumables_required["tb_3HP"]: 12})
+
+            # if available, schedule IPT decision
+            if drugs_available:
                 # Update properties
                 df.at[person_id, "tb_on_ipt"] = True
                 df.at[person_id, "tb_date_ipt"] = self.sim.date
