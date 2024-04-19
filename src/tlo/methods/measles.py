@@ -1,9 +1,11 @@
 import math
 import os
+from typing import List
 
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
@@ -202,6 +204,16 @@ class Measles(Module):
         for _age in range(30 + 1):
             assert set(self.symptoms) == set(self.symptom_probs.get(_age).keys())
             assert all([0.0 <= x <= 1.0 for x in self.symptom_probs.get(_age).values()])
+
+    def do_at_generic_first_appt(
+        self,
+        patient_id: int,
+        symptoms: List[str],
+        **kwargs,
+    ) -> IndividualPropertyUpdates:
+        if "rash" in symptoms:
+            event = HSI_Measles_Treatment(person_id=patient_id, module=self)
+            self.healthsystem.schedule_hsi_event(event, priority=0, topen=self.sim.date)
 
 
 class MeaslesEvent(RegularEvent, PopulationScopeEventMixin):

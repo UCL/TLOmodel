@@ -340,7 +340,7 @@ if __name__ == "__main__":
             "Root directory to write profiling outputs to. Results will be written to "
             "a subdirectory within this directory based on the date-time at which the "
             "profiling run was started, specifically using the format codes from "
-            "strftime, within a directory corresponding to '%Y/%m/%d/%H%M'."
+            "strftime, within a directory corresponding to 'YY/mm/dd/HHMM'."
         ),
         default=_PROFILING_RESULTS,
     )
