@@ -142,7 +142,6 @@ class Property(Specifiable):
         "category": float("nan"),
         object: float("nan"),
         np.uint32: 0,
-        np.uint64: 0,
     }
 
     def __init__(self, type_, description, categories=None, *, ordered=False):
