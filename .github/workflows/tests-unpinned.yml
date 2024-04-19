@@ -31,4 +31,4 @@ jobs:
       - name: Install tox
         run: python -m pip install tox
       - name: Run tests
-        run: tox -v -e py3-latest
+        run: tox -v -e py3-latest -- pytest -n auto -vv tests --skip-slow
