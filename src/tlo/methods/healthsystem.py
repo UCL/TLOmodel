@@ -202,8 +202,10 @@ class HealthSystem(Module):
         'policy_name': Parameter(
             Types.STRING, "Name of priority policy adopted"),
         'year_mode_switch': Parameter(
-            Types.INT, "Year in which mode switch in enforced"),
-
+            Types.INT, "Year in which mode switch is enforced"),
+        'year_cons_availability_switch': Parameter(
+            Types.INT, "Year in which consumable availability switch is enforced. The change happens"
+                       "on 1st January of that year.)"),
         'priority_rank': Parameter(
             Types.DICT, "Data on the priority ranking of each of the Treatment_IDs to be adopted by "
                         " the queueing system under different policies, where the lower the number the higher"
@@ -288,7 +290,10 @@ class HealthSystem(Module):
                        ' to the module initialiser.',
         ),
         'mode_appt_constraints_postSwitch': Parameter(
-            Types.INT, 'Mode considered after a mode switch in year_mode_switch.')
+            Types.INT, 'Mode considered after a mode switch in year_mode_switch.'),
+        'cons_availability_postSwitch': Parameter(
+            Types.STRING, 'Consumables availability after switch in `year_cons_availability_switch`. Acceptable values'
+                          'are the same as those for Parameter `cons_availability`.')
     }
 
     PROPERTIES = {
@@ -652,6 +657,17 @@ class HealthSystem(Module):
         # Schedule a mode_appt_constraints change
         sim.schedule_event(HealthSystemChangeMode(self),
                            Date(self.parameters["year_mode_switch"], 1, 1))
+
+        # Schedule a consumables availability switch
+        sim.schedule_event(
+            HealthSystemChangeParameters(
+                self,
+                parameters={
+                    'cons_availability': self.parameters['cons_availability_postSwitch']
+                }
+            ),
+            Date(self.parameters["year_cons_availability_switch"], 1, 1)
+        )
 
         # Schedule a one-off rescaling of _daily_capabilities broken down by officer type and level.
         # This occurs on 1st January of the year specified in the parameters.
