@@ -9,6 +9,8 @@ import os
 import matplotlib.lines as mlines
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
+
 import pandas as pd
 import numpy as np
 from tlo import Date
@@ -26,9 +28,9 @@ from tlo.analysis.utils import (
 )
 import seaborn as sns
 
-# outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
+outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
 
-outputspath = Path("./outputs")
+# outputspath = Path("./outputs")
 
 # Find results_folder associated with a given batch_file (and get most recent [-1])
 results_folder = get_scenario_outputs("exclude_HTM_services.py", outputspath)[-1]
@@ -64,13 +66,14 @@ results = extract_results(
 )
 # indices are year/label
 results.index = results.index.set_names('label', level=1)
-results.to_csv(outputspath / ('Mar2024_HTMresults/dalys_by_cause_yr_run' + '.csv'))
+# results.to_csv(outputspath / ('Mar2024_HTMresults/dalys_by_cause_yr_run' + '.csv'))
 
 
-# median_dalys = results.groupby(level=0, axis=1).median(0.5)
-# lower_dalys = results.groupby(level=0, axis=1).quantile(0.025)
-# upper_dalys = results.groupby(level=0, axis=1).quantile(0.975)
+TARGET_PERIOD = (Date(2010, 1, 1), Date(2020, 1, 1))
 
+
+# TARGET_PERIOD = (Date(2019, 1, 1), Date(2020, 1, 1))
+#
 
 # person-years (total) mean by year
 
@@ -102,15 +105,13 @@ person_years = extract_results(
 )
 
 person_years.index = person_years.index.year
-person_years.to_csv(outputspath / ('Mar2024_HTMresults/py_by_cause_yr_run' + '.csv'))
+# person_years.to_csv(outputspath / ('Mar2024_HTMresults/py_by_cause_yr_run' + '.csv'))
 
 # get dalys per person_year over the whole simulation
 py_totals = person_years.sum(axis=0)
+
+
 # divide each value in first column by first value in py_totals
-
-# get total DALYs by cause for each run divided by person-years
-TARGET_PERIOD = (Date(2010, 1, 1), Date(2020, 1, 1))
-
 
 def num_dalys_by_cause(_df):
     """Return total number of DALYS (Stacked) (total by age-group within the TARGET_PERIOD)"""
@@ -121,20 +122,20 @@ def num_dalys_by_cause(_df):
 
 
 daly_full = extract_results(
-        results_folder,
-        module="tlo.methods.healthburden",
-        key="dalys_stacked",
-        custom_generate_series=num_dalys_by_cause,
-        do_scaling=True,
-    )
+    results_folder,
+    module="tlo.methods.healthburden",
+    key="dalys_stacked",
+    custom_generate_series=num_dalys_by_cause,
+    do_scaling=True,
+)
 
 # divide total dalys per cause over simulation by total person-years for each run
 tmp = daly_full.div(py_totals, axis=1)
-tmp.to_csv(outputspath / ('Mar2024_HTMresults/dalys_per_py_run' + '.csv'))
+# tmp.to_csv(outputspath / ('Mar2024_HTMresults/dalys_per_py_run' + '.csv'))
 
 # get median dalys per person-year by cause
 median_dalys_per_py = tmp.groupby(level=0, axis=1).median()
-median_dalys_per_py.to_csv(outputspath / ('Mar2024_HTMresults/median_dalys_per_py' + '.csv'))
+# median_dalys_per_py.to_csv(outputspath / ('Mar2024_HTMresults/median_dalys_per_py' + '.csv'))
 
 min_dalys_per_py = tmp.groupby(level=0, axis=1).min()
 new_columns = {col: f"{i}_min" for i, col in enumerate(min_dalys_per_py.columns)}
@@ -151,26 +152,29 @@ new_columns = [f"{i}_{ext}" for i in range(len(dalys_range.columns) // 2) for ex
 
 # Reindex the DataFrame with the new column names
 dalys_range = dalys_range.reindex(columns=new_columns)
-dalys_range.to_csv(outputspath / ('Mar2024_HTMresults/range_dalys_per_py' + '.csv'))
+# dalys_range.to_csv(outputspath / ('Mar2024_HTMresults/range_dalys_per_py' + '.csv'))
 
 # --------------------------------- Plotting
-df = dalys_range
-fig, ax = plt.subplots(figsize=(12, 8))
+# plot the DALY range (min-max) for all years
 
-# Plotting vertical lines for each row
-for i, row in enumerate(df.index):
-    ax.plot([i - 0.1, i - 0.1], [df.loc[row, '0_min'], df.loc[row, '0_max']], color='blue')
-    ax.plot([i + 0.1, i + 0.1], [df.loc[row, '1_min'], df.loc[row, '1_max']], color='red')
 
-ax.set_xticks(range(len(df.index)))
-ax.set_xticklabels(df.index, rotation=90)
-ax.set_xlabel('Draw')
-ax.set_ylabel('Values')
-ax.set_title('')
-ax.legend(['0', '1'])
-
-plt.tight_layout()
-plt.show()
+# df = dalys_range
+# fig, ax = plt.subplots(figsize=(12, 8))
+#
+# # Plotting vertical lines for each row
+# for i, row in enumerate(df.index):
+#     ax.plot([i - 0.1, i - 0.1], [df.loc[row, '0_min'], df.loc[row, '0_max']], color='blue')
+#     ax.plot([i + 0.1, i + 0.1], [df.loc[row, '1_min'], df.loc[row, '1_max']], color='red')
+#
+# ax.set_xticks(range(len(df.index)))
+# ax.set_xticklabels(df.index, rotation=90)
+# ax.set_xlabel('Draw')
+# ax.set_ylabel('Values')
+# ax.set_title('')
+# ax.legend(['0', '1'])
+#
+# plt.tight_layout()
+# plt.show()
 
 # --------------------------------- DALYS by HTM or other causes
 # separate out the DALYs incurred due to HTM separately, and other
@@ -181,8 +185,9 @@ plt.show()
 # Define disease categories
 diseases = ['AIDS', 'TB (non-AIDS)', 'Malaria']
 
+
 def g(df, diseases):
-  """
+    """
   This function takes a DataFrame and a list of diseases as input.
   It creates a new DataFrame with 4 rows ('aids', 'tb', 'malaria', 'other')
   and 15 columns as in the original DataFrame.
@@ -196,32 +201,54 @@ def g(df, diseases):
   Returns:
       A new DataFrame with the specified format.
   """
-  result = pd.DataFrame(columns=df.columns, index=['AIDS', 'TB (non-AIDS)', 'Malaria', 'other'])
-  for col in df.columns:
-    for disease in diseases:
-        if disease in df.index:  # Check if disease is in the index string
-            result.loc[disease, col] = df[col][disease]
-    else:
-      # Exclude disease rows when summing other values (boolean indexing)
-      disease_mask = ~df.index.isin(diseases)
-      result.loc['other', col] = df[col][disease_mask].sum()
-  return result
+    result = pd.DataFrame(columns=df.columns, index=['AIDS', 'TB (non-AIDS)', 'Malaria', 'other'])
+    for col in df.columns:
+        for disease in diseases:
+            if disease in df.index:  # Check if disease is in the index string
+                result.loc[disease, col] = df[col][disease]
+        else:
+            # Exclude disease rows when summing other values (boolean indexing)
+            disease_mask = ~df.index.isin(diseases)
+            result.loc['other', col] = df[col][disease_mask].sum()
+    return result
+
 
 dalys_broad_categories_by_run = g(daly_full.copy(), diseases.copy())
 print(dalys_broad_categories_by_run)
 
 # divide compiled DALYs by person-years
-tmp2 = dalys_broad_categories_by_run.div(py_totals, axis=1)
+tmp2 = pd.DataFrame(dalys_broad_categories_by_run.div(py_totals, axis=1))
 
-# get summary stats of DALYs per py for broad cause categories
-median_dalys_broad_categories_per_py = tmp2.groupby(level=0, axis=1).median()
-lower_dalys_broad_categories_per_py = tmp2.groupby(level=0, axis=1).quantile(0.025)
-upper_dalys_broad_categories_per_py = tmp2.groupby(level=0, axis=1).median()
+tmp2 = tmp2.apply(pd.to_numeric, errors='coerce')
+
+daly_grouped_per_pyALLYEARS = pd.concat({
+    'median': tmp2.groupby(level=0, axis=1).median(0.5),
+    'lower': tmp2.groupby(level=0, axis=1).quantile(0.025),
+    'upper': tmp2.groupby(level=0, axis=1).quantile(0.975)
+}, axis=1).swaplevel(axis=1)
+# daly_grouped_per_pyALLYEARS.to_csv(outputspath / ('Mar2024_HTMresults/daly_grouped_per_pyALLYEARS' + '.csv'))
 
 
+# --------------------------------------------------------------------
+# re-run but set target period to 2019 only
 
-#-----------------------------------------------------------------------------------------------------
+daly_grouped_per_py2019 = pd.concat({
+    'median': tmp2.groupby(level=0, axis=1).median(0.5),
+    'lower': tmp2.groupby(level=0, axis=1).quantile(0.025),
+    'upper': tmp2.groupby(level=0, axis=1).quantile(0.975)
+}, axis=1).swaplevel(axis=1)
+
+daly_grouped_per_py2019.to_csv(outputspath / ('Mar2024_HTMresults/daly_grouped_per_py2019' + '.csv'))
+
+
+# -----------------------------------------------------------------------------------------------------
 # # calculate DALYs per 100,000 population by year
+
+median_dalys = results.groupby(level=0, axis=1).median(0.5)
+lower_dalys = results.groupby(level=0, axis=1).quantile(0.025)
+upper_dalys = results.groupby(level=0, axis=1).quantile(0.975)
+
+
 def edit_data_for_plotting(draw):
     median = median_dalys.loc[:, draw].reset_index(0)
     median = median.reset_index(0)
@@ -269,8 +296,16 @@ fig, ((ax1, ax2, ax3), (ax4, ax5, ax6)) = plt.subplots(nrows=2, ncols=3,
                                                        figsize=(16, 8))
 fig.suptitle('')
 
-# ALRI
-d0 = dalys0.loc[(dalys0.label == 'Lower respiratory infections') & (dalys0.year < 2020)]
+# set diseases to include
+label1 = 'Lower respiratory infections'
+label2 = 'Childhood Diarrhoea'
+label3 = 'Maternal Disorders'
+label4 = 'Neonatal Disorders'
+label5 = 'Congenital birth defects'
+label6 = 'Measles'
+
+# plot1
+d0 = dalys0.loc[(dalys0.label == label1) & (dalys0.year < 2020)]
 
 ax1.plot(d0['year'], d0['dalys_per_100_000'],
          color=colors[0])
@@ -278,7 +313,7 @@ ax1.fill_between(d0['year'], d0['dalys_per_100_000_lower'].astype(float),
                  d0['dalys_per_100_000_upper'].astype(float),
                  color=colors[0], alpha=0.2)
 
-d4 = dalys4.loc[(dalys4.label == 'Lower respiratory infections') & (dalys4.year < 2020)]
+d4 = dalys4.loc[(dalys4.label == label1) & (dalys4.year < 2020)]
 
 ax1.plot(d4['year'], d4['dalys_per_100_000'],
          color=colors[3])
@@ -287,12 +322,12 @@ ax1.fill_between(d4['year'], d4['dalys_per_100_000_lower'].astype(float),
                  color=colors[3], alpha=0.2)
 
 ax1.set_ylim(0, 9000)
-ax1.set(title='ALRI',
+ax1.set(title=label1,
         ylabel='DALYs per 100,000',
         xlabel='Year')
 
-# Diarrhoea
-d0 = dalys0.loc[(dalys0.label == 'Childhood Diarrhoea') & (dalys0.year < 2020)]
+# plot 2
+d0 = dalys0.loc[(dalys0.label == label2) & (dalys0.year < 2020)]
 
 ax2.plot(d0['year'], d0['dalys_per_100_000'],
          color=colors[0])
@@ -300,7 +335,7 @@ ax2.fill_between(d0['year'], d0['dalys_per_100_000_lower'].astype(float),
                  d0['dalys_per_100_000_upper'].astype(float),
                  color=colors[0], alpha=0.2)
 
-d4 = dalys4.loc[(dalys4.label == 'Childhood Diarrhoea') & (dalys4.year < 2020)]
+d4 = dalys4.loc[(dalys4.label == label2) & (dalys4.year < 2020)]
 
 ax2.plot(d4['year'], d4['dalys_per_100_000'],
          color=colors[3])
@@ -309,12 +344,12 @@ ax2.fill_between(d4['year'], d4['dalys_per_100_000_lower'].astype(float),
                  color=colors[3], alpha=0.2)
 
 ax2.set_ylim(0, 4000)
-ax2.set(title='Childhood diarrhoea',
+ax2.set(title=label2,
         ylabel='DALYs per 100,000',
         xlabel='Year')
 
-# Maternal disorders
-d0 = dalys0.loc[(dalys0.label == 'Maternal Disorders') & (dalys0.year < 2020)]
+# plot 3
+d0 = dalys0.loc[(dalys0.label == label3) & (dalys0.year < 2020)]
 
 ax3.plot(d0['year'], d0['dalys_per_100_000'],
          color=colors[0])
@@ -322,7 +357,7 @@ ax3.fill_between(d0['year'], d0['dalys_per_100_000_lower'].astype(float),
                  d0['dalys_per_100_000_upper'].astype(float),
                  color=colors[0], alpha=0.2)
 
-d4 = dalys4.loc[(dalys4.label == 'Maternal Disorders') & (dalys4.year < 2020)]
+d4 = dalys4.loc[(dalys4.label == label3) & (dalys4.year < 2020)]
 
 ax3.plot(d4['year'], d4['dalys_per_100_000'],
          color=colors[3])
@@ -331,12 +366,12 @@ ax3.fill_between(d4['year'], d4['dalys_per_100_000_lower'].astype(float),
                  color=colors[3], alpha=0.2)
 
 ax3.set_ylim(0, 2000)
-ax3.set(title='Maternal disorders',
+ax3.set(title=label3,
         ylabel='DALYs per 100,000',
         xlabel='Year')
 
-# Neonatal disorders
-d0 = dalys0.loc[(dalys0.label == 'Neonatal Disorders') & (dalys0.year < 2020)]
+# plot4
+d0 = dalys0.loc[(dalys0.label == label4) & (dalys0.year < 2020)]
 
 ax4.plot(d0['year'], d0['dalys_per_100_000'],
          color=colors[0])
@@ -344,7 +379,7 @@ ax4.fill_between(d0['year'], d0['dalys_per_100_000_lower'].astype(float),
                  d0['dalys_per_100_000_upper'].astype(float),
                  color=colors[0], alpha=0.2)
 
-d4 = dalys4.loc[(dalys4.label == 'Neonatal Disorders') & (dalys4.year < 2020)]
+d4 = dalys4.loc[(dalys4.label == label4) & (dalys4.year < 2020)]
 
 ax4.plot(d4['year'], d4['dalys_per_100_000'],
          color=colors[3])
@@ -353,12 +388,12 @@ ax4.fill_between(d4['year'], d4['dalys_per_100_000_lower'].astype(float),
                  color=colors[3], alpha=0.2)
 
 ax4.set_ylim(0, 9000)
-ax4.set(title='Neonatal disorders',
+ax4.set(title=label4,
         ylabel='DALYs per 100,000',
         xlabel='Year')
 
-# Heart disease
-d0 = dalys0.loc[(dalys0.label == 'Heart Disease') & (dalys0.year < 2020)]
+# plot5
+d0 = dalys0.loc[(dalys0.label == label5) & (dalys0.year < 2020)]
 
 ax5.plot(d0['year'], d0['dalys_per_100_000'],
          color=colors[0])
@@ -366,7 +401,7 @@ ax5.fill_between(d0['year'], d0['dalys_per_100_000_lower'].astype(float),
                  d0['dalys_per_100_000_upper'].astype(float),
                  color=colors[0], alpha=0.2)
 
-d4 = dalys4.loc[(dalys4.label == 'Heart Disease') & (dalys4.year < 2020)]
+d4 = dalys4.loc[(dalys4.label == label5) & (dalys4.year < 2020)]
 
 ax5.plot(d4['year'], d4['dalys_per_100_000'],
          color=colors[3])
@@ -374,13 +409,13 @@ ax5.fill_between(d4['year'], d4['dalys_per_100_000_lower'].astype(float),
                  d4['dalys_per_100_000_upper'].astype(float),
                  color=colors[3], alpha=0.2)
 
-ax5.set_ylim(0, 600)
-ax5.set(title='Heart Disease',
+ax5.set_ylim(0, 1100)
+ax5.set(title=label5,
         ylabel='DALYs per 100,000',
         xlabel='Year')
 
-# Kidney disease
-d0 = dalys0.loc[(dalys0.label == 'Kidney Disease') & (dalys0.year < 2020)]
+# plot6
+d0 = dalys0.loc[(dalys0.label == label6) & (dalys0.year < 2020)]
 
 ax6.plot(d0['year'], d0['dalys_per_100_000'],
          color=colors[0])
@@ -388,7 +423,7 @@ ax6.fill_between(d0['year'], d0['dalys_per_100_000_lower'].astype(float),
                  d0['dalys_per_100_000_upper'].astype(float),
                  color=colors[0], alpha=0.2)
 
-d4 = dalys4.loc[(dalys4.label == 'Kidney Disease') & (dalys4.year < 2020)]
+d4 = dalys4.loc[(dalys4.label == label6) & (dalys4.year < 2020)]
 
 ax6.plot(d4['year'], d4['dalys_per_100_000'],
          color=colors[3])
@@ -396,14 +431,180 @@ ax6.fill_between(d4['year'], d4['dalys_per_100_000_lower'].astype(float),
                  d4['dalys_per_100_000_upper'].astype(float),
                  color=colors[3], alpha=0.2)
 
-ax6.set_ylim(0, 200)
-ax6.set(title='Kidney Disease',
+ax6.set_ylim(0, 1100)
+ax6.set(title=label6,
         ylabel='DALYs per 100,000',
         xlabel='Year')
 
-fig.savefig(outputspath / "DALYs_per_100k.png")
+# Add legend using custom handles
+legend = ax6.legend(handles=[Line2D([0], [0], color=colors[0], lw=2),
+                              Line2D([0], [0], color=colors[3], lw=2)],
+                    labels=['Status quo', 'Exclude HTM'],
+                    loc='upper right', bbox_to_anchor=(1, 1))
+
+fig.savefig(outputspath / "Mar2024_HTMresults/Temporal_DALYs_per_100k.png")
 
 plt.show()
+
+#-----------------------------------------------------------------------------
+
+
+fig, ((ax1, ax2, ax3), (ax4, ax5, ax6)) = plt.subplots(nrows=2, ncols=3,
+                                                       constrained_layout=True,
+                                                       figsize=(16, 8))
+fig.suptitle('')
+
+# set diseases to include
+label1 = 'Cancer (Other)'
+label2 = 'Heart Disease'
+label3 = 'Kidney Disease'
+label4 = 'Stroke'
+label5 = 'Diabetes'
+label6 = 'Depression / Self-harm'
+
+# plot1
+d0 = dalys0.loc[(dalys0.label == label1) & (dalys0.year < 2020)]
+
+ax1.plot(d0['year'], d0['dalys_per_100_000'],
+         color=colors[0])
+ax1.fill_between(d0['year'], d0['dalys_per_100_000_lower'].astype(float),
+                 d0['dalys_per_100_000_upper'].astype(float),
+                 color=colors[0], alpha=0.2)
+
+d4 = dalys4.loc[(dalys4.label == label1) & (dalys4.year < 2020)]
+
+ax1.plot(d4['year'], d4['dalys_per_100_000'],
+         color=colors[3])
+ax1.fill_between(d4['year'], d4['dalys_per_100_000_lower'].astype(float),
+                 d4['dalys_per_100_000_upper'].astype(float),
+                 color=colors[3], alpha=0.2)
+
+ax1.set_ylim(0, 2000)
+ax1.set(title=label1,
+        ylabel='DALYs per 100,000',
+        xlabel='Year')
+
+# plot 2
+d0 = dalys0.loc[(dalys0.label == label2) & (dalys0.year < 2020)]
+
+ax2.plot(d0['year'], d0['dalys_per_100_000'],
+         color=colors[0])
+ax2.fill_between(d0['year'], d0['dalys_per_100_000_lower'].astype(float),
+                 d0['dalys_per_100_000_upper'].astype(float),
+                 color=colors[0], alpha=0.2)
+
+d4 = dalys4.loc[(dalys4.label == label2) & (dalys4.year < 2020)]
+
+ax2.plot(d4['year'], d4['dalys_per_100_000'],
+         color=colors[3])
+ax2.fill_between(d4['year'], d4['dalys_per_100_000_lower'].astype(float),
+                 d4['dalys_per_100_000_upper'].astype(float),
+                 color=colors[3], alpha=0.2)
+
+ax2.set_ylim(0, 1000)
+ax2.set(title=label2,
+        ylabel='DALYs per 100,000',
+        xlabel='Year')
+
+# plot 3
+d0 = dalys0.loc[(dalys0.label == label3) & (dalys0.year < 2020)]
+
+ax3.plot(d0['year'], d0['dalys_per_100_000'],
+         color=colors[0])
+ax3.fill_between(d0['year'], d0['dalys_per_100_000_lower'].astype(float),
+                 d0['dalys_per_100_000_upper'].astype(float),
+                 color=colors[0], alpha=0.2)
+
+d4 = dalys4.loc[(dalys4.label == label3) & (dalys4.year < 2020)]
+
+ax3.plot(d4['year'], d4['dalys_per_100_000'],
+         color=colors[3])
+ax3.fill_between(d4['year'], d4['dalys_per_100_000_lower'].astype(float),
+                 d4['dalys_per_100_000_upper'].astype(float),
+                 color=colors[3], alpha=0.2)
+
+ax3.set_ylim(0, 200)
+ax3.set(title=label3,
+        ylabel='DALYs per 100,000',
+        xlabel='Year')
+
+# plot4
+d0 = dalys0.loc[(dalys0.label == label4) & (dalys0.year < 2020)]
+
+ax4.plot(d0['year'], d0['dalys_per_100_000'],
+         color=colors[0])
+ax4.fill_between(d0['year'], d0['dalys_per_100_000_lower'].astype(float),
+                 d0['dalys_per_100_000_upper'].astype(float),
+                 color=colors[0], alpha=0.2)
+
+d4 = dalys4.loc[(dalys4.label == label4) & (dalys4.year < 2020)]
+
+ax4.plot(d4['year'], d4['dalys_per_100_000'],
+         color=colors[3])
+ax4.fill_between(d4['year'], d4['dalys_per_100_000_lower'].astype(float),
+                 d4['dalys_per_100_000_upper'].astype(float),
+                 color=colors[3], alpha=0.2)
+
+ax4.set_ylim(0, 1000)
+ax4.set(title=label4,
+        ylabel='DALYs per 100,000',
+        xlabel='Year')
+
+# plot5
+d0 = dalys0.loc[(dalys0.label == label5) & (dalys0.year < 2020)]
+
+ax5.plot(d0['year'], d0['dalys_per_100_000'],
+         color=colors[0])
+ax5.fill_between(d0['year'], d0['dalys_per_100_000_lower'].astype(float),
+                 d0['dalys_per_100_000_upper'].astype(float),
+                 color=colors[0], alpha=0.2)
+
+d4 = dalys4.loc[(dalys4.label == label5) & (dalys4.year < 2020)]
+
+ax5.plot(d4['year'], d4['dalys_per_100_000'],
+         color=colors[3])
+ax5.fill_between(d4['year'], d4['dalys_per_100_000_lower'].astype(float),
+                 d4['dalys_per_100_000_upper'].astype(float),
+                 color=colors[3], alpha=0.2)
+
+ax5.set_ylim(0, 400)
+ax5.set(title=label5,
+        ylabel='DALYs per 100,000',
+        xlabel='Year')
+
+# plot6
+d0 = dalys0.loc[(dalys0.label == label6) & (dalys0.year < 2020)]
+
+ax6.plot(d0['year'], d0['dalys_per_100_000'],
+         color=colors[0])
+ax6.fill_between(d0['year'], d0['dalys_per_100_000_lower'].astype(float),
+                 d0['dalys_per_100_000_upper'].astype(float),
+                 color=colors[0], alpha=0.2)
+
+d4 = dalys4.loc[(dalys4.label == label6) & (dalys4.year < 2020)]
+
+ax6.plot(d4['year'], d4['dalys_per_100_000'],
+         color=colors[3])
+ax6.fill_between(d4['year'], d4['dalys_per_100_000_lower'].astype(float),
+                 d4['dalys_per_100_000_upper'].astype(float),
+                 color=colors[3], alpha=0.2)
+
+ax6.set_ylim(0, 4000)
+ax6.set(title=label6,
+        ylabel='DALYs per 100,000',
+        xlabel='Year')
+
+# Add legend using custom handles
+legend = ax6.legend(handles=[Line2D([0], [0], color=colors[0], lw=2),
+                              Line2D([0], [0], color=colors[3], lw=2)],
+                    labels=['Status quo', 'Exclude HTM'],
+                    loc='lower right', bbox_to_anchor=(0.95, 0.05))
+
+fig.savefig(outputspath / "Mar2024_HTMresults/Temporal_DALYs_per_100k_2.png")
+
+plt.show()
+
+
 
 ####################
 # add column totals

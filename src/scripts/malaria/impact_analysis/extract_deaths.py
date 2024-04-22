@@ -455,7 +455,7 @@ array2 = array1 - np.array(lower_deaths_for_plot)
 array3 = np.array(upper_deaths_for_plot) - array1
 
 
-
+# ---------------------------------------------------------------------------------------------
 
 target_period = (datetime.date(2019, 1, 1), datetime.date(2020, 1, 1))
 
@@ -584,3 +584,64 @@ ax2.legend(
 fig.savefig(outputspath / "Mar2024_HTMresults/Death_life_expect_exclHTM.png")
 
 plt.show()
+
+
+# ---------------------------------------------------------------------------------------------
+# sum the deaths averted through the single programmes to show difference from joint programmes
+
+# get total deaths for each run 2010-2020
+def get_total_deaths(results_folder, do_scaling=True):
+    """ sum all deaths occurring for each run of each draw
+    dataframe returned: row=total deaths, column=run/draw
+    """
+    def extract_deaths_total(df: pd.DataFrame) -> pd.Series:
+        return pd.Series({"Total": len(df)})
+
+    return extract_results(
+        results_folder,
+        module="tlo.methods.demography",
+        key="death",
+        custom_generate_series=extract_deaths_total,
+        do_scaling=do_scaling
+    )
+
+total_deaths = get_total_deaths(results_folder)
+
+# do run-by-run comparison, deaths in draw1 - draw0
+def extract_difference_in_deaths_across_runs(total_deaths, scenario_info):
+    """# this computes the mean difference in deaths between each scenario and baseline
+    # numbers of deaths are compared run-for-run
+    """
+    out = [None] * scenario_info["number_of_draws"]
+    for scenario in range(scenario_info["number_of_draws"]):
+        deaths_difference_by_run = [
+            total_deaths[scenario][run_number]["Total"] - total_deaths[0][run_number]["Total"]
+            for run_number in range(scenario_info["runs_per_draw"])
+        ]
+
+        # Save each value of deaths_difference_by_run instead of computing the mean
+        out[scenario] = deaths_difference_by_run
+    df = pd.DataFrame(out, index=range(scenario_info["number_of_draws"]))
+
+    return df
+
+# the rows are scenarios, columns are runs
+diffs_in_deaths = extract_difference_in_deaths_across_runs(total_deaths, scenario_info)
+
+# to sum deaths averted by scenario:sum the deaths averted in each column 1:3
+# this will be the all-cause deaths averted by HIV, TB and malaria programmes separately
+# will have double-counting
+# should be larger than the joint impact estimates
+sum_values = diffs_in_deaths.iloc[1:4, :].sum()
+
+# Add the sum values as a new row to the DataFrame
+diffs_in_deaths.loc['Sum'] = sum_values
+
+
+# Calculate median and percentiles for each row
+row_stats = diffs_in_deaths.apply(lambda row: pd.Series([row.median(), row.quantile(0.025), row.quantile(0.975)]), axis=1)
+
+# Rename the columns for clarity
+row_stats.columns = ['Median', '2.5th Percentile', '97.5th Percentile']
+
+print(row_stats)
