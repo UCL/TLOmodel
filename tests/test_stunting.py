@@ -221,59 +221,137 @@ def test_polling_event_progression(seed):
     assert (df.loc[df.is_alive & (df.age_years >= 5), 'un_HAZ_category'] == 'HAZ>=-2').all()
 
 
-def test_routine_assessment_for_chronic_undernutrition_if_stunted_and_correctly_diagnosed(seed):
+@pytest.fixture(scope="module")
+def shared_stunting_sim(seed, jan_1st_2010, resource_filepath):
+    """"""
+    sim = Simulation(start_date=jan_1st_2010, seed=seed)
+    sim.register(
+        demography.Demography(resourcefilepath=resource_filepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resource_filepath),
+        healthsystem.HealthSystem(
+            resourcefilepath=resource_filepath, cons_availability="all"
+        ),
+        simplified_births.SimplifiedBirths(resourcefilepath=resource_filepath),
+        stunting.Stunting(resourcefilepath=resource_filepath),
+        stunting.StuntingPropertiesOfOtherModules(),
+    )
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=sim.start_date)
+    return sim
+
+@pytest.fixture(scope="module")
+def patient_id() -> int:
+    return 0
+
+@pytest.fixture(scope="function")
+def reset_hsi_queue(shared_stunting_sim):
+    """
+    Reset the HSI event queue before running this test.
+    """
+    shared_stunting_sim.modules["HealthSystem"].reset_queue()
+    yield
+
+@pytest.fixture(scope="function")
+def edit_sim_properties(shared_stunting_sim, param_overwrites):
+    """
+    Temporarily edit the Stunting module parameters when running
+    this test.
+
+    Property overwrites should be a dictionary whose key: value pairs
+    are the names of parameters in the stunting module, and the value
+    to overwrite that parameter with for the duration of the test.
+    """
+    old_param_values = {}
+    params = shared_stunting_sim.modules["Stunting"].parameters
+
+    # Edit properties for this test only
+    for param, old_value in param_overwrites.items():
+        old_param_values[param] = old_value
+        params[param] = param_overwrites[param]
+    
+    yield
+
+    # Reset properties to defaults
+    for param, old_value in old_param_values.items():
+        params[param] = old_value
+
+
+@pytest.fixture(scope="function")
+def edit_patient_properties(shared_stunting_sim, patient_id, patient_overwrites):
+    """
+    Edit the details of the patient with the given ID to match those given
+    in property_overwrites, reverting this change at the end of the test.
+
+    Property overwrites should be a dictionary whose key: value pairs
+    are the names of parameters in the stunting module, and the value
+    to overwrite that parameter with for the duration of the test.
+    """
+    old_patient_values = shared_stunting_sim.population.row_in_readonly_form(patient_id)
+    values_to_restore = {col: old_patient_values[col] for col in patient_overwrites.keys()}
+
+    # Edit patient properties
+    shared_stunting_sim.population.props.loc[patient_id, patient_overwrites.keys()] = patient_overwrites.values()
+
+    yield
+
+    # Reset the patient to their pre-test state
+    shared_stunting_sim.population.props.loc[patient_id, values_to_restore.keys()] = (
+        values_to_restore.values()
+    )
+
+
+non_severe_stunting = {"age_years": 2, "un_HAZ_category": "-3<=HAZ<-2"}
+non_severe_stunting_params = {
+    "prob_stunting_diagnosed_at_generic_appt": 1.0,
+    "effectiveness_of_complementary_feeding_education_in_stunting_reduction": 1.0,
+    "effectiveness_of_food_supplementation_in_stunting_reduction": 1.0,
+}
+
+
+@pytest.mark.parametrize(
+    "patient_overwrites, param_overwrites",
+    [
+        pytest.param(
+            non_severe_stunting, non_severe_stunting_params, id="Non-severe stunting"
+        )
+    ],
+)
+def test_routine_assessment_for_chronic_undernutrition_if_stunted_and_correctly_diagnosed(
+    shared_stunting_sim, patient_id, edit_patient_properties, edit_sim_properties, reset_hsi_queue
+):
     """Check that a call to `do_at_generic_first_appt` can lead to immediate recovery for a
     stunted child (via an HSI), if there is checking and correct diagnosis."""
-    popsize = 100
-    sim = get_sim(seed)
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=sim.start_date)
-    sim.modules['HealthSystem'].reset_queue()
-
-    # Make one person have non-severe stunting
-    df = sim.population.props
-    person_id = 0
-    df.loc[person_id, 'age_years'] = 2
-    df.loc[person_id, "un_HAZ_category"] = "-3<=HAZ<-2"
-    patient_details = sim.population.row_in_readonly_form(person_id)
-
-    # Make the probability of stunting checking/diagnosis as 1.0
-    sim.modules['Stunting'].parameters['prob_stunting_diagnosed_at_generic_appt'] = 1.0
+    patient_details = shared_stunting_sim.population.row_in_readonly_form(patient_id)
+    df = shared_stunting_sim.population.props
 
     # Subject the person to `do_at_generic_first_appt`
-    sim.modules["Stunting"].do_at_generic_first_appt(
-        patient_id=person_id, patient_details=patient_details
+    shared_stunting_sim.modules["Stunting"].do_at_generic_first_appt(
+        patient_id=patient_id, patient_details=patient_details
     )
 
     # Check that there is an HSI scheduled for this person
     hsi_event_scheduled = [
         ev
-        for ev in sim.modules["HealthSystem"].find_events_for_person(person_id)
+        for ev in shared_stunting_sim.modules["HealthSystem"].find_events_for_person(patient_id)
         if isinstance(ev[1], HSI_Stunting_ComplementaryFeeding)
     ]
     assert 1 == len(hsi_event_scheduled)
-    assert sim.date == hsi_event_scheduled[0][0]
+    assert shared_stunting_sim.date == hsi_event_scheduled[0][0]
     the_hsi_event = hsi_event_scheduled[0][1]
-    assert person_id == the_hsi_event.target
-
-    # Make probability of treatment success is 1.0 (consumables are available through use of `ignore_cons_constraints`)
-    sim.modules['Stunting'].parameters[
-        'effectiveness_of_complementary_feeding_education_in_stunting_reduction'] = 1.0
-    sim.modules['Stunting'].parameters[
-        'effectiveness_of_food_supplementation_in_stunting_reduction'] = 1.0
+    assert patient_id == the_hsi_event.target
 
     # Run the HSI event
     the_hsi_event.run(squeeze_factor=0.0)
 
     # Check that the person is not longer stunted
-    assert df.at[person_id, 'un_HAZ_category'] == 'HAZ>=-2'
+    assert df.at[patient_id, 'un_HAZ_category'] == 'HAZ>=-2'
     # Check that there is a follow-up appointment scheduled
     hsi_event_scheduled_after_first_appt = [
-        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id)
+        ev for ev in shared_stunting_sim.modules['HealthSystem'].find_events_for_person(patient_id)
         if isinstance(ev[1], HSI_Stunting_ComplementaryFeeding)
     ]
     assert 2 == len(hsi_event_scheduled_after_first_appt)
-    assert (sim.date + pd.DateOffset(months=6)) == hsi_event_scheduled_after_first_appt[
+    assert (shared_stunting_sim.date + pd.DateOffset(months=6)) == hsi_event_scheduled_after_first_appt[
         1
     ][0]
     the_follow_up_hsi_event = hsi_event_scheduled_after_first_appt[1][1]
@@ -283,7 +361,7 @@ def test_routine_assessment_for_chronic_undernutrition_if_stunted_and_correctly_
 
     # Check that after running the following appointments there are no further appointments scheduled
     assert hsi_event_scheduled_after_first_appt == [
-        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id)
+        ev for ev in shared_stunting_sim.modules['HealthSystem'].find_events_for_person(patient_id)
         if isinstance(ev[1], HSI_Stunting_ComplementaryFeeding)
     ]
 
