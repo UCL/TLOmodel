@@ -2583,8 +2583,8 @@ class HealthSystemSummaryCounter:
             key="Capacity_By_OfficerType_And_FacilityLevel",
             description="The fraction of healthcare worker time that is used each day, averaged over this "
                         "calendar year, for each officer type at each facility level.",
-            data=flatten_multi_index_series_into_dict_for_logging(mean_of_frac_time_used_by_officertype_and_facilitylevel),
-
+            data=flatten_multi_index_series_into_dict_for_logging(
+                mean_of_frac_time_used_by_officertype_and_facilitylevel),
         )
 
         self._reset_internal_stores()
