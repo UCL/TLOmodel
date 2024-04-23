@@ -32,12 +32,10 @@ class LongRun(BaseScenario):
             'directory': './outputs',  # <- (specified only for local running)
             'custom_levels': {
                 '*': logging.WARNING,
-                'tlo.methods.demography': logging.INFO,
-                'tlo.methods.demography.detail': logging.WARNING,
-                'tlo.methods.healthburden': logging.INFO,
-                'tlo.methods.healthsystem': logging.INFO,
-                'tlo.methods.healthsystem.summary': logging.INFO,
-                "tlo.methods.contraception": logging.INFO,
+                'tlo.methods.demography': logging.INFO,  # turn on demography log
+                'tlo.methods.demography.detail': logging.WARNING,  # ensure detailed log is off
+                'tlo.methods.healthsystem.summary': logging.INFO,  # turn on healthsystem summary log
+                'tlo.methods.healthsystem': logging.INFO,  # keep the verbose log, just in case needed
             }
         }
 
