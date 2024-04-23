@@ -1653,7 +1653,7 @@ class HealthSystem(Module):
     def log_current_capabilities_and_usage(self):
         """
         This will log the percentage of the current capabilities that is used at each Facility Type, according the
-        `runnning_total_footprint`.
+        `runnning_total_footprint`. This runs every day.
         """
         current_capabilities = self.capabilities_today
         total_footprint = self.running_total_footprint
@@ -1699,7 +1699,9 @@ class HealthSystem(Module):
                     description='daily summary of utilisation and capacity of health system resources')
 
         self._summary_counter.record_hs_status(
-            fraction_time_used_across_all_facilities=fraction_time_used_overall)
+            fraction_time_used_across_all_facilities=fraction_time_used_overall,
+            fraction_time_used_by_officertype_and_facilitylevel=summary_by_officer['Fraction_Time_Used'].to_dict(),
+        )
 
     def remove_beddays_footprint(self, person_id):
         # removing bed_days from a particular individual if any
@@ -2473,6 +2475,8 @@ class HealthSystemSummaryCounter:
         self._never_ran_appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
 
         self._frac_time_used_overall = []  # Running record of the usage of the healthcare system
+        self._frac_time_used_by_officertype_and_facilitylevel = []  # Running record of the usage of the healthcare
+        #                                                              system
         self._squeeze_factor_by_hsi_event_name = defaultdict(list)  # Running record the squeeze-factor applying to each
         #                                                           treatment_id. Key is of the form:
         #                                                           "<TREATMENT_ID>:<HSI_EVENT_NAME>"
@@ -2515,14 +2519,20 @@ class HealthSystemSummaryCounter:
             self._never_ran_appts[appt_type] += number
             self._never_ran_appts_by_level[level][appt_type] += number
 
-    def record_hs_status(self, fraction_time_used_across_all_facilities: float) -> None:
+    def record_hs_status(
+        self,
+        fraction_time_used_across_all_facilities: float,
+        fraction_time_used_by_officertype_and_facilitylevel: Dict,
+    ) -> None:
         """Record a current status metric of the HealthSystem."""
 
         # The fraction of all healthcare worker time that is used:
         self._frac_time_used_overall.append(fraction_time_used_across_all_facilities)
+        self._frac_time_used_by_officertype_and_facilitylevel.append(
+            fraction_time_used_by_officertype_and_facilitylevel)
 
     def write_to_log_and_reset_counters(self):
-        """Log summary statistics reset the data structures."""
+        """Log summary statistics reset the data structures. This usually occurs at the end of the year."""
 
         logger_summary.info(
             key="HSI_Event",
@@ -2559,6 +2569,22 @@ class HealthSystemSummaryCounter:
                 "average_Frac_Time_Used_Overall": np.mean(self._frac_time_used_overall),
                 # <-- leaving space here for additional summary measures that may be needed in the future.
             },
+        )
+
+        # Compute mean of 'fraction time used by officer type and facility level' from daily entries from the previous
+        # year.
+        mean_of_frac_time_used_by_officertype_and_facilitylevel = pd.DataFrame(
+            self._frac_time_used_by_officertype_and_facilitylevel).mean()
+        # Set-up multiindex with names to facilitate logging
+        mean_of_frac_time_used_by_officertype_and_facilitylevel.index = pd.MultiIndex.from_tuples(
+            mean_of_frac_time_used_by_officertype_and_facilitylevel.index, names=('OfficerType', 'FacilityLevel'))
+
+        logger_summary.info(
+            key="Capacity_By_OfficerType_And_FacilityLevel",
+            description="The fraction of healthcare worker time that is used each day, averaged over this "
+                        "calendar year, for each officer type at each facility level.",
+            data=flatten_multi_index_series_into_dict_for_logging(mean_of_frac_time_used_by_officertype_and_facilitylevel),
+
         )
 
         self._reset_internal_stores()
