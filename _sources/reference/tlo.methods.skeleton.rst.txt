@@ -42,13 +42,13 @@ tlo.methods.skeleton module
 
      ADDITIONAL_DEPENDENCIES : {'HealthSystem'}
 
-     CAUSES_OF_DEATH : {'tlo_name_of_a_cause_of_death_in_this_module': <tlo.methods.causes.Cause object at 0x1361f7990>}
+     CAUSES_OF_DEATH : {'tlo_name_of_a_cause_of_death_in_this_module': <tlo.methods.causes.Cause object at 0x1281f55d0>}
 
-     CAUSES_OF_DISABILITY : {'tlo_name_of_a_cause_of_disability_in_this_module': <tlo.methods.causes.Cause object at 0x1361f4290>}
+     CAUSES_OF_DISABILITY : {'tlo_name_of_a_cause_of_disability_in_this_module': <tlo.methods.causes.Cause object at 0x128b2c150>}
 
      INIT_DEPENDENCIES : {'Demography'}
 
-     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 
@@ -125,8 +125,13 @@ tlo.methods.skeleton module
 
 .. autoclass:: HSI_Skeleton_Example_Interaction
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_Skeleton_Example_Interaction):**
 

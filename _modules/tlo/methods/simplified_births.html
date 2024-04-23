@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.simplified_births &mdash; TLOmodel 0.1.dev2378+g25dce3d documentation</title>
+  <title>tlo.methods.simplified_births &mdash; TLOmodel 0.1.dev2392+g4a55807 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
@@ -16,7 +16,7 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../../_static/documentation_options.js?v=c93bd2cd"></script>
+        <script src="../../../_static/documentation_options.js?v=2acae80b"></script>
         <script src="../../../_static/doctools.js?v=888ff710"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -51,7 +51,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../aims.html">Aims &amp; Objectives</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../writeups.html">Model Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../data_sources.html">Data Sources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../getting_started.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../reference/index.html">Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../resources/index.html">Resource files</a></li>
@@ -93,6 +93,7 @@
 <span class="sd"> is that every pregnancy results in a birth.&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
 
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
@@ -201,12 +202,12 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Load parameters for probability of pregnancy/birth and breastfeeding status for newborns&quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;age_specific_fertility_rates&#39;</span><span class="p">]</span> <span class="o">=</span> \
-            <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span> <span class="o">/</span> <span class="s1">&#39;demography&#39;</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_ASFR_WPP.csv&#39;</span><span class="p">)</span>
+            <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;demography&#39;</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_ASFR_WPP.csv&#39;</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;months_between_pregnancy_and_delivery&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">9</span>
 
         <span class="c1"># Breastfeeding status for newborns (importing from the Newborn resourcefile)</span>
-        <span class="n">rf</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_NewbornOutcomes.xlsx&#39;</span><span class="p">)</span>
+        <span class="n">rf</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_NewbornOutcomes.xlsx&#39;</span><span class="p">)</span>
         <span class="n">param_as_string</span> <span class="o">=</span> <span class="n">rf</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">rf</span><span class="o">.</span><span class="n">parameter_name</span> <span class="o">==</span> <span class="s1">&#39;prob_breastfeeding_type&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">parameter</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">param_as_string</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;prob_breastfeeding_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">parameter</span></div>
@@ -363,7 +364,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Mar 06, 2024.
+      <span class="lastupdated">Last updated on Apr 23, 2024.
       </span></p>
   </div>
 

@@ -109,7 +109,7 @@ tlo.methods.epi module
 
      **Class attributes:**
 
-     INIT_DEPENDENCIES : {'HealthSystem', 'Demography'}
+     INIT_DEPENDENCIES : {'Demography', 'HealthSystem'}
 
      METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>}
 
@@ -163,13 +163,15 @@ tlo.methods.epi module
 
 .. autoclass:: HsiBaseVaccine
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
 
 
      **Class attributes:**
 
-     EXPECTED_APPT_FOOTPRINT : <property object at 0x124de3830>
+     EXPECTED_APPT_FOOTPRINT : <property object at 0x124a91440>
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HsiBaseVaccine):**
 
@@ -188,8 +190,13 @@ tlo.methods.epi module
 
 .. autoclass:: HSI_BcgVaccine
 
-     Bases: :class:`tlo.methods.epi.HsiBaseVaccine`, :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.epi.HsiBaseVaccine`, :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_BcgVaccine):**
 
@@ -206,8 +213,13 @@ tlo.methods.epi module
 
 .. autoclass:: HSI_opv
 
-     Bases: :class:`tlo.methods.epi.HsiBaseVaccine`, :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.epi.HsiBaseVaccine`, :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_opv):**
 
@@ -224,8 +236,13 @@ tlo.methods.epi module
 
 .. autoclass:: HSI_DtpHibHepVaccine
 
-     Bases: :class:`tlo.methods.epi.HsiBaseVaccine`, :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.epi.HsiBaseVaccine`, :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_DtpHibHepVaccine):**
 
@@ -242,8 +259,13 @@ tlo.methods.epi module
 
 .. autoclass:: HSI_RotaVaccine
 
-     Bases: :class:`tlo.methods.epi.HsiBaseVaccine`, :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.epi.HsiBaseVaccine`, :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_RotaVaccine):**
 
@@ -260,8 +282,13 @@ tlo.methods.epi module
 
 .. autoclass:: HSI_PneumoVaccine
 
-     Bases: :class:`tlo.methods.epi.HsiBaseVaccine`, :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.epi.HsiBaseVaccine`, :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_PneumoVaccine):**
 
@@ -278,8 +305,13 @@ tlo.methods.epi module
 
 .. autoclass:: HSI_MeaslesRubellaVaccine
 
-     Bases: :class:`tlo.methods.epi.HsiBaseVaccine`, :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.epi.HsiBaseVaccine`, :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_MeaslesRubellaVaccine):**
 
@@ -296,8 +328,13 @@ tlo.methods.epi module
 
 .. autoclass:: HSI_HpvVaccine
 
-     Bases: :class:`tlo.methods.epi.HsiBaseVaccine`, :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.epi.HsiBaseVaccine`, :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_HpvVaccine):**
 
@@ -314,8 +351,13 @@ tlo.methods.epi module
 
 .. autoclass:: HSI_TdVaccine
 
-     Bases: :class:`tlo.methods.epi.HsiBaseVaccine`, :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.epi.HsiBaseVaccine`, :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_TdVaccine):**
 

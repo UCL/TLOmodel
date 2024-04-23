@@ -31,6 +31,7 @@ Submodules
    tlo.methods.healthsystem
    tlo.methods.hiv
    tlo.methods.hiv_tb_calibration
+   tlo.methods.hsi_event
    tlo.methods.hsi_generic_first_appts
    tlo.methods.labour
    tlo.methods.labour_lm

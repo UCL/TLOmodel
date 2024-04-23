@@ -220,15 +220,15 @@ tlo.methods.postnatal_supervisor module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'PregnancySupervisor', 'Labour', 'NewbornOutcomes', 'Lifestyle'}
+     ADDITIONAL_DEPENDENCIES : {'NewbornOutcomes', 'PregnancySupervisor', 'Lifestyle', 'Labour'}
 
-     CAUSES_OF_DEATH : {'secondary_postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x135e83b50>, 'postpartum_sepsis': <tlo.methods.causes.Cause object at 0x135e83bd0>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x135e83e10>, 'eclampsia': <tlo.methods.causes.Cause object at 0x135e83e50>, 'severe_gestational_hypertension': <tlo.methods.causes.Cause object at 0x135e83e90>, 'early_onset_sepsis': <tlo.methods.causes.Cause object at 0x135e83ed0>, 'late_onset_sepsis': <tlo.methods.causes.Cause object at 0x135e83f10>}
+     CAUSES_OF_DEATH : {'secondary_postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x135d2b010>, 'postpartum_sepsis': <tlo.methods.causes.Cause object at 0x135d29f90>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x135d2b610>, 'eclampsia': <tlo.methods.causes.Cause object at 0x135d2a990>, 'severe_gestational_hypertension': <tlo.methods.causes.Cause object at 0x135d29e90>, 'early_onset_sepsis': <tlo.methods.causes.Cause object at 0x135d2a790>, 'late_onset_sepsis': <tlo.methods.causes.Cause object at 0x135d2b1d0>}
 
-     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x135e83f50>}
+     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x135d2b710>}
 
-     INIT_DEPENDENCIES : {'HealthSystem', 'Demography'}
+     INIT_DEPENDENCIES : {'Demography', 'HealthSystem'}
 
-     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
 
      **Functions (defined or overridden in class PostnatalSupervisor):**
 
@@ -326,8 +326,13 @@ tlo.methods.postnatal_supervisor module
 
 .. autoclass:: HSI_PostnatalSupervisor_TreatmentForObstetricFistula
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_PostnatalSupervisor_TreatmentForObstetricFistula):**
 

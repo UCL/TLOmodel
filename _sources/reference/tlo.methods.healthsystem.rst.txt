@@ -4,68 +4,6 @@ tlo.methods.healthsystem module
 .. automodule:: tlo.methods.healthsystem
 
 
-.. autoclass:: HSI_Event
-
-
-
-
-     **Class attributes:**
-
-     bed_days_allocated_to_this_event : <property object at 0x124cd5580>
-
-     **Functions (defined or overridden in class HSI_Event):**
-
-     .. automethod:: __init__
-
-     .. automethod:: apply
-
-     .. automethod:: did_not_run
-
-     .. automethod:: never_ran
-
-     .. automethod:: post_apply_hook
-
-     .. automethod:: run
-
-     .. automethod:: get_consumables
-
-     .. automethod:: make_beddays_footprint
-
-     .. automethod:: is_all_beddays_allocated
-
-     .. automethod:: make_appt_footprint
-
-     .. automethod:: initialise
-
-     .. automethod:: _check_if_appt_footprint_can_run
-
-     .. automethod:: as_namedtuple
-
-
-
-
-
-
-
-
-.. autoclass:: HSIEventWrapper
-
-     Bases: :class:`tlo.events.Event`
-
-
-     **Functions (defined or overridden in class HSIEventWrapper):**
-
-     .. automethod:: __init__
-
-     .. automethod:: run
-
-
-
-
-
-
-
-
 .. autoclass:: HealthSystem
 
      Bases: :class:`tlo.core.Module`
@@ -130,22 +68,37 @@ tlo.methods.healthsystem module
           - Name of priority policy adopted
         * - year_mode_switch
           - INT
-          - Year in which mode switch in enforced
+          - Year in which mode switch is enforced
+        * - year_cons_availability_switch
+          - INT
+          - Year in which consumable availability switch is enforced. The change happenson 1st January of that year.)
         * - priority_rank
           - DICT
           - Data on the priority ranking of each of the Treatment_IDs to be adopted by  the queueing system under different policies, where the lower the number the higher the priority, and on which categories of individuals classify for fast-tracking  for specific treatments
-        * - const_HR_scaling_table
+        * - HR_scaling_by_level_and_officer_type_table
           - DICT
-          - Factors by which capabilities of medical officer categories at different levels will bescaled at the start of the simulation to simulate a number of effects (e.g. absenteeism,boosting of specific medical cadres, etc). This is the imported from anExcel workbook: keys are the worksheet names and values are the worksheets in the format of pd.DataFrames.
-        * - const_HR_scaling_mode
+          - Factors by which capabilities of medical officer types at different levels will bescaled at the start of the year specified by `year_HR_scaling_by_level_and_officer_type`. Thisserves to simulate a number of effects (e.g. absenteeism, boosting capabilities of specific medical cadres, etc). This is the imported from an Excel workbook: keys are the worksheet names and values are the worksheets in the format of pd.DataFrames. Additional scenarios can be added by adding worksheets to this workbook: the value of `HR_scaling_by_level_and_officer_type_mode` indicates which sheet is used.
+        * - year_HR_scaling_by_level_and_officer_type
+          - INT
+          - Year in which one-off constant HR scaling will take place. (The change happenson 1st January of that year.)
+        * - HR_scaling_by_level_and_officer_type_mode
           - STRING
-          - Mode of HR scaling considered at the start of the simulation. Options are default (capabilities are scaled by a constaint factor of 1), data (factors informed by survey data),and custom (user can freely set these factors as parameters in the analysis).
-        * - dynamic_HR_scaling_factor
-          - REAL
-          - Factor by which HR capabilities are scaled at regular intervals of 1 year (in addition to the [optional] scaling with population size (controlled by `scale_HR_by_popsize`
-        * - scale_HR_by_popsize
-          - BOOL
-          - Decide whether to scale HR capabilities by population size every year. Can be used as well as the dynamic_HR_scaling_factor
+          - Mode of HR scaling considered at the start of the simulation. This corresponds to the nameof the worksheet in `ResourceFile_HR_scaling_by_level_and_officer_type.xlsx` that should be used. Options are: `default` (capabilities are scaled by a constaint factor of 1); `data` (factors informed by survey data); and, `custom` (user can freely set these factors as parameters in the analysis).
+        * - HR_scaling_by_district_table
+          - DICT
+          - Factors by which daily capabilities in different districts will bescaled at the start of the year specified by year_HR_scaling_by_district to simulate(e.g., through catastrophic event disrupting delivery of services in particular district(s)).This is the import of an Excel workbook: keys are the worksheet names and values are the worksheets in the format of pd.DataFrames. Additional scenarios can be added by adding worksheets to this workbook: the value of `HR_scaling_by_district_mode` indicates whichsheet is used.
+        * - year_HR_scaling_by_district
+          - INT
+          - Year in which scaling of daily capabilities by district will take place. (The change happenson 1st January of that year.)
+        * - HR_scaling_by_district_mode
+          - STRING
+          - Mode of scaling of daily capabilities by district. This corresponds to the name of the worksheet in the file `ResourceFile_HR_scaling_by_district.xlsx`.
+        * - yearly_HR_scaling
+          - DICT
+          - Factors by which HR capabilities are scaled. Each sheet specifies a 'mode' for dynamic HR scaling. The mode to use is determined by the parameter `yearly_HR_scaling_mode`. Each sheet must have the same format, including the same column headers. On each sheet, the first row (for `2010`, when the simulation starts) specifies the initial configuration: `dynamic_HR_scaling_factor` (float) is the factor by which all human resoucres capabilities and multiplied; `scale_HR_by_popsize` (bool) specifies whether the capabilities should (also) grow by the factor by which the population has grown in the last year. Each subsequent row specifies a year where there should be a CHANGE in the configuration. If there are no further rows, then there is no change. But, for example, an additional row of the form ```2015, 1.05, TRUE``` would mean that on 1st January of 2015, 2016, 2017, ....(and the rest of the simulation), the capabilities would increase by the product of 1.05 and by the ratio of the population size to that in the year previous.
+        * - yearly_HR_scaling_mode
+          - STRING
+          - Specifies which of the policies in yearly_HR_scaling should be adopted. This corresponds toa worksheet of the file `ResourceFile_dynamic_HR_scaling.xlsx`.
         * - tclose_overwrite
           - INT
           - Decide whether to overwrite tclose variables assigned by disease modules
@@ -158,6 +111,9 @@ tlo.methods.healthsystem module
         * - mode_appt_constraints_postSwitch
           - INT
           - Mode considered after a mode switch in year_mode_switch.
+        * - cons_availability_postSwitch
+          - STRING
+          - Consumables availability after switch in `year_cons_availability_switch`. Acceptable valuesare the same as those for Parameter `cons_availability`.
 
 
      **PROPERTIES:**
@@ -179,11 +135,11 @@ tlo.methods.healthsystem module
 
      INIT_DEPENDENCIES : {'Demography'}
 
-     capabilities_today : <property object at 0x124cd57b0>
+     capabilities_today : <property object at 0x12497dad0>
 
-     hsi_event_counts : <property object at 0x124cd5940>
+     hsi_event_counts : <property object at 0x12497dc60>
 
-     never_ran_hsi_event_counts : <property object at 0x124cd5990>
+     never_ran_hsi_event_counts : <property object at 0x12497dcb0>
 
      **Functions (defined or overridden in class HealthSystem):**
 
@@ -204,8 +160,6 @@ tlo.methods.healthsystem module
      .. automethod:: setup_priority_policy
 
      .. automethod:: process_human_resources_files
-
-     .. automethod:: adjust_for_const_HR_scaling
 
      .. automethod:: format_daily_capabilities
 
@@ -358,9 +312,57 @@ tlo.methods.healthsystem module
 
      __annotations__ : {}
 
-     current_pop_size : <property object at 0x124cd5cb0>
+     current_pop_size : <property object at 0x12497dfd0>
 
      **Functions (defined or overridden in class DynamicRescalingHRCapabilities):**
+
+     .. automethod:: __init__
+
+     .. automethod:: _get_most_recent_year_specified_for_a_change_in_configuration
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: ConstantRescalingHRCapabilities
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
+     **Functions (defined or overridden in class ConstantRescalingHRCapabilities):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: RescaleHRCapabilities_ByDistrict
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
+     **Functions (defined or overridden in class RescaleHRCapabilities_ByDistrict):**
 
      .. automethod:: __init__
 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.hsi_generic_first_appts &mdash; TLOmodel 0.1.dev2378+g25dce3d documentation</title>
+  <title>tlo.methods.hsi_generic_first_appts &mdash; TLOmodel 0.1.dev2392+g4a55807 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
@@ -16,7 +16,7 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../../_static/documentation_options.js?v=c93bd2cd"></script>
+        <script src="../../../_static/documentation_options.js?v=2acae80b"></script>
         <script src="../../../_static/doctools.js?v=888ff710"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -51,7 +51,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../aims.html">Aims &amp; Objectives</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../writeups.html">Model Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../data_sources.html">Data Sources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../getting_started.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../reference/index.html">Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../resources/index.html">Resource files</a></li>
@@ -95,47 +95,147 @@
 <span class="sd">the onset of symptoms. Non-emergency symptoms lead to `HSI_GenericFirstApptAtFacilityLevel0` and emergency symptoms</span>
 <span class="sd">lead to `HSI_GenericEmergencyFirstApptAtFacilityLevel1`.</span>
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">OrderedDict</span>
 
 <span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">logging</span>
 <span class="kn">from</span> <span class="nn">tlo.events</span> <span class="kn">import</span> <span class="n">IndividualScopeEventMixin</span>
-<span class="kn">from</span> <span class="nn">tlo.methods.bladder_cancer</span> <span class="kn">import</span> <span class="p">(</span>
-    <span class="n">HSI_BladderCancer_Investigation_Following_Blood_Urine</span><span class="p">,</span>
-    <span class="n">HSI_BladderCancer_Investigation_Following_pelvic_pain</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="kn">from</span> <span class="nn">tlo.methods.breast_cancer</span> <span class="kn">import</span> <span class="p">(</span>
-    <span class="n">HSI_BreastCancer_Investigation_Following_breast_lump_discernible</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="kn">from</span> <span class="nn">tlo.methods.care_of_women_during_pregnancy</span> <span class="kn">import</span> <span class="p">(</span>
-    <span class="n">HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement</span><span class="p">,</span>
-    <span class="n">HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="kn">from</span> <span class="nn">tlo.methods.chronicsyndrome</span> <span class="kn">import</span> <span class="n">HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment</span>
-<span class="kn">from</span> <span class="nn">tlo.methods.epilepsy</span> <span class="kn">import</span> <span class="n">HSI_Epilepsy_Start_Anti_Epileptic</span>
-<span class="kn">from</span> <span class="nn">tlo.methods.healthsystem</span> <span class="kn">import</span> <span class="n">HSI_Event</span>
-<span class="kn">from</span> <span class="nn">tlo.methods.hiv</span> <span class="kn">import</span> <span class="n">HSI_Hiv_TestAndRefer</span>
-<span class="kn">from</span> <span class="nn">tlo.methods.labour</span> <span class="kn">import</span> <span class="n">HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour</span>
-<span class="kn">from</span> <span class="nn">tlo.methods.measles</span> <span class="kn">import</span> <span class="n">HSI_Measles_Treatment</span>
-<span class="kn">from</span> <span class="nn">tlo.methods.mockitis</span> <span class="kn">import</span> <span class="n">HSI_Mockitis_PresentsForCareWithSevereSymptoms</span>
-<span class="kn">from</span> <span class="nn">tlo.methods.oesophagealcancer</span> <span class="kn">import</span> <span class="n">HSI_OesophagealCancer_Investigation_Following_Dysphagia</span>
-<span class="kn">from</span> <span class="nn">tlo.methods.other_adult_cancers</span> <span class="kn">import</span> <span class="p">(</span>
-    <span class="n">HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="kn">from</span> <span class="nn">tlo.methods.prostate_cancer</span> <span class="kn">import</span> <span class="p">(</span>
-    <span class="n">HSI_ProstateCancer_Investigation_Following_Pelvic_Pain</span><span class="p">,</span>
-    <span class="n">HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms</span><span class="p">,</span>
-<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">tlo.methods.hsi_event</span> <span class="kn">import</span> <span class="n">HSI_Event</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">Module</span>
+    <span class="kn">from</span> <span class="nn">tlo.methods.dxmanager</span> <span class="kn">import</span> <span class="n">DiagnosisTestReturnType</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
 
+<div class="viewcode-block" id="HSI_BaseGenericFirstAppt">
+<a class="viewcode-back" href="../../../reference/tlo.methods.hsi_generic_first_appts.html#tlo.methods.hsi_generic_first_appts.HSI_BaseGenericFirstAppt">[docs]</a>
+<span class="k">class</span> <span class="nc">HSI_BaseGenericFirstAppt</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">MODULE_METHOD_ON_APPLY</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span>
+        <span class="s2">&quot;do_at_generic_first_appt&quot;</span><span class="p">,</span> <span class="s2">&quot;do_at_generic_first_appt_emergency&quot;</span>
+    <span class="p">]</span>
+
+<div class="viewcode-block" id="HSI_BaseGenericFirstAppt.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.hsi_generic_first_appts.html#tlo.methods.hsi_generic_first_appts.HSI_BaseGenericFirstAppt.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
+        <span class="c1"># No footprint, as this HSI (mostly just) determines which</span>
+        <span class="c1"># further HSI will be needed for this person. In some cases,</span>
+        <span class="c1"># small bits of care are provided (e.g. a diagnosis, or the</span>
+        <span class="c1"># provision of inhaler).</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">(</span>
+            <span class="p">{}</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HSI_BaseGenericFirstAppt._diagnosis_function">
+<a class="viewcode-back" href="../../../reference/tlo.methods.hsi_generic_first_appts.html#tlo.methods.hsi_generic_first_appts.HSI_BaseGenericFirstAppt._diagnosis_function">[docs]</a>
+    <span class="k">def</span> <span class="nf">_diagnosis_function</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">tests</span><span class="p">,</span> <span class="n">use_dict</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">report_tried</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DiagnosisTestReturnType</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Passed to modules when determining HSI_Events to be scheduled based on</span>
+<span class="sd">        this generic appointment. Intended as the diagnosis_function argument to the</span>
+<span class="sd">        Module.do_at_generic_{non_}_emergency.</span>
+
+<span class="sd">        Class-level definition avoids the need to redefine this method each time</span>
+<span class="sd">        the .apply() method is called.</span>
+
+<span class="sd">        :param tests: The name of the test(s) to run via the diagnosis manager.</span>
+<span class="sd">        :param use_dict_for_single: If True, the return type will be a dictionary</span>
+<span class="sd">        even if only one test was requested.</span>
+<span class="sd">        :param report_dxtest_tried: Report if a test was attempted but could not</span>
+<span class="sd">        be carried out due to EG lack of consumables, etc.</span>
+<span class="sd">        :returns: Test results as dictionary key/value pairs.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">healthcare_system</span><span class="o">.</span><span class="n">dx_manager</span><span class="o">.</span><span class="n">run_dx_test</span><span class="p">(</span>
+            <span class="n">tests</span><span class="p">,</span>
+            <span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
+            <span class="n">use_dict_for_single</span><span class="o">=</span><span class="n">use_dict</span><span class="p">,</span>
+            <span class="n">report_dxtest_tried</span><span class="o">=</span><span class="n">report_tried</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HSI_BaseGenericFirstAppt._do_on_generic_first_appt">
+<a class="viewcode-back" href="../../../reference/tlo.methods.hsi_generic_first_appts.html#tlo.methods.hsi_generic_first_appts.HSI_BaseGenericFirstAppt._do_on_generic_first_appt">[docs]</a>
+    <span class="k">def</span> <span class="nf">_do_on_generic_first_appt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Make top-level reads of information, to avoid repeat accesses.</span>
+        <span class="n">modules</span><span class="p">:</span> <span class="n">OrderedDict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;Module&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span>
+        <span class="n">symptoms</span> <span class="o">=</span> <span class="n">modules</span><span class="p">[</span><span class="s2">&quot;SymptomManager&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">has_what</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">)</span>
+
+        <span class="c1"># Dynamically create immutable container with the target&#39;s details stored.</span>
+        <span class="c1"># This will avoid repeat DataFrame reads when we call the module-level functions.</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
+        <span class="n">patient_details</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">row_in_readonly_form</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">)</span>
+
+        <span class="n">proposed_patient_details_updates</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="n">modules</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">module_patient_updates</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">MODULE_METHOD_ON_APPLY</span><span class="p">)(</span>
+                <span class="n">patient_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">,</span>
+                <span class="n">patient_details</span><span class="o">=</span><span class="n">patient_details</span><span class="p">,</span>
+                <span class="n">symptoms</span><span class="o">=</span><span class="n">symptoms</span><span class="p">,</span>
+                <span class="n">diagnosis_function</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_diagnosis_function</span><span class="p">,</span>
+                <span class="n">consumables_checker</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">,</span>
+                <span class="n">facility_level</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span><span class="p">,</span>
+                <span class="n">treatment_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span><span class="p">,</span>
+                <span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="c1"># Record any requested DataFrame updates, but do not implement yet</span>
+            <span class="c1"># NOTE: |= syntax is only available in Python &gt;=3.9</span>
+            <span class="k">if</span> <span class="n">module_patient_updates</span><span class="p">:</span>
+                <span class="n">proposed_patient_details_updates</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="o">**</span><span class="n">proposed_patient_details_updates</span><span class="p">,</span>
+                    <span class="o">**</span><span class="n">module_patient_updates</span><span class="p">,</span>
+                <span class="p">}</span>
+
+        <span class="c1"># Perform any DataFrame updates that were requested, all in one go.</span>
+        <span class="k">if</span> <span class="n">proposed_patient_details_updates</span><span class="p">:</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="n">proposed_patient_details_updates</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+            <span class="p">]</span> <span class="o">=</span> <span class="n">proposed_patient_details_updates</span><span class="o">.</span><span class="n">values</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="HSI_BaseGenericFirstAppt.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.hsi_generic_first_appts.html#tlo.methods.hsi_generic_first_appts.HSI_BaseGenericFirstAppt.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="o">=</span><span class="mf">0.</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Run the actions required during the HSI.</span>
+
+<span class="sd">        TODO: person_id is not needed any more - but would have to go through the</span>
+<span class="sd">        whole codebase to manually identify instances of this class to change call</span>
+<span class="sd">        syntax, and leave other HSI_Event-derived classes alone.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_is_alive</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_do_on_generic_first_appt</span><span class="p">(</span><span class="n">squeeze_factor</span><span class="o">=</span><span class="n">squeeze_factor</span><span class="p">)</span></div>
+</div>
+
+
 
 <div class="viewcode-block" id="HSI_GenericNonEmergencyFirstAppt">
 <a class="viewcode-back" href="../../../reference/tlo.methods.hsi_generic_first_appts.html#tlo.methods.hsi_generic_first_appts.HSI_GenericNonEmergencyFirstAppt">[docs]</a>
-<span class="k">class</span> <span class="nc">HSI_GenericNonEmergencyFirstAppt</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;This is a Health System Interaction Event that represents the first interaction with the health system following</span>
-<span class="sd">     the onset of non-emergency symptom(s). This is the HSI that is generated by the HealthSeekingBehaviour module. By</span>
-<span class="sd">     default, it occurs at level &#39;0&#39; but it could occur also at other levels.&quot;&quot;&quot;</span>
+<span class="k">class</span> <span class="nc">HSI_GenericNonEmergencyFirstAppt</span><span class="p">(</span><span class="n">HSI_BaseGenericFirstAppt</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This is a Health System Interaction Event that represents the</span>
+<span class="sd">    first interaction with the health system following the onset</span>
+<span class="sd">    of non-emergency symptom(s).</span>
+
+<span class="sd">    It is generated by the HealthSeekingBehaviour module.</span>
+<span class="sd">    </span>
+<span class="sd">    By default, it occurs at level &#39;0&#39; but it could occur also at</span>
+<span class="sd">    other levels.</span>
+
+<span class="sd">    It uses the non-emergency generic first appointment methods of</span>
+<span class="sd">    the disease modules to determine any follow-up events that need</span>
+<span class="sd">    to be scheduled.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">MODULE_METHOD_ON_APPLY</span> <span class="o">=</span> <span class="s2">&quot;do_at_generic_first_appt&quot;</span>
 
 <div class="viewcode-block" id="HSI_GenericNonEmergencyFirstAppt.__init__">
 <a class="viewcode-back" href="../../../reference/tlo.methods.hsi_generic_first_appts.html#tlo.methods.hsi_generic_first_appts.HSI_GenericNonEmergencyFirstAppt.__init__">[docs]</a>
@@ -145,63 +245,40 @@
         <span class="k">assert</span> <span class="n">module</span> <span class="ow">is</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSeekingBehaviour&#39;</span><span class="p">]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s1">&#39;FirstAttendance_NonEmergency&#39;</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="n">facility_level</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({})</span>  <span class="c1"># &lt;-- No footprint, as this HSI (mostly just)</span></div>
-
-        <span class="c1">#                                                                  determines which further HSI will be needed</span>
-        <span class="c1">#                                                                  for this person. In some cases, small bits</span>
-        <span class="c1">#                                                                  of care are provided (e.g. a diagnosis, or</span>
-        <span class="c1">#                                                                  the provision of inhaler.).</span>
-
-<div class="viewcode-block" id="HSI_GenericNonEmergencyFirstAppt.apply">
-<a class="viewcode-back" href="../../../reference/tlo.methods.hsi_generic_first_appts.html#tlo.methods.hsi_generic_first_appts.HSI_GenericNonEmergencyFirstAppt.apply">[docs]</a>
-    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run the actions required during the HSI.&quot;&quot;&quot;</span>
-        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;is_alive&#39;</span><span class="p">]:</span>
-            <span class="k">return</span>
-
-        <span class="n">do_at_generic_first_appt_non_emergency</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="o">=</span><span class="n">squeeze_factor</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="n">facility_level</span></div>
 </div>
 
 
 
 <div class="viewcode-block" id="HSI_GenericEmergencyFirstAppt">
 <a class="viewcode-back" href="../../../reference/tlo.methods.hsi_generic_first_appts.html#tlo.methods.hsi_generic_first_appts.HSI_GenericEmergencyFirstAppt">[docs]</a>
-<span class="k">class</span> <span class="nc">HSI_GenericEmergencyFirstAppt</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;This is a Health System Interaction Event that represents the generic appointment which is the first interaction</span>
-<span class="sd">    with the health system following the onset of emergency symptom(s).&quot;&quot;&quot;</span>
+<span class="k">class</span> <span class="nc">HSI_GenericEmergencyFirstAppt</span><span class="p">(</span><span class="n">HSI_BaseGenericFirstAppt</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This is a Health System Interaction Event that represents</span>
+<span class="sd">    the generic appointment which is the first interaction with</span>
+<span class="sd">    the health system following the onset of emergency symptom(s).</span>
+
+<span class="sd">    It uses the emergency generic first appointment methods of</span>
+<span class="sd">    the disease modules to determine any follow-up events that need</span>
+<span class="sd">    to be scheduled.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">MODULE_METHOD_ON_APPLY</span> <span class="o">=</span> <span class="s2">&quot;do_at_generic_first_appt_emergency&quot;</span>
 
 <div class="viewcode-block" id="HSI_GenericEmergencyFirstAppt.__init__">
 <a class="viewcode-back" href="../../../reference/tlo.methods.hsi_generic_first_appts.html#tlo.methods.hsi_generic_first_appts.HSI_GenericEmergencyFirstAppt.__init__">[docs]</a>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
 
-        <span class="k">assert</span> <span class="n">module</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;HealthSeekingBehaviour&#39;</span><span class="p">,</span> <span class="s1">&#39;Labour&#39;</span><span class="p">,</span> <span class="s1">&#39;PregnancySupervisor&#39;</span><span class="p">,</span> <span class="s1">&#39;RTI&#39;</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="n">module</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="p">[</span>
+            <span class="s2">&quot;HealthSeekingBehaviour&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Labour&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;PregnancySupervisor&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;RTI&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s1">&#39;FirstAttendance_Emergency&#39;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1b&#39;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({})</span>  <span class="c1"># &lt;-- No footprint, as this HSI (mostly just)</span></div>
-
-        <span class="c1">#                                                                  determines which further HSI will be needed</span>
-        <span class="c1">#                                                                  for this person. In some cases, small bits</span>
-        <span class="c1">#                                                                  of care are provided (e.g. a diagnosis, or</span>
-        <span class="c1">#                                                                  the provision of inhaler.).</span>
-
-<div class="viewcode-block" id="HSI_GenericEmergencyFirstAppt.apply">
-<a class="viewcode-back" href="../../../reference/tlo.methods.hsi_generic_first_appts.html#tlo.methods.hsi_generic_first_appts.HSI_GenericEmergencyFirstAppt.apply">[docs]</a>
-    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
-
-        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;is_alive&#39;</span><span class="p">]:</span>
-            <span class="k">return</span>
-
-        <span class="n">do_at_generic_first_appt_emergency</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="o">=</span><span class="n">squeeze_factor</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s2">&quot;FirstAttendance_Emergency&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s2">&quot;1b&quot;</span></div>
 </div>
-
 
 
 <div class="viewcode-block" id="HSI_EmergencyCare_SpuriousSymptom">
@@ -211,283 +288,30 @@
 
 <div class="viewcode-block" id="HSI_EmergencyCare_SpuriousSymptom.__init__">
 <a class="viewcode-back" href="../../../reference/tlo.methods.hsi_generic_first_appts.html#tlo.methods.hsi_generic_first_appts.HSI_EmergencyCare_SpuriousSymptom.__init__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">accepted_facility_level</span><span class="o">=</span><span class="s1">&#39;1a&#39;</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">accepted_facility_level</span><span class="o">=</span><span class="s2">&quot;1a&quot;</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="n">module</span> <span class="ow">is</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSeekingBehaviour&#39;</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="n">module</span> <span class="ow">is</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSeekingBehaviour&quot;</span><span class="p">]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s2">&quot;FirstAttendance_SpuriousEmergencyCare&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s1">&#39;AccidentsandEmerg&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="n">accepted_facility_level</span>  <span class="c1"># &#39;1a&#39; in default or &#39;1b&#39; as an alternative</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">(</span>
+            <span class="p">{</span><span class="s2">&quot;AccidentsandEmerg&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">accepted_facility_level</span>  <span class="c1"># &#39;1a&#39; in default or &#39;1b&#39; as an alternative</span>
+        <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="HSI_EmergencyCare_SpuriousSymptom.apply">
 <a class="viewcode-back" href="../../../reference/tlo.methods.hsi_generic_first_appts.html#tlo.methods.hsi_generic_first_appts.HSI_EmergencyCare_SpuriousSymptom.apply">[docs]</a>
     <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;is_alive&#39;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;is_alive&quot;</span><span class="p">]:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({})</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">sm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">]</span>
-            <span class="n">sm</span><span class="o">.</span><span class="n">change_symptom</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;spurious_emergency_symptom&quot;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">sm</span><span class="p">)</span></div>
+            <span class="n">sm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;SymptomManager&quot;</span><span class="p">]</span>
+            <span class="n">sm</span><span class="o">.</span><span class="n">change_symptom</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;spurious_emergency_symptom&quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="n">sm</span><span class="p">)</span></div>
 </div>
 
-
-
-<span class="k">def</span> <span class="nf">do_at_generic_first_appt_non_emergency</span><span class="p">(</span><span class="n">hsi_event</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;The actions are taken during the non-emergency generic HSI, HSI_GenericFirstApptAtFacilityLevel0.&quot;&quot;&quot;</span>
-
-    <span class="c1"># Gather useful shortcuts</span>
-    <span class="n">sim</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">sim</span>
-    <span class="n">person_id</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">target</span>
-    <span class="n">df</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
-    <span class="n">symptoms</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">has_what</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
-    <span class="n">age</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;age_years&#39;</span><span class="p">]</span>
-    <span class="n">schedule_hsi</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span>
-
-    <span class="c1"># ----------------------------------- ALL AGES -----------------------------------</span>
-    <span class="c1"># Consider Measles if rash.</span>
-    <span class="k">if</span> <span class="s1">&#39;Measles&#39;</span> <span class="ow">in</span> <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
-        <span class="k">if</span> <span class="s2">&quot;rash&quot;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">:</span>
-            <span class="n">schedule_hsi</span><span class="p">(</span>
-                <span class="n">HSI_Measles_Treatment</span><span class="p">(</span>
-                    <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
-                    <span class="n">module</span><span class="o">=</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Measles&#39;</span><span class="p">]),</span>
-                <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                <span class="n">topen</span><span class="o">=</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
-                <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-
-    <span class="c1"># &#39;Automatic&#39; testing for HIV for everyone attending care with AIDS symptoms:</span>
-    <span class="c1">#  - suppress the footprint (as it done as part of another appointment)</span>
-    <span class="c1">#  - do not do referrals if the person is HIV negative (assumed not time for counselling etc).</span>
-    <span class="k">if</span> <span class="s1">&#39;Hiv&#39;</span> <span class="ow">in</span> <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
-        <span class="k">if</span> <span class="s1">&#39;aids_symptoms&#39;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">:</span>
-            <span class="n">schedule_hsi</span><span class="p">(</span>
-                <span class="n">HSI_Hiv_TestAndRefer</span><span class="p">(</span>
-                    <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
-                    <span class="n">module</span><span class="o">=</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Hiv&#39;</span><span class="p">],</span>
-                    <span class="n">referred_from</span><span class="o">=</span><span class="s2">&quot;hsi_generic_first_appt&quot;</span><span class="p">,</span>
-                    <span class="n">suppress_footprint</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                    <span class="n">do_not_refer_if_neg</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
-                <span class="n">topen</span><span class="o">=</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
-                <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="s1">&#39;injury&#39;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">:</span>
-        <span class="k">if</span> <span class="s1">&#39;RTI&#39;</span> <span class="ow">in</span> <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
-            <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;RTI&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">do_rti_diagnosis_and_treatment</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="s1">&#39;Schisto&#39;</span> <span class="ow">in</span> <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
-        <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Schisto&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">do_on_presentation_with_symptoms</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">symptoms</span><span class="o">=</span><span class="n">symptoms</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="s2">&quot;Malaria&quot;</span> <span class="ow">in</span> <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
-        <span class="n">malaria_associated_symptoms</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;fever&#39;</span><span class="p">,</span> <span class="s1">&#39;headache&#39;</span><span class="p">,</span> <span class="s1">&#39;stomachache&#39;</span><span class="p">,</span> <span class="s1">&#39;diarrhoea&#39;</span><span class="p">,</span> <span class="s1">&#39;vomiting&#39;</span><span class="p">}</span>
-        <span class="k">if</span> <span class="nb">bool</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">symptoms</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">malaria_associated_symptoms</span><span class="p">):</span>
-            <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Malaria&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">do_for_suspected_malaria_case</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">age</span> <span class="o">&lt;=</span> <span class="mi">5</span><span class="p">:</span>
-        <span class="c1"># ----------------------------------- CHILD &lt; 5 -----------------------------------</span>
-        <span class="k">if</span> <span class="s1">&#39;Diarrhoea&#39;</span> <span class="ow">in</span> <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
-            <span class="k">if</span> <span class="s1">&#39;diarrhoea&#39;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">:</span>
-                <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Diarrhoea&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">do_when_presentation_with_diarrhoea</span><span class="p">(</span>
-                    <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="s1">&#39;Alri&#39;</span> <span class="ow">in</span> <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
-            <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;cough&#39;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="s1">&#39;difficult_breathing&#39;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">):</span>
-                <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Alri&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">on_presentation</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">)</span>
-
-        <span class="c1"># Routine assessments</span>
-        <span class="k">if</span> <span class="s1">&#39;Stunting&#39;</span> <span class="ow">in</span> <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
-            <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Stunting&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">do_routine_assessment_for_chronic_undernutrition</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
-
-    <span class="k">else</span><span class="p">:</span>
-        <span class="c1"># ----------------------------------- ADULT -----------------------------------</span>
-        <span class="k">if</span> <span class="s1">&#39;OesophagealCancer&#39;</span> <span class="ow">in</span> <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
-            <span class="c1"># If the symptoms include dysphagia, then begin investigation for Oesophageal Cancer:</span>
-            <span class="k">if</span> <span class="s1">&#39;dysphagia&#39;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">:</span>
-                <span class="n">schedule_hsi</span><span class="p">(</span>
-                    <span class="n">HSI_OesophagealCancer_Investigation_Following_Dysphagia</span><span class="p">(</span>
-                        <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
-                        <span class="n">module</span><span class="o">=</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;OesophagealCancer&#39;</span><span class="p">]),</span>
-                    <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                    <span class="n">topen</span><span class="o">=</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
-                    <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span>
-                <span class="p">)</span>
-
-        <span class="k">if</span> <span class="s1">&#39;BladderCancer&#39;</span> <span class="ow">in</span> <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
-            <span class="c1"># If the symptoms include blood_urine, then begin investigation for Bladder Cancer:</span>
-            <span class="k">if</span> <span class="s1">&#39;blood_urine&#39;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">:</span>
-                <span class="n">schedule_hsi</span><span class="p">(</span>
-                    <span class="n">HSI_BladderCancer_Investigation_Following_Blood_Urine</span><span class="p">(</span>
-                        <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
-                        <span class="n">module</span><span class="o">=</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;BladderCancer&#39;</span><span class="p">]),</span>
-                    <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                    <span class="n">topen</span><span class="o">=</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
-                    <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span>
-                <span class="p">)</span>
-
-            <span class="c1"># If the symptoms include pelvic_pain, then begin investigation for Bladder Cancer:</span>
-            <span class="k">if</span> <span class="s1">&#39;pelvic_pain&#39;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">:</span>
-                <span class="n">schedule_hsi</span><span class="p">(</span>
-                    <span class="n">HSI_BladderCancer_Investigation_Following_pelvic_pain</span><span class="p">(</span>
-                        <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
-                        <span class="n">module</span><span class="o">=</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;BladderCancer&#39;</span><span class="p">]),</span>
-                    <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                    <span class="n">topen</span><span class="o">=</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
-                    <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="s1">&#39;ProstateCancer&#39;</span> <span class="ow">in</span> <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
-            <span class="c1"># If the symptoms include urinary, then begin investigation for prostate cancer:</span>
-            <span class="k">if</span> <span class="s1">&#39;urinary&#39;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">:</span>
-                <span class="n">schedule_hsi</span><span class="p">(</span>
-                    <span class="n">HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms</span><span class="p">(</span>
-                        <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
-                        <span class="n">module</span><span class="o">=</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;ProstateCancer&#39;</span><span class="p">]),</span>
-                    <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                    <span class="n">topen</span><span class="o">=</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
-                    <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-
-            <span class="k">if</span> <span class="s1">&#39;pelvic_pain&#39;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">:</span>
-                <span class="n">schedule_hsi</span><span class="p">(</span>
-                    <span class="n">HSI_ProstateCancer_Investigation_Following_Pelvic_Pain</span><span class="p">(</span>
-                        <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
-                        <span class="n">module</span><span class="o">=</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;ProstateCancer&#39;</span><span class="p">]),</span>
-                    <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                    <span class="n">topen</span><span class="o">=</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
-                    <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="s1">&#39;OtherAdultCancer&#39;</span> <span class="ow">in</span> <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
-            <span class="k">if</span> <span class="s1">&#39;early_other_adult_ca_symptom&#39;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">:</span>
-                <span class="n">schedule_hsi</span><span class="p">(</span>
-                    <span class="n">HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom</span><span class="p">(</span>
-                        <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
-                        <span class="n">module</span><span class="o">=</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;OtherAdultCancer&#39;</span><span class="p">]</span>
-                    <span class="p">),</span>
-                    <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                    <span class="n">topen</span><span class="o">=</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
-                    <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="s1">&#39;BreastCancer&#39;</span> <span class="ow">in</span> <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
-            <span class="c1"># If the symptoms include breast lump discernible:</span>
-            <span class="k">if</span> <span class="s1">&#39;breast_lump_discernible&#39;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">:</span>
-                <span class="n">schedule_hsi</span><span class="p">(</span>
-                    <span class="n">HSI_BreastCancer_Investigation_Following_breast_lump_discernible</span><span class="p">(</span>
-                        <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
-                        <span class="n">module</span><span class="o">=</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;BreastCancer&#39;</span><span class="p">],</span>
-                    <span class="p">),</span>
-                    <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                    <span class="n">topen</span><span class="o">=</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
-                    <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="s1">&#39;Depression&#39;</span> <span class="ow">in</span> <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
-            <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Depression&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">do_on_presentation_to_care</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
-                                                                 <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="s1">&#39;CardioMetabolicDisorders&#39;</span> <span class="ow">in</span> <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
-            <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;CardioMetabolicDisorders&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">determine_if_will_be_investigated</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="s1">&#39;Copd&#39;</span> <span class="ow">in</span> <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
-            <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;breathless_moderate&#39;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="s1">&#39;breathless_severe&#39;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">):</span>
-                <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Copd&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">do_when_present_with_breathless</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">)</span>
-
-
-<span class="k">def</span> <span class="nf">do_at_generic_first_appt_emergency</span><span class="p">(</span><span class="n">hsi_event</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;The actions are taken during the non-emergency generic HSI, HSI_GenericEmergencyFirstApptAtFacilityLevel1.&quot;&quot;&quot;</span>
-
-    <span class="c1"># Gather useful shortcuts</span>
-    <span class="n">sim</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">sim</span>
-    <span class="n">rng</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span>
-    <span class="n">person_id</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">target</span>
-    <span class="n">df</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
-    <span class="n">symptoms</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">has_what</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
-    <span class="n">schedule_hsi</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span>
-    <span class="n">age</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;age_years&#39;</span><span class="p">]</span>
-
-    <span class="k">if</span> <span class="s1">&#39;PregnancySupervisor&#39;</span> <span class="ow">in</span> <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
-
-        <span class="c1"># -----  ECTOPIC PREGNANCY  -----</span>
-        <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ps_ectopic_pregnancy&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;none&#39;</span><span class="p">:</span>
-            <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy</span><span class="p">(</span>
-                <span class="n">module</span><span class="o">=</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;CareOfWomenDuringPregnancy&#39;</span><span class="p">],</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
-            <span class="n">schedule_hsi</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">topen</span><span class="o">=</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span> <span class="n">tclose</span><span class="o">=</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
-
-        <span class="c1"># -----  COMPLICATIONS OF ABORTION  -----</span>
-        <span class="n">abortion_complications</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;PregnancySupervisor&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">abortion_complications</span>
-        <span class="k">if</span> <span class="n">abortion_complications</span><span class="o">.</span><span class="n">has_any</span><span class="p">([</span><span class="n">person_id</span><span class="p">],</span> <span class="s1">&#39;sepsis&#39;</span><span class="p">,</span> <span class="s1">&#39;injury&#39;</span><span class="p">,</span> <span class="s1">&#39;haemorrhage&#39;</span><span class="p">,</span> <span class="n">first</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-            <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement</span><span class="p">(</span>
-                <span class="n">module</span><span class="o">=</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;CareOfWomenDuringPregnancy&#39;</span><span class="p">],</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
-            <span class="n">schedule_hsi</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">topen</span><span class="o">=</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span> <span class="n">tclose</span><span class="o">=</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
-
-    <span class="k">if</span> <span class="s1">&#39;Labour&#39;</span> <span class="ow">in</span> <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
-        <span class="n">mni</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;PregnancySupervisor&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mother_and_newborn_info</span>
-        <span class="n">labour_list</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Labour&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">women_in_labour</span>
-
-        <span class="k">if</span> <span class="n">person_id</span> <span class="ow">in</span> <span class="n">labour_list</span><span class="p">:</span>
-            <span class="n">la_currently_in_labour</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;la_currently_in_labour&#39;</span><span class="p">]</span>
-            <span class="k">if</span> <span class="p">(</span>
-                <span class="n">la_currently_in_labour</span> <span class="o">&amp;</span>
-                <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;sought_care_for_complication&#39;</span><span class="p">]</span> <span class="o">&amp;</span>
-                <span class="p">(</span><span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;sought_care_labour_phase&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;intrapartum&#39;</span><span class="p">)</span>
-            <span class="p">):</span>
-                <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour</span><span class="p">(</span>
-                    <span class="n">module</span><span class="o">=</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Labour&#39;</span><span class="p">],</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
-                    <span class="n">facility_level_of_this_hsi</span><span class="o">=</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="s1">&#39;1a&#39;</span><span class="p">,</span> <span class="s1">&#39;1b&#39;</span><span class="p">]))</span>
-                <span class="n">schedule_hsi</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">topen</span><span class="o">=</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span> <span class="n">tclose</span><span class="o">=</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
-
-    <span class="k">if</span> <span class="s2">&quot;Depression&quot;</span> <span class="ow">in</span> <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
-        <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Depression&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">do_on_presentation_to_care</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
-                                                             <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="s2">&quot;Malaria&quot;</span> <span class="ow">in</span> <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
-        <span class="k">if</span> <span class="s1">&#39;severe_malaria&#39;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">:</span>
-            <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Malaria&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">do_on_emergency_presentation_with_severe_malaria</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
-                                                                                    <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">)</span>
-
-    <span class="c1"># ------ CARDIO-METABOLIC DISORDERS ------</span>
-    <span class="k">if</span> <span class="s1">&#39;CardioMetabolicDisorders&#39;</span> <span class="ow">in</span> <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
-        <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;CardioMetabolicDisorders&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">determine_if_will_be_investigated_events</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="s2">&quot;Epilepsy&quot;</span> <span class="ow">in</span> <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
-        <span class="k">if</span> <span class="s1">&#39;seizures&#39;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">:</span>
-            <span class="n">schedule_hsi</span><span class="p">(</span><span class="n">HSI_Epilepsy_Start_Anti_Epileptic</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
-                                                           <span class="n">module</span><span class="o">=</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Epilepsy&#39;</span><span class="p">]),</span>
-                         <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                         <span class="n">topen</span><span class="o">=</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
-                         <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="s1">&#39;severe_trauma&#39;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">:</span>
-        <span class="k">if</span> <span class="s1">&#39;RTI&#39;</span> <span class="ow">in</span> <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
-            <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;RTI&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">do_rti_diagnosis_and_treatment</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="s1">&#39;Alri&#39;</span> <span class="ow">in</span> <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
-        <span class="k">if</span> <span class="p">(</span><span class="n">age</span> <span class="o">&lt;=</span> <span class="mi">5</span><span class="p">)</span> <span class="ow">and</span> <span class="p">((</span><span class="s1">&#39;cough&#39;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="s1">&#39;difficult_breathing&#39;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">)):</span>
-            <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Alri&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">on_presentation</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">)</span>
-
-    <span class="c1"># ----- spurious emergency symptom -----</span>
-    <span class="k">if</span> <span class="s1">&#39;spurious_emergency_symptom&#39;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">:</span>
-        <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_EmergencyCare_SpuriousSymptom</span><span class="p">(</span>
-            <span class="n">module</span><span class="o">=</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSeekingBehaviour&#39;</span><span class="p">],</span>
-            <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span>
-        <span class="p">)</span>
-        <span class="n">schedule_hsi</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">topen</span><span class="o">=</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="s1">&#39;Copd&#39;</span> <span class="ow">in</span> <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
-        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;breathless_moderate&#39;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="s1">&#39;breathless_severe&#39;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">):</span>
-            <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Copd&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">do_when_present_with_breathless</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">)</span>
-
-    <span class="c1"># -----  EXAMPLES FOR MOCKITIS AND CHRONIC SYNDROME  -----</span>
-    <span class="k">if</span> <span class="s1">&#39;craving_sandwiches&#39;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">:</span>
-        <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment</span><span class="p">(</span>
-            <span class="n">module</span><span class="o">=</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;ChronicSyndrome&#39;</span><span class="p">],</span>
-            <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span>
-        <span class="p">)</span>
-        <span class="n">schedule_hsi</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">topen</span><span class="o">=</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="s1">&#39;extreme_pain_in_the_nose&#39;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">:</span>
-        <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_Mockitis_PresentsForCareWithSevereSymptoms</span><span class="p">(</span>
-            <span class="n">module</span><span class="o">=</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Mockitis&#39;</span><span class="p">],</span>
-            <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span>
-        <span class="p">)</span>
-        <span class="n">schedule_hsi</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">topen</span><span class="o">=</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
 </pre></div>
 
            </div>
@@ -498,7 +322,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Mar 06, 2024.
+      <span class="lastupdated">Last updated on Apr 23, 2024.
       </span></p>
   </div>
 

@@ -298,15 +298,15 @@ tlo.methods.tb module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'TB': <tlo.methods.causes.Cause object at 0x135ed4810>, 'AIDS_TB': <tlo.methods.causes.Cause object at 0x135ed4910>}
+     CAUSES_OF_DEATH : {'TB': <tlo.methods.causes.Cause object at 0x124debf90>, 'AIDS_TB': <tlo.methods.causes.Cause object at 0x124deb910>}
 
-     CAUSES_OF_DISABILITY : {'TB': <tlo.methods.causes.Cause object at 0x135ed4750>}
+     CAUSES_OF_DISABILITY : {'TB': <tlo.methods.causes.Cause object at 0x124dea190>}
 
-     INIT_DEPENDENCIES : {'SymptomManager', 'Epi', 'Demography', 'Lifestyle', 'HealthSystem'}
+     INIT_DEPENDENCIES : {'Lifestyle', 'HealthSystem', 'Epi', 'Demography', 'SymptomManager'}
 
-     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
 
-     OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden', 'Hiv'}
+     OPTIONAL_INIT_DEPENDENCIES : {'Hiv', 'HealthBurden'}
 
      SYMPTOMS : {'night_sweats', 'fatigue'}
 
@@ -468,8 +468,13 @@ tlo.methods.tb module
 
 .. autoclass:: HSI_Tb_ScreeningAndRefer
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_Tb_ScreeningAndRefer):**
 
@@ -486,8 +491,13 @@ tlo.methods.tb module
 
 .. autoclass:: HSI_Tb_ClinicalDiagnosis
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_Tb_ClinicalDiagnosis):**
 
@@ -504,8 +514,13 @@ tlo.methods.tb module
 
 .. autoclass:: HSI_Tb_Xray_level1b
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_Tb_Xray_level1b):**
 
@@ -522,8 +537,13 @@ tlo.methods.tb module
 
 .. autoclass:: HSI_Tb_Xray_level2
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_Tb_Xray_level2):**
 
@@ -540,13 +560,15 @@ tlo.methods.tb module
 
 .. autoclass:: HSI_Tb_StartTreatment
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
 
 
      **Class attributes:**
 
-     EXPECTED_APPT_FOOTPRINT : <property object at 0x135f05da0>
+     EXPECTED_APPT_FOOTPRINT : <property object at 0x124ad7f10>
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_Tb_StartTreatment):**
 
@@ -567,8 +589,13 @@ tlo.methods.tb module
 
 .. autoclass:: HSI_Tb_FollowUp
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_Tb_FollowUp):**
 
@@ -585,8 +612,13 @@ tlo.methods.tb module
 
 .. autoclass:: HSI_Tb_Start_or_Continue_Ipt
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_Tb_Start_or_Continue_Ipt):**
 

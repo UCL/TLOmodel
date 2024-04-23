@@ -3,20 +3,24 @@ HealthSystem parameters (.csv)
 
 :download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/healthsystem/ResourceFile_HealthSystem_parameters.csv>`
 
-====  ===================================  ============
-  ..  parameter\_name                      value
-====  ===================================  ============
-   0  policy\_name                         Naive
-   1  year\_mode\_switch                   2100
-   2  Service\_Availability                ["\*"]
-   3  use\_funded\_or\_actual\_staffing    funded\_plus
-   4  mode\_appt\_constraints              1
-   5  mode\_appt\_constraints\_postSwitch  1
-   6  cons\_availability                   default
-   7  beds\_availability                   default
-   8  tclose\_overwrite                    0
-   9  tclose\_days\_offset\_overwrite      7
-  10  const\_HR\_scaling\_mode             default
-  11  dynamic\_HR\_scaling\_factor         1
-  12  scale\_HR\_by\_popsize               FALSE
-====  ===================================  ============
+====  ================================================  ============
+  ..  parameter\_name                                   value
+====  ================================================  ============
+   0  policy\_name                                      Naive
+   1  year\_mode\_switch                                2100
+   2  Service\_Availability                             ["\*"]
+   3  use\_funded\_or\_actual\_staffing                 funded\_plus
+   4  mode\_appt\_constraints                           1
+   5  mode\_appt\_constraints\_postSwitch               1
+   6  cons\_availability                                default
+   7  beds\_availability                                default
+   8  tclose\_overwrite                                 0
+   9  tclose\_days\_offset\_overwrite                   7
+  10  HR\_scaling\_by\_level\_and\_officer\_type\_mode  default
+  11  year\_HR\_scaling\_by\_level\_and\_officer\_type  2100
+  12  HR\_scaling\_by\_district\_mode                   default
+  13  year\_HR\_scaling\_by\_district                   2100
+  14  yearly\_HR\_scaling\_mode                         no\_scaling
+  15  year\_cons\_availability\_switch                  2100
+  16  cons\_availability\_postSwitch                    default
+====  ================================================  ============

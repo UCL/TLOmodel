@@ -60,13 +60,13 @@ tlo.methods.schisto module
 
      CAUSES_OF_DEATH : {}
 
-     CAUSES_OF_DISABILITY : {'Schistosomiasis': <tlo.methods.causes.Cause object at 0x124c61d90>}
+     CAUSES_OF_DISABILITY : {'Schistosomiasis': <tlo.methods.causes.Cause object at 0x124ed4c90>}
 
-     INIT_DEPENDENCIES : {'SymptomManager', 'Demography'}
+     INIT_DEPENDENCIES : {'Demography', 'SymptomManager'}
 
-     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
 
-     OPTIONAL_INIT_DEPENDENCIES : {'HealthSystem', 'HealthBurden'}
+     OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden', 'HealthSystem'}
 
      module_prefix : ss
 
@@ -86,8 +86,6 @@ tlo.methods.schisto module
 
      .. automethod:: report_daly_values
 
-     .. automethod:: do_on_presentation_with_symptoms
-
      .. automethod:: do_effect_of_treatment
 
      .. automethod:: _load_parameters_from_workbook
@@ -99,6 +97,8 @@ tlo.methods.schisto module
      .. automethod:: _get_item_code_for_praziquantel
 
      .. automethod:: _schedule_mda_events
+
+     .. automethod:: do_at_generic_first_appt
 
 
 
@@ -193,8 +193,13 @@ tlo.methods.schisto module
 
 .. autoclass:: HSI_Schisto_TestingFollowingSymptoms
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_Schisto_TestingFollowingSymptoms):**
 
@@ -211,8 +216,13 @@ tlo.methods.schisto module
 
 .. autoclass:: HSI_Schisto_TreatmentFollowingDiagnosis
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_Schisto_TreatmentFollowingDiagnosis):**
 
@@ -229,8 +239,13 @@ tlo.methods.schisto module
 
 .. autoclass:: HSI_Schisto_MDA
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_Schisto_MDA):**
 

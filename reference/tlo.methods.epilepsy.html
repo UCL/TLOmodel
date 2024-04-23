@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.epilepsy module &mdash; TLOmodel 0.1.dev2378+g25dce3d documentation</title>
+  <title>tlo.methods.epilepsy module &mdash; TLOmodel 0.1.dev2392+g4a55807 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -17,7 +17,7 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=c93bd2cd"></script>
+        <script src="../_static/documentation_options.js?v=2acae80b"></script>
         <script src="../_static/doctools.js?v=888ff710"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -54,7 +54,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../aims.html">Aims &amp; Objectives</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../writeups.html">Model Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../data_sources.html">Data Sources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../readme.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../resources/index.html">Resource files</a></li>
@@ -226,10 +226,10 @@
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>CAUSES_OF_DEATH : {‘Epilepsy’: &lt;tlo.methods.causes.Cause object at 0x135f16ed0&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘Epilepsy’: &lt;tlo.methods.causes.Cause object at 0x135f16fd0&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘SymptomManager’, ‘HealthBurden’, ‘Demography’, ‘HealthSystem’}</p>
-<p>METADATA : {&lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
+<p>CAUSES_OF_DEATH : {‘Epilepsy’: &lt;tlo.methods.causes.Cause object at 0x135a5d050&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘Epilepsy’: &lt;tlo.methods.causes.Cause object at 0x135a5c690&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘SymptomManager’, ‘Demography’, ‘HealthBurden’, ‘HealthSystem’}</p>
+<p>METADATA : {&lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;}</p>
 <p>TREATMENT_ID : antiepileptic</p>
 <p><strong>Functions (defined or overridden in class Epilepsy):</strong></p>
 <dl class="py method">
@@ -319,6 +319,18 @@ and whether they are on anti epileptics determines a new seizure status
 <dd><p>Returns the best available medicine (as string), or None if none are available</p>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.epilepsy.Epilepsy.do_at_generic_first_appt_emergency">
+<span class="sig-name descname"><span class="pre">do_at_generic_first_appt_emergency</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">patient_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">symptoms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/tlo/methods/epilepsy.html#Epilepsy.do_at_generic_first_appt_emergency"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epilepsy.Epilepsy.do_at_generic_first_appt_emergency" title="Link to this definition"></a></dt>
+<dd><p>Actions to be take during an EMERGENCY generic HSI.
+Call signature and return values are identical to the
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">do_at_generic_first_appt()</span></code> method.
+Derived classes should overwrite this method so that they are
+compatible with the HealthSystem module, and can schedule HSI
+events when a patient presents symptoms indicative of the
+corresponding illness or condition.</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -394,7 +406,9 @@ so that random number generators can be scoped per-module.</p>
 <dt class="sig sig-object py" id="tlo.methods.epilepsy.HSI_Epilepsy_Start_Anti_Epileptic">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Epilepsy_Start_Anti_Epileptic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epilepsy.html#HSI_Epilepsy_Start_Anti_Epileptic"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epilepsy.HSI_Epilepsy_Start_Anti_Epileptic" title="Link to this definition"></a></dt>
 <dd><p>This is a Health System Interaction Event.</p>
-<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p>Bases: <a class="reference internal" href="tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event" title="tlo.methods.hsi_event.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_event.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Class attributes:</strong></p>
+<p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class HSI_Epilepsy_Start_Anti_Epileptic):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.epilepsy.HSI_Epilepsy_Start_Anti_Epileptic.__init__">
@@ -423,7 +437,9 @@ constructor, but may also take further keyword arguments.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.epilepsy.HSI_Epilepsy_Follow_Up">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Epilepsy_Follow_Up</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epilepsy.html#HSI_Epilepsy_Follow_Up"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epilepsy.HSI_Epilepsy_Follow_Up" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event" title="tlo.methods.hsi_event.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_event.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Class attributes:</strong></p>
+<p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class HSI_Epilepsy_Follow_Up):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.epilepsy.HSI_Epilepsy_Follow_Up.__init__">
@@ -463,7 +479,7 @@ constructor, but may also take further keyword arguments.</p>
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Mar 06, 2024.
+      <span class="lastupdated">Last updated on Apr 23, 2024.
       </span></p>
   </div>
 

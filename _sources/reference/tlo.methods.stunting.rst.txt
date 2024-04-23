@@ -130,9 +130,9 @@ tlo.methods.stunting module
 
      **Class attributes:**
 
-     INIT_DEPENDENCIES : {'Wasting', 'Hiv', 'Demography', 'Diarrhoea', 'NewbornOutcomes'}
+     INIT_DEPENDENCIES : {'Diarrhoea', 'Wasting', 'Hiv', 'Demography', 'NewbornOutcomes'}
 
-     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
 
      **Functions (defined or overridden in class Stunting):**
 
@@ -154,9 +154,9 @@ tlo.methods.stunting module
 
      .. automethod:: do_recovery
 
-     .. automethod:: do_routine_assessment_for_chronic_undernutrition
-
      .. automethod:: do_treatment
+
+     .. automethod:: do_at_generic_first_appt
 
 
 
@@ -215,8 +215,13 @@ tlo.methods.stunting module
 
 .. autoclass:: HSI_Stunting_ComplementaryFeeding
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_Stunting_ComplementaryFeeding):**
 
@@ -277,7 +282,7 @@ tlo.methods.stunting module
 
      **Class attributes:**
 
-     ALTERNATIVE_TO : {'Wasting', 'Hiv', 'Diarrhoea'}
+     ALTERNATIVE_TO : {'Hiv', 'Diarrhoea', 'Wasting'}
 
      INIT_DEPENDENCIES : {'Demography'}
 

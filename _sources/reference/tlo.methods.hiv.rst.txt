@@ -273,13 +273,13 @@ tlo.methods.hiv module
 
      ADDITIONAL_DEPENDENCIES : {'Tb', 'NewbornOutcomes'}
 
-     CAUSES_OF_DEATH : {'AIDS_non_TB': <tlo.methods.causes.Cause object at 0x135f08ed0>, 'AIDS_TB': <tlo.methods.causes.Cause object at 0x135f08f50>}
+     CAUSES_OF_DEATH : {'AIDS_non_TB': <tlo.methods.causes.Cause object at 0x124d8fc90>, 'AIDS_TB': <tlo.methods.causes.Cause object at 0x124d8c710>}
 
-     CAUSES_OF_DISABILITY : {'HIV': <tlo.methods.causes.Cause object at 0x135f08fd0>}
+     CAUSES_OF_DISABILITY : {'HIV': <tlo.methods.causes.Cause object at 0x124d8c310>}
 
-     INIT_DEPENDENCIES : {'SymptomManager', 'HealthSystem', 'Demography', 'Lifestyle'}
+     INIT_DEPENDENCIES : {'SymptomManager', 'Demography', 'Lifestyle', 'HealthSystem'}
 
-     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 
@@ -330,6 +330,8 @@ tlo.methods.hiv module
      .. automethod:: decide_whether_hiv_test_for_infant
 
      .. automethod:: check_config_of_properties
+
+     .. automethod:: do_at_generic_first_appt
 
 
 
@@ -489,8 +491,13 @@ tlo.methods.hiv module
 
 .. autoclass:: HSI_Hiv_TestAndRefer
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_Hiv_TestAndRefer):**
 
@@ -507,8 +514,13 @@ tlo.methods.hiv module
 
 .. autoclass:: HSI_Hiv_Circ
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_Hiv_Circ):**
 
@@ -525,8 +537,13 @@ tlo.methods.hiv module
 
 .. autoclass:: HSI_Hiv_StartInfantProphylaxis
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_Hiv_StartInfantProphylaxis):**
 
@@ -545,8 +562,13 @@ tlo.methods.hiv module
 
 .. autoclass:: HSI_Hiv_StartOrContinueOnPrep
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_Hiv_StartOrContinueOnPrep):**
 
@@ -565,13 +587,15 @@ tlo.methods.hiv module
 
 .. autoclass:: HSI_Hiv_StartOrContinueTreatment
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
 
 
      **Class attributes:**
 
-     EXPECTED_APPT_FOOTPRINT : <property object at 0x135f056c0>
+     EXPECTED_APPT_FOOTPRINT : <property object at 0x124d848b0>
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_Hiv_StartOrContinueTreatment):**
 

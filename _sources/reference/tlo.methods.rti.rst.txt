@@ -805,11 +805,11 @@ tlo.methods.rti module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'HealthSystem', 'Demography', 'Lifestyle'}
+     ADDITIONAL_DEPENDENCIES : {'Demography', 'Lifestyle', 'HealthSystem'}
 
-     CAUSES_OF_DEATH : {'RTI_death_without_med': <tlo.methods.causes.Cause object at 0x1361750d0>, 'RTI_death_with_med': <tlo.methods.causes.Cause object at 0x136176990>, 'RTI_unavailable_med': <tlo.methods.causes.Cause object at 0x1361748d0>, 'RTI_imm_death': <tlo.methods.causes.Cause object at 0x136176c90>, 'RTI_death_shock': <tlo.methods.causes.Cause object at 0x136175290>}
+     CAUSES_OF_DEATH : {'RTI_death_without_med': <tlo.methods.causes.Cause object at 0x1362e2dd0>, 'RTI_death_with_med': <tlo.methods.causes.Cause object at 0x1362e1d50>, 'RTI_unavailable_med': <tlo.methods.causes.Cause object at 0x1362e1290>, 'RTI_imm_death': <tlo.methods.causes.Cause object at 0x1362e05d0>, 'RTI_death_shock': <tlo.methods.causes.Cause object at 0x1362e3510>}
 
-     CAUSES_OF_DISABILITY : {'RTI': <tlo.methods.causes.Cause object at 0x136174c10>}
+     CAUSES_OF_DISABILITY : {'RTI': <tlo.methods.causes.Cause object at 0x1362e18d0>}
 
      DATE_TO_REMOVE_DALY_COLUMNS : ['rt_date_to_remove_daly_1', 'rt_date_to_remove_daly_2', 'rt_date_to_remove_daly_3', 'rt_date_to_remove_daly_4', 'rt_date_to_remove_daly_5', 'rt_date_to_remove_daly_6', 'rt_date_to_remove_daly_7', 'rt_date_to_remove_daly_8']
 
@@ -827,7 +827,7 @@ tlo.methods.rti module
 
      INJURY_INDICES : range(1, 9)
 
-     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
 
      NO_TREATMENT_RECOVERY_TIMES_IN_DAYS : {'112': 49, '113': 49, '1101': 7, '211': 49, '212': 49, '241': 7, '2101': 7, '291': 7, '342': 42, '343': 42, '361': 7, '363': 14, '322': 42, '323': 42, '3101': 7, '3113': 56, '412': 35, '414': 365, '461': 7, '463': 14, '453a': 84, '453b': 84, '441': 14, '442': 14, '4101': 7, '552': 90, '553': 90, '554': 90, '5101': 7, '5113': 56, '612': 63, '712a': 70, '712b': 70, '722': 84, '7101': 7, '7113': 56, '813do': 240, '811': 70, '812': 70, '813eo': 240, '813bo': 240, '813co': 240, '822a': 60, '822b': 180, '8101': 7, '8113': 56}
 
@@ -856,8 +856,6 @@ tlo.methods.rti module
      .. automethod:: rti_ask_for_suture_kit
 
      .. automethod:: rti_ask_for_shock_treatment
-
-     .. automethod:: rti_ask_for_imaging
 
      .. automethod:: rti_ask_for_burn_treatment
 
@@ -893,7 +891,11 @@ tlo.methods.rti module
 
      .. automethod:: rti_assign_injuries
 
-     .. automethod:: do_rti_diagnosis_and_treatment
+     .. automethod:: _common_first_appt_steps
+
+     .. automethod:: do_at_generic_first_appt
+
+     .. automethod:: do_at_generic_first_appt_emergency
 
 
 
@@ -973,8 +975,13 @@ tlo.methods.rti module
 
 .. autoclass:: HSI_RTI_Imaging_Event
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_RTI_Imaging_Event):**
 
@@ -993,8 +1000,13 @@ tlo.methods.rti module
 
 .. autoclass:: HSI_RTI_Medical_Intervention
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_RTI_Medical_Intervention):**
 
@@ -1013,8 +1025,13 @@ tlo.methods.rti module
 
 .. autoclass:: HSI_RTI_Shock_Treatment
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_RTI_Shock_Treatment):**
 
@@ -1033,8 +1050,13 @@ tlo.methods.rti module
 
 .. autoclass:: HSI_RTI_Fracture_Cast
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_RTI_Fracture_Cast):**
 
@@ -1053,8 +1075,13 @@ tlo.methods.rti module
 
 .. autoclass:: HSI_RTI_Open_Fracture_Treatment
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_RTI_Open_Fracture_Treatment):**
 
@@ -1073,8 +1100,13 @@ tlo.methods.rti module
 
 .. autoclass:: HSI_RTI_Suture
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_RTI_Suture):**
 
@@ -1093,8 +1125,13 @@ tlo.methods.rti module
 
 .. autoclass:: HSI_RTI_Burn_Management
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_RTI_Burn_Management):**
 
@@ -1113,8 +1150,13 @@ tlo.methods.rti module
 
 .. autoclass:: HSI_RTI_Tetanus_Vaccine
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_RTI_Tetanus_Vaccine):**
 
@@ -1133,8 +1175,13 @@ tlo.methods.rti module
 
 .. autoclass:: HSI_RTI_Acute_Pain_Management
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_RTI_Acute_Pain_Management):**
 
@@ -1153,8 +1200,13 @@ tlo.methods.rti module
 
 .. autoclass:: HSI_RTI_Major_Surgeries
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_RTI_Major_Surgeries):**
 
@@ -1173,8 +1225,13 @@ tlo.methods.rti module
 
 .. autoclass:: HSI_RTI_Minor_Surgeries
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_RTI_Minor_Surgeries):**
 

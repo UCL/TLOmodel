@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.malaria &mdash; TLOmodel 0.1.dev2378+g25dce3d documentation</title>
+  <title>tlo.methods.malaria &mdash; TLOmodel 0.1.dev2392+g4a55807 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
@@ -16,7 +16,7 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../../_static/documentation_options.js?v=c93bd2cd"></script>
+        <script src="../../../_static/documentation_options.js?v=2acae80b"></script>
         <script src="../../../_static/doctools.js?v=888ff710"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -51,7 +51,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../aims.html">Aims &amp; Objectives</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../writeups.html">Model Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../data_sources.html">Data Sources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../getting_started.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../reference/index.html">Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../resources/index.html">Resource files</a></li>
@@ -93,20 +93,26 @@
 <span class="sd">including the malaria RDT using DxTest</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
 <span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">DateOffset</span><span class="p">,</span> <span class="n">Module</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">Property</span><span class="p">,</span> <span class="n">Types</span><span class="p">,</span> <span class="n">logging</span>
+<span class="kn">from</span> <span class="nn">tlo.core</span> <span class="kn">import</span> <span class="n">DiagnosisFunction</span><span class="p">,</span> <span class="n">IndividualPropertyUpdates</span>
 <span class="kn">from</span> <span class="nn">tlo.events</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">,</span> <span class="n">RegularEvent</span>
 <span class="kn">from</span> <span class="nn">tlo.lm</span> <span class="kn">import</span> <span class="n">LinearModel</span><span class="p">,</span> <span class="n">Predictor</span>
 <span class="kn">from</span> <span class="nn">tlo.methods</span> <span class="kn">import</span> <span class="n">Metadata</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.causes</span> <span class="kn">import</span> <span class="n">Cause</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.dxmanager</span> <span class="kn">import</span> <span class="n">DxTest</span>
-<span class="kn">from</span> <span class="nn">tlo.methods.healthsystem</span> <span class="kn">import</span> <span class="n">HSI_Event</span>
+<span class="kn">from</span> <span class="nn">tlo.methods.hsi_event</span> <span class="kn">import</span> <span class="n">HSI_Event</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.symptommanager</span> <span class="kn">import</span> <span class="n">Symptom</span>
 <span class="kn">from</span> <span class="nn">tlo.util</span> <span class="kn">import</span> <span class="n">random_date</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">tlo.population</span> <span class="kn">import</span> <span class="n">PatientDetails</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
@@ -782,107 +788,144 @@
 
 <div class="viewcode-block" id="Malaria.check_if_fever_is_caused_by_malaria">
 <a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.check_if_fever_is_caused_by_malaria">[docs]</a>
-    <span class="k">def</span> <span class="nf">check_if_fever_is_caused_by_malaria</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run by an HSI when an adult presents with fever&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">check_if_fever_is_caused_by_malaria</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">true_malaria_infection_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">diagnosis_function</span><span class="p">:</span> <span class="n">DiagnosisFunction</span><span class="p">,</span>
+        <span class="n">patient_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">fever_is_a_symptom</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">patient_age</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">facility_level</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">treatment_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;severe_malaria&quot;</span><span class="p">,</span> <span class="s2">&quot;clinical_malaria&quot;</span><span class="p">,</span> <span class="s2">&quot;negative_malaria_test&quot;</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Run by an HSI when an adult presents with fever.</span>
+<span class="sd">        Determine if the cause is malaria.</span>
 
+<span class="sd">        Optional arguments are used by the logger,</span>
+<span class="sd">        and are not needed in the diagnosis.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Call the DxTest RDT to diagnose malaria</span>
-        <span class="n">dx_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dx_manager</span><span class="o">.</span><span class="n">run_dx_test</span><span class="p">(</span>
-            <span class="n">dx_tests_to_run</span><span class="o">=</span><span class="s1">&#39;malaria_rdt&#39;</span><span class="p">,</span>
-            <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span>
-        <span class="p">)</span>
+        <span class="n">dx_result</span> <span class="o">=</span> <span class="n">diagnosis_function</span><span class="p">(</span><span class="s1">&#39;malaria_rdt&#39;</span><span class="p">)</span>
 
         <span class="c1"># Log the test: line-list of summary information about each test</span>
-        <span class="n">fever_present</span> <span class="o">=</span> <span class="s1">&#39;fever&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;SymptomManager&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">has_what</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span>
-        <span class="n">person_details_for_test</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;person_id&#39;</span><span class="p">:</span> <span class="n">person_id</span><span class="p">,</span>
-            <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;age_years&#39;</span><span class="p">],</span>
-            <span class="s1">&#39;fever_present&#39;</span><span class="p">:</span> <span class="n">fever_present</span><span class="p">,</span>
-            <span class="s1">&#39;rdt_result&#39;</span><span class="p">:</span> <span class="n">dx_result</span><span class="p">,</span>
-            <span class="s1">&#39;facility_level&#39;</span><span class="p">:</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span><span class="p">,</span>
-            <span class="s1">&#39;called_by&#39;</span><span class="p">:</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">TREATMENT_ID</span>
-        <span class="p">}</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;rdt_log&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">person_details_for_test</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="n">key</span><span class="o">=</span><span class="s2">&quot;rdt_log&quot;</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">&quot;person_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">,</span>
+                <span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="n">patient_age</span><span class="p">,</span>
+                <span class="s2">&quot;fever_present&quot;</span><span class="p">:</span> <span class="n">fever_is_a_symptom</span><span class="p">,</span>
+                <span class="s2">&quot;rdt_result&quot;</span><span class="p">:</span> <span class="n">dx_result</span><span class="p">,</span>
+                <span class="s2">&quot;facility_level&quot;</span><span class="p">:</span> <span class="n">facility_level</span><span class="p">,</span>
+                <span class="s2">&quot;called_by&quot;</span><span class="p">:</span> <span class="n">treatment_id</span><span class="p">,</span>
+            <span class="p">},</span>
+        <span class="p">)</span>
 
-        <span class="c1"># get facility level from hsi_event</span>
-
-        <span class="n">true_malaria_infection_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ma_inf_type&#39;</span><span class="p">]</span>
-
-        <span class="c1"># severe malaria infection always returns positive RDT</span>
+        <span class="c1"># Severe malaria infection always returns positive RDT</span>
         <span class="k">if</span> <span class="n">true_malaria_infection_type</span> <span class="o">==</span> <span class="s1">&#39;severe&#39;</span><span class="p">:</span>
             <span class="k">return</span> <span class="s1">&#39;severe_malaria&#39;</span>
-
         <span class="k">elif</span> <span class="n">dx_result</span> <span class="ow">and</span> <span class="n">true_malaria_infection_type</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;clinical&#39;</span><span class="p">,</span> <span class="s1">&#39;asym&#39;</span><span class="p">):</span>
             <span class="k">return</span> <span class="s1">&#39;clinical_malaria&#39;</span>
-
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="s1">&#39;negative_malaria_test&#39;</span></div>
 
 
-<div class="viewcode-block" id="Malaria.do_for_suspected_malaria_case">
-<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.do_for_suspected_malaria_case">[docs]</a>
-    <span class="k">def</span> <span class="nf">do_for_suspected_malaria_case</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        :param person_id:</span>
-<span class="sd">        :param hsi_event:</span>
-<span class="sd">        :return:</span>
+<div class="viewcode-block" id="Malaria.do_at_generic_first_appt">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.do_at_generic_first_appt">[docs]</a>
+    <span class="k">def</span> <span class="nf">do_at_generic_first_appt</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">patient_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">patient_details</span><span class="p">:</span> <span class="n">PatientDetails</span><span class="p">,</span>
+        <span class="n">symptoms</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">diagnosis_function</span><span class="p">:</span> <span class="n">DiagnosisFunction</span><span class="p">,</span>
+        <span class="n">facility_level</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">treatment_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">IndividualPropertyUpdates</span><span class="p">:</span>
+        <span class="n">patient_details_updates</span> <span class="o">=</span> <span class="p">{}</span>
 
-<span class="sd">        This is called for a person (of any age) that attends non-emergency generic HSI and has</span>
-<span class="sd">        any symptoms suggestive of malaria &quot;&quot;&quot;</span>
-
-        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
-
-        <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ma_tx&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;none&#39;</span><span class="p">:</span>
-            <span class="n">malaria_test_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_if_fever_is_caused_by_malaria</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">)</span>
-
+        <span class="n">malaria_associated_symptoms</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;fever&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;headache&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;stomachache&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;diarrhoea&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;vomiting&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="nb">bool</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">symptoms</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">malaria_associated_symptoms</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="n">patient_details</span><span class="o">.</span><span class="n">ma_tx</span> <span class="o">==</span> <span class="s2">&quot;none&quot;</span>
+        <span class="p">):</span>
+            <span class="n">malaria_test_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_if_fever_is_caused_by_malaria</span><span class="p">(</span>
+                <span class="n">true_malaria_infection_type</span><span class="o">=</span><span class="n">patient_details</span><span class="o">.</span><span class="n">ma_inf_type</span><span class="p">,</span>
+                <span class="n">diagnosis_function</span><span class="o">=</span><span class="n">diagnosis_function</span><span class="p">,</span>
+                <span class="n">patient_id</span><span class="o">=</span><span class="n">patient_id</span><span class="p">,</span>
+                <span class="n">fever_is_a_symptom</span><span class="o">=</span><span class="s2">&quot;fever&quot;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">,</span>
+                <span class="n">patient_age</span><span class="o">=</span><span class="n">patient_details</span><span class="o">.</span><span class="n">age_years</span><span class="p">,</span>
+                <span class="n">facility_level</span><span class="o">=</span><span class="n">facility_level</span><span class="p">,</span>
+                <span class="n">treatment_id</span><span class="o">=</span><span class="n">treatment_id</span><span class="p">,</span>
+            <span class="p">)</span>
             <span class="c1"># Treat / refer based on diagnosis</span>
-            <span class="k">if</span> <span class="n">malaria_test_result</span> <span class="o">==</span> <span class="s1">&#39;severe_malaria&#39;</span><span class="p">:</span>
-                <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ma_dx_counter&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
-                    <span class="n">HSI_Malaria_Treatment_Complicated</span><span class="p">(</span>
-                        <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
-                        <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">),</span>
-                    <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                    <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
-                    <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">malaria_test_result</span> <span class="o">==</span> <span class="s2">&quot;severe_malaria&quot;</span><span class="p">:</span>
+                <span class="n">patient_details_updates</span><span class="p">[</span><span class="s2">&quot;ma_dx_counter&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">patient_details</span><span class="o">.</span><span class="n">ma_dx_counter</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_Malaria_Treatment_Complicated</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">patient_id</span><span class="p">,</span> <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">healthsystem</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
+                    <span class="n">event</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
+                <span class="p">)</span>
 
             <span class="c1"># return type &#39;clinical_malaria&#39; includes asymptomatic infection</span>
-            <span class="k">elif</span> <span class="n">malaria_test_result</span> <span class="o">==</span> <span class="s1">&#39;clinical_malaria&#39;</span><span class="p">:</span>
-                <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ma_dx_counter&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
-                    <span class="n">HSI_Malaria_Treatment</span><span class="p">(</span>
-                        <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
-                        <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">),</span>
-                    <span class="n">priority</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-                    <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
-                    <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></div>
+            <span class="k">elif</span> <span class="n">malaria_test_result</span> <span class="o">==</span> <span class="s2">&quot;clinical_malaria&quot;</span><span class="p">:</span>
+                <span class="n">patient_details_updates</span><span class="p">[</span><span class="s2">&quot;ma_dx_counter&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">patient_details</span><span class="o">.</span><span class="n">ma_dx_counter</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_Malaria_Treatment</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">patient_id</span><span class="p">,</span> <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">healthsystem</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
+                    <span class="n">event</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
+                <span class="p">)</span>
+        <span class="k">return</span> <span class="n">patient_details_updates</span></div>
 
 
-<div class="viewcode-block" id="Malaria.do_on_emergency_presentation_with_severe_malaria">
-<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.do_on_emergency_presentation_with_severe_malaria">[docs]</a>
-    <span class="k">def</span> <span class="nf">do_on_emergency_presentation_with_severe_malaria</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;This is called for a person (of any age) that attends an emergency generic HSI and has a fever.</span>
-<span class="sd">        (Quick diagnosis algorithm - just perfectly recognises the symptoms of severe malaria.)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
+<div class="viewcode-block" id="Malaria.do_at_generic_first_appt_emergency">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.do_at_generic_first_appt_emergency">[docs]</a>
+    <span class="k">def</span> <span class="nf">do_at_generic_first_appt_emergency</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">patient_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">patient_details</span><span class="p">:</span> <span class="n">PatientDetails</span><span class="p">,</span>
+        <span class="n">symptoms</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">diagnosis_function</span><span class="p">:</span> <span class="n">DiagnosisFunction</span><span class="p">,</span>
+        <span class="n">facility_level</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">treatment_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">IndividualPropertyUpdates</span><span class="p">:</span>
+        <span class="c1"># This is called for a person (of any age) that attends an</span>
+        <span class="c1"># emergency generic HSI and has a fever.</span>
+        <span class="c1"># (Quick diagnosis algorithm - just perfectly recognises the</span>
+        <span class="c1"># symptoms of severe malaria.)</span>
+        <span class="n">patient_details_updates</span> <span class="o">=</span> <span class="p">{}</span>
 
-        <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ma_tx&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;none&#39;</span><span class="p">:</span>
-            <span class="c1"># Check if malaria parasitaemia:</span>
-            <span class="n">malaria_test_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_if_fever_is_caused_by_malaria</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;severe_malaria&#39;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">patient_details</span><span class="o">.</span><span class="n">ma_tx</span> <span class="o">==</span> <span class="s1">&#39;none&#39;</span><span class="p">:</span>
+                <span class="c1"># Check if malaria parasitaemia:</span>
+                <span class="n">malaria_test_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_if_fever_is_caused_by_malaria</span><span class="p">(</span>
+                    <span class="n">true_malaria_infection_type</span><span class="o">=</span><span class="n">patient_details</span><span class="o">.</span><span class="n">ma_inf_type</span><span class="p">,</span>
+                    <span class="n">diagnosis_function</span><span class="o">=</span><span class="n">diagnosis_function</span><span class="p">,</span>
+                    <span class="n">patient_id</span><span class="o">=</span><span class="n">patient_id</span><span class="p">,</span>
+                    <span class="n">fever_is_a_symptom</span><span class="o">=</span><span class="s2">&quot;fever&quot;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">,</span>
+                    <span class="n">patient_age</span><span class="o">=</span><span class="n">patient_details</span><span class="o">.</span><span class="n">age_years</span><span class="p">,</span>
+                    <span class="n">facility_level</span><span class="o">=</span><span class="n">facility_level</span><span class="p">,</span>
+                    <span class="n">treatment_id</span><span class="o">=</span><span class="n">treatment_id</span><span class="p">,</span>
+                <span class="p">)</span>
 
-            <span class="c1"># if any symptoms indicative of malaria and they have parasitaemia (would return a positive rdt)</span>
-            <span class="k">if</span> <span class="n">malaria_test_result</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;severe_malaria&#39;</span><span class="p">,</span> <span class="s1">&#39;clinical_malaria&#39;</span><span class="p">):</span>
-                <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ma_dx_counter&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="c1"># if any symptoms indicative of malaria and they have parasitaemia (would return a positive rdt)</span>
+                <span class="k">if</span> <span class="n">malaria_test_result</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;severe_malaria&#39;</span><span class="p">,</span> <span class="s1">&#39;clinical_malaria&#39;</span><span class="p">):</span>
+                    <span class="n">patient_details_updates</span><span class="p">[</span><span class="s1">&#39;ma_dx_counter&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">patient_details</span><span class="o">.</span><span class="n">ma_dx_counter</span> <span class="o">+</span> <span class="mi">1</span>
 
-                <span class="c1"># Launch the HSI for treatment for Malaria, HSI_Malaria_Treatment will determine correct treatment</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
-                    <span class="n">hsi_event</span><span class="o">=</span><span class="n">HSI_Malaria_Treatment_Complicated</span><span class="p">(</span>
-                        <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
-                        <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">),</span>
-                    <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                    <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
-                <span class="p">)</span></div>
+                    <span class="c1"># Launch the HSI for treatment for Malaria, HSI_Malaria_Treatment will determine correct treatment</span>
+                    <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_Malaria_Treatment_Complicated</span><span class="p">(</span>
+                        <span class="n">person_id</span><span class="o">=</span><span class="n">patient_id</span><span class="p">,</span> <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
+                    <span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">healthsystem</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
+                        <span class="n">event</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
+                    <span class="p">)</span>
+        <span class="k">return</span> <span class="n">patient_details_updates</span></div>
 </div>
-
 
 
 <div class="viewcode-block" id="MalariaPollingEventDistrict">
@@ -1886,7 +1929,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Mar 06, 2024.
+      <span class="lastupdated">Last updated on Apr 23, 2024.
       </span></p>
   </div>
 

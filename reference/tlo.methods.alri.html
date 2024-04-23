@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.alri module &mdash; TLOmodel 0.1.dev2378+g25dce3d documentation</title>
+  <title>tlo.methods.alri module &mdash; TLOmodel 0.1.dev2392+g4a55807 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -17,7 +17,7 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=c93bd2cd"></script>
+        <script src="../_static/documentation_options.js?v=2acae80b"></script>
         <script src="../_static/doctools.js?v=888ff710"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -54,7 +54,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../aims.html">Aims &amp; Objectives</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../writeups.html">Model Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../data_sources.html">Data Sources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../readme.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../resources/index.html">Resource files</a></li>
@@ -663,10 +663,10 @@ death is lowered and the person is “cured” (symptom resolved) some days late
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>CAUSES_OF_DEATH : {‘ALRI_Enterobacteriaceae’: &lt;tlo.methods.causes.Cause object at 0x124ce3410&gt;, ‘ALRI_H.influenzae_non_type_b’: &lt;tlo.methods.causes.Cause object at 0x124d3f390&gt;, ‘ALRI_HMPV’: &lt;tlo.methods.causes.Cause object at 0x124d3fdd0&gt;, ‘ALRI_Hib’: &lt;tlo.methods.causes.Cause object at 0x124d3fe50&gt;, ‘ALRI_Influenza’: &lt;tlo.methods.causes.Cause object at 0x124d3fed0&gt;, ‘ALRI_P.jirovecii’: &lt;tlo.methods.causes.Cause object at 0x124d3ff10&gt;, ‘ALRI_Parainfluenza’: &lt;tlo.methods.causes.Cause object at 0x124d3ff50&gt;, ‘ALRI_RSV’: &lt;tlo.methods.causes.Cause object at 0x124d3ffd0&gt;, ‘ALRI_Rhinovirus’: &lt;tlo.methods.causes.Cause object at 0x124d4c090&gt;, ‘ALRI_Staph_aureus’: &lt;tlo.methods.causes.Cause object at 0x124d4c0d0&gt;, ‘ALRI_Strep_pneumoniae_PCV13’: &lt;tlo.methods.causes.Cause object at 0x124d4c110&gt;, ‘ALRI_Strep_pneumoniae_non_PCV13’: &lt;tlo.methods.causes.Cause object at 0x124d4c150&gt;, ‘ALRI_other_Strepto_Enterococci’: &lt;tlo.methods.causes.Cause object at 0x124d4c190&gt;, ‘ALRI_other_bacterial_pathogens’: &lt;tlo.methods.causes.Cause object at 0x124d4c1d0&gt;, ‘ALRI_other_pathogens_NoS’: &lt;tlo.methods.causes.Cause object at 0x124d4c210&gt;, ‘ALRI_other_viral_pathogens’: &lt;tlo.methods.causes.Cause object at 0x124d4c250&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘ALRI_Enterobacteriaceae’: &lt;tlo.methods.causes.Cause object at 0x124d4c2d0&gt;, ‘ALRI_H.influenzae_non_type_b’: &lt;tlo.methods.causes.Cause object at 0x124d4c310&gt;, ‘ALRI_HMPV’: &lt;tlo.methods.causes.Cause object at 0x124d4c390&gt;, ‘ALRI_Hib’: &lt;tlo.methods.causes.Cause object at 0x124d4c410&gt;, ‘ALRI_Influenza’: &lt;tlo.methods.causes.Cause object at 0x124d4c490&gt;, ‘ALRI_P.jirovecii’: &lt;tlo.methods.causes.Cause object at 0x124d4c4d0&gt;, ‘ALRI_Parainfluenza’: &lt;tlo.methods.causes.Cause object at 0x124d4c510&gt;, ‘ALRI_RSV’: &lt;tlo.methods.causes.Cause object at 0x124d4c590&gt;, ‘ALRI_Rhinovirus’: &lt;tlo.methods.causes.Cause object at 0x124d4c650&gt;, ‘ALRI_Staph_aureus’: &lt;tlo.methods.causes.Cause object at 0x124d4c690&gt;, ‘ALRI_Strep_pneumoniae_PCV13’: &lt;tlo.methods.causes.Cause object at 0x124d4c6d0&gt;, ‘ALRI_Strep_pneumoniae_non_PCV13’: &lt;tlo.methods.causes.Cause object at 0x124d4c710&gt;, ‘ALRI_other_Strepto_Enterococci’: &lt;tlo.methods.causes.Cause object at 0x124d4c750&gt;, ‘ALRI_other_bacterial_pathogens’: &lt;tlo.methods.causes.Cause object at 0x124d4c790&gt;, ‘ALRI_other_pathogens_NoS’: &lt;tlo.methods.causes.Cause object at 0x124d4c7d0&gt;, ‘ALRI_other_viral_pathogens’: &lt;tlo.methods.causes.Cause object at 0x124d4c810&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘SymptomManager’, ‘Wasting’, ‘Hiv’, ‘Epi’, ‘Demography’, ‘Lifestyle’, ‘NewbornOutcomes’}</p>
-<p>METADATA : {&lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
+<p>CAUSES_OF_DEATH : {‘ALRI_Enterobacteriaceae’: &lt;tlo.methods.causes.Cause object at 0x124995550&gt;, ‘ALRI_H.influenzae_non_type_b’: &lt;tlo.methods.causes.Cause object at 0x1249e5750&gt;, ‘ALRI_HMPV’: &lt;tlo.methods.causes.Cause object at 0x1249e6150&gt;, ‘ALRI_Hib’: &lt;tlo.methods.causes.Cause object at 0x1249e61d0&gt;, ‘ALRI_Influenza’: &lt;tlo.methods.causes.Cause object at 0x1249e6250&gt;, ‘ALRI_P.jirovecii’: &lt;tlo.methods.causes.Cause object at 0x1249e6290&gt;, ‘ALRI_Parainfluenza’: &lt;tlo.methods.causes.Cause object at 0x1249e62d0&gt;, ‘ALRI_RSV’: &lt;tlo.methods.causes.Cause object at 0x1249e6350&gt;, ‘ALRI_Rhinovirus’: &lt;tlo.methods.causes.Cause object at 0x1249e63d0&gt;, ‘ALRI_Staph_aureus’: &lt;tlo.methods.causes.Cause object at 0x1249e6410&gt;, ‘ALRI_Strep_pneumoniae_PCV13’: &lt;tlo.methods.causes.Cause object at 0x1249e6450&gt;, ‘ALRI_Strep_pneumoniae_non_PCV13’: &lt;tlo.methods.causes.Cause object at 0x1249e6490&gt;, ‘ALRI_other_Strepto_Enterococci’: &lt;tlo.methods.causes.Cause object at 0x1249e64d0&gt;, ‘ALRI_other_bacterial_pathogens’: &lt;tlo.methods.causes.Cause object at 0x1249e6510&gt;, ‘ALRI_other_pathogens_NoS’: &lt;tlo.methods.causes.Cause object at 0x1249e6550&gt;, ‘ALRI_other_viral_pathogens’: &lt;tlo.methods.causes.Cause object at 0x1249e6590&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘ALRI_Enterobacteriaceae’: &lt;tlo.methods.causes.Cause object at 0x1249e6610&gt;, ‘ALRI_H.influenzae_non_type_b’: &lt;tlo.methods.causes.Cause object at 0x1249e6650&gt;, ‘ALRI_HMPV’: &lt;tlo.methods.causes.Cause object at 0x1249e66d0&gt;, ‘ALRI_Hib’: &lt;tlo.methods.causes.Cause object at 0x1249e6750&gt;, ‘ALRI_Influenza’: &lt;tlo.methods.causes.Cause object at 0x1249e67d0&gt;, ‘ALRI_P.jirovecii’: &lt;tlo.methods.causes.Cause object at 0x1249e6810&gt;, ‘ALRI_Parainfluenza’: &lt;tlo.methods.causes.Cause object at 0x1249e6850&gt;, ‘ALRI_RSV’: &lt;tlo.methods.causes.Cause object at 0x1249e68d0&gt;, ‘ALRI_Rhinovirus’: &lt;tlo.methods.causes.Cause object at 0x1249e6990&gt;, ‘ALRI_Staph_aureus’: &lt;tlo.methods.causes.Cause object at 0x1249e69d0&gt;, ‘ALRI_Strep_pneumoniae_PCV13’: &lt;tlo.methods.causes.Cause object at 0x1249e6a10&gt;, ‘ALRI_Strep_pneumoniae_non_PCV13’: &lt;tlo.methods.causes.Cause object at 0x1249e6a50&gt;, ‘ALRI_other_Strepto_Enterococci’: &lt;tlo.methods.causes.Cause object at 0x1249e6a90&gt;, ‘ALRI_other_bacterial_pathogens’: &lt;tlo.methods.causes.Cause object at 0x1249e6ad0&gt;, ‘ALRI_other_pathogens_NoS’: &lt;tlo.methods.causes.Cause object at 0x1249e6b10&gt;, ‘ALRI_other_viral_pathogens’: &lt;tlo.methods.causes.Cause object at 0x1249e6b50&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘NewbornOutcomes’, ‘Wasting’, ‘Lifestyle’, ‘Epi’, ‘Hiv’, ‘Demography’, ‘SymptomManager’}</p>
+<p>METADATA : {&lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’}</p>
 <p>all_pathogens : [‘Enterobacteriaceae’, ‘H.influenzae_non_type_b’, ‘HMPV’, ‘Hib’, ‘Influenza’, ‘P.jirovecii’, ‘Parainfluenza’, ‘RSV’, ‘Rhinovirus’, ‘Staph_aureus’, ‘Strep_pneumoniae_PCV13’, ‘Strep_pneumoniae_non_PCV13’, ‘other_Strepto_Enterococci’, ‘other_bacterial_pathogens’, ‘other_pathogens_NoS’, ‘other_viral_pathogens’]</p>
 <p>all_symptoms : [‘chest_indrawing’, ‘cough’, ‘cyanosis’, ‘danger_signs’, ‘difficult_breathing’, ‘fever’, ‘tachypnoea’]</p>
@@ -795,13 +795,6 @@ It will only do something if the Alri is caused by a pathogen (this module).
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.alri.Alri.on_presentation">
-<span class="sig-name descname"><span class="pre">on_presentation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#Alri.on_presentation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.Alri.on_presentation" title="Link to this definition"></a></dt>
-<dd><p>Action taken when a child (under 5 years old) presents at a generic appointment (emergency or non-emergency)
-with symptoms of <cite>cough</cite> or <cite>difficult_breathing</cite>.</p>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.alri.Alri.record_sought_care_for_alri">
 <span class="sig-name descname"><span class="pre">record_sought_care_for_alri</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#Alri.record_sought_care_for_alri"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.Alri.record_sought_care_for_alri" title="Link to this definition"></a></dt>
 <dd><p>Count that the person is seeking care</p>
@@ -834,6 +827,68 @@ the second is assumed to be a drop-in replacement with the same effectiveness et
 first is found to be not available.</p>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.Alri.do_at_generic_first_appt">
+<span class="sig-name descname"><span class="pre">do_at_generic_first_appt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">patient_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patient_details</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="tlo.population.html#tlo.population.PatientDetails" title="tlo.population.PatientDetails"><span class="pre">PatientDetails</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">symptoms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">IndividualPropertyUpdates</span></span></span><a class="reference internal" href="../_modules/tlo/methods/alri.html#Alri.do_at_generic_first_appt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.Alri.do_at_generic_first_appt" title="Link to this definition"></a></dt>
+<dd><p>Actions to be take during a NON-emergency generic HSI.</p>
+<p>Derived classes should overwrite this method so that they are
+compatible with the HealthSystem module, and can schedule HSI
+events when a patient presents symptoms indicative of the
+corresponding illness or condition.</p>
+<p>When overwriting, arguments that are not required can be left out
+of the definition.
+If done so, the method MUST take a <a href="#id1"><span class="problematic" id="id2">**</span></a>kwargs input to avoid errors
+when looping over all disease modules and running their generic
+HSI methods.</p>
+<p>HSI_Events should be scheduled by the Module implementing this
+method using the <code class="xref py py-meth docutils literal notranslate"><span class="pre">Module.healthsystem.schedule_hsi()</span></code> method.
+However, they should not write updates back to the population
+DataFrame in this method - these values should be returned as a
+dictionary as described below:</p>
+<p>The return value of this function should be a dictionary
+containing any changes that need to be made to the individual’s
+row in the population DataFrame.
+Key/value pairs should be the column name and the new value to
+assign to the patient.
+In the event no updates are required; return an object that evaluates
+to False when cast to a bool. Your options are:
+- Omit a return statement and value (preferred).
+- Return an empty dictionary. Use this case when patient details
+might need updating conditionally, on EG patient symptoms or consumable
+availability. In which case, an empty dictionary should be created and
+key-value pairs added to this dictionary as such conditionals are checked.
+If no conditionals are met, the empty dictionary will be returned.
+- Use a return statement with no values (use if the logic of your
+module-specific method necessitates the explicit return).
+- Return None (not recommended, use “return” on its own, as above).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>patient_id</strong> – Row index (ID) of the individual target of the HSI event in the population DataFrame.</p></li>
+<li><p><strong>patient_details</strong> – Patient details as provided in the population DataFrame.</p></li>
+<li><p><strong>symptoms</strong> – List of symptoms the patient is experiencing.</p></li>
+<li><p><strong>diagnosis_function</strong> – A function that can run diagnosis tests based on the patient’s symptoms.</p></li>
+<li><p><strong>consumables_checker</strong> – A function that can query the HealthSystem to check for available consumables.</p></li>
+<li><p><strong>facility_level</strong> – The level of the facility that the patient presented at.</p></li>
+<li><p><strong>treatment_id</strong> – The treatment id of the HSI event triggering the generic appointment.</p></li>
+<li><p><strong>random_state</strong> – Random number generator to be used when making random choices during event creation.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.Alri.do_at_generic_first_appt_emergency">
+<span class="sig-name descname"><span class="pre">do_at_generic_first_appt_emergency</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/tlo/methods/alri.html#Alri.do_at_generic_first_appt_emergency"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.Alri.do_at_generic_first_appt_emergency" title="Link to this definition"></a></dt>
+<dd><p>Actions to be take during an EMERGENCY generic HSI.
+Call signature and return values are identical to the
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">do_at_generic_first_appt()</span></code> method.
+Derived classes should overwrite this method so that they are
+compatible with the HealthSystem module, and can schedule HSI
+events when a patient presents symptoms indicative of the
+corresponding illness or condition.</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -848,7 +903,7 @@ age-groups. This is a small effect when the frequency of the polling event is hi
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
 <p>__annotations__ : {}</p>
-<p>fraction_of_year_between_polling_event : &lt;property object at 0x124d48a90&gt;</p>
+<p>fraction_of_year_between_polling_event : &lt;property object at 0x1249ed120&gt;</p>
 <p><strong>Functions (defined or overridden in class AlriPollingEvent):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.alri.AlriPollingEvent.__init__">
@@ -1062,9 +1117,10 @@ constructor, but may also take further keyword arguments.</p></li>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Alri_Treatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><span class="pre">Module</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inpatient</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_followup_following_treatment_failure</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#HSI_Alri_Treatment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.HSI_Alri_Treatment" title="Link to this definition"></a></dt>
 <dd><p>HSI event for treating uncomplicated pneumonia. This event runs for every presentation and represents all the
 interactions with the healthcare system at all the levels.</p>
-<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p>Bases: <a class="reference internal" href="tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event" title="tlo.methods.hsi_event.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_event.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
-<p>_is_as_in_patient : &lt;property object at 0x124d48d60&gt;</p>
+<p>__annotations__ : {}</p>
+<p>_is_as_in_patient : &lt;property object at 0x1249ed3a0&gt;</p>
 <p><strong>Functions (defined or overridden in class HSI_Alri_Treatment):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.alri.HSI_Alri_Treatment.__init__">
@@ -1443,7 +1499,7 @@ Analysis scripts expect that the frequency of this logging event is once per yea
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ALTERNATIVE_TO : {‘Wasting’, ‘Hiv’, ‘Epi’}</p>
+<p>ALTERNATIVE_TO : {‘Hiv’, ‘Wasting’, ‘Epi’}</p>
 <p>INIT_DEPENDENCIES : {‘Demography’}</p>
 <p><strong>Functions (defined or overridden in class AlriPropertiesOfOtherModules):</strong></p>
 <dl class="py method">
@@ -1584,7 +1640,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Mar 06, 2024.
+      <span class="lastupdated">Last updated on Apr 23, 2024.
       </span></p>
   </div>
 

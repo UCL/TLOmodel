@@ -4,16 +4,48 @@ tlo.methods.hsi_generic_first_appts module
 .. automodule:: tlo.methods.hsi_generic_first_appts
 
 
+.. autoclass:: HSI_BaseGenericFirstAppt
+
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+
+     **Class attributes:**
+
+     __annotations__ : {'MODULE_METHOD_ON_APPLY': "Literal['do_at_generic_first_appt', 'do_at_generic_first_appt_emergency']"}
+
+     **Functions (defined or overridden in class HSI_BaseGenericFirstAppt):**
+
+     .. automethod:: __init__
+
+     .. automethod:: _diagnosis_function
+
+     .. automethod:: _do_on_generic_first_appt
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
 .. autoclass:: HSI_GenericNonEmergencyFirstAppt
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_generic_first_appts.HSI_BaseGenericFirstAppt`, :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     MODULE_METHOD_ON_APPLY : do_at_generic_first_appt
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_GenericNonEmergencyFirstAppt):**
 
      .. automethod:: __init__
-
-     .. automethod:: apply
 
 
 
@@ -24,14 +56,19 @@ tlo.methods.hsi_generic_first_appts module
 
 .. autoclass:: HSI_GenericEmergencyFirstAppt
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_generic_first_appts.HSI_BaseGenericFirstAppt`, :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     MODULE_METHOD_ON_APPLY : do_at_generic_first_appt_emergency
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_GenericEmergencyFirstAppt):**
 
      .. automethod:: __init__
-
-     .. automethod:: apply
 
 
 
@@ -42,8 +79,13 @@ tlo.methods.hsi_generic_first_appts module
 
 .. autoclass:: HSI_EmergencyCare_SpuriousSymptom
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_EmergencyCare_SpuriousSymptom):**
 

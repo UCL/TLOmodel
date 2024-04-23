@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.rti &mdash; TLOmodel 0.1.dev2378+g25dce3d documentation</title>
+  <title>tlo.methods.rti &mdash; TLOmodel 0.1.dev2392+g4a55807 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
@@ -16,7 +16,7 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../../_static/documentation_options.js?v=c93bd2cd"></script>
+        <script src="../../../_static/documentation_options.js?v=2acae80b"></script>
         <script src="../../../_static/doctools.js?v=888ff710"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -51,7 +51,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../aims.html">Aims &amp; Objectives</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../writeups.html">Model Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../data_sources.html">Data Sources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../getting_started.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../reference/index.html">Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../resources/index.html">Resource files</a></li>
@@ -91,18 +91,25 @@
 <span class="sd">Road traffic injury module.</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">List</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
 <span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">DateOffset</span><span class="p">,</span> <span class="n">Module</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">Property</span><span class="p">,</span> <span class="n">Types</span><span class="p">,</span> <span class="n">logging</span>
+<span class="kn">from</span> <span class="nn">tlo.core</span> <span class="kn">import</span> <span class="n">IndividualPropertyUpdates</span>
 <span class="kn">from</span> <span class="nn">tlo.events</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">,</span> <span class="n">RegularEvent</span>
 <span class="kn">from</span> <span class="nn">tlo.lm</span> <span class="kn">import</span> <span class="n">LinearModel</span><span class="p">,</span> <span class="n">LinearModelType</span><span class="p">,</span> <span class="n">Predictor</span>
 <span class="kn">from</span> <span class="nn">tlo.methods</span> <span class="kn">import</span> <span class="n">Metadata</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.causes</span> <span class="kn">import</span> <span class="n">Cause</span>
-<span class="kn">from</span> <span class="nn">tlo.methods.healthsystem</span> <span class="kn">import</span> <span class="n">HSI_Event</span>
+<span class="kn">from</span> <span class="nn">tlo.methods.hsi_event</span> <span class="kn">import</span> <span class="n">HSI_Event</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.symptommanager</span> <span class="kn">import</span> <span class="n">Symptom</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">tlo.population</span> <span class="kn">import</span> <span class="n">PatientDetails</span>
 
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
 <span class="c1">#   MODULE DEFINITIONS</span>
@@ -1897,24 +1904,6 @@
             <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="RTI.rti_ask_for_imaging">
-<a class="viewcode-back" href="../../../reference/tlo.methods.rti.html#tlo.methods.rti.RTI.rti_ask_for_imaging">[docs]</a>
-    <span class="k">def</span> <span class="nf">rti_ask_for_imaging</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        A function called by the generic emergency appointment to order imaging for diagnosis</span>
-<span class="sd">        :param person_id:</span>
-<span class="sd">        :return:</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
-        <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;is_alive&#39;</span><span class="p">]:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
-                <span class="n">hsi_event</span><span class="o">=</span><span class="n">HSI_RTI_Imaging_Event</span><span class="p">(</span><span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">),</span>
-                <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
-                <span class="n">tclose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
-            <span class="p">)</span></div>
-
-
 <div class="viewcode-block" id="RTI.rti_ask_for_burn_treatment">
 <a class="viewcode-back" href="../../../reference/tlo.methods.rti.html#tlo.methods.rti.RTI.rti_ask_for_burn_treatment">[docs]</a>
     <span class="k">def</span> <span class="nf">rti_ask_for_burn_treatment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
@@ -2678,19 +2667,110 @@
         <span class="k">return</span> <span class="n">inj_df</span></div>
 
 
-<div class="viewcode-block" id="RTI.do_rti_diagnosis_and_treatment">
-<a class="viewcode-back" href="../../../reference/tlo.methods.rti.html#tlo.methods.rti.RTI.do_rti_diagnosis_and_treatment">[docs]</a>
-    <span class="k">def</span> <span class="nf">do_rti_diagnosis_and_treatment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Things to do upon a person presenting at a Non-Emergency Generic HSI if they have an injury.&quot;&quot;&quot;</span>
-        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
-        <span class="n">persons_injuries</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="n">RTI</span><span class="o">.</span><span class="n">INJURY_COLUMNS</span><span class="p">]</span>
-        <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;cause_of_death&#39;</span><span class="p">])</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_diagnosed&#39;</span><span class="p">]:</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">RTI</span><span class="o">.</span><span class="n">INJURIES_REQ_IMAGING</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">persons_injuries</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">rti_ask_for_imaging</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span>
-            <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_diagnosed&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">rti_do_when_diagnosed</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_in_shock&#39;</span><span class="p">]:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">rti_ask_for_shock_treatment</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span></div>
+<div class="viewcode-block" id="RTI._common_first_appt_steps">
+<a class="viewcode-back" href="../../../reference/tlo.methods.rti.html#tlo.methods.rti.RTI._common_first_appt_steps">[docs]</a>
+    <span class="k">def</span> <span class="nf">_common_first_appt_steps</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">patient_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">patient_details</span><span class="p">:</span> <span class="n">PatientDetails</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">IndividualPropertyUpdates</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Shared logic steps that are used by the RTI module when a generic HSI</span>
+<span class="sd">        event is to be scheduled.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">patient_details_updates</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># Things to do upon a person presenting at a Non-Emergency Generic</span>
+        <span class="c1"># HSI if they have an injury.</span>
+        <span class="n">persons_injuries</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="nb">getattr</span><span class="p">(</span><span class="n">patient_details</span><span class="p">,</span> <span class="n">injury</span><span class="p">)</span> <span class="k">for</span> <span class="n">injury</span> <span class="ow">in</span> <span class="n">RTI</span><span class="o">.</span><span class="n">INJURY_COLUMNS</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">patient_details</span><span class="o">.</span><span class="n">cause_of_death</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="ow">not</span> <span class="n">patient_details</span><span class="o">.</span><span class="n">rt_diagnosed</span>
+        <span class="p">):</span>
+            <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">RTI</span><span class="o">.</span><span class="n">INJURIES_REQ_IMAGING</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">persons_injuries</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="n">patient_details</span><span class="o">.</span><span class="n">is_alive</span><span class="p">:</span>
+                    <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_RTI_Imaging_Event</span><span class="p">(</span><span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">patient_id</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">healthsystem</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
+                        <span class="n">event</span><span class="p">,</span>
+                        <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                        <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+                        <span class="n">tclose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">15</span><span class="p">),</span>
+                    <span class="p">)</span>
+            <span class="n">patient_details_updates</span><span class="p">[</span><span class="s2">&quot;rt_diagnosed&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+            <span class="c1"># The injured person has been diagnosed in A&amp;E and needs to progress further</span>
+            <span class="c1"># through the health system.</span>
+            <span class="c1"># They will then me scheduled a generic &quot;medical intervention&quot; appointment,</span>
+            <span class="c1"># serving three purposes:</span>
+            <span class="c1"># 1. Determine which treatments they require for their injuries to and shedule them,</span>
+            <span class="c1"># 2. Contain them in the health care system with inpatient days,</span>
+            <span class="c1"># 3. The appointment treats injuries that heal over time without further need for</span>
+            <span class="c1"># resources in the health system.</span>
+
+            <span class="c1"># Check this person is injured, search they have an injury code that isn&#39;t &quot;none&quot;</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">counts</span> <span class="o">=</span> <span class="n">RTI</span><span class="o">.</span><span class="n">rti_find_and_count_injuries</span><span class="p">(</span>
+                <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="p">[</span><span class="n">persons_injuries</span><span class="p">],</span> <span class="n">columns</span><span class="o">=</span><span class="n">RTI</span><span class="o">.</span><span class="n">INJURY_COLUMNS</span><span class="p">),</span>
+                <span class="n">RTI</span><span class="o">.</span><span class="n">INJURY_CODES</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span>
+            <span class="p">)</span>
+            <span class="c1"># also test whether the regular injury symptom has been given to the person via spurious symptoms</span>
+            <span class="k">assert</span> <span class="p">(</span><span class="n">counts</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span>
+                <span class="s2">&quot;SymptomManager&quot;</span>
+            <span class="p">]</span><span class="o">.</span><span class="n">spurious_symptoms</span><span class="p">,</span> <span class="p">(</span>
+                <span class="s2">&quot;This person has asked for medical treatment despite not being injured&quot;</span>
+            <span class="p">)</span>
+
+            <span class="c1"># If they meet the requirements, send them to HSI_RTI_MedicalIntervention for further treatment</span>
+            <span class="c1"># Using counts condition to stop spurious symptoms progressing people through the model</span>
+            <span class="k">if</span> <span class="n">counts</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_RTI_Medical_Intervention</span><span class="p">(</span><span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">patient_id</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">healthsystem</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
+                    <span class="n">event</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
+                <span class="p">)</span>
+
+            <span class="c1"># We now check if they need shock treatment</span>
+            <span class="k">if</span> <span class="n">patient_details</span><span class="o">.</span><span class="n">rt_in_shock</span> <span class="ow">and</span> <span class="n">patient_details</span><span class="o">.</span><span class="n">is_alive</span><span class="p">:</span>
+                <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_RTI_Shock_Treatment</span><span class="p">(</span><span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">patient_id</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">healthsystem</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
+                    <span class="n">event</span><span class="p">,</span>
+                    <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                    <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+                    <span class="n">tclose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">15</span><span class="p">),</span>
+                <span class="p">)</span>
+        <span class="k">return</span> <span class="n">patient_details_updates</span></div>
+
+
+<div class="viewcode-block" id="RTI.do_at_generic_first_appt">
+<a class="viewcode-back" href="../../../reference/tlo.methods.rti.html#tlo.methods.rti.RTI.do_at_generic_first_appt">[docs]</a>
+    <span class="k">def</span> <span class="nf">do_at_generic_first_appt</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">patient_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">patient_details</span><span class="p">:</span> <span class="n">PatientDetails</span><span class="p">,</span>
+        <span class="n">symptoms</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">IndividualPropertyUpdates</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">&quot;injury&quot;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_common_first_appt_steps</span><span class="p">(</span>
+                <span class="n">patient_id</span><span class="o">=</span><span class="n">patient_id</span><span class="p">,</span> <span class="n">patient_details</span><span class="o">=</span><span class="n">patient_details</span>
+            <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="RTI.do_at_generic_first_appt_emergency">
+<a class="viewcode-back" href="../../../reference/tlo.methods.rti.html#tlo.methods.rti.RTI.do_at_generic_first_appt_emergency">[docs]</a>
+    <span class="k">def</span> <span class="nf">do_at_generic_first_appt_emergency</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">patient_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">patient_details</span><span class="p">:</span> <span class="n">PatientDetails</span><span class="p">,</span>
+        <span class="n">symptoms</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">IndividualPropertyUpdates</span><span class="p">:</span>
+        <span class="c1"># Same process is followed for emergency and non emergency appointments, except the</span>
+        <span class="c1"># initial symptom check</span>
+        <span class="k">if</span> <span class="s2">&quot;severe_trauma&quot;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_common_first_appt_steps</span><span class="p">(</span>
+                <span class="n">patient_id</span><span class="o">=</span><span class="n">patient_id</span><span class="p">,</span>
+                <span class="n">patient_details</span><span class="o">=</span><span class="n">patient_details</span>
+            <span class="p">)</span></div>
 </div>
 
 
@@ -5967,7 +6047,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Mar 06, 2024.
+      <span class="lastupdated">Last updated on Apr 23, 2024.
       </span></p>
   </div>
 

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.enhanced_lifestyle module &mdash; TLOmodel 0.1.dev2378+g25dce3d documentation</title>
+  <title>tlo.methods.enhanced_lifestyle module &mdash; TLOmodel 0.1.dev2392+g4a55807 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -17,7 +17,7 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=c93bd2cd"></script>
+        <script src="../_static/documentation_options.js?v=2acae80b"></script>
         <script src="../_static/doctools.js?v=888ff710"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -54,7 +54,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../aims.html">Aims &amp; Objectives</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../writeups.html">Model Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../data_sources.html">Data Sources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../readme.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../resources/index.html">Resource files</a></li>
@@ -197,7 +197,7 @@ by urban/rural, wealth, tobacco usage etc.</p>
 </tr>
 <tr class="row-even"><td><p>init_p_tob_age1519_m_wealth1</p></td>
 <td><p>REAL</p></td>
-<td><p>initital proportion of 15-19 year old men using tobacco, wealth level 1</p></td>
+<td><p>initial proportion of 15-19 year old men using tobacco, wealth level 1</p></td>
 </tr>
 <tr class="row-odd"><td><p>init_or_tob_f</p></td>
 <td><p>REAL</p></td>
@@ -343,279 +343,283 @@ by urban/rural, wealth, tobacco usage etc.</p>
 <td><p>REAL</p></td>
 <td><p>initial odds ratio of no_access_handwashing per lower wealth level</p></td>
 </tr>
-<tr class="row-odd"><td><p>init_rp_some_ed_age0513</p></td>
+<tr class="row-odd"><td><p>init_prop_primary_edu</p></td>
+<td><p>REAL</p></td>
+<td><p>proportion of starting primary education at baseline age 5-12</p></td>
+</tr>
+<tr class="row-even"><td><p>init_rp_some_ed_age0513</p></td>
 <td><p>REAL</p></td>
 <td><p>relative prevalence of some education at baseline age 5-13</p></td>
 </tr>
-<tr class="row-even"><td><p>init_rp_some_ed_age1320</p></td>
+<tr class="row-odd"><td><p>init_rp_some_ed_age1320</p></td>
 <td><p>REAL</p></td>
 <td><p>relative prevalence of some education at baseline age 13-20</p></td>
 </tr>
-<tr class="row-odd"><td><p>init_rp_some_ed_age2030</p></td>
+<tr class="row-even"><td><p>init_rp_some_ed_age2030</p></td>
 <td><p>REAL</p></td>
 <td><p>relative prevalence of some education at baseline age 20-30</p></td>
 </tr>
-<tr class="row-even"><td><p>init_rp_some_ed_age3040</p></td>
+<tr class="row-odd"><td><p>init_rp_some_ed_age3040</p></td>
 <td><p>REAL</p></td>
 <td><p>relative prevalence of some education at baseline age 30-40</p></td>
 </tr>
-<tr class="row-odd"><td><p>init_rp_some_ed_age4050</p></td>
+<tr class="row-even"><td><p>init_rp_some_ed_age4050</p></td>
 <td><p>REAL</p></td>
 <td><p>relative prevalence of some education at baseline age 40-50</p></td>
 </tr>
-<tr class="row-even"><td><p>init_rp_some_ed_age5060</p></td>
+<tr class="row-odd"><td><p>init_rp_some_ed_age5060</p></td>
 <td><p>REAL</p></td>
 <td><p>relative prevalence of some education at baseline age 50-60</p></td>
 </tr>
-<tr class="row-odd"><td><p>init_rp_some_ed_per_higher_wealth</p></td>
+<tr class="row-even"><td><p>init_rp_some_ed_per_higher_wealth</p></td>
 <td><p>REAL</p></td>
 <td><p>relative prevalence of some education at baseline per higher wealth level</p></td>
 </tr>
-<tr class="row-even"><td><p>init_rp_some_ed_sec_age1320</p></td>
+<tr class="row-odd"><td><p>init_rp_some_ed_sec_age1320</p></td>
 <td><p>REAL</p></td>
 <td><p>relative prevalence of secondary education age 15-20</p></td>
 </tr>
-<tr class="row-odd"><td><p>init_rp_some_ed_sec_age3040</p></td>
+<tr class="row-even"><td><p>init_rp_some_ed_sec_age3040</p></td>
 <td><p>REAL</p></td>
 <td><p>relative prevalence of secondary education age 30-40</p></td>
 </tr>
-<tr class="row-even"><td><p>init_rp_some_ed_sec_age4050</p></td>
+<tr class="row-odd"><td><p>init_rp_some_ed_sec_age4050</p></td>
 <td><p>REAL</p></td>
 <td><p>relative prevalence of secondary education age 40-50</p></td>
 </tr>
-<tr class="row-odd"><td><p>init_rp_some_ed_sec_age5060</p></td>
+<tr class="row-even"><td><p>init_rp_some_ed_sec_age5060</p></td>
 <td><p>REAL</p></td>
 <td><p>relative prevalence of secondary education age 50-60</p></td>
 </tr>
-<tr class="row-even"><td><p>init_rp_some_ed_sec_agege60</p></td>
+<tr class="row-odd"><td><p>init_rp_some_ed_sec_agege60</p></td>
 <td><p>REAL</p></td>
 <td><p>relative prevalence of secondary education age 60+</p></td>
 </tr>
-<tr class="row-odd"><td><p>init_rp_some_ed_agege60</p></td>
+<tr class="row-even"><td><p>init_rp_some_ed_agege60</p></td>
 <td><p>REAL</p></td>
 <td><p>relative prevalence of some education at baseline age age 60+</p></td>
 </tr>
-<tr class="row-even"><td><p>init_rp_some_ed_sec_per_higher_wealth</p></td>
+<tr class="row-odd"><td><p>init_rp_some_ed_sec_per_higher_wealth</p></td>
 <td><p>REAL</p></td>
 <td><p>relative prevalence of secondary education per higher wealth level</p></td>
 </tr>
-<tr class="row-odd"><td><p>r_urban</p></td>
+<tr class="row-even"><td><p>r_urban</p></td>
 <td><p>REAL</p></td>
 <td><p>probability per 3 months of change from rural to urban</p></td>
 </tr>
-<tr class="row-even"><td><p>r_rural</p></td>
+<tr class="row-odd"><td><p>r_rural</p></td>
 <td><p>REAL</p></td>
 <td><p>probability per 3 months of change from urban to rural</p></td>
 </tr>
-<tr class="row-odd"><td><p>r_higher_bmi</p></td>
+<tr class="row-even"><td><p>r_higher_bmi</p></td>
 <td><p>REAL</p></td>
 <td><p>probability per 3 months of increase in bmi category if rural male age15-29 not using tobacoo with wealth level 1 with not high sugar intake</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_higher_bmi_urban</p></td>
+<tr class="row-odd"><td><p>rr_higher_bmi_urban</p></td>
 <td><p>REAL</p></td>
 <td><p>probability per 3 months of increase in bmi category if</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_higher_bmi_f</p></td>
+<tr class="row-even"><td><p>rr_higher_bmi_f</p></td>
 <td><p>REAL</p></td>
 <td><p>rate ratio for increase in bmi category for females</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_higher_bmi_age3049</p></td>
+<tr class="row-odd"><td><p>rr_higher_bmi_age3049</p></td>
 <td><p>REAL</p></td>
 <td><p>rate ratio for increase in bmi category for age 30-49</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_higher_bmi_agege50</p></td>
+<tr class="row-even"><td><p>rr_higher_bmi_agege50</p></td>
 <td><p>REAL</p></td>
 <td><p>rate ratio for increase in bmi category for age ge 50</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_higher_bmi_tob</p></td>
+<tr class="row-odd"><td><p>rr_higher_bmi_tob</p></td>
 <td><p>REAL</p></td>
 <td><p>rate ratio for increase in bmi category for tobacco users</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_higher_bmi_per_higher_wealth</p></td>
+<tr class="row-even"><td><p>rr_higher_bmi_per_higher_wealth</p></td>
 <td><p>REAL</p></td>
 <td><p>rate ratio for increase in bmi category per higher wealth level</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_higher_bmi_high_sugar</p></td>
+<tr class="row-odd"><td><p>rr_higher_bmi_high_sugar</p></td>
 <td><p>REAL</p></td>
 <td><p>rate ratio for increase in bmi category for high sugar intake</p></td>
 </tr>
-<tr class="row-odd"><td><p>r_lower_bmi</p></td>
+<tr class="row-even"><td><p>r_lower_bmi</p></td>
 <td><p>REAL</p></td>
 <td><p>probability per 3 months of decrease in bmi category in non tobacco users</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_lower_bmi_tob</p></td>
+<tr class="row-odd"><td><p>rr_lower_bmi_tob</p></td>
 <td><p>REAL</p></td>
 <td><p>rate ratio for lower bmi category for tobacco users</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_lower_bmi_pop_advice_weight</p></td>
+<tr class="row-even"><td><p>rr_lower_bmi_pop_advice_weight</p></td>
 <td><p>REAL</p></td>
 <td><p>probability per 3 months of decrease in bmi category given population advice/campaign on weight</p></td>
 </tr>
-<tr class="row-even"><td><p>r_high_salt_urban</p></td>
+<tr class="row-odd"><td><p>r_high_salt_urban</p></td>
 <td><p>REAL</p></td>
 <td><p>probability per 3 months of high salt intake if urban</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_high_salt_rural</p></td>
+<tr class="row-even"><td><p>rr_high_salt_rural</p></td>
 <td><p>REAL</p></td>
 <td><p>rate ratio for high salt if rural</p></td>
 </tr>
-<tr class="row-even"><td><p>r_not_high_salt</p></td>
+<tr class="row-odd"><td><p>r_not_high_salt</p></td>
 <td><p>REAL</p></td>
 <td><p>probability per 3 months of not high salt intake</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_not_high_salt_pop_advice_salt</p></td>
+<tr class="row-even"><td><p>rr_not_high_salt_pop_advice_salt</p></td>
 <td><p>REAL</p></td>
-<td><p>probability per 3 months of not high salt givenpopulation advice/campaign on salt</p></td>
+<td><p>probability per 3 months of not high salt given population advice/campaign on salt</p></td>
 </tr>
-<tr class="row-even"><td><p>r_high_sugar</p></td>
+<tr class="row-odd"><td><p>r_high_sugar</p></td>
 <td><p>REAL</p></td>
 <td><p>probability per 3 months of high sugar intake</p></td>
 </tr>
-<tr class="row-odd"><td><p>r_not_high_sugar</p></td>
+<tr class="row-even"><td><p>r_not_high_sugar</p></td>
 <td><p>REAL</p></td>
 <td><p>probability per 3 months of not high sugar intake</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_not_high_sugar_pop_advice_sugar</p></td>
+<tr class="row-odd"><td><p>rr_not_high_sugar_pop_advice_sugar</p></td>
 <td><p>REAL</p></td>
-<td><p>probability per 3 months of not high sugar givenpopulation advice/campaign on sugar</p></td>
+<td><p>probability per 3 months of not high sugar given population advice/campaign on sugar</p></td>
 </tr>
-<tr class="row-odd"><td><p>r_low_ex</p></td>
+<tr class="row-even"><td><p>r_low_ex</p></td>
 <td><p>REAL</p></td>
 <td><p>probability per 3 months of change from not low exercise to low exercise</p></td>
 </tr>
-<tr class="row-even"><td><p>r_not_low_ex</p></td>
+<tr class="row-odd"><td><p>r_not_low_ex</p></td>
 <td><p>REAL</p></td>
 <td><p>probability per 3 months of change from low exercise to not low exercie</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_not_low_ex_pop_advice_exercise</p></td>
+<tr class="row-even"><td><p>rr_not_low_ex_pop_advice_exercise</p></td>
 <td><p>REAL</p></td>
-<td><p>probability per 3 months of not low exercisepopulation advice/campaign on exercise</p></td>
+<td><p>probability per 3 months of not low exercise population advice/campaign on exercise</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_low_ex_f</p></td>
+<tr class="row-odd"><td><p>rr_low_ex_f</p></td>
 <td><p>REAL</p></td>
 <td><p>risk ratio for becoming low exercise if female rather than male</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_low_ex_urban</p></td>
+<tr class="row-even"><td><p>rr_low_ex_urban</p></td>
 <td><p>REAL</p></td>
 <td><p>risk ratio for becoming low exercise if urban rather than rural</p></td>
 </tr>
-<tr class="row-even"><td><p>r_tob</p></td>
+<tr class="row-odd"><td><p>r_tob</p></td>
 <td><p>REAL</p></td>
 <td><p>probability per 3 months of change from not using tobacco to using tobacco if male age 15-19 wealth level 1</p></td>
 </tr>
-<tr class="row-odd"><td><p>r_not_tob</p></td>
+<tr class="row-even"><td><p>r_not_tob</p></td>
 <td><p>REAL</p></td>
 <td><p>probability per 3 months of change from tobacco using to not tobacco using</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_tob_f</p></td>
+<tr class="row-odd"><td><p>rr_tob_f</p></td>
 <td><p>REAL</p></td>
 <td><p>rate ratio tobacco if female</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_tob_age2039</p></td>
+<tr class="row-even"><td><p>rr_tob_age2039</p></td>
 <td><p>REAL</p></td>
 <td><p>risk ratio for tobacco using if age 20-39 compared with 15-19</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_tob_agege40</p></td>
+<tr class="row-odd"><td><p>rr_tob_agege40</p></td>
 <td><p>REAL</p></td>
 <td><p>risk ratio for tobacco using if age &gt;= 40 compared with 15-19</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_tob_wealth</p></td>
+<tr class="row-even"><td><p>rr_tob_wealth</p></td>
 <td><p>REAL</p></td>
 <td><p>risk ratio for tobacco using per 1 higher wealth level (higher wealth level = lower wealth)</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_not_tob_pop_advice_tobacco</p></td>
+<tr class="row-odd"><td><p>rr_not_tob_pop_advice_tobacco</p></td>
 <td><p>REAL</p></td>
-<td><p>probability per 3 months of quitting tobacco givenpopulation advice/campaign on tobacco</p></td>
+<td><p>probability per 3 months of quitting tobacco given population advice/campaign on tobacco</p></td>
 </tr>
-<tr class="row-odd"><td><p>r_ex_alc</p></td>
+<tr class="row-even"><td><p>r_ex_alc</p></td>
 <td><p>REAL</p></td>
 <td><p>probability per 3 months of change from not excess alcohol to excess alcohol</p></td>
 </tr>
-<tr class="row-even"><td><p>r_not_ex_alc</p></td>
+<tr class="row-odd"><td><p>r_not_ex_alc</p></td>
 <td><p>REAL</p></td>
 <td><p>probability per 3 months of change from excess alcohol to not excess alcohol</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_ex_alc_f</p></td>
+<tr class="row-even"><td><p>rr_ex_alc_f</p></td>
 <td><p>REAL</p></td>
 <td><p>risk ratio for becoming excess alcohol if female rather than male</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_not_ex_alc_pop_advice_alcohol</p></td>
+<tr class="row-odd"><td><p>rr_not_ex_alc_pop_advice_alcohol</p></td>
 <td><p>REAL</p></td>
-<td><p>probability per 3 months of not excess alcohol givenpopulation advice/campaign on alcohol</p></td>
+<td><p>probability per 3 months of not excess alcohol given population advice/campaign on alcohol</p></td>
 </tr>
-<tr class="row-odd"><td><p>r_mar</p></td>
+<tr class="row-even"><td><p>r_mar</p></td>
 <td><p>REAL</p></td>
 <td><p>probability per 3 months of marriage when age 15-30</p></td>
 </tr>
-<tr class="row-even"><td><p>r_div_wid</p></td>
+<tr class="row-odd"><td><p>r_div_wid</p></td>
 <td><p>REAL</p></td>
 <td><p>probability per 3 months of becoming divorced or widowed, amongst those married</p></td>
 </tr>
-<tr class="row-odd"><td><p>r_stop_ed</p></td>
+<tr class="row-even"><td><p>r_stop_ed</p></td>
 <td><p>REAL</p></td>
 <td><p>probabilities per 3 months of stopping education if wealth level 5</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_stop_ed_lower_wealth</p></td>
+<tr class="row-odd"><td><p>rr_stop_ed_lower_wealth</p></td>
 <td><p>REAL</p></td>
-<td><p>relative rate of stopping education per 1 lower wealth quintile</p></td>
+<td><p>relative rate of stopping education per 1 lower wealth quantile</p></td>
 </tr>
-<tr class="row-odd"><td><p>p_ed_primary</p></td>
+<tr class="row-even"><td><p>p_ed_primary</p></td>
 <td><p>REAL</p></td>
 <td><p>probability at age 5 that start primary education if wealth level 5</p></td>
 </tr>
-<tr class="row-even"><td><p>rp_ed_primary_higher_wealth</p></td>
+<tr class="row-odd"><td><p>rp_ed_primary_higher_wealth</p></td>
 <td><p>REAL</p></td>
 <td><p>relative probability of starting school per 1 higher wealth level</p></td>
 </tr>
-<tr class="row-odd"><td><p>p_ed_secondary</p></td>
+<tr class="row-even"><td><p>p_ed_secondary</p></td>
 <td><p>REAL</p></td>
 <td><p>probability at age 13 that start secondary education at 13 if in primary education and wealth level 5</p></td>
 </tr>
-<tr class="row-even"><td><p>rp_ed_secondary_higher_wealth</p></td>
+<tr class="row-odd"><td><p>rp_ed_secondary_higher_wealth</p></td>
 <td><p>REAL</p></td>
 <td><p>relative probability of starting secondary school per 1 higher wealth level</p></td>
 </tr>
-<tr class="row-odd"><td><p>r_improved_sanitation</p></td>
+<tr class="row-even"><td><p>r_improved_sanitation</p></td>
 <td><p>REAL</p></td>
 <td><p>probability per 3 months of change from unimproved_sanitation true to false</p></td>
 </tr>
-<tr class="row-even"><td><p>r_clean_drinking_water</p></td>
+<tr class="row-odd"><td><p>r_clean_drinking_water</p></td>
 <td><p>REAL</p></td>
 <td><p>probability per 3 months of change from drinking_water true to false</p></td>
 </tr>
-<tr class="row-odd"><td><p>r_non_wood_burn_stove</p></td>
+<tr class="row-even"><td><p>r_non_wood_burn_stove</p></td>
 <td><p>REAL</p></td>
 <td><p>probability per 3 months of change from wood_burn_stove true to false</p></td>
 </tr>
-<tr class="row-even"><td><p>r_access_handwashing</p></td>
+<tr class="row-odd"><td><p>r_access_handwashing</p></td>
 <td><p>REAL</p></td>
-<td><p>probability per 3 months of change from no_access_handwashing true to false</p></td>
+<td><p>probability per 3 months of change from no access hand washing true to false</p></td>
 </tr>
-<tr class="row-odd"><td><p>start_date_campaign_exercise_increase</p></td>
+<tr class="row-even"><td><p>start_date_campaign_exercise_increase</p></td>
 <td><p>DATE</p></td>
 <td><p>Date of campaign start for increased exercise</p></td>
 </tr>
-<tr class="row-even"><td><p>start_date_campaign_quit_smoking</p></td>
+<tr class="row-odd"><td><p>start_date_campaign_quit_smoking</p></td>
 <td><p>DATE</p></td>
 <td><p>Date of campaign start to quit smoking</p></td>
 </tr>
-<tr class="row-odd"><td><p>start_date_campaign_alcohol_reduction</p></td>
+<tr class="row-even"><td><p>start_date_campaign_alcohol_reduction</p></td>
 <td><p>DATE</p></td>
 <td><p>Date of campaign start for alcohol reduction</p></td>
 </tr>
-<tr class="row-even"><td><p>proportion_of_men_that_are_assumed_to_be_circumcised_at_birth</p></td>
+<tr class="row-odd"><td><p>proportion_of_men_that_are_assumed_to_be_circumcised_at_birth</p></td>
 <td><p>REAL</p></td>
 <td><p>Proportion of men that are assumed to be circumcised at birth.The men are assumed to be circumcised at birth.</p></td>
 </tr>
-<tr class="row-odd"><td><p>proportion_of_men_circumcised_at_initiation</p></td>
+<tr class="row-even"><td><p>proportion_of_men_circumcised_at_initiation</p></td>
 <td><p>REAL</p></td>
 <td><p>Proportion of men (of all ages) that are assumed to be circumcised at the initiation of thesimulation.</p></td>
 </tr>
-<tr class="row-even"><td><p>proportion_female_sex_workers</p></td>
+<tr class="row-odd"><td><p>proportion_female_sex_workers</p></td>
 <td><p>REAL</p></td>
 <td><p>proportion of women aged 15-49 years who are sex workers</p></td>
 </tr>
-<tr class="row-odd"><td><p>fsw_transition</p></td>
+<tr class="row-even"><td><p>fsw_transition</p></td>
 <td><p>REAL</p></td>
 <td><p>proportion of sex workers that stop being a sex worker each year</p></td>
 </tr>
@@ -644,8 +648,8 @@ by urban/rural, wealth, tobacco usage etc.</p>
 <td><p>wealth level: 1 (high) to 5 (low).  Possible values are: [1, 2, 3, 4, 5, ]</p></td>
 </tr>
 <tr class="row-even"><td><p>li_bmi</p></td>
-<td><p>INT</p></td>
-<td><p>bmi: 1 (&lt;18) 2 (18-24.9)  3 (25-29.9) 4 (30-34.9) 5 (35+)bmi is 0 until age 15</p></td>
+<td><p>CATEGORICAL</p></td>
+<td><p>bmi: 1 (&lt;18) 2 (18-24.9)  3 (25-29.9) 4 (30-34.9) 5 (35+)bmi is np.nan until age 15.  Possible values are: [1, 2, 3, 4, 5, ]</p></td>
 </tr>
 <tr class="row-odd"><td><p>li_exposed_to_campaign_weight_reduction</p></td>
 <td><p>BOOL</p></td>
@@ -685,7 +689,7 @@ by urban/rural, wealth, tobacco usage etc.</p>
 </tr>
 <tr class="row-even"><td><p>li_exposed_to_campaign_quit_smoking</p></td>
 <td><p>BOOL</p></td>
-<td><p>currently exposed to population campaign toquit smoking if tob</p></td>
+<td><p>currently exposed to population campaign to quit smoking if tob</p></td>
 </tr>
 <tr class="row-odd"><td><p>li_ex_alc</p></td>
 <td><p>BOOL</p></td>
@@ -784,6 +788,12 @@ Typically, modules would read a particular file within here.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.enhanced_lifestyle.Lifestyle.pre_initialise_population">
+<span class="sig-name descname"><span class="pre">pre_initialise_population</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/enhanced_lifestyle.html#Lifestyle.pre_initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.enhanced_lifestyle.Lifestyle.pre_initialise_population" title="Link to this definition"></a></dt>
+<dd><p>Initialise the linear model class</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.enhanced_lifestyle.Lifestyle.initialise_population">
 <span class="sig-name descname"><span class="pre">initialise_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/enhanced_lifestyle.html#Lifestyle.initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.enhanced_lifestyle.Lifestyle.initialise_population" title="Link to this definition"></a></dt>
 <dd><p>Set our property values for the initial population.
@@ -802,25 +812,6 @@ Typically, modules would read a particular file within here.</p>
 <dd><p>Initialise properties for a newborn individual.
 :param mother_id: the mother for this child
 :param child_id: the new child</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.enhanced_lifestyle.Lifestyle.determine_who_will_be_sexworker">
-<span class="sig-name descname"><span class="pre">determine_who_will_be_sexworker</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">months_since_last_poll</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/enhanced_lifestyle.html#Lifestyle.determine_who_will_be_sexworker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.enhanced_lifestyle.Lifestyle.determine_who_will_be_sexworker" title="Link to this definition"></a></dt>
-<dd><p>Determine which women will be sex workers.
-This is called by initialise_population and the LifestyleEvent.
-Subject to the constraints:
-(i) Women who are in sex work may stop and there is a proportion that stop during each year.
-(ii) New women are ‘recruited’ to start sex work such that the overall proportion of women who are sex workers</p>
-<blockquote>
-<div><p>does not fall below a given level.</p>
-</div></blockquote>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.enhanced_lifestyle.Lifestyle.compute_bmi_proportions_of_interest">
-<span class="sig-name descname"><span class="pre">compute_bmi_proportions_of_interest</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/enhanced_lifestyle.html#Lifestyle.compute_bmi_proportions_of_interest"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.enhanced_lifestyle.Lifestyle.compute_bmi_proportions_of_interest" title="Link to this definition"></a></dt>
-<dd><p>This is called by the logger and computes summary statistics about the bmi</p>
 </dd></dl>
 
 </dd></dl>
@@ -887,7 +878,7 @@ note: if change this offset from 3 months need to consider code conditioning on 
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Mar 06, 2024.
+      <span class="lastupdated">Last updated on Apr 23, 2024.
       </span></p>
   </div>
 

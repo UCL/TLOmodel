@@ -157,9 +157,9 @@ tlo.methods.care_of_women_during_pregnancy module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'Labour', 'Contraception', 'Lifestyle'}
+     ADDITIONAL_DEPENDENCIES : {'Contraception', 'Lifestyle', 'Labour'}
 
-     INIT_DEPENDENCIES : {'PregnancySupervisor', 'HealthSystem', 'Demography'}
+     INIT_DEPENDENCIES : {'Demography', 'PregnancySupervisor', 'HealthSystem'}
 
      METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>}
 
@@ -254,8 +254,13 @@ tlo.methods.care_of_women_during_pregnancy module
 
 .. autoclass:: HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact):**
 
@@ -276,8 +281,13 @@ tlo.methods.care_of_women_during_pregnancy module
 
 .. autoclass:: HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact):**
 
@@ -298,8 +308,13 @@ tlo.methods.care_of_women_during_pregnancy module
 
 .. autoclass:: HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact):**
 
@@ -320,8 +335,13 @@ tlo.methods.care_of_women_during_pregnancy module
 
 .. autoclass:: HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact):**
 
@@ -342,8 +362,13 @@ tlo.methods.care_of_women_during_pregnancy module
 
 .. autoclass:: HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact):**
 
@@ -364,8 +389,13 @@ tlo.methods.care_of_women_during_pregnancy module
 
 .. autoclass:: HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact):**
 
@@ -386,8 +416,13 @@ tlo.methods.care_of_women_during_pregnancy module
 
 .. autoclass:: HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact):**
 
@@ -408,8 +443,13 @@ tlo.methods.care_of_women_during_pregnancy module
 
 .. autoclass:: HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact):**
 
@@ -430,8 +470,13 @@ tlo.methods.care_of_women_during_pregnancy module
 
 .. autoclass:: HSI_CareOfWomenDuringPregnancy_FocusedANCVisit
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit):**
 
@@ -448,8 +493,13 @@ tlo.methods.care_of_women_during_pregnancy module
 
 .. autoclass:: HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour):**
 
@@ -466,8 +516,13 @@ tlo.methods.care_of_women_during_pregnancy module
 
 .. autoclass:: HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare):**
 
@@ -488,8 +543,13 @@ tlo.methods.care_of_women_during_pregnancy module
 
 .. autoclass:: HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia):**
 
@@ -510,8 +570,13 @@ tlo.methods.care_of_women_during_pregnancy module
 
 .. autoclass:: HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes):**
 
@@ -532,8 +597,13 @@ tlo.methods.care_of_women_during_pregnancy module
 
 .. autoclass:: HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement):**
 
@@ -554,8 +624,13 @@ tlo.methods.care_of_women_during_pregnancy module
 
 .. autoclass:: HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy):**
 

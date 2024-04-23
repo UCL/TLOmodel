@@ -106,13 +106,13 @@ tlo.methods.epilepsy module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'Epilepsy': <tlo.methods.causes.Cause object at 0x135f16ed0>}
+     CAUSES_OF_DEATH : {'Epilepsy': <tlo.methods.causes.Cause object at 0x135a5d050>}
 
-     CAUSES_OF_DISABILITY : {'Epilepsy': <tlo.methods.causes.Cause object at 0x135f16fd0>}
+     CAUSES_OF_DISABILITY : {'Epilepsy': <tlo.methods.causes.Cause object at 0x135a5c690>}
 
-     INIT_DEPENDENCIES : {'SymptomManager', 'HealthBurden', 'Demography', 'HealthSystem'}
+     INIT_DEPENDENCIES : {'SymptomManager', 'Demography', 'HealthBurden', 'HealthSystem'}
 
-     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
 
      TREATMENT_ID : antiepileptic
 
@@ -135,6 +135,8 @@ tlo.methods.epilepsy module
      .. automethod:: stop_antiep
 
      .. automethod:: get_best_available_medicine
+
+     .. automethod:: do_at_generic_first_appt_emergency
 
 
 
@@ -191,8 +193,13 @@ tlo.methods.epilepsy module
 
 .. autoclass:: HSI_Epilepsy_Start_Anti_Epileptic
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_Epilepsy_Start_Anti_Epileptic):**
 
@@ -209,8 +216,13 @@ tlo.methods.epilepsy module
 
 .. autoclass:: HSI_Epilepsy_Follow_Up
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_Epilepsy_Follow_Up):**
 

@@ -436,17 +436,17 @@ tlo.methods.pregnancy_supervisor module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'Labour', 'Lifestyle', 'HealthSystem', 'CareOfWomenDuringPregnancy', 'Contraception'}
+     ADDITIONAL_DEPENDENCIES : {'CareOfWomenDuringPregnancy', 'HealthSystem', 'Lifestyle', 'Contraception', 'Labour'}
 
-     CAUSES_OF_DEATH : {'ectopic_pregnancy': <tlo.methods.causes.Cause object at 0x1360e3a10>, 'spontaneous_abortion': <tlo.methods.causes.Cause object at 0x1360e0950>, 'induced_abortion': <tlo.methods.causes.Cause object at 0x1360e37d0>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x1360e2010>, 'severe_gestational_hypertension': <tlo.methods.causes.Cause object at 0x1360e2b50>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x1360e0c10>, 'eclampsia': <tlo.methods.causes.Cause object at 0x1360e32d0>, 'antenatal_sepsis': <tlo.methods.causes.Cause object at 0x1360e1e50>}
+     CAUSES_OF_DEATH : {'ectopic_pregnancy': <tlo.methods.causes.Cause object at 0x135ea7610>, 'spontaneous_abortion': <tlo.methods.causes.Cause object at 0x135ea5050>, 'induced_abortion': <tlo.methods.causes.Cause object at 0x135db4490>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x135db6b10>, 'severe_gestational_hypertension': <tlo.methods.causes.Cause object at 0x135db4d50>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x135db47d0>, 'eclampsia': <tlo.methods.causes.Cause object at 0x135db49d0>, 'antenatal_sepsis': <tlo.methods.causes.Cause object at 0x135db69d0>}
 
-     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x1360e2290>}
+     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x135db5250>}
 
      INIT_DEPENDENCIES : {'Demography'}
 
      METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>}
 
-     OPTIONAL_INIT_DEPENDENCIES : {'CardioMetabolicDisorders', 'Malaria', 'Hiv', 'HealthBurden'}
+     OPTIONAL_INIT_DEPENDENCIES : {'CardioMetabolicDisorders', 'Hiv', 'Malaria', 'HealthBurden'}
 
      **Functions (defined or overridden in class PregnancySupervisor):**
 
@@ -511,6 +511,8 @@ tlo.methods.pregnancy_supervisor module
      .. automethod:: apply_risk_of_death_from_monthly_complications
 
      .. automethod:: schedule_first_anc_contact_for_new_pregnancy
+
+     .. automethod:: do_at_generic_first_appt_emergency
 
 
 

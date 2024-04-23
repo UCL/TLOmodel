@@ -279,13 +279,13 @@ tlo.methods.cardio_metabolic_disorders module
 
      ADDITIONAL_DEPENDENCIES : {'Depression'}
 
-     CAUSES_OF_DEATH : {'diabetes': <tlo.methods.causes.Cause object at 0x1362927d0>, 'chronic_ischemic_hd': <tlo.methods.causes.Cause object at 0x136290550>, 'ever_heart_attack': <tlo.methods.causes.Cause object at 0x136293a90>, 'ever_stroke': <tlo.methods.causes.Cause object at 0x136290610>, 'chronic_kidney_disease': <tlo.methods.causes.Cause object at 0x136292550>}
+     CAUSES_OF_DEATH : {'diabetes': <tlo.methods.causes.Cause object at 0x1361994d0>, 'chronic_ischemic_hd': <tlo.methods.causes.Cause object at 0x136199b50>, 'ever_heart_attack': <tlo.methods.causes.Cause object at 0x13619a950>, 'ever_stroke': <tlo.methods.causes.Cause object at 0x136198c10>, 'chronic_kidney_disease': <tlo.methods.causes.Cause object at 0x13619a390>}
 
-     CAUSES_OF_DISABILITY : {'diabetes': <tlo.methods.causes.Cause object at 0x136290c50>, 'chronic_ischemic_hd': <tlo.methods.causes.Cause object at 0x136292390>, 'heart_attack': <tlo.methods.causes.Cause object at 0x136292b50>, 'stroke': <tlo.methods.causes.Cause object at 0x136292ad0>, 'chronic_kidney_disease': <tlo.methods.causes.Cause object at 0x1362910d0>, 'lower_back_pain': <tlo.methods.causes.Cause object at 0x136292810>}
+     CAUSES_OF_DISABILITY : {'diabetes': <tlo.methods.causes.Cause object at 0x13619b3d0>, 'chronic_ischemic_hd': <tlo.methods.causes.Cause object at 0x13619b610>, 'heart_attack': <tlo.methods.causes.Cause object at 0x13619ac10>, 'stroke': <tlo.methods.causes.Cause object at 0x13619bb50>, 'chronic_kidney_disease': <tlo.methods.causes.Cause object at 0x13619b6d0>, 'lower_back_pain': <tlo.methods.causes.Cause object at 0x13619a150>}
 
-     INIT_DEPENDENCIES : {'SymptomManager', 'HealthSystem', 'Demography', 'Lifestyle'}
+     INIT_DEPENDENCIES : {'SymptomManager', 'Demography', 'Lifestyle', 'HealthSystem'}
 
-     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 
@@ -359,9 +359,9 @@ tlo.methods.cardio_metabolic_disorders module
 
      .. automethod:: on_hsi_alert
 
-     .. automethod:: determine_if_will_be_investigated
+     .. automethod:: do_at_generic_first_appt
 
-     .. automethod:: determine_if_will_be_investigated_events
+     .. automethod:: do_at_generic_first_appt_emergency
 
 
 
@@ -474,8 +474,13 @@ tlo.methods.cardio_metabolic_disorders module
 
 .. autoclass:: HSI_CardioMetabolicDisorders_CommunityTestingForHypertension
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_CardioMetabolicDisorders_CommunityTestingForHypertension):**
 
@@ -492,8 +497,13 @@ tlo.methods.cardio_metabolic_disorders module
 
 .. autoclass:: HSI_CardioMetabolicDisorders_Investigations
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_CardioMetabolicDisorders_Investigations):**
 
@@ -512,8 +522,13 @@ tlo.methods.cardio_metabolic_disorders module
 
 .. autoclass:: HSI_CardioMetabolicDisorders_StartWeightLossAndMedication
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication):**
 
@@ -530,8 +545,13 @@ tlo.methods.cardio_metabolic_disorders module
 
 .. autoclass:: HSI_CardioMetabolicDisorders_Refill_Medication
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_CardioMetabolicDisorders_Refill_Medication):**
 
@@ -550,8 +570,13 @@ tlo.methods.cardio_metabolic_disorders module
 
 .. autoclass:: HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment):**
 

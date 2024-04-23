@@ -112,7 +112,7 @@ tlo.methods.contraception module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'Labour', 'Hiv'}
+     ADDITIONAL_DEPENDENCIES : {'Hiv', 'Labour'}
 
      INIT_DEPENDENCIES : {'Demography'}
 
@@ -120,9 +120,9 @@ tlo.methods.contraception module
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthSystem'}
 
-     all_contraception_states : {'male_condom', 'other_modern', 'IUD', 'female_sterilization', 'other_traditional', 'injections', 'not_using', 'implant', 'withdrawal', 'periodic_abstinence', 'pill'}
+     all_contraception_states : {'withdrawal', 'injections', 'implant', 'male_condom', 'IUD', 'other_modern', 'periodic_abstinence', 'female_sterilization', 'not_using', 'pill', 'other_traditional'}
 
-     contraceptives_initiated_with_additional_items : {'implant', 'pill', 'IUD', 'female_sterilization', 'injections'}
+     contraceptives_initiated_with_additional_items : {'IUD', 'injections', 'pill', 'implant', 'female_sterilization'}
 
      **Functions (defined or overridden in class Contraception):**
 
@@ -243,13 +243,15 @@ tlo.methods.contraception module
 
 .. autoclass:: HSI_Contraception_FamilyPlanningAppt
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
 
 
      **Class attributes:**
 
-     EXPECTED_APPT_FOOTPRINT : <property object at 0x1364c2570>
+     EXPECTED_APPT_FOOTPRINT : <property object at 0x135e653a0>
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_Contraception_FamilyPlanningAppt):**
 

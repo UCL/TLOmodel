@@ -643,15 +643,15 @@ tlo.methods.labour module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'NewbornOutcomes', 'Lifestyle', 'PregnancySupervisor', 'HealthSystem', 'CareOfWomenDuringPregnancy', 'Contraception', 'PostnatalSupervisor'}
+     ADDITIONAL_DEPENDENCIES : {'Lifestyle', 'HealthSystem', 'CareOfWomenDuringPregnancy', 'Contraception', 'PregnancySupervisor', 'PostnatalSupervisor', 'NewbornOutcomes'}
 
-     CAUSES_OF_DEATH : {'uterine_rupture': <tlo.methods.causes.Cause object at 0x135e9d250>, 'intrapartum_sepsis': <tlo.methods.causes.Cause object at 0x135e9d290>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x135e9d2d0>, 'postpartum_sepsis': <tlo.methods.causes.Cause object at 0x135e9d310>, 'postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x135e9d350>, 'secondary_postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x135e9d390>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x135e9d3d0>, 'eclampsia': <tlo.methods.causes.Cause object at 0x135e9d410>}
+     CAUSES_OF_DEATH : {'uterine_rupture': <tlo.methods.causes.Cause object at 0x135ea4c50>, 'intrapartum_sepsis': <tlo.methods.causes.Cause object at 0x135ea42d0>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x135ea4650>, 'postpartum_sepsis': <tlo.methods.causes.Cause object at 0x135ea4410>, 'postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x135ea4e50>, 'secondary_postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x135ea4b10>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x135ea6990>, 'eclampsia': <tlo.methods.causes.Cause object at 0x135ea4910>}
 
-     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x135e9d490>}
+     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x135ea5110>}
 
      INIT_DEPENDENCIES : {'Demography'}
 
-     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'Stunting'}
 
@@ -735,6 +735,8 @@ tlo.methods.labour module
 
      .. automethod:: run_if_receives_comprehensive_emergency_obstetric_care_cant_run
 
+     .. automethod:: do_at_generic_first_appt_emergency
+
 
 
 
@@ -816,8 +818,13 @@ tlo.methods.labour module
 
 .. autoclass:: HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour):**
 
@@ -840,8 +847,13 @@ tlo.methods.labour module
 
 .. autoclass:: HSI_Labour_ReceivesPostnatalCheck
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_Labour_ReceivesPostnatalCheck):**
 
@@ -866,8 +878,13 @@ tlo.methods.labour module
 
 .. autoclass:: HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare):**
 
@@ -890,8 +907,13 @@ tlo.methods.labour module
 
 .. autoclass:: HSI_Labour_PostnatalWardInpatientCare
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_Labour_PostnatalWardInpatientCare):**
 

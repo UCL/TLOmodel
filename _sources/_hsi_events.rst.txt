@@ -92,6 +92,7 @@ Epilepsy
 HealthSeekingBehaviour
 **********************
 
+* ```` at facility level ? with appointment footprint: .
 * ``FirstAttendance_Emergency`` at facility level 1b with appointment footprint: .
 * ``FirstAttendance_NonEmergency`` at facility level 0 with appointment footprint: .
 * ``FirstAttendance_SpuriousEmergencyCare`` at facility level 1a with appointment footprint: ``AccidentsandEmerg``.

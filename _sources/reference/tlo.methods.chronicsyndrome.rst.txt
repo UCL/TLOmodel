@@ -70,13 +70,13 @@ tlo.methods.chronicsyndrome module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'ChronicSyndrome': <tlo.methods.causes.Cause object at 0x1251d9310>}
+     CAUSES_OF_DEATH : {'ChronicSyndrome': <tlo.methods.causes.Cause object at 0x1248f0d10>}
 
-     CAUSES_OF_DISABILITY : {'ChronicSyndrome': <tlo.methods.causes.Cause object at 0x1251dbd10>}
+     CAUSES_OF_DISABILITY : {'ChronicSyndrome': <tlo.methods.causes.Cause object at 0x1248f0e10>}
 
-     INIT_DEPENDENCIES : {'SymptomManager', 'HealthSystem', 'Demography'}
+     INIT_DEPENDENCIES : {'SymptomManager', 'Demography', 'HealthSystem'}
 
-     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 
@@ -95,6 +95,8 @@ tlo.methods.chronicsyndrome module
      .. automethod:: on_hsi_alert
 
      .. automethod:: report_daly_values
+
+     .. automethod:: do_at_generic_first_appt_emergency
 
 
 
@@ -169,8 +171,13 @@ tlo.methods.chronicsyndrome module
 
 .. autoclass:: HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment):**
 
@@ -189,8 +196,13 @@ tlo.methods.chronicsyndrome module
 
 .. autoclass:: HSI_ChronicSyndrome_Outreach_Individual
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_ChronicSyndrome_Outreach_Individual):**
 
@@ -209,7 +221,7 @@ tlo.methods.chronicsyndrome module
 
 .. autoclass:: HSI_ChronicSyndrome_PopulationWideBehaviourChange
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.PopulationScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
 
 

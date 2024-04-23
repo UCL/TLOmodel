@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.pregnancy_supervisor &mdash; TLOmodel 0.1.dev2378+g25dce3d documentation</title>
+  <title>tlo.methods.pregnancy_supervisor &mdash; TLOmodel 0.1.dev2392+g4a55807 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
@@ -16,7 +16,7 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../../_static/documentation_options.js?v=c93bd2cd"></script>
+        <script src="../../../_static/documentation_options.js?v=2acae80b"></script>
         <script src="../../../_static/doctools.js?v=888ff710"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -51,7 +51,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../aims.html">Aims &amp; Objectives</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../writeups.html">Model Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../data_sources.html">Data Sources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../getting_started.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../reference/index.html">Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../resources/index.html">Resource files</a></li>
@@ -87,7 +87,10 @@
            <div itemprop="articleBody">
              
   <h1>Source code for tlo.methods.pregnancy_supervisor</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
@@ -104,11 +107,19 @@
     <span class="n">logging</span><span class="p">,</span>
     <span class="n">util</span><span class="p">,</span>
 <span class="p">)</span>
+<span class="kn">from</span> <span class="nn">tlo.core</span> <span class="kn">import</span> <span class="n">IndividualPropertyUpdates</span>
 <span class="kn">from</span> <span class="nn">tlo.events</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">,</span> <span class="n">RegularEvent</span>
 <span class="kn">from</span> <span class="nn">tlo.lm</span> <span class="kn">import</span> <span class="n">LinearModel</span>
 <span class="kn">from</span> <span class="nn">tlo.methods</span> <span class="kn">import</span> <span class="n">Metadata</span><span class="p">,</span> <span class="n">labour</span><span class="p">,</span> <span class="n">pregnancy_helper_functions</span><span class="p">,</span> <span class="n">pregnancy_supervisor_lm</span>
+<span class="kn">from</span> <span class="nn">tlo.methods.care_of_women_during_pregnancy</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement</span><span class="p">,</span>
+    <span class="n">HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.causes</span> <span class="kn">import</span> <span class="n">Cause</span>
 <span class="kn">from</span> <span class="nn">tlo.util</span> <span class="kn">import</span> <span class="n">BitsetHandler</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">tlo.population</span> <span class="kn">import</span> <span class="n">PatientDetails</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
@@ -1842,8 +1853,43 @@
             <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="p">[</span><span class="n">late_initiation_anc4</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">late_initiation_anc4</span><span class="p">],</span>
                       <span class="n">early_initiation_anc_below_4</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="o">~</span><span class="n">early_initiation_anc_below_4</span><span class="p">]]:</span>
                 <span class="n">schedule_late_visit</span><span class="p">(</span><span class="n">s</span><span class="p">)</span></div>
-</div>
 
+
+<div class="viewcode-block" id="PregnancySupervisor.do_at_generic_first_appt_emergency">
+<a class="viewcode-back" href="../../../reference/tlo.methods.pregnancy_supervisor.html#tlo.methods.pregnancy_supervisor.PregnancySupervisor.do_at_generic_first_appt_emergency">[docs]</a>
+    <span class="k">def</span> <span class="nf">do_at_generic_first_appt_emergency</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">patient_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">patient_details</span><span class="p">:</span> <span class="n">PatientDetails</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">IndividualPropertyUpdates</span><span class="p">:</span>
+        <span class="n">scheduling_options</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;priority&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s2">&quot;topen&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
+                <span class="s2">&quot;tclose&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+            <span class="p">}</span>
+
+        <span class="c1"># -----  ECTOPIC PREGNANCY  -----</span>
+        <span class="k">if</span> <span class="n">patient_details</span><span class="o">.</span><span class="n">ps_ectopic_pregnancy</span> <span class="o">!=</span> <span class="s1">&#39;none&#39;</span><span class="p">:</span>
+            <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy</span><span class="p">(</span>
+                <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;CareOfWomenDuringPregnancy&quot;</span><span class="p">],</span>
+                <span class="n">person_id</span><span class="o">=</span><span class="n">patient_id</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">healthsystem</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="o">**</span><span class="n">scheduling_options</span><span class="p">)</span>
+
+        <span class="c1"># -----  COMPLICATIONS OF ABORTION  -----</span>
+        <span class="n">abortion_complications</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span>
+            <span class="s2">&quot;PregnancySupervisor&quot;</span>
+        <span class="p">]</span><span class="o">.</span><span class="n">abortion_complications</span>
+        <span class="k">if</span> <span class="n">abortion_complications</span><span class="o">.</span><span class="n">has_any</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">patient_id</span><span class="p">],</span> <span class="s2">&quot;sepsis&quot;</span><span class="p">,</span> <span class="s2">&quot;injury&quot;</span><span class="p">,</span> <span class="s2">&quot;haemorrhage&quot;</span><span class="p">,</span> <span class="n">first</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">):</span>
+            <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement</span><span class="p">(</span>
+                <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;CareOfWomenDuringPregnancy&quot;</span><span class="p">],</span>
+                <span class="n">person_id</span><span class="o">=</span><span class="n">patient_id</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">healthsystem</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="o">**</span><span class="n">scheduling_options</span><span class="p">)</span></div>
+</div>
 
 
 <div class="viewcode-block" id="PregnancySupervisorEvent">
@@ -2500,7 +2546,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Mar 06, 2024.
+      <span class="lastupdated">Last updated on Apr 23, 2024.
       </span></p>
   </div>
 

@@ -183,13 +183,13 @@ tlo.methods.malaria module
 
      ADDITIONAL_DEPENDENCIES : {'Tb', 'Hiv'}
 
-     CAUSES_OF_DEATH : {'Malaria': <tlo.methods.causes.Cause object at 0x135ea38d0>}
+     CAUSES_OF_DEATH : {'Malaria': <tlo.methods.causes.Cause object at 0x135f3eed0>}
 
-     CAUSES_OF_DISABILITY : {'Malaria': <tlo.methods.causes.Cause object at 0x135ea39d0>}
+     CAUSES_OF_DISABILITY : {'Malaria': <tlo.methods.causes.Cause object at 0x135f3f810>}
 
-     INIT_DEPENDENCIES : {'SymptomManager', 'HealthSystem', 'Contraception', 'Demography'}
+     INIT_DEPENDENCIES : {'Contraception', 'Demography', 'SymptomManager', 'HealthSystem'}
 
-     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 
@@ -215,9 +215,9 @@ tlo.methods.malaria module
 
      .. automethod:: check_if_fever_is_caused_by_malaria
 
-     .. automethod:: do_for_suspected_malaria_case
+     .. automethod:: do_at_generic_first_appt
 
-     .. automethod:: do_on_emergency_presentation_with_severe_malaria
+     .. automethod:: do_at_generic_first_appt_emergency
 
 
 
@@ -310,8 +310,13 @@ tlo.methods.malaria module
 
 .. autoclass:: HSI_Malaria_rdt
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_Malaria_rdt):**
 
@@ -328,8 +333,13 @@ tlo.methods.malaria module
 
 .. autoclass:: HSI_Malaria_rdt_community
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_Malaria_rdt_community):**
 
@@ -346,8 +356,13 @@ tlo.methods.malaria module
 
 .. autoclass:: HSI_Malaria_Treatment
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_Malaria_Treatment):**
 
@@ -368,8 +383,13 @@ tlo.methods.malaria module
 
 .. autoclass:: HSI_Malaria_Treatment_Complicated
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_Malaria_Treatment_Complicated):**
 
@@ -388,8 +408,13 @@ tlo.methods.malaria module
 
 .. autoclass:: HSI_MalariaIPTp
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_MalariaIPTp):**
 

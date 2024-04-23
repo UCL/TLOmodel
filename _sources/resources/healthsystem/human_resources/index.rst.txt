@@ -6,8 +6,8 @@ human_resources
 
     absenteeism/index.rst
     actual/index.rst
-    const_HR_scaling/index.rst
     definitions/index.rst
     funded/index.rst
     funded_plus/index.rst
+    scaling_capabilities/index.rst
 

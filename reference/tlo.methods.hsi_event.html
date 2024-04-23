@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>tlo.methods.hsi_event module &mdash; TLOmodel 0.1.dev2392+g4a55807 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
+
+  
+    <link rel="shortcut icon" href="../_static/favicon.png"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=2acae80b"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="tlo.methods.hsi_generic_first_appts module" href="tlo.methods.hsi_generic_first_appts.html" />
+    <link rel="prev" title="tlo.methods.hiv_tb_calibration module" href="tlo.methods.hiv_tb_calibration.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            TLOmodel
+          </a>
+              <div class="version">
+                0.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Welcome</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../aims.html">Aims &amp; Objectives</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../writeups.html">Model Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../resources/index.html">Resource files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../learning.html">Learning Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributors.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">TLOmodel</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Reference</a></li>
+          <li class="breadcrumb-item"><a href="tlo.html">tlo package</a></li>
+          <li class="breadcrumb-item"><a href="tlo.methods.html">tlo.methods package</a></li>
+      <li class="breadcrumb-item active">tlo.methods.hsi_event module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/reference/tlo.methods.hsi_event.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-tlo.methods.hsi_event">
+<span id="tlo-methods-hsi-event-module"></span><h1>tlo.methods.hsi_event module<a class="headerlink" href="#module-tlo.methods.hsi_event" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.hsi_event.HSI_Event">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hsi_event.html#HSI_Event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hsi_event.HSI_Event" title="Link to this definition"></a></dt>
+<dd><p>Base HSI event class, from which all others inherit.</p>
+<p>Concrete subclasses should also inherit from one of the EventMixin classes
+defined in <cite>src/tlo/events.py</cite>, and implement at least an <cite>apply</cite> and
+<cite>did_not_run</cite> method.</p>
+<p><strong>Class attributes:</strong></p>
+<p>__annotations__ : {‘module’: ‘Module’, ‘target’: ‘int’, ‘TREATMENT_ID’: ‘str’, ‘ACCEPTED_FACILITY_LEVEL’: ‘str’, ‘BEDDAYS_FOOTPRINT’: ‘Dict[str, Union[float, int]]’, ‘_received_info_about_bed_days’: ‘Dict[str, Union[float, int]]’, ‘expected_time_requests’: ‘Counter’, ‘facility_info’: ‘FacilityInfo’}</p>
+<p>_received_info_about_bed_days : None</p>
+<p>bed_days_allocated_to_this_event : &lt;property object at 0x12481efc0&gt;</p>
+<p>expected_time_requests : {}</p>
+<p>facility_info : None</p>
+<p>healthcare_system : &lt;property object at 0x12497d800&gt;</p>
+<p>sim : &lt;property object at 0x12497d7b0&gt;</p>
+<p>target_is_alive : &lt;property object at 0x12497d760&gt;</p>
+<p><strong>Functions (defined or overridden in class HSI_Event):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hsi_event.HSI_Event.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hsi_event.html#HSI_Event.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hsi_event.HSI_Event.__init__" title="Link to this definition"></a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hsi_event.HSI_Event._adjust_facility_level_to_merge_1b_and_2">
+<span class="sig-name descname"><span class="pre">_adjust_facility_level_to_merge_1b_and_2</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../_modules/tlo/methods/hsi_event.html#HSI_Event._adjust_facility_level_to_merge_1b_and_2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hsi_event.HSI_Event._adjust_facility_level_to_merge_1b_and_2" title="Link to this definition"></a></dt>
+<dd><p>Adjust the facility level of the HSI_Event,
+so that HSI_Events scheduled at level ‘1b’ and ‘2’ are both directed to level ‘2’</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hsi_event.HSI_Event.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hsi_event.html#HSI_Event.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hsi_event.HSI_Event.apply" title="Link to this definition"></a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hsi_event.HSI_Event.did_not_run">
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="k"><span class="pre">True</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/tlo/methods/hsi_event.html#HSI_Event.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hsi_event.HSI_Event.did_not_run" title="Link to this definition"></a></dt>
+<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hsi_event.HSI_Event.never_ran">
+<span class="sig-name descname"><span class="pre">never_ran</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/tlo/methods/hsi_event.html#HSI_Event.never_ran"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hsi_event.HSI_Event.never_ran" title="Link to this definition"></a></dt>
+<dd><p>Called when this event is was entered to the HSI Event Queue, but was never run.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hsi_event.HSI_Event.post_apply_hook">
+<span class="sig-name descname"><span class="pre">post_apply_hook</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/tlo/methods/hsi_event.html#HSI_Event.post_apply_hook"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hsi_event.HSI_Event.post_apply_hook" title="Link to this definition"></a></dt>
+<dd><p>Impose the bed-days footprint (if target of the HSI is a person_id)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hsi_event.HSI_Event.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hsi_event.html#HSI_Event.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hsi_event.HSI_Event.run" title="Link to this definition"></a></dt>
+<dd><p>Make the event happen.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hsi_event.HSI_Event.get_consumables">
+<span class="sig-name descname"><span class="pre">get_consumables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">item_codes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">integer</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">set</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optional_item_codes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">integer</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">set</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to_log</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_individual_results</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">dict</span></span></span><a class="reference internal" href="../_modules/tlo/methods/hsi_event.html#HSI_Event.get_consumables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hsi_event.HSI_Event.get_consumables" title="Link to this definition"></a></dt>
+<dd><p>Function to allow for getting and checking of entire set of consumables. All requests for consumables should
+use this function.
+:param item_codes: The item code(s) (and quantities) of the consumables that are requested and which determine
+the summary result for availability/non-availability. This can be an <cite>int</cite> (the item_code needed [assume
+quantity=1]), a <cite>list</cite> or <cite>set</cite> (the collection  of item_codes [for each assuming quantity=1]), or a <cite>dict</cite>
+(with key:value pairs <cite>&lt;item_code&gt;:&lt;quantity&gt;</cite>).
+:param optional_item_codes: The item code(s) (and quantities) of the consumables that are requested and which do</p>
+<blockquote>
+<div><p>not determine the summary result for availability/non-availability. (Same format as <cite>item_codes</cite>). This is
+useful when a large set of items may be used, but the viability of a subsequent operation depends only on a
+subset.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>return_individual_results</strong> – If True returns a <cite>dict</cite> giving the availability of each item_code requested</p>
+</dd>
+</dl>
+<p>(otherwise gives a <cite>bool</cite> indicating if all the item_codes requested are available).
+:param to_log: If True, logs the request.
+:returns A <cite>bool</cite> indicating whether every item is available, or a <cite>dict</cite> indicating the availability of each</p>
+<blockquote>
+<div><p>item.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>Note that disease module can use the <cite>get_item_codes_from_package_name</cite> and <cite>get_item_code_from_item_name</cite></dt><dd><p>methods in the <cite>HealthSystem</cite> module to find item_codes.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hsi_event.HSI_Event.make_beddays_footprint">
+<span class="sig-name descname"><span class="pre">make_beddays_footprint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dict_of_beddays</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/tlo/methods/hsi_event.html#HSI_Event.make_beddays_footprint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hsi_event.HSI_Event.make_beddays_footprint" title="Link to this definition"></a></dt>
+<dd><p>Helper function to make a correctly-formed ‘bed-days footprint’</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hsi_event.HSI_Event.is_all_beddays_allocated">
+<span class="sig-name descname"><span class="pre">is_all_beddays_allocated</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../_modules/tlo/methods/hsi_event.html#HSI_Event.is_all_beddays_allocated"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hsi_event.HSI_Event.is_all_beddays_allocated" title="Link to this definition"></a></dt>
+<dd><p>Check if the entire footprint requested is allocated</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hsi_event.HSI_Event.make_appt_footprint">
+<span class="sig-name descname"><span class="pre">make_appt_footprint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dict_of_appts</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Counter</span></span></span><a class="reference internal" href="../_modules/tlo/methods/hsi_event.html#HSI_Event.make_appt_footprint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hsi_event.HSI_Event.make_appt_footprint" title="Link to this definition"></a></dt>
+<dd><p>Helper function to make appointment footprint in format expected downstream.</p>
+<p>Should be passed a dictionary keyed by appointment type codes with non-negative
+values.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hsi_event.HSI_Event.initialise">
+<span class="sig-name descname"><span class="pre">initialise</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/tlo/methods/hsi_event.html#HSI_Event.initialise"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hsi_event.HSI_Event.initialise" title="Link to this definition"></a></dt>
+<dd><p>Initialise the HSI:
+* Set the facility_info
+* Compute appt-footprint time requirements</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hsi_event.HSI_Event._check_if_appt_footprint_can_run">
+<span class="sig-name descname"><span class="pre">_check_if_appt_footprint_can_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../_modules/tlo/methods/hsi_event.html#HSI_Event._check_if_appt_footprint_can_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hsi_event.HSI_Event._check_if_appt_footprint_can_run" title="Link to this definition"></a></dt>
+<dd><p>Check that event (if individual level) is able to run with this configuration of officers (i.e. check that
+this does not demand officers that are _never_ available), and issue warning if not.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hsi_event.HSI_Event._return_item_codes_in_dict">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">_return_item_codes_in_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">item_codes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">integer</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">set</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="../_modules/tlo/methods/hsi_event.html#HSI_Event._return_item_codes_in_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hsi_event.HSI_Event._return_item_codes_in_dict" title="Link to this definition"></a></dt>
+<dd><p>Convert an argument for ‘item_codes` (provided as int, list, set or dict) into the format
+dict(&lt;item_code&gt;:quantity).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hsi_event.HSI_Event.as_namedtuple">
+<span class="sig-name descname"><span class="pre">as_namedtuple</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">actual_appt_footprint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">HSIEventDetails</span></span></span><a class="reference internal" href="../_modules/tlo/methods/hsi_event.html#HSI_Event.as_namedtuple"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hsi_event.HSI_Event.as_namedtuple" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.hsi_event.HSIEventWrapper">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSIEventWrapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_hsi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hsi_event.html#HSIEventWrapper"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hsi_event.HSIEventWrapper" title="Link to this definition"></a></dt>
+<dd><p>This is wrapper that contains an HSI event.</p>
+<dl class="simple">
+<dt>It is used:</dt><dd><p>1) When the healthsystem is in mode ‘disabled=True’ such that HSI events sent to the health system scheduler are
+passed to the main simulation scheduler for running on the date of <cite>topen</cite>. (Note, it is run with
+squeeze_factor=0.0.)
+2) When the healthsystem is in mode <cite>disable_and_reject_all=True</cite> such that HSI are not run but the <cite>never_ran</cite>
+method is run on the date of <cite>tclose</cite>.
+3) When an HSI has been submitted to <cite>schedule_hsi_event</cite> but the service is not available.</p>
+</dd>
+</dl>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSIEventWrapper):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hsi_event.HSIEventWrapper.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_hsi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hsi_event.html#HSIEventWrapper.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hsi_event.HSIEventWrapper.__init__" title="Link to this definition"></a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hsi_event.HSIEventWrapper.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hsi_event.html#HSIEventWrapper.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hsi_event.HSIEventWrapper.run" title="Link to this definition"></a></dt>
+<dd><p>Do the appropriate action on the HSI event</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="tlo.methods.hiv_tb_calibration.html" class="btn btn-neutral float-left" title="tlo.methods.hiv_tb_calibration module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="tlo.methods.hsi_generic_first_appts.html" class="btn btn-neutral float-right" title="tlo.methods.hsi_generic_first_appts module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+      <span class="lastupdated">Last updated on Apr 23, 2024.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

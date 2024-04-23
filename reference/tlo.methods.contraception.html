@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.contraception module &mdash; TLOmodel 0.1.dev2378+g25dce3d documentation</title>
+  <title>tlo.methods.contraception module &mdash; TLOmodel 0.1.dev2392+g4a55807 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -17,7 +17,7 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=c93bd2cd"></script>
+        <script src="../_static/documentation_options.js?v=2acae80b"></script>
         <script src="../_static/doctools.js?v=888ff710"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -54,7 +54,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../aims.html">Aims &amp; Objectives</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../writeups.html">Model Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../data_sources.html">Data Sources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../readme.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../resources/index.html">Resource files</a></li>
@@ -243,12 +243,12 @@ Calibration is done in two stages:
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ADDITIONAL_DEPENDENCIES : {‘Labour’, ‘Hiv’}</p>
+<p>ADDITIONAL_DEPENDENCIES : {‘Hiv’, ‘Labour’}</p>
 <p>INIT_DEPENDENCIES : {‘Demography’}</p>
 <p>METADATA : {}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthSystem’}</p>
-<p>all_contraception_states : {‘male_condom’, ‘other_modern’, ‘IUD’, ‘female_sterilization’, ‘other_traditional’, ‘injections’, ‘not_using’, ‘implant’, ‘withdrawal’, ‘periodic_abstinence’, ‘pill’}</p>
-<p>contraceptives_initiated_with_additional_items : {‘implant’, ‘pill’, ‘IUD’, ‘female_sterilization’, ‘injections’}</p>
+<p>all_contraception_states : {‘withdrawal’, ‘injections’, ‘implant’, ‘male_condom’, ‘IUD’, ‘other_modern’, ‘periodic_abstinence’, ‘female_sterilization’, ‘not_using’, ‘pill’, ‘other_traditional’}</p>
+<p>contraceptives_initiated_with_additional_items : {‘IUD’, ‘injections’, ‘pill’, ‘implant’, ‘female_sterilization’}</p>
 <p><strong>Functions (defined or overridden in class Contraception):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.contraception.Contraception.__init__">
@@ -527,9 +527,10 @@ method fails).</p>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Contraception_FamilyPlanningAppt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_contraceptive</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/contraception.html#HSI_Contraception_FamilyPlanningAppt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.contraception.HSI_Contraception_FamilyPlanningAppt" title="Link to this definition"></a></dt>
 <dd><p>HSI event for the starting a contraceptive method, maintaining use of a method of a contraceptive, or switching
 between contraceptives.</p>
-<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p>Bases: <a class="reference internal" href="tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event" title="tlo.methods.hsi_event.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_event.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
-<p>EXPECTED_APPT_FOOTPRINT : &lt;property object at 0x1364c2570&gt;</p>
+<p>EXPECTED_APPT_FOOTPRINT : &lt;property object at 0x135e653a0&gt;</p>
+<p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class HSI_Contraception_FamilyPlanningAppt):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.contraception.HSI_Contraception_FamilyPlanningAppt.__init__">
@@ -802,7 +803,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Mar 06, 2024.
+      <span class="lastupdated">Last updated on Apr 23, 2024.
       </span></p>
   </div>
 

@@ -298,15 +298,15 @@ tlo.methods.newborn_outcomes module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'PregnancySupervisor', 'Labour', 'CareOfWomenDuringPregnancy', 'PostnatalSupervisor'}
+     ADDITIONAL_DEPENDENCIES : {'PostnatalSupervisor', 'PregnancySupervisor', 'CareOfWomenDuringPregnancy', 'Labour'}
 
-     CAUSES_OF_DEATH : {'early_onset_sepsis': <tlo.methods.causes.Cause object at 0x136139a10>, 'late_onset_sepsis': <tlo.methods.causes.Cause object at 0x136139810>, 'encephalopathy': <tlo.methods.causes.Cause object at 0x136139950>, 'neonatal_respiratory_depression': <tlo.methods.causes.Cause object at 0x136138c50>, 'preterm_other': <tlo.methods.causes.Cause object at 0x136139890>, 'respiratory_distress_syndrome': <tlo.methods.causes.Cause object at 0x1361387d0>, 'congenital_heart_anomaly': <tlo.methods.causes.Cause object at 0x136139750>, 'limb_or_musculoskeletal_anomaly': <tlo.methods.causes.Cause object at 0x136139410>, 'urogenital_anomaly': <tlo.methods.causes.Cause object at 0x136139b90>, 'digestive_anomaly': <tlo.methods.causes.Cause object at 0x1361391d0>, 'other_anomaly': <tlo.methods.causes.Cause object at 0x136138790>}
+     CAUSES_OF_DEATH : {'early_onset_sepsis': <tlo.methods.causes.Cause object at 0x1361791d0>, 'late_onset_sepsis': <tlo.methods.causes.Cause object at 0x136179390>, 'encephalopathy': <tlo.methods.causes.Cause object at 0x13617aa90>, 'neonatal_respiratory_depression': <tlo.methods.causes.Cause object at 0x13617a1d0>, 'preterm_other': <tlo.methods.causes.Cause object at 0x13617ab90>, 'respiratory_distress_syndrome': <tlo.methods.causes.Cause object at 0x136179910>, 'congenital_heart_anomaly': <tlo.methods.causes.Cause object at 0x136179250>, 'limb_or_musculoskeletal_anomaly': <tlo.methods.causes.Cause object at 0x13617ab50>, 'urogenital_anomaly': <tlo.methods.causes.Cause object at 0x13617a450>, 'digestive_anomaly': <tlo.methods.causes.Cause object at 0x136179590>, 'other_anomaly': <tlo.methods.causes.Cause object at 0x136179d50>}
 
-     CAUSES_OF_DISABILITY : {'Retinopathy of Prematurity': <tlo.methods.causes.Cause object at 0x136138990>, 'Neonatal Encephalopathy': <tlo.methods.causes.Cause object at 0x1361396d0>, 'Neonatal Sepsis Long term Disability': <tlo.methods.causes.Cause object at 0x136138650>, 'Preterm Birth Disability': <tlo.methods.causes.Cause object at 0x136138850>}
+     CAUSES_OF_DISABILITY : {'Retinopathy of Prematurity': <tlo.methods.causes.Cause object at 0x13617ab10>, 'Neonatal Encephalopathy': <tlo.methods.causes.Cause object at 0x13617ad50>, 'Neonatal Sepsis Long term Disability': <tlo.methods.causes.Cause object at 0x13617a490>, 'Preterm Birth Disability': <tlo.methods.causes.Cause object at 0x136179ed0>}
 
-     INIT_DEPENDENCIES : {'HealthSystem', 'Demography'}
+     INIT_DEPENDENCIES : {'Demography', 'HealthSystem'}
 
-     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 
@@ -373,8 +373,13 @@ tlo.methods.newborn_outcomes module
 
 .. autoclass:: HSI_NewbornOutcomes_ReceivesPostnatalCheck
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_NewbornOutcomes_ReceivesPostnatalCheck):**
 
@@ -399,8 +404,13 @@ tlo.methods.newborn_outcomes module
 
 .. autoclass:: HSI_NewbornOutcomes_NeonatalWardInpatientCare
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_NewbornOutcomes_NeonatalWardInpatientCare):**
 

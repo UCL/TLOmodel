@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.hsi_generic_first_appts module &mdash; TLOmodel 0.1.dev2378+g25dce3d documentation</title>
+  <title>tlo.methods.hsi_generic_first_appts module &mdash; TLOmodel 0.1.dev2392+g4a55807 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -17,14 +17,14 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=c93bd2cd"></script>
+        <script src="../_static/documentation_options.js?v=2acae80b"></script>
         <script src="../_static/doctools.js?v=888ff710"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="tlo.methods.labour module" href="tlo.methods.labour.html" />
-    <link rel="prev" title="tlo.methods.hiv_tb_calibration module" href="tlo.methods.hiv_tb_calibration.html" /> 
+    <link rel="prev" title="tlo.methods.hsi_event module" href="tlo.methods.hsi_event.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -54,7 +54,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../aims.html">Aims &amp; Objectives</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../writeups.html">Model Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../data_sources.html">Data Sources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../readme.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../resources/index.html">Resource files</a></li>
@@ -99,12 +99,81 @@ the health system following the onset of acute generic symptoms.</p>
 the onset of symptoms. Non-emergency symptoms lead to <cite>HSI_GenericFirstApptAtFacilityLevel0</cite> and emergency symptoms
 lead to <cite>HSI_GenericEmergencyFirstApptAtFacilityLevel1</cite>.</p>
 <dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.hsi_generic_first_appts.HSI_BaseGenericFirstAppt">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_BaseGenericFirstAppt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hsi_generic_first_appts.html#HSI_BaseGenericFirstAppt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hsi_generic_first_appts.HSI_BaseGenericFirstAppt" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event" title="tlo.methods.hsi_event.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_event.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Class attributes:</strong></p>
+<p>__annotations__ : {‘MODULE_METHOD_ON_APPLY’: “Literal[‘do_at_generic_first_appt’, ‘do_at_generic_first_appt_emergency’]”}</p>
+<p><strong>Functions (defined or overridden in class HSI_BaseGenericFirstAppt):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hsi_generic_first_appts.HSI_BaseGenericFirstAppt.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/tlo/methods/hsi_generic_first_appts.html#HSI_BaseGenericFirstAppt.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hsi_generic_first_appts.HSI_BaseGenericFirstAppt.__init__" title="Link to this definition"></a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hsi_generic_first_appts.HSI_BaseGenericFirstAppt._diagnosis_function">
+<span class="sig-name descname"><span class="pre">_diagnosis_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tests</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">report_tried</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DiagnosisTestReturnType</span></span></span><a class="reference internal" href="../_modules/tlo/methods/hsi_generic_first_appts.html#HSI_BaseGenericFirstAppt._diagnosis_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hsi_generic_first_appts.HSI_BaseGenericFirstAppt._diagnosis_function" title="Link to this definition"></a></dt>
+<dd><p>Passed to modules when determining HSI_Events to be scheduled based on
+this generic appointment. Intended as the diagnosis_function argument to the
+Module.do_at_generic_{<a href="#id1"><span class="problematic" id="id2">non_</span></a>}_emergency.</p>
+<p>Class-level definition avoids the need to redefine this method each time
+the .apply() method is called.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tests</strong> – The name of the test(s) to run via the diagnosis manager.</p></li>
+<li><p><strong>use_dict_for_single</strong> – If True, the return type will be a dictionary</p></li>
+</ul>
+</dd>
+</dl>
+<p>even if only one test was requested.
+:param report_dxtest_tried: Report if a test was attempted but could not
+be carried out due to EG lack of consumables, etc.
+:returns: Test results as dictionary key/value pairs.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hsi_generic_first_appts.HSI_BaseGenericFirstAppt._do_on_generic_first_appt">
+<span class="sig-name descname"><span class="pre">_do_on_generic_first_appt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/tlo/methods/hsi_generic_first_appts.html#HSI_BaseGenericFirstAppt._do_on_generic_first_appt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hsi_generic_first_appts.HSI_BaseGenericFirstAppt._do_on_generic_first_appt" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hsi_generic_first_appts.HSI_BaseGenericFirstAppt.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/tlo/methods/hsi_generic_first_appts.html#HSI_BaseGenericFirstAppt.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hsi_generic_first_appts.HSI_BaseGenericFirstAppt.apply" title="Link to this definition"></a></dt>
+<dd><p>Run the actions required during the HSI.</p>
+<p>TODO: person_id is not needed any more - but would have to go through the
+whole codebase to manually identify instances of this class to change call
+syntax, and leave other HSI_Event-derived classes alone.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.hsi_generic_first_appts.HSI_GenericNonEmergencyFirstAppt">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_GenericNonEmergencyFirstAppt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'0'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hsi_generic_first_appts.html#HSI_GenericNonEmergencyFirstAppt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hsi_generic_first_appts.HSI_GenericNonEmergencyFirstAppt" title="Link to this definition"></a></dt>
-<dd><p>This is a Health System Interaction Event that represents the first interaction with the health system following
-the onset of non-emergency symptom(s). This is the HSI that is generated by the HealthSeekingBehaviour module. By
-default, it occurs at level ‘0’ but it could occur also at other levels.</p>
-<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<dd><p>This is a Health System Interaction Event that represents the
+first interaction with the health system following the onset
+of non-emergency symptom(s).</p>
+<p>It is generated by the HealthSeekingBehaviour module.</p>
+<p>By default, it occurs at level ‘0’ but it could occur also at
+other levels.</p>
+<p>It uses the non-emergency generic first appointment methods of
+the disease modules to determine any follow-up events that need
+to be scheduled.</p>
+<p>Bases: <a class="reference internal" href="#tlo.methods.hsi_generic_first_appts.HSI_BaseGenericFirstAppt" title="tlo.methods.hsi_generic_first_appts.HSI_BaseGenericFirstAppt"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_generic_first_appts.HSI_BaseGenericFirstAppt</span></code></a>, <a class="reference internal" href="tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event" title="tlo.methods.hsi_event.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_event.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Class attributes:</strong></p>
+<p>MODULE_METHOD_ON_APPLY : do_at_generic_first_appt</p>
+<p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class HSI_GenericNonEmergencyFirstAppt):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.hsi_generic_first_appts.HSI_GenericNonEmergencyFirstAppt.__init__">
@@ -121,20 +190,21 @@ constructor, but may also take further keyword arguments.</p>
 </dl>
 </dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.hsi_generic_first_appts.HSI_GenericNonEmergencyFirstAppt.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hsi_generic_first_appts.html#HSI_GenericNonEmergencyFirstAppt.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hsi_generic_first_appts.HSI_GenericNonEmergencyFirstAppt.apply" title="Link to this definition"></a></dt>
-<dd><p>Run the actions required during the HSI.</p>
-</dd></dl>
-
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.hsi_generic_first_appts.HSI_GenericEmergencyFirstAppt">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_GenericEmergencyFirstAppt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hsi_generic_first_appts.html#HSI_GenericEmergencyFirstAppt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hsi_generic_first_appts.HSI_GenericEmergencyFirstAppt" title="Link to this definition"></a></dt>
-<dd><p>This is a Health System Interaction Event that represents the generic appointment which is the first interaction
-with the health system following the onset of emergency symptom(s).</p>
-<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<dd><p>This is a Health System Interaction Event that represents
+the generic appointment which is the first interaction with
+the health system following the onset of emergency symptom(s).</p>
+<p>It uses the emergency generic first appointment methods of
+the disease modules to determine any follow-up events that need
+to be scheduled.</p>
+<p>Bases: <a class="reference internal" href="#tlo.methods.hsi_generic_first_appts.HSI_BaseGenericFirstAppt" title="tlo.methods.hsi_generic_first_appts.HSI_BaseGenericFirstAppt"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_generic_first_appts.HSI_BaseGenericFirstAppt</span></code></a>, <a class="reference internal" href="tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event" title="tlo.methods.hsi_event.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_event.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Class attributes:</strong></p>
+<p>MODULE_METHOD_ON_APPLY : do_at_generic_first_appt_emergency</p>
+<p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class HSI_GenericEmergencyFirstAppt):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.hsi_generic_first_appts.HSI_GenericEmergencyFirstAppt.__init__">
@@ -151,20 +221,15 @@ constructor, but may also take further keyword arguments.</p>
 </dl>
 </dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.hsi_generic_first_appts.HSI_GenericEmergencyFirstAppt.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hsi_generic_first_appts.html#HSI_GenericEmergencyFirstAppt.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hsi_generic_first_appts.HSI_GenericEmergencyFirstAppt.apply" title="Link to this definition"></a></dt>
-<dd><p>Apply this event to the population.</p>
-<p>Must be implemented by subclasses.</p>
-</dd></dl>
-
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.hsi_generic_first_appts.HSI_EmergencyCare_SpuriousSymptom">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_EmergencyCare_SpuriousSymptom</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accepted_facility_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1a'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hsi_generic_first_appts.html#HSI_EmergencyCare_SpuriousSymptom"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hsi_generic_first_appts.HSI_EmergencyCare_SpuriousSymptom" title="Link to this definition"></a></dt>
 <dd><p>This is an HSI event that provides Accident &amp; Emergency Care for a person that has spurious emergency symptom.</p>
-<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p>Bases: <a class="reference internal" href="tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event" title="tlo.methods.hsi_event.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_event.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Class attributes:</strong></p>
+<p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class HSI_EmergencyCare_SpuriousSymptom):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.hsi_generic_first_appts.HSI_EmergencyCare_SpuriousSymptom.__init__">
@@ -196,7 +261,7 @@ constructor, but may also take further keyword arguments.</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="tlo.methods.hiv_tb_calibration.html" class="btn btn-neutral float-left" title="tlo.methods.hiv_tb_calibration module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="tlo.methods.hsi_event.html" class="btn btn-neutral float-left" title="tlo.methods.hsi_event module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="tlo.methods.labour.html" class="btn btn-neutral float-right" title="tlo.methods.labour module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
@@ -204,7 +269,7 @@ constructor, but may also take further keyword arguments.</p>
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Mar 06, 2024.
+      <span class="lastupdated">Last updated on Apr 23, 2024.
       </span></p>
   </div>
 

@@ -367,15 +367,15 @@ tlo.methods.diarrhoea module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'Stunting', 'Epi', 'Alri'}
+     ADDITIONAL_DEPENDENCIES : {'Stunting', 'Alri', 'Epi'}
 
-     CAUSES_OF_DEATH : {'Diarrhoea_rotavirus': <tlo.methods.causes.Cause object at 0x13651e490>, 'Diarrhoea_shigella': <tlo.methods.causes.Cause object at 0x13651dc10>, 'Diarrhoea_adenovirus': <tlo.methods.causes.Cause object at 0x13651d850>, 'Diarrhoea_cryptosporidium': <tlo.methods.causes.Cause object at 0x13651dc90>, 'Diarrhoea_campylobacter': <tlo.methods.causes.Cause object at 0x13651da10>, 'Diarrhoea_ETEC': <tlo.methods.causes.Cause object at 0x13651e550>, 'Diarrhoea_sapovirus': <tlo.methods.causes.Cause object at 0x13651dcd0>, 'Diarrhoea_norovirus': <tlo.methods.causes.Cause object at 0x13651d250>, 'Diarrhoea_astrovirus': <tlo.methods.causes.Cause object at 0x13651d610>, 'Diarrhoea_tEPEC': <tlo.methods.causes.Cause object at 0x13651d910>}
+     CAUSES_OF_DEATH : {'Diarrhoea_rotavirus': <tlo.methods.causes.Cause object at 0x13610b310>, 'Diarrhoea_shigella': <tlo.methods.causes.Cause object at 0x136109590>, 'Diarrhoea_adenovirus': <tlo.methods.causes.Cause object at 0x136109710>, 'Diarrhoea_cryptosporidium': <tlo.methods.causes.Cause object at 0x136108a50>, 'Diarrhoea_campylobacter': <tlo.methods.causes.Cause object at 0x136108d90>, 'Diarrhoea_ETEC': <tlo.methods.causes.Cause object at 0x136109810>, 'Diarrhoea_sapovirus': <tlo.methods.causes.Cause object at 0x136108a10>, 'Diarrhoea_norovirus': <tlo.methods.causes.Cause object at 0x1361097d0>, 'Diarrhoea_astrovirus': <tlo.methods.causes.Cause object at 0x1361086d0>, 'Diarrhoea_tEPEC': <tlo.methods.causes.Cause object at 0x136109a90>}
 
-     CAUSES_OF_DISABILITY : {'Diarrhoea': <tlo.methods.causes.Cause object at 0x13651dd90>}
+     CAUSES_OF_DISABILITY : {'Diarrhoea': <tlo.methods.causes.Cause object at 0x136109d50>}
 
-     INIT_DEPENDENCIES : {'SymptomManager', 'Wasting', 'Hiv', 'Demography', 'Lifestyle', 'HealthSystem', 'NewbornOutcomes'}
+     INIT_DEPENDENCIES : {'NewbornOutcomes', 'Wasting', 'HealthSystem', 'Lifestyle', 'Hiv', 'Demography', 'SymptomManager'}
 
-     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 
@@ -399,8 +399,6 @@ tlo.methods.diarrhoea module
 
      .. automethod:: look_up_consumables
 
-     .. automethod:: do_when_presentation_with_diarrhoea
-
      .. automethod:: do_treatment
 
      .. automethod:: cancel_death_date
@@ -408,6 +406,8 @@ tlo.methods.diarrhoea module
      .. automethod:: end_episode
 
      .. automethod:: check_properties
+
+     .. automethod:: do_at_generic_first_appt
 
 
 
@@ -515,8 +515,13 @@ tlo.methods.diarrhoea module
 
 .. autoclass:: HSI_Diarrhoea_Treatment_Outpatient
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_Diarrhoea_Treatment_Outpatient):**
 
@@ -533,8 +538,13 @@ tlo.methods.diarrhoea module
 
 .. autoclass:: HSI_Diarrhoea_Treatment_Inpatient
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_Diarrhoea_Treatment_Inpatient):**
 
@@ -589,7 +599,7 @@ tlo.methods.diarrhoea module
 
      **Class attributes:**
 
-     ALTERNATIVE_TO : {'Wasting', 'Hiv', 'Epi', 'Alri', 'Stunting'}
+     ALTERNATIVE_TO : {'Stunting', 'Wasting', 'Epi', 'Hiv', 'Alri'}
 
      INIT_DEPENDENCIES : {'Demography'}
 

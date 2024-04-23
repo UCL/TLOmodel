@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.newborn_outcomes module &mdash; TLOmodel 0.1.dev2378+g25dce3d documentation</title>
+  <title>tlo.methods.newborn_outcomes module &mdash; TLOmodel 0.1.dev2392+g4a55807 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -17,7 +17,7 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=c93bd2cd"></script>
+        <script src="../_static/documentation_options.js?v=2acae80b"></script>
         <script src="../_static/doctools.js?v=888ff710"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -54,7 +54,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../aims.html">Aims &amp; Objectives</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../writeups.html">Model Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../data_sources.html">Data Sources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../readme.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../resources/index.html">Resource files</a></li>
@@ -488,11 +488,11 @@ delivered as part of postnatal care via HSI_NewbornOutcomes_ReceivesPostnatalChe
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ADDITIONAL_DEPENDENCIES : {‘PregnancySupervisor’, ‘Labour’, ‘CareOfWomenDuringPregnancy’, ‘PostnatalSupervisor’}</p>
-<p>CAUSES_OF_DEATH : {‘early_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x136139a10&gt;, ‘late_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x136139810&gt;, ‘encephalopathy’: &lt;tlo.methods.causes.Cause object at 0x136139950&gt;, ‘neonatal_respiratory_depression’: &lt;tlo.methods.causes.Cause object at 0x136138c50&gt;, ‘preterm_other’: &lt;tlo.methods.causes.Cause object at 0x136139890&gt;, ‘respiratory_distress_syndrome’: &lt;tlo.methods.causes.Cause object at 0x1361387d0&gt;, ‘congenital_heart_anomaly’: &lt;tlo.methods.causes.Cause object at 0x136139750&gt;, ‘limb_or_musculoskeletal_anomaly’: &lt;tlo.methods.causes.Cause object at 0x136139410&gt;, ‘urogenital_anomaly’: &lt;tlo.methods.causes.Cause object at 0x136139b90&gt;, ‘digestive_anomaly’: &lt;tlo.methods.causes.Cause object at 0x1361391d0&gt;, ‘other_anomaly’: &lt;tlo.methods.causes.Cause object at 0x136138790&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘Retinopathy of Prematurity’: &lt;tlo.methods.causes.Cause object at 0x136138990&gt;, ‘Neonatal Encephalopathy’: &lt;tlo.methods.causes.Cause object at 0x1361396d0&gt;, ‘Neonatal Sepsis Long term Disability’: &lt;tlo.methods.causes.Cause object at 0x136138650&gt;, ‘Preterm Birth Disability’: &lt;tlo.methods.causes.Cause object at 0x136138850&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘HealthSystem’, ‘Demography’}</p>
-<p>METADATA : {&lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
+<p>ADDITIONAL_DEPENDENCIES : {‘PostnatalSupervisor’, ‘PregnancySupervisor’, ‘CareOfWomenDuringPregnancy’, ‘Labour’}</p>
+<p>CAUSES_OF_DEATH : {‘early_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x1361791d0&gt;, ‘late_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x136179390&gt;, ‘encephalopathy’: &lt;tlo.methods.causes.Cause object at 0x13617aa90&gt;, ‘neonatal_respiratory_depression’: &lt;tlo.methods.causes.Cause object at 0x13617a1d0&gt;, ‘preterm_other’: &lt;tlo.methods.causes.Cause object at 0x13617ab90&gt;, ‘respiratory_distress_syndrome’: &lt;tlo.methods.causes.Cause object at 0x136179910&gt;, ‘congenital_heart_anomaly’: &lt;tlo.methods.causes.Cause object at 0x136179250&gt;, ‘limb_or_musculoskeletal_anomaly’: &lt;tlo.methods.causes.Cause object at 0x13617ab50&gt;, ‘urogenital_anomaly’: &lt;tlo.methods.causes.Cause object at 0x13617a450&gt;, ‘digestive_anomaly’: &lt;tlo.methods.causes.Cause object at 0x136179590&gt;, ‘other_anomaly’: &lt;tlo.methods.causes.Cause object at 0x136179d50&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘Retinopathy of Prematurity’: &lt;tlo.methods.causes.Cause object at 0x13617ab10&gt;, ‘Neonatal Encephalopathy’: &lt;tlo.methods.causes.Cause object at 0x13617ad50&gt;, ‘Neonatal Sepsis Long term Disability’: &lt;tlo.methods.causes.Cause object at 0x13617a490&gt;, ‘Preterm Birth Disability’: &lt;tlo.methods.causes.Cause object at 0x136179ed0&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘Demography’, ‘HealthSystem’}</p>
+<p>METADATA : {&lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’}</p>
 <p><strong>Functions (defined or overridden in class NewbornOutcomes):</strong></p>
 <dl class="py method">
@@ -798,7 +798,9 @@ within the event
 predicted to receive a full postnatal checkup within the first 2 days of life following either home birth or
 facility delivery. Interventions within in this event include management of essential newborn care, initiation of
 kangaroo mother care, newborn immunisation, HIV screening and management of early onset neonatal sepsis,</p>
-<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p>Bases: <a class="reference internal" href="tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event" title="tlo.methods.hsi_event.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_event.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Class attributes:</strong></p>
+<p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class HSI_NewbornOutcomes_ReceivesPostnatalCheck):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.newborn_outcomes.HSI_NewbornOutcomes_ReceivesPostnatalCheck.__init__">
@@ -853,7 +855,9 @@ to allow the rescheduling. This is called each time that the event is tried to b
 <dd><p>This is HSI_PostnatalSupervisor_NeonatalWardInpatientCare. It is scheduled by any of the PNC HSIs for neonates
 who are require inpatient care due to a complication of the postnatal period. Treatment is delivered in this
 event</p>
-<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p>Bases: <a class="reference internal" href="tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event" title="tlo.methods.hsi_event.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_event.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Class attributes:</strong></p>
+<p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class HSI_NewbornOutcomes_NeonatalWardInpatientCare):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.newborn_outcomes.HSI_NewbornOutcomes_NeonatalWardInpatientCare.__init__">
@@ -984,7 +988,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Mar 06, 2024.
+      <span class="lastupdated">Last updated on Apr 23, 2024.
       </span></p>
   </div>
 

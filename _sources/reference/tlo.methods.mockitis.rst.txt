@@ -64,13 +64,13 @@ tlo.methods.mockitis module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'Mockitis': <tlo.methods.causes.Cause object at 0x135f2e150>}
+     CAUSES_OF_DEATH : {'Mockitis': <tlo.methods.causes.Cause object at 0x124ed8910>}
 
-     CAUSES_OF_DISABILITY : {'Mockitis': <tlo.methods.causes.Cause object at 0x135f2e1d0>}
+     CAUSES_OF_DISABILITY : {'Mockitis': <tlo.methods.causes.Cause object at 0x124ed8b50>}
 
-     INIT_DEPENDENCIES : {'SymptomManager', 'Demography'}
+     INIT_DEPENDENCIES : {'Demography', 'SymptomManager'}
 
-     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 
@@ -89,6 +89,8 @@ tlo.methods.mockitis module
      .. automethod:: on_hsi_alert
 
      .. automethod:: report_daly_values
+
+     .. automethod:: do_at_generic_first_appt_emergency
 
 
 
@@ -140,8 +142,13 @@ tlo.methods.mockitis module
 
 .. autoclass:: HSI_Mockitis_PresentsForCareWithSevereSymptoms
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_Mockitis_PresentsForCareWithSevereSymptoms):**
 
@@ -160,8 +167,13 @@ tlo.methods.mockitis module
 
 .. autoclass:: HSI_Mockitis_StartTreatment
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_Mockitis_StartTreatment):**
 
@@ -180,8 +192,13 @@ tlo.methods.mockitis module
 
 .. autoclass:: HSI_Mockitis_TreatmentMonitoring
 
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_Mockitis_TreatmentMonitoring):**
 

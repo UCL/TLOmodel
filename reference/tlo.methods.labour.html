@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.labour module &mdash; TLOmodel 0.1.dev2378+g25dce3d documentation</title>
+  <title>tlo.methods.labour module &mdash; TLOmodel 0.1.dev2392+g4a55807 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -17,7 +17,7 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=c93bd2cd"></script>
+        <script src="../_static/documentation_options.js?v=2acae80b"></script>
         <script src="../_static/doctools.js?v=888ff710"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -54,7 +54,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../aims.html">Aims &amp; Objectives</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../writeups.html">Model Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../data_sources.html">Data Sources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../readme.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../resources/index.html">Resource files</a></li>
@@ -958,11 +958,11 @@ PostnatalWeekOneMaternalEvent which represents the start of a womans postnatal p
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ADDITIONAL_DEPENDENCIES : {‘NewbornOutcomes’, ‘Lifestyle’, ‘PregnancySupervisor’, ‘HealthSystem’, ‘CareOfWomenDuringPregnancy’, ‘Contraception’, ‘PostnatalSupervisor’}</p>
-<p>CAUSES_OF_DEATH : {‘uterine_rupture’: &lt;tlo.methods.causes.Cause object at 0x135e9d250&gt;, ‘intrapartum_sepsis’: &lt;tlo.methods.causes.Cause object at 0x135e9d290&gt;, ‘antepartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x135e9d2d0&gt;, ‘postpartum_sepsis’: &lt;tlo.methods.causes.Cause object at 0x135e9d310&gt;, ‘postpartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x135e9d350&gt;, ‘secondary_postpartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x135e9d390&gt;, ‘severe_pre_eclampsia’: &lt;tlo.methods.causes.Cause object at 0x135e9d3d0&gt;, ‘eclampsia’: &lt;tlo.methods.causes.Cause object at 0x135e9d410&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘maternal’: &lt;tlo.methods.causes.Cause object at 0x135e9d490&gt;}</p>
+<p>ADDITIONAL_DEPENDENCIES : {‘Lifestyle’, ‘HealthSystem’, ‘CareOfWomenDuringPregnancy’, ‘Contraception’, ‘PregnancySupervisor’, ‘PostnatalSupervisor’, ‘NewbornOutcomes’}</p>
+<p>CAUSES_OF_DEATH : {‘uterine_rupture’: &lt;tlo.methods.causes.Cause object at 0x135ea4c50&gt;, ‘intrapartum_sepsis’: &lt;tlo.methods.causes.Cause object at 0x135ea42d0&gt;, ‘antepartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x135ea4650&gt;, ‘postpartum_sepsis’: &lt;tlo.methods.causes.Cause object at 0x135ea4410&gt;, ‘postpartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x135ea4e50&gt;, ‘secondary_postpartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x135ea4b10&gt;, ‘severe_pre_eclampsia’: &lt;tlo.methods.causes.Cause object at 0x135ea6990&gt;, ‘eclampsia’: &lt;tlo.methods.causes.Cause object at 0x135ea4910&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘maternal’: &lt;tlo.methods.causes.Cause object at 0x135ea5110&gt;}</p>
 <p>INIT_DEPENDENCIES : {‘Demography’}</p>
-<p>METADATA : {&lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
+<p>METADATA : {&lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘Stunting’}</p>
 <p><strong>Functions (defined or overridden in class Labour):</strong></p>
 <dl class="py method">
@@ -1415,6 +1415,18 @@ run
 :param hsi_event: HSI event in which the function has been called:</p>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.labour.Labour.do_at_generic_first_appt_emergency">
+<span class="sig-name descname"><span class="pre">do_at_generic_first_appt_emergency</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">patient_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patient_details</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="tlo.population.html#tlo.population.PatientDetails" title="tlo.population.PatientDetails"><span class="pre">PatientDetails</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">RandomState</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">IndividualPropertyUpdates</span></span></span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.do_at_generic_first_appt_emergency"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.do_at_generic_first_appt_emergency" title="Link to this definition"></a></dt>
+<dd><p>Actions to be take during an EMERGENCY generic HSI.
+Call signature and return values are identical to the
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">do_at_generic_first_appt()</span></code> method.
+Derived classes should overwrite this method so that they are
+compatible with the HealthSystem module, and can schedule HSI
+events when a patient presents symptoms indicative of the
+corresponding illness or condition.</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -1611,7 +1623,9 @@ antibiotics, intravenous anticonvulsants and assisted vaginal delivery. Addition
 antihypertensives in line with Malawi’s EHP. Interventions will only be attempted to be delivered if the squeeze
 factor of the HSI is below a predetermined threshold of each intervention. CEmONC level interventions are managed
 within HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare</p>
-<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p>Bases: <a class="reference internal" href="tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event" title="tlo.methods.hsi_event.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_event.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Class attributes:</strong></p>
+<p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour.__init__">
@@ -1664,7 +1678,9 @@ PostnatalSupervisorEvent for women who require PNC later in the postnatal period
 postpartum care contact after delivery and includes assessment and treatment of severe pre-eclampsia, hypertension,
 sepsis and postpartum bleeding. In addition woman are scheduled HIV screening if appropriate and started on
 postnatal iron tablets</p>
-<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p>Bases: <a class="reference internal" href="tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event" title="tlo.methods.hsi_event.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_event.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Class attributes:</strong></p>
+<p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class HSI_Labour_ReceivesPostnatalCheck):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.HSI_Labour_ReceivesPostnatalCheck.__init__">
@@ -1720,7 +1736,9 @@ to allow the rescheduling. This is called each time that the event is tried to b
 required to be delivered at a CEmONC level facility including caesarean section, blood transfusion and surgery
 during or following labour Currently we assume that if this even runs and the consumables are available then the
 intervention is delivered i.e. we dont apply squeeze factor threshold.</p>
-<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p>Bases: <a class="reference internal" href="tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event" title="tlo.methods.hsi_event.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_event.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Class attributes:</strong></p>
+<p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare.__init__">
@@ -1770,7 +1788,9 @@ to allow the rescheduling. This is called each time that the event is tried to b
 <dd><p>This is HSI_Labour_PostnatalWardInpatientCare. It is scheduled by HSI_Labour_ReceivesPostnatalCheck for all women
 require treatment as inpatients after delivery. The primary function of this event is to capture inpatient bed
 days</p>
-<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p>Bases: <a class="reference internal" href="tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event" title="tlo.methods.hsi_event.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_event.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Class attributes:</strong></p>
+<p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class HSI_Labour_PostnatalWardInpatientCare):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.HSI_Labour_PostnatalWardInpatientCare.__init__">
@@ -1905,7 +1925,7 @@ are processed and presented by different analysis scripts</p>
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Mar 06, 2024.
+      <span class="lastupdated">Last updated on Apr 23, 2024.
       </span></p>
   </div>
 

@@ -80,7 +80,7 @@ tlo.methods.enhanced_lifestyle module
           - odds ratio low exercise female
         * - init_p_tob_age1519_m_wealth1
           - REAL
-          - initital proportion of 15-19 year old men using tobacco, wealth level 1 
+          - initial proportion of 15-19 year old men using tobacco, wealth level 1 
         * - init_or_tob_f
           - REAL
           - odds ratio tobacco use females
@@ -189,6 +189,9 @@ tlo.methods.enhanced_lifestyle module
         * - init_or_no_access_handwashing_per_lower_wealth
           - REAL
           - initial odds ratio of no_access_handwashing per lower wealth level
+        * - init_prop_primary_edu
+          - REAL
+          - proportion of starting primary education at baseline age 5-12
         * - init_rp_some_ed_age0513
           - REAL
           - relative prevalence of some education at baseline age 5-13
@@ -281,7 +284,7 @@ tlo.methods.enhanced_lifestyle module
           - probability per 3 months of not high salt intake
         * - rr_not_high_salt_pop_advice_salt
           - REAL
-          - probability per 3 months of not high salt givenpopulation advice/campaign on salt
+          - probability per 3 months of not high salt given population advice/campaign on salt
         * - r_high_sugar
           - REAL
           - probability per 3 months of high sugar intake
@@ -290,7 +293,7 @@ tlo.methods.enhanced_lifestyle module
           - probability per 3 months of not high sugar intake
         * - rr_not_high_sugar_pop_advice_sugar
           - REAL
-          - probability per 3 months of not high sugar givenpopulation advice/campaign on sugar
+          - probability per 3 months of not high sugar given population advice/campaign on sugar
         * - r_low_ex
           - REAL
           - probability per 3 months of change from not low exercise to low exercise
@@ -299,7 +302,7 @@ tlo.methods.enhanced_lifestyle module
           - probability per 3 months of change from low exercise to not low exercie
         * - rr_not_low_ex_pop_advice_exercise
           - REAL
-          - probability per 3 months of not low exercisepopulation advice/campaign on exercise
+          - probability per 3 months of not low exercise population advice/campaign on exercise
         * - rr_low_ex_f
           - REAL
           - risk ratio for becoming low exercise if female rather than male
@@ -326,7 +329,7 @@ tlo.methods.enhanced_lifestyle module
           - risk ratio for tobacco using per 1 higher wealth level (higher wealth level = lower wealth)
         * - rr_not_tob_pop_advice_tobacco
           - REAL
-          - probability per 3 months of quitting tobacco givenpopulation advice/campaign on tobacco
+          - probability per 3 months of quitting tobacco given population advice/campaign on tobacco
         * - r_ex_alc
           - REAL
           - probability per 3 months of change from not excess alcohol to excess alcohol
@@ -338,7 +341,7 @@ tlo.methods.enhanced_lifestyle module
           - risk ratio for becoming excess alcohol if female rather than male
         * - rr_not_ex_alc_pop_advice_alcohol
           - REAL
-          - probability per 3 months of not excess alcohol givenpopulation advice/campaign on alcohol
+          - probability per 3 months of not excess alcohol given population advice/campaign on alcohol
         * - r_mar
           - REAL
           - probability per 3 months of marriage when age 15-30
@@ -350,7 +353,7 @@ tlo.methods.enhanced_lifestyle module
           - probabilities per 3 months of stopping education if wealth level 5
         * - rr_stop_ed_lower_wealth
           - REAL
-          - relative rate of stopping education per 1 lower wealth quintile
+          - relative rate of stopping education per 1 lower wealth quantile
         * - p_ed_primary
           - REAL
           - probability at age 5 that start primary education if wealth level 5
@@ -374,7 +377,7 @@ tlo.methods.enhanced_lifestyle module
           - probability per 3 months of change from wood_burn_stove true to false
         * - r_access_handwashing
           - REAL
-          - probability per 3 months of change from no_access_handwashing true to false
+          - probability per 3 months of change from no access hand washing true to false
         * - start_date_campaign_exercise_increase
           - DATE
           - Date of campaign start for increased exercise
@@ -414,8 +417,8 @@ tlo.methods.enhanced_lifestyle module
           - CATEGORICAL
           - wealth level: 1 (high) to 5 (low).  Possible values are: [1, 2, 3, 4, 5, ]
         * - li_bmi
-          - INT
-          - bmi: 1 (<18) 2 (18-24.9)  3 (25-29.9) 4 (30-34.9) 5 (35+)bmi is 0 until age 15
+          - CATEGORICAL
+          - bmi: 1 (<18) 2 (18-24.9)  3 (25-29.9) 4 (30-34.9) 5 (35+)bmi is np.nan until age 15.  Possible values are: [1, 2, 3, 4, 5, ]
         * - li_exposed_to_campaign_weight_reduction
           - BOOL
           - currently exposed to population campaign for weight reduction if BMI >= 25
@@ -445,7 +448,7 @@ tlo.methods.enhanced_lifestyle module
           - date last transitioned from tob to not tob
         * - li_exposed_to_campaign_quit_smoking
           - BOOL
-          - currently exposed to population campaign toquit smoking if tob
+          - currently exposed to population campaign to quit smoking if tob
         * - li_ex_alc
           - BOOL
           - current excess alcohol
@@ -509,15 +512,13 @@ tlo.methods.enhanced_lifestyle module
 
      .. automethod:: read_parameters
 
+     .. automethod:: pre_initialise_population
+
      .. automethod:: initialise_population
 
      .. automethod:: initialise_simulation
 
      .. automethod:: on_birth
-
-     .. automethod:: determine_who_will_be_sexworker
-
-     .. automethod:: compute_bmi_proportions_of_interest
 
 
 

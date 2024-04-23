@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.postnatal_supervisor module &mdash; TLOmodel 0.1.dev2378+g25dce3d documentation</title>
+  <title>tlo.methods.postnatal_supervisor module &mdash; TLOmodel 0.1.dev2392+g4a55807 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -17,7 +17,7 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=c93bd2cd"></script>
+        <script src="../_static/documentation_options.js?v=2acae80b"></script>
         <script src="../_static/doctools.js?v=888ff710"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -54,7 +54,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../aims.html">Aims &amp; Objectives</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../writeups.html">Model Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../data_sources.html">Data Sources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../readme.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../resources/index.html">Resource files</a></li>
@@ -393,11 +393,11 @@ day 28.</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ADDITIONAL_DEPENDENCIES : {‘PregnancySupervisor’, ‘Labour’, ‘NewbornOutcomes’, ‘Lifestyle’}</p>
-<p>CAUSES_OF_DEATH : {‘secondary_postpartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x135e83b50&gt;, ‘postpartum_sepsis’: &lt;tlo.methods.causes.Cause object at 0x135e83bd0&gt;, ‘severe_pre_eclampsia’: &lt;tlo.methods.causes.Cause object at 0x135e83e10&gt;, ‘eclampsia’: &lt;tlo.methods.causes.Cause object at 0x135e83e50&gt;, ‘severe_gestational_hypertension’: &lt;tlo.methods.causes.Cause object at 0x135e83e90&gt;, ‘early_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x135e83ed0&gt;, ‘late_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x135e83f10&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘maternal’: &lt;tlo.methods.causes.Cause object at 0x135e83f50&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘HealthSystem’, ‘Demography’}</p>
-<p>METADATA : {&lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
+<p>ADDITIONAL_DEPENDENCIES : {‘NewbornOutcomes’, ‘PregnancySupervisor’, ‘Lifestyle’, ‘Labour’}</p>
+<p>CAUSES_OF_DEATH : {‘secondary_postpartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x135d2b010&gt;, ‘postpartum_sepsis’: &lt;tlo.methods.causes.Cause object at 0x135d29f90&gt;, ‘severe_pre_eclampsia’: &lt;tlo.methods.causes.Cause object at 0x135d2b610&gt;, ‘eclampsia’: &lt;tlo.methods.causes.Cause object at 0x135d2a990&gt;, ‘severe_gestational_hypertension’: &lt;tlo.methods.causes.Cause object at 0x135d29e90&gt;, ‘early_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x135d2a790&gt;, ‘late_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x135d2b1d0&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘maternal’: &lt;tlo.methods.causes.Cause object at 0x135d2b710&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘Demography’, ‘HealthSystem’}</p>
+<p>METADATA : {&lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;}</p>
 <p><strong>Functions (defined or overridden in class PostnatalSupervisor):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.PostnatalSupervisor.__init__">
@@ -686,7 +686,9 @@ constructor, but may also take further keyword arguments.</p></li>
 </dd>
 </dl>
 <p>includes surgical correction of obstetric fistula</p>
-<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p>Bases: <a class="reference internal" href="tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event" title="tlo.methods.hsi_event.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_event.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Class attributes:</strong></p>
+<p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class HSI_PostnatalSupervisor_TreatmentForObstetricFistula):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_TreatmentForObstetricFistula.__init__">
@@ -726,7 +728,7 @@ constructor, but may also take further keyword arguments.</p>
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Mar 06, 2024.
+      <span class="lastupdated">Last updated on Apr 23, 2024.
       </span></p>
   </div>
 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.copd &mdash; TLOmodel 0.1.dev2378+g25dce3d documentation</title>
+  <title>tlo.methods.copd &mdash; TLOmodel 0.1.dev2392+g4a55807 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
@@ -16,7 +16,7 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../../_static/documentation_options.js?v=c93bd2cd"></script>
+        <script src="../../../_static/documentation_options.js?v=2acae80b"></script>
         <script src="../../../_static/doctools.js?v=888ff710"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -51,7 +51,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../aims.html">Aims &amp; Objectives</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../writeups.html">Model Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../data_sources.html">Data Sources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../getting_started.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../reference/index.html">Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../resources/index.html">Resource files</a></li>
@@ -87,20 +87,26 @@
            <div itemprop="articleBody">
              
   <h1>Source code for tlo.methods.copd</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span>
 
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
 <span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">Module</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">Property</span><span class="p">,</span> <span class="n">Types</span><span class="p">,</span> <span class="n">logging</span>
 <span class="kn">from</span> <span class="nn">tlo.analysis.utils</span> <span class="kn">import</span> <span class="n">flatten_multi_index_series_into_dict_for_logging</span>
+<span class="kn">from</span> <span class="nn">tlo.core</span> <span class="kn">import</span> <span class="n">ConsumablesChecker</span><span class="p">,</span> <span class="n">IndividualPropertyUpdates</span>
 <span class="kn">from</span> <span class="nn">tlo.events</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">,</span> <span class="n">RegularEvent</span>
 <span class="kn">from</span> <span class="nn">tlo.lm</span> <span class="kn">import</span> <span class="n">LinearModel</span><span class="p">,</span> <span class="n">LinearModelType</span><span class="p">,</span> <span class="n">Predictor</span>
 <span class="kn">from</span> <span class="nn">tlo.methods</span> <span class="kn">import</span> <span class="n">Metadata</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.causes</span> <span class="kn">import</span> <span class="n">Cause</span>
-<span class="kn">from</span> <span class="nn">tlo.methods.healthsystem</span> <span class="kn">import</span> <span class="n">HSI_Event</span>
+<span class="kn">from</span> <span class="nn">tlo.methods.hsi_event</span> <span class="kn">import</span> <span class="n">HSI_Event</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.symptommanager</span> <span class="kn">import</span> <span class="n">Symptom</span>
 <span class="kn">from</span> <span class="nn">tlo.util</span> <span class="kn">import</span> <span class="n">random_date</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">tlo.population</span> <span class="kn">import</span> <span class="n">PatientDetails</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
@@ -325,34 +331,75 @@
         <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="Copd.give_inhaler">
-<a class="viewcode-back" href="../../../reference/tlo.methods.copd.html#tlo.methods.copd.Copd.give_inhaler">[docs]</a>
-    <span class="k">def</span> <span class="nf">give_inhaler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">:</span> <span class="n">HSI_Event</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Give inhaler if person does not already have one&quot;&quot;&quot;</span>
-        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
-        <span class="n">has_inhaler</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ch_has_inhaler&#39;</span><span class="p">]</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">has_inhaler</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">item_codes</span><span class="p">[</span><span class="s1">&#39;bronchodilater_inhaler&#39;</span><span class="p">]):</span>
-                <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ch_has_inhaler&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span></div>
-
-
-<div class="viewcode-block" id="Copd.do_when_present_with_breathless">
-<a class="viewcode-back" href="../../../reference/tlo.methods.copd.html#tlo.methods.copd.Copd.do_when_present_with_breathless">[docs]</a>
-    <span class="k">def</span> <span class="nf">do_when_present_with_breathless</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">:</span> <span class="n">HSI_Event</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;What to do when a person presents at the generic first appt HSI with a symptom of `breathless_severe` or</span>
-<span class="sd">        `breathless_moderate`.</span>
+<div class="viewcode-block" id="Copd._common_first_appt">
+<a class="viewcode-back" href="../../../reference/tlo.methods.copd.html#tlo.methods.copd.Copd._common_first_appt">[docs]</a>
+    <span class="k">def</span> <span class="nf">_common_first_appt</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">patient_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">patient_details</span><span class="p">:</span> <span class="n">PatientDetails</span><span class="p">,</span>
+        <span class="n">symptoms</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">consumables_checker</span><span class="p">:</span> <span class="n">ConsumablesChecker</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;What to do when a person presents at the generic first appt HSI</span>
+<span class="sd">        with a symptom of `breathless_severe` or `breathless_moderate`.</span>
 <span class="sd">        * If severe --&gt; give the inhaler and schedule the HSI for Treatment</span>
 <span class="sd">        * Otherwise --&gt; just give inhaler.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">give_inhaler</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;breathless_moderate&#39;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="s1">&#39;breathless_severe&#39;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">):</span>
+            <span class="n">patient_details_updates</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="c1"># Give inhaler if patient does not already have one</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">patient_details</span><span class="o">.</span><span class="n">ch_has_inhaler</span> <span class="ow">and</span> <span class="n">consumables_checker</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">item_codes</span><span class="p">[</span><span class="s2">&quot;bronchodilater_inhaler&quot;</span><span class="p">]</span>
+            <span class="p">):</span>
+                <span class="n">patient_details_updates</span><span class="p">[</span><span class="s2">&quot;ch_has_inhaler&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
-        <span class="k">if</span> <span class="s1">&#39;breathless_severe&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">has_what</span><span class="p">(</span><span class="n">person_id</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
-                <span class="n">hsi_event</span><span class="o">=</span><span class="n">HSI_Copd_TreatmentOnSevereExacerbation</span><span class="p">(</span><span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">),</span>
-                <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
-                <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="k">if</span> <span class="s2">&quot;breathless_severe&quot;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">:</span>
+                <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_Copd_TreatmentOnSevereExacerbation</span><span class="p">(</span>
+                    <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">patient_id</span>
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">healthsystem</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
+                    <span class="n">event</span><span class="p">,</span> <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">0</span>
+                <span class="p">)</span>
+            <span class="k">return</span> <span class="n">patient_details_updates</span></div>
+
+
+<div class="viewcode-block" id="Copd.do_at_generic_first_appt">
+<a class="viewcode-back" href="../../../reference/tlo.methods.copd.html#tlo.methods.copd.Copd.do_at_generic_first_appt">[docs]</a>
+    <span class="k">def</span> <span class="nf">do_at_generic_first_appt</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">patient_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">patient_details</span><span class="p">:</span> <span class="n">PatientDetails</span><span class="p">,</span>
+        <span class="n">symptoms</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">consumables_checker</span><span class="p">:</span> <span class="n">ConsumablesChecker</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">IndividualPropertyUpdates</span><span class="p">:</span>
+        <span class="c1"># Non-emergency appointments are only forwarded if</span>
+        <span class="c1"># the patient is over 5 years old</span>
+        <span class="k">if</span> <span class="n">patient_details</span><span class="o">.</span><span class="n">age_years</span> <span class="o">&gt;</span> <span class="mi">5</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_common_first_appt</span><span class="p">(</span>
+                <span class="n">patient_id</span><span class="o">=</span><span class="n">patient_id</span><span class="p">,</span>
+                <span class="n">patient_details</span><span class="o">=</span><span class="n">patient_details</span><span class="p">,</span>
+                <span class="n">symptoms</span><span class="o">=</span><span class="n">symptoms</span><span class="p">,</span>
+                <span class="n">consumables_checker</span><span class="o">=</span><span class="n">consumables_checker</span><span class="p">,</span>
             <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Copd.do_at_generic_first_appt_emergency">
+<a class="viewcode-back" href="../../../reference/tlo.methods.copd.html#tlo.methods.copd.Copd.do_at_generic_first_appt_emergency">[docs]</a>
+    <span class="k">def</span> <span class="nf">do_at_generic_first_appt_emergency</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">patient_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">patient_details</span><span class="p">:</span> <span class="n">PatientDetails</span><span class="p">,</span>
+        <span class="n">symptoms</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">consumables_checker</span><span class="p">:</span> <span class="n">ConsumablesChecker</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">IndividualPropertyUpdates</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_common_first_appt</span><span class="p">(</span>
+            <span class="n">patient_id</span><span class="o">=</span><span class="n">patient_id</span><span class="p">,</span>
+            <span class="n">patient_details</span><span class="o">=</span><span class="n">patient_details</span><span class="p">,</span>
+            <span class="n">symptoms</span><span class="o">=</span><span class="n">symptoms</span><span class="p">,</span>
+            <span class="n">consumables_checker</span><span class="o">=</span><span class="n">consumables_checker</span><span class="p">,</span>
+        <span class="p">)</span></div>
 </div>
 
 
@@ -728,7 +775,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Mar 06, 2024.
+      <span class="lastupdated">Last updated on Apr 23, 2024.
       </span></p>
   </div>
 
