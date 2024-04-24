@@ -29,6 +29,7 @@ from tlo.methods.consumables import Consumables, create_dummy_data_for_cons_avai
 from tlo.methods.fullmodel import fullmodel
 from tlo.methods.healthsystem import HealthSystem, HealthSystemChangeParameters
 from tlo.methods.hsi_event import HSI_Event
+from tlo.util import BitsetDType
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
@@ -188,7 +189,11 @@ def test_run_no_interventions_allowed(tmpdir, seed):
     # Do the checks for the symptom manager: some symptoms should be registered
     assert sim.population.props.loc[:, sim.population.props.columns.str.startswith('sy_')] \
         .apply(lambda x: x != set()).any().any()
-    assert (sim.population.props.loc[:, sim.population.props.columns.str.startswith('sy_')].dtypes == 'int64').all()
+    assert (
+        sim.population.props.loc[
+            :, sim.population.props.columns.str.startswith('sy_')
+        ].dtypes == BitsetDType
+    ).all()
     assert not pd.isnull(sim.population.props.loc[:, sim.population.props.columns.str.startswith('sy_')]).any().any()
 
     # Check that no one was cured of mockitis:
