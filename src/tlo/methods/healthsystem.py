@@ -388,11 +388,8 @@ class HealthSystem(Module):
             assert mode_appt_constraints in {0, 1, 2}
         self.arg_mode_appt_constraints = mode_appt_constraints
         
-        self.year_mode_switch = None
-        self.arg_year_mode_switch = year_mode_switch
-        
-        self.scale_to_effective_capabilities = None
-        self.arg_scale_to_effective_capabilities = scale_to_effective_capabilities
+        self._arg_year_mode_switch = year_mode_switch
+        self._arg_scale_to_effective_capabilities = scale_to_effective_capabilities
 
         self.rng_for_hsi_queue = None  # Will be a dedicated RNG for the purpose of randomising the queue
         self.rng_for_dx = None  # Will be a dedicated RNG for the purpose of determining Dx Test results
