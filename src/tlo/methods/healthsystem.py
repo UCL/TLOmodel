@@ -919,6 +919,27 @@ class HealthSystem(Module):
         # return the pd.Series of `Total_Minutes_Per_Day' indexed for each type of officer at each facility
         return capabilities_ex['Total_Minutes_Per_Day']
 
+    def _rescale_capabilities_to_capture_effective_capability(self):
+        # Notice that capabilities will only be expanded through this process
+        # (i.e. won't reduce available capabilities if these were under-used in the last year).
+        # Note: Currently relying on module variable rather than parameter for
+        # scale_to_effective_capabilities, in order to facilitate testing. However
+        # this may eventually come into conflict with the Switcher functions.
+        pattern = r"FacilityID_(\w+)_Officer_(\w+)"
+        for officer in self.module._daily_capabilities.keys():
+            matches = re.match(pattern, officer)
+            # Extract ID and officer type from
+            facility_id = int(matches.group(1))
+            officer_type = matches.group(2)
+            level = self.module._facility_by_facility_id[facility_id].level
+            # Only rescale if rescaling factor is greater than 1 (i.e. don't reduce
+            # available capabilities if these were under-used the previous year).
+            rescaling_factor = self._summary_counter.frac_time_used_by_officer_type_and_level(
+                officer_type, level
+            )
+            if rescaling_factor > 1:
+                self.module._daily_capabilities[officer] *= rescaling_factor
+
     def update_consumables_availability_to_represent_merging_of_levels_1b_and_2(self, df_original):
         """To represent that facility levels '1b' and '2' are merged together under the label '2', we replace the
         availability of consumables at level 2 with new values."""
@@ -1821,6 +1842,11 @@ class HealthSystem(Module):
 
     def on_end_of_year(self) -> None:
         """Write to log the current states of the summary counters and reset them."""
+        # If we are at the end of the year preceeding the mode switch, and if wanted
+        # to rescale capabilities to capture effective availability as was recorded, on
+        # average, in the past year, do so here.
+        if (self.sim.date.year == self.year_mode_switch - 1) and self.scale_to_effective_capabilities:
+            self._rescale_capabilities_to_capture_effective_capability()
         self._summary_counter.write_to_log_and_reset_counters()
         self.consumables.on_end_of_year()
         self.bed_days.on_end_of_year()
@@ -2631,6 +2657,14 @@ class HealthSystemSummaryCounter:
         )
 
         self._reset_internal_stores()
+        
+    def frac_time_used_by_officer_type_and_level(self, officer_type, level):
+        """Average fraction of time used by officer type and level since last reset."""
+        # Use len(self._frac_time_used_overall) as proxy for number of days in past year.
+        return (
+            self._sum_of_daily_frac_time_used_by_officer_type_and_level[officer_type, level]
+            / len(self._frac_time_used_overall)
+        )
 
 
 class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
