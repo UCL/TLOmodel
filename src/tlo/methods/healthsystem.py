@@ -2511,7 +2511,7 @@ class HealthSystemSummaryCounter:
         self._never_ran_appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
 
         self._frac_time_used_overall = []  # Running record of the usage of the healthcare system
-        self._frac_time_used_by_officer_type_and_level = Counter()
+        self._sum_of_daily_frac_time_used_by_officer_type_and_level = Counter()
         
         self._squeeze_factor_by_hsi_event_name = defaultdict(list)  # Running record the squeeze-factor applying to each
         #                                                           treatment_id. Key is of the form:
@@ -2564,7 +2564,7 @@ class HealthSystemSummaryCounter:
         # The fraction of all healthcare worker time that is used:
         self._frac_time_used_overall.append(fraction_time_used_across_all_facilities)
         for officer_type_facility_level, fraction_time in fraction_time_used_by_officer_type_and_level.items():
-            self._sum_frac_time_used_by_officer_type_and_level[officer_type_facility_level] += fraction_time
+            self._sum_of_daily_frac_time_used_by_officer_type_and_level[officer_type_facility_level] += fraction_time
 
     def write_to_log_and_reset_counters(self):
         """Log summary statistics reset the data structures."""
@@ -2579,8 +2579,8 @@ class HealthSystemSummaryCounter:
             pattern = r"FacilityID_(\w+)_Officer_(\w+)"
             # Calculate the average fraction of time used by officer type and level over the past year.
             # Use len(self._frac_time_used_overall) as proxy for number of days in past year.
-            for key in self._frac_time_used_by_officer_type_and_level:
-                self._frac_time_used_by_officer_type_and_level[key] /= float(len(self._frac_time_used_overall))
+            for key in self._sum_of_daily_frac_time_used_by_officer_type_and_level:
+                self._sum_of_daily_frac_time_used_by_officer_type_and_level[key] /= float(len(self._frac_time_used_overall))
 
             for officer in self.module._daily_capabilities.keys():
                 matches = re.match(pattern, officer)
@@ -2590,9 +2590,9 @@ class HealthSystemSummaryCounter:
                 level = self.module._facility_by_facility_id[facility_id].level
                 # Only rescale if rescaling factor is greater than 1 (i.e. don't reduce available capabilities
                 # if these were under-used the previous year).
-                if self._frac_time_used_by_officer_type_and_level[officer_type + "_" + level] > 1:
+                if self._sum_of_daily_frac_time_used_by_officer_type_and_level[officer_type + "_" + level] > 1:
                     self.module._daily_capabilities[officer] *= \
-                        self._frac_time_used_by_officer_type_and_level[officer_type + "_" + level]
+                        self._sum_of_daily_frac_time_used_by_officer_type_and_level[officer_type + "_" + level]
 
         logger_summary.info(
             key="HSI_Event",
