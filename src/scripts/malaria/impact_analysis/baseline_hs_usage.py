@@ -27,12 +27,10 @@ from tlo.analysis.utils import (
     make_age_grp_types,
 )
 
-# outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
-
-outputspath = Path("./outputs")
+outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
 
 # Find results_folder associated with a given batch_file (and get most recent [-1])
-results_folder = get_scenario_outputs("remove_treatment_effects.py", outputspath)[-1]
+results_folder = get_scenario_outputs("exclude_services_Mar2024.py", outputspath)[-1]
 
 # Declare path for output graphs from this script
 make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
@@ -98,6 +96,8 @@ column = 'TREATMENT_ID'
 # get total counts of every appt type for each scenario
 appt_sums = sum_appt_by_id(results_folder,
                            module=module, key=key, column=column, draw=0)
+appt_sums.to_csv(outputspath / "Mar2024_HTMresults/appt_sums_baseline.csv")
+
 
 # group together appts
 test = ['Tb_Test_Xray', 'Malaria_Test', 'Hiv_Test', 'Tb_Test_Screening']
