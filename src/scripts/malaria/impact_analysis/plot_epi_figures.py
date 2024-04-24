@@ -525,7 +525,7 @@ ax7.legend(loc='upper right',
 # empty plot
 ax8.axis('off')
 
-# fig.savefig(outputspath / "Mar2024_HTMresults/Epi_outputs_excl_htm_mortality.png")
+fig.savefig(outputspath / "Mar2024_HTMresults/Epi_outputs_excl_htm_mortality.png")
 
 plt.show()
 

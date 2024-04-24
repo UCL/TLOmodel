@@ -90,6 +90,29 @@ total_deaths = summarise_total_deaths(results_folder)
 rounded_total_deaths = total_deaths.applymap(round_to_nearest_100)
 
 
+def summarise_total_mortality_rate(results_folder, do_scaling=True):
+    """ sum all deaths occurring for each run of each draw
+    dataframe returned: row=total deaths, column=run/draw
+    """
+    def extract_deaths_total(df: pd.DataFrame) -> pd.Series:
+        return pd.Series({"Total": len(df)})
+
+    t = extract_results(
+        results_folder,
+        module="tlo.methods.demography",
+        key="death",
+        custom_generate_series=extract_deaths_total,
+        do_scaling=do_scaling
+    )
+
+    t2 = t.div(py_totals) * 1000
+
+    return t2
+
+
+total_mortality_rate = summarise_total_mortality_rate(results_folder)
+
+
 def plot_summarized_total_deaths(summarized_total_deaths, scenario_info, mean_deaths_difference_by_run):
     """ barplot with mean total deaths for each scenario
     with the mean difference in numbers of deaths compared with the baseline
@@ -278,6 +301,8 @@ plt.show()
 barplot_summarized_deaths_by_age(deaths_summarized_by_age, proportion=False)
 
 
+# get mortality rates by cause ------------------------------------------------------------------------
+
 def get_num_deaths_by_cause_label(_df):
     """Return total number of Deaths by label within the TARGET_PERIOD
     values are summed for all ages
@@ -289,7 +314,7 @@ def get_num_deaths_by_cause_label(_df):
         .size()
 
 
-TARGET_PERIOD = (Date(2019, 1, 1), Date(2020, 1, 1))
+TARGET_PERIOD = (Date(2010, 1, 1), Date(2020, 1, 1))
 
 num_deaths_by_cause_label = extract_results(
         results_folder,
@@ -339,23 +364,9 @@ tmp2 = pd.concat({
 tmp2.to_csv(outputspath / "Mar2024_HTMresults/deaths_by_py2019.csv")
 
 
-num_deaths_by_cause_label = summarize(
-    extract_results(
-        results_folder,
-        module='tlo.methods.demography',
-        key='death',
-        custom_generate_series=get_num_deaths_by_cause_label,
-        do_scaling=True
-    )
-)
+# get mortality rates by cause for plot ------------------------------------------------------------------------
 
-
-mean_deaths_by_cause = num_deaths_by_cause_label.xs('mean', level=1, axis=1)
-mean_deaths_by_cause_lower = num_deaths_by_cause_label.xs('lower', level=1, axis=1)
-mean_deaths_by_cause_upper = num_deaths_by_cause_label.xs('upper', level=1, axis=1)
-
-
-deaths_by_cause_by_run = extract_results(
+num_deaths_by_cause_label = extract_results(
         results_folder,
         module='tlo.methods.demography',
         key='death',
@@ -363,23 +374,43 @@ deaths_by_cause_by_run = extract_results(
         do_scaling=True
     )
 
-deaths_by_cause_by_run.to_csv(outputspath / "Mar2024_HTMresults/deaths_by_cause_by_run.csv")
+t1 = num_deaths_by_cause_label.div(py_totals) * 1000
+
+mean_deaths_by_cause = t1.groupby(level=0, axis=1).median(0.5)
+mean_deaths_by_cause_lower = t1.groupby(level=0, axis=1).quantile(0.025)
+mean_deaths_by_cause_upper = t1.groupby(level=0, axis=1).quantile(0.975)
+
+appended_df = pd.concat([mean_deaths_by_cause, mean_deaths_by_cause_lower, mean_deaths_by_cause_upper],
+                        axis=1, keys=['mean_deaths', 'lower_deaths', 'upper_deaths'])
+appended_df.to_csv(outputspath / "Mar2024_HTMresults/mortality_rates_per_py_by_cause.csv")
+
+
+
+# deaths_by_cause_by_run = extract_results(
+#         results_folder,
+#         module='tlo.methods.demography',
+#         key='death',
+#         custom_generate_series=get_num_deaths_by_cause_label,
+#         do_scaling=True
+#     )
+#
+# deaths_by_cause_by_run.to_csv(outputspath / "Mar2024_HTMresults/deaths_by_cause_by_run.csv")
 
 
 # Function to round to the nearest 1000
 def round_to_nearest_100(value):
     return round(value, -2)
-
-# Apply the rounding function to the entire DataFrame
-rounded_deaths = mean_deaths_by_cause.applymap(round_to_nearest_100)
-rounded_deaths_lower = mean_deaths_by_cause_lower.applymap(round_to_nearest_100)
-rounded_deaths_upper = mean_deaths_by_cause_upper.applymap(round_to_nearest_100)
-
-# Apply the rounding function to the entire DataFrame
-sum_deaths = mean_deaths_by_cause.sum(axis=0)
-
-rounded_deaths.to_csv(outputspath / "Mar2024_HTMresults/deaths_by_cause_excl_htm.csv")
-
+#
+# # Apply the rounding function to the entire DataFrame
+# rounded_deaths = mean_deaths_by_cause.applymap(round_to_nearest_100)
+# rounded_deaths_lower = mean_deaths_by_cause_lower.applymap(round_to_nearest_100)
+# rounded_deaths_upper = mean_deaths_by_cause_upper.applymap(round_to_nearest_100)
+#
+# # Apply the rounding function to the entire DataFrame
+# sum_deaths = mean_deaths_by_cause.sum(axis=0)
+#
+# rounded_deaths.to_csv(outputspath / "Mar2024_HTMresults/deaths_by_cause_excl_htm.csv")
+#
 
 def summarise_deaths_for_one_cause(results_folder, label):
     """ returns mean deaths for each year of the simulation
@@ -423,80 +454,99 @@ malaria_deaths = summarise_deaths_for_one_cause(results_folder, 'Malaria')
 # plot life expectancy and numbers of deaths by cause
 
 # all cause deaths
-total_deaths = summarise_total_deaths(results_folder)
-mean_total_deaths = total_deaths.loc[:, total_deaths.columns.get_level_values(1) == 'mean']
-lower_total_deaths = total_deaths.loc[:, total_deaths.columns.get_level_values(1) == 'lower']
-upper_total_deaths = total_deaths.loc[:, total_deaths.columns.get_level_values(1) == 'upper']
+# total_deaths = summarise_total_deaths(results_folder)
+# mean_total_deaths = total_deaths.loc[:, total_deaths.columns.get_level_values(1) == 'mean']
+# lower_total_deaths = total_deaths.loc[:, total_deaths.columns.get_level_values(1) == 'lower']
+# upper_total_deaths = total_deaths.loc[:, total_deaths.columns.get_level_values(1) == 'upper']
 
-# deaths by cause
-mean_deaths_by_cause = num_deaths_by_cause_label.xs('mean', level=1, axis=1)
-mean_deaths_by_cause_lower = num_deaths_by_cause_label.xs('lower', level=1, axis=1)
-mean_deaths_by_cause_upper = num_deaths_by_cause_label.xs('upper', level=1, axis=1)
+# mortality rate per 1000py
+mean_total_deaths = total_mortality_rate.groupby(level=0, axis=1).median(0.5)
+lower_total_deaths = total_mortality_rate.groupby(level=0, axis=1).quantile(0.025)
+upper_total_deaths = total_mortality_rate.groupby(level=0, axis=1).quantile(0.975)
+
+
+appended_df = pd.concat([mean_total_deaths, lower_total_deaths, upper_total_deaths], axis=0)
+appended_df.to_csv(outputspath / "Mar2024_HTMresults/total_mortality_rates_per_py.csv")
+
+
+# deaths by cause: mean_deaths_by_cause
 
 deaths_for_plot = [mean_deaths_by_cause.loc['AIDS', 0],
                mean_deaths_by_cause.loc['TB (non-AIDS)', 0],
                mean_deaths_by_cause.loc['Malaria', 0],
-               mean_total_deaths[0].values[0][0],
+               mean_total_deaths.values[0][0],
+                   ##
                mean_deaths_by_cause.loc['AIDS', 1],
                mean_deaths_by_cause.loc['TB (non-AIDS)', 1],
                mean_deaths_by_cause.loc['Malaria', 1],
-               mean_total_deaths[1].values[0][0],
+               mean_total_deaths.values[0][1],
+                   ##
                 mean_deaths_by_cause.loc['AIDS', 2],
                mean_deaths_by_cause.loc['TB (non-AIDS)', 2],
                mean_deaths_by_cause.loc['Malaria', 2],
-               mean_total_deaths[2].values[0][0],
+               mean_total_deaths.values[0][2],
+                   ##
                 mean_deaths_by_cause.loc['AIDS', 3],
                mean_deaths_by_cause.loc['TB (non-AIDS)', 3],
                mean_deaths_by_cause.loc['Malaria', 3],
-               mean_total_deaths[3].values[0][0],
+               mean_total_deaths.values[0][3],
+                   ##
                 mean_deaths_by_cause.loc['AIDS', 4],
                mean_deaths_by_cause.loc['TB (non-AIDS)', 4],
                mean_deaths_by_cause.loc['Malaria', 4],
-               mean_total_deaths[4].values[0][0],
+               mean_total_deaths.values[0][4],
                ]
 
 lower_deaths_for_plot = [mean_deaths_by_cause_lower.loc['AIDS', 0],
                mean_deaths_by_cause_lower.loc['TB (non-AIDS)', 0],
                mean_deaths_by_cause_lower.loc['Malaria', 0],
-               lower_total_deaths[0].values[0][0],
+               lower_total_deaths.values[0][0],
+                         ##
                mean_deaths_by_cause_lower.loc['AIDS', 1],
                mean_deaths_by_cause_lower.loc['TB (non-AIDS)', 1],
                mean_deaths_by_cause_lower.loc['Malaria', 1],
-               lower_total_deaths[1].values[0][0],
+               lower_total_deaths.values[0][1],
+                         ##
                 mean_deaths_by_cause_lower.loc['AIDS', 2],
                mean_deaths_by_cause_lower.loc['TB (non-AIDS)', 2],
                mean_deaths_by_cause_lower.loc['Malaria', 2],
-               lower_total_deaths[2].values[0][0],
+               lower_total_deaths.values[0][2],
+                         ##
                 mean_deaths_by_cause_lower.loc['AIDS', 3],
                mean_deaths_by_cause_lower.loc['TB (non-AIDS)', 3],
                mean_deaths_by_cause_lower.loc['Malaria', 3],
-               lower_total_deaths[3].values[0][0],
+               lower_total_deaths.values[0][3],
+                         ##
                 mean_deaths_by_cause_lower.loc['AIDS', 4],
                mean_deaths_by_cause_lower.loc['TB (non-AIDS)', 4],
                mean_deaths_by_cause_lower.loc['Malaria', 4],
-               lower_total_deaths[4].values[0][0],
+               lower_total_deaths.values[0][4],
                ]
 
 upper_deaths_for_plot = [mean_deaths_by_cause_upper.loc['AIDS', 0],
                mean_deaths_by_cause_upper.loc['TB (non-AIDS)', 0],
                mean_deaths_by_cause_upper.loc['Malaria', 0],
-               upper_total_deaths[0].values[0][0],
+               upper_total_deaths.values[0][0],
+                         ##
                mean_deaths_by_cause_upper.loc['AIDS', 1],
                mean_deaths_by_cause_upper.loc['TB (non-AIDS)', 1],
                mean_deaths_by_cause_upper.loc['Malaria', 1],
-               upper_total_deaths[1].values[0][0],
+               upper_total_deaths.values[0][1],
+                         ##
                 mean_deaths_by_cause_upper.loc['AIDS', 2],
                mean_deaths_by_cause_upper.loc['TB (non-AIDS)', 2],
                mean_deaths_by_cause_upper.loc['Malaria', 2],
-               upper_total_deaths[2].values[0][0],
+               upper_total_deaths.values[0][2],
+                         ##
                 mean_deaths_by_cause_upper.loc['AIDS', 3],
                mean_deaths_by_cause_upper.loc['TB (non-AIDS)', 3],
                mean_deaths_by_cause_upper.loc['Malaria', 3],
-               upper_total_deaths[3].values[0][0],
+               upper_total_deaths.values[0][3],
+                         ##
                 mean_deaths_by_cause_upper.loc['AIDS', 4],
                mean_deaths_by_cause_upper.loc['TB (non-AIDS)', 4],
                mean_deaths_by_cause_upper.loc['Malaria', 4],
-               upper_total_deaths[4].values[0][0],
+               upper_total_deaths.values[0][4],
                ]
 
 # Convert lists to numpy arrays
@@ -602,9 +652,9 @@ for bar, neg_err, pos_err, color in zip(bars,
                  color='black',  # Set error bar color to the same as the bars
                  capsize=5)
 
-ax2.set_yscale('log')
+# ax2.set_yscale('log')
 
-ax2.set_ylabel('Number of deaths (log)')
+ax2.set_ylabel('Mortality rate per 1000py')
 
 for i in [4.5, 8.5, 12.5, 16.5]:
     ax2.axvline(x=i, color='grey', linestyle='--', linewidth=1)
@@ -631,7 +681,7 @@ ax2.legend(
     bbox_to_anchor=(1.2, 1)
 )
 
-fig.savefig(outputspath / "Mar2024_HTMresults/Death_life_expect_exclHTM.png")
+fig.savefig(outputspath / "Mar2024_HTMresults/Mortality_life_expect_exclHTM.png")
 
 plt.show()
 
