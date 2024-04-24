@@ -7,8 +7,8 @@ from pathlib import Path
 from typing import Any, Dict, Literal, Optional
 
 import pandas as pd
-from pandas import DateOffset
 import pytest
+from pandas import DateOffset
 
 from tlo import Date, Module, Simulation, logging
 from tlo.analysis.utils import parse_log_file

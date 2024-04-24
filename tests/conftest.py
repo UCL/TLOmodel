@@ -1,7 +1,8 @@
 """Collection of shared fixtures"""
 from __future__ import annotations
-from copy import copy
+
 import os
+from copy import copy
 from pathlib import Path
 from typing import TYPE_CHECKING, List
 
@@ -17,7 +18,7 @@ from tlo.methods import (
     healthsystem,
     simplified_births,
     stunting,
-    symptommanager
+    symptommanager,
 )
 
 DEFAULT_SEED = 83563095832589325021

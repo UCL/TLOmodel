@@ -16,6 +16,7 @@ from tlo.util import random_date
 
 from .conftest import _BaseSharedSim
 
+
 def get_sim(seed):
     """Return simulation objection with Stunting and other necessary modules registered."""
 
