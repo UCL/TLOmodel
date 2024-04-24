@@ -164,7 +164,10 @@ class Contraception(Module):
         """Import the relevant sheets from the ResourceFile (excel workbook) and declare values for other parameters
         (CSV ResourceFile).
         """
-        workbook = pd.read_excel(Path(self.resourcefilepath) / 'contraception' / 'ResourceFile_Contraception.xlsx', sheet_name=None)
+        workbook = pd.read_excel(
+            Path(self.resourcefilepath) / 'contraception' / 'ResourceFile_Contraception.xlsx',
+            sheet_name=None
+            )
 
         # Import selected sheets from the workbook as the parameters
         sheet_names = [

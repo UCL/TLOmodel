@@ -212,7 +212,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                 ),
 
             # =========== PERFECT HEALTHSYSTEM ============
-            "No growth perfect consumables":
+            "No growth perfect healthsystem":
                 mix_scenarios(
                     self._baseline(),
                     {
@@ -228,7 +228,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     }
                 ),
                 
-            "GDP growth perfect consumables":
+            "GDP growth perfect healthsystem":
                 mix_scenarios(
                     self._baseline(),
                     {
@@ -244,7 +244,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     }
                 ),
                 
-            "GDP growth fHE growth case 1 perfect consumables":
+            "GDP growth fHE growth case 1 perfect healthsystem":
                 mix_scenarios(
                     self._baseline(),
                     {
@@ -260,7 +260,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     }
                 ),
  
-            "GDP growth fHE growth case 3 perfect consumables":
+            "GDP growth fHE growth case 3 perfect healthsystem":
                 mix_scenarios(
                     self._baseline(),
                     {
@@ -277,7 +277,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                 ),
 
  
-            "GDP growth fHE growth case 4 perfect consumables":
+            "GDP growth fHE growth case 4 perfect healthsystem":
                 mix_scenarios(
                     self._baseline(),
                     {
@@ -293,7 +293,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     }
                 ),
 
-            "GDP growth fHE growth case 6 perfect consumables":
+            "GDP growth fHE growth case 6 perfect healthsystem":
                 mix_scenarios(
                     self._baseline(),
                     {

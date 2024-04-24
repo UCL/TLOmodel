@@ -2752,7 +2752,7 @@ class RescaleHRCapabilities_ByDistrict(Event, PopulationScopeEventMixin):
 
     def apply(self, population):
 
-        # Get the set of scaling_factors that are specified by the 'HR_scaling_by_level_and_officer_type_mode' assumption
+        # Get the set of scaling_factors that are specified by 'HR_scaling_by_level_and_officer_type_mode'
         HR_scaling_factor_by_district = self.module.parameters['HR_scaling_by_district_table'][
             self.module.parameters['HR_scaling_by_district_mode']
         ].set_index('District').to_dict()
