@@ -1,12 +1,14 @@
+from typing import List
 
 import pandas as pd
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
-from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.symptommanager import Symptom
 
 logger = logging.getLogger(__name__)
@@ -286,6 +288,19 @@ class Mockitis(Module):
 
         return health_values  # returns the series
 
+    def do_at_generic_first_appt_emergency(
+        self,
+        patient_id: int,
+        symptoms: List[str],
+        **kwargs,
+    ) -> IndividualPropertyUpdates:
+        # Example for mockitis
+        if "extreme_pain_in_the_nose" in symptoms:
+            event = HSI_Mockitis_PresentsForCareWithSevereSymptoms(
+                module=self,
+                person_id=patient_id,
+            )
+            self.healthsystem.schedule_hsi_event(event, priority=1, topen=self.sim.date)
 
 class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
     """
