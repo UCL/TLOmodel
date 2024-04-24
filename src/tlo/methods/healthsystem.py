@@ -465,7 +465,7 @@ class HealthSystem(Module):
         self.healthsystemscheduler = None
 
         # Create pointer to the `HealthSystemSummaryCounter` helper class
-        self._summary_counter = HealthSystemSummaryCounter(self)
+        self._summary_counter = HealthSystemSummaryCounter()
 
         # Create counter for the running total of footprint of all the HSIs being run today
         self.running_total_footprint: Counter = Counter()
