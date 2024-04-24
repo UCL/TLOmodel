@@ -469,11 +469,11 @@ def print_basic_job_details(job: dict):
 
 
 @cli.command()
-@click.argument("job_id", type=str)
+@click.argument("job_ids", type=str, nargs=-1)
 @click.option("--username", type=str, hidden=True)
 @click.option("--verbose", default=False, is_flag=True, hidden=True)
 @click.pass_context
-def batch_download(ctx, job_id, username, verbose):
+def batch_download(ctx, job_ids, username, verbose):
     """Download output files for a job."""
     config = load_config(ctx.obj["config_file"])
 
@@ -518,17 +518,18 @@ def batch_download(ctx, job_id, username, verbose):
     share_client = ShareClient.from_connection_string(config['STORAGE']['CONNECTION_STRING'],
                                                       config['STORAGE']['FILESHARE'])
 
-    # if the job directory exist, exit with error
-    top_level = f"{username}/{job_id}"
-    destination = Path(".", "outputs", top_level)
-    if os.path.exists(destination):
-        print("ERROR: Local directory already exists. Please move or delete.")
-        print("Directory:", destination)
-        return
+    for job_id in job_ids:
+        # if the job directory exist, print error and continue to next job_id
+        top_level = f"{username}/{job_id}"
+        destination = Path(".", "outputs", top_level)
+        if os.path.exists(destination):
+            print("ERROR: Local directory already exists. Please move or delete.")
+            print("Directory:", destination)
+            continue
 
-    print(f"Downloading {top_level}")
-    walk_fileshare(top_level)
-    print("\rDownload complete.              ")
+        print(f"Downloading {top_level}")
+        walk_fileshare(top_level)
+        print("\rDownload complete.              ")
 
 
 def load_config(config_file):
