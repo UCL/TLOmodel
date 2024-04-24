@@ -1721,9 +1721,6 @@ class HealthSystem(Module):
         
         # Store information on fraction of time used, broken down by officer type and level
         summary_by_officer['OfficerType_FacilityLevel'] = summary_by_officer.index.get_level_values('Officer_Type') + '_' + summary_by_officer.index.get_level_values('Facility_Level')
-        
-        for index, row in summary_by_officer.iterrows():
-            self._summary_counter._frac_time_used_by_officer_type_and_level[row['OfficerType_FacilityLevel']] += float(row['Fraction_Time_Used'])
  
         logger.info(key='Capacity',
                     data={
@@ -1736,7 +1733,9 @@ class HealthSystem(Module):
                     description='daily summary of utilisation and capacity of health system resources')
 
         self._summary_counter.record_hs_status(
-            fraction_time_used_across_all_facilities=fraction_time_used_overall)
+            fraction_time_used_across_all_facilities=fraction_time_used_overall,
+            fraction_time_used_by_officer_type_and_level=summary_by_officer["Fraction_Time_Used"].to_dict()
+        )
 
     def remove_beddays_footprint(self, person_id):
         # removing bed_days from a particular individual if any
@@ -2556,11 +2555,16 @@ class HealthSystemSummaryCounter:
             self._never_ran_appts[appt_type] += number
             self._never_ran_appts_by_level[level][appt_type] += number
 
-    def record_hs_status(self, fraction_time_used_across_all_facilities: float) -> None:
+    def record_hs_status(
+        self,
+        fraction_time_used_across_all_facilities: float,
+        fraction_time_used_by_officer_type_and_level: Dict[Tuple[str, int], float],
+    ) -> None:
         """Record a current status metric of the HealthSystem."""
-
         # The fraction of all healthcare worker time that is used:
         self._frac_time_used_overall.append(fraction_time_used_across_all_facilities)
+        for officer_type_facility_level, fraction_time in fraction_time_used_by_officer_type_and_level.items():
+            self._sum_frac_time_used_by_officer_type_and_level[officer_type_facility_level] += fraction_time
 
     def write_to_log_and_reset_counters(self):
         """Log summary statistics reset the data structures."""
