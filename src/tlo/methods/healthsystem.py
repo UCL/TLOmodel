@@ -2494,7 +2494,6 @@ class HealthSystemSummaryCounter:
 
     def __init__(self, module: HealthSystem):
         self.module = module
-        #super().__init__(module)
         self._reset_internal_stores()
 
     def _reset_internal_stores(self) -> None:
