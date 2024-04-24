@@ -598,12 +598,6 @@ class HealthSystem(Module):
 
         # Determine mode_appt_constraints
         self.mode_appt_constraints = self.get_mode_appt_constraints()
-        
-        # Determine year mode switch
-        self.year_mode_switch = self.get_year_mode_switch()
-
-        # Determine year mode switch
-        self.scale_to_effective_capabilities = self.get_scale_to_effective_capabilities()
 
         # Determine service_availability
         self.service_availability = self.get_service_availability()
