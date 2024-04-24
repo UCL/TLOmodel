@@ -397,8 +397,7 @@ def test_run_in_mode_1_with_capacity(tmpdir, seed):
 
 @pytest.mark.slow
 def test_rescaling_capabilities_based_on_squeeze_factors(tmpdir, seed):
-    # Capabilities should increase if considering HealthSystem set-up which leads to
-    # high squeeze factors
+    # Capabilities should increase when a HealthSystem that has low capabilities changes mode with the option `scale_to_effective_capabilities` set to `True`.
 
     # Establish the simulation object
     sim = Simulation(
@@ -453,7 +452,6 @@ def test_rescaling_capabilities_based_on_squeeze_factors(tmpdir, seed):
     assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
     hsi_events = output['tlo.methods.healthsystem']['HSI_Event']
     hsi_events['date'] = pd.to_datetime(hsi_events['date']).dt.year
-    # assert hsi_events['did_run'].all()
 
     # Check that all squeeze factors were high in 2010, but not all were high in 2011 thanks to rescaling of capabilities
     assert (
