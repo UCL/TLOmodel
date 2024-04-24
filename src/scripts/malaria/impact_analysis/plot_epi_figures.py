@@ -241,8 +241,6 @@ results_deaths = extract_results(
 results_deaths.to_csv(outputspath / "Mar2024_HTMresults/full_deaths.csv")
 
 
-
-
 # plot AIDS deaths by yr
 def summarise_aids_deaths(results_folder):
     results_deaths = extract_results(
@@ -253,7 +251,7 @@ def summarise_aids_deaths(results_folder):
             lambda df: df.assign(year=df["date"].dt.year).groupby(
                 ["year", "cause"])["person_id"].count()
         ),
-        do_scaling=True,
+        do_scaling=False,
     )
     # removes multi-index
     results_deaths = results_deaths.reset_index()
@@ -266,11 +264,24 @@ def summarise_aids_deaths(results_folder):
     # group deaths by year
     tmp = pd.DataFrame(tmp.groupby(["year"]).sum())
 
+    py = extract_results(
+        results_folder,
+        module="tlo.methods.demography",
+        key="person_years",
+        custom_generate_series=get_person_years,
+        do_scaling=False
+    )
+    # years = pd.to_datetime(_df["date"]).dt.year
+    # py = pd.Series(dtype="int64", index=years)
+    py.index = tmp.index
+
+    deaths_per_py = tmp.iloc[:, 1:26].div(py) * 1000
+
     # get median and UI
     tmp2 = pd.concat({
-        'median': tmp.iloc[:, 1:].groupby(level=0, axis=1).median(0.5),
-        'lower': tmp.iloc[:, 1:].groupby(level=0, axis=1).quantile(0.025),
-        'upper': tmp.iloc[:, 1:].groupby(level=0, axis=1).quantile(0.975)
+        'median': deaths_per_py.groupby(level=0, axis=1).median(0.5),
+        'lower': deaths_per_py.groupby(level=0, axis=1).quantile(0.025),
+        'upper': deaths_per_py.groupby(level=0, axis=1).quantile(0.975)
     }, axis=1).swaplevel(axis=1)
 
     return tmp2
@@ -285,7 +296,7 @@ def summarise_deaths_for_one_cause(results_folder, cause):
             lambda df: df.assign(year=df["date"].dt.year).groupby(
                 ["year", "cause"])["person_id"].count()
         ),
-        do_scaling=True,
+        do_scaling=False,
     )
     # removes multi-index
     results_deaths = results_deaths.reset_index()
@@ -298,12 +309,23 @@ def summarise_deaths_for_one_cause(results_folder, cause):
     # group deaths by year
     tmp = pd.DataFrame(tmp.groupby(["year"]).sum())
 
-    # get mean for each draw
+    py = extract_results(
+        results_folder,
+        module="tlo.methods.demography",
+        key="person_years",
+        custom_generate_series=get_person_years,
+        do_scaling=False
+    )
+
+    py.index = tmp.index
+
+    deaths_per_py = tmp.iloc[:, 1:26].div(py) * 1000
+
     # get median and UI
     tmp2 = pd.concat({
-        'median': tmp.iloc[:, 1:].groupby(level=0, axis=1).median(0.5),
-        'lower': tmp.iloc[:, 1:].groupby(level=0, axis=1).quantile(0.025),
-        'upper': tmp.iloc[:, 1:].groupby(level=0, axis=1).quantile(0.975)
+        'median': deaths_per_py.groupby(level=0, axis=1).median(0.5),
+        'lower': deaths_per_py.groupby(level=0, axis=1).quantile(0.025),
+        'upper': deaths_per_py.groupby(level=0, axis=1).quantile(0.975)
     }, axis=1).swaplevel(axis=1)
 
     return tmp2
@@ -357,9 +379,9 @@ smoothed_tb_inc = create_smoothed_lines(data_x, tb_inc) * 1000
 smoothed_mal_inc = create_smoothed_lines(data_x, mal_inc)
 
 # scaled numbers of deaths per year
-smoothed_aids_deaths = create_smoothed_lines(data_x, aids_deaths) / 1000
-smoothed_tb_deaths = create_smoothed_lines(data_x, tb_deaths) / 1000
-smoothed_malaria_deaths = create_smoothed_lines(data_x, malaria_deaths) / 1000
+smoothed_aids_deaths = create_smoothed_lines(data_x, aids_deaths)
+smoothed_tb_deaths = create_smoothed_lines(data_x, tb_deaths)
+smoothed_malaria_deaths = create_smoothed_lines(data_x, malaria_deaths)
 
 # ---------------------------------- PLOTS ---------------------------------- #
 
@@ -371,7 +393,8 @@ font = {'family': 'sans-serif',
         'size': 11,
         }
 
-colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd']
+# colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd']
+colors = ['#1E22AA', '#9B26B6', '#F8485E', '#FF8F1C', '#30B700']
 
 
 # Set x-axis tick positions and labels at every second data point
@@ -398,7 +421,7 @@ for i, scenario in enumerate(smoothed_hiv_inc.filter(like='lower')):
 
 ax1.grid(True, linestyle='-', color=gridcol, zorder=1)
 ax1.set(title='HIV',
-        ylabel='HIV Incidence, per 1000')
+        ylabel='HIV Incidence, per 1000py')
 ax1.set_xticks(xvals_for_ticks)
 ax1.set_xticklabels("")
 ax1.set_ylim(0, 14)
@@ -415,7 +438,7 @@ for i, scenario in enumerate(smoothed_tb_inc.filter(like='lower')):
 
 ax2.grid(True, linestyle='-', color=gridcol, zorder=1)
 ax2.set(title='TB',
-        ylabel='TB Incidence, per 1000')
+        ylabel='TB Incidence, per 1000py')
 ax2.set_xticks(xvals_for_ticks)
 ax2.set_xticklabels("")
 ax2.set_ylim(0, 6)
@@ -433,7 +456,7 @@ for i, scenario in enumerate(smoothed_mal_inc.filter(like='lower')):
 
 ax3.grid(True, linestyle='-', color=gridcol, zorder=1)
 ax3.set(title='Malaria',
-        ylabel='Malaria Incidence, per 1000')
+        ylabel='Malaria Incidence, per 1000py')
 ax3.set_xticks(xvals_for_ticks)
 ax3.set_xticklabels("")
 ax3.set_ylim(0, 900)
@@ -453,10 +476,10 @@ for i, scenario in enumerate(smoothed_aids_deaths.filter(like='lower')):
 
 ax5.grid(True, linestyle='-', color=gridcol, zorder=1)
 ax5.set(title='',
-        ylabel='Number AIDS deaths, thousands')
+        ylabel='AIDS mortality rate per 1000py')
 ax5.set_xticks(xvals_for_ticks)
 ax5.set_xticklabels(xlabels_for_ticks)
-ax5.set_ylim(0, 120)
+ax5.set_ylim(0, 7)
 ax5.tick_params(axis='x', rotation=70)
 
 # TB deaths
@@ -471,10 +494,10 @@ for i, scenario in enumerate(smoothed_tb_deaths.filter(like='lower')):
 
 ax6.grid(True, linestyle='-', color=gridcol, zorder=1)
 ax6.set(title='',
-        ylabel='Number TB deaths, thousands')
+        ylabel='TB mortality rate per 1000py')
 ax6.set_xticks(xvals_for_ticks)
 ax6.set_xticklabels(xlabels_for_ticks)
-ax6.set_ylim(0, 23)
+ax6.set_ylim(0, 2)
 ax6.tick_params(axis='x', rotation=70)
 
 # Malaria deaths
@@ -489,10 +512,10 @@ for i, scenario in enumerate(smoothed_malaria_deaths.filter(like='lower')):
 
 ax7.grid(True, linestyle='-', color=gridcol, zorder=1)
 ax7.set(title='',
-        ylabel='Number malaria deaths, thousands')
+        ylabel='Malaria mortality rate per 1000py')
 ax7.set_xticks(xvals_for_ticks)
 ax7.set_xticklabels(xlabels_for_ticks)
-ax7.set_ylim(0, 70)
+ax7.set_ylim(0, 5)
 ax7.tick_params(axis='x', rotation=70)
 ax7.legend(loc='upper right',
            labels=['Status Quo', 'Exclude HIV services', 'Exclude TB services',
@@ -502,7 +525,7 @@ ax7.legend(loc='upper right',
 # empty plot
 ax8.axis('off')
 
-fig.savefig(outputspath / "Mar2024_HTMresults/Epi_outputs_excl_htm.png")
+# fig.savefig(outputspath / "Mar2024_HTMresults/Epi_outputs_excl_htm_mortality.png")
 
 plt.show()
 

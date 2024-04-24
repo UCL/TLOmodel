@@ -193,15 +193,14 @@ def _adjusted_mortality_rates(
     subset2 = mortality_rate_HTM.iloc[:, 20:25]  # Select columns 20 to 24 from mortality_rate_HTM
 
     # Align the columns by reindexing
-    # Ensure the column levels are aligned before reindexing
     subset1.columns = subset1.columns.droplevel(0)
     subset2.columns = subset2.columns.droplevel(0)
 
     # Add the two subsets together
     summed_mortality_rates = subset1 + subset2
-    median_adjusted_mortality_rates = summed_mortality_rates.median(axis=1)
+    # median_adjusted_mortality_rates = summed_mortality_rates.median(axis=1)
 
-    return median_adjusted_mortality_rates
+    return summed_mortality_rates
 
 
 target_period = (datetime.date(2019, 1, 1), datetime.date(2020, 1, 1))
@@ -217,3 +216,13 @@ F_adjusted_mortality = _adjusted_mortality_rates(
     sex='F')
 
 # enter manually into life expectancy spreadsheet column M_i to get life expectancy at birth
+M_LE = pd.Series([47.6, 48.3, 49.0, 47.9, 48.8])
+F_LE = pd.Series([50.3, 49.3, 51.1, 50.8, 49.5])
+
+print(M_LE.median())
+print(M_LE.quantile(0.025))
+print(M_LE.quantile(0.975))
+
+print(F_LE.median())
+print(F_LE.quantile(0.025))
+print(F_LE.quantile(0.975))

@@ -24,11 +24,11 @@ from tlo.analysis.utils import (
     make_age_grp_types,
 )
 
-# outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
-outputspath = Path("./outputs")
+outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
+# outputspath = Path("./outputs")
 
 # Find results_folder associated with a given batch_file (and get most recent [-1])
-results_folder = get_scenario_outputs("exclude_HTM_services.py", outputspath)[-1]
+results_folder = get_scenario_outputs("exclude_services_Mar2024.py", outputspath)[-1]
 
 # Declare path for output graphs from this script
 make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
@@ -280,13 +280,63 @@ barplot_summarized_deaths_by_age(deaths_summarized_by_age, proportion=False)
 
 def get_num_deaths_by_cause_label(_df):
     """Return total number of Deaths by label within the TARGET_PERIOD
-    values are summed for all ages and aggregated across the runs
+    values are summed for all ages
     df returned: rows=COD, columns=draw
     """
     return _df \
         .loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)] \
         .groupby(_df['label']) \
         .size()
+
+
+TARGET_PERIOD = (Date(2019, 1, 1), Date(2020, 1, 1))
+
+num_deaths_by_cause_label = extract_results(
+        results_folder,
+        module='tlo.methods.demography',
+        key='death',
+        custom_generate_series=get_num_deaths_by_cause_label,
+        do_scaling=True
+    )
+
+def get_person_years(_df):
+    """ extract person-years for each draw/run
+    sums across men and women
+    will skip column if particular run has failed
+    """
+    years = pd.to_datetime(_df["date"]).dt.year
+    py = pd.Series(dtype="int64", index=years)
+    for year in years:
+        tot_py = (
+            (_df.loc[pd.to_datetime(_df["date"]).dt.year == year]["M"]).apply(pd.Series) +
+            (_df.loc[pd.to_datetime(_df["date"]).dt.year == year]["F"]).apply(pd.Series)
+        ).transpose()
+        py[year] = tot_py.sum().values[0]
+
+    py.index = pd.to_datetime(years, format="%Y")
+
+    return py
+
+
+py0 = extract_results(
+    results_folder,
+    module="tlo.methods.demography",
+    key="person_years",
+    custom_generate_series=get_person_years,
+    do_scaling=True
+)
+py_totals = py0.sum(axis=0)
+
+
+deaths_by_py = num_deaths_by_cause_label.div(py_totals) * 1000
+
+# get median deaths per py to output
+tmp2 = pd.concat({
+    'median': deaths_by_py.groupby(level=0, axis=1).median(0.5),
+    'lower': deaths_by_py.groupby(level=0, axis=1).quantile(0.025),
+    'upper': deaths_by_py.groupby(level=0, axis=1).quantile(0.975)
+}, axis=1).swaplevel(axis=1)
+tmp2.to_csv(outputspath / "Mar2024_HTMresults/deaths_by_py2019.csv")
 
 
 num_deaths_by_cause_label = summarize(
@@ -298,7 +348,7 @@ num_deaths_by_cause_label = summarize(
         do_scaling=True
     )
 )
-TARGET_PERIOD = (Date(2010, 1, 1), Date(2020, 1, 1))
+
 
 mean_deaths_by_cause = num_deaths_by_cause_label.xs('mean', level=1, axis=1)
 mean_deaths_by_cause_lower = num_deaths_by_cause_label.xs('lower', level=1, axis=1)
