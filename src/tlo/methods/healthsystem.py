@@ -1053,19 +1053,25 @@ class HealthSystem(Module):
             if self.arg_mode_appt_constraints is None \
             else self.arg_mode_appt_constraints
             
-    def get_year_mode_switch(self) -> int:
+    @property
+    def year_mode_switch(self) -> int:
         """Returns `year_mode_switch`. (Should be equal to what is specified by the parameter, but overwrite with
         what was provided in argument if an argument was specified -- provided for backward compatibility/debugging.)"""
-        return self.parameters['year_mode_switch'] \
-            if self.arg_year_mode_switch is None \
-            else self.arg_year_mode_switch
+        return (
+            self.parameters['year_mode_switch']
+            if self._arg_year_mode_switch is None
+            else self._arg_year_mode_switch
+        )
 
-    def get_scale_to_effective_capabilities(self) -> int:
+    @property
+    def scale_to_effective_capabilities(self) -> int:
         """Returns `scale_to_effective_capabilities`. (Should be equal to what is specified by the parameter, but overwrite with
         what was provided in argument if an argument was specified -- provided for backward compatibility/debugging.)"""
-        return self.parameters['scale_to_effective_capabilities'] \
-            if self.arg_scale_to_effective_capabilities is None \
-            else self.arg_scale_to_effective_capabilities
+        return (
+            self.parameters['scale_to_effective_capabilities']
+            if self._arg_scale_to_effective_capabilities is None
+            else self._arg_scale_to_effective_capabilities
+        )
 
     def get_use_funded_or_actual_staffing(self) -> str:
         """Returns `use_funded_or_actual_staffing`. (Should be equal to what is specified by the parameter, but
