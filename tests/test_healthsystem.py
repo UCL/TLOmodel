@@ -402,7 +402,8 @@ def test_run_in_mode_1_with_capacity(tmpdir, seed):
 
 @pytest.mark.slow
 def test_rescaling_capabilities_based_on_squeeze_factors(tmpdir, seed):
-    # Capabilities should increase when a HealthSystem that has low capabilities changes mode with the option `scale_to_effective_capabilities` set to `True`.
+    # Capabilities should increase when a HealthSystem that has low capabilities changes mode with
+    # the option `scale_to_effective_capabilities` set to `True`.
 
     # Establish the simulation object
     sim = Simulation(
@@ -458,14 +459,23 @@ def test_rescaling_capabilities_based_on_squeeze_factors(tmpdir, seed):
     hsi_events = output['tlo.methods.healthsystem']['HSI_Event']
     hsi_events['date'] = pd.to_datetime(hsi_events['date']).dt.year
 
-    # Check that all squeeze factors were high in 2010, but not all were high in 2011 thanks to rescaling of capabilities
+    # Check that all squeeze factors were high in 2010, but not all were high in 2011
+    # thanks to rescaling of capabilities
     assert (
-        hsi_events.loc[(hsi_events['Person_ID'] >= 0) & (hsi_events['Number_By_Appt_Type_Code'] != {}) & (hsi_events['date'] == 2010),
-                       'Squeeze_Factor'] >= 100.0
+        hsi_events.loc[
+            (hsi_events['Person_ID'] >= 0) &
+            (hsi_events['Number_By_Appt_Type_Code'] != {}) &
+            (hsi_events['date'] == 2010),
+            'Squeeze_Factor'
+        ] >= 100.0
     ).all()  # All the events that had a non-blank footprint experienced high squeezing.
     assert not (
-        hsi_events.loc[(hsi_events['Person_ID'] >= 0) & (hsi_events['Number_By_Appt_Type_Code'] != {}) & (hsi_events['date'] == 2011),
-                       'Squeeze_Factor'] >= 100.0
+        hsi_events.loc[
+            (hsi_events['Person_ID'] >= 0) &
+            (hsi_events['Number_By_Appt_Type_Code'] != {}) &
+            (hsi_events['date'] == 2011),
+            'Squeeze_Factor'
+        ] >= 100.0
     ).all()  # All the events that had a non-blank footprint experienced high squeezing.
 
 
