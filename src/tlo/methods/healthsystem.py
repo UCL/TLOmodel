@@ -937,7 +937,7 @@ class HealthSystem(Module):
             rescaling_factor = self._summary_counter.frac_time_used_by_officer_type_and_level(
                 officer_type, level
             )
-            if rescaling_factor > 1:
+            if rescaling_factor > 1 and rescaling_factor != float("inf"):
                 self._daily_capabilities[officer] *= rescaling_factor
 
     def update_consumables_availability_to_represent_merging_of_levels_1b_and_2(self, df_original):
