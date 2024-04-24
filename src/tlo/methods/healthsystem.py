@@ -2593,31 +2593,6 @@ class HealthSystemSummaryCounter:
 
     def write_to_log_and_reset_counters(self):
         """Log summary statistics reset the data structures."""
-        
-        # If we are at the end of the year preceeding the mode switch, and if wanted to rescale capabilities to capture effective availability as was recorded, on
-        # average, in the past year, do so here.
-        # Notice that capabilities will only be expanded through this process (i.e. won't reduce available capabilities if these were under-used in the last year).
-        # Note: Currently relying on module variable rather than parameter for scale_to_effective_capabilities, in order to facilitate testing. However
-        # this may eventually come into conflict with the Switcher functions.
-        if (self.module.sim.date.year == self.module.year_mode_switch-1) and self.module.scale_to_effective_capabilities:
-
-            pattern = r"FacilityID_(\w+)_Officer_(\w+)"
-            # Calculate the average fraction of time used by officer type and level over the past year.
-            # Use len(self._frac_time_used_overall) as proxy for number of days in past year.
-            for key in self._sum_of_daily_frac_time_used_by_officer_type_and_level:
-                self._sum_of_daily_frac_time_used_by_officer_type_and_level[key] /= float(len(self._frac_time_used_overall))
-
-            for officer in self.module._daily_capabilities.keys():
-                matches = re.match(pattern, officer)
-                # Extract ID and officer type from
-                facility_id = int(matches.group(1))
-                officer_type = matches.group(2)
-                level = self.module._facility_by_facility_id[facility_id].level
-                # Only rescale if rescaling factor is greater than 1 (i.e. don't reduce available capabilities
-                # if these were under-used the previous year).
-                if self._sum_of_daily_frac_time_used_by_officer_type_and_level[officer_type + "_" + level] > 1:
-                    self.module._daily_capabilities[officer] *= \
-                        self._sum_of_daily_frac_time_used_by_officer_type_and_level[officer_type + "_" + level]
 
         logger_summary.info(
             key="HSI_Event",
