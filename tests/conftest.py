@@ -1,5 +1,6 @@
 """Collection of shared fixtures"""
 from __future__ import annotations
+from copy import copy
 import os
 from pathlib import Path
 from typing import TYPE_CHECKING, List
@@ -9,10 +10,14 @@ import pytest
 from tlo import Date, Module, Simulation
 from tlo.methods import (
     demography,
+    diarrhoea,
     enhanced_lifestyle,
+    healthburden,
+    healthseekingbehaviour,
     healthsystem,
     simplified_births,
     stunting,
+    symptommanager
 )
 
 DEFAULT_SEED = 83563095832589325021
@@ -77,13 +82,20 @@ def small_shared_sim(seed, jan_1st_2010, resource_filepath):
     sim = Simulation(start_date=jan_1st_2010, seed=seed)
     sim.register(
         demography.Demography(resourcefilepath=resource_filepath),
+        diarrhoea.Diarrhoea(resourcefilepath=resource_filepath, do_checks=True),
+        diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resource_filepath),
+        healthburden.HealthBurden(resourcefilepath=resource_filepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(
+            resourcefilepath=resource_filepath,
+            force_any_symptom_to_lead_to_healthcareseeking=True,
+        ),
         healthsystem.HealthSystem(
             resourcefilepath=resource_filepath, cons_availability="all"
         ),
         simplified_births.SimplifiedBirths(resourcefilepath=resource_filepath),
         stunting.Stunting(resourcefilepath=resource_filepath),
-        stunting.StuntingPropertiesOfOtherModules(),
+        symptommanager.SymptomManager(resourcefilepath=resource_filepath),
     )
     sim.make_initial_population(n=100)
     sim.simulate(end_date=sim.start_date)
@@ -155,6 +167,18 @@ class _BaseSharedSim:
         simulation fixture defined above. This ensures that every test
         is run with the persistent simulation object in its context.
 
+        NOTE: this is not strictly necessary in the current implementation
+        where we only have one simulation object to share; as we could
+        just pass the shared_small_sim explicitly to every test in the
+        (derived) class.
+        However, it does make accessing the simulation much more similar
+        to the main codebase (via self.sim.XXX rather than
+        shared_small_sim.XXX) and means we save on explicitly passing the
+        same fixture to a lot of tests since we do it automatically.
+        If we later define another simulation object that we want to share
+        between another set of tests, we can re-use this base class for
+        that purpose too, further saving on code repetition.
+
         WARNING: Writes to the shared simulation object will thus be
         persistent between tests! If a test needs to modify module
         parameters, use a fresh HSI queue, or similar, use the setup
@@ -168,14 +192,34 @@ class _BaseSharedSim:
         Flags this test as needing to clear the HSI event queue
         in the shared simulation.
 
-        Using this fixture will cause pytest to cache the current
-        HSI queue of the shared simulation, clear the queue, run
-        the test, then restore the old queue during test teardown.
+        Using this fixture will cause pytest to:
+        - Cache the current HSI queue of the shared simulation,
+        - Clear the queue,
+        - Run the test,
+        - Restore the old queue during test teardown.
+        The queue can safely be manually cleared again during the
+        test if this is necessary (EG if testing two calls to the
+        HSI scheduler).
         """
         cached_queue = list(self.shared_sim_healthsystem.HSI_EVENT_QUEUE)
         self.shared_sim_healthsystem.reset_queue()
         yield
         self.shared_sim_healthsystem.HSI_EVENT_QUEUE = list(cached_queue)
+
+    @pytest.fixture(scope="function")
+    def changes_event_queue(self):
+        """
+        Flags the test as needing to change the simulation
+        event queue, normally to check that certain events
+        have been scheduled based on treatment routines.
+
+        Using this fixture will cause pytest to cache the
+        event queue prior to running the test, then restore
+        the event queue to this state at the end of the test.
+        """
+        old_event_queue = copy(self.sim.event_queue)
+        yield
+        self.sim.event_queue = old_event_queue
 
     @pytest.fixture(scope="function")
     def changes_module_properties(self):
@@ -207,3 +251,18 @@ class _BaseSharedSim:
         cached_values = self.shared_sim_df.loc[patient_id].copy()
         yield
         self.shared_sim_df.loc[patient_id] = cached_values
+
+    @pytest.fixture(scope="function")
+    def changes_sim_date(self):
+        """
+        Flags this test as needing to manually change the date of the
+        shared simulation; typically needed when testing cures or deaths
+        that are scheduled then occur.
+
+        Using this fixture will cause pytest to cache the date of the
+        shared simulation prior to running the test, then restore the
+        simulation to that date during teardown.
+        """
+        old_date = Date(self.sim.date)
+        yield
+        self.sim.date = Date(old_date)

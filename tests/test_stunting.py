@@ -229,7 +229,7 @@ class TestStunting_SharedSim(_BaseSharedSim):
 
     module: str = "Stunting"
 
-    @pytest.fixture(scope="module")
+    @pytest.fixture(scope="class")
     def patient_id(self) -> int:
         return 0
 
