@@ -926,19 +926,19 @@ class HealthSystem(Module):
         # scale_to_effective_capabilities, in order to facilitate testing. However
         # this may eventually come into conflict with the Switcher functions.
         pattern = r"FacilityID_(\w+)_Officer_(\w+)"
-        for officer in self.module._daily_capabilities.keys():
+        for officer in self._daily_capabilities.keys():
             matches = re.match(pattern, officer)
             # Extract ID and officer type from
             facility_id = int(matches.group(1))
             officer_type = matches.group(2)
-            level = self.module._facility_by_facility_id[facility_id].level
+            level = self._facility_by_facility_id[facility_id].level
             # Only rescale if rescaling factor is greater than 1 (i.e. don't reduce
             # available capabilities if these were under-used the previous year).
             rescaling_factor = self._summary_counter.frac_time_used_by_officer_type_and_level(
                 officer_type, level
             )
             if rescaling_factor > 1:
-                self.module._daily_capabilities[officer] *= rescaling_factor
+                self._daily_capabilities[officer] *= rescaling_factor
 
     def update_consumables_availability_to_represent_merging_of_levels_1b_and_2(self, df_original):
         """To represent that facility levels '1b' and '2' are merged together under the label '2', we replace the
