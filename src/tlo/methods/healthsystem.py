@@ -2517,8 +2517,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 class HealthSystemSummaryCounter:
     """Helper class to keep running counts of HSI and the state of the HealthSystem and logging summaries."""
 
-    def __init__(self, module: HealthSystem):
-        self.module = module
+    def __init__(self):
         self._reset_internal_stores()
 
     def _reset_internal_stores(self) -> None:
