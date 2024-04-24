@@ -336,7 +336,8 @@ class HealthSystem(Module):
             events run with squeeze factor, 2: hard constraints, only HSI events with
             no squeeze factor run.
         :param year_mode_switch: Year in which mode_appt_constraints switch is enforced
-        :param scale_to_effective_capabilities: Before switching mode, if True this rescales capabilities based on squeeze factors
+        :param scale_to_effective_capabilities: Before switching mode, if True this rescales capabilities
+            based on squeeze factors
         :param cons_availability: If 'default' then use the availability specified in the ResourceFile; if 'none', then
         let no consumable be ever be available; if 'all', then all consumables are always available. When using 'all'
         or 'none', requests for consumables are not logged.
@@ -1077,8 +1078,9 @@ class HealthSystem(Module):
 
     @property
     def scale_to_effective_capabilities(self) -> int:
-        """Returns `scale_to_effective_capabilities`. (Should be equal to what is specified by the parameter, but overwrite with
-        what was provided in argument if an argument was specified -- provided for backward compatibility/debugging.)"""
+        """Returns `scale_to_effective_capabilities`. (Should be equal to what is specified by the parameter,
+        but overwrite with what was provided in argument if an argument was specified -- provided for backward
+        compatibility/debugging.)"""
         return (
             self.parameters['scale_to_effective_capabilities']
             if self._arg_scale_to_effective_capabilities is None
@@ -1739,9 +1741,6 @@ class HealthSystem(Module):
             summary_by_officer['Minutes_Used'] / summary_by_officer['Total_Minutes_Per_Day']
         ).replace([np.inf, -np.inf, np.nan], 0.0)
         summary_by_officer.index.names = ['Officer_Type', 'Facility_Level']
-        
-        # Store information on fraction of time used, broken down by officer type and level
-        summary_by_officer['OfficerType_FacilityLevel'] = summary_by_officer.index.get_level_values('Officer_Type') + '_' + summary_by_officer.index.get_level_values('Facility_Level')
  
         logger.info(key='Capacity',
                     data={
