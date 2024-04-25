@@ -28,9 +28,7 @@ from tlo.analysis.utils import (
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.methods import demography
 from tlo.methods.fullmodel import fullmodel
-from tlo.methods.scenario_switcher import (
-    ImprovedHealthSystemAndCareSeekingScenarioSwitcher,
-)
+from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScenarioSwitcher
 
 resourcefilepath = Path(os.path.dirname(__file__)) / "../resources"
 
