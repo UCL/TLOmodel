@@ -7,7 +7,7 @@ from tlo.events import Event, PopulationScopeEventMixin
 
 class ImprovedHealthSystemAndCareSeekingScenarioSwitcher(Module):
     """This is the `ImprovedHealthSystemAndCareSeekingScenarioSwitcher` module.
-    It provides switches that can used by the `Scenario` class to control the overall performance of the HealthSystem
+    It provides switches that can be used by the `Scenario` class to control the overall performance of the HealthSystem
     and healthcare seeking, which are mediated by many parameters across many modules, and which are of the types
     `pd.Series` and `pd.DataFrame`, which cannot be changed via the `Scenario` class (see
     https://github.com/UCL/TLOmodel/issues/988).
