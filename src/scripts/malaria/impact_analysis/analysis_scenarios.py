@@ -41,10 +41,10 @@ class EffectOfProgrammes(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2015, 1, 1)  # todo update these for full runs
-        self.pop_size = 10_000  # todo update these for full runs
+        self.end_date = Date(2020, 1, 1)  # todo update these for full runs
+        self.pop_size = 147_000  # todo update these for full runs, scale to 1:100
         self.number_of_draws = 9
-        self.runs_per_draw = 1  # todo update these for full runs
+        self.runs_per_draw = 5  # todo update these for full runs
 
         self.treatment_effects = pd.read_excel(
             os.path.join(self.resources, "ResourceFile_HIV.xlsx"),

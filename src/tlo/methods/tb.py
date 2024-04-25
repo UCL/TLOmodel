@@ -2150,7 +2150,6 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                 self.number_of_occurrences
                 <= self.module.parameters["tb_healthseekingbehaviour_cap"]
             ):
-                print(self.number_of_occurrences)
 
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     self,
