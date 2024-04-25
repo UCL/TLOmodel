@@ -1371,32 +1371,63 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
 
-        # TODO *** THIS HAS TROUBLE BE PARESED ON LONG RUNS BY PARSE_OUTPUT: CHANGING KEYS DUE TO GROUPBY? \
-        #  NEED TO USE UNSTACK?!?!?
-        """
-        def flatten_tuples_in_keys(d1):
-            d2 = dict()
-            for k in d1.keys():
-                d2['_'.join([str(y) for y in k])] = d1[k]
-            return d2
+        # ---------------------- log properties associated with WASH
 
-        logger.info(key='li_urban', data=df[df.is_alive].groupby('li_urban').size().to_dict())
-        logger.info(key='li_wealth', data=df[df.is_alive].groupby('li_wealth').size().to_dict())
-        logger.info(key='li_tob', data=flatten_tuples_in_keys(
-            df[df.is_alive].groupby(['sex', 'li_tob']).size().to_dict())
-                    )
-        logger.info(key='li_ed_lev_by_age',
-                    data=flatten_tuples_in_keys(
-                        df[df.is_alive].groupby(['age_range', 'li_in_ed', 'li_ed_lev']).size().to_dict())
-                    )
-        logger.info(
-            key='bmi_proportions',
-            data=self.module.compute_bmi_proportions_of_interest()
-        )
-        logger.info(key='li_low_ex', data=flatten_tuples_in_keys(
-            df[df.is_alive].groupby(['sex', 'li_low_ex']).size().to_dict())
-                    )
-        """
+        # unimproved sanitation
+        # NOTE: True = no sanitation
+        no_sanitation_PSAC = len(
+            df[df.li_unimproved_sanitation & df.is_alive & (df.age_years < 5)]
+        ) / len(df[df.is_alive & (df.age_years < 5)]
+                ) if len(df[df.is_alive & (df.age_years < 5)]) else 0
+
+        no_sanitation_SAC = len(
+            df[df.li_unimproved_sanitation & df.is_alive & df.age_years.between(5, 15)]
+        ) / len(df[df.is_alive & df.age_years.between(5, 15)]) if len(
+            df[df.is_alive & df.age_years.between(5, 15)]) else 0
+
+        no_sanitation_ALL = len(
+            df[df.li_unimproved_sanitation & df.is_alive]
+        ) / len(df[df.is_alive]
+                ) if len(df[df.is_alive]) else 0
+
+
+        # no access hand-washing
+        # NOTE: True = no access hand-washing
+        no_handwashing_PSAC = len(
+            df[df.li_no_access_handwashing & df.is_alive & (df.age_years < 5)]
+        ) / len(df[df.is_alive & (df.age_years < 5)]
+                ) if len(df[df.is_alive & (df.age_years < 5)]) else 0
+
+        no_handwashing_SAC = len(
+            df[df.li_no_access_handwashing & df.is_alive & df.age_years.between(5, 15)]
+        ) / len(df[df.is_alive & df.age_years.between(5, 15)]) if len(
+            df[df.is_alive & df.age_years.between(5, 15)]) else 0
+
+        no_handwashing_ALL = len(
+            df[df.li_no_access_handwashing & df.is_alive]
+        ) / len(df[df.is_alive]
+                ) if len(df[df.is_alive]) else 0
+
+
+        # no clean drinking water
+        # NOTE: True = no clean drinking water
+        no_drinkingwater_PSAC = len(
+            df[df.li_no_clean_drinking_water & df.is_alive & (df.age_years < 5)]
+        ) / len(df[df.is_alive & (df.age_years < 5)]
+                ) if len(df[df.is_alive & (df.age_years < 5)]) else 0
+
+        no_drinkingwater_SAC = len(
+            df[df.li_no_clean_drinking_water & df.is_alive & df.age_years.between(5, 15)]
+        ) / len(df[df.is_alive & df.age_years.between(5, 15)]) if len(
+            df[df.is_alive & df.age_years.between(5, 15)]) else 0
+
+        no_drinkingwater_ALL = len(
+            df[df.li_no_clean_drinking_water & df.is_alive]
+        ) / len(df[df.is_alive]
+                ) if len(df[df.is_alive]) else 0
+
+
+        # ---------------------- circumcision
 
         logger.info(
             key='prop_adult_men_circumcised',
