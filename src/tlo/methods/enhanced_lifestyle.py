@@ -1977,7 +1977,7 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # unimproved sanitation
         # NOTE: True = no sanitation
-        no_sanitation_PSAC = len(
+        li_no_clean_drinking_water = len(
             df[df.li_unimproved_sanitation & df.is_alive & (df.age_years < 5)]
         ) / len(df[df.is_alive & (df.age_years < 5)]
                 ) if len(df[df.is_alive & (df.age_years < 5)]) else 0
@@ -2023,4 +2023,23 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         ) / len(df[df.is_alive & df.age_years.between(5, 15)]) if len(
             df[df.is_alive & df.age_years.between(5, 15)]) else 0
 
+        no_drinkingwater_ALL = len(
+            df[df.li_no_clean_drinking_water & df.is_alive]
+        ) / len(df[df.is_alive]
+                ) if len(df[df.is_alive]) else 0
 
+        logger.info(
+            key="summary_WASH_properties",
+            description="Summary of current status of WASH properties",
+            data={
+                "no_sanitation_PSAC": li_no_clean_drinking_water,
+                "no_sanitation_SAC": no_sanitation_SAC,
+                "no_sanitation_ALL": no_sanitation_ALL,
+                "no_handwashing_PSAC": no_handwashing_PSAC,
+                "no_handwashing_SAC": no_handwashing_SAC,
+                "no_handwashing_ALL": no_handwashing_ALL,
+                "no_drinkingwater_PSAC": no_drinkingwater_PSAC,
+                "no_drinkingwater_SAC": no_drinkingwater_SAC,
+                "no_drinkingwater_ALL": no_drinkingwater_ALL,
+            },
+        )
