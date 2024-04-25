@@ -1,4 +1,5 @@
 """The main simulation controller."""
+from __future__ import annotations
 
 import datetime
 import heapq
@@ -6,7 +7,7 @@ import itertools
 import time
 from collections import OrderedDict
 from pathlib import Path
-from typing import Dict, Optional, Union
+from typing import TYPE_CHECKING, Dict, Optional, Tuple, Union
 
 import numpy as np
 
@@ -14,6 +15,9 @@ from tlo import Date, Population, logging
 from tlo.dependencies import check_dependencies_present, topologically_sort_modules
 from tlo.events import Event, IndividualScopeEventMixin
 from tlo.progressbar import ProgressBar
+
+if TYPE_CHECKING:
+    from tlo import Module
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -42,6 +46,8 @@ class Simulation:
         Note that individual modules also have their own random number generator
         with independent state.
     """
+
+    modules: OrderedDict[str, Module]
 
     def __init__(self, *, start_date: Date, seed: int = None, log_config: dict = None,
                  show_progress_bar=False):
@@ -329,7 +335,7 @@ class EventQueue:
         entry = (date, event.priority, next(self.counter), event)
         heapq.heappush(self.queue, entry)
 
-    def next_event(self):
+    def next_event(self) -> Tuple[Event, Date]:
         """Get the earliest event in the queue.
 
         :returns: an (event, date) pair
