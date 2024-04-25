@@ -7,7 +7,7 @@ from warnings import warn
 from tlo import Simulation
 from tlo.events import Event, IndividualScopeEventMixin
 
-MAX_THREADS = 2 # make more elegant, probably examine the OS
+MAX_THREADS = 4 # make more elegant, probably examine the OS
 
 class ThreadController:
     """
@@ -28,11 +28,11 @@ class ThreadController:
         """
         """
         # Determine how many threads to use given the machine maximum,
-        # and the user's request
-        self._n_threads = min(n_threads, MAX_THREADS)
+        # and the user's request. Be sure to save one for the main thread!
+        self._n_threads = min(n_threads, MAX_THREADS - 1)
         if self._n_threads < n_threads:
             warn(
-                f"Requested {n_threads} but this exceeds the maximum possible number of threads ({MAX_THREADS}). Restricting to {self._n_threads}."
+                f"Requested {n_threads} but this exceeds the maximum possible number of worker threads ({MAX_THREADS - 1}). Restricting to {self._n_threads}."
             )
         assert (
             self._n_threads > 0
@@ -170,26 +170,33 @@ class ThreadedSimulation(Simulation):
             # event from the previous date but may still call sim.date
             # to get the "current" time, which would then be out-of-sync.
             elif date != self.date:
+                print("MAIN THREAD: Waiting to advance time...", flush=True, end="")
                 # This event moves time forward, wait until all jobs
                 # from the current day have finished before advancing time
                 self.wait_for_workers()
                 # All jobs from the previous day have ended.
                 # Advance time and continue.
                 self.date = date
+                print("done")
             
             # Next, determine if the event to be run can be delegated to the
             # worker pool.
             if self.event_must_run_in_main_thread(event):
+                print("MAIN THREAD: Waiting to run population level event...")
                 # Event needs all workers to finish, then to run in
                 # the main thread (this one)
                 self.wait_for_workers()
+                print("running", flush=True, end="...")
                 event.run()
+                print("done")
             else:
                 # This job can be delegated to the worker pool, and run safely
                 self._worker_queue.put(event)
 
+        # We may have exhausted all the events in the queue, but the workers will
+        # still need time to process them all!
         self.wait_for_workers()
-        # The simulation has ended.
+        print("MAIN THREAD: Simulation has now ended, worker queue empty.")
 
         for module in self.modules.values():
             module.on_simulation_end()
