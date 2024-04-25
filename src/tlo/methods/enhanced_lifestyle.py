@@ -1944,6 +1944,35 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 else:
                     data = df.loc[df.is_alive & (df.age_years >= 15)].groupby(by=[
                         'sex', _property, 'age_range']).size()
+
+            elif _property == 'li_in_ed':
+                data = df.loc[df.is_alive & df.age_years.between(5, 19)].groupby(by=[
+                    'sex', 'li_wealth', _property, 'age_years']).size()
+
+            elif _property == 'li_ed_lev':
+                data = df.loc[df.is_alive & df.age_years.between(15, 49)].groupby(by=[
+                    'sex', 'li_wealth', _property, 'age_years']).size()
+
+            elif _property == 'li_is_sexworker':
+                data = df.loc[df.is_alive & (df.age_years.between(15, 49))].groupby(by=[
+                    'sex', _property, 'age_range']).size()
+
+            elif _property in cat_by_rural_urban_props:
+                # log all properties that are also categorised by rural or urban in addition to ex and age groups
+                data = df.loc[df.is_alive].groupby(by=[
+                    'li_urban', 'sex', _property, 'age_range']).size()
+
+            else:
+                # log all other remaining properties
+                data = df.loc[df.is_alive].groupby(by=['sex', _property, 'age_range']).size()
+
+            # log data
+            logger.info(
+                key=_property,
+                data=flatten_multi_index_series_into_dict_for_logging(data)
+            )
+
+
         # ---------------------- log properties associated with WASH
 
         # unimproved sanitation
@@ -1994,29 +2023,4 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         ) / len(df[df.is_alive & df.age_years.between(5, 15)]) if len(
             df[df.is_alive & df.age_years.between(5, 15)]) else 0
 
-            elif _property == 'li_in_ed':
-                data = df.loc[df.is_alive & df.age_years.between(5, 19)].groupby(by=[
-                    'sex', 'li_wealth', _property, 'age_years']).size()
 
-            elif _property == 'li_ed_lev':
-                data = df.loc[df.is_alive & df.age_years.between(15, 49)].groupby(by=[
-                    'sex', 'li_wealth', _property, 'age_years']).size()
-
-            elif _property == 'li_is_sexworker':
-                data = df.loc[df.is_alive & (df.age_years.between(15, 49))].groupby(by=[
-                    'sex', _property, 'age_range']).size()
-
-            elif _property in cat_by_rural_urban_props:
-                # log all properties that are also categorised by rural or urban in addition to ex and age groups
-                data = df.loc[df.is_alive].groupby(by=[
-                    'li_urban', 'sex', _property, 'age_range']).size()
-
-            else:
-                # log all other remaining properties
-                data = df.loc[df.is_alive].groupby(by=['sex', _property, 'age_range']).size()
-
-            # log data
-            logger.info(
-                key=_property,
-                data=flatten_multi_index_series_into_dict_for_logging(data)
-            )
