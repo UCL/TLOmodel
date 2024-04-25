@@ -4,20 +4,26 @@ Other_adult Cancer Disease Module
 Limitations to note:
 * Footprints of HSI -- pending input from expert on resources required.
 """
+from __future__ import annotations
 
 from pathlib import Path
+from typing import TYPE_CHECKING, List
 
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import IndividualPropertyUpdates
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
-from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.symptommanager import Symptom
+
+if TYPE_CHECKING:
+    from tlo.population import PatientDetails
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -112,6 +118,9 @@ class OtherAdultCancer(Module):
         ),
         "rr_site_confined_agege70": Parameter(
             Types.REAL, "rate ratio for site-confined other_adult cancer for age ge 70"
+        ),
+        "rr_site_confined_hiv": Parameter(
+            Types.REAL, "rate ratio for site-confined other_adult_cancer if infected with HIV"
         ),
         "r_local_ln_site_confined_other_adult_ca": Parameter(
             Types.REAL,
@@ -381,15 +390,26 @@ class OtherAdultCancer(Module):
         p = self.parameters
         lm = self.linear_models_for_progession_of_oac_status
 
-        lm['site_confined'] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            p['r_site_confined_none'],
+        predictors = [
             Predictor('age_years', conditions_are_mutually_exclusive=True)
             .when('.between(30,49)', p['rr_site_confined_age3049'])
             .when('.between(50,69)', p['rr_site_confined_age5069'])
             .when('.between(0,14)', 0.0)
             .when('.between(70,120)', p['rr_site_confined_agege70']),
             Predictor('oac_status').when('none', 1.0).otherwise(0.0)
+        ]
+
+        conditional_predictors = [
+            Predictor().when(
+                'hv_inf & '
+                '(hv_art != "on_VL_suppressed")',
+                p["rr_site_confined_hiv"]),
+        ] if "Hiv" in self.sim.modules else []
+
+        lm['site_confined'] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            p['r_site_confined_none'],
+            *(predictors + conditional_predictors)
         )
 
         lm['local_ln'] = LinearModel(
@@ -548,6 +568,20 @@ class OtherAdultCancer(Module):
             ] = self.daly_wts['metastatic_palliative_care']
 
         return disability_series_for_alive_persons
+
+    def do_at_generic_first_appt(
+        self,
+        patient_id: int,
+        patient_details: PatientDetails,
+        symptoms: List[str],
+        **kwargs
+    ) -> IndividualPropertyUpdates:
+        if patient_details.age_years > 5 and "early_other_adult_ca_symptom" in symptoms:
+            event = HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom(
+                person_id=patient_id,
+                module=self,
+            )
+            self.healthsystem.schedule_hsi_event(event, priority=0, topen=self.sim.date)
 
 
 # ---------------------------------------------------------------------------------------------------------

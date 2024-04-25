@@ -5,20 +5,26 @@ Limitations to note:
 * Needs to represent the the DxTest 'cytoscopy_blood_urine_bladder_cancer' requires use of a cytoscope
 * Footprints of HSI -- pending input from expert on resources required.
 """
+from __future__ import annotations
 
 from pathlib import Path
+from typing import TYPE_CHECKING, List
 
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import IndividualPropertyUpdates
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
-from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.symptommanager import Symptom
+
+if TYPE_CHECKING:
+    from tlo.population import PatientDetails
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -581,6 +587,32 @@ class BladderCancer(Module):
         ] = self.daly_wts['metastatic_palliative_care']
 
         return disability_series_for_alive_persons
+
+    def do_at_generic_first_appt(
+        self,
+        patient_id: int,
+        patient_details: PatientDetails,
+        symptoms: List[str],
+        **kwargs,
+    ) -> IndividualPropertyUpdates:
+        # Only investigate if the patient is not a child
+        if patient_details.age_years > 5:
+            # Begin investigation if symptoms are present.
+            if "blood_urine" in symptoms:
+                event = HSI_BladderCancer_Investigation_Following_Blood_Urine(
+                    person_id=patient_id, module=self
+                )
+                self.healthsystem.schedule_hsi_event(
+                    event, topen=self.sim.date, priority=0
+                )
+
+            if "pelvic_pain" in symptoms:
+                event = HSI_BladderCancer_Investigation_Following_pelvic_pain(
+                    person_id=patient_id, module=self
+                )
+                self.healthsystem.schedule_hsi_event(
+                    event, topen=self.sim.date, priority=0
+                )
 
 
 # ---------------------------------------------------------------------------------------------------------

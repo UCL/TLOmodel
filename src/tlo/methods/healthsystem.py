@@ -1,12 +1,13 @@
 import datetime
 import heapq as hp
 import itertools
+import re
 import warnings
 from collections import Counter, defaultdict
 from collections.abc import Iterable
 from itertools import repeat
 from pathlib import Path
-from typing import Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import Dict, List, NamedTuple, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -26,15 +27,20 @@ from tlo.methods.consumables import (
     get_item_codes_from_package_name,
 )
 from tlo.methods.dxmanager import DxManager
+from tlo.methods.hsi_event import (
+    LABEL_FOR_MERGED_FACILITY_LEVELS_1B_AND_2,
+    FacilityInfo,
+    HSI_Event,
+    HSIEventDetails,
+    HSIEventQueueItem,
+    HSIEventWrapper,
+)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 logger_summary = logging.getLogger(f"{__name__}.summary")
 logger_summary.setLevel(logging.INFO)
-
-# Declare the level which will be used to represent the merging of levels '1b' and '2'
-LABEL_FOR_MERGED_FACILITY_LEVELS_1B_AND_2 = '2'
 
 # Declare the assumption for the availability of consumables at the merged levels '1b' and '2'. This can be a
 #  list of facility_levels over which an average is taken (within a district): e.g. ['1b', '2'].
@@ -44,13 +50,6 @@ AVAILABILITY_OF_CONSUMABLES_AT_MERGED_LEVELS_1B_AND_2 = ['1b']  # <-- Implies th
 #                                                                     those of '2' and have more overall capacity, so
 #                                                                     probably account for the majority of the
 #                                                                     interactions.
-
-
-def adjust_facility_level_to_merge_1b_and_2(level: str) -> str:
-    """Adjust the facility level of an HSI_Event so that HSI_Events scheduled at level '1b' and '2' are both directed
-    to level '2'"""
-    return level if level not in ('1b', '2') else LABEL_FOR_MERGED_FACILITY_LEVELS_1B_AND_2
-
 
 def pool_capabilities_at_levels_1b_and_2(df_original: pd.DataFrame) -> pd.DataFrame:
     """Return a modified version of the imported capabilities DataFrame to reflect that the capabilities of level 1b
@@ -104,340 +103,10 @@ def pool_capabilities_at_levels_1b_and_2(df_original: pd.DataFrame) -> pd.DataFr
     return df_updated
 
 
-class FacilityInfo(NamedTuple):
-    """Information about a specific health facility."""
-    id: int
-    name: str
-    level: str
-    region: str
-
-
 class AppointmentSubunit(NamedTuple):
     """Component of an appointment relating to a specific officer type."""
     officer_type: str
     time_taken: float
-
-
-class HSIEventDetails(NamedTuple):
-    """Non-target specific details of a health system interaction event."""
-    event_name: str
-    module_name: str
-    treatment_id: str
-    facility_level: Optional[str]
-    appt_footprint: Tuple[Tuple[str, int]]
-    beddays_footprint: Tuple[Tuple[str, int]]
-
-
-class HSIEventQueueItem(NamedTuple):
-    """Properties of event added to health system queue.
-
-    The order of the attributes in the tuple is important as the queue sorting is done
-    by the order of the items in the tuple, i.e. first by `priority`, then `topen` and
-    so on.
-
-    Ensure priority is above topen in order for held-over events with low priority not
-    to jump ahead higher priority ones which were opened later.
-    """
-    priority: int
-    topen: Date
-    rand_queue_counter: int  # Ensure order of events with same topen & priority is not model-dependent
-    queue_counter: int  # Include safety tie-breaker in unlikely event rand_queue_counter is equal
-    tclose: Date
-    # Define HSI_Event type as string to avoid NameError exception as HSI_Event defined
-    # later in module (see https://stackoverflow.com/a/36286947/4798943)
-    hsi_event: 'HSI_Event'
-
-
-class HSI_Event:
-    """Base HSI event class, from which all others inherit.
-
-    Concrete subclasses should also inherit from one of the EventMixin classes
-    defined below, and implement at least an `apply` and `did_not_run` method.
-    """
-
-    def __init__(self, module, *args, **kwargs):
-        """Create a new event.
-
-        Note that just creating an event does not schedule it to happen; that
-        must be done by calling Simulation.schedule_event.
-
-        :param module: the module that created this event.
-            All subclasses of Event take this as the first argument in their
-            constructor, but may also take further keyword arguments.
-        """
-        self.module = module
-        self.sim = module.sim
-        self.target = None  # Overwritten by the mixin
-        super().__init__(*args, **kwargs)  # Call the mixin's constructors
-
-        # Defaults for the HSI information:
-        self.TREATMENT_ID = ''
-        # self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})  # HSI needs this property, but it is not defined
-        #                                                                 in the Base class to allow overwriting with a
-        #                                                                 property function.
-        self.ACCEPTED_FACILITY_LEVEL = None
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({})
-
-        # Information received about this HSI:
-        self._received_info_about_bed_days = None
-        self.expected_time_requests = {}
-        self.facility_info = None
-
-    @property
-    def bed_days_allocated_to_this_event(self):
-        if self._received_info_about_bed_days is None:
-            # default to the footprint if no information about bed-days is received
-            return self.BEDDAYS_FOOTPRINT
-
-        return self._received_info_about_bed_days
-
-    def apply(self, squeeze_factor=0.0, *args, **kwargs):
-        """Apply this event to the population.
-
-        Must be implemented by subclasses.
-
-        """
-        raise NotImplementedError
-
-    def did_not_run(self, *args, **kwargs):
-        """Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
-        to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.
-        """
-        logger.debug(key="message", data=f"{self.__class__.__name__}: did not run.")
-        return True
-
-    def never_ran(self):
-        """Called when this event is was entered to the HSI Event Queue, but was never run.
-        """
-        logger.debug(key="message", data=f"{self.__class__.__name__}: was never run.")
-
-    def post_apply_hook(self):
-        """Impose the bed-days footprint (if target of the HSI is a person_id)"""
-        if isinstance(self.target, int):
-            self.module.sim.modules['HealthSystem'].bed_days.impose_beddays_footprint(
-                person_id=self.target,
-                footprint=self.bed_days_allocated_to_this_event
-            )
-
-    def run(self, squeeze_factor):
-        """Make the event happen."""
-        updated_appt_footprint = self.apply(self.target, squeeze_factor)
-        self.post_apply_hook()
-        return updated_appt_footprint
-
-    def get_consumables(self,
-                        item_codes: Union[None, np.integer, int, list, set, dict] = None,
-                        optional_item_codes: Union[None, np.integer, int, list, set, dict] = None,
-                        to_log: Optional[bool] = True,
-                        return_individual_results: Optional[bool] = False
-                        ) -> Union[bool, dict]:
-        """Function to allow for getting and checking of entire set of consumables. All requests for consumables should
-        use this function.
-        :param item_codes: The item code(s) (and quantities) of the consumables that are requested and which determine
-        the summary result for availability/non-availability. This can be an `int` (the item_code needed [assume
-        quantity=1]), a `list` or `set` (the collection  of item_codes [for each assuming quantity=1]), or a `dict`
-        (with key:value pairs `<item_code>:<quantity>`).
-        :param optional_item_codes: The item code(s) (and quantities) of the consumables that are requested and which do
-         not determine the summary result for availability/non-availability. (Same format as `item_codes`). This is
-         useful when a large set of items may be used, but the viability of a subsequent operation depends only on a
-         subset.
-        :param return_individual_results: If True returns a `dict` giving the availability of each item_code requested
-        (otherwise gives a `bool` indicating if all the item_codes requested are available).
-        :param to_log: If True, logs the request.
-        :returns A `bool` indicating whether every item is available, or a `dict` indicating the availability of each
-         item.
-        Note that disease module can use the `get_item_codes_from_package_name` and `get_item_code_from_item_name`
-         methods in the `HealthSystem` module to find item_codes.
-        """
-
-        def _return_item_codes_in_dict(item_codes: Union[None, np.integer, int, list, set, dict]) -> dict:
-            """Convert an argument for 'item_codes` (provided as int, list, set or dict) into the format
-            dict(<item_code>:quantity)."""
-
-            if item_codes is None:
-                return {}
-
-            if isinstance(item_codes, (int, np.integer)):
-                return {int(item_codes): 1}
-
-            elif isinstance(item_codes, list):
-                if not all([isinstance(i, (int, np.integer)) for i in item_codes]):
-                    raise ValueError("item_codes must be integers")
-                return {int(i): 1 for i in item_codes}
-
-            elif isinstance(item_codes, dict):
-                if not all(
-                    [(isinstance(code, (int, np.integer)) and
-                      isinstance(quantity, (float, np.floating, int, np.integer)))
-                     for code, quantity in item_codes.items()]
-                ):
-                    raise ValueError("item_codes must be integers and quantities must be integers or floats.")
-                return {int(i): float(q) for i, q in item_codes.items()}
-
-            else:
-                raise ValueError("The item_codes are given in an unrecognised format")
-
-        hs_module = self.sim.modules['HealthSystem']
-
-        _item_codes = _return_item_codes_in_dict(item_codes)
-        _optional_item_codes = _return_item_codes_in_dict(optional_item_codes)
-
-        # Determine if the request should be logged (over-ride argument provided if HealthSystem is disabled).
-        _to_log = to_log if not hs_module.disable else False
-
-        # Checking the availability and logging:
-        rtn = hs_module.consumables._request_consumables(item_codes={**_item_codes, **_optional_item_codes},
-                                                         to_log=_to_log,
-                                                         facility_info=self.facility_info,
-                                                         treatment_id=self.TREATMENT_ID)
-
-        # Return result in expected format:
-        if not return_individual_results:
-            # Determine if all results for all the `item_codes` are True (discarding results from optional_item_codes).
-            return all(v for k, v in rtn.items() if k in _item_codes)
-        else:
-            return rtn
-
-    def make_beddays_footprint(self, dict_of_beddays):
-        """Helper function to make a correctly-formed 'bed-days footprint'"""
-
-        # get blank footprint
-        footprint = self.sim.modules['HealthSystem'].bed_days.get_blank_beddays_footprint()
-
-        # do checks on the dict_of_beddays provided.
-        assert isinstance(dict_of_beddays, dict)
-        assert all((k in footprint.keys()) for k in dict_of_beddays.keys())
-        assert all(isinstance(v, (float, int)) for v in dict_of_beddays.values())
-
-        # make footprint (defaulting to zero where a type of bed-days is not specified)
-        for k, v in dict_of_beddays.items():
-            footprint[k] = v
-
-        return footprint
-
-    def is_all_beddays_allocated(self):
-        """Check if the entire footprint requested is allocated"""
-        return all(
-            self.bed_days_allocated_to_this_event[k] == self.BEDDAYS_FOOTPRINT[k] for k in self.BEDDAYS_FOOTPRINT
-        )
-
-    def make_appt_footprint(self, dict_of_appts):
-        """Helper function to make appointment footprint in format expected downstream.
-
-        Should be passed a dictionary keyed by appointment type codes with non-negative
-        values.
-        """
-        health_system = self.sim.modules['HealthSystem']
-        if health_system.appt_footprint_is_valid(dict_of_appts):
-            return Counter(dict_of_appts)
-
-        raise ValueError(
-            "Argument to make_appt_footprint should be a dictionary keyed by "
-            "appointment type code strings in Appt_Types_Table with non-negative "
-            "values"
-        )
-
-    def initialise(self):
-        """Initialise the HSI:
-        * Set the facility_info
-        * Compute appt-footprint time requirements
-        """
-        health_system = self.sim.modules['HealthSystem']
-
-        # Over-write ACCEPTED_FACILITY_LEVEL to to redirect all '1b' appointments to '2'
-        self.ACCEPTED_FACILITY_LEVEL = adjust_facility_level_to_merge_1b_and_2(self.ACCEPTED_FACILITY_LEVEL)
-
-        if not isinstance(self.target, tlo.population.Population):
-            self.facility_info = health_system.get_facility_info(self)
-
-            # If there are bed-days specified, add (if needed) the in-patient admission and in-patient day Appointment
-            # Types.
-            # (HSI that require a bed for one or more days always need such appointments, but this may have been
-            # missed in the declaration of the `EXPECTED_APPT_FOOTPRINT` in the HSI.)
-            # NB. The in-patient day Appointment time is automatically applied on subsequent days.
-            if sum(self.BEDDAYS_FOOTPRINT.values()):
-                self.EXPECTED_APPT_FOOTPRINT = health_system.bed_days.add_first_day_inpatient_appts_to_footprint(
-                    self.EXPECTED_APPT_FOOTPRINT)
-
-            # Write the time requirements for staff of the appointments to the HSI:
-            self.expected_time_requests = health_system.get_appt_footprint_as_time_request(
-                facility_info=self.facility_info,
-                appt_footprint=self.EXPECTED_APPT_FOOTPRINT,
-            )
-
-        # Do checks
-        _ = self._check_if_appt_footprint_can_run()
-
-    def _check_if_appt_footprint_can_run(self):
-        """Check that event (if individual level) is able to run with this configuration of officers (i.e. check that
-        this does not demand officers that are _never_ available), and issue warning if not."""
-        health_system = self.sim.modules['HealthSystem']
-        if not isinstance(self.target, tlo.population.Population):
-            if health_system._officers_with_availability.issuperset(self.expected_time_requests.keys()):
-                return True
-            else:
-                logger.warning(
-                    key="message",
-                    data=(f"The expected footprint of {self.TREATMENT_ID} is not possible with the configuration of "
-                          f"officers.")
-                )
-                return False
-
-    def as_namedtuple(
-        self, actual_appt_footprint: Optional[dict] = None
-    ) -> HSIEventDetails:
-        appt_footprint = (
-            getattr(self, 'EXPECTED_APPT_FOOTPRINT', {})
-            if actual_appt_footprint is None else actual_appt_footprint
-        )
-        return HSIEventDetails(
-            event_name=type(self).__name__,
-            module_name=type(self.module).__name__,
-            treatment_id=self.TREATMENT_ID,
-            facility_level=getattr(self, 'ACCEPTED_FACILITY_LEVEL', None),
-            appt_footprint=tuple(sorted(appt_footprint.items())),
-            beddays_footprint=tuple(
-                sorted((k, v) for k, v in self.BEDDAYS_FOOTPRINT.items() if v > 0)
-            )
-        )
-
-
-class HSIEventWrapper(Event):
-    """This is wrapper that contains an HSI event.
-
-    It is used:
-     1) When the healthsystem is in mode 'disabled=True' such that HSI events sent to the health system scheduler are
-     passed to the main simulation scheduler for running on the date of `topen`. (Note, it is run with
-     squeeze_factor=0.0.)
-     2) When the healthsytsem is in mode `diable_and_reject_all=True` such that HSI are not run but the `never_ran`
-     method is run on the date of `tclose`.
-     3) When an HSI has been submitted to `schedule_hsi_event` but the service is not available.
-    """
-
-    def __init__(self, hsi_event, run_hsi=True, *args, **kwargs):
-        super().__init__(hsi_event.module, *args, **kwargs)
-        self.hsi_event = hsi_event
-        self.target = hsi_event.target
-        self.run_hsi = run_hsi  # True to call the HSI's `run` method; False to call the HSI's `never_ran` method
-
-    def run(self):
-        """Do the appropriate action on the HSI event"""
-
-        # Check that the person is still alive (this check normally happens in the HealthSystemScheduler and silently
-        # do not run the HSI event)
-
-        if isinstance(self.hsi_event.target, tlo.population.Population) or (
-            self.hsi_event.module.sim.population.props.at[self.hsi_event.target, 'is_alive']
-        ):
-
-            if self.run_hsi:
-                # Run the event (with 0 squeeze_factor) and ignore the output
-                _ = self.hsi_event.run(squeeze_factor=0.0)
-            else:
-                self.hsi_event.module.sim.modules["HealthSystem"].call_and_record_never_ran_hsi_event(
-                      hsi_event=self.hsi_event,
-                      priority=-1
-                     )
 
 
 def _accepts_argument(function: callable, argument: str) -> bool:
@@ -533,35 +202,76 @@ class HealthSystem(Module):
         'policy_name': Parameter(
             Types.STRING, "Name of priority policy adopted"),
         'year_mode_switch': Parameter(
-            Types.INT, "Year in which mode switch in enforced"),
-
+            Types.INT, "Year in which mode switch is enforced"),
+        'year_cons_availability_switch': Parameter(
+            Types.INT, "Year in which consumable availability switch is enforced. The change happens"
+                       "on 1st January of that year.)"),
         'priority_rank': Parameter(
             Types.DICT, "Data on the priority ranking of each of the Treatment_IDs to be adopted by "
                         " the queueing system under different policies, where the lower the number the higher"
                         " the priority, and on which categories of individuals classify for fast-tracking "
                         " for specific treatments"),
 
-        'const_HR_scaling_table': Parameter(
-            Types.DICT, "Factors by which capabilities of medical officer categories at different levels will be"
-                              "scaled at the start of the simulation to simulate a number of effects (e.g. absenteeism,"
-                              "boosting of specific medical cadres, etc). This is the imported from an"
-                              "Excel workbook: keys are the worksheet names and values are the worksheets in "
-                              "the format of pd.DataFrames."),
-
-        'const_HR_scaling_mode': Parameter(
-            Types.STRING, "Mode of HR scaling considered at the start of the simulation. Options are default"
-                          " (capabilities are scaled by a constaint factor of 1), data (factors informed by survey data),"
-                          "and custom (user can freely set these factors as parameters in the analysis).",
+        'HR_scaling_by_level_and_officer_type_table': Parameter(
+            Types.DICT, "Factors by which capabilities of medical officer types at different levels will be"
+                        "scaled at the start of the year specified by `year_HR_scaling_by_level_and_officer_type`. This"
+                        "serves to simulate a number of effects (e.g. absenteeism, boosting capabilities of specific "
+                        "medical cadres, etc). This is the imported from an Excel workbook: keys are the worksheet "
+                        "names and values are the worksheets in the format of pd.DataFrames. Additional scenarios can "
+                        "be added by adding worksheets to this workbook: the value of "
+                        "`HR_scaling_by_level_and_officer_type_mode` indicates which sheet is used."
         ),
 
-        'dynamic_HR_scaling_factor': Parameter(
-            Types.REAL, "Factor by which HR capabilities are scaled at regular intervals of 1 year (in addition to the"
-                        " [optional] scaling with population size (controlled by `scale_HR_by_popsize`"
+        'year_HR_scaling_by_level_and_officer_type': Parameter(
+            Types.INT, "Year in which one-off constant HR scaling will take place. (The change happens"
+                       "on 1st January of that year.)"
         ),
 
-        'scale_HR_by_popsize': Parameter(
-            Types.BOOL, "Decide whether to scale HR capabilities by population size every year. Can be used as well as"
-                        " the dynamic_HR_scaling_factor"
+        'HR_scaling_by_level_and_officer_type_mode': Parameter(
+            Types.STRING, "Mode of HR scaling considered at the start of the simulation. This corresponds to the name"
+                          "of the worksheet in `ResourceFile_HR_scaling_by_level_and_officer_type.xlsx` that should be"
+                          " used. Options are: `default` (capabilities are scaled by a constaint factor of 1); `data` "
+                          "(factors informed by survey data); and, `custom` (user can freely set these factors as "
+                          "parameters in the analysis).",
+        ),
+
+        'HR_scaling_by_district_table': Parameter(
+            Types.DICT, "Factors by which daily capabilities in different districts will be"
+                        "scaled at the start of the year specified by year_HR_scaling_by_district to simulate"
+                        "(e.g., through catastrophic event disrupting delivery of services in particular district(s))."
+                        "This is the import of an Excel workbook: keys are the worksheet names and values are the "
+                        "worksheets in the format of pd.DataFrames. Additional scenarios can be added by adding "
+                        "worksheets to this workbook: the value of `HR_scaling_by_district_mode` indicates which"
+                        "sheet is used."
+        ),
+
+        'year_HR_scaling_by_district': Parameter(
+            Types.INT, "Year in which scaling of daily capabilities by district will take place. (The change happens"
+                       "on 1st January of that year.)"),
+
+        'HR_scaling_by_district_mode': Parameter(
+            Types.STRING, "Mode of scaling of daily capabilities by district. This corresponds to the name of the "
+                          "worksheet in the file `ResourceFile_HR_scaling_by_district.xlsx`."
+        ),
+
+        'yearly_HR_scaling': Parameter(
+            Types.DICT, "Factors by which HR capabilities are scaled. "
+                        "Each sheet specifies a 'mode' for dynamic HR scaling. The mode to use is determined by the "
+                        "parameter `yearly_HR_scaling_mode`. Each sheet must have the same format, including the same "
+                        "column headers. On each sheet, the first row (for `2010`, when the simulation starts) "
+                        "specifies the initial configuration: `dynamic_HR_scaling_factor` (float) is the factor by "
+                        "which all human resoucres capabilities and multiplied; `scale_HR_by_popsize` (bool) specifies "
+                        "whether the capabilities should (also) grow by the factor by which the population has grown in"
+                        " the last year. Each subsequent row specifies a year where there should be a CHANGE in the "
+                        "configuration. If there are no further rows, then there is no change. But, for example, an"
+                        " additional row of the form ```2015, 1.05, TRUE``` would mean that on 1st January of 2015, "
+                        "2016, 2017, ....(and the rest of the simulation), the capabilities would increase by the "
+                        "product of 1.05 and by the ratio of the population size to that in the year previous."
+        ),
+
+        'yearly_HR_scaling_mode': Parameter(
+            Types.STRING, "Specifies which of the policies in yearly_HR_scaling should be adopted. This corresponds to"
+                          "a worksheet of the file `ResourceFile_dynamic_HR_scaling.xlsx`."
         ),
 
         'tclose_overwrite': Parameter(
@@ -580,7 +290,10 @@ class HealthSystem(Module):
                        ' to the module initialiser.',
         ),
         'mode_appt_constraints_postSwitch': Parameter(
-            Types.INT, 'Mode considered after a mode switch in year_mode_switch.')
+            Types.INT, 'Mode considered after a mode switch in year_mode_switch.'),
+        'cons_availability_postSwitch': Parameter(
+            Types.STRING, 'Consumables availability after switch in `year_cons_availability_switch`. Acceptable values'
+                          'are the same as those for Parameter `cons_availability`.')
     }
 
     PROPERTIES = {
@@ -684,6 +397,7 @@ class HealthSystem(Module):
                                        'VerticalProgrammes', 'ClinicallyVulnerable', 'EHP_III',
                                        'LCOA_EHP']
         self.arg_policy_name = policy_name
+
 
         self.tclose_overwrite = None
         self.tclose_days_offset_overwrite = None
@@ -817,21 +531,51 @@ class HealthSystem(Module):
                                                          'ResourceFile_PriorityRanking_ALLPOLICIES.xlsx',
                                                          sheet_name=None)
 
-        self.parameters['const_HR_scaling_table']: Dict = pd.read_excel(
+        self.parameters['HR_scaling_by_level_and_officer_type_table']: Dict = pd.read_excel(
             path_to_resourcefiles_for_healthsystem /
             "human_resources" /
-            "const_HR_scaling" /
-            "ResourceFile_const_HR_scaling.xlsx",
+            "scaling_capabilities" /
+            "ResourceFile_HR_scaling_by_level_and_officer_type.xlsx",
             sheet_name=None  # all sheets read in
         )
+        # Ensure the mode of HR scaling to be considered in included in the tables loaded
+        assert (self.parameters['HR_scaling_by_level_and_officer_type_mode'] in
+                self.parameters['HR_scaling_by_level_and_officer_type_table']), \
+            (f"Value of `HR_scaling_by_level_and_officer_type_mode` not recognised: "
+             f"{self.parameters['HR_scaling_by_level_and_officer_type_mode']}")
+
+        self.parameters['HR_scaling_by_district_table']: Dict = pd.read_excel(
+            path_to_resourcefiles_for_healthsystem /
+            "human_resources" /
+            "scaling_capabilities" /
+            "ResourceFile_HR_scaling_by_district.xlsx",
+            sheet_name=None  # all sheets read in
+        )
+        # Ensure the mode of HR scaling by district to be considered in included in the tables loaded
+        assert self.parameters['HR_scaling_by_district_mode'] in self.parameters['HR_scaling_by_district_table'], \
+            f"Value of `HR_scaling_by_district_mode` not recognised: {self.parameters['HR_scaling_by_district_mode']}"
+
+        self.parameters['yearly_HR_scaling']: Dict = pd.read_excel(
+            path_to_resourcefiles_for_healthsystem /
+            "human_resources" /
+            "scaling_capabilities" /
+            "ResourceFile_dynamic_HR_scaling.xlsx",
+            sheet_name=None,  # all sheets read in
+            dtype={
+                'year': int,
+                'dynamic_HR_scaling_factor': float,
+                'scale_HR_by_popsize': bool
+            }  # Ensure that these column are read as the right type
+        )
+        # Ensure the mode of yearly HR scaling to be considered in included in the tables loaded
+        assert self.parameters['yearly_HR_scaling_mode'] in self.parameters['yearly_HR_scaling'], \
+            f"Value of `yearly_HR_scaling` not recognised: {self.parameters['yearly_HR_scaling_mode']}"
+        # Ensure that a value for the year at the start of the simulation is provided.
+        assert all(2010 in sheet['year'].values for sheet in self.parameters['yearly_HR_scaling'].values())
 
 
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
-
-        # Ensure the mode of HR scaling to be considered in included in the tables loaded
-        assert self.parameters['const_HR_scaling_mode'] in self.parameters['const_HR_scaling_table'], \
-            f"Value of `const_HR_scaling_mode` not recognised: {self.parameters['const_HR_scaling_mode']}"
 
         # Create dedicated RNGs for separate functions done by the HealthSystem module
         self.rng_for_hsi_queue = np.random.RandomState(self.rng.randint(2 ** 31 - 1))
@@ -914,10 +658,31 @@ class HealthSystem(Module):
         sim.schedule_event(HealthSystemChangeMode(self),
                            Date(self.parameters["year_mode_switch"], 1, 1))
 
-        # Schedule recurring event which will rescale daily capabilities at regular intervals.
-        # The first event scheduled will only be used to update self.last_year_pop_size parameter,
-        # actual scaling will only take effect from 2011 onwards
-        sim.schedule_event(DynamicRescalingHRCapabilities(self), Date(sim.date) + pd.DateOffset(years=1))
+        # Schedule a consumables availability switch
+        sim.schedule_event(
+            HealthSystemChangeParameters(
+                self,
+                parameters={
+                    'cons_availability': self.parameters['cons_availability_postSwitch']
+                }
+            ),
+            Date(self.parameters["year_cons_availability_switch"], 1, 1)
+        )
+
+        # Schedule a one-off rescaling of _daily_capabilities broken down by officer type and level.
+        # This occurs on 1st January of the year specified in the parameters.
+        sim.schedule_event(ConstantRescalingHRCapabilities(self),
+                           Date(self.parameters["year_HR_scaling_by_level_and_officer_type"], 1, 1))
+
+        # Schedule a one-off rescaling of _daily_capabilities broken down by district
+        # This occurs on 1st January of the year specified in the parameters.
+        sim.schedule_event(RescaleHRCapabilities_ByDistrict(self),
+                           Date(self.parameters["year_HR_scaling_by_district"], 1, 1))
+
+        # Schedule recurring event which will rescale daily capabilities (at yearly intervals).
+        # The first event scheduled for the start of the simulation is only used to update self.last_year_pop_size,
+        # whilst the actual scaling will only take effect from 2011 onwards.
+        sim.schedule_event(DynamicRescalingHRCapabilities(self), Date(sim.date))
 
     def on_birth(self, mother_id, child_id):
         self.bed_days.on_birth(self.sim.population.props, mother_id, child_id)
@@ -1076,28 +841,6 @@ class HealthSystem(Module):
         # never available.)
         self._officers_with_availability = set(self._daily_capabilities.index[self._daily_capabilities > 0])
 
-    def adjust_for_const_HR_scaling(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Adjust the Daily_Capabilities pd.DataFrame to account for assumptions about scaling of HR resources"""
-
-        # Get the set of scaling_factors that are specified by the 'const_HR_scaling_mode' assumption
-        const_HR_scaling_factor = self.parameters['const_HR_scaling_table'][self.parameters['const_HR_scaling_mode']]
-        const_HR_scaling_factor = const_HR_scaling_factor.set_index('Officer_Category')
-
-        level_conversion = {"1a": "L1a_Av_Mins_Per_Day", "1b": "L1b_Av_Mins_Per_Day",
-                            "2": "L2_Av_Mins_Per_Day", "0": "L0_Av_Mins_Per_Day", "3": "L3_Av_Mins_Per_Day",
-                            "4": "L4_Av_Mins_Per_Day", "5": "L5_Av_Mins_Per_Day"}
-
-        scaler = df[['Officer_Category', 'Facility_Level']].apply(
-            lambda row: const_HR_scaling_factor.loc[row['Officer_Category'], level_conversion[row['Facility_Level']]],
-            axis=1
-        )
-
-        # Apply scaling to 'Total_Mins_Per_Day'
-        df['Total_Mins_Per_Day'] *= scaler
-
-        return df
-
-
     def format_daily_capabilities(self, use_funded_or_actual_staffing: str) -> pd.Series:
         """
         This will updates the dataframe for the self.parameters['Daily_Capabilities'] so as to include
@@ -1111,9 +854,7 @@ class HealthSystem(Module):
 
         # Get the capabilities data imported (according to the specified underlying assumptions).
         capabilities = pool_capabilities_at_levels_1b_and_2(
-            self.adjust_for_const_HR_scaling(
                 self.parameters[f'Daily_Capabilities_{use_funded_or_actual_staffing}']
-            )
         )
         capabilities = capabilities.rename(columns={'Officer_Category': 'Officer_Type_Code'})  # neaten
 
@@ -2861,8 +2602,13 @@ class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
     """ This event exists to scale the daily capabilities assumed at fixed time intervals"""
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(years=1))
-        self.last_year_pop_size = self.current_pop_size  # store population size at initiation (when this class is
-        #                                                  created)
+        self.last_year_pop_size = self.current_pop_size  # will store population size at initiation (when this class is
+        #                                                  created, at the start of the simulation)
+
+        # Store the sequence of updates as a dict of the form
+        #   {<year_of_change>: {`dynamic_HR_scaling_factor`: float, `scale_HR_by_popsize`: bool}}
+        self.scaling_values = self.module.parameters['yearly_HR_scaling'][
+            self.module.parameters['yearly_HR_scaling_mode']].set_index("year").to_dict("index")
 
     @property
     def current_pop_size(self) -> float:
@@ -2870,18 +2616,79 @@ class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
         df = self.sim.population.props
         return df.is_alive.sum()
 
-    def apply(self, population):
+    def _get_most_recent_year_specified_for_a_change_in_configuration(self) -> int:
+        """Get the most recent year (in the past), for which there is an entry in `parameters['yearly_HR_scaling']`."""
+        years = np.array(list(self.scaling_values.keys()))
+        return years[years <= self.sim.date.year].max()
 
+    def apply(self, population):
+        """Do the scaling on the capabilities based on instruction that is in force at this time."""
+        # Get current population size
         this_year_pop_size = self.current_pop_size
 
-        # Rescale by fixed amount
-        self.module._daily_capabilities *= self.module.parameters['dynamic_HR_scaling_factor']
+        # Get the configuration to apply now (the latest entry in the `parameters['yearly_HR_scaling']`)
+        config = self.scaling_values.get(self._get_most_recent_year_specified_for_a_change_in_configuration())
 
-        # Rescale daily capabilities by population size, if this option is included
-        if self.module.parameters['scale_HR_by_popsize']:
-            self.module._daily_capabilities *= this_year_pop_size/self.last_year_pop_size
+        # ... Do the rescaling specified for this year by the specified factor
+        self.module._daily_capabilities *= config['dynamic_HR_scaling_factor']
 
-        self.last_year_pop_size = this_year_pop_size   # Save for next year
+        # ... If requested, also do the scaling for the population growth that has occurred since the last year
+        if config['scale_HR_by_popsize']:
+            self.module._daily_capabilities *= this_year_pop_size / self.last_year_pop_size
+
+        # Save current population size as that for 'last year'.
+        self.last_year_pop_size = this_year_pop_size
+
+
+class ConstantRescalingHRCapabilities(Event, PopulationScopeEventMixin):
+    """ This event exists to scale the daily capabilities, with a factor for each Officer Type at each Facility_Level.
+    """
+    def __init__(self, module):
+        super().__init__(module)
+
+    def apply(self, population):
+
+        # Get the set of scaling_factors that are specified by the 'HR_scaling_by_level_and_officer_type_mode'
+        # assumption
+        HR_scaling_by_level_and_officer_type_factor = (
+            self.module.parameters['HR_scaling_by_level_and_officer_type_table'][
+                self.module.parameters['HR_scaling_by_level_and_officer_type_mode']
+            ].set_index('Officer_Category')
+        )
+
+        pattern = r"FacilityID_(\w+)_Officer_(\w+)"
+
+        for officer in self.module._daily_capabilities.keys():
+            matches = re.match(pattern, officer)
+            # Extract ID and officer type from
+            facility_id = int(matches.group(1))
+            officer_type = matches.group(2)
+            level = self.module._facility_by_facility_id[facility_id].level
+            self.module._daily_capabilities[officer] *= \
+                HR_scaling_by_level_and_officer_type_factor.at[officer_type, f"L{level}_factor"]
+
+
+class RescaleHRCapabilities_ByDistrict(Event, PopulationScopeEventMixin):
+    """ This event exists to scale the daily capabilities, with a factor for each district."""
+    def __init__(self, module):
+        super().__init__(module)
+
+    def apply(self, population):
+
+        # Get the set of scaling_factors that are specified by the 'HR_scaling_by_level_and_officer_type_mode' assumption
+        HR_scaling_factor_by_district = self.module.parameters['HR_scaling_by_district_table'][
+            self.module.parameters['HR_scaling_by_district_mode']
+        ].set_index('District').to_dict()
+
+        pattern = r"FacilityID_(\w+)_Officer_(\w+)"
+
+        for officer in self.module._daily_capabilities.keys():
+            matches = re.match(pattern, officer)
+            # Extract ID and officer type from
+            facility_id = int(matches.group(1))
+            district = self.module._facility_by_facility_id[facility_id].district
+            if district in HR_scaling_factor_by_district:
+                self.module._daily_capabilities[officer] *= HR_scaling_factor_by_district[district]
 
 
 class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):

@@ -48,7 +48,7 @@ Contents
    aims
    writeups
    data_sources
-   readme
+   getting_started
    azure_batch
    reference/index
    resources/index

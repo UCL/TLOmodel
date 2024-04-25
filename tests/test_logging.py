@@ -137,7 +137,7 @@ class TestStructuredLogging:
 
 
 class TestConvertLogData:
-    def setup(self):
+    def setup_method(self):
         self.expected_output = {'item_1': 1, 'item_2': 2}
         self.logger = logging.getLogger('tlo.test.logger')
 

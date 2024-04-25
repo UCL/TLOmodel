@@ -4,20 +4,26 @@ Breast Cancer Disease Module
 Limitations to note:
 * Footprints of HSI -- pending input from expert on resources required.
 """
+from __future__ import annotations
 
 from pathlib import Path
+from typing import TYPE_CHECKING, List
 
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import IndividualPropertyUpdates
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
-from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.symptommanager import Symptom
+
+if TYPE_CHECKING:
+    from tlo.population import PatientDetails
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -558,6 +564,22 @@ class BreastCancer(Module):
             ] = self.daly_wts['stage4_palliative_care']
 
         return disability_series_for_alive_persons
+
+    def do_at_generic_first_appt(
+        self,
+        patient_id: int,
+        patient_details: PatientDetails,
+        symptoms: List[str],
+        **kwargs,
+    ) -> IndividualPropertyUpdates:
+        # If the patient is not a child and symptoms include breast
+        # lump discernible
+        if patient_details.age_years > 5 and "breast_lump_discernible" in symptoms:
+            event = HSI_BreastCancer_Investigation_Following_breast_lump_discernible(
+                person_id=patient_id,
+                module=self,
+            )
+            self.healthsystem.schedule_hsi_event(event, topen=self.sim.date, priority=0)
 
 
 # ---------------------------------------------------------------------------------------------------------

@@ -1,19 +1,26 @@
 """
 This is the Depression Module.
 """
+from __future__ import annotations
+
 from pathlib import Path
+from typing import TYPE_CHECKING, List, Optional
 
 import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import DiagnosisFunction, IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
-from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.symptommanager import Symptom
+
+if TYPE_CHECKING:
+    from tlo.population import PatientDetails
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -138,6 +145,8 @@ class Depression(Module):
 
         'rr_depr_agege60': Parameter(Types.REAL, 'Relative rate of depression associated with age > 60'),
 
+        'rr_depr_hiv': Parameter(Types.REAL, 'Relative rate of depression associated with HIV infection'),
+
         'depr_resolution_rates': Parameter(
             Types.LIST,
             'Risk of depression resolving in 3 months if no chronic conditions and no treatments.'
@@ -220,11 +229,13 @@ class Depression(Module):
         )
         p = self.parameters
 
-        # Build the Linear Models:
+        # Build the Linear Models
+
+        # ----- Initialisation of population -----
         self.linearModels = dict()
-        self.linearModels['Depression_At_Population_Initialisation'] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            self.parameters['init_pr_depr_m_age1519_no_cc_wealth123'],
+
+        # risk of depression in initial population
+        predictors = [
             Predictor('de_cc').when(True, p['init_rp_depr_cc']),
             Predictor('li_wealth').when('.isin([4,5])', p['init_rp_depr_wealth45']),
             Predictor().when('(sex=="F") & de_recently_pregnant', p['init_rp_depr_f_rec_preg']),
@@ -237,44 +248,63 @@ class Depression(Module):
             .when('.between(0, 14)', 0)
             .when('.between(15, 19)', 1.0)
             .when('.between(20, 59)', p['init_rp_depr_age2059'])
-            .when('>= 60', p['init_rp_depr_agege60'])
+            .when('>= 60', p['init_rp_depr_agege60']),
+        ]
+
+        conditional_predictors = [
+            Predictor().when(
+                'hv_inf & hv_diagnosed',
+                p["rr_depr_hiv"]),
+        ] if "Hiv" in self.sim.modules else []
+
+        self.linearModels["Depression_At_Population_Initialisation"] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            p['init_pr_depr_m_age1519_no_cc_wealth123'],
+            *(predictors + conditional_predictors)
         )
 
+        # risk of ever having depression in initial population
         self.linearModels['Depression_Ever_At_Population_Initialisation_Males'] = LinearModel.multiplicative(
             Predictor('age_years').apply(
                 lambda x: (x if x > 15 else 0) * self.parameters['init_rp_ever_depr_per_year_older_m']
             )
         )
 
+        # risk of ever having depression in initial population (female)
         self.linearModels['Depression_Ever_At_Population_Initialisation_Females'] = LinearModel.multiplicative(
             Predictor('age_years').apply(lambda x: (x if x > 15 else 0) * p['init_rp_ever_depr_per_year_older_f'])
         )
 
+        # risk of ever having diagnosed depression in initial population
         self.linearModels['Depression_Ever_Diagnosed_At_Population_Initialisation'] = LinearModel.multiplicative(
             Predictor('de_ever_depr').when(True, p['init_pr_ever_diagnosed_depression'])
                                      .otherwise(0.0)
         )
 
+        # risk of currently using anti-depressants in initial population
         self.linearModels['Using_AntiDepressants_Initialisation'] = LinearModel.multiplicative(
             Predictor('de_depr').when(True, p['init_pr_antidepr_curr_depr']),
             Predictor().when('~de_depr & de_ever_diagnosed_depression', p['init_rp_antidepr_ever_depr_not_curr'])
         )
 
+        # risk of ever having talking therapy in initial population
         self.linearModels['Ever_Talking_Therapy_Initialisation'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p['init_pr_ever_talking_therapy_if_diagnosed'],
             Predictor('de_ever_diagnosed_depression').when(False, 0)
         )
 
+        # risk of ever having self-harmed in initial population
         self.linearModels['Ever_Self_Harmed_Initialisation'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p['init_pr_ever_self_harmed_if_ever_depr'],
             Predictor('de_ever_depr').when(False, 0)
         )
 
-        self.linearModels['Risk_of_Depression_Onset_per3mo'] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            p['base_3m_prob_depr'],
+        # ----- Recurring events -----
+
+        # risk of depression every 3 months
+        predictors = [
             Predictor('de_cc').when(True, p['rr_depr_cc']),
             Predictor('age_years', conditions_are_mutually_exclusive=True)
             .when('.between(0, 14)', 0)
@@ -284,9 +314,26 @@ class Depression(Module):
             Predictor('sex').when('F', p['rr_depr_female']),
             Predictor('de_recently_pregnant').when(True, p['rr_depr_pregnancy']),
             Predictor('de_ever_depr').when(True, p['rr_depr_prev_epis']),
-            Predictor('de_on_antidepr').when(True, p['rr_depr_on_antidepr'])
+            Predictor('de_on_antidepr').when(True, p['rr_depr_on_antidepr']),
+        ]
+
+        conditional_predictors = [
+            Predictor('hv_inf').when(True, p['rr_depr_hiv']),
+        ] if "Hiv" in self.sim.modules else []
+
+        conditional_predictors = [
+            Predictor().when(
+                'hv_inf & hv_diagnosed',
+                p["rr_depr_hiv"]),
+        ] if "Hiv" in self.sim.modules else []
+
+        self.linearModels["Risk_of_Depression_Onset_per3mo"] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            p['base_3m_prob_depr'],
+            *(predictors + conditional_predictors)
         )
 
+        # risk of depression resolution every 3 months
         self.linearModels['Risk_of_Depression_Resolution_per3mo'] = LinearModel.multiplicative(
             Predictor('de_intrinsic_3mo_risk_of_depr_resolution').apply(lambda x: x),
             Predictor('de_cc').when(True, p['rr_resol_depr_cc']),
@@ -294,16 +341,19 @@ class Depression(Module):
             Predictor('de_ever_talk_ther').when(True, p['rr_resol_depr_current_talk_ther'])
         )
 
+        # risk of stopping anti-depressants every 3 months
         self.linearModels['Risk_of_Stopping_Antidepressants_per3mo'] = LinearModel.multiplicative(
             Predictor('de_depr').when(True, p['prob_3m_default_antidepr'])
                                 .when(False, p['prob_3m_stop_antidepr'])
         )
 
+        # risk of self-harm every 3 months
         self.linearModels['Risk_of_SelfHarm_per3mo'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p['prob_3m_selfharm_depr']
         )
 
+        # risk of suicide every 3 months
         self.linearModels['Risk_of_Suicide_per3mo'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p['prob_3m_suicide_depr_m'],
@@ -507,62 +557,139 @@ class Depression(Module):
 
         return av_daly_wt_last_month
 
-    def do_on_presentation_to_care(self, person_id, hsi_event):
-        """This member function is called when a person is in an HSI, and there may need to be screening for depression.
+    def _check_for_suspected_depression(
+        self, symptoms: List[str], treatment_id: str, has_even_been_diagnosed: bool
+    ):
         """
-        df = self.sim.population.props
-        if hsi_event.TREATMENT_ID == "FirstAttendance_NonEmergency":
-            if self.rng.rand() < self.parameters['pr_assessed_for_depression_in_generic_appt_level1']:
-                self.do_when_suspected_depression(person_id=person_id, hsi_event=hsi_event)
-
-        elif hsi_event.TREATMENT_ID == "FirstAttendance_Emergency":
-            symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
-            if 'Injuries_From_Self_Harm' in symptoms:
-                self.do_when_suspected_depression(person_id=person_id, hsi_event=hsi_event)
+        Returns True if any signs of depression are present, otherwise False.
+        
+        Raises an error if the treatment type cannot be identified.
+        """
+        if treatment_id == "FirstAttendance_NonEmergency":
+            if (
+                self.rng.rand()
+                < self.parameters["pr_assessed_for_depression_in_generic_appt_level1"]
+            ):
+                return True
+        elif treatment_id == "FirstAttendance_Emergency":
+            if "Injuries_From_Self_Harm" in symptoms:
+                return True
                 # TODO: Trigger surgical care for injuries.
-
-        elif hsi_event.TREATMENT_ID == "AntenatalCare_Outpatient":  # module care_of_women_during_pregnancy
-            if (not df.at[person_id, 'de_ever_diagnosed_depression']) and (
-                self.rng.rand() < self.parameters['pr_assessed_for_depression_for_perinatal_female']
-            ):
-                self.do_when_suspected_depression(person_id, hsi_event)
-
-        elif hsi_event.TREATMENT_ID == "PostnatalCare_Maternal":  # module labour
-            if (not df.at[person_id, 'de_ever_diagnosed_depression']) and (
-                self.rng.rand() < self.parameters['pr_assessed_for_depression_for_perinatal_female']
-            ):
-                self.do_when_suspected_depression(person_id=person_id, hsi_event=hsi_event)
-
+        elif treatment_id == "AntenatalCare_Outpatient":
+            if (not has_even_been_diagnosed) and (
+                self.rng.rand()
+                < self.parameters["pr_assessed_for_depression_for_perinatal_female"]
+            ):  # module care_of_women_during_pregnancy
+                return True
+        elif treatment_id == "PostnatalCare_Maternal":
+            if (not has_even_been_diagnosed) and self.rng.rand() < self.parameters[
+                "pr_assessed_for_depression_for_perinatal_female"
+            ]:  # module labour
+                return True
         else:
             raise NotImplementedError
+        return False
 
-    def do_when_suspected_depression(self, person_id, hsi_event):
+    def do_on_presentation_to_care(self, person_id: int, hsi_event: HSI_Event):
         """
-        This is called by the a generic HSI event when depression is suspected or otherwise investigated.
-        :param person_id:
-        :param hsi_event: The HSI event that has called this event
-        :return:
+        This member function is called when a person is in an HSI,
+        and there may need to be screening for depression.
         """
+        if self._check_for_suspected_depression(
+            self.sim.modules["SymptomManager"].has_what(person_id),
+            hsi_event.TREATMENT_ID,
+            self.sim.population.props.at[person_id, "de_ever_diagnosed_depression"],
+        ):
+            patient_details_updates = self.do_when_suspected_depression(
+                person_id=person_id, hsi_event=hsi_event
+            )
+            self.sim.population.props.loc[person_id, patient_details_updates.keys()] = (
+                patient_details_updates.values()
+            )
+        return
+
+    def do_when_suspected_depression(
+        self,
+        person_id: int,
+        diagnosis_function: Optional[DiagnosisFunction] = None,
+        hsi_event: Optional[HSI_Event] = None,
+    ) -> IndividualPropertyUpdates:
+        """
+        This is called by any HSI event when depression is suspected or otherwise investigated.
+
+        At least one of the diagnosis_function or hsi_event arguments must be provided; if both 
+        are provided, the hsi_event argument is ignored.
+        - If the hsi_event argument is provided, that event is used to access the diagnosis
+        manager and run diagnosis tests.
+        - If the diagnosis_function is passed in directly, it is assumed to be a Callable method that
+        runs diagnosis tests.
+
+        :param person_id: Patient's row index in the population DataFrame.
+        :param diagnosis_function: A function capable of running diagnosis checks on the population.
+        :param hsi_event: The HSI_Event that triggered this call.
+        :returns: Values as per the output of do_at_generic_first_appt().
+        """
+        patient_details_updates = {}
+
+        if diagnosis_function is None:
+            assert isinstance(
+                hsi_event, HSI_Event
+            ), "No diagnosis test function, nor HSI_Event instance, supplied."
+
+            def diagnosis_function(tests, use_dict: bool = False, report_tried: bool = False):
+                return hsi_event.healthcare_system.dx_manager.run_dx_test(
+                    tests,
+                    hsi_event=hsi_event,
+                    use_dict_for_single=use_dict,
+                    report_dxtest_tried=report_tried,
+                )
 
         # Assess for depression and initiate treatments for depression if positive diagnosis
-        if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='assess_depression',
-                                                                   hsi_event=hsi_event
-                                                                   ):
+        if diagnosis_function('assess_depression'):
             # If depressed: diagnose the person with depression
-            self.sim.population.props.at[person_id, 'de_ever_diagnosed_depression'] = True
+            patient_details_updates['de_ever_diagnosed_depression'] = True
 
-            # Provide talking therapy (This can occur even if the person has already had talking therapy before)
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_Depression_TalkingTherapy(module=self, person_id=person_id),
-                priority=0,
-                topen=self.sim.date
+            scheduling_options = {"priority": 0, "topen": self.sim.date}
+            # Provide talking therapy
+            # (this can occur even if the person has already had talking therapy before)
+            self.healthsystem.schedule_hsi_event(
+                HSI_Depression_TalkingTherapy(module=self, person_id=person_id),
+                **scheduling_options,
+            )
+            # Initiate person on anti-depressants
+            # (at the same facility level as the HSI event that is calling)
+            self.healthsystem.schedule_hsi_event(
+                HSI_Depression_Start_Antidepressant(module=self, person_id=person_id),
+                **scheduling_options,
+            )
+        return patient_details_updates
+
+    def do_at_generic_first_appt(
+        self,
+        patient_details: PatientDetails,
+        **kwargs
+    ) -> IndividualPropertyUpdates:
+        if patient_details.age_years > 5:
+            return self.do_at_generic_first_appt_emergency(
+                patient_details=patient_details,
+                **kwargs,
             )
 
-            # Initiate person on anti-depressants (at the same facility level as the HSI event that is calling)
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_Depression_Start_Antidepressant(module=self, person_id=person_id),
-                priority=0,
-                topen=self.sim.date
+    def do_at_generic_first_appt_emergency(
+        self,
+        patient_id: int,
+        patient_details: PatientDetails,
+        symptoms: List[str],
+        diagnosis_function: DiagnosisFunction,
+        treatment_id: str,
+        **kwargs,
+    ) -> IndividualPropertyUpdates:
+        if self._check_for_suspected_depression(
+            symptoms, treatment_id, patient_details.de_ever_diagnosed_depression
+        ):
+            return self.do_when_suspected_depression(
+                person_id=patient_id,
+                diagnosis_function=diagnosis_function,
             )
 
 

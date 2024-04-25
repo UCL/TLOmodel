@@ -11,15 +11,15 @@ from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     demography,
     enhanced_lifestyle,
-    epi,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    hiv,
     malaria,
+    hiv,
+    tb,
     simplified_births,
     symptommanager,
-    tb,
+    epi,
 )
 
 t0 = time.time()
@@ -34,9 +34,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2016, 1, 1)
-popsize = 300
-
+end_date = Date(2014, 1, 1)
+popsize = 1000
 
 # set up the log config
 log_config = {
@@ -47,6 +46,7 @@ log_config = {
         "tlo.methods.demography": logging.INFO,
         "tlo.methods.malaria": logging.INFO,
         "tlo.methods.hiv": logging.INFO,
+        "tlo.methods.tb": logging.INFO,
         "tlo.methods.healthsystem.summary": logging.INFO,
     },
 }
@@ -84,6 +84,9 @@ sim.register(
     )
 )
 
+sim.modules["Hiv"].parameters["scenario"] = 0
+
+
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
@@ -96,6 +99,5 @@ with open(outputpath / "malaria_run.pickle", "wb") as f:
     # Pickle the 'data' dictionary using the highest protocol available.
     pickle.dump(dict(output), f, pickle.HIGHEST_PROTOCOL)
 
-# load the results
-with open(outputpath / "default_run.pickle", "rb") as f:
+with open(outputpath / "malaria_run.pickle", "rb") as f:
     output = pickle.load(f)
