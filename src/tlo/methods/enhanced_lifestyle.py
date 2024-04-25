@@ -1940,31 +1940,31 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             if _property in log_by_age_15up:
                 if _property in cat_by_rural_urban_props:
                     data = df.loc[df.is_alive & (df.age_years >= 15)].groupby(by=[
-                        'li_urban', 'sex', _property, 'age_range']).size()
+                        'li_urban', 'sex', _property, 'age_range'], observed=False).size()
                 else:
                     data = df.loc[df.is_alive & (df.age_years >= 15)].groupby(by=[
-                        'sex', _property, 'age_range']).size()
+                        'sex', _property, 'age_range'], observed=False).size()
 
             elif _property == 'li_in_ed':
                 data = df.loc[df.is_alive & df.age_years.between(5, 19)].groupby(by=[
-                    'sex', 'li_wealth', _property, 'age_years']).size()
+                    'sex', 'li_wealth', _property, 'age_years'], observed=False).size()
 
             elif _property == 'li_ed_lev':
                 data = df.loc[df.is_alive & df.age_years.between(15, 49)].groupby(by=[
-                    'sex', 'li_wealth', _property, 'age_years']).size()
+                    'sex', 'li_wealth', _property, 'age_years'], observed=False).size()
 
             elif _property == 'li_is_sexworker':
                 data = df.loc[df.is_alive & (df.age_years.between(15, 49))].groupby(by=[
-                    'sex', _property, 'age_range']).size()
+                    'sex', _property, 'age_range'], observed=False).size()
 
             elif _property in cat_by_rural_urban_props:
                 # log all properties that are also categorised by rural or urban in addition to ex and age groups
                 data = df.loc[df.is_alive].groupby(by=[
-                    'li_urban', 'sex', _property, 'age_range']).size()
+                    'li_urban', 'sex', _property, 'age_range'], observed=False).size()
 
             else:
                 # log all other remaining properties
-                data = df.loc[df.is_alive].groupby(by=['sex', _property, 'age_range']).size()
+                data = df.loc[df.is_alive].groupby(by=['sex', _property, 'age_range'], observed=False).size()
 
             # log data
             logger.info(

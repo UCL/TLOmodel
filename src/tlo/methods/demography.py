@@ -528,13 +528,13 @@ class Demography(Module):
         df_py.loc[condition, 'age_exact_start'] = 0
 
         # collected all time spent in age at start of period
-        df1 = df_py[['sex', 'years_in_age_start', 'age_years_start']].groupby(by=['sex', 'age_years_start']).sum()
+        df1 = df_py[['sex', 'years_in_age_start', 'age_years_start']].groupby(by=['sex', 'age_years_start'], observed=False).sum()
         df1 = df1.unstack('sex')
         df1.columns = df1.columns.droplevel(0)
         df1.index.rename('age_years', inplace=True)
 
         # collect all time spent in age at end of period
-        df2 = df_py[['sex', 'years_in_age_end', 'age_years_end']].groupby(by=['sex', 'age_years_end']).sum()
+        df2 = df_py[['sex', 'years_in_age_end', 'age_years_end']].groupby(by=['sex', 'age_years_end'], observed=False).sum()
         df2 = df2.unstack('sex')
         df2.columns = df2.columns.droplevel(0)
         df2.index.rename('age_years', inplace=True)
@@ -723,7 +723,7 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.module.popsize_by_year[self.sim.date.year] = df.is_alive.sum()
 
         # 2) Compute Statistics for the log
-        sex_count = df[df.is_alive].groupby('sex').size()
+        sex_count = df[df.is_alive].groupby('sex', observed=False).size()
 
         logger.info(
             key='population',
@@ -734,8 +734,8 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # (nb. if you groupby both sex and age_range, you weirdly lose categories where size==0, so
         # get the counts separately.)
-        m_age_counts = df[df.is_alive & (df.sex == 'M')].groupby('age_range').size()
-        f_age_counts = df[df.is_alive & (df.sex == 'F')].groupby('age_range').size()
+        m_age_counts = df[df.is_alive & (df.sex == 'M')].groupby('age_range', observed=False).size()
+        f_age_counts = df[df.is_alive & (df.sex == 'F')].groupby('age_range', observed=False).size()
 
         logger.info(key='age_range_m', data=m_age_counts.to_dict())
 
