@@ -418,9 +418,6 @@ def test_rescaling_capabilities_based_on_squeeze_factors(tmpdir, seed):
         }
     )
 
-    # Define the service availability
-    service_availability = ['*']
-
     # Register the core modules
     # Set the year in which mode is changed to start_date + 1 year, and mode after that still 1.
     # Check that in second year, squeeze factor is smaller on average.
@@ -428,7 +425,6 @@ def test_rescaling_capabilities_based_on_squeeze_factors(tmpdir, seed):
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           service_availability=service_availability,
                                            capabilities_coefficient=0.0000001,  # This will mean that capabilities are
                                                                                 # very close to 0 everywhere.
                                                                                 # (If the value was 0, then it would
@@ -437,14 +433,19 @@ def test_rescaling_capabilities_based_on_squeeze_factors(tmpdir, seed):
                                                                                 # which would mean the HSIs should not
                                                                                 # run (as opposed to running with
                                                                                 # a very high squeeze factor)).
-                                           year_mode_switch = start_date.year + 1,
-                                           scale_to_effective_capabilities = True,
-                                           mode_appt_constraints=1),
+                 ),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome()
                  )
+
+    # Define the "switch" from Mode 1 to Mode 1, with the rescaling
+    hs_params = sim.modules['HealthSystem'].parameters
+    hs_params['mode_appt_constraints'] = 1
+    hs_params['mode_appt_constraints_postSwitch'] = 1
+    hs_params['year_mode_switch'] = start_date.year + 1
+    hs_params['scale_to_effective_capabilities'] = True
 
     # Run the simulation
     sim.make_initial_population(n=popsize)
