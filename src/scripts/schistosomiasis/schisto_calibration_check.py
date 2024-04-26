@@ -95,10 +95,10 @@ dfs = construct_dfs(output['tlo.methods.schisto'])
 
 # %% Plot the district-level prevalence at the end of the simulation and compare with data
 
-def get_model_prevalence_by_district(spec: str):
-    """Get the prevalence of a particular species at end of 2010 (???) for a particular species. """
+def get_model_prevalence_by_district(spec: str, year: int):
+    """Get the prevalence of a particular species at end of 2010 (???) """
     _df = dfs[f'infection_status_{spec}']
-    t = _df.loc[_df.index.year == 2010].iloc[-1]
+    t = _df.loc[_df.index.year == year].iloc[-1]  # gets the last entry for 2010 (Dec)
     counts = t.unstack(level=1).groupby(level=0).sum().T
     return ((counts['High-infection'] + counts['Low-infection']) / counts.sum(axis=1)).to_dict()
 
@@ -112,13 +112,31 @@ def get_expected_prevalence_by_district(species: str):
     return expected_district_prevalence
 
 
+def get_model_prevalence_by_district_over_time(spec: str):
+    """Get the prevalence every year of the simulation """
+    _df = dfs[f'infection_status_{spec}']
+    # select the last entry for each year
+    df = _df.resample('Y').last()
+
+    # Aggregate the sums of infection statuses by district_of_residence and year
+    district_sums = df.groupby(level='district_of_residence', axis=1).sum()
+
+    filtered_columns = df.columns.get_level_values('infection_status').isin(['High-infection', 'Low-infection'])
+    infected = df.loc[:, filtered_columns].groupby(level='district_of_residence', axis=1).sum()
+
+    prop_infected = infected.div(district_sums)
+
+    return prop_infected
+
+# ----------- PLOTS -----------------
+
 # Districts with prevalence fitted
 fig, axes = plt.subplots(1, 2, sharey=True)
 for i, _spec in enumerate(species):
     ax = axes[i]
     pd.DataFrame(data={
         'Data': get_expected_prevalence_by_district(_spec),
-        'Model': get_model_prevalence_by_district(_spec)}
+        'Model': get_model_prevalence_by_district(_spec, year=2010)}
     ).loc[fitted_districts].plot.bar(ax=ax)
     ax.set_title(f"{_spec}")
     ax.set_xlabel('District (Fitted)')
@@ -129,13 +147,13 @@ fig.tight_layout()
 # fig.savefig(make_graph_file_name('prev_in_districts_all'))
 fig.show()
 
-# All Districts
+# All Districts - model prev and data prev, one year
 fig, axes = plt.subplots(1, 2, sharey=True)
 for i, _spec in enumerate(species):
     ax = axes[i]
     pd.DataFrame(data={
         'Data': get_expected_prevalence_by_district(_spec),
-        'Model': get_model_prevalence_by_district(_spec)}
+        'Model': get_model_prevalence_by_district(_spec, year=2010)}
     ).plot(ax=ax)
     ax.set_title(f"{_spec}")
     ax.set_xlabel('District (All)')
@@ -144,6 +162,28 @@ for i, _spec in enumerate(species):
     ax.legend(loc=1)
 fig.tight_layout()
 # fig.savefig(make_graph_file_name('prev_in_districts_fitted'))
+fig.show()
+
+
+# All Districts = prevalence by year
+fig, axes = plt.subplots(1, 2, sharey=True)
+for i, _spec in enumerate(species):
+    ax = axes[i]
+    data = get_model_prevalence_by_district_over_time(_spec)
+    data.plot(ax=ax)
+    ax.set_title(f"{_spec}")
+    ax.set_xlabel('')
+    ax.set_ylabel('End of year prevalence')
+    ax.set_ylim(0, 1.00)
+    ax.get_legend().remove()
+
+    # Plot legend only for the last subplot
+    # if i == len(species) -1:
+    #     handles, labels = ax.get_legend_handles_labels()  # Get handles and labels for legend
+    #     ax.legend(handles, labels, bbox_to_anchor =(1.44,-0.10), loc='lower right')
+
+fig.tight_layout()
+# fig.savefig(make_graph_file_name('annual_prev_in_districts'))
 fig.show()
 
 

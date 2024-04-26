@@ -76,9 +76,6 @@ class Schisto(Module):
         'PZQ_efficacy': Parameter(Types.REAL,
                                   'The efficacy of Praziquantel in clearing burden of any Schistosomiasis '
                                   'worm species'),
-        'harbouring_rate': Parameter(Types.REAL,
-                                     'habouring rate (k) specifies the degree of aggregation of worms within'
-                                     'the individual. Gamma distribution with shape parameter k'),
         'MDA_coverage_historical': Parameter(Types.DATA_FRAME,
                                              'Probability of getting PZQ in the MDA for PSAC, SAC and Adults '
                                              'in historic rounds'),
@@ -228,7 +225,12 @@ class Schisto(Module):
 
         # Set properties to be not-infected (any species), and zero-out all worm burden information.
         for spec_prefix in [_spec.prefix for _spec in self.species.values()]:
-            df.loc[person_id, f'{self.module_prefix}_{spec_prefix}_aggregate_worm_burden'] = 0
+            # todo PZQ_efficacy
+            pzq_efficacy = self.parameters[f'PZQ_efficacy_{spec_prefix}']
+            # df.loc[person_id, f'{self.module_prefix}_{spec_prefix}_aggregate_worm_burden'] = 0
+            df.loc[person_id, f'{self.module_prefix}_{spec_prefix}_aggregate_worm_burden'] = df.loc[
+                                                                                                 person_id, f'{self.module_prefix}_{spec_prefix}_aggregate_worm_burden'] * (
+                                                                                                 1 - pzq_efficacy)
             df.loc[person_id, f'{self.module_prefix}_{spec_prefix}_infection_status'] = 'Non-infected'
             # df.loc[person_id, f'{self.module_prefix}_{spec_prefix}_start_of_prevalent_period'] = pd.NaT
             # df.loc[person_id, f'{self.module_prefix}_{spec_prefix}_start_of_high_infection'] = pd.NaT
@@ -245,8 +247,7 @@ class Schisto(Module):
                             'delay_till_hsi_b_repeated',
                             'prob_sent_to_lab_test_children',
                             'prob_sent_to_lab_test_adults',
-                            'PZQ_efficacy',
-                            'harbouring_rate',
+            # 'PZQ_efficacy',
                             ):
             parameters[_param_name] = float(param_list[_param_name])
 
@@ -366,7 +367,6 @@ class SchistoSpecies:
             # 'delay_a': Parameter(Types.REAL, 'End of the latent period in days, start'),
             # 'delay_b': Parameter(Types.REAL, 'End of the latent period in days, end'),
             # 'symptoms': Parameter(Types.LIST, 'Symptoms of the schistosomiasis infection, dependent on the module'),
-            'R0': Parameter(Types.REAL, 'Effective reproduction number, for the FOI'),
             'beta_PSAC': Parameter(Types.REAL, 'Contact/exposure rate of PSAC'),
             'beta_SAC': Parameter(Types.REAL, 'Contact/exposure rate of SAC'),
             'beta_Adults': Parameter(Types.REAL, 'Contact/exposure rate of Adults'),
@@ -378,11 +378,13 @@ class SchistoSpecies:
                                                  'Threshold of worm burden indicating low intensity infection'),
             'high_intensity_threshold_PSAC': Parameter(Types.REAL,
                                                        'Worm burden threshold for high intensity infection in PSAC'),
+            'PZQ_efficacy': Parameter(Types.REAL,
+                                      ' Efficacy of praziquantel in reducing worm burden'),
             'reservoir_2010': Parameter(Types.DATA_FRAME,
                                         'Initial reservoir of infectious material per district in 2010'),
             'prop_susceptible': Parameter(Types.DATA_FRAME,
                                           'Proportion of population in each district susceptible to schisto infection'),
-            # 'gamma_alpha': Parameter(Types.DATA_FRAME, 'Parameter alpha for Gamma distribution for harbouring rates'),
+            'gamma_alpha': Parameter(Types.DATA_FRAME, 'Parameter alpha for Gamma distribution for harbouring rates'),
         }
         return {self._prefix_species_parameter(k): v for k, v in params.items()}
 
@@ -394,8 +396,10 @@ class SchistoSpecies:
                 categories=['Non-infected', 'Low-infection', 'High-infection']),
             'aggregate_worm_burden': Property(
                 Types.INT, 'Number of mature worms of this species in the individual'),
-            # 'harbouring_rate': Property(
-            #     Types.REAL, 'Rate of harbouring new worms of this species (Poisson), drawn from gamma distribution'),
+            'susceptibility': Property(
+                Types.INT, 'Binary value 0,1 denoting whether person is susceptible or not'),
+            'harbouring_rate': Property(
+                Types.REAL, 'Rate of harbouring new worms of this species (Poisson), drawn from gamma distribution'),
         }
         return {self.prefix_species_property(k): v for k, v in properties.items()}
 
@@ -428,15 +432,17 @@ class SchistoSpecies:
                             'worms_fecundity',
                             'high_intensity_threshold',
                             'low_intensity_threshold',
-                            'high_intensity_threshold_PSAC'
+                            'high_intensity_threshold_PSAC',
+                            'PZQ_efficacy'
                             ):
             parameters[_param_name] = param_list[f'{_param_name}_{self.name}']
 
-        # Baseline reservoir size and other district-related params (alpha and R0)
+        # Baseline reservoir size and other district-related params (R0, proportion susceptible)
         schisto_initial_reservoir = workbook[f'District_Params_{self.name}'].set_index("District")
         parameters['reservoir_2010'] = schisto_initial_reservoir['Reservoir']
-        parameters['gamma_alpha'] = schisto_initial_reservoir['alpha_value']
-        parameters['R0'] = schisto_initial_reservoir['R0_value']
+        parameters['R0'] = schisto_initial_reservoir['R0']
+        parameters['gamma_alpha'] = schisto_initial_reservoir['gamma_alpha']
+        parameters['prop_susceptible'] = schisto_initial_reservoir['prop_susceptible']
 
         # Symptoms (prevalence of each type of symptom)
         symptoms_df = workbook['Symptoms']
@@ -467,6 +473,9 @@ class SchistoSpecies:
 
         # assign initial worm burden
         self._assign_initial_worm_burden(population)
+
+        # assign whether person susceptible to infection
+        self._assign_susceptibility(population)
 
     def initialise_simulation(self, sim):
         """
@@ -611,6 +620,23 @@ class SchistoSpecies:
             hr = params['gamma_alpha'][district]
             df.loc[in_the_district, prop('harbouring_rate')] = rng.gamma(hr, size=len(in_the_district))
 
+    # todo - also do this on_birth
+    # todo add property susceptible
+    def _assign_susceptibility(self, population) -> None:
+        """Assign susceptibility to every individual in the initial population (based on their district of
+        residence)."""
+        df = population.props
+        prop = self.prefix_species_property
+        params = self.params
+        districts = self.schisto_module.districts
+        rng = self.schisto_module.rng
+
+        for district in districts:
+            in_the_district = df.index[df['district_of_residence'] == district]
+            susceptibility = params['prop_susceptible'][district]
+            # assign 0 and 1 to each person in the district based on the district proportion susceptible
+            df.loc[in_the_district, prop('susceptibility')] = rng.binomial(n=1, p=susceptibility, size=len(in_the_district))
+
     def _assign_initial_worm_burden(self, population) -> None:
         """Assign initial distribution of worms to each person (based on district and age-group)."""
         df = population.props
@@ -718,8 +744,8 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
         # mean_count_burden_district_age_group = df.loc[where].groupby(['district_of_residence', age_group])[
         #     prop('aggregate_worm_burden')].agg([np.mean, np.size])
         mean_count_burden_district_age_group = \
-        df.loc[where].groupby(['district_of_residence', age_group], observed=False)[
-            prop('aggregate_worm_burden')].agg(['mean', 'size'])
+            df.loc[where].groupby(['district_of_residence', age_group], observed=False)[
+                prop('aggregate_worm_burden')].agg(['mean', 'size'])
 
         # get population size by district
         district_count = df.loc[where].groupby(by='district_of_residence', observed=False)[
