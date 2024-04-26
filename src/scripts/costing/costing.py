@@ -8,6 +8,7 @@ import datetime
 import os
 
 import matplotlib.pyplot as plt
+from matplotlib.ticker import FuncFormatter
 import numpy as np
 import pandas as pd
 
@@ -32,7 +33,8 @@ print('Script Start', datetime.datetime.now().strftime('%H:%M'))
 
 # define a pathway to the data folder (note: currently outside the TLO model directory)
 # remember to set working directory to TLOmodel/
-outputfilepath = Path('./outputs/sakshi.mohan@york.ac.uk')
+#outputfilepath = Path('./outputs/sakshi.mohan@york.ac.uk')
+outputfilepath = Path('./outputs/tbh03@ic.ac.uk')
 resourcefilepath = Path("./resources")
 path_for_new_resourcefiles = resourcefilepath / "healthsystem/consumables"
 costing_outputs_folder = Path('./outputs/costing')
@@ -47,7 +49,9 @@ def drop_outside_period(_df):
 
 # %% Gathering basic information
 # Find results_folder associated with a given batch_file and get most recent
-results_folder = get_scenario_outputs('example_costing_scenario.py', outputfilepath)[0] # impact_of_cons_regression_scenarios
+#results_folder = get_scenario_outputs('example_costing_scenario.py', outputfilepath)[0] # impact_of_cons_regression_scenarios
+results_folder = get_scenario_outputs('long_run_all_diseases.py', outputfilepath)[0] # impact_of_cons_regression_scenarios
+#results_folder = get_scenario_outputs('scenario_impact_of_consumables_availability.py', outputfilepath)[0] # impact_of_cons_regression_scenarios
 
 # look at one log (so can decide what to extract)
 log = load_pickled_dataframes(results_folder)
@@ -63,6 +67,7 @@ workbook_cost = pd.read_excel((resourcefilepath / "costing/ResourceFile_Costing.
                                     sheet_name = None)
 
 # 1. HR cost
+# TODO apply attrition rate to the cost calculation  https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9237893/#SP1
 # 1.1 HR Cost - Financial (Given the staff available)
 # Load annual salary by officer type and facility level
 hr_annual_salary = workbook_cost["human_resources"]
@@ -101,12 +106,18 @@ current_staff_count_by_level_and_officer_type['OfficerType_FacilityLevel'] = 'Of
 used_staff_count_by_level_and_officer_type = current_staff_count_by_level_and_officer_type[current_staff_count_by_level_and_officer_type['OfficerType_FacilityLevel'].isin(list_of_cadre_and_level_combinations_used)]
 
 # Calculate salary cost for modelled health workforce (Staff count X Annual salary)
+salary_for_all_staff = pd.merge(current_staff_count_by_level_and_officer_type[['OfficerType_FacilityLevel', 'Staff_Count']],
+                                     hr_annual_salary[['OfficerType_FacilityLevel', 'Salary_USD']], on = ['OfficerType_FacilityLevel'], how = "left")
+salary_for_all_staff['Total_salary_by_cadre_and_level'] = salary_for_all_staff['Salary_USD'] * salary_for_all_staff['Staff_Count']
+
+# Calculate salary cost for current total staff
 salary_for_modelled_staff = pd.merge(used_staff_count_by_level_and_officer_type[['OfficerType_FacilityLevel', 'Staff_Count']],
                                      hr_annual_salary[['OfficerType_FacilityLevel', 'Salary_USD']], on = ['OfficerType_FacilityLevel'], how = "left")
 salary_for_modelled_staff['Total_salary_by_cadre_and_level'] = salary_for_modelled_staff['Salary_USD'] * salary_for_modelled_staff['Staff_Count']
 
+
 # Create a dataframe to store financial costs
-scenario_cost_financial = pd.DataFrame({'HR': salary_for_modelled_staff['Total_salary_by_cadre_and_level'].sum()}, index=[0])
+scenario_cost_financial = pd.DataFrame({'HR': salary_for_all_staff['Total_salary_by_cadre_and_level'].sum()}, index=[0])
 
 # 1.2 HR Cost - Economic (Staff needed for interventions delivered in the simulation)
 # For HR required, multiply above with total capabilities X 'Frac_Time_Used_By_OfficerType' by facility level
@@ -128,13 +139,16 @@ scenario_cost_economic = pd.DataFrame({'HR': salary_for_required_staff['Total_sa
 
 # 2. Consumables cost
 # 2.1 Consumables cost - Financial (What needs to be purchased given what is dispensed)
-_df = log['tlo.methods.healthsystem']['Consumables']
+_df = log['tlo.methods.healthsystem.summary']['Consumables']
 
 counts_of_available = defaultdict(int)
 counts_of_not_available = defaultdict(int)
 for _, row in _df.iterrows():
-    for item, num in eval(row['Item_Available']).items():
+    for item, num in row['Item_Available'].items(): # if using 'tlo.methods.healthsystem' eval(row['Item_Available'])
         counts_of_available[item] += num
+
+counts_of_available = defaultdict(int, {int(key): value for key, value in counts_of_available.items()}) # Convert string keys to integer
+# for consistency with other dictionaries
 
 # Load consumables cost data
 unit_price_consumable = workbook_cost["consumables"]
@@ -164,7 +178,6 @@ total_consumables_inflow_during_the_year = df.loc[df.index.get_level_values('mon
                                          closing_bal_december.reset_index(level='month', drop=True)
 total_consumables_outflow_during_the_year  = df['dispensed'].groupby(level=[0,1,2,3]).sum()
 inflow_to_outflow_ratio = total_consumables_inflow_during_the_year.div(total_consumables_outflow_during_the_year, fill_value=1)
-inflow_to_outflow_ratio.to_dict()
 
 # Edit outlier ratios
 inflow_to_outflow_ratio.loc[inflow_to_outflow_ratio < 1] = 1 # Ratio can't be less than 1
@@ -174,6 +187,7 @@ average_inflow_to_outflow_ratio_ratio = inflow_to_outflow_ratio.mean()
 
 # Multiply number of items needed by cost of consumable
 inflow_to_outflow_ratio_by_consumable = inflow_to_outflow_ratio.groupby(level='item_code').mean()
+inflow_to_outflow_ratio_by_consumable = inflow_to_outflow_ratio_by_consumable.to_dict()
 # TODO Consider whether a more disaggregated version of the ratio dictionary should be applied
 cost_of_consumables_stocked = dict(zip(unit_price_consumable, (unit_price_consumable[key]['Final_price_per_chosen_unit (USD, 2023)'] *
                                                 counts_of_available[key] *
@@ -201,7 +215,7 @@ unit_cost_equipment['replacement_cost_annual'] = unit_cost_equipment.apply(lambd
 
 
 # 4. Facility running costs
-# Average running costs by facility level and district times the number of facilities in the simulation
+# Average running costs by facility level and district times the number of facilities  in the simulation
 
 # Explore the ratio of consumable inflows to outflows
 ######################################################
@@ -242,6 +256,7 @@ real_budget = [salary_budget_2018, consuambles_budget_2018]
 model_cost = [scenario_cost_financial['HR'][0], scenario_cost_financial['Consumables'][0]]
 labels = ['HR_salary', 'Consumables']
 
+plt.clf()
 plt.scatter(real_budget, model_cost)
 # Plot a line representing a 45-degree angle
 min_val = min(min(real_budget), min(model_cost))
@@ -254,7 +269,8 @@ plt.gca().xaxis.set_major_formatter(formatter)
 plt.gca().yaxis.set_major_formatter(formatter)
 # Add labels for each point
 hr_label = 'HR_salary ' + f'{round(model_cost[0] / real_budget[0], 2)}'
-plotlabels = [hr_label, 'Consumables']
+consumables_label = 'Consumables ' + f'{round(model_cost[1] / real_budget[1], 5)}'
+plotlabels = [hr_label, consumables_label]
 for i, txt in enumerate(plotlabels):
     plt.text(real_budget[i], model_cost[i], txt, ha='right')
 
@@ -272,10 +288,14 @@ plt.savefig(costing_outputs_folder /  'hr_time_need_economic_cost.png')
 
 # Plot salary costs by cadre and facility level
 # Group by cadre and level
-total_salary_by_cadre = salary_df.groupby('Officer_Category')['Total_salary_by_cadre_and_level'].sum()
-total_salary_by_level = salary_df.groupby('Facility_Level')['Total_salary_by_cadre_and_level'].sum()
+salary_for_all_staff[['Officer_Type', 'Facility_Level']] = salary_for_all_staff['OfficerType_FacilityLevel'].str.split('|', expand=True)
+salary_for_all_staff['Officer_Type'] = salary_for_all_staff['Officer_Type'].str.replace('Officer_Type=', '')
+salary_for_all_staff['Facility_Level'] = salary_for_all_staff['Facility_Level'].str.replace('Facility_Level=', '')
+total_salary_by_cadre = salary_for_all_staff.groupby('Officer_Type')['Total_salary_by_cadre_and_level'].sum()
+total_salary_by_level = salary_for_all_staff.groupby('Facility_Level')['Total_salary_by_cadre_and_level'].sum()
 
 # Plot by cadre
+plt.clf()
 total_salary_by_cadre.plot(kind='bar')
 plt.xlabel('Officer_category')
 plt.ylabel('Total Salary')
@@ -283,16 +303,12 @@ plt.title('Total Salary by Cadre')
 plt.savefig(costing_outputs_folder /  'total_salary_by_cadre.png')
 
 # Plot by level
+plt.clf()
 total_salary_by_level.plot(kind='bar')
 plt.xlabel('Facility_Level')
 plt.ylabel('Total Salary')
 plt.title('Total Salary by Facility_Level')
 plt.savefig(costing_outputs_folder /  'total_salary_by_level.png')
-
-# Consumables
-log['tlo.methods.healthsystem']['Consumables']
-# Aggregate Items_Available by Treatment_ID
-# Multiply by the cost per item (need to check quantity)
 
 '''
 # Scratch pad
