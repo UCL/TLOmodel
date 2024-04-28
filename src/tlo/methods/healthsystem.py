@@ -203,6 +203,10 @@ class HealthSystem(Module):
             Types.STRING, "Name of priority policy adopted"),
         'year_mode_switch': Parameter(
             Types.INT, "Year in which mode switch is enforced"),
+        'scale_to_effective_capabilities': Parameter(
+            Types.BOOL, "In year in which mode switch takes place, will rescale available capabilities to match those"
+                        "that were effectively used (on average) in the past year if this is set to True. This way,"
+                        "we can approximate overtime and rushing of appts even in mode 2."),
         'year_cons_availability_switch': Parameter(
             Types.INT, "Year in which consumable availability switch is enforced. The change happens"
                        "on 1st January of that year.)"),
@@ -907,6 +911,27 @@ class HealthSystem(Module):
 
         # return the pd.Series of `Total_Minutes_Per_Day' indexed for each type of officer at each facility
         return capabilities_ex['Total_Minutes_Per_Day']
+
+    def _rescale_capabilities_to_capture_effective_capability(self):
+        # Notice that capabilities will only be expanded through this process
+        # (i.e. won't reduce available capabilities if these were under-used in the last year).
+        # Note: Currently relying on module variable rather than parameter for
+        # scale_to_effective_capabilities, in order to facilitate testing. However
+        # this may eventually come into conflict with the Switcher functions.
+        pattern = r"FacilityID_(\w+)_Officer_(\w+)"
+        for officer in self._daily_capabilities.keys():
+            matches = re.match(pattern, officer)
+            # Extract ID and officer type from
+            facility_id = int(matches.group(1))
+            officer_type = matches.group(2)
+            level = self._facility_by_facility_id[facility_id].level
+            # Only rescale if rescaling factor is greater than 1 (i.e. don't reduce
+            # available capabilities if these were under-used the previous year).
+            rescaling_factor = self._summary_counter.frac_time_used_by_officer_type_and_level(
+                officer_type, level
+            )
+            if rescaling_factor > 1 and rescaling_factor != float("inf"):
+                self._daily_capabilities[officer] *= rescaling_factor
 
     def update_consumables_availability_to_represent_merging_of_levels_1b_and_2(self, df_original):
         """To represent that facility levels '1b' and '2' are merged together under the label '2', we replace the
@@ -1699,7 +1724,9 @@ class HealthSystem(Module):
                     description='daily summary of utilisation and capacity of health system resources')
 
         self._summary_counter.record_hs_status(
-            fraction_time_used_across_all_facilities=fraction_time_used_overall)
+            fraction_time_used_across_all_facilities=fraction_time_used_overall,
+            fraction_time_used_by_officer_type_and_level=summary_by_officer["Fraction_Time_Used"].to_dict()
+        )
 
     def remove_beddays_footprint(self, person_id):
         # removing bed_days from a particular individual if any
@@ -1785,6 +1812,11 @@ class HealthSystem(Module):
 
     def on_end_of_year(self) -> None:
         """Write to log the current states of the summary counters and reset them."""
+        # If we are at the end of the year preceeding the mode switch, and if wanted
+        # to rescale capabilities to capture effective availability as was recorded, on
+        # average, in the past year, do so here.
+        if (self.sim.date.year == self.parameters['year_mode_switch'] - 1) and self.parameters['scale_to_effective_capabilities']:
+            self._rescale_capabilities_to_capture_effective_capability()
         self._summary_counter.write_to_log_and_reset_counters()
         self.consumables.on_end_of_year()
         self.bed_days.on_end_of_year()
@@ -2473,6 +2505,8 @@ class HealthSystemSummaryCounter:
         self._never_ran_appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
 
         self._frac_time_used_overall = []  # Running record of the usage of the healthcare system
+        self._sum_of_daily_frac_time_used_by_officer_type_and_level = Counter()
+
         self._squeeze_factor_by_hsi_event_name = defaultdict(list)  # Running record the squeeze-factor applying to each
         #                                                           treatment_id. Key is of the form:
         #                                                           "<TREATMENT_ID>:<HSI_EVENT_NAME>"
@@ -2515,11 +2549,16 @@ class HealthSystemSummaryCounter:
             self._never_ran_appts[appt_type] += number
             self._never_ran_appts_by_level[level][appt_type] += number
 
-    def record_hs_status(self, fraction_time_used_across_all_facilities: float) -> None:
+    def record_hs_status(
+        self,
+        fraction_time_used_across_all_facilities: float,
+        fraction_time_used_by_officer_type_and_level: Dict[Tuple[str, int], float],
+    ) -> None:
         """Record a current status metric of the HealthSystem."""
-
         # The fraction of all healthcare worker time that is used:
         self._frac_time_used_overall.append(fraction_time_used_across_all_facilities)
+        for officer_type_facility_level, fraction_time in fraction_time_used_by_officer_type_and_level.items():
+            self._sum_of_daily_frac_time_used_by_officer_type_and_level[officer_type_facility_level] += fraction_time
 
     def write_to_log_and_reset_counters(self):
         """Log summary statistics reset the data structures."""
@@ -2562,6 +2601,14 @@ class HealthSystemSummaryCounter:
         )
 
         self._reset_internal_stores()
+
+    def frac_time_used_by_officer_type_and_level(self, officer_type, level):
+        """Average fraction of time used by officer type and level since last reset."""
+        # Use len(self._frac_time_used_overall) as proxy for number of days in past year.
+        return (
+            self._sum_of_daily_frac_time_used_by_officer_type_and_level[officer_type, level]
+            / len(self._frac_time_used_overall)
+        )
 
 
 class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
@@ -2675,7 +2722,7 @@ class RescaleHRCapabilities_ByDistrict(Event, PopulationScopeEventMixin):
 
     def apply(self, population):
 
-        # Get the set of scaling_factors that are specified by the 'HR_scaling_by_level_and_officer_type_mode' assumption
+        # Get the set of scaling_factors that are specified by 'HR_scaling_by_level_and_officer_type_mode'
         HR_scaling_factor_by_district = self.module.parameters['HR_scaling_by_district_table'][
             self.module.parameters['HR_scaling_by_district_mode']
         ].set_index('District').to_dict()
