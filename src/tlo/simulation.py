@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class Simulation:
+class _BaseSimulation:
     """The main control centre for a simulation.
 
     This class contains the core simulation logic and event queue, and holds
@@ -45,6 +45,10 @@ class Simulation:
         The simulation-level random number generator.
         Note that individual modules also have their own random number generator
         with independent state.
+    
+    The `step_through_events` method is implemented by the `Simulation` and
+    `ThreadedSimulation` classes, which controls how the simulation events are
+    fired.
     """
 
     modules: OrderedDict[str, Module]
@@ -69,6 +73,7 @@ class Simulation:
         self.population: Optional[Population] = None
 
         self.show_progress_bar = show_progress_bar
+        self.progress_bar = None
 
         # logging
         if log_config is None:
@@ -211,37 +216,18 @@ class Simulation:
         for module in self.modules.values():
             module.initialise_simulation(self)
 
-        progress_bar = None
         if self.show_progress_bar:
-            num_simulated_days = (end_date - self.start_date).days
-            progress_bar = ProgressBar(
+            num_simulated_days = (self.end_date - self.start_date).days
+            self.progress_bar = ProgressBar(
                 num_simulated_days, "Simulation progress", unit="day")
-            progress_bar.start()
+            self.progress_bar.start()
 
-        while self.event_queue:
-            event, date = self.event_queue.next_event()
-
-            if self.show_progress_bar:
-                simulation_day = (date - self.start_date).days
-                stats_dict = {
-                    "date": str(date.date()),
-                    "dataframe size": str(len(self.population.props)),
-                    "queued events": str(len(self.event_queue)),
-                }
-                if "HealthSystem" in self.modules:
-                    stats_dict["queued HSI events"] = str(
-                        len(self.modules["HealthSystem"].HSI_EVENT_QUEUE)
-                    )
-                progress_bar.update(simulation_day, stats_dict=stats_dict)
-
-            if date >= end_date:
-                self.date = end_date
-                break
-            self.fire_single_event(event, date)
+        # Run the simulation by firing events in the queue
+        self.step_through_events()
 
         # The simulation has ended.
         if self.show_progress_bar:
-            progress_bar.stop()
+            self.progress_bar.stop()
 
         for module in self.modules.values():
             module.on_simulation_end()
@@ -259,6 +245,17 @@ class Simulation:
             finally:
                 self.output_file.release()
 
+    def step_through_events(self) -> None:
+        """
+        Method for forward-propagating the simulation, by executing
+        the scheduled events in the queue. This is overwritten by
+        inheriting classes.
+        """
+        raise NotImplementedError(
+            f"{self.__name__} is not intended to be simulated, "
+            "use either Simulation or ThreadedSimulation to run a simulation."
+        )
+
     def schedule_event(self, event, date):
         """Schedule an event to happen on the given future date.
 
@@ -274,15 +271,6 @@ class Simulation:
         assert isinstance(event, Event)
 
         self.event_queue.schedule(event=event, date=date)
-
-    def fire_single_event(self, event, date):
-        """Fires the event once for the given date
-
-        :param event: :py:class:`Event` to fire
-        :param date: the date of the event
-        """
-        self.date = date
-        event.run()
 
     def do_birth(self, mother_id):
         """Create a new child person.
@@ -313,6 +301,23 @@ class Simulation:
                     person_events.append((date, event))
 
         return person_events
+
+    def update_progress_bar(self, new_date: Date):
+        """
+        Updates the simulation's progress bar, if this is in use.
+        """
+        if self.show_progress_bar:
+            simulation_day = (new_date - self.start_date).days
+            stats_dict = {
+                "date": str(new_date.date()),
+                "dataframe size": str(len(self.population.props)),
+                "queued events": str(len(self.event_queue)),
+            }
+            if "HealthSystem" in self.modules:
+                stats_dict["queued HSI events"] = str(
+                    len(self.modules["HealthSystem"].HSI_EVENT_QUEUE)
+                )
+            self.progress_bar.update(simulation_day, stats_dict=stats_dict)
 
 
 class EventQueue:
@@ -346,3 +351,35 @@ class EventQueue:
     def __len__(self):
         """:return: the length of the queue"""
         return len(self.queue)
+
+
+class Simulation(_BaseSimulation):
+    """
+    Default simulation type, which runs a serial simulation.
+    Events in the event_queue are executed in sequence, one
+    after the other, in the order they appear in the queue.
+
+    See `_BaseSimulation` for more details.
+    """
+
+    def step_through_events(self) -> None:
+        """Serial simulation: events are executed in the
+        order they occur in the queue."""
+        while self.event_queue:
+            event, date = self.event_queue.next_event()
+
+            self.update_progress_bar(date)
+
+            if date >= self.end_date:
+                self.date = self.end_date
+                break
+            self.fire_single_event(event, date)
+
+    def fire_single_event(self, event, date):
+        """Fires the event once for the given date
+
+        :param event: :py:class:`Event` to fire
+        :param date: the date of the event
+        """
+        self.date = date
+        event.run()

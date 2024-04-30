@@ -4,7 +4,7 @@ from typing import Callable, List
 from queue import Queue
 from warnings import warn
 
-from tlo import Simulation
+from tlo.simulation import _BaseSimulation
 from tlo.events import Event, IndividualScopeEventMixin
 
 MAX_THREADS = 4 # make more elegant, probably examine the OS
@@ -88,14 +88,22 @@ class ThreadController:
             thread.start()
 
 
-class ThreadedSimulation(Simulation):
+class ThreadedSimulation(_BaseSimulation):
     """
-    Class for running threaded simulations. WIP.
+    Class for running threaded simulations. Events in the queue that can
+    be executed in parallel are delegated to a worker pool, to be executed
+    when resources become available.
 
-    - No logging support
-    - No progress bar
+    Certain events cannot be executed in parallel threads safely (notably
+    population-level events, but also events that attempt to advance time).
+    When encountering such events, all workers complete the remaining
+    "thread-safe" events before the unsafe event is triggered.
 
-    NOTE: Re-implementing the simulate() method is the easiest way to overwrite for the purposes of PoC. Later, we can refactor a base simulation class and from there have two separate simulate methods in alternative subclasses.
+    Progress bar for threaded simulations only advances when time advances,
+    and statistics do not dynamically update as each event is fired.
+
+    TODO: Prints to actually using the logger
+    TODO: Prints to include the worker thread they were spit out from
     """
     # Tracks the job queue that will be dispatched to worker threads
     _worker_queue: Queue
@@ -177,18 +185,7 @@ class ThreadedSimulation(Simulation):
             return True
         return False
 
-    def simulate(self, *, end_date):
-        """Simulate until the given end date, utilising threads to process events
-        that can be run simultaneously.
-
-        :param end_date: when to stop simulating. Only events strictly before this 
-        date will be allowed to occur. Must be given as a keyword parameter for clarity.
-        """
-        self.end_date = end_date
-
-        for module in self.modules.values():
-            module.initialise_simulation(self)
-
+    def step_through_events(self) -> None:
         # Start the threads
         self.thread_controller.start_all()
 
@@ -204,15 +201,14 @@ class ThreadedSimulation(Simulation):
             # event from the previous date but may still call sim.date
             # to get the "current" time, which would then be out-of-sync.
             elif date != self.date:
-                print("MAIN THREAD: Waiting to advance time...", flush=True, end="")
                 # This event moves time forward, wait until all jobs
                 # from the current day have finished before advancing time
                 self.wait_for_workers()
                 # All jobs from the previous day have ended.
                 # Advance time and continue.
                 self.date = date
-                print("done")
-            
+                self.update_progress_bar(self.date)
+
             # Next, determine if the event to be run can be delegated to the
             # worker pool.
             if self.event_must_run_in_main_thread(event):
@@ -231,20 +227,6 @@ class ThreadedSimulation(Simulation):
         # still need time to process them all!
         self.wait_for_workers()
         print("MAIN THREAD: Simulation has now ended, worker queue empty.")
-
-        for module in self.modules.values():
-            module.on_simulation_end()
-
-        # From Python logging.shutdown
-        if self.output_file:
-            try:
-                self.output_file.acquire()
-                self.output_file.flush()
-                self.output_file.close()
-            except (OSError, ValueError):
-                pass
-            finally:
-                self.output_file.release()
 
     def wait_for_workers(self) -> None:
         """
