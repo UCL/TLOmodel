@@ -200,9 +200,9 @@ class ThreadedSimulation(_BaseSimulation):
             # the worker queue. Otherwise, a worker might be running an
             # event from the previous date but may still call sim.date
             # to get the "current" time, which would then be out-of-sync.
-            elif date != self.date:
+            elif date > self.date:
                 # This event moves time forward, wait until all jobs
-                # from the current day have finished before advancing time
+                # from the current date have finished before advancing time
                 self.wait_for_workers()
                 # All jobs from the previous day have ended.
                 # Advance time and continue.
@@ -212,13 +212,10 @@ class ThreadedSimulation(_BaseSimulation):
             # Next, determine if the event to be run can be delegated to the
             # worker pool.
             if self.event_must_run_in_main_thread(event):
-                print("MAIN THREAD: Waiting to run population level event...")
                 # Event needs all workers to finish, then to run in
                 # the main thread (this one)
                 self.wait_for_workers()
-                print("running", flush=True, end="...")
                 event.run()
-                print("done")
             else:
                 # This job can be delegated to the worker pool, and run safely
                 self._worker_queue.put(event)
@@ -226,7 +223,6 @@ class ThreadedSimulation(_BaseSimulation):
         # We may have exhausted all the events in the queue, but the workers will
         # still need time to process them all!
         self.wait_for_workers()
-        print("MAIN THREAD: Simulation has now ended, worker queue empty.")
 
     def wait_for_workers(self) -> None:
         """
