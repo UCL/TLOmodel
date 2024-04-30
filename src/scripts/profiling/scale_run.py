@@ -13,9 +13,9 @@ if TYPE_CHECKING:
 from shared import print_checksum, schedule_profile_log
 
 from tlo import Date, Simulation, logging
-from tlo.threaded_simulation import ThreadedSimulation
 from tlo.analysis.utils import parse_log_file as parse_log_file_fn
 from tlo.methods.fullmodel import fullmodel
+from tlo.threaded_simulation import ThreadedSimulation
 
 _TLO_ROOT: Path = Path(__file__).parents[3].resolve()
 _TLO_OUTPUT_DIR: Path = (_TLO_ROOT / "outputs").resolve()

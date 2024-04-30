@@ -1,11 +1,11 @@
+from queue import Queue
 from threading import Thread
 from time import sleep
 from typing import Callable, List
-from queue import Queue
 from warnings import warn
 
-from tlo.simulation import _BaseSimulation
 from tlo.events import Event, IndividualScopeEventMixin
+from tlo.simulation import _BaseSimulation
 
 MAX_THREADS = 4 # make more elegant, probably examine the OS
 

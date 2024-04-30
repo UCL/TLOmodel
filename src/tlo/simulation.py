@@ -51,6 +51,7 @@ class _BaseSimulation:
     fired.
     """
 
+    __name__: str = "_BaseSimulation"
     modules: OrderedDict[str, Module]
 
     def __init__(self, *, start_date: Date, seed: int = None, log_config: dict = None,
