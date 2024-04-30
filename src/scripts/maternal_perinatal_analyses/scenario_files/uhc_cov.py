@@ -38,7 +38,7 @@ class AllServicesIncreasedCoverage(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'all_serv_increased_250k', 'directory': './outputs',
+            'filename': 'all_serv_inc_cov_250k', 'directory': './outputs',
             "custom_levels": {
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
