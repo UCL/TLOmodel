@@ -13,6 +13,7 @@ if TYPE_CHECKING:
 from shared import print_checksum, schedule_profile_log
 
 from tlo import Date, Simulation, logging
+from tlo.threaded_simulation import ThreadedSimulation
 from tlo.analysis.utils import parse_log_file as parse_log_file_fn
 from tlo.methods.fullmodel import fullmodel
 
@@ -55,6 +56,7 @@ def scale_run(
     ignore_warnings: bool = False,
     log_final_population_checksum: bool = True,
     profiler: Optional["Profiler"] = None,
+    n_threads: Optional[int] = 0,
 ) -> Simulation:
     if ignore_warnings:
         warnings.filterwarnings("ignore")
@@ -74,12 +76,16 @@ def scale_run(
         "suppress_stdout": disable_log_output_to_stdout,
     }
 
-    sim = Simulation(
-        start_date=start_date,
-        seed=seed,
-        log_config=log_config,
-        show_progress_bar=show_progress_bar,
-    )
+    sim_args =  {
+        "start_date": start_date,
+        "seed": seed,
+        "log_config": log_config,
+        "show_progress_bar": show_progress_bar,
+    }
+    if n_threads:
+        sim = ThreadedSimulation(n_threads=n_threads, **sim_args)
+    else:
+        sim = Simulation(**sim_args)
 
     # Register the appropriate modules with the arguments passed through
     sim.register(
@@ -268,6 +274,12 @@ if __name__ == "__main__":
             "run and output to a JSON file 'hsi_event_details.json' in output directory."
         ),
         action="store_true",
+    )
+    parser.add_argument(
+        "--n-threads",
+        help="Run a threaded simulation using the given number of threaded workers",
+        type=int,
+        default=0,
     )
     args = parser.parse_args()
     args_dict = vars(args)
