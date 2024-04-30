@@ -26,7 +26,7 @@ from tlo.methods import (
 from tlo.scenario import BaseScenario
 
 
-class AllServicesIncreasedCoverageAndQual(BaseScenario):
+class AllServicesRemoved(BaseScenario):
     def __init__(self):
         super().__init__()
         self.seed = 661184
