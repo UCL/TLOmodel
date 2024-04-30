@@ -129,9 +129,6 @@ class ThreadedSimulation(_BaseSimulation):
         # Initialise as you would for any other simulation
         super().__init__(**kwargs)
 
-        # Progress bar currently not supported
-        self.show_progress_bar = False
-
         # Setup the thread controller
         self.thread_controller = ThreadController(n_threads=n_threads, name = "EventWorker-")
 
@@ -191,23 +188,23 @@ class ThreadedSimulation(_BaseSimulation):
 
         # Whilst the event queue is not empty
         while self.event_queue:
-            event, date = self.event_queue.next_event()
+            event, date_of_next_event = self.event_queue.next_event()
+            self.update_progress_bar(self.date)
 
             # If the simulation should end, escape
-            if date >= self.end_date:
+            if date_of_next_event >= self.end_date:
                 break
             # If we want to advance time, we need to ensure that
             # the worker queue. Otherwise, a worker might be running an
             # event from the previous date but may still call sim.date
             # to get the "current" time, which would then be out-of-sync.
-            elif date > self.date:
+            elif date_of_next_event > self.date:
                 # This event moves time forward, wait until all jobs
                 # from the current date have finished before advancing time
                 self.wait_for_workers()
                 # All jobs from the previous day have ended.
                 # Advance time and continue.
-                self.date = date
-                self.update_progress_bar(self.date)
+                self.date = date_of_next_event
 
             # Next, determine if the event to be run can be delegated to the
             # worker pool.
@@ -223,6 +220,7 @@ class ThreadedSimulation(_BaseSimulation):
         # We may have exhausted all the events in the queue, but the workers will
         # still need time to process them all!
         self.wait_for_workers()
+        self.update_progress_bar(date_of_next_event)
 
     def wait_for_workers(self) -> None:
         """
