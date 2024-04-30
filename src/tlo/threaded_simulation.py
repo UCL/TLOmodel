@@ -11,6 +11,17 @@ MAX_THREADS = 4 # make more elegant, probably examine the OS
 
 class ThreadController:
     """
+    Thread controllers serve an organisational role, and allow us to
+    keep track of threads that we create for debugging purposes.
+    They also provide convenient wrapper functions to batch start the
+    threads they control all at once, and will manage the teardown of
+    their own threads when this is ready.
+
+    Threads spawned by the controller are intended to form a "pool" of
+    workers that will routinely check a Queue object for tasks to
+    perform, and otherwise will be idle. Worker targets should be
+    functions that allow the thread access to the job queue, whilst
+    they persist.
     """
     _n_threads: int
     _thread_list: List[Thread]
@@ -26,6 +37,12 @@ class ThreadController:
 
     def __init__(self, n_threads: int = 1, name: str = "Worker") -> None:
         """
+        Create a new thread controller.
+
+        :param n_threads: Number of threads to be spawned, in addition to
+        the main thread.
+        :param name: Name to assign to worker threads that this controller
+        creates, for logging and internal ID purposes.
         """
         # Determine how many threads to use given the machine maximum,
         # and the user's request. Be sure to save one for the main thread!
@@ -48,6 +65,15 @@ class ThreadController:
         """
         Creates the threads that will be managed by this controller,
         and sets their targets.
+
+        Targets are not executed until the start_all method is called.
+
+        Targets are functions that take no arguments and return
+        no values. Workers will execute these functions - preserving
+        context and access of the functions that are passed in.
+        Passing in something like foo.bar will provide access to the
+        foo object and attempt to run the bar method on said object,
+        for example.
         """
         for i in range(self._n_threads):
             self._thread_list.append(
@@ -84,6 +110,14 @@ class ThreadedSimulation(Simulation):
     _individuals_currently_being_examined: set
 
     def __init__(self, n_threads: int = 1, **kwargs) -> None:
+        """
+        In addition to the usual simulation instantiation arguments,
+        threaded simulations must also be passed the number of
+        worker threads to be used.
+
+        :param n_threads: Number of threads to use - in addition to
+        the main thread - when running simulation events.
+        """
         # Initialise as you would for any other simulation
         super().__init__(**kwargs)
 
@@ -121,7 +155,7 @@ class ThreadedSimulation(Simulation):
             while target in self._worker_patient_targets:
                 # Stall if another thread is currently executing an event
                 # which targets the same individual.
-                # Add some sleep time here to avoid near-misses
+                # Add some sleep time here to avoid near-misses.
                 sleep(0.01)
             # Flag that this thread is running an event on this patient
             self._worker_patient_targets.add(target)
@@ -144,11 +178,11 @@ class ThreadedSimulation(Simulation):
         return False
 
     def simulate(self, *, end_date):
-        """Simulation until the given end date
+        """Simulate until the given end date, utilising threads to process events
+        that can be run simultaneously.
 
-        :param end_date: when to stop simulating. Only events strictly before this
-            date will be allowed to occur.
-            Must be given as a keyword parameter for clarity.
+        :param end_date: when to stop simulating. Only events strictly before this 
+        date will be allowed to occur. Must be given as a keyword parameter for clarity.
         """
         self.end_date = end_date
 
@@ -213,4 +247,8 @@ class ThreadedSimulation(Simulation):
                 self.output_file.release()
 
     def wait_for_workers(self) -> None:
+        """
+        Pauses simulation progression until all worker threads
+        are ready and waiting to receive a new job.
+        """
         self._worker_queue.join()
