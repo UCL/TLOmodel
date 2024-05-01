@@ -3,11 +3,15 @@ import os
 import analysis_utility_functions
 import numpy as np
 import pandas as pd
+import scipy.stats
+from analysis_utility_functions import (
+    get_mean_95_CI_from_list,
+    get_mean_from_columns,
+    return_95_CI_across_runs,
+)
 from matplotlib import pyplot as plt
 
 from tlo.analysis.utils import extract_results, get_scenario_outputs
-from analysis_utility_functions import get_mean_from_columns, get_mean_95_CI_from_list, return_95_CI_across_runs
-import scipy.stats
 
 plt.style.use('seaborn-darkgrid')
 
@@ -81,7 +85,7 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
                     t.append(f_df)
         if t:
             causes_df = pd.concat(t)
-            updated_df = df.append(causes_df)
+            updated_df = pd.concat([df, causes_df])
             return updated_df
         else:
             return df
@@ -99,7 +103,7 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
 
         if t:
             final_df = pd.concat(t)
-            updated_df = df.append(final_df)
+            updated_df = pd.concat([df, final_df])
             return updated_df
         else:
             return df
@@ -122,6 +126,11 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
         ci = [(x - y) / 2 for x, y in zip(uq_vals, lq_vals)]
         ax.bar(labels, mean_vals, color=scen_colours, width=width, yerr=ci)
         ax.tick_params(axis='x', which='major', labelsize=8)
+
+        if title == 'Average Maternal Mortality Ratio by Scenario (2023-2030)':
+            plt.gca().set_ylim(bottom=0, top=450)
+        elif title == 'Average Neonatal Mortality Rate by Scenario (2023-2030)':
+            plt.gca().set_ylim(bottom=0, top=25)
 
         ax.set_ylabel(y_label)
         ax.set_xlabel('Scenario')
@@ -158,6 +167,7 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
             return m, m - h, m + h
 
         # Cycle through each of the outcomes of interest (e.g. MMR, NMR etc)
+        df_lists = list()
         for k in keys:
             # Create DF which is the difference between the status quo and intervention scenario across runs/years
             diff = dfs[intervention][k] - dfs[baseline][k]
@@ -221,9 +231,9 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
                                            'skew_for_diff_data',
                                            'median_diff_outcome_int_period',
                                            'percent_diff'])
+            df_lists.append(res_df)
 
-            output_df = output_df.append(res_df)
-
+        output_df = pd.concat(df_lists)
         return output_df
 
     def save_outputs(folder, keys, save_name, save_folder):
@@ -530,13 +540,13 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
              'Total Neonatal Deaths By Scenario (2023-2030)',
              'Average Neonatal Mortality Rate by Scenario (2023-2030)'],
             ['Total Direct Maternal Deaths',
-             'Average Maternal Mortality Ratio',
+             'Maternal Deaths per 100,000 Live Births',
              'Total Indirect Maternal Deaths',
-             'Average Maternal Mortality Ratio',
+             'Maternal Deaths per 100,000 Live Births',
              'Total Maternal Deaths',
-             'Average Maternal Mortality Ratio',
+             'Maternal Deaths per 100,000 Live Births',
              'Total Neonatal Deaths',
-             'Average Neonatal Mortality Rate']):
+             'Neonatal Deaths per 1000 Live Births']):
         plot_agg_graph(death_data, data, y_lable, title, data, primary_oc_path)
 
     # Followed by line graphs showing outcomes per year of the entire simulated period
@@ -558,9 +568,9 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
         'Neonatal Mortality Rate per Year by Scenario ',
         primary_oc_path, 'neonatal_mr_int')
 
-    for group, l in zip(['Maternal', 'Neonatal'], ['dir_m', 'n']):
+    for group, abrv in zip(['Maternal', 'Neonatal'], ['dir_m', 'n']):
         analysis_utility_functions.comparison_bar_chart_multiple_bars(
-            death_data, f'crude_{l}_deaths', sim_years, scen_colours,
+            death_data, f'crude_{abrv}_deaths', sim_years, scen_colours,
             f'Total {group} Deaths (scaled)', f'Total {group} Deaths per by Scenario ',
             primary_oc_path, f'{group}_crude_deaths_comparison.png')
 
@@ -630,7 +640,7 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
 
         return results
 
-    def extract_neonatal_deaths_by_cause(results_folder, births_df, intervention_years):
+    def extract_neonatal_deaths_by_cause(results_folder, births_df, sim_years, intervention_years):
         """Generates dataframes which contain the yearly cause-specific NMR for all modelled causes across the runs
            for the entire simulation period. In addition, calculates the average cause-specific NMR across the
            intervention period"""
@@ -646,9 +656,31 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
             do_scaling=True)
         neo_deaths = nd.fillna(0)
 
-        # Extract modelled causes of neonatal death from data frame index
-        n_causes = list(neo_deaths.loc[2010].index)
+        alri = neo_deaths.loc[neo_deaths.index.get_level_values(1).str.contains("ALRI")]
+        diar = neo_deaths.loc[neo_deaths.index.get_level_values(1).str.contains("Diarrhoea")]
 
+        def combine_deaths_from_external_causes(d_df, death):
+            df_list = list()
+            for year in sim_years:
+                index = pd.MultiIndex.from_tuples([(year, death)], names=["year", "cause_of_death"])
+                new_row = pd.DataFrame(columns=neo_deaths.columns, index=index)
+                new_row.loc[year, death] = d_df.loc[year].sum()
+                df_list.append(new_row)
+            final = pd.concat(df_list)
+
+            return final
+
+        alri_df = combine_deaths_from_external_causes(alri, 'ALRI')
+        diarr_df = combine_deaths_from_external_causes(diar, 'Diarrhoea')
+
+        neo_deaths = pd.concat([neo_deaths, alri_df])
+        neo_deaths = pd.concat([neo_deaths, diarr_df])
+
+        # Extract modelled causes of neonatal death from data frame index
+        n_causes = ['early_onset_sepsis', 'late_onset_sepsis', 'encephalopathy', 'preterm_other',
+                    'respiratory_distress_syndrome', 'neonatal_respiratory_depression', 'ALRI',
+                    'Diarrhoea', 'Malaria', 'Other', 'limb_or_musculoskeletal_anomaly', 'congenital_heart_anomaly',
+                    'digestive_anomaly', 'urogenital_anomaly', 'other_anomaly', 'AIDS_non_TB']
         results = dict()
 
         # For each modelled cause generate a DF containing the cause-specific NMR across the simulation period and the
@@ -686,6 +718,21 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
         # Finally, plot a series of bar charts comparing the average cause-specific NMR/MMR for each complication
         # during the intervention period between the status quo and each intervention/sensitivity scenario
         labels = [lab.replace(f'_{d[0]}mr_df', '') for lab in cod_keys]
+        if d[0] == 'm':
+            reformat_labels = ['Ectopic pregnancy', 'Spontaneous abortion', 'Induced abortion',
+                               'Severe gestational hypertension', 'Severe pre-eclampsia', 'Eclampsia',
+                               'Antenatal sepsis', 'Uterine rupture', 'Intrapartum sepsis', 'Postpartum sepsis',
+                               'Postpartum haemorrhage', 'Secondary postpartum haemorrhage', 'Antepartum haemorrhage',
+                               'AIDS (non-Tb)', 'AIDS (Tb)', 'Tuberculosis', 'Malaria', 'Suicide', 'Stroke', 'Diabetes',
+                               'Chronic ischaemic heart disease', 'Heart attack', 'Chronic kidney disease']
+        else:
+            reformat_labels = ['Early-onset sepsis', 'Late-onset sepsis', 'Encephalopathy', 'Preterm (other)',
+                               'Preterm RDS', 'Other respiratory depression',
+                               'ALRI', 'Diarrhoea', 'Malaria', 'Other', 'Congenital anomaly (limb)',
+                               'Congenital anomaly (heart)','Congenital anomaly (digestive)',
+                               'Congenital anomaly (urogenital)',
+                               'Congenital anomaly (other)', 'AIDS (non-TB)']
+
         for k, colour in zip(cause_d, scen_colours):
             if 'Status Quo' not in k:
                 data = [[], [], []]
@@ -701,7 +748,7 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
                         sq_data[1].append(cause_d['Status Quo'][key][1])
                         sq_data[2].append(cause_d['Status Quo'][key][2])
 
-                labels = labels
+                labels = reformat_labels
                 model_sq = sq_data[0]
                 model_int = data[0]
 
@@ -717,8 +764,10 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
 
                 if group == 'mat':
                     title_data = ['100,000', 'Maternal', 'Ratios']
+                    top = 120
                 else:
                     title_data = ['1000', 'Neonatal', 'Rates']
+                    top = 12
 
                 ax.set_ylabel(f'Deaths per {title_data[0]} Live Births')
                 ax.set_xlabel('Cause of Death')
@@ -726,9 +775,9 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
                     f'Average Cause-specific {title_data[1]} Mortality {title_data[2]} by Scenario (2023-2030)')
                 ax.set_xticks(x)
                 ax.set_xticklabels(labels)
-                plt.xticks(rotation=90, size=7)
-                plt.gca().set_ylim(bottom=0)
-                ax.legend(loc='upper left')
+                plt.xticks(rotation=90, size=10)
+                plt.gca().set_ylim(bottom=0, top=top)
+                ax.legend(loc='upper right')
                 fig.tight_layout()
                 plt.savefig(f'{primary_oc_path}/{k}_{d[0]}mr_by_cause.png', bbox_inches='tight')
                 plt.show()
@@ -738,7 +787,7 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
                                            intervention_years) for k in results_folders}
 
     cod_neo_data = {k: extract_neonatal_deaths_by_cause(results_folders[k], births_dict[k]['births_data_frame'],
-                                                        intervention_years) for k in results_folders}
+                                                        sim_years, intervention_years) for k in results_folders}
     save_mr_by_cause_data_and_output_graphs('mat', cod_data)
     save_mr_by_cause_data_and_output_graphs('neo', cod_neo_data)
 
@@ -770,9 +819,9 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
         zip(['avg_sbr',
              'avg_i_sbr',
              'avg_a_sbr'],
-            ['Average Total Stillbirth Rate during the Intervention Period',
-             'Average Intrapartum Stillbirth Rate during the Intervention Period',
-             'Average Antenatal Stillbirth Rate during the Intervention Period'],
+            ['Average Stillbirth Rate by Scenario (2023-2030)',
+             'Average Intrapartum Stillbirth Rate by Scenario (2023-2030)',
+             'Average Antenatal Stillbirth Rate by Scenario (2023-2030)'],
             ['Stillbirths per 1000 births',
              'Stillbirths per 1000 births',
              'Stillbirths per 1000 births']):
@@ -793,7 +842,7 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
         ci = [(x - y) / 2 for x, y in zip(uq_vals, lq_vals)]
         ax.bar(labels, mean_vals, color=scen_colours, width=width, yerr=ci)
         ax.tick_params(axis='x', which='major', labelsize=8)
-
+        plt.gca().set_ylim(bottom=0, top=18)
         ax.set_ylabel(y_lable)
         ax.set_xlabel('Scenario')
         ax.set_title(title)
@@ -820,7 +869,7 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
             key="dalys",
             custom_generate_series=(
                 lambda df: df.drop(
-                    columns='date').groupby(['year']).sum().stack()),
+                    columns=['date', 'sex', 'age_range']).groupby(['year']).sum().stack()),
             do_scaling=True)
 
         dalys_stacked = extract_results(
@@ -829,7 +878,7 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
             key="dalys_stacked",
             custom_generate_series=(
                 lambda df: df.drop(
-                    columns='date').groupby(['year']).sum().stack()),
+                    columns=['date', 'sex', 'age_range']).groupby(['year']).sum().stack()),
             do_scaling=True)
 
         # And the total person-years from the scenario file which is used as a denominator
@@ -920,7 +969,7 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
             key="yll_by_causes_of_death",
             custom_generate_series=(
                 lambda df: df.drop(
-                    columns='date').groupby(['year']).sum().stack()),
+                    columns=['date', 'sex', 'age_range']).groupby(['year']).sum().stack()),
             do_scaling=True)
         yll_final = yll.fillna(0)
 
@@ -930,7 +979,7 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
             key="yll_by_causes_of_death_stacked",
             custom_generate_series=(
                 lambda df: df.drop(
-                    columns='date').groupby(['year']).sum().stack()),
+                    columns=['date', 'sex', 'age_range']).groupby(['year']).sum().stack()),
             do_scaling=True)
         yll_stacked_final = yll_stacked.fillna(0)
 
@@ -940,7 +989,7 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
             key="yld_by_causes_of_disability",
             custom_generate_series=(
                 lambda df: df.drop(
-                    columns='date').groupby(['year']).sum().stack()),
+                    columns=['date', 'sex', 'age_range']).groupby(['year']).sum().stack()),
             do_scaling=True)
         yld_final = yld.fillna(0)
 

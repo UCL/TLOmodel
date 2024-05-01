@@ -6,6 +6,6 @@ import calibration_outputs_with_ci
 for file in ['baseline_scenario-2023-07-17T153309Z']:
     calibration_outputs_with_ci.output_incidence_for_calibration(
        scenario_filename=f'{file}.py',
-       pop_size='250k',
+       pop_size='250K',
        outputspath='./outputs/sejjj49@ucl.ac.uk/',
        sim_years=list(range(2010, 2023)))
