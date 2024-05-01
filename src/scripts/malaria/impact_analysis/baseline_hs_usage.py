@@ -27,10 +27,14 @@ from tlo.analysis.utils import (
     make_age_grp_types,
 )
 
-outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
+# outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
+
+outputspath = Path("./outputs")
 
 # Find results_folder associated with a given batch_file (and get most recent [-1])
-results_folder = get_scenario_outputs("exclude_services_Mar2024.py", outputspath)[-1]
+# results_folder = get_scenario_outputs("exclude_HTM_services.py", outputspath)[-1]
+results_folder = Path("./outputs/exclude_HTM_services_Apr2024")
+
 
 # Declare path for output graphs from this script
 make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
@@ -96,7 +100,7 @@ column = 'TREATMENT_ID'
 # get total counts of every appt type for each scenario
 appt_sums = sum_appt_by_id(results_folder,
                            module=module, key=key, column=column, draw=0)
-appt_sums.to_csv(outputspath / "Mar2024_HTMresults/appt_sums_baseline.csv")
+appt_sums.to_csv(outputspath / "Apr2024_HTMresults/appt_sums_baseline.csv")
 
 
 # group together appts
@@ -115,9 +119,9 @@ def summarise_appt_groups(group):
 
     # extract and sum appts within this group for each run
     tmp = appt_sums.loc[group].sum()
-    tmp = tmp.append(pd.Series(tmp.median()))
-    tmp = tmp.append(pd.Series(tmp.quantile(0.025)))
-    tmp = tmp.append(pd.Series(tmp.quantile(0.975)))
+    tmp = tmp._append(pd.Series(tmp.median()))
+    tmp = tmp._append(pd.Series(tmp.quantile(0.025)))
+    tmp = tmp._append(pd.Series(tmp.quantile(0.975)))
 
     tmp.index = index_names
 
@@ -130,7 +134,11 @@ tx_fup_sums = summarise_appt_groups(tx_fup)
 preventive_sums = summarise_appt_groups(preventive)
 inpatient_sums = summarise_appt_groups(inpatient)
 
-
+# get values in millions
+test_sums = test_sums / 1000000
+tx_fup_sums = tx_fup_sums / 1000000
+preventive_sums = preventive_sums / 1000000
+inpatient_sums = inpatient_sums / 1000000
 
 # %% -------------------------------------------------------------------------------------------------------
 # EXTRACT TOTAL HEALTH SYSTEM USAGE IN BASELINE SCENARIO USING APPT_TYPE
@@ -160,6 +168,9 @@ appt_types['median'] = appt_types.median(axis='columns')
 appt_types['lower'] = appt_types.quantile(0.025, axis='columns')
 appt_types['upper'] = appt_types.quantile(0.975, axis='columns')
 
+appt_types.to_csv(outputspath / "Apr2024_HTMresults/baseline_appt_numbers_by_type.csv")
+
+
 # produce table for export
 output_table = appt_types[['median', 'lower', 'upper']].copy()
 
@@ -174,7 +185,7 @@ output_table = output_table.applymap(round_to_nearest_100)
 # Convert all values to integers
 output_table = output_table.astype(int, errors='ignore')
 
-output_table.to_csv(outputspath / ('baseline_appt_numbers' + '.csv'))
+output_table.to_csv(outputspath / "Apr2024_HTMresults/baseline_appt_numbers.csv")
 
 
 

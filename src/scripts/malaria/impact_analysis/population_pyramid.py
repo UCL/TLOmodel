@@ -35,8 +35,13 @@ from tlo.analysis.utils import (
 
 
 
-outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
-results_folder = get_scenario_outputs("exclude_services_Mar2024.py", outputspath)[-1]
+# outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
+
+outputspath = Path("./outputs")
+
+# Find results_folder associated with a given batch_file (and get most recent [-1])
+# results_folder = get_scenario_outputs("exclude_HTM_services.py", outputspath)[-1]
+results_folder = Path("./outputs/exclude_HTM_services_Apr2024")
 
 # get basic information about the results
 scenario_info = get_scenario_info(results_folder)
@@ -154,7 +159,7 @@ labels=['1', '0.5', '0', '0.5', '1'])
 
 plt.legend(handles=[patch1, patch2], title="")
 
-plt.savefig(outputspath / "Mar2024_HTMresults/PopulationPyramid.png")
+plt.savefig(outputspath / "Apr2024_HTMresults/PopulationPyramid.png")
 
 plt.show()
 
@@ -190,7 +195,8 @@ py0 = extract_results(
 
 # select draw 0 and draw 4
 new_df = py0.loc[:, py0.columns.get_level_values('draw').isin([0, 4])]
-
+# Append a new row with column means to the DataFrame
+new_df.loc['Mean'] = new_df.mean()
 
 # plot population size for baseline and Excl HTM
 
@@ -214,6 +220,6 @@ legend_labels = ['Status quo', 'Excluding HTM']
 legend_handles = [Line2D([0], [0], color=color, lw=2) for color in col]
 plt.legend(handles=legend_handles, labels=legend_labels)
 
-plt.savefig(outputspath / "Mar2024_HTMresults/PopulationSize.png")
+plt.savefig(outputspath / "Apr2024_HTMresults/PopulationSize.png")
 
 plt.show()

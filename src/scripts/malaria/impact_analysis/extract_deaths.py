@@ -24,11 +24,12 @@ from tlo.analysis.utils import (
     make_age_grp_types,
 )
 
-outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
-# outputspath = Path("./outputs")
+# outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
+outputspath = Path("./outputs")
 
 # Find results_folder associated with a given batch_file (and get most recent [-1])
-results_folder = get_scenario_outputs("exclude_services_Mar2024.py", outputspath)[-1]
+# results_folder = get_scenario_outputs("exclude_services_Mar2024.py", outputspath)[-1]
+results_folder = Path("./outputs/exclude_HTM_services_Apr2024")
 
 # Declare path for output graphs from this script
 make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
@@ -88,6 +89,42 @@ def round_to_nearest_100(x):
 
 total_deaths = summarise_total_deaths(results_folder)
 rounded_total_deaths = total_deaths.applymap(round_to_nearest_100)
+
+
+
+def get_person_years(_df):
+    """ extract person-years for each draw/run
+    sums across men and women
+    will skip column if particular run has failed
+    """
+    years = pd.to_datetime(_df["date"]).dt.year
+    py = pd.Series(dtype="int64", index=years)
+    for year in years:
+        tot_py = (
+            (_df.loc[pd.to_datetime(_df["date"]).dt.year == year]["M"]).apply(pd.Series) +
+            (_df.loc[pd.to_datetime(_df["date"]).dt.year == year]["F"]).apply(pd.Series)
+        ).transpose()
+        py[year] = tot_py.sum().values[0]
+
+    py.index = pd.to_datetime(years, format="%Y")
+
+    return py
+
+
+person_years = extract_results(
+    results_folder,
+    module="tlo.methods.demography",
+    key="person_years",
+    custom_generate_series=get_person_years,
+    do_scaling=True
+)
+
+person_years.index = person_years.index.year
+# person_years.to_csv(outputspath / ('Apr2024_HTMresults/py_by_cause_yr_run' + '.csv'))
+
+# get dalys per person_year over the whole simulation
+py_totals = person_years.sum(axis=0)
+
 
 
 def summarise_total_mortality_rate(results_folder, do_scaling=True):
@@ -271,7 +308,7 @@ def barplot_summarized_deaths_by_age(deaths_summarized_by_age, proportion):
     plt.ylabel("Total deaths")
     plt.xlabel("")
     plt.subplots_adjust(bottom=0.2, left=0.15)
-    plt.savefig(outputspath / "Mar2024_HTMresults/Deaths_by_age_barplot_excl_htm.png")
+    plt.savefig(outputspath / "Apr2024_HTMresults/Deaths_by_age_barplot_excl_htm.png")
 
     plt.show()
 
@@ -293,7 +330,7 @@ plt.show()
 
 # Plot the total deaths across scenarios by age
 fig_1, ax_1 = plot_summarized_deaths_by_age(deaths_summarized_by_age)
-fig_1.savefig(outputspath / "Mar2024_HTMresults/Deaths_by_age_excl_htm.png")
+fig_1.savefig(outputspath / "Apr2024_HTMresults/Deaths_by_age_excl_htm.png")
 plt.show()
 
 
@@ -324,6 +361,20 @@ num_deaths_by_cause_label = extract_results(
         do_scaling=True
     )
 
+num_deaths_by_cause_label.to_csv(outputspath / "Apr2024_HTMresults/num_deaths_by_cause.csv")
+
+
+# get median deaths per py to output
+t1 = pd.concat({
+    'median': num_deaths_by_cause_label.groupby(level=0, axis=1).median(0.5) / 1000,
+    'lower': num_deaths_by_cause_label.groupby(level=0, axis=1).quantile(0.025) / 1000,
+    'upper': num_deaths_by_cause_label.groupby(level=0, axis=1).quantile(0.975) / 1000
+}, axis=1).swaplevel(axis=1)
+t1_sorted = t1.sort_index(axis=1, level='draw')
+t1_sorted.to_csv(outputspath / "Apr2024_HTMresults/num_deaths_summarised.csv")
+
+
+
 def get_person_years(_df):
     """ extract person-years for each draw/run
     sums across men and women
@@ -353,7 +404,10 @@ py0 = extract_results(
 py_totals = py0.sum(axis=0)
 
 
+
 deaths_by_py = num_deaths_by_cause_label.div(py_totals) * 1000
+deaths_by_py.to_csv(outputspath / "Apr2024_HTMresults/deaths_by_py_by_run.csv")
+
 
 # get median deaths per py to output
 tmp2 = pd.concat({
@@ -361,7 +415,28 @@ tmp2 = pd.concat({
     'lower': deaths_by_py.groupby(level=0, axis=1).quantile(0.025),
     'upper': deaths_by_py.groupby(level=0, axis=1).quantile(0.975)
 }, axis=1).swaplevel(axis=1)
-tmp2.to_csv(outputspath / "Mar2024_HTMresults/deaths_by_py2019.csv")
+tmp2_sorted = tmp2.sort_index(axis=1, level='draw')
+tmp2_sorted.to_csv(outputspath / "Apr2024_HTMresults/deaths_by_py.csv")
+
+# Function to combine values based on specified format with rounding
+def combine_values(row):
+    combined_values = []
+    for i in range(5):  # Iterate over 'draw' levels 0 to 4
+        try:
+            median = round(row[(i, 'median')], 3)  # Round median value to 3 decimal places
+            lower = round(row[(i, 'lower')], 3)    # Round lower value to 3 decimal places
+            upper = round(row[(i, 'upper')], 3)    # Round upper value to 3 decimal places
+            combined_values.append(f"{median} ({lower}-{upper})")
+        except KeyError:
+            combined_values.append("")  # Handle missing columns gracefully
+    return pd.Series(combined_values, index=['draw0', 'draw1', 'draw2', 'draw3', 'draw4'])
+
+# Apply the function row-wise to create a new DataFrame
+new_df = tmp2_sorted.apply(combine_values, axis=1)
+
+new_df.to_csv(outputspath / "Apr2024_HTMresults/deaths_by_py_formatted.csv")
+
+
 
 
 # get mortality rates by cause for plot ------------------------------------------------------------------------
@@ -382,7 +457,7 @@ mean_deaths_by_cause_upper = t1.groupby(level=0, axis=1).quantile(0.975)
 
 appended_df = pd.concat([mean_deaths_by_cause, mean_deaths_by_cause_lower, mean_deaths_by_cause_upper],
                         axis=1, keys=['mean_deaths', 'lower_deaths', 'upper_deaths'])
-appended_df.to_csv(outputspath / "Mar2024_HTMresults/mortality_rates_per_py_by_cause.csv")
+appended_df.to_csv(outputspath / "Apr2024_HTMresults/mortality_rates_per_py_by_cause.csv")
 
 
 
@@ -394,7 +469,7 @@ appended_df.to_csv(outputspath / "Mar2024_HTMresults/mortality_rates_per_py_by_c
 #         do_scaling=True
 #     )
 #
-# deaths_by_cause_by_run.to_csv(outputspath / "Mar2024_HTMresults/deaths_by_cause_by_run.csv")
+# deaths_by_cause_by_run.to_csv(outputspath / "Apr2024_HTMresults/deaths_by_cause_by_run.csv")
 
 
 # Function to round to the nearest 1000
@@ -409,7 +484,7 @@ def round_to_nearest_100(value):
 # # Apply the rounding function to the entire DataFrame
 # sum_deaths = mean_deaths_by_cause.sum(axis=0)
 #
-# rounded_deaths.to_csv(outputspath / "Mar2024_HTMresults/deaths_by_cause_excl_htm.csv")
+# rounded_deaths.to_csv(outputspath / "Apr2024_HTMresults/deaths_by_cause_excl_htm.csv")
 #
 
 def summarise_deaths_for_one_cause(results_folder, label):
@@ -454,10 +529,10 @@ malaria_deaths = summarise_deaths_for_one_cause(results_folder, 'Malaria')
 # plot life expectancy and numbers of deaths by cause
 
 # all cause deaths
-# total_deaths = summarise_total_deaths(results_folder)
-# mean_total_deaths = total_deaths.loc[:, total_deaths.columns.get_level_values(1) == 'mean']
-# lower_total_deaths = total_deaths.loc[:, total_deaths.columns.get_level_values(1) == 'lower']
-# upper_total_deaths = total_deaths.loc[:, total_deaths.columns.get_level_values(1) == 'upper']
+total_num_deaths = summarise_total_deaths(results_folder)
+# mean_num_total_deaths = total_deaths.loc[:, total_deaths.columns.get_level_values(1) == 'mean']
+# lower_num_total_deaths = total_deaths.loc[:, total_deaths.columns.get_level_values(1) == 'lower']
+# upper_num_total_deaths = total_deaths.loc[:, total_deaths.columns.get_level_values(1) == 'upper']
 
 # mortality rate per 1000py
 mean_total_deaths = total_mortality_rate.groupby(level=0, axis=1).median(0.5)
@@ -466,7 +541,7 @@ upper_total_deaths = total_mortality_rate.groupby(level=0, axis=1).quantile(0.97
 
 
 appended_df = pd.concat([mean_total_deaths, lower_total_deaths, upper_total_deaths], axis=0)
-appended_df.to_csv(outputspath / "Mar2024_HTMresults/total_mortality_rates_per_py.csv")
+appended_df.to_csv(outputspath / "Apr2024_HTMresults/total_mortality_rates_per_py.csv")
 
 
 # deaths by cause: mean_deaths_by_cause
@@ -652,9 +727,9 @@ for bar, neg_err, pos_err, color in zip(bars,
                  color='black',  # Set error bar color to the same as the bars
                  capsize=5)
 
-# ax2.set_yscale('log')
+ax2.set_yscale('log')
 
-ax2.set_ylabel('Mortality rate per 1000py')
+ax2.set_ylabel('Mortality rate per 1000py \n (log-scale)')
 
 for i in [4.5, 8.5, 12.5, 16.5]:
     ax2.axvline(x=i, color='grey', linestyle='--', linewidth=1)
@@ -681,7 +756,7 @@ ax2.legend(
     bbox_to_anchor=(1.2, 1)
 )
 
-fig.savefig(outputspath / "Mar2024_HTMresults/Mortality_life_expect_exclHTM.png")
+fig.savefig(outputspath / "Apr2024_HTMresults/Mortality_life_expect_exclHTM.png")
 
 plt.show()
 

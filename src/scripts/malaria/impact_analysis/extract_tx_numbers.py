@@ -32,8 +32,8 @@ import seaborn as sns
 outputspath = Path("./outputs")
 
 # Find results_folder associated with a given batch_file (and get most recent [-1])
-results_folder = get_scenario_outputs("exclude_HTM_services.py", outputspath)[-1]
-# results_folder = get_scenario_outputs("remove_treatment_effects.py", outputspath)[-1]
+# results_folder = get_scenario_outputs("exclude_HTM_services.py", outputspath)[-1]
+results_folder = Path("./outputs/exclude_HTM_services_Apr2024")
 
 # Declare path for output graphs from this script
 make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
@@ -288,9 +288,10 @@ sum4['mean'] = sum4.mean(axis=1) * scaling_factor.values[0][0]
 
 
 data_output = pd.concat([sum0['mean'], sum1['mean'], sum2['mean'], sum3['mean'], sum4['mean']], axis=1)
-data_output.to_csv(outputspath / ('treatment_numbers_tx_ineff' + '.csv'))
+data_output.to_csv(outputspath / "Apr2024_HTMresults/treatment_numbers.csv")
 
-sum0.to_csv(outputspath / ('baseline_appt_numbers_27Nov' + '.csv'))
+
+sum0.to_csv(outputspath / "Apr2024_HTMresults/baseline_appt_numbers.csv")
 
 # extract numbers of appts grouped by treatment_id stub
 # median is taken across runs for grouped numbers of appts
@@ -322,7 +323,7 @@ output_table = output_table.applymap(round_to_nearest_100)
 # Convert all values to integers
 output_table = output_table.astype(int, errors='ignore')
 
-output_table.to_csv(outputspath / ('tx_id_numbers_excl_HTM' + '.csv'))
+output_table.to_csv(outputspath / "Apr2024_HTMresults/treatment_IDnumbers.csv")
 
 # ---------------------------------------------------------------------------------
 # HOW MUCH HS REQUIRED FOR BIG 3 PROGRAMME DELIVERY
@@ -347,6 +348,7 @@ selected_columns = list(
     set(treatment_id0.filter(like='Hiv').columns) | set(treatment_id0.filter(like='Tb').columns) | set(
         treatment_id0.filter(like='Malaria').columns))
 
+# todo now it's scale
 prog_df = treatment_id0[selected_columns] * scaling_factor.values[0][0]
 
 prog_df.loc['Total'] = prog_df.sum()
@@ -378,8 +380,8 @@ stripped_mean_column_names = [col.replace('_', ' ') for col in stripped_mean_col
 
 # Create a horizontal bar plot
 mean_values = mean_data.iloc[10]
-lower_values = lower_error.iloc[10]
-upper_values = upper_error.iloc[10]
+lower_values = mean_data.iloc[10] - lower_error.iloc[10]
+upper_values = upper_error.iloc[10] - mean_data.iloc[10]
 
 tmp = pd.concat([mean_values, lower_values, upper_values], axis=1)
 tmp.columns = ['mean', 'lower_error', 'upper_error']
@@ -390,7 +392,8 @@ tmp_sorted = tmp.sort_values(by=['index'], inplace=False, ascending=False)
 
 # Create a color list based on column name criteria
 sns.set(style="whitegrid")
-palette = sns.color_palette("muted", 3).as_hex()
+# palette = sns.color_palette("muted", 3).as_hex()
+palette = ['#0218a2', '#ffb703', '#f76f73']
 
 colours = np.where(tmp_sorted['index'].str.contains('Hiv'), palette[0],
                    np.where(tmp_sorted['index'].str.contains('Tb'), palette[1], palette[2]))
@@ -408,12 +411,11 @@ bars = plt.barh(tmp_sorted['index'],
 for bar, neg_err, pos_err, color in zip(bars,
                                         tmp_sorted['lower_error'],
                                         tmp_sorted['upper_error'], colours):
-    plt.errorbar(x=bar.get_x() + bar.get_width() / 2,
+    plt.errorbar(x=bar.get_x() + bar.get_width(),
                  y=bar.get_y() + bar.get_height() / 2,
                  xerr=[[neg_err], [pos_err]],
-                 color=color,  # Set error bar color to the same as the bars
+                 color='black',  # Set error bar color to the same as the bars
                  capsize=5)
-
 plt.xscale('log')
 
 # Add labels and title
@@ -422,7 +424,7 @@ plt.ylabel('')
 plt.yticks(fontsize=10)
 plt.title('')
 
-plt.savefig(outputspath / "baseline_HTM_appts.png")
+plt.savefig(outputspath / "Apr2024_HTMresults/baseline_HTM_appts.png")
 plt.show()
 
 

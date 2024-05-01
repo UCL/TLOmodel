@@ -28,12 +28,13 @@ from tlo.analysis.utils import (
 )
 import seaborn as sns
 
-outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
+# outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
 
-# outputspath = Path("./outputs")
+outputspath = Path("./outputs")
 
 # Find results_folder associated with a given batch_file (and get most recent [-1])
-results_folder = get_scenario_outputs("exclude_HTM_services.py", outputspath)[-1]
+# results_folder = get_scenario_outputs("exclude_HTM_services.py", outputspath)[-1]
+results_folder = Path("./outputs/exclude_HTM_services_Apr2024")
 
 # Declare path for output graphs from this script
 make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
@@ -105,7 +106,7 @@ person_years = extract_results(
 )
 
 person_years.index = person_years.index.year
-# person_years.to_csv(outputspath / ('Mar2024_HTMresults/py_by_cause_yr_run' + '.csv'))
+person_years.to_csv(outputspath / ('Apr2024_HTMresults/py_by_cause_yr_run' + '.csv'))
 
 # get dalys per person_year over the whole simulation
 py_totals = person_years.sum(axis=0)
@@ -131,11 +132,11 @@ daly_full = extract_results(
 
 # divide total dalys per cause over simulation by total person-years for each run
 tmp = daly_full.div(py_totals, axis=1)
-# tmp.to_csv(outputspath / ('Mar2024_HTMresults/dalys_per_py_run' + '.csv'))
+tmp.to_csv(outputspath / ('Apr2024_HTMresults/dalys_per_py_run' + '.csv'))
 
 # get median dalys per person-year by cause
 median_dalys_per_py = tmp.groupby(level=0, axis=1).median()
-# median_dalys_per_py.to_csv(outputspath / ('Mar2024_HTMresults/median_dalys_per_py' + '.csv'))
+median_dalys_per_py.to_csv(outputspath / ('Apr2024_HTMresults/median_dalys_per_py' + '.csv'))
 
 min_dalys_per_py = tmp.groupby(level=0, axis=1).min()
 new_columns = {col: f"{i}_min" for i, col in enumerate(min_dalys_per_py.columns)}
@@ -152,7 +153,7 @@ new_columns = [f"{i}_{ext}" for i in range(len(dalys_range.columns) // 2) for ex
 
 # Reindex the DataFrame with the new column names
 dalys_range = dalys_range.reindex(columns=new_columns)
-# dalys_range.to_csv(outputspath / ('Mar2024_HTMresults/range_dalys_per_py' + '.csv'))
+dalys_range.to_csv(outputspath / ('Apr2024_HTMresults/range_dalys_per_py' + '.csv'))
 
 # --------------------------------- Plotting
 # plot the DALY range (min-max) for all years
@@ -226,19 +227,19 @@ daly_grouped_per_pyALLYEARS = pd.concat({
     'lower': tmp2.groupby(level=0, axis=1).quantile(0.025),
     'upper': tmp2.groupby(level=0, axis=1).quantile(0.975)
 }, axis=1).swaplevel(axis=1)
-# daly_grouped_per_pyALLYEARS.to_csv(outputspath / ('Mar2024_HTMresults/daly_grouped_per_pyALLYEARS' + '.csv'))
+daly_grouped_per_pyALLYEARS.to_csv(outputspath / ('Apr2024_HTMresults/daly_grouped_per_pyALLYEARS' + '.csv'))
 
 
 # --------------------------------------------------------------------
 # re-run but set target period to 2019 only
 
-daly_grouped_per_py2019 = pd.concat({
-    'median': tmp2.groupby(level=0, axis=1).median(0.5),
-    'lower': tmp2.groupby(level=0, axis=1).quantile(0.025),
-    'upper': tmp2.groupby(level=0, axis=1).quantile(0.975)
-}, axis=1).swaplevel(axis=1)
-
-daly_grouped_per_py2019.to_csv(outputspath / ('Mar2024_HTMresults/daly_grouped_per_py2019' + '.csv'))
+# daly_grouped_per_py2019 = pd.concat({
+#     'median': tmp2.groupby(level=0, axis=1).median(0.5),
+#     'lower': tmp2.groupby(level=0, axis=1).quantile(0.025),
+#     'upper': tmp2.groupby(level=0, axis=1).quantile(0.975)
+# }, axis=1).swaplevel(axis=1)
+#
+# daly_grouped_per_py2019.to_csv(outputspath / ('Apr2024_HTMresults/daly_grouped_per_py2019' + '.csv'))
 
 
 # -----------------------------------------------------------------------------------------------------
@@ -321,7 +322,7 @@ ax1.fill_between(d4['year'], d4['dalys_per_100_000_lower'].astype(float),
                  d4['dalys_per_100_000_upper'].astype(float),
                  color=colors[3], alpha=0.2)
 
-ax1.set_ylim(0, 9000)
+ax1.set_ylim(0, 12000)
 ax1.set(title=label1,
         ylabel='DALYs per 100,000',
         xlabel='Year')
@@ -387,7 +388,7 @@ ax4.fill_between(d4['year'], d4['dalys_per_100_000_lower'].astype(float),
                  d4['dalys_per_100_000_upper'].astype(float),
                  color=colors[3], alpha=0.2)
 
-ax4.set_ylim(0, 9000)
+ax4.set_ylim(0, 12000)
 ax4.set(title=label4,
         ylabel='DALYs per 100,000',
         xlabel='Year')
@@ -409,7 +410,7 @@ ax5.fill_between(d4['year'], d4['dalys_per_100_000_lower'].astype(float),
                  d4['dalys_per_100_000_upper'].astype(float),
                  color=colors[3], alpha=0.2)
 
-ax5.set_ylim(0, 1100)
+ax5.set_ylim(0, 800)
 ax5.set(title=label5,
         ylabel='DALYs per 100,000',
         xlabel='Year')
@@ -431,7 +432,7 @@ ax6.fill_between(d4['year'], d4['dalys_per_100_000_lower'].astype(float),
                  d4['dalys_per_100_000_upper'].astype(float),
                  color=colors[3], alpha=0.2)
 
-ax6.set_ylim(0, 1100)
+ax6.set_ylim(0, 1400)
 ax6.set(title=label6,
         ylabel='DALYs per 100,000',
         xlabel='Year')
@@ -442,7 +443,7 @@ legend = ax6.legend(handles=[Line2D([0], [0], color=colors[0], lw=2),
                     labels=['Status quo', 'Exclude HTM'],
                     loc='upper right', bbox_to_anchor=(1, 1))
 
-fig.savefig(outputspath / "Mar2024_HTMresults/Temporal_DALYs_per_100k.png")
+fig.savefig(outputspath / "Apr2024_HTMresults/Temporal_DALYs_per_100k.png")
 
 plt.show()
 
@@ -479,7 +480,7 @@ ax1.fill_between(d4['year'], d4['dalys_per_100_000_lower'].astype(float),
                  d4['dalys_per_100_000_upper'].astype(float),
                  color=colors[3], alpha=0.2)
 
-ax1.set_ylim(0, 2000)
+ax1.set_ylim(0, 3000)
 ax1.set(title=label1,
         ylabel='DALYs per 100,000',
         xlabel='Year')
@@ -501,7 +502,7 @@ ax2.fill_between(d4['year'], d4['dalys_per_100_000_lower'].astype(float),
                  d4['dalys_per_100_000_upper'].astype(float),
                  color=colors[3], alpha=0.2)
 
-ax2.set_ylim(0, 1000)
+ax2.set_ylim(0, 1500)
 ax2.set(title=label2,
         ylabel='DALYs per 100,000',
         xlabel='Year')
@@ -523,7 +524,7 @@ ax3.fill_between(d4['year'], d4['dalys_per_100_000_lower'].astype(float),
                  d4['dalys_per_100_000_upper'].astype(float),
                  color=colors[3], alpha=0.2)
 
-ax3.set_ylim(0, 200)
+ax3.set_ylim(0, 400)
 ax3.set(title=label3,
         ylabel='DALYs per 100,000',
         xlabel='Year')
@@ -545,7 +546,7 @@ ax4.fill_between(d4['year'], d4['dalys_per_100_000_lower'].astype(float),
                  d4['dalys_per_100_000_upper'].astype(float),
                  color=colors[3], alpha=0.2)
 
-ax4.set_ylim(0, 1000)
+ax4.set_ylim(0, 2000)
 ax4.set(title=label4,
         ylabel='DALYs per 100,000',
         xlabel='Year')
@@ -567,7 +568,7 @@ ax5.fill_between(d4['year'], d4['dalys_per_100_000_lower'].astype(float),
                  d4['dalys_per_100_000_upper'].astype(float),
                  color=colors[3], alpha=0.2)
 
-ax5.set_ylim(0, 400)
+ax5.set_ylim(0, 800)
 ax5.set(title=label5,
         ylabel='DALYs per 100,000',
         xlabel='Year')
@@ -589,7 +590,7 @@ ax6.fill_between(d4['year'], d4['dalys_per_100_000_lower'].astype(float),
                  d4['dalys_per_100_000_upper'].astype(float),
                  color=colors[3], alpha=0.2)
 
-ax6.set_ylim(0, 4000)
+ax6.set_ylim(0, 6000)
 ax6.set(title=label6,
         ylabel='DALYs per 100,000',
         xlabel='Year')
@@ -600,7 +601,7 @@ legend = ax6.legend(handles=[Line2D([0], [0], color=colors[0], lw=2),
                     labels=['Status quo', 'Exclude HTM'],
                     loc='lower right', bbox_to_anchor=(0.95, 0.05))
 
-fig.savefig(outputspath / "Mar2024_HTMresults/Temporal_DALYs_per_100k_2.png")
+fig.savefig(outputspath / "Apr2024_HTMresults/Temporal_DALYs_per_100k_2.png")
 
 plt.show()
 

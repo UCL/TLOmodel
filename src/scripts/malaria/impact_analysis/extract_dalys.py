@@ -79,7 +79,28 @@ daly_summary = summarize(
 
 daly_summary = round_to_nearest_100(daly_summary)
 daly_summary = daly_summary.astype(int)
-daly_summary.to_csv(outputspath / ('Mar2024_HTMresults/dalys_excl_htm' + '.csv'))
+daly_summary.to_csv(outputspath / ('Apr2024_HTMresults/dalys_excl_htm' + '.csv'))
+
+
+# Function to combine values based on specified format with rounding
+def combine_values(row):
+    combined_values = []
+    for i in range(5):  # Iterate over 'draw' levels 0 to 4
+        try:
+            median = row[(i, 'mean')] / 1000
+            lower = row[(i, 'lower')] / 1000
+            upper = row[(i, 'upper')] / 1000
+            combined_values.append(f"{median} ({lower}-{upper})")
+        except KeyError:
+            combined_values.append("")  # Handle missing columns gracefully
+    return pd.Series(combined_values, index=['draw0', 'draw1', 'draw2', 'draw3', 'draw4'])
+
+
+# Apply the function row-wise to create a new DataFrame
+new_df = daly_summary.apply(combine_values, axis=1)
+
+new_df.to_csv(outputspath / "Apr2024_HTMresults/daly_summary_formatted.csv")
+
 
 daly_full = extract_results(
         results_folder,
@@ -91,7 +112,7 @@ daly_full = extract_results(
 
 daly_full = round_to_nearest_100(daly_full)
 daly_full = daly_full.astype(int)
-daly_full.to_csv(outputspath / ('Mar2024_HTMresults/dalys_excl_htm_full' + '.csv'))
+daly_full.to_csv(outputspath / ('Apr2024_HTMresults/dalys_excl_htm_full' + '.csv'))
 
 
 
@@ -119,5 +140,5 @@ total_daly_summary = summarize(
 
 total_daly_summary = round_to_nearest_100(total_daly_summary)
 total_daly_summary = total_daly_summary.astype(int)
-total_daly_summary.to_csv(outputspath / ('Mar2024_HTMresults/total_dalys_excl_htm' + '.csv'))
+total_daly_summary.to_csv(outputspath / ('Apr2024_HTMresults/total_dalys_excl_htm' + '.csv'))
 

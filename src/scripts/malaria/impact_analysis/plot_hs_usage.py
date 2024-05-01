@@ -29,10 +29,13 @@ from tlo.analysis.utils import (
     make_age_grp_types,
 )
 
+# outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
+
 outputspath = Path("./outputs")
 
 # Find results_folder associated with a given batch_file (and get most recent [-1])
-results_folder = get_scenario_outputs("effect_of_treatment_packages_combined.py", outputspath)[-1]
+# results_folder = get_scenario_outputs("exclude_HTM_services.py", outputspath)[-1]
+results_folder = Path("./outputs/exclude_HTM_services_Apr2024")
 
 # Declare path for output graphs from this script
 make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
@@ -52,6 +55,7 @@ params = extract_params(results_folder)
 # get numbers of appt types from outputs (extract_tx_numbers) and edit in spreadsheet
 # outpatient, inpatient, emergency
 # mean numbers of appts across the 5 runs, values have been scaled to full pop size
+# todo not updated
 sc0 = [1014736527.00706, 118017802.698474, 8371732.386892000]
 sc1 = [1001762514.02496, 112815850.469672, 8271380.005574000]
 sc2 = [1016739067.35463, 117661524.119538, 8334772.700814]
@@ -107,7 +111,7 @@ plt.gca().spines['right'].set_color('none')
 plt.gca().spines['top'].set_color('none')
 
 # Show the plot
-plt.savefig(outputspath / "appt_type_by_scenario.png")
+# plt.savefig(outputspath / "appt_type_by_scenario.png")
 
 plt.show()
 # plt.close()
