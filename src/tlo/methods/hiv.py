@@ -895,7 +895,7 @@ class Hiv(Module):
         sim.schedule_event(HivRegularPollingEvent(self), sim.date + DateOffset(days=0))
 
         # 2) Schedule the Logging Event
-        sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(years=1))
+        sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(months=6))
 
         # 3) Determine who has AIDS and impose the Symptoms 'aids_symptoms'
 
@@ -1463,7 +1463,7 @@ class Hiv(Module):
         df = self.sim.population.props
 
         # get number of tests performed in last time period
-        if self.sim.date.year == 2011:
+        if self.sim.date.year < 2011:
             number_tests_new = df.hv_number_tests.sum()
             previous_test_numbers = 0
 
@@ -2686,7 +2686,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # check whether person had Rx at least 3 months ago and is now due repeat prescription
         # alternate routes into testing/tx may mean person already has recent ARV dispensation
-        if person['hv_date_last_ART'] >= (
+        if person['hv_date_last_ART'] > (
             self.sim.date - pd.DateOffset(months=self.module.parameters['dispensation_period_months'])):
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
@@ -2841,6 +2841,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         _ = self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['vl_measurement'])
 
         # Log the VL test: line-list of summary information about each test
+        print(self.sim.date)
         adult = True if person['age_years'] >= 15 else False
         person_details_for_test = {
             'adult': adult,
@@ -3253,8 +3254,8 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         df["hv_days_on_prep_FSW"] = 0
 
         logger.info(
-            key="stock_variables",
-            description="Stock variables",
+            key="flow_variables",
+            description="Flow variables",
             data={
                 "N_BirthAll": N_BirthAll,
                 "N_BirthHIV": N_BirthHIV,
