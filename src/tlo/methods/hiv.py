@@ -2841,7 +2841,6 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         _ = self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['vl_measurement'])
 
         # Log the VL test: line-list of summary information about each test
-        print(self.sim.date)
         adult = True if person['age_years'] >= 15 else False
         person_details_for_test = {
             'adult': adult,
