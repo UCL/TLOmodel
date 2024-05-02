@@ -5,13 +5,13 @@ check the batch configuration gets generated without error:
 tlo scenario-run --draw-only src/scripts/hiv/mihpsa_runs/mihpsa_minimal_scenario.py
 
 Test the scenario starts running without problems:
-tlo scenario-run src/scripts/hiv/deviance_for_calibration/calibration_script.py
+tlo scenario-run src/scripts/hiv/mihpsa_runs/mihpsa_minimal_scenario.py
 
 or execute a single run:
-tlo scenario-run src/scripts/hiv/deviance_for_calibration/calibration_script.py --draw 1 0
+tlo scenario-run src/scripts/hiv/mihpsa_runs/mihpsa_minimal_scenario.py --draw 1 0
 
 Run on the batch system using:
-tlo batch-submit src/scripts/hiv/deviance_for_calibration/calibration_script.py
+tlo batch-submit src/scripts/hiv/mihpsa_runs/mihpsa_minimal_scenario.py
 
 weds 16th feb runs:
 Job ID: calibration_script-2022-02-16T202042Z
