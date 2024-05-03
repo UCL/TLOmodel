@@ -27,6 +27,7 @@ from tlo.methods import (
 resourcefilepath = Path("./resources")
 outputpath = Path("./outputs")
 
+
 # Declare path for output graphs from this script
 def make_graph_file_name(name):
     return outputpath / f"Schisto_{name}.png"
@@ -44,7 +45,7 @@ popsize = 30_000
 
 def run_simulation(popsize=popsize, mda_execute=True):
     start_date = Date(2010, 1, 1)
-    end_date = Date(2011, 2, 1)
+    end_date = Date(2030, 2, 1)
 
     # For logging, set all modules to WARNING threshold, then alters `Schisto` to level "INFO"
     custom_levels = {
@@ -77,7 +78,7 @@ def run_simulation(popsize=popsize, mda_execute=True):
     return sim, output
 
 
-sim, output = run_simulation(popsize=10000, mda_execute=False)
+sim, output = run_simulation(popsize=1000, mda_execute=False)
 
 # %% Extract and process the `pd.DataFrame`s needed
 

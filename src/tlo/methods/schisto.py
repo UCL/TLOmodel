@@ -380,8 +380,11 @@ class SchistoSpecies:
                                                        'Worm burden threshold for high intensity infection in PSAC'),
             'PZQ_efficacy': Parameter(Types.REAL,
                                       ' Efficacy of praziquantel in reducing worm burden'),
-            'reservoir_2010': Parameter(Types.DATA_FRAME,
-                                        'Initial reservoir of infectious material per district in 2010'),
+            'mean_worm_burden2010': Parameter(Types.DATA_FRAME,
+                                        'Mean worm burden per infected person per district in 2010'),
+
+            'prevalence_2010': Parameter(Types.DATA_FRAME,
+                                        'Initial prevalence in each district in 2010'),
             'prop_susceptible': Parameter(Types.DATA_FRAME,
                                           'Proportion of population in each district susceptible to schisto infection'),
             'gamma_alpha': Parameter(Types.DATA_FRAME, 'Parameter alpha for Gamma distribution for harbouring rates'),
@@ -439,7 +442,8 @@ class SchistoSpecies:
 
         # Baseline reservoir size and other district-related params (R0, proportion susceptible)
         schisto_initial_reservoir = workbook[f'District_Params_{self.name}'].set_index("District")
-        parameters['reservoir_2010'] = schisto_initial_reservoir['Reservoir']
+        parameters['mean_worm_burden2010'] = schisto_initial_reservoir['Mean_worm_burden']
+        parameters['prevalence_2010'] = schisto_initial_reservoir['Prevalence']
         parameters['R0'] = schisto_initial_reservoir['R0']
         parameters['gamma_alpha'] = schisto_initial_reservoir['gamma_alpha']
         parameters['prop_susceptible'] = schisto_initial_reservoir['prop_susceptible']
@@ -469,13 +473,10 @@ class SchistoSpecies:
         df.loc[df.is_alive, prop('aggregate_worm_burden')] = 0
 
         # assign a harbouring rate
-        self._assign_initial_harbouring_rate(population)
+        self._assign_initial_properties(population)
 
         # assign initial worm burden
         self._assign_initial_worm_burden(population)
-
-        # assign whether person susceptible to infection
-        self._assign_susceptibility(population)
 
     def initialise_simulation(self, sim):
         """
@@ -514,6 +515,9 @@ class SchistoSpecies:
         # Generate the harbouring rate depending on a district of residence.
         district = df.loc[child_id, 'district_of_residence']
         df.at[child_id, prop('harbouring_rate')] = rng.gamma(params['gamma_alpha'][district], size=1)
+
+        # determine susceptibility depending on district
+        df.at[child_id, prop('susceptibility')] = rng.binomial(n=1, p=params['prop_susceptible'][district], size=1)
 
     def update_infectious_status_and_symptoms(self, idx: pd.Index) -> None:
         """Updates the infection status and symptoms based on the current aggregate worm burden of this species.
@@ -606,9 +610,9 @@ class SchistoSpecies:
             if k.startswith(self.prefix)
         }
 
-    def _assign_initial_harbouring_rate(self, population) -> None:
-        """Assign a harbouring rate to every individual in the initial population (based on their district of
-        residence)."""
+    def _assign_initial_properties(self, population) -> None:
+        """Assign a harbouring rate and susceptibility to every individual in the initial population
+        (based on their district of residence)."""
         df = population.props
         prop = self.prefix_species_property
         params = self.params
@@ -617,22 +621,11 @@ class SchistoSpecies:
 
         for district in districts:
             in_the_district = df.index[df['district_of_residence'] == district]
+            # harbouring rate
             hr = params['gamma_alpha'][district]
             df.loc[in_the_district, prop('harbouring_rate')] = rng.gamma(hr, size=len(in_the_district))
 
-    # todo - also do this on_birth
-    # todo add property susceptible
-    def _assign_susceptibility(self, population) -> None:
-        """Assign susceptibility to every individual in the initial population (based on their district of
-        residence)."""
-        df = population.props
-        prop = self.prefix_species_property
-        params = self.params
-        districts = self.schisto_module.districts
-        rng = self.schisto_module.rng
-
-        for district in districts:
-            in_the_district = df.index[df['district_of_residence'] == district]
+            # susceptibility
             susceptibility = params['prop_susceptible'][district]
             # assign 0 and 1 to each person in the district based on the district proportion susceptible
             df.loc[in_the_district, prop('susceptibility')] = rng.binomial(n=1, p=susceptibility, size=len(in_the_district))
@@ -645,23 +638,30 @@ class SchistoSpecies:
         districts = self.schisto_module.districts
         rng = self.schisto_module.rng
 
-        reservoir = params['reservoir_2010']
-
         for district in districts:
-            # Determine a 'contact rate' for each person
             in_the_district = df.index[df['district_of_residence'] == district]
+
+            # get reservoir in district
+            num_infected = (len(in_the_district) * params['prevalence_2010'][district]) if len(in_the_district) else 0
+            reservoir = num_infected * params['mean_worm_burden2010'][district]
+
+            # Determine a 'contact rate' for each person
             contact_rates = pd.Series(1, index=in_the_district, dtype=float)
+
+            # multiply by susceptibility (0 or 1)
+            contact_and_susceptibility = contact_rates * df.loc[in_the_district, prop('susceptibility')]
+
             for age_group in ['PSAC', 'SAC', 'Adults']:
                 age_range = _AGE_GROUPS[age_group]
                 in_the_district_and_age_group = \
                     df.index[(df['district_of_residence'] == district) &
                              (df['age_years'].between(age_range[0], age_range[1]))]
-                contact_rates.loc[in_the_district_and_age_group] *= params[f"beta_{age_group}"]
+                contact_and_susceptibility.loc[in_the_district_and_age_group] *= params[f"beta_{age_group}"]
 
             if len(in_the_district):
                 harbouring_rates = df.loc[in_the_district, prop('harbouring_rate')].values
-                rates = np.multiply(harbouring_rates, contact_rates)
-                reservoir_distr = int(reservoir[district] * len(in_the_district))
+                rates = np.multiply(harbouring_rates, contact_and_susceptibility)
+                reservoir_distr = int(reservoir * len(in_the_district))
 
                 # Distribute a worm burden among persons, according to their 'contact rate'
                 if (reservoir_distr > 0) and (rates.sum() > 0):
