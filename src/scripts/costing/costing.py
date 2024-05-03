@@ -70,7 +70,8 @@ workbook_cost = pd.read_excel((resourcefilepath / "costing/ResourceFile_Costing.
 # TODO apply attrition rate to the cost calculation  https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9237893/#SP1
 # 1.1 HR Cost - Financial (Given the staff available)
 # Load annual salary by officer type and facility level
-hr_annual_salary = workbook_cost["human_resources"]
+hr_cost_parameters = workbook_cost["human_resources"]
+hr_annual_salary = hr_cost_parameters[hr_cost_parameters['Parameter_name'] == 'salary_usd']
 hr_annual_salary['OfficerType_FacilityLevel'] = 'Officer_Type=' + hr_annual_salary['Officer_Category'].astype(str) + '|Facility_Level=' + hr_annual_salary['Facility_Level'].astype(str)
 
 # Load scenario staffing level
@@ -87,19 +88,30 @@ current_staff_count_by_level_and_officer_type = current_staff_count.groupby(['Fa
     'Staff_Count'].sum().reset_index()
 
 # Check if any cadres were not utilised at particular levels of care in the simulation
-_df = log['tlo.methods.healthsystem']['Capacity']
-# Initialize a dictionary to store the sums
-cadres_used = {}
-# Iterate over the rows and sum values for each key
-for index, row in _df.iterrows():
-    for key, value in row['Frac_Time_Used_By_OfficerType'].items():
-        if key not in cadres_used:
-            cadres_used[key] = 0
-        cadres_used[key] += value
+def expand_capacity_by_officer_type_and_facility_level(_df: pd.Series) -> pd.Series:
+    """Summarise the parsed logged-key results for one draw (as dataframe) into a pd.Series."""
+    _df = _df.set_axis(_df['date'].dt.year).drop(columns=['date'])
+    _df.index.name = 'year'
+    return unflatten_flattened_multi_index_in_logging(_df).stack(level=[0, 1])  # expanded flattened axis
 
-# Store list of cadre-level combinations used in the simulation in a list
-cadres_used_df = pd.DataFrame(cadres_used.items(), columns=['Key', 'Sum'])
-list_of_cadre_and_level_combinations_used = cadres_used_df[cadres_used_df['Sum'] != 0]['Key']
+extracted_results = extract_results(
+    Path(results_folder),
+    module='tlo.methods.healthsystem.summary',
+    key='Capacity_By_OfficerType_And_FacilityLevel',
+    custom_generate_series=expand_capacity_by_officer_type_and_facility_level,
+    do_scaling=False,
+)
+
+# Mean of results across the runs
+summarized_results = summarize(extracted_results, only_mean=True, collapse_columns=True)
+
+# Take mean across the entire simulation
+mean_across_simulation = summarized_results.groupby(['OfficerType', 'FacilityLevel']).mean()
+
+# Unstack to make it look like a nice table
+cadres_utilisation_rate = mean_across_simulation.reset_index(drop=False)
+cadres_utilisation_rate['OfficerType_FacilityLevel'] = 'Officer_Type=' + cadres_utilisation_rate['OfficerType'].astype(str) + '|Facility_Level=' + cadres_utilisation_rate['FacilityLevel'].astype(str)
+list_of_cadre_and_level_combinations_used = cadres_utilisation_rate[cadres_utilisation_rate['mean'] != 0]['OfficerType_FacilityLevel']
 
 # Subset scenario staffing level to only include cadre-level combinations used in the simulation
 current_staff_count_by_level_and_officer_type['OfficerType_FacilityLevel'] = 'Officer_Type=' + current_staff_count_by_level_and_officer_type['Officer_Category'].astype(str) + '|Facility_Level=' + current_staff_count_by_level_and_officer_type['Facility_Level'].astype(str)
@@ -107,35 +119,22 @@ used_staff_count_by_level_and_officer_type = current_staff_count_by_level_and_of
 
 # Calculate salary cost for modelled health workforce (Staff count X Annual salary)
 salary_for_all_staff = pd.merge(current_staff_count_by_level_and_officer_type[['OfficerType_FacilityLevel', 'Staff_Count']],
-                                     hr_annual_salary[['OfficerType_FacilityLevel', 'Salary_USD']], on = ['OfficerType_FacilityLevel'], how = "left")
-salary_for_all_staff['Total_salary_by_cadre_and_level'] = salary_for_all_staff['Salary_USD'] * salary_for_all_staff['Staff_Count']
+                                     hr_annual_salary[['OfficerType_FacilityLevel', 'Value']], on = ['OfficerType_FacilityLevel'], how = "left")
+salary_for_all_staff['Total_salary_by_cadre_and_level'] = salary_for_all_staff['Value'] * salary_for_all_staff['Staff_Count']
 
 # Calculate salary cost for current total staff
 salary_for_modelled_staff = pd.merge(used_staff_count_by_level_and_officer_type[['OfficerType_FacilityLevel', 'Staff_Count']],
-                                     hr_annual_salary[['OfficerType_FacilityLevel', 'Salary_USD']], on = ['OfficerType_FacilityLevel'], how = "left")
-salary_for_modelled_staff['Total_salary_by_cadre_and_level'] = salary_for_modelled_staff['Salary_USD'] * salary_for_modelled_staff['Staff_Count']
+                                     hr_annual_salary[['OfficerType_FacilityLevel', 'Value']], on = ['OfficerType_FacilityLevel'], how = "left")
+salary_for_modelled_staff['Total_salary_by_cadre_and_level'] = salary_for_modelled_staff['Value'] * salary_for_modelled_staff['Staff_Count']
 
+# Other costs to maintain a fixed size of health workforce
+# TODO consider annual_preservice_training_cost_percapita_usd, annual_preservice_training_cost_percapita_usd, annual_attrition_rate, absorption_rate_of_students_into_public_workforce,
+# TODO consider proportion_of_workforce_recruited_from_abroad, recruitment_cost_per_person_recruited_usd, licensure_exam_passing_rate, graduation_rate
 
 # Create a dataframe to store financial costs
-scenario_cost_financial = pd.DataFrame({'HR': salary_for_all_staff['Total_salary_by_cadre_and_level'].sum()}, index=[0])
+scenario_cost_financial = pd.DataFrame({'HR': salary_for_modelled_staff['Total_salary_by_cadre_and_level'].sum()}, index=[0])
 
-# 1.2 HR Cost - Economic (Staff needed for interventions delivered in the simulation)
-# For HR required, multiply above with total capabilities X 'Frac_Time_Used_By_OfficerType' by facility level
-frac_time_used_by_officer_type = pd.DataFrame(log['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_By_OfficerType'].to_list())
-aggregate_frac_time_used_by_officer_type = pd.DataFrame(frac_time_used_by_officer_type.sum(axis=0))/len(frac_time_used_by_officer_type)
-aggregate_frac_time_used_by_officer_type.columns = ['Value']
-aggregate_frac_time_used_by_officer_type['OfficerType_FacilityLevel'] = aggregate_frac_time_used_by_officer_type.index
-
-salary_for_required_staff = pd.merge(aggregate_frac_time_used_by_officer_type[['OfficerType_FacilityLevel', 'Value']],
-                                     hr_annual_salary[['OfficerType_FacilityLevel', 'Salary_USD']], on = ['OfficerType_FacilityLevel'])
-salary_for_required_staff = pd.merge(salary_for_required_staff,
-                                     current_staff_count_by_level_and_officer_type[['OfficerType_FacilityLevel', 'Staff_Count']], on = ['OfficerType_FacilityLevel'])
-
-# Calculate salary cost for required  health workforce (Staff count X Fraction of staff time needed X Annual salary)
-salary_for_required_staff['Total_salary_by_cadre_and_level'] = salary_for_required_staff['Salary_USD'] * salary_for_required_staff['Value'] * salary_for_required_staff['Staff_Count']
-
-# Create a dataframe to store economic costs
-scenario_cost_economic = pd.DataFrame({'HR': salary_for_required_staff['Total_salary_by_cadre_and_level'].sum()}, index=[0])
+# TODO Consider calculating economic cost of HR by multiplying salary times staff count with cadres_utilisation_rate
 
 # 2. Consumables cost
 # 2.1 Consumables cost - Financial (What needs to be purchased given what is dispensed)
