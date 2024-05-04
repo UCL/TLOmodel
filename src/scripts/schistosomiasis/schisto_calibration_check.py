@@ -177,6 +177,7 @@ for i, _spec in enumerate(species):
     ax.set_ylabel('End of year prevalence')
     ax.set_ylim(0, 1.00)
     ax.get_legend().remove()
+    data.to_csv(outputpath / (f"{_spec}" + '.csv'))
 
     # Plot legend only for the last subplot
     # if i == len(species) -1:
