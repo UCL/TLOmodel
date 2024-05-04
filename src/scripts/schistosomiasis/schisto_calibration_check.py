@@ -78,7 +78,7 @@ def run_simulation(popsize=popsize, mda_execute=True):
     return sim, output
 
 
-sim, output = run_simulation(popsize=1000, mda_execute=False)
+sim, output = run_simulation(popsize=popsize, mda_execute=False)
 
 # %% Extract and process the `pd.DataFrame`s needed
 
