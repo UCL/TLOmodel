@@ -67,7 +67,6 @@ workbook_cost = pd.read_excel((resourcefilepath / "costing/ResourceFile_Costing.
                                     sheet_name = None)
 
 # 1. HR cost
-# TODO apply attrition rate to the cost calculation  https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9237893/#SP1
 # 1.1 HR Cost - Financial (Given the staff available)
 # Load annual salary by officer type and facility level
 hr_cost_parameters = workbook_cost["human_resources"]
@@ -117,22 +116,70 @@ list_of_cadre_and_level_combinations_used = cadres_utilisation_rate[cadres_utili
 current_staff_count_by_level_and_officer_type['OfficerType_FacilityLevel'] = 'Officer_Type=' + current_staff_count_by_level_and_officer_type['Officer_Category'].astype(str) + '|Facility_Level=' + current_staff_count_by_level_and_officer_type['Facility_Level'].astype(str)
 used_staff_count_by_level_and_officer_type = current_staff_count_by_level_and_officer_type[current_staff_count_by_level_and_officer_type['OfficerType_FacilityLevel'].isin(list_of_cadre_and_level_combinations_used)]
 
-# Calculate salary cost for modelled health workforce (Staff count X Annual salary)
+# Calculate various components of HR cost
+# 1. Salary cost for modelled health workforce (Staff count X Annual salary)
 salary_for_all_staff = pd.merge(current_staff_count_by_level_and_officer_type[['OfficerType_FacilityLevel', 'Staff_Count']],
                                      hr_annual_salary[['OfficerType_FacilityLevel', 'Value']], on = ['OfficerType_FacilityLevel'], how = "left")
 salary_for_all_staff['Total_salary_by_cadre_and_level'] = salary_for_all_staff['Value'] * salary_for_all_staff['Staff_Count']
+total_salary_for_all_staff = salary_for_all_staff['Total_salary_by_cadre_and_level'].sum()
 
-# Calculate salary cost for current total staff
-salary_for_modelled_staff = pd.merge(used_staff_count_by_level_and_officer_type[['OfficerType_FacilityLevel', 'Staff_Count']],
+# 2. Salary cost for current total staff
+salary_for_staff_used_in_scenario = pd.merge(used_staff_count_by_level_and_officer_type[['OfficerType_FacilityLevel', 'Staff_Count']],
                                      hr_annual_salary[['OfficerType_FacilityLevel', 'Value']], on = ['OfficerType_FacilityLevel'], how = "left")
-salary_for_modelled_staff['Total_salary_by_cadre_and_level'] = salary_for_modelled_staff['Value'] * salary_for_modelled_staff['Staff_Count']
+salary_for_staff_used_in_scenario['Total_salary_by_cadre_and_level'] = salary_for_staff_used_in_scenario['Value'] * salary_for_staff_used_in_scenario['Staff_Count']
+total_salary_for_staff_used_in_scenario = salary_for_staff_used_in_scenario['Total_salary_by_cadre_and_level'].sum()
 
-# Other costs to maintain a fixed size of health workforce
-# TODO consider annual_preservice_training_cost_percapita_usd, annual_preservice_training_cost_percapita_usd, annual_attrition_rate, absorption_rate_of_students_into_public_workforce,
-# TODO consider proportion_of_workforce_recruited_from_abroad, recruitment_cost_per_person_recruited_usd, licensure_exam_passing_rate, graduation_rate
+# 3. Recruitment cost to fill gap created by attrition
+def merge_cost_and_model_data(cost_df, model_df, varnames):
+    merged_df = model_df.copy()
+    for varname in varnames:
+        new_cost_df = cost_df[cost_df['Parameter_name'] == varname][['Officer_Category', 'Facility_Level', 'Value']]
+        new_cost_df = new_cost_df.rename(columns={"Value": varname})
+        if ((new_cost_df['Officer_Category'] == 'All').all()) and ((new_cost_df['Facility_Level'] == 'All').all()):
+            merged_df[varname] = new_cost_df[varname].mean()
+        elif ((new_cost_df['Officer_Category'] == 'All').all()) and ((new_cost_df['Facility_Level'] == 'All').all() == False):
+            merged_df = pd.merge(merged_df, new_cost_df[['Facility_Level',varname]], on=['Facility_Level'], how="left")
+        elif ((new_cost_df['Officer_Category'] == 'All').all() == False) and ((new_cost_df['Facility_Level'] == 'All').all()):
+            merged_df = pd.merge(merged_df, new_cost_df[['Officer_Category',varname]], on=['Officer_Category'], how="left")
+        else:
+            merged_df = pd.merge(merged_df, new_cost_df, on=['Officer_Category', 'Facility_Level'], how="left")
+    return merged_df
+
+recruitment_cost_df = merge_cost_and_model_data(cost_df = hr_cost_parameters, model_df = used_staff_count_by_level_and_officer_type,
+                                                     varnames = ['annual_attrition_rate', 'recruitment_cost_per_person_recruited_usd'])
+recruitment_cost_df['annual_recruitment_cost'] = recruitment_cost_df['annual_attrition_rate'] * recruitment_cost_df['Staff_Count'] * \
+                      recruitment_cost_df['recruitment_cost_per_person_recruited_usd']
+recruitment_cost_for_attrited_workers = recruitment_cost_df['annual_recruitment_cost'].sum()
+
+# 4. Pre-service training cost to fill gap created by attrition
+preservice_training_cost_df = merge_cost_and_model_data(cost_df = hr_cost_parameters, model_df = used_staff_count_by_level_and_officer_type,
+                                                     varnames = ['annual_attrition_rate',
+                                                                 'licensure_exam_passing_rate', 'graduation_rate',
+                                                                 'absorption_rate_of_students_into_public_workforce', 'proportion_of_workforce_recruited_from_abroad',
+                                                                 'annual_preservice_training_cost_percapita_usd'])
+preservice_training_cost_df['annual_preservice_training_cost'] = preservice_training_cost_df['annual_attrition_rate'] * preservice_training_cost_df['Staff_Count'] * \
+                                                (1/(preservice_training_cost_df['absorption_rate_of_students_into_public_workforce'] + preservice_training_cost_df['proportion_of_workforce_recruited_from_abroad'])) * \
+                                                (1/preservice_training_cost_df['graduation_rate']) * (1/preservice_training_cost_df['licensure_exam_passing_rate']) * \
+                                                preservice_training_cost_df['annual_preservice_training_cost_percapita_usd']
+preservice_training_cost_for_attrited_workers = preservice_training_cost_df['annual_preservice_training_cost'].sum()
+
+# 5. In-service training cost to train all staff
+inservice_training_cost_df = merge_cost_and_model_data(cost_df = hr_cost_parameters, model_df = used_staff_count_by_level_and_officer_type,
+                                                     varnames = ['annual_inservice_training_cost_usd'])
+inservice_training_cost_df['annual_inservice_training_cost'] = inservice_training_cost_df['Staff_Count'] * inservice_training_cost_df['annual_inservice_training_cost_usd']
+inservice_training_cost_for_staff_used_in_scenario = inservice_training_cost_df['annual_inservice_training_cost'].sum()
+# TODO check why annual_inservice_training_cost for DCSA is NaN in the merged_df
 
 # Create a dataframe to store financial costs
-scenario_cost_financial = pd.DataFrame({'HR': salary_for_modelled_staff['Total_salary_by_cadre_and_level'].sum()}, index=[0])
+#scenario_cost_financial = pd.DataFrame({'HR': salary_for_modelled_staff['Total_salary_by_cadre_and_level'].sum()}, index=[0])
+hr_cost_subcategories = ['total_salary_for_all_staff', 'total_salary_for_staff_used_in_scenario',
+                         'recruitment_cost_for_attrited_workers', 'preservice_training_cost_for_attrited_workers',
+                         'inservice_training_cost_for_staff_used_in_scenario']
+scenario_cost_financial = pd.DataFrame({
+    'Cost_Category': ['Human Resources for Health'] * len(hr_cost_subcategories),
+    'Cost_Sub-category': hr_cost_subcategories,
+    'Value_2023USD': [total_salary_for_all_staff, total_salary_for_staff_used_in_scenario, recruitment_cost_for_attrited_workers, preservice_training_cost_for_attrited_workers, inservice_training_cost_for_staff_used_in_scenario]#print('[' + ', '.join(hr_cost_subcategories) + ']')
+})
 
 # TODO Consider calculating economic cost of HR by multiplying salary times staff count with cadres_utilisation_rate
 
