@@ -4,7 +4,8 @@ on:
   workflow_call:
     inputs:
       runs-on:
-        description: The type of machine to run job on
+        description: |
+          The type(s) of machine to run job on. Use JSON encoded strings for sequences.
         required: false
         type: string
         default: ubuntu-latest
@@ -64,13 +65,13 @@ on:
         required: true
 jobs:
   run_test_on_keyword_and_reply_with_result:
-    runs-on: ${{ inputs.runs-on }}
+    runs-on: ${{ fromJSON(inputs.runs-on) }}
     timeout-minutes: ${{ inputs.timeout-minutes }}
     if: github.event.comment.body == format('/run {0}', inputs.keyword)
     steps:
     - name: Check permissions of commenting user
       id: has_permissions
-      uses: actions/github-script@v6
+      uses: actions/github-script@v7
       with:
         script: |
           const response = await github.rest.repos.getCollaboratorPermissionLevel({
@@ -87,7 +88,7 @@ jobs:
         exit 1
 
     - name: React to comment
-      uses: actions/github-script@v6
+      uses: actions/github-script@v7
       with:
         script: |
           github.rest.reactions.createForIssueComment({
@@ -99,7 +100,7 @@ jobs:
 
     - name: Get SHA of last commit on default branch if issue or pull-request branch
       id: sha
-      uses: actions/github-script@v6
+      uses: actions/github-script@v7
       with:
         result-encoding: string
         script: |
@@ -125,7 +126,7 @@ jobs:
     - name: Get comment-bot token
       if: always() && steps.has_permissions.outputs.result == 'true'
       id: get_comment_bot_token
-      uses: peter-murray/workflow-application-token-action@b1ad34e28f4ef30582df1bd5f45df2044eb7a6b9
+      uses: peter-murray/workflow-application-token-action@dc0413987a085fa17d19df9e47d4677cf81ffef3
       with:
         application_id: ${{ secrets.application-id }}
         application_private_key: ${{ secrets.application-private-key }}
@@ -133,7 +134,7 @@ jobs:
 
     - name: Create comment with test result and link to workflow run information
       if: always() && steps.has_permissions.outputs.result == 'true'
-      uses: actions/github-script@v6
+      uses: actions/github-script@v7
       with:
         github-token: ${{ steps.get_comment_bot_token.outputs.token }}
         script: |
@@ -193,7 +194,7 @@ jobs:
 
     - name: Upload artifact if requested
       if: "${{ inputs.artifact-path != '' }}"
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ inputs.artifact-name }}
         path: ${{ inputs.artifact-path }}

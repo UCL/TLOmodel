@@ -220,10 +220,10 @@ class BedDays:
 
     def check_beddays_footprint_format(self, beddays_footprint):
         """Check that the format of the beddays footprint is correct"""
-        assert type(beddays_footprint) is dict
+        assert isinstance(beddays_footprint, dict)
         assert len(self.bed_types) == len(beddays_footprint)
         assert all([(bed_type in beddays_footprint) for bed_type in self.bed_types])
-        assert all([((v >= 0) and (type(v) is int)) for v in beddays_footprint.values()])
+        assert all([((v >= 0) and isinstance(v, int)) for v in beddays_footprint.values()])
         if 'non_bed_space' in self.bed_types:
             assert beddays_footprint['non_bed_space'] == 0, "A request cannot be made for a non-bed space"
 

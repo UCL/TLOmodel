@@ -11,7 +11,7 @@ from tlo.methods import (
     pregnancy_helper_functions,
 )
 from tlo.methods.fullmodel import fullmodel
-from tlo.methods.healthsystem import FacilityInfo
+from tlo.methods.hsi_event import FacilityInfo
 
 start_date = Date(2010, 1, 1)
 
@@ -26,7 +26,7 @@ except NameError:
 def get_dummy_hsi(sim, mother_id, id, fl):
     """create dummy HSI to test that consumables truly are unavailable when using standard method"""
     from tlo.events import IndividualScopeEventMixin
-    from tlo.methods.healthsystem import HSI_Event
+    from tlo.methods.hsi_event import HSI_Event
 
     class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
         def __init__(self, module, person_id):
@@ -65,11 +65,13 @@ def test_analysis_analysis_events_run_as_expected_and_update_parameters(seed):
 
     # set some availability probability
     new_avail_prob = 0.5
+    new_avail_odds = 1.5
 
     # set variables that trigger updates within analysis events
     pparams['alternative_anc_coverage'] = True
     pparams['alternative_anc_quality'] = True
     pparams['anc_availability_probability'] = new_avail_prob
+
     lparams['alternative_bemonc_availability'] = True
     lparams['alternative_cemonc_availability'] = True
     lparams['bemonc_availability'] = new_avail_prob
@@ -77,6 +79,7 @@ def test_analysis_analysis_events_run_as_expected_and_update_parameters(seed):
     lparams['alternative_pnc_coverage'] = True
     lparams['alternative_pnc_quality'] = True
     lparams['pnc_availability_probability'] = new_avail_prob
+    lparams['pnc_availability_odds'] = new_avail_odds
 
     # store the parameters determining care seeking before the change
     unchanged_odds_anc = pparams['odds_early_init_anc4'][0]
@@ -87,6 +90,11 @@ def test_analysis_analysis_events_run_as_expected_and_update_parameters(seed):
 
     p_current_params = sim.modules['PregnancySupervisor'].current_parameters
     c_current_params = sim.modules['CareOfWomenDuringPregnancy'].current_parameters
+    l_current_params = sim.modules['Labour'].current_parameters
+    nbparams = sim.modules['NewbornOutcomes'].current_parameters
+
+    assert p_current_params['ps_analysis_in_progress']
+    assert l_current_params['la_analysis_in_progress']
 
     # Check antenatal parameters correctly updated
     assert p_current_params['prob_anc1_months_2_to_4'] == [1.0, 0, 0]
@@ -94,31 +102,110 @@ def test_analysis_analysis_events_run_as_expected_and_update_parameters(seed):
     assert p_current_params['odds_early_init_anc4'] != unchanged_odds_anc
 
     for parameter in ['prob_intervention_delivered_urine_ds', 'prob_intervention_delivered_bp',
-                      'prob_intervention_delivered_ifa', 'prob_intervention_delivered_llitn',
-                      'prob_intervention_delivered_llitn', 'prob_intervention_delivered_tt',
-                      'prob_intervention_delivered_poct', 'prob_intervention_delivered_syph_test',
-                      'prob_intervention_delivered_iptp', 'prob_intervention_delivered_gdm_test']:
+                      'prob_intervention_delivered_syph_test', 'prob_intervention_delivered_gdm_test']:
         assert c_current_params[parameter] == new_avail_prob
 
-    # Check labour/postnatal/newborn parameters updated
-    l_current_params = sim.modules['Labour'].current_parameters
-    pn_current_params = sim.modules['PostnatalSupervisor'].current_parameters
-    nbparams = sim.modules['NewbornOutcomes'].current_parameters
-
-    assert l_current_params['squeeze_threshold_for_delay_three_bemonc'] == 10_000
-    assert l_current_params['squeeze_threshold_for_delay_three_cemonc'] == 10_000
-    assert l_current_params['squeeze_threshold_for_delay_three_pn'] == 10_000
-    assert nbparams['squeeze_threshold_for_delay_three_nb_care'] == 10_000
+    # Now check corrent labour/newborn/postnatal parameters have been updated
+    assert l_current_params['prob_intervention_delivered_anaemia_assessment_pnc'] == new_avail_prob
 
     assert l_current_params['odds_will_attend_pnc'] != unchanged_odds_pnc
-    assert l_current_params['prob_careseeking_for_complication_pn'] == new_avail_prob
     assert l_current_params['prob_timings_pnc'] == [1.0, 0.0]
 
-    assert nbparams['prob_pnc_check_newborn'] == new_avail_prob
-    assert nbparams['prob_care_seeking_for_complication'] == new_avail_prob
+    assert nbparams['prob_pnc_check_newborn'] == \
+           l_current_params['pnc_availability_odds'] / (l_current_params['pnc_availability_odds'] + 1)
+    assert nbparams['prob_timings_pnc_newborns'] == [1.0, 0.0]
 
-    assert pn_current_params['prob_care_seeking_postnatal_emergency_neonate'] == new_avail_prob
-    assert pn_current_params['prob_care_seeking_postnatal_emergency'] == new_avail_prob
+
+def test_analysis_analysis_events_run_as_expected_when_using_sensitivity_max_parameters(seed):
+    sim = Simulation(start_date=start_date, seed=seed)
+    sim.register(*fullmodel(resourcefilepath=resourcefilepath))
+    sim.make_initial_population(n=100)
+    lparams = sim.modules['Labour'].parameters
+    pparams = sim.modules['PregnancySupervisor'].parameters
+
+    # set the events to run 1/1/2010
+    lparams['analysis_year'] = 2010
+    pparams['analysis_year'] = 2010
+
+    # set variables that trigger updates within analysis events
+    pparams['sens_analysis_max'] = True
+    lparams['sba_sens_analysis_max'] = True
+    lparams['pnc_sens_analysis_max'] = True
+
+    pnc_avail_prob = 1.0
+    lparams['pnc_availability_probability'] = pnc_avail_prob
+
+    sim.simulate(end_date=Date(2010, 1, 2))
+
+    p_current_params = sim.modules['PregnancySupervisor'].current_parameters
+    c_current_params = sim.modules['CareOfWomenDuringPregnancy'].current_parameters
+    l_current_params = sim.modules['Labour'].current_parameters
+    pn_current_params = sim.modules['PostnatalSupervisor'].current_parameters
+    nb_current_params = sim.modules['NewbornOutcomes'].current_parameters
+
+    assert p_current_params['ps_analysis_in_progress']
+    assert l_current_params['la_analysis_in_progress']
+
+    # Check ANC max
+    for parameter in ['prob_seek_anc5', 'prob_seek_anc6',
+                      'prob_seek_anc7', 'prob_seek_anc8']:
+        assert c_current_params[parameter] == 1.0
+
+    assert p_current_params['prob_seek_care_pregnancy_complication'] == 1.0
+
+    # Check labour max
+    assert l_current_params['odds_deliver_at_home'] == 0.0
+
+    # Check PNC max
+    assert l_current_params['prob_timings_pnc'] == [pnc_avail_prob, (1 - pnc_avail_prob)]
+    assert l_current_params['prob_careseeking_for_complication_pn'] == pnc_avail_prob
+    assert pn_current_params['prob_care_seeking_postnatal_emergency'] == pnc_avail_prob
+
+    assert nb_current_params['prob_pnc_check_newborn'] == pnc_avail_prob
+    assert nb_current_params['prob_timings_pnc_newborns'] == [pnc_avail_prob, (1 - pnc_avail_prob)]
+    assert nb_current_params['prob_care_seeking_for_complication'] == pnc_avail_prob
+    assert pn_current_params['prob_care_seeking_postnatal_emergency_neonate'] == pnc_avail_prob
+
+
+def test_analysis_analysis_events_run_as_expected_when_using_sensitivity_min_parameters(seed):
+    sim = Simulation(start_date=start_date, seed=seed)
+    sim.register(*fullmodel(resourcefilepath=resourcefilepath))
+    sim.make_initial_population(n=100)
+    lparams = sim.modules['Labour'].parameters
+    pparams = sim.modules['PregnancySupervisor'].parameters
+
+    # set the events to run 1/1/2010
+    lparams['analysis_year'] = 2010
+    pparams['analysis_year'] = 2010
+
+    # set variables that trigger updates within analysis events
+    pparams['sens_analysis_min'] = True
+    lparams['pnc_sens_analysis_min'] = True
+
+    pnc_avail_prob = 0.0
+    lparams['pnc_availability_probability'] = pnc_avail_prob
+
+    sim.simulate(end_date=Date(2010, 1, 2))
+
+    p_current_params = sim.modules['PregnancySupervisor'].current_parameters
+    l_current_params = sim.modules['Labour'].current_parameters
+    pn_current_params = sim.modules['PostnatalSupervisor'].current_parameters
+    nb_current_params = sim.modules['NewbornOutcomes'].current_parameters
+
+    assert p_current_params['ps_analysis_in_progress']
+    assert l_current_params['la_analysis_in_progress']
+
+    assert p_current_params['prob_seek_care_pregnancy_complication'] == 0.0
+
+    # Check PNC min
+    assert l_current_params['prob_timings_pnc'] == [pnc_avail_prob, (1 - pnc_avail_prob)]
+    assert l_current_params['prob_careseeking_for_complication_pn'] == pnc_avail_prob
+    assert pn_current_params['prob_care_seeking_postnatal_emergency'] == pnc_avail_prob
+
+    assert nb_current_params['prob_pnc_check_newborn'] == pnc_avail_prob
+    assert nb_current_params['prob_timings_pnc_newborns'] == [pnc_avail_prob, (1 - pnc_avail_prob)]
+    assert nb_current_params['prob_care_seeking_for_complication'] == pnc_avail_prob
+    assert pn_current_params['prob_care_seeking_postnatal_emergency_neonate'] == pnc_avail_prob
 
 
 def test_analysis_events_force_availability_of_consumables_when_scheduled_in_anc(seed):
@@ -159,7 +246,7 @@ def test_analysis_events_force_availability_of_consumables_when_scheduled_in_anc
     pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
     pregnancy_helper_functions.update_mni_dictionary(sim.modules['Labour'], mother_id)
 
-    for params in ['prob_intervention_delivered_ifa', 'prob_adherent_ifa', 'prob_intervention_delivered_syph_test']:
+    for params in ['prob_adherent_ifa', 'prob_intervention_delivered_syph_test']:
         sim.modules['CareOfWomenDuringPregnancy'].current_parameters[params] = 1.0
 
     # Override the availability of the consumables within the health system- set to 0. If analysis was not running no
@@ -245,6 +332,7 @@ def test_analysis_events_force_availability_of_consumables_for_sba_analysis(seed
     df.at[mother_id, 'ps_premature_rupture_of_membranes'] = True
     df.at[mother_id, 'ps_htn_disorders'] = 'severe_pre_eclamp'
     df.at[mother_id, 'la_obstructed_labour'] = True
+
     df.at[mother_id, 'la_sepsis'] = True
 
     mni[mother_id]['cpd'] = False
@@ -277,6 +365,9 @@ def test_analysis_events_force_availability_of_consumables_for_sba_analysis(seed
     for cons in abx_prom, steroids, cbp, ol, mag_sulf, htns, seps, resus:
         available = hsi_event.get_consumables(item_codes=cons)
         assert not available
+
+    # Ensure AVD can occur
+    params['prob_successful_assisted_vaginal_delivery'] = 1.0
 
     # Next define the actual HSI of interest
     sba = labour.HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(
@@ -323,7 +414,7 @@ def test_analysis_events_force_availability_of_consumables_for_sba_analysis(seed
         assert not available
 
     cemonc = labour.HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(
-        module=sim.modules['Labour'], person_id=mother_id, timing='intrapartum')
+        module=sim.modules['Labour'], person_id=mother_id, timing='intrapartum', facility_level_of_this_hsi='1b')
     cemonc.facility_info = FacilityInfo(id=3,
                                         name='Facility_Level_2_Balaka',
                                         level='2',
@@ -370,22 +461,24 @@ def test_analysis_events_force_availability_of_consumables_for_pnc_analysis(seed
     df.at[mother_id, 'la_date_most_recent_delivery'] = sim.date
     mni[mother_id]['will_receive_pnc'] = 'early'
 
+    # This MNI variable blocks death being calculated which resets treatment variables - therfore setting as true
+    # allows for test on treatment variables after the event runs
+    mni[mother_id]['referred_for_surgery'] = True
+
     # set some complications
-    df.at[mother_id, 'la_postpartum_haem'] = True
-    mni[mother_id]['uterine_atony'] = True
-    params['prob_haemostatis_uterotonics'] = 1.0
+    df.at[mother_id, 'la_sepsis_pp'] = True
 
     module = sim.modules['Labour']
-    pph = module.item_codes_lab_consumables['pph_core']
+    sep_cons = module.item_codes_lab_consumables['maternal_sepsis_core']
 
-    for item in pph:
+    for item in sep_cons:
         sim.modules['HealthSystem'].override_availability_of_consumables({item: 0.0})
 
     # refresh the consumables
     sim.modules['HealthSystem'].consumables._refresh_availability_of_consumables(date=sim.date)
 
     hsi_event = get_dummy_hsi(sim, mother_id, id=3, fl=2)
-    for cons in pph:
+    for cons in sep_cons:
         available = hsi_event.get_consumables(item_codes=cons)
         assert not available
 
@@ -399,8 +492,7 @@ def test_analysis_events_force_availability_of_consumables_for_pnc_analysis(seed
 
     pnc.apply(person_id=mother_id, squeeze_factor=0.0)
 
-    assert not df.at[mother_id, 'la_postpartum_haem']
-    assert not mni[mother_id]['uterine_atony']
+    assert df.at[mother_id, 'la_sepsis_treatment']
 
 
 def test_analysis_events_force_availability_of_consumables_for_newborn_hsi(seed):
@@ -529,8 +621,11 @@ def test_analysis_events_circumnavigates_sf_and_competency_parameters(seed):
     params['mean_hcw_competence_hp'] = 0.0
     params['mean_hcw_competence_hc'] = 0.0
 
+    # Ensure AVD can occur
+    params['prob_successful_assisted_vaginal_delivery'] = 1.0
+
     # Next define the actual HSI of interest
-    from tlo.methods.healthsystem import FacilityInfo
+    from tlo.methods.hsi_event import FacilityInfo
 
     # run the event and check the interventions were delivered as expected
     sba = labour.HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(

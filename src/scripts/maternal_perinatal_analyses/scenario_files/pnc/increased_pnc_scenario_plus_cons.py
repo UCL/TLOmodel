@@ -29,16 +29,16 @@ from tlo.scenario import BaseScenario
 class IncreasedPNCandImprovedQualityScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 55447
+        self.seed = 661184
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2031, 1, 1)
-        self.pop_size = 200_000
+        self.pop_size = 250_000
         self.number_of_draws = 1
         self.runs_per_draw = 20
 
     def log_configuration(self):
         return {
-            'filename': 'increased_anc_qual_200k', 'directory': './outputs',
+            'filename': 'increased_pnc_qual_250k', 'directory': './outputs',
             "custom_levels": {
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
@@ -92,9 +92,12 @@ class IncreasedPNCandImprovedQualityScenario(BaseScenario):
         return {
             'Labour': {'alternative_pnc_coverage': True,
                        'alternative_pnc_quality': True,
-                       'pnc_availability_odds': 11.0,
-                       'pnc_availability_probability': 0.9,
-                       'analysis_year': 2021},
+                       'pnc_availability_odds': 15.0,
+                       'pnc_availability_probability': 1.0,
+                       'analysis_year': 2023},
+
+            'PregnancySupervisor': {'analysis_year': 2023},
+
         }
 
 

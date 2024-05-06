@@ -108,7 +108,7 @@ def test_birth_and_death():
 
     # Register modules
     rb = random_birth.RandomBirth(name='rb')
-    rb.pregnancy_probability = 0.1
+    rb.parameters['pregnancy_probability'] = 0.1
     rd = random_death.RandomDeath(name='rd')
     rd.parameters['death_probability'] = 0.01
     sim.register(rb, rd)

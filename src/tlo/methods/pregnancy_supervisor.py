@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
@@ -15,11 +18,19 @@ from tlo import (
     logging,
     util,
 )
+from tlo.core import IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel
 from tlo.methods import Metadata, labour, pregnancy_helper_functions, pregnancy_supervisor_lm
+from tlo.methods.care_of_women_during_pregnancy import (
+    HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement,
+    HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy,
+)
 from tlo.methods.causes import Cause
 from tlo.util import BitsetHandler
+
+if TYPE_CHECKING:
+    from tlo.population import PatientDetails
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -229,7 +240,7 @@ class PregnancySupervisor(Module):
         'rr_preterm_labour_multiple_pregnancy': Parameter(
             Types.LIST, 'relative risk of early labour onset in women pregnant with twins'),
 
-        # ANTENATAL STILLBIRTH
+        # ANTENATAL STILLBIRTH...
         'prob_still_birth_per_month': Parameter(
             Types.LIST, 'underlying risk of stillbirth per month without the impact of risk factors'),
         'rr_still_birth_ga_41': Parameter(
@@ -300,22 +311,12 @@ class PregnancySupervisor(Module):
             Types.LIST, 'adjusted odds ratio of EANC4+ in women with a parity of 4-5'),
         'aor_early_anc4_parity_6+': Parameter(
             Types.LIST, 'adjusted odds ratio of EANC4+ in women with a parity of 6+'),
-        'aor_early_anc4_primary_edu': Parameter(
-            Types.LIST, 'adjusted odds ratio of EANC4+ in women with primary education'),
         'aor_early_anc4_secondary_edu': Parameter(
             Types.LIST, 'adjusted odds ratio of EANC4+ in women with secondary education'),
         'aor_early_anc4_tertiary_edu': Parameter(
             Types.LIST, 'adjusted odds ratio of EANC4+ in women with tertiary education'),
-        'aor_early_anc4_middle_wealth': Parameter(
-            Types.LIST, 'adjusted odds ratio of EANC4+ in women in the middle wealth quintile'),
-        'aor_early_anc4_richer_wealth': Parameter(
-            Types.LIST, 'adjusted odds ratio of EANC4+ in women in the richer wealth quintile'),
         'aor_early_anc4_richest_wealth': Parameter(
             Types.LIST, 'adjusted odds ratio of EANC4+ in women in the richest wealth quintile'),
-        'aor_early_anc4_married': Parameter(
-            Types.LIST, 'adjusted odds ratio of EANC4+ in women who are married'),
-        'aor_early_anc4_previously_married': Parameter(
-            Types.LIST, 'adjusted odds ratio of EANC4+ in women who were previously married (divorced/widowed)'),
         'prob_late_initiation_anc4': Parameter(
             Types.LIST, 'probability a woman will undertake 4 or more ANC visits with the first being after 4 months'),
         'prob_early_initiation_anc_below4': Parameter(
@@ -349,12 +350,6 @@ class PregnancySupervisor(Module):
         'treatment_effect_still_birth_food_sups': Parameter(
             Types.LIST, 'risk reduction of still birth for women receiving nutritional supplements'),
 
-        # EFFECT OF DELAYS...
-        'treatment_effect_modifier_all_delays': Parameter(
-            Types.LIST, 'factor by which treatment effectiveness is reduced in the presences of multiple delays'),
-        'treatment_effect_modifier_one_delay': Parameter(
-            Types.LIST, 'factor by which treatment effectiveness is reduced in the presences of one delays'),
-
         # ANALYSIS PARAMETERS...
         'anc_service_structure': Parameter(
             Types.INT, 'stores type of ANC service being delivered in the model (anc4 or anc8) and is used in analysis'
@@ -377,27 +372,38 @@ class PregnancySupervisor(Module):
         'anc_availability_probability': Parameter(
             Types.REAL, 'Target probability of quality/consumables when analysis is being conducted - only applied if '
                         'alternative_anc_quality is true'),
-
+        'alternative_ip_anc_quality': Parameter(
+            Types.BOOL, 'Signals within the analysis event that an alternative level of inpatient ANC quality has been '
+                        'determined following the events run'),
+        'ip_anc_availability_probability': Parameter(
+            Types.REAL, 'Target probability of quality/consumables when analysis is being conducted - only applied if '
+                        'alternative_ip_anc_quality is true'),
+        'sens_analysis_min': Parameter(
+            Types.BOOL, 'Signals within the analysis event and code that sensitivity analysis is being undertaken in '
+                        'which ANC is blocked from occurring'),
+        'sens_analysis_max': Parameter(
+            Types.BOOL, 'Signals within the analysis event and code that sensitivity analysis is being undertaken in '
+                        'which the maximum coverage of ANC is enforced'),
     }
 
     PROPERTIES = {
-        'ps_gestational_age_in_weeks': Property(Types.REAL, 'current gestational age, in weeks, of a womans '
+        'ps_gestational_age_in_weeks': Property(Types.REAL, 'current gestational age, in weeks, of a woman '
                                                             'pregnancy'),
         'ps_date_of_anc1': Property(Types.DATE, 'Date first ANC visit is scheduled for'),
-        'ps_ectopic_pregnancy': Property(Types.CATEGORICAL, 'Whether a womans is experiencing ectopic pregnancy and'
+        'ps_ectopic_pregnancy': Property(Types.CATEGORICAL, 'Whether a woman is experiencing ectopic pregnancy and'
                                                             ' its current state',
                                          categories=['none', 'not_ruptured', 'ruptured']),
-        'ps_multiple_pregnancy': Property(Types.BOOL, 'Whether a womans is pregnant with multiple fetuses'),
-        'ps_placenta_praevia': Property(Types.BOOL, 'Whether a womans pregnancy will be complicated by placenta'
+        'ps_multiple_pregnancy': Property(Types.BOOL, 'Whether a woman is pregnant with multiple fetuses'),
+        'ps_placenta_praevia': Property(Types.BOOL, 'Whether a woman pregnancy will be complicated by placenta'
                                                     'praevia'),
-        'ps_syphilis': Property(Types.BOOL, 'Whether a womans has syphilis during pregnancy'),
+        'ps_syphilis': Property(Types.BOOL, 'Whether a woman has syphilis during pregnancy'),
         'ps_anaemia_in_pregnancy': Property(Types.CATEGORICAL, 'Whether a woman has anaemia in pregnancy and its '
                                                                'severity',
                                             categories=['none', 'mild', 'moderate', 'severe']),
 
-        'ps_anc4': Property(Types.BOOL, 'Whether this womans is predicted to attend 4 or more antenatal care visits '
+        'ps_anc4': Property(Types.BOOL, 'Whether this woman is predicted to attend 4 or more antenatal care visits '
                                         'during her pregnancy'),
-        'ps_abortion_complications': Property(Types.INT, 'Bitset column holding types of abortion complication'),
+        'ps_abortion_complications': Property(Types.BITSET, 'Bitset column holding types of abortion complication'),
         'ps_prev_spont_abortion': Property(Types.BOOL, 'Whether this woman has had any previous pregnancies end in '
                                                        'spontaneous abortion'),
         'ps_prev_stillbirth': Property(Types.BOOL, 'Whether this woman has had any previous pregnancies end in '
@@ -419,7 +425,7 @@ class PregnancySupervisor(Module):
                                                                   'membranes before the onset of labour. If this is '
                                                                   '<37 weeks from gestation the woman has preterm '
                                                                   'premature rupture of membranes'),
-        'ps_chorioamnionitis': Property(Types.BOOL, 'Whether a womans is experiencing chorioamnionitis'),
+        'ps_chorioamnionitis': Property(Types.BOOL, 'Whether a woman is experiencing chorioamnionitis'),
         'ps_emergency_event': Property(Types.BOOL, 'signifies a woman in undergoing an acute emergency event in her '
                                                    'pregnancy- used to consolidated care seeking in the instance of '
                                                    'multiple complications')
@@ -541,7 +547,7 @@ class PregnancySupervisor(Module):
             'ectopic_pregnancy_death': LinearModel.custom(pregnancy_supervisor_lm.ectopic_pregnancy_death,
                                                           parameters=params),
 
-            # This equation determines the monthly probability of a women experiencing a miscarriage prior to 28 weeks
+            # This equation determines the monthly probability of a woman experiencing a miscarriage prior to 28 weeks
             # gestation
             'spontaneous_abortion': LinearModel.custom(pregnancy_supervisor_lm.spontaneous_abortion, parameters=params),
 
@@ -556,7 +562,7 @@ class PregnancySupervisor(Module):
             # This equation determines the monthly probability of a woman determining anaemia during her pregnancy
             'maternal_anaemia': LinearModel.custom(pregnancy_supervisor_lm.maternal_anaemia, module=self),
 
-            # This equation determines the monthly probability of a women going into labour before reaching term
+            # This equation determines the monthly probability of a woman going into labour before reaching term
             # gestation (i.e. 37 weeks or more)
             'early_onset_labour': LinearModel.custom(pregnancy_supervisor_lm.preterm_labour, module=self),
 
@@ -568,20 +574,20 @@ class PregnancySupervisor(Module):
             # pregnancy which is a strong predictor of antenatal bleeding
             'placental_abruption': LinearModel.custom(pregnancy_supervisor_lm.placental_abruption, parameters=params),
 
-            # This equation determines the monthly probability of a women developing antepartum haemorrhage. Haemorrhage
+            # This equation determines the monthly probability of a woman developing antepartum haemorrhage. Haemorrhage
             # may only occur in the presence of either praevia or abruption
             'antepartum_haem': LinearModel.custom(pregnancy_supervisor_lm.antepartum_haem, parameters=params),
 
-            # This equation determines the monthly probability of a women developing gestational diabetes
+            # This equation determines the monthly probability of a woman developing gestational diabetes
             'gest_diab': LinearModel.custom(pregnancy_supervisor_lm.gest_diab, parameters=params),
 
-            # This equation determines the monthly probability of a women developing gestational hypertension
+            # This equation determines the monthly probability of a woman developing gestational hypertension
             'gest_htn': LinearModel.custom(pregnancy_supervisor_lm.gest_htn, parameters=params),
 
-            # This equation determines the monthly probability of a women developing mild pre-eclampsia
+            # This equation determines the monthly probability of a woman developing mild pre-eclampsia
             'pre_eclampsia': LinearModel.custom(pregnancy_supervisor_lm.pre_eclampsia, module=self),
 
-            # This equation determines the monthly probability of a women experiencing an antenatal stillbirth,
+            # This equation determines the monthly probability of a woman experiencing an antenatal stillbirth,
             # pregnancy loss following 28 weeks gestation
             'antenatal_stillbirth': LinearModel.custom(pregnancy_supervisor_lm.antenatal_stillbirth, module=self),
         }
@@ -642,13 +648,15 @@ class PregnancySupervisor(Module):
 
         if df.at[mother_id, 'is_alive']:
 
-            # We reset all womans gestational age when they deliver as they are no longer pregnant
+            # We reset all women gestational age when they deliver as they are no longer pregnant
             df.at[mother_id, 'ps_gestational_age_in_weeks'] = 0
             df.at[mother_id, 'ps_date_of_anc1'] = pd.NaT
 
             # And store her anaemia status to calculate the prevalence of anaemia on birth
-            logger.info(key='anaemia_on_birth', data={'mother': mother_id,
-                                                      'anaemia_status': df.at[mother_id, 'ps_anaemia_in_pregnancy']})
+            logger.info(key='conditions_on_birth', data={'mother': mother_id,
+                                                         'anaemia_status': df.at[mother_id, 'ps_anaemia_in_pregnancy'],
+                                                         'gdm_status': df.at[mother_id, 'ps_gest_diab'],
+                                                         'htn_status': df.at[mother_id, 'ps_htn_disorders']})
 
             # We currently assume that hyperglycemia due to gestational diabetes resolves following birth
             if df.at[mother_id, 'ps_gest_diab'] != 'none':
@@ -682,7 +690,7 @@ class PregnancySupervisor(Module):
 
         # First we define a function that calculates disability associated with 'acute' complications of pregnancy
         def acute_daly_calculation(person, complication):
-            # If the woman has not experience the complication of interest in the past month she does not accrue dalys
+            # If the woman has not experienced the complication of interest in the past month she does not accrue dalys
             if pd.isnull(mni[person][f'{complication}_onset']):
                 return
 
@@ -1104,7 +1112,7 @@ class PregnancySupervisor(Module):
         df = self.sim.population.props
 
         #  ----------------------------------- RISK OF PRE-ECLAMPSIA ----------------------------------------------
-        # We assume all women must developed a mild pre-eclampsia/gestational hypertension before progressing to a more
+        # We assume all women must develop mild pre-eclampsia/gestational hypertension before progressing to a more
         # severe disease
         pre_eclampsia = self.apply_linear_model(
             self.ps_linear_models['pre_eclampsia'],
@@ -1155,10 +1163,9 @@ class PregnancySupervisor(Module):
             risk_ghtn_remains_mild = 1.0 - (risk_of_gest_htn_progression + params['probs_for_mgh_matrix'][2])
 
             # We reset the parameter here to allow for testing with the original parameter
-            params['probs_for_mgh_matrix'] = [risk_ghtn_remains_mild, risk_of_gest_htn_progression,
-                                              params['probs_for_mgh_matrix'][2], 0.0, 0.0]
 
-            prob_matrix['gest_htn'] = params['probs_for_mgh_matrix']
+            prob_matrix['gest_htn'] = [risk_ghtn_remains_mild, risk_of_gest_htn_progression,
+                                       params['probs_for_mgh_matrix'][2], 0.0, 0.0]
             prob_matrix['severe_gest_htn'] = params['probs_for_sgh_matrix']
             prob_matrix['mild_pre_eclamp'] = params['probs_for_mpe_matrix']
             prob_matrix['severe_pre_eclamp'] = params['probs_for_spe_matrix']
@@ -1536,9 +1543,6 @@ class PregnancySupervisor(Module):
             care_seeking = self.rng.random_sample() < params['prob_seek_care_pregnancy_loss']
 
         if care_seeking:
-            # check for delay
-            pregnancy_helper_functions.check_if_delayed_careseeking(self, individual_id)
-
             # We assume women will seek care via HSI_GenericEmergencyFirstApptAtFacilityLevel1 and will be admitted for
             # care in CareOfWomenDuringPregnancy module
             from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstAppt
@@ -1572,7 +1576,7 @@ class PregnancySupervisor(Module):
         # Function checks df for any potential cause of death, uses CFR parameters to determine risk of death
         # (either from one or multiple causes) and if death occurs returns the cause
         potential_cause_of_death = pregnancy_helper_functions.check_for_risk_of_death_from_cause_maternal(
-                self, individual_id=individual_id)
+                self, individual_id=individual_id, timing='antenatal')
 
         # If a cause is returned death is scheduled
         if potential_cause_of_death:
@@ -1584,10 +1588,6 @@ class PregnancySupervisor(Module):
         # If not we reset variables and the woman survives
         else:
             mni[individual_id]['didnt_seek_care'] = False
-
-            # If a death does not occur we reset the death causing properties (if appropriate)
-            if mother.ps_antepartum_haemorrhage != 'none':
-                df.at[individual_id, 'ps_antepartum_haemorrhage'] = 'none'
 
             if (mother.ps_htn_disorders == 'severe_pre_eclamp') and mni[individual_id]['new_onset_spe']:
                 mni[individual_id]['new_onset_spe'] = False
@@ -1607,59 +1607,102 @@ class PregnancySupervisor(Module):
         df = self.sim.population.props
         params = self.current_parameters
 
-        # First we identify all the women predicted to attend ANC, with the first visit occurring before 4 months
-        early_initiation_anc4 = self.apply_linear_model(
-            self.ps_linear_models['early_initiation_anc4'],
-            df.loc[df['is_alive'] & df['is_pregnant'] & (df['ps_gestational_age_in_weeks'] == gestation_of_interest) &
-                   (df['ps_ectopic_pregnancy'] == 'none')])
-
-        # Of the women who will not attend ANC4 early, we determine who will attend ANC4 later in pregnancy
-        late_initiation_anc4 = pd.Series(self.rng.random_sample(
-            len(early_initiation_anc4.loc[~early_initiation_anc4])) < params['prob_late_initiation_anc4'],
-                                        index=early_initiation_anc4.loc[~early_initiation_anc4].index)
-
-        # Check there are no duplicates
-        for v in late_initiation_anc4.loc[late_initiation_anc4].index:
-            if v in early_initiation_anc4.loc[early_initiation_anc4].index:
-                logger.info(key='error', data='Probability of ANC4 is being applied to some women twice')
-
-        # Update this variable used in the ANC HSIs for scheduling the next visits
-        df.loc[early_initiation_anc4.loc[early_initiation_anc4].index, 'ps_anc4'] = True
-        df.loc[late_initiation_anc4.loc[late_initiation_anc4].index, 'ps_anc4'] = True
-
-        # Select any women who are not predicted to attend ANC4
-        anc_below_4 = \
-            df.is_alive & df.is_pregnant & (df.ps_gestational_age_in_weeks == gestation_of_interest) &\
-            (df.ps_ectopic_pregnancy == 'none') & ~df.ps_anc4
-
-        # See if any of the women who wont attend ANC4 will still attend their first visit early in pregnancy
-        early_initiation_anc_below_4 = pd.Series(self.rng.random_sample(len(anc_below_4.loc[anc_below_4]))
-                                                 < params['prob_early_initiation_anc_below4'],
-                                                 index=anc_below_4.loc[anc_below_4].index)
-
-        # Call the functions that schedule the HSIs according to the predicted month of gestation at which each woman
-        # will attend her first visit
-        def schedule_early_visit(df_slice):
+        # In analysis is occuring where ANC4+ should occur for all women this is set here
+        if params['ps_analysis_in_progress'] and params['sens_analysis_max']:
+            df_slice = df.loc[df['is_alive'] & df['is_pregnant'] &
+                              (df['ps_gestational_age_in_weeks'] == gestation_of_interest) &
+                              (df['ps_ectopic_pregnancy'] == 'none')]
             for person in df_slice.index:
-                random_draw_gest_at_anc = self.rng.choice([2, 3, 4], p=params['prob_anc1_months_2_to_4'])
-                self.schedule_anc_one(individual_id=person, anc_month=random_draw_gest_at_anc)
+                df.at[person, 'ps_anc4'] = True
+                self.schedule_anc_one(individual_id=person, anc_month=2)
 
-        for s in [early_initiation_anc4.loc[early_initiation_anc4],
-                  early_initiation_anc_below_4.loc[early_initiation_anc_below_4]]:
-            schedule_early_visit(s)
+        else:
+            # First we identify all the women predicted to attend ANC, with the first visit occurring before 4 months
+            early_initiation_anc4 = self.apply_linear_model(
+                self.ps_linear_models['early_initiation_anc4'],
+                df.loc[df['is_alive'] & df['is_pregnant'] &
+                       (df['ps_gestational_age_in_weeks'] == gestation_of_interest) &
+                       (df['ps_ectopic_pregnancy'] == 'none')])
 
-        def schedule_late_visit(df_slice):
-            for person in df_slice.index:
-                random_draw_gest_at_anc = self.rng.choice([5, 6, 7, 8, 9, 10], p=params['prob_anc1_months_5_to_9'])
+            # Of the women who will not attend ANC4 early, we determine who will attend ANC4 later in pregnancy
+            late_initiation_anc4 = pd.Series(self.rng.random_sample(
+                len(early_initiation_anc4.loc[~early_initiation_anc4])) < params['prob_late_initiation_anc4'],
+                                            index=early_initiation_anc4.loc[~early_initiation_anc4].index)
 
-                # We use month ten to capture women who will never attend ANC during their pregnancy
-                if random_draw_gest_at_anc != 10:
+            # Check there are no duplicates
+            for v in late_initiation_anc4.loc[late_initiation_anc4].index:
+                if v in early_initiation_anc4.loc[early_initiation_anc4].index:
+                    logger.info(key='error', data='Probability of ANC4 is being applied to some women twice')
+
+            # Update this variable used in the ANC HSIs for scheduling the next visits
+            df.loc[early_initiation_anc4.loc[early_initiation_anc4].index, 'ps_anc4'] = True
+            df.loc[late_initiation_anc4.loc[late_initiation_anc4].index, 'ps_anc4'] = True
+
+            # Select any women who are not predicted to attend ANC4
+            anc_below_4 = \
+                df.is_alive & df.is_pregnant & (df.ps_gestational_age_in_weeks == gestation_of_interest) &\
+                (df.ps_ectopic_pregnancy == 'none') & ~df.ps_anc4
+
+            # See if any of the women who wont attend ANC4 will still attend their first visit early in pregnancy
+            early_initiation_anc_below_4 = pd.Series(self.rng.random_sample(len(anc_below_4.loc[anc_below_4]))
+                                                     < params['prob_early_initiation_anc_below4'],
+                                                     index=anc_below_4.loc[anc_below_4].index)
+
+            # Call the functions that schedule the HSIs according to the predicted month of gestation at which each
+            # woman will attend her first visit
+            def schedule_early_visit(df_slice):
+                for person in df_slice.index:
+                    random_draw_gest_at_anc = self.rng.choice([2, 3, 4], p=params['prob_anc1_months_2_to_4'])
                     self.schedule_anc_one(individual_id=person, anc_month=random_draw_gest_at_anc)
 
-        for s in [late_initiation_anc4.loc[late_initiation_anc4],
-                  early_initiation_anc_below_4.loc[~early_initiation_anc_below_4]]:
-            schedule_late_visit(s)
+            for s in [early_initiation_anc4.loc[early_initiation_anc4],
+                      early_initiation_anc_below_4.loc[early_initiation_anc_below_4]]:
+                schedule_early_visit(s)
 
+            def schedule_late_visit(df_slice):
+                for person in df_slice.index:
+                    random_draw_gest_at_anc = self.rng.choice([5, 6, 7, 8, 9, 10], p=params['prob_anc1_months_5_to_9'])
+
+                    # We use month ten to capture women who will never attend ANC during their pregnancy
+                    if random_draw_gest_at_anc != 10:
+                        self.schedule_anc_one(individual_id=person, anc_month=random_draw_gest_at_anc)
+
+            for s in [late_initiation_anc4.loc[late_initiation_anc4],
+                      early_initiation_anc_below_4.loc[~early_initiation_anc_below_4]]:
+                schedule_late_visit(s)
+
+    def do_at_generic_first_appt_emergency(
+        self,
+        patient_id: int,
+        patient_details: PatientDetails,
+        **kwargs,
+    ) -> IndividualPropertyUpdates:
+        scheduling_options = {
+                "priority": 0,
+                "topen": self.sim.date,
+                "tclose": self.sim.date + pd.DateOffset(days=1),
+            }
+
+        # -----  ECTOPIC PREGNANCY  -----
+        if patient_details.ps_ectopic_pregnancy != 'none':
+            event = HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(
+                module=self.sim.modules["CareOfWomenDuringPregnancy"],
+                person_id=patient_id,
+            )
+            self.healthsystem.schedule_hsi_event(event, **scheduling_options)
+
+        # -----  COMPLICATIONS OF ABORTION  -----
+        abortion_complications = self.sim.modules[
+            "PregnancySupervisor"
+        ].abortion_complications
+        if abortion_complications.has_any(
+            [patient_id], "sepsis", "injury", "haemorrhage", first=True
+        ):
+            event = HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(
+                module=self.sim.modules["CareOfWomenDuringPregnancy"],
+                person_id=patient_id,
+            )
+            self.healthsystem.schedule_hsi_event(event, **scheduling_options)
 
 class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
     """ This is the PregnancySupervisorEvent, it is a weekly event which has four primary functions.
@@ -1791,7 +1834,9 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
             self.module.apply_risk_of_induced_abortion(gestation_of_interest=gestation_of_interest)
 
         # Next, at 8 weeks gestation, we determine if/when women will seek antenatal care
-        self.module.schedule_first_anc_contact_for_new_pregnancy(gestation_of_interest=8)
+        if not params['ps_analysis_in_progress'] or (params['ps_analysis_in_progress'] and
+                                                     not params['sens_analysis_min']):
+            self.module.schedule_first_anc_contact_for_new_pregnancy(gestation_of_interest=8)
 
         # Every month a risk of maternal anaemia is applied
         for gestation_of_interest in [4, 8, 13, 17, 22, 27, 31, 35, 40]:
@@ -1845,9 +1890,6 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # We assume women who seek care will present to a form of Maternal Assessment Unit- not through normal A&E
         for person in care_seeking.loc[care_seeking].index:
             if not df.at[person, 'hs_is_inpatient']:
-
-                # Determine if care seeking is delayed
-                pregnancy_helper_functions.check_if_delayed_careseeking(self.module, person)
 
                 from tlo.methods.care_of_women_during_pregnancy import (
                     HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare,
@@ -1905,7 +1947,7 @@ class EctopicPregnancyEvent(Event, IndividualScopeEventMixin):
         ):
             return
 
-        # reset pregnancy variables and store onset for daly calculation
+        # Reset pregnancy variables and store onset for daly calculation
         self.sim.modules['Contraception'].end_pregnancy(individual_id)
         pregnancy_helper_functions.store_dalys_in_mni(individual_id, self.module.mother_and_newborn_info,
                                                       'ectopic_onset', self.sim.date)
@@ -1975,9 +2017,7 @@ class EarlyPregnancyLossDeathEvent(Event, IndividualScopeEventMixin):
 
         # Individual risk of death is calculated through the linear model
         risk_of_death = self.module.ps_linear_models[f'{self.cause}_death'].predict(
-            df.loc[[individual_id]],
-            delay_one_two=mni[individual_id]['delay_one_two'],
-            delay_three=mni[individual_id]['delay_three'])[individual_id]
+            df.loc[[individual_id]])[individual_id]
 
         # If the death occurs we record it here
         if self.module.rng.random_sample() < risk_of_death:
@@ -1997,8 +2037,6 @@ class EarlyPregnancyLossDeathEvent(Event, IndividualScopeEventMixin):
             else:
                 self.module.abortion_complications.unset(individual_id, 'sepsis', 'haemorrhage', 'injury')
                 df.at[individual_id, 'ac_received_post_abortion_care'] = False
-                mni[individual_id]['delay_one_two'] = False
-                mni[individual_id]['delay_three'] = False
 
             if individual_id in mni:
                 mni[individual_id]['delete_mni'] = True
@@ -2076,7 +2114,7 @@ class ParameterUpdateEvent(Event, PopulationScopeEventMixin):
                        self.sim.modules['PostnatalSupervisor']]:
             pregnancy_helper_functions.update_current_parameter_dictionary(module, list_position=1)
 
-        # scale the linear models again according to the distribution of the population
+        # Scale the linear models again according to the distribution of the population
         mod_ps = self.module.ps_linear_models
         mod_la = self.sim.modules['Labour'].la_linear_models
 
@@ -2119,7 +2157,11 @@ class PregnancyAnalysisEvent(Event, PopulationScopeEventMixin):
         df = self.sim.population.props
 
         # Check if either of the analysis parameters are set to True
-        if params['alternative_anc_coverage'] or params['alternative_anc_quality']:
+        if params['alternative_anc_coverage'] or \
+            params['alternative_anc_quality'] or \
+            params['alternative_ip_anc_quality'] or \
+            params['sens_analysis_max'] or \
+           params['sens_analysis_min']:
 
             # Update this parameter which is a signal used in the pregnancy_helper_function_file to ensure that
             # alternative functionality for determining availability of interventions only occurs when analysis is
@@ -2145,7 +2187,12 @@ class PregnancyAnalysisEvent(Event, PopulationScopeEventMixin):
                 params['prob_anc1_months_2_to_4'] = [1.0, 0, 0]
                 params['prob_late_initiation_anc4'] = 0
 
-            if params['alternative_anc_quality']:
+                # Finally, remove squeeze factor threshold for ANC attendance to ensure that higher levels of ANC
+                # coverage can  be reached with current logic
+                self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters['squeeze_factor_threshold_anc'] = \
+                    10_000
+
+            if params['alternative_anc_quality'] or params['sens_analysis_max']:
 
                 # Override the availability of IPTp consumables with the set level of coverage
                 if 'Malaria' in self.sim.modules:
@@ -2155,12 +2202,26 @@ class PregnancyAnalysisEvent(Event, PopulationScopeEventMixin):
 
                 # And then override the quality parameters in the model
                 for parameter in ['prob_intervention_delivered_urine_ds', 'prob_intervention_delivered_bp',
-                                  'prob_intervention_delivered_ifa', 'prob_intervention_delivered_llitn',
-                                  'prob_intervention_delivered_llitn', 'prob_intervention_delivered_tt',
-                                  'prob_intervention_delivered_poct', 'prob_intervention_delivered_syph_test',
-                                  'prob_intervention_delivered_iptp', 'prob_intervention_delivered_gdm_test']:
+                                  'prob_intervention_delivered_syph_test', 'prob_intervention_delivered_gdm_test']:
                     self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters[parameter] = \
                         params['anc_availability_probability']
+
+            if params['alternative_ip_anc_quality']:
+                self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters['squeeze_factor_threshold_an'] = \
+                    10_000
+
+            if params['sens_analysis_max']:
+                for parameter in ['prob_seek_anc5', 'prob_seek_anc6', 'prob_seek_anc7', 'prob_seek_anc8']:
+                    self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters[parameter] = 1.0
+
+                self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters['squeeze_factor_threshold_anc'] = \
+                    10_000
+
+                params['prob_seek_care_pregnancy_complication'] = 1.0
+                self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters['prob_adherent_ifa'] = 1.0
+
+            if params['sens_analysis_min']:
+                params['prob_seek_care_pregnancy_complication'] = 0.0
 
 
 class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):

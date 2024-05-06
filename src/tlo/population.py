@@ -1,5 +1,7 @@
 """The Person and Population classes."""
+
 import math
+from typing import Any, Dict
 
 import pandas as pd
 
@@ -7,6 +9,31 @@ from tlo import logging
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+
+class PatientDetails:
+    """Read-only memoized view of population dataframe row."""
+    
+    def __init__(self, population_dataframe: pd.DataFrame, person_id: int):
+        self._population_dataframe = population_dataframe
+        self._person_id = person_id
+        self._property_cache: Dict[str, Any] = {}
+        
+    def __getitem__(self, key: str) -> Any:
+        try:
+            return self._property_cache[key]
+        except KeyError:
+            value = self._population_dataframe.at[self._person_id, key]
+            self._property_cache[key] = value
+            return value     
+        
+    def __getattr__(self, name: str) -> Any:
+        try:
+            return self[name]
+        except KeyError as e:
+            msg = f"'{type(self).__name__}' object has no attribute '{name}'"
+            raise AttributeError(msg) from e
+    
 
 
 class Population:
@@ -21,7 +48,15 @@ class Population:
         A Pandas DataFrame with the properties of all individuals as columns.
     """
 
-    __slots__ = ('props', 'sim', 'initial_size', 'new_row', 'next_person_id', 'new_rows')
+    __slots__ = (
+        "_patient_details_readonly_type",
+        "props",
+        "sim",
+        "initial_size",
+        "new_row",
+        "next_person_id",
+        "new_rows",
+    )
 
     def __init__(self, sim, initial_size: int, append_size: int = None):
         """Create a new population.
@@ -45,7 +80,9 @@ class Population:
             # TODO: profile adjustment of this and more clever calculation
             append_size = math.ceil(initial_size * 0.02)
 
-        assert append_size > 0, "Number of rows to append when growing must be greater than 0"
+        assert (
+            append_size > 0
+        ), "Number of rows to append when growing must be greater than 0"
 
         logger.info(key="info", data=f"Dataframe capacity append size: {append_size}")
 
@@ -61,11 +98,14 @@ class Population:
 
         :param size: the number of rows to create
         """
-        props = pd.DataFrame(index=pd.RangeIndex(stop=size, name="person"))
-        for module in self.sim.modules.values():
-            for prop_name, prop in module.PROPERTIES.items():
-                props[prop_name] = prop.create_series(prop_name, size)
-        return props
+        return pd.DataFrame(
+            data={
+                property_name: property.create_series(property_name, size)
+                for module in self.sim.modules.values()
+                for property_name, property in module.PROPERTIES.items()
+            },
+            index=pd.RangeIndex(stop=size, name="person"),
+        )
 
     def do_birth(self):
         """Create a new person within the population.
@@ -80,9 +120,14 @@ class Population:
         # the index of the next person
         if self.next_person_id > index_of_last_row:
             # we need to add some rows
-            self.props = pd.concat((self.props, self.new_rows), ignore_index=True, sort=False)
-            self.props.index.name = 'person'
-            logger.info(key="info", data=f"Increased capacity of population dataframe to {len(self.props)}")
+            self.props = pd.concat(
+                (self.props, self.new_rows), ignore_index=True, sort=False
+            )
+            self.props.index.name = "person"
+            logger.info(
+                key="info",
+                data=f"Increased capacity of population dataframe to {len(self.props)}",
+            )
 
         new_index = self.next_person_id
         self.next_person_id += 1
@@ -104,6 +149,20 @@ class Population:
             the property
         """
         from tlo import Property
-        prop = Property(type_, 'A test property')
+
+        prop = Property(type_, "A test property")
         size = self.initial_size if self.props.empty else len(self.props)
         self.props[name] = prop.create_series(name, size)
+
+    def row_in_readonly_form(self, patient_index: int) -> PatientDetails:
+        """
+        Extract a lazily evaluated, read-only view of a row of the population dataframe.
+        
+        The object returned represents the properties of an individual with properties
+        accessible either using dot based attribute access or squared bracket based 
+        indexing using string column names.
+
+        :param patient_index: Row index of the dataframe row to extract.
+        :returns: Object allowing read-only access to an individuals properties.
+        """
+        return PatientDetails(self.props, patient_index)

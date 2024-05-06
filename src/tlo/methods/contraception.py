@@ -7,7 +7,7 @@ import pandas as pd
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.hsi_event import HSI_Event
 from tlo.util import random_date, sample_outcome, transition_states
 
 logger = logging.getLogger(__name__)
@@ -96,11 +96,9 @@ class Contraception(Module):
             Types.INT, "The maximum delay (in days) between the decision for a contraceptive to change and the `topen` "
                        "date of the HSI that is scheduled to effect the change (when using the healthsystem)."),
 
-        # TODO: needs to be fixed to be BOOL parameter (together with resolving the temporary fix below)
         'use_interventions': Parameter(
-            Types.STRING, "if 'On': FP interventions (pop & ppfp) are simulated since 'interventions_start_date',"
-                          " if 'Off': FP interventions (pop & ppfp) are not simulated."),
-
+            Types.BOOL, "if True: FP interventions (pop & ppfp) are simulated from the date 'interventions_start_date',"
+                        " if False: FP interventions (pop & ppfp) are not simulated."),
         'interventions_start_date': Parameter(
             Types.DATE, "The date since which the FP interventions (pop & ppfp) are implemented, if at all (ie, if "
                         "use_interventions==True")
@@ -166,7 +164,7 @@ class Contraception(Module):
         """Import the relevant sheets from the ResourceFile (excel workbook) and declare values for other parameters
         (CSV ResourceFile).
         """
-        workbook = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Contraception.xlsx', sheet_name=None)
+        workbook = pd.read_excel(Path(self.resourcefilepath) / 'contraception' / 'ResourceFile_Contraception.xlsx', sheet_name=None)
 
         # Import selected sheets from the workbook as the parameters
         sheet_names = [
@@ -190,38 +188,24 @@ class Contraception(Module):
 
         # Declare values for other parameters
         self.load_parameters_from_dataframe(pd.read_csv(
-            Path(self.resourcefilepath) / 'ResourceFile_ContraceptionParams.csv'
+            Path(self.resourcefilepath) / 'contraception' / 'ResourceFile_ContraceptionParams.csv'
         ))
-
-        # Temporary fix of loading the boolean  parameter 'use_interventions':
-        co_params = pd.read_csv(
-            Path(self.resourcefilepath) / 'ResourceFile_ContraceptionParams.csv'
-        )
-        self.parameters['use_interventions_loaded'] =\
-            co_params['value'].loc[co_params['parameter_name'] == 'use_interventions'].values[0]
-        self.parameters['use_interventions'] = self.parameters['use_interventions_loaded'] == 'On'
-        if self.parameters['use_interventions_loaded'] not in ('On', 'Off'):
-            warnings.warn(UserWarning(f"'use_intervention' parameter set to 'Off' (=False) as the given value "
-                                      f"{self.parameters['use_interventions_loaded']} was not recognised."))
-            logger.info(
-                key="use_intervention",
-                data={"input_given": self.parameters['use_interventions_loaded'],
-                      "value_used": self.parameters['use_interventions']
-                      },
-                description='Unrecognised value given for use_intervention parameter replaced.'
-            )
 
         # Import the Age-specific fertility rate data from WPP
         self.parameters['age_specific_fertility_rates'] = \
             pd.read_csv(Path(self.resourcefilepath) / 'demography' / 'ResourceFile_ASFR_WPP.csv')
 
         # Import 2010 pop and count numbs of women 15-49 & 30-49
-        pop_2010 = self.sim.modules["Demography"].parameters["pop_2010"].copy()
-
-        female1549_in_2010 = \
-            pop_2010.loc[(pop_2010.Sex == 'F') & pop_2010.Age.between(15, 49), ['Age', 'Count']].groupby('Age').sum()
-        self.n_female1549_in_2010 = female1549_in_2010.sum()
-        self.n_female3049_in_2010 = female1549_in_2010.loc[female1549_in_2010.index >= 30].sum()
+        pop_2010 = self.sim.modules["Demography"].parameters["pop_2010"]
+        n_females_aged_15_to_49_in_2010 = pop_2010[
+            (pop_2010.Sex == "F") & (pop_2010.Age >= 15) & (pop_2010.Age <= 49)
+        ].Count.sum()
+        n_females_aged_30_to_49_in_2010 = pop_2010[
+            (pop_2010.Sex == "F") & (pop_2010.Age >= 30) & (pop_2010.Age <= 49)
+        ].Count.sum()
+        self.ratio_n_females_30_49_to_15_49_in_2010 = (
+            n_females_aged_30_to_49_in_2010 / n_females_aged_15_to_49_in_2010
+        )
 
     def pre_initialise_population(self):
         """Process parameters before initialising population and simulation"""
@@ -368,9 +352,10 @@ class Contraception(Module):
 
             # Increase prob of 'female_sterilization' in older women accordingly
             probs_30plus = probs.copy()
-            probs_30plus['female_sterilization'] = \
-                probs.loc['female_sterilization'] / \
-                (self.n_female3049_in_2010 / self.n_female1549_in_2010)
+            probs_30plus['female_sterilization'] = (
+                probs.loc['female_sterilization'] /
+                self.ratio_n_females_30_49_to_15_49_in_2010
+            )
             # Scale so that the probability of all outcomes sum to 1.0
             probs_30plus = probs_30plus / probs_30plus.sum()
             assert np.isclose(1.0, probs_30plus.sum())
@@ -444,10 +429,10 @@ class Contraception(Module):
             assert np.isclose(1.0, switching_matrix_below30.sum(axis=0)).all()
 
             # Increase prob of 'female_sterilization' in older women accordingly
-            new_fs_probs_30plus = switching_matrix.loc['female_sterilization', :] /\
-                float(
-                    self.n_female3049_in_2010 / self.n_female1549_in_2010
-                )
+            new_fs_probs_30plus = (
+                switching_matrix.loc['female_sterilization', :] /
+                self.ratio_n_females_30_49_to_15_49_in_2010
+            )
             switching_matrix_except_fs = switching_matrix.loc[switching_matrix.index != 'female_sterilization']
             switching_matrix_30plus = switching_matrix_except_fs.apply(lambda col: col / col.sum())
             switching_matrix_30plus = switching_matrix_30plus * (1 - new_fs_probs_30plus)
@@ -580,7 +565,7 @@ class Contraception(Module):
                 columns=sorted(self.all_contraception_states - {"not_using"})
             )
             p_pregnancy_with_contraception_per_month.loc[15, :] = p_pregnancy_by_method_per_month
-            p_pregnancy_with_contraception_per_month = p_pregnancy_with_contraception_per_month.ffill()
+            p_pregnancy_with_contraception_per_month.ffill(inplace=True)
             p_pregnancy_with_contraception_per_month.loc[
                 p_pregnancy_with_contraception_per_month.index < 25
                 ] *= self.parameters['rr_fail_under25']
@@ -611,121 +596,37 @@ class Contraception(Module):
 
         processed_params = self.processed_params
 
-        def expand_to_age_years(values_by_age_groups, ages_by_year):
-            _d = dict(zip(['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49'], values_by_age_groups))
-            return np.array(
-                [_d[self.sim.modules['Demography'].AGE_RANGE_LOOKUP[_age_year]] for _age_year in ages_by_year]
-            )
+        def contraception_initiation_with_interv(p_start_per_month_without_interv):
+            """Increase the probabilities of a woman starting modern contraceptives due to Pop intervention being
+            applied."""
+            p_start_per_month_with_interv = {}
+            for year, age_method_df in p_start_per_month_without_interv.items():
+                if year >= self.sim.date.year:
+                    p_start_per_month_with_interv[year] = age_method_df * self.parameters['Interventions_Pop'].loc[0]
+            return p_start_per_month_with_interv
 
-        def time_age_trend_in_initiation():
-            """The age-specific effect of calendar year on the probability of starting use of contraceptive
-            (multiplicative effect). Values are chosen to induce a trend in age-specific fertility consistent with
-             the WPP estimates."""
+        def contraception_initiation_after_birth_with_interv(p_start_after_birth_without_interv):
+            """Increase the probabilities of a woman starting modern contraceptives following giving birth due to PPFP
+            intervention being applied."""
+            # Exclude prob of 'not_using'
+            p_start_after_birth_with_interv = p_start_after_birth_without_interv.copy().drop('not_using')
 
-            _years = np.arange(2010, 2101)
-            _ages = np.arange(15, 50)
+            # Apply PPFP intervention multipliers (ie increase probs of modern methods)
+            p_start_after_birth_with_interv = \
+                p_start_after_birth_with_interv.mul(self.parameters['Interventions_PPFP'].loc[0])
 
-            _init_over_time = np.exp(+0.05 * np.minimum(2020 - 2010, (_years - 2010))) * np.maximum(1.0, np.exp(
-                +0.01 * (_years - 2020)))
-            _init_over_time_modification_by_age = 1.0 / expand_to_age_years([1.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5], _ages)
-            _init = np.outer(_init_over_time, _init_over_time_modification_by_age)
+            # Return reduced prob of 'not_using'
+            p_start_after_birth_with_interv = pd.Series((1.0 - p_start_after_birth_with_interv.sum()),
+                                                        index=['not_using']).append(p_start_after_birth_with_interv)
 
-            return pd.DataFrame(index=_years, columns=_ages, data=_init)
+            return p_start_after_birth_with_interv
 
-        def avoid_sterilization_below30(probs):
-            """Prevent women below 30 years having female sterilization and adjust the probability for women 30 and over
-            to preserve the overall probability of initiating sterilization."""
-            # Input 'probs' must include probs for all methods including 'not_using'
-            assert set(probs.index) == set(self.all_contraception_states)
-
-            # Prevent women below 30 years having 'female_sterilization'
-            probs_below30 = probs.copy()
-            probs_below30['female_sterilization'] = 0.0
-            # Scale so that the probability of all outcomes sum to 1.0
-            probs_below30 = probs_below30 / probs_below30.sum()
-            assert np.isclose(1.0, probs_below30.sum())
-
-            # Increase prob of 'female_sterilization' in older women accordingly
-            probs_30plus = probs.copy()
-            probs_30plus['female_sterilization'] = \
-                probs.loc['female_sterilization'] / \
-                (self.n_female3049_in_2010 / self.n_female1549_in_2010)
-            # Scale so that the probability of all outcomes sum to 1.0
-            probs_30plus = probs_30plus / probs_30plus.sum()
-            assert np.isclose(1.0, probs_30plus.sum())
-
-            return probs_below30, probs_30plus
-
-        def contraception_initiation_with_interv():
-            """Generate the probability per month of a woman initiating onto each contraceptive, by the age (in whole
-             years) if FP interventions are applied."""
-
-            # Probability of initiation by method per month (average over all ages)
-            p_init_by_method = self.parameters['Initiation_ByMethod'].loc[0]
-
-            # Prevent women below 30 years having 'female_sterilization' while preserving the overall probability of
-            # 'female_sterilization' initiation
-            p_init_by_method_below30, p_init_by_method_30plus = avoid_sterilization_below30(p_init_by_method)
-
-            # Effect of age
-            age_effect = 1.0 + self.parameters['Initiation_ByAge'].set_index('age')['r_init1_age'].rename_axis(
-                "age_years")
-
-            # Year effect
-            year_effect = time_age_trend_in_initiation()
-
-            def apply_intervention_age_year_effects(probs_below30, probs_30plus):
-                # Apply Pop intervention
-                probs_by_method_below30 = \
-                    probs_below30.copy().drop('not_using').mul(self.parameters['Interventions_Pop'].loc[0])
-                probs_by_method_30plus = \
-                    probs_30plus.copy().drop('not_using').mul(self.parameters['Interventions_Pop'].loc[0])
-                # Assemble into age-specific data-frame:
-                p_init = dict()
-                for year in year_effect.index:
-
-                    p_init_this_year = dict()
-                    for a in age_effect.index:
-                        if a < 30:
-                            p_init_this_year[a] = probs_by_method_below30 * age_effect.at[a] * year_effect.at[year, a]
-                        else:
-                            p_init_this_year[a] = probs_by_method_30plus * age_effect.at[a] * year_effect.at[year, a]
-                    p_init_this_year_df = pd.DataFrame.from_dict(p_init_this_year, orient='index')
-
-                    # Check correct format of age/method data-frame
-                    assert set(p_init_this_year_df.columns) == set(self.all_contraception_states - {'not_using'})
-                    assert (p_init_this_year_df.index == range(15, 50)).all()
-                    assert (p_init_this_year_df >= 0.0).all().all()
-
-                    p_init[year] = p_init_this_year_df
-
-                return p_init
-
-            return apply_intervention_age_year_effects(p_init_by_method_below30, p_init_by_method_30plus)
-
-        def contraception_initiation_after_birth_with_interv():
-            """Get the probability of a woman starting a contraceptive following giving birth if FP interventions are
-            applied. Avoid sterilization in women below 30 years old."""
-
-            # Get initiation probabilities of contraception methods after birth from read-in Excel sheet
-            p_start_after_birth = self.parameters['Initiation_AfterBirth'].loc[0].drop('not_using')
-
-            # Apply PPFP intervention multipliers
-            p_start_after_birth = p_start_after_birth.mul(self.parameters['Interventions_PPFP'].loc[0])
-
-            # Add 'not_using' to initiation probabilities of contraception methods after birth
-            p_start_after_birth = pd.concat(
-                (
-                    pd.Series((1.0 - p_start_after_birth.sum()), index=['not_using']),
-                    p_start_after_birth
-                )
-            )
-
-            return avoid_sterilization_below30(p_start_after_birth)
-
-        processed_params['p_start_per_month'] = contraception_initiation_with_interv()
-        processed_params['p_start_after_birth_below30'], processed_params['p_start_after_birth_30plus'] =\
-            contraception_initiation_after_birth_with_interv()
+        processed_params['p_start_per_month'] = \
+            contraception_initiation_with_interv(processed_params['p_start_per_month'])
+        processed_params['p_start_after_birth_below30'] = \
+            contraception_initiation_after_birth_with_interv(processed_params['p_start_after_birth_below30'])
+        processed_params['p_start_after_birth_30plus'] = \
+            contraception_initiation_after_birth_with_interv(processed_params['p_start_after_birth_30plus'])
 
         return processed_params
 
@@ -750,6 +651,7 @@ class Contraception(Module):
         get_items_from_pkg = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
 
         _cons_codes = dict()
+        # items for each method that requires an HSI to switch to
         _cons_codes['pill'] = get_items_from_pkg('Pill')
         _cons_codes['male_condom'] = get_items_from_pkg('Male condom')
         _cons_codes['other_modern'] = get_items_from_pkg('Female Condom')
@@ -759,6 +661,7 @@ class Contraception(Module):
         _cons_codes['implant'] = get_items_from_pkg('Implant')
         _cons_codes['female_sterilization'] = get_items_from_pkg('Female sterilization')
         assert set(_cons_codes.keys()) == set(self.states_that_may_require_HSI_to_switch_to)
+        # items used when initiating a modern reliable method after not using or switching from non-reliable method
         _cons_codes['co_initiation'] = get_items_from_pkg('Contraception initiation')
 
         return _cons_codes
@@ -1390,6 +1293,7 @@ class SimplifiedPregnancyAndLabour(Module):
 
     def read_parameters(self, *args):
         parameter_dataframe = pd.read_excel(self.sim.modules['Contraception'].resourcefilepath /
+                                            'contraception' /
                                             'ResourceFile_Contraception.xlsx',
                                             sheet_name='simplified_labour_parameters')
         self.load_parameters_from_dataframe(parameter_dataframe)

@@ -43,7 +43,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         title="TREATMENT_ID (Short)",
     )
     fig.tight_layout()
-    fig.show()
     plt.close(fig)
 
     # %% Coarse Appt Type
@@ -59,7 +58,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         colors=[get_color_coarse_appt(x) for x in coarse_appt_types],
         title="Appointment Types (Coarse)",
     )
-    fig.show()
     plt.close(fig)
 
     # %% Cause of Death Labels
@@ -68,7 +66,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         colors=list(CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.values()),
         title="Cause-of-Death or -Disability Labels",
     )
-    fig.show()
     plt.close(fig)
 
 

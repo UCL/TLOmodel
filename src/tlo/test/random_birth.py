@@ -85,7 +85,9 @@ class RandomBirth(Module):
 
         Here we add our monthly event to poll the population for deaths.
         """
-        pregnancy_poll = RandomPregnancyEvent(self, self.pregnancy_probability)
+        pregnancy_poll = RandomPregnancyEvent(
+            self, self.parameters["pregnancy_probability"]
+        )
         sim.schedule_event(pregnancy_poll, sim.date + DateOffset(months=1))
 
     def on_birth(self, mother_id, child_id):

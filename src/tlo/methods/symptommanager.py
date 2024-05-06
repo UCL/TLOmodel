@@ -272,7 +272,7 @@ class SymptomManager(Module):
         SymptomManager.PROPERTIES = dict()
         for symptom_name in sorted(self.symptom_names):
             symptom_column_name = self.get_column_name_for_symptom(symptom_name)
-            SymptomManager.PROPERTIES[symptom_column_name] = Property(Types.INT, f'Presence of symptom {symptom_name}')
+            SymptomManager.PROPERTIES[symptom_column_name] = Property(Types.BITSET, f'Presence of symptom {symptom_name}')
 
     def initialise_population(self, population):
         """
@@ -484,7 +484,8 @@ class SymptomManager(Module):
             )
             return [s for s in self.symptom_names if person_has[f'sy_{s}']]
         else:
-            return [s for s in self.symptom_names if df.loc[person_id, f'sy_{s}'] > 0]
+            symptom_cols = df.loc[person_id, [f'sy_{s}' for s in self.symptom_names]]
+            return symptom_cols.index[symptom_cols > 0].str.removeprefix("sy_").to_list()
 
     def have_what(self, person_ids: Sequence[int]):
         """Find the set of symptoms for a list of person_ids.

@@ -3,11 +3,15 @@ from collections import Counter
 from pathlib import Path
 
 import pandas as pd
-import squarify
 from matplotlib import pyplot as plt
 
 from tlo import Date
-from tlo.analysis.utils import bin_hsi_event_details, compute_mean_across_runs
+from tlo.analysis.utils import (
+    bin_hsi_event_details,
+    compute_mean_across_runs,
+    get_color_short_treatment_id,
+    squarify_neat,
+)
 
 PREFIX_ON_FILENAME = '5'
 
@@ -71,6 +75,7 @@ def figure5_proportion_of_hsi_events_per_appt_type(results_folder: Path, output_
     counter_to_df = counter_to_df.groupby(
         ['TREATMENT_ID', 'Appt_Type'])['Count'].sum().reset_index()
 
+    # VERSION USING SHORT TREATMENT ID & DEFAULT COLOUR SCHEME:
     # plot a square plot of appt use by treatment_id for each appt
     # appts to be plot
     appts = ['AccidentsandEmerg', 'AntenatalTotal', 'Csection',
@@ -84,13 +89,20 @@ def figure5_proportion_of_hsi_events_per_appt_type(results_folder: Path, output_
         df_to_plot = counter_to_df[counter_to_df.Appt_Type == appts[idx]].copy()
         df_to_plot = df_to_plot.sort_values(by=['Count'], ascending=False)  # sort count in descending order
         name_of_subplot = appts[idx]
-        axs[idx] = squarify.plot(sizes=df_to_plot.Count, label=df_to_plot.TREATMENT_ID[:3],  # label top 3
-                                 alpha=0.6, pad=True, ax=axs[idx],
-                                 text_kwargs={'color': 'black', 'size': 12})
+        squarify_neat(
+            sizes=df_to_plot.Count,
+            label=df_to_plot.TREATMENT_ID,
+            numlabels=3,  # label top 3
+            colormap=None,
+            alpha=0.6,
+            pad=True,
+            ax=axs[idx],
+            text_kwargs={'color': 'black', 'size': 12}
+        )
         axs[idx].axis('off')
         axs[idx].invert_xaxis()
         axs[idx].legend(handles=axs[idx].containers[0][3:10],  # legend for top 10
-                        labels=list(df_to_plot.TREATMENT_ID[3:10]),
+                        labels=list(df_to_plot.index[3:10]),
                         handlelength=1, handleheight=1, fontsize=10,
                         title='Unlabelled Treatment ID', title_fontsize=11,
                         ncol=1, loc='center left', bbox_to_anchor=(1, 0.5))
@@ -100,7 +112,42 @@ def figure5_proportion_of_hsi_events_per_appt_type(results_folder: Path, output_
         output_folder
         / f"{PREFIX_ON_FILENAME}_{name_of_figure.replace(' ', '_')}.png"
     )
-    fig.show()
+    plt.close(fig)
+
+    # VERSION USING SHORT TREATMENT ID & DEFAULT COLOUR SCHEME:
+    # plot a square plot of appt use by treatment_id for each appt
+    # appts to be plot
+    fig, axs = plt.subplots(len(appts), 1, figsize=(11, 40))
+    name_of_figure = 'Proportion of Appointment Use by SHORT_TREATMENT_ID per Appointment Type'
+    for idx in range(len(appts)):
+        df_to_plot = counter_to_df[counter_to_df.Appt_Type == appts[idx]].copy()
+        df_to_plot['SHORT_TREATMENT_ID'] = df_to_plot['TREATMENT_ID'].apply(lambda s: s.split("_")[0])
+        df_to_plot = df_to_plot.groupby('SHORT_TREATMENT_ID')['Count'].sum()
+        df_to_plot = df_to_plot.sort_values(ascending=False)  # sort count in descending order
+        name_of_subplot = appts[idx]
+        squarify_neat(
+            sizes=df_to_plot.values,
+            label=df_to_plot.index,
+            numlabels=3,  # label top 3
+            colormap=get_color_short_treatment_id,
+            alpha=0.6,
+            pad=True,
+            ax=axs[idx],
+            text_kwargs={'color': 'black', 'size': 12},
+        )
+        axs[idx].axis('off')
+        axs[idx].invert_xaxis()
+        axs[idx].legend(handles=axs[idx].containers[0][3:10],  # legend for top 10
+                        labels=list(df_to_plot.index[3:10]),
+                        handlelength=1, handleheight=1, fontsize=10,
+                        title='Unlabelled Treatment ID', title_fontsize=11,
+                        ncol=1, loc='center left', bbox_to_anchor=(1, 0.5))
+        axs[idx].set_title(name_of_subplot, {'size': 13, 'color': 'black'})
+    fig.tight_layout()
+    fig.savefig(
+        output_folder
+        / f"{PREFIX_ON_FILENAME}_{name_of_figure.replace(' ', '_')}.png"
+    )
     plt.close(fig)
 
 

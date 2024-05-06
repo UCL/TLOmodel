@@ -27,15 +27,15 @@ jobs:
         with:
           lfs: false
       - name: Cache tox
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: .tox
           key: tox-${{hashFiles('requirements/*.txt', 'tox.ini')}}
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: 3.8
+          python-version: 3.11
       - name: Install tox
-        run: python -m pip install tox
+        run: python3 -m pip install tox
       - name: Run checks with tox
         run: tox -v -e check

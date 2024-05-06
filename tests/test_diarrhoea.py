@@ -401,13 +401,25 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration(seed):
     }
     df.loc[person_id, props_new.keys()] = props_new.values()
     generic_hsi = HSI_GenericNonEmergencyFirstAppt(
-        module=sim.modules['HealthSeekingBehaviour'], person_id=person_id)
+        module=sim.modules["HealthSeekingBehaviour"], person_id=person_id
+    )
+    patient_details = sim.population.row_in_readonly_form(person_id)
 
-    # 1) If DxTest of danger signs perfect and 100% chance of referral --> Inpatient HSI should be created
+    def diagnosis_fn(tests, use_dict: bool = False, report_tried: bool = False):
+        return generic_hsi.healthcare_system.dx_manager.run_dx_test(
+            tests,
+            hsi_event=generic_hsi,
+            use_dict_for_single=use_dict,
+            report_dxtest_tried=report_tried,
+        )
+
     sim.modules['HealthSystem'].reset_queue()
     sim.modules['Diarrhoea'].parameters['prob_hospitalization_on_danger_signs'] = 1.0
-    sim.modules['Diarrhoea'].do_when_presentation_with_diarrhoea(
-        person_id=person_id, hsi_event=generic_hsi)
+    sim.modules["Diarrhoea"].do_at_generic_first_appt(
+        patient_id=person_id,
+        patient_details=patient_details,
+        diagnosis_function=diagnosis_fn,
+    )
     evs = sim.modules['HealthSystem'].find_events_for_person(person_id)
 
     assert 1 == len(evs)
@@ -416,8 +428,11 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration(seed):
     # 2) If DxTest of danger signs perfect but 0% chance of referral --> Inpatient HSI should not be created
     sim.modules['HealthSystem'].reset_queue()
     sim.modules['Diarrhoea'].parameters['prob_hospitalization_on_danger_signs'] = 0.0
-    sim.modules['Diarrhoea'].do_when_presentation_with_diarrhoea(
-        person_id=person_id, hsi_event=generic_hsi)
+    sim.modules["Diarrhoea"].do_at_generic_first_appt(
+        patient_id=person_id,
+        patient_details=patient_details,
+        diagnosis_function=diagnosis_fn,
+    )
     evs = sim.modules['HealthSystem'].find_events_for_person(person_id)
     assert 1 == len(evs)
     assert isinstance(evs[0][1], HSI_Diarrhoea_Treatment_Outpatient)
@@ -477,12 +492,24 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration_dxtest_notfuncti
     df.loc[person_id, props_new.keys()] = props_new.values()
     generic_hsi = HSI_GenericNonEmergencyFirstAppt(
         module=sim.modules['HealthSeekingBehaviour'], person_id=person_id)
+    patient_details = sim.population.row_in_readonly_form(person_id)
+
+    def diagnosis_fn(tests, use_dict: bool = False, report_tried: bool = False):
+        return generic_hsi.healthcare_system.dx_manager.run_dx_test(
+            tests,
+            hsi_event=generic_hsi,
+            use_dict_for_single=use_dict,
+            report_dxtest_tried=report_tried,
+        )
 
     # Only an out-patient appointment should be created as the DxTest for danger signs is not functional.
     sim.modules['Diarrhoea'].parameters['prob_hospitalization_on_danger_signs'] = 0.0
     sim.modules['HealthSystem'].reset_queue()
-    sim.modules['Diarrhoea'].do_when_presentation_with_diarrhoea(
-        person_id=person_id, hsi_event=generic_hsi)
+    sim.modules["Diarrhoea"].do_at_generic_first_appt(
+        patient_id=person_id,
+        patient_details=patient_details,
+        diagnosis_function=diagnosis_fn,
+    )
     evs = sim.modules['HealthSystem'].find_events_for_person(person_id)
     assert 1 == len(evs)
     assert isinstance(evs[0][1], HSI_Diarrhoea_Treatment_Outpatient)
@@ -541,12 +568,21 @@ def test_do_when_presentation_with_diarrhoea_non_severe_dehydration(seed):
     df.loc[person_id, props_new.keys()] = props_new.values()
     generic_hsi = HSI_GenericNonEmergencyFirstAppt(
         module=sim.modules['HealthSeekingBehaviour'], person_id=person_id)
+    patient_details = sim.population.row_in_readonly_form(person_id)
 
+    def diagnosis_fn(tests, use_dict: bool = False, report_tried: bool = False):
+        return generic_hsi.healthcare_system.dx_manager.run_dx_test(
+            tests,
+            hsi_event=generic_hsi,
+            use_dict_for_single=use_dict,
+            report_dxtest_tried=report_tried,
+        )
     # 1) Outpatient HSI should be created
-    sim.modules['HealthSystem'].reset_queue()
-    sim.modules['Diarrhoea'].do_when_presentation_with_diarrhoea(
-        person_id=person_id, hsi_event=generic_hsi)
-    evs = sim.modules['HealthSystem'].find_events_for_person(person_id)
+    sim.modules["HealthSystem"].reset_queue()
+    sim.modules["Diarrhoea"].do_at_generic_first_appt(
+        patient_id=person_id, patient_details=patient_details, diagnosis_function=diagnosis_fn
+    )
+    evs = sim.modules["HealthSystem"].find_events_for_person(person_id)
 
     assert 1 == len(evs)
     assert isinstance(evs[0][1], HSI_Diarrhoea_Treatment_Outpatient)

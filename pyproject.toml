@@ -1,0 +1,129 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = ["setuptools>=62", "setuptools_scm[toml]>=8.0"]
+
+[project]
+name = "tlo"
+authors = [
+    {name = "Thanzi La Onse Model Development Team"},
+]
+classifiers = [
+    'Development Status :: 3 - Alpha',
+    'Intended Audience :: Science/Research',
+    'License :: MIT',
+    'Operating System :: OS Independent',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3 :: Only',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
+]
+dependencies = [
+    "GitPython",
+    "click",
+    "matplotlib",
+    "pyshp",
+    "squarify",
+    "numpy",
+    "pandas~=2.0.0",
+    "scipy",
+     # Avoid https://foss.heptapod.net/openpyxl/openpyxl/-/issues/1963
+    "openpyxl==3.1.0",
+    # To submit jobs to Azure Batch
+    "azure-batch",
+    "azure-identity",
+    "azure-keyvault",
+    "azure-storage-file-share",
+]
+description = "Thanzi la Onse Epidemiology Model"
+dynamic = ["version"]
+license = {file = "LICENSE.txt"}
+readme = "README.md"
+requires-python = ">=3.8"
+
+[project.optional-dependencies]
+dev = [
+    # Running tests
+    "pytest",
+    "pytest-cov",
+    "pytest-xdist",
+    "virtualenv",
+    "tox",
+    # Linting
+    "isort",
+    "pylint",
+    "ruff",
+    # Profiling
+    "ansi2html",
+    "psutil",
+    "pyinstrument>=4.3",
+    # Building requirements files
+    "pip-tools",
+]
+
+[project.scripts]
+tlo = "tlo.cli:cli"
+
+[project.urls]
+repository = "https://github.com/UCL/TLOmodel"
+documentation = "https://tlomodel.org"
+
+[tool.coverage]
+report = {show_missing = true, precision = 2}
+run = {branch = true, parallel = true, source = [
+    "tlo",
+    "tests"
+]}
+paths.source = [
+    "src",
+    "*/site-packages",
+]
+
+[tool.isort]
+force_single_line = false
+multi_line_output = 3
+include_trailing_comma = true
+line_length = 100
+known_first_party = "tlo"
+default_section = "THIRDPARTY"
+
+[tool.pylint.main]
+extension-pkg-whitelist = ["numpy"]
+disable = [
+    "R",
+    "C",
+    "W",
+]
+
+
+[tool.pylint.typecheck]
+signature-mutators = [
+    "click.decorators.option",
+    "click.decorators.argument",
+    "click.decorators.version_option",
+    "click.decorators.help_option",
+    "click.decorators.pass_context",
+    "click.decorators.confirmation_option",
+]
+
+[tool.pytest.ini_options]
+testpaths = "tests"
+python_files = [
+    "test_*.py",
+    "*_test.py",
+    "tests.py",
+]
+addopts = "-ra --strict-markers --doctest-modules --doctest-glob=*.rst --tb=short"
+markers = ["group2", "slow"]
+
+[tool.ruff]
+target-version = "py38"
+line-length = 120
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools_scm]
+version_file  = "src/tlo/_version.py"

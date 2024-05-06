@@ -60,6 +60,12 @@ def set_all_women_as_pregnant_and_reset_baseline_parity(sim):
     df.loc[women_repro.index, 'is_pregnant'] = True
     df.loc[women_repro.index, 'date_of_last_pregnancy'] = sim.start_date
     df.loc[women_repro.index, 'co_contraception'] = "not_using"
+
+    sim.modules['Labour'].la_linear_models['post_term_labour'] = \
+        LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            0.0)
+
     for person in women_repro.index:
         sim.modules['Labour'].set_date_of_labour(person)
 
@@ -142,7 +148,8 @@ def test_run_core_modules_high_volumes_of_pregnancy(seed, tmpdir):
 @pytest.mark.slow
 def test_run_core_modules_high_volumes_of_pregnancy_hsis_cant_run(seed, tmpdir):
     """Runs the simulation with the core modules and all women of reproductive age being pregnant at the start of the
-    simulation. In addition scheduled HSI events will not run- testing the did_not_run functions of the relevant HSIs"""
+    simulation. In addition, scheduled HSI events will not run- testing the did_not_run functions of the
+     relevant HSIs"""
     sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
 
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -483,7 +490,7 @@ def test_abortion_complications(seed):
 
         params = sim.modules['PregnancySupervisor'].current_parameters
 
-        # Set the relvant risk of pregnancy loss to 1
+        # Set the relevant risk of pregnancy loss to 1
         if abortion_type == 'spontaneous':
             sim.modules['PregnancySupervisor'].ps_linear_models['spontaneous_abortion'] = \
                 LinearModel(
@@ -752,7 +759,7 @@ def test_preterm_labour_logic(seed):
     assert (df.loc[pregnant_women.index, 'la_due_date_current_pregnancy'] <= latest_labour_can_happen).all().all()
 
     # Check that each woman has had a new labour onset event scheduled (original event has been cleared so if logic
-    # hasnt held no labour onset event would have been set)
+    # hasn't held then no labour onset event would have been set)
     mother_id = pregnant_women.index[0]
     events = sim.find_events_for_person(person_id=mother_id)
     events = [e.__class__ for d, e in events]
@@ -1054,9 +1061,6 @@ def test_pregnancy_supervisor_gestational_hypertension_and_progression(seed):
 
     # Check all women of interest have developed the correct condition after the events run
     assert (df.loc[pregnant_women.index, 'ps_htn_disorders'] == 'gest_htn').all().all()
-
-    # TODO: test progression (need to sort progression matrix as a parameter)
-    # TODO: test that anti htn reduces risk of progression from mild to moderate
 
 
 def test_pregnancy_supervisor_gdm(seed):

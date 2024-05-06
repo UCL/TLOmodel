@@ -87,7 +87,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # Load Data: WPP_Annual
     wpp_ann = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_Pop_Annual_WPP.csv")
     wpp_ann['Age_Grp'] = wpp_ann['Age_Grp'].astype(make_age_grp_types())
-    wpp_ann_total = wpp_ann.groupby(['Year']).sum().sum(axis=1)
+    wpp_ann_total = wpp_ann.groupby(by=['Year'])['Count'].sum()
 
     # Load Data: Census
     cens = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_PopulationSize_2018Census.csv")
@@ -118,7 +118,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.legend()
     fig.tight_layout()
     plt.savefig(make_graph_file_name("Pop_Over_Time"))
-    plt.show()
     plt.close(fig)
 
     # 2) Population Size in 2018 (broken down by Male and Female)
@@ -178,12 +177,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.legend()
     fig.tight_layout()
     plt.savefig(make_graph_file_name("Pop_Males_Females_2018"))
-    plt.show()
     plt.close(fig)
 
-    # %% Population Pyramid
     # Population Pyramid at two time points
-
     def plot_population_pyramid(data, fig):
         """Plot a population pyramid on the specified figure. Data is of the form:
         {
@@ -267,7 +263,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         return num_by_age
 
     for year in [2010, 2015, 2018, 2029, 2049]:
-        try:
+        if year in pop_model.index:
             # Get WPP data:
             wpp_thisyr = wpp_ann.loc[wpp_ann['Year'] == year].groupby(['Sex', 'Age_Grp'])['Count'].sum()
 
@@ -291,11 +287,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             ax = plot_population_pyramid(data=pops, fig=fig)
             ax.set_title(f'Population Pyramid in {year}')
             fig.savefig(make_graph_file_name(f"Pop_Size_{year}"))
-            fig.show()
             plt.close(fig)
-
-        except pd.core.base.DataError:
-            pass
 
     # %% Births: Number over time
 
@@ -383,7 +375,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         plt.xticks(np.arange(len(births_loc.index)), births_loc.index)
         plt.tight_layout()
         plt.savefig(make_graph_file_name(f"Births_Over_Time_{tp}"))
-        plt.show()
         plt.close(fig)
 
     # %% Describe patterns of contraceptive usage over time
@@ -413,14 +404,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     spacing = (np.arange(len(mean_usage_mean)) % 5) == 0
     mean_usage_mean.loc[spacing].plot.bar(stacked=True, ax=ax, legend=False)
     plt.title('Proportion Females 15-49 Using Contraceptive Methods')
-    plt.xlabel('Date')
+    plt.xlabel('Year')
     plt.ylabel('Proportion')
 
     fig.legend(loc=7)
     fig.tight_layout()
     fig.subplots_adjust(right=0.65)
     plt.savefig(make_graph_file_name("Contraception_1549"))
-    plt.show()
     plt.close(fig)
 
     # %% Describe patterns of contraceptive usage over time and age
@@ -470,7 +460,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig.tight_layout()
         fig.subplots_adjust(right=0.65)
         plt.savefig(make_graph_file_name(f"Contraception_use_over_time_{_age}"))
-        plt.show()
         plt.close(fig)
 
     # Show Distribution of use at different ages at one time point (2015)
@@ -482,7 +471,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.set_xlabel('Age-Group')
     ax.set_ylabel('Proportion')
     fig.tight_layout()
-    fig.show()
     fig.savefig(make_graph_file_name(f"Contraception_use_by_age_in_year_{year_of_interest}"))
     plt.close(fig)
 
@@ -554,10 +542,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax[i].set_ylabel('Live births per woman')
 
     ax[-1].set_axis_off()
-    fig.legend((l1[0], l2[0]), ('WPP', 'Model'), 'lower right')
+    fig.legend(handles=(l1[0], l2[0]), labels=('WPP', 'Model'), loc='lower right')
     fig.tight_layout()
     fig.savefig(make_graph_file_name("asfr_model_vs_data"))
-    fig.show()
     plt.close(fig)
 
     # Plot with respect to age, averaged in the five-year periods:
@@ -588,29 +575,26 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.suptitle('Live Births By Age of Mother At Conception')
     fig.tight_layout()
     fig.savefig(make_graph_file_name("asfr_model_vs_data_average_by_age_2015-2019"))
-    fig.show()
     plt.close(fig)
 
     # %% All-Cause Deaths
-    #  todo - fix this -- only do summarize after the groupbys
-    #  Get Model output (aggregating by year before doing the summarize)
+    #  Get Model output (aggregating by period before doing the summarize)
+
+    # Aggregate the model outputs into five-year periods for age and time:
+    def get_counts_of_death_by_period_sex_agegrp(df):
+        df['year'] = df['date'].dt.year
+        df['Age_Grp'] = df['age'].map(agegrplookup).astype(make_age_grp_types())
+        df['Period'] = df['year'].map(calperiodlookup).astype(make_calendar_period_type())
+        df['Sex'] = df['sex']
+        return df.groupby(by=['Period', 'Sex', 'Age_Grp'])['person_id'].count()
 
     results_deaths = extract_results(
         results_folder,
         module="tlo.methods.demography",
         key="death",
-        custom_generate_series=(
-            lambda df: df.assign(year=df['date'].dt.year).groupby(['sex', 'year', 'age'])['person_id'].count()
-        ),
+        custom_generate_series=get_counts_of_death_by_period_sex_agegrp,
         do_scaling=True
     )
-
-    # Aggregate the model outputs into five year periods for age and time:
-    results_deaths = results_deaths.reset_index()
-    results_deaths['Age_Grp'] = results_deaths['age'].map(agegrplookup).astype(make_age_grp_types())
-    results_deaths['Period'] = results_deaths['year'].map(calperiodlookup).astype(make_calendar_period_type())
-    results_deaths = results_deaths.rename(columns={'sex': 'Sex'})
-    results_deaths = results_deaths.drop(columns=['age', 'year']).groupby(['Period', 'Sex', 'Age_Grp']).sum()
 
     # Load WPP data
     wpp_deaths = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_TotalDeaths_WPP.csv")
@@ -698,7 +682,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     plt.xticks(np.arange(len(deaths_by_period.index)), deaths_by_period.index, rotation=90)
     fig.tight_layout()
     plt.savefig(make_graph_file_name("Deaths_OverTime"))
-    plt.show()
     plt.close(fig)
 
     # 2) Plots by sex and age-group for selected period:
@@ -734,7 +717,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             tot_deaths_byage = pd.DataFrame(
                 deaths_by_agesexperiod.loc[
                     (deaths_by_agesexperiod['Period'] == period) & (deaths_by_agesexperiod['Sex'] == sex)].groupby(
-                    by=['Variant', 'Age_Grp']).sum()).unstack()
+                    by=['Variant', 'Age_Grp'])['Count'].sum()).unstack()
             tot_deaths_byage.columns = pd.Index([label[1] for label in tot_deaths_byage.columns.tolist()])
             tot_deaths_byage = tot_deaths_byage.transpose()
 
@@ -789,7 +772,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
             fig.tight_layout()
             fig.savefig(make_graph_file_name(f"Deaths_By_Age_{sex}_{period}"))
-            fig.show()
             plt.close(fig)
 
 

@@ -96,17 +96,15 @@ def write_log_to_excel(filename, log_dataframes):
                 sheet_count += 1
                 metadata.append([module, key, sheet_count, dataframes['_metadata'][module][key]['description']])
 
-    writer = pd.ExcelWriter(filename)
-    index = pd.DataFrame(data=metadata, columns=['module', 'key', 'sheet', 'description'])
-    index.to_excel(writer, sheet_name='Index')
-
-    sheet_count = 0
-    for module, dataframes in log_dataframes.items():
-        for key, df in dataframes.items():
-            if key != '_metadata':
-                sheet_count += 1
-                df.to_excel(writer, sheet_name=f'Sheet {sheet_count}')
-    writer.save()
+    with pd.ExcelWriter(filename) as writer:  # https://github.com/PyCQA/pylint/issues/3060 pylint: disable=E0110
+        index = pd.DataFrame(data=metadata, columns=['module', 'key', 'sheet', 'description'])
+        index.to_excel(writer, sheet_name='Index')
+        sheet_count = 0
+        for module, dataframes in log_dataframes.items():
+            for key, df in dataframes.items():
+                if key != '_metadata':
+                    sheet_count += 1
+                    df.to_excel(writer, sheet_name=f'Sheet {sheet_count}')
 
 
 def make_calendar_period_lookup():
@@ -265,19 +263,21 @@ def extract_results(results_folder: Path,
                                            )['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
 
     if custom_generate_series is None:
-        # If there is no `custom_generate_series` provided, it implies that function required selects a the specified
+        # If there is no `custom_generate_series` provided, it implies that function required selects the specified
         # column from the dataframe.
         assert column is not None, "Must specify which column to extract"
-
-        if index is not None:
-            _gen_series = lambda _df: _df.set_index(index)[column]  # noqa: 731
-        else:
-            _gen_series = lambda _df: _df.reset_index(drop=True)[column]  # noqa: 731
-
     else:
         assert index is None, "Cannot specify an index if using custom_generate_series"
         assert column is None, "Cannot specify a column if using custom_generate_series"
-        _gen_series = custom_generate_series
+
+    def generate_series(dataframe: pd.DataFrame) -> pd.Series:
+        if custom_generate_series is None:
+            if index is not None:
+                return dataframe.set_index(index)[column]
+            else:
+                return dataframe.reset_index(drop=True)[column]
+        else:
+            return custom_generate_series(dataframe)
 
     # get number of draws and numbers of runs
     info = get_scenario_info(results_folder)
@@ -291,7 +291,7 @@ def extract_results(results_folder: Path,
 
             try:
                 df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
-                output_from_eval: pd.Series = _gen_series(df)
+                output_from_eval: pd.Series = generate_series(df)
                 assert pd.Series == type(output_from_eval), 'Custom command does not generate a pd.Series'
                 res[draw_run] = output_from_eval * get_multiplier(draw, run)
 
@@ -610,6 +610,7 @@ def get_filtered_treatment_ids(depth: Optional[int] = None) -> List[str]:
             [
                 "".join(f"{x}_" for i, x in enumerate(t.split('_')) if i < depth).rstrip('_') + '_*'
                 for t in set(_treatments)
+                if t # In the event an abstract base class is detected, that does not set TREATMENT_ID by default
             ]
         )))
 
@@ -855,7 +856,7 @@ def get_color_cause_of_death_or_daly_label(cause_of_death_label: str) -> str:
     return CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.get(cause_of_death_label, np.nan)
 
 
-def squarify_neat(sizes: np.array, label: np.array, colormap: Callable, numlabels=5, **kwargs):
+def squarify_neat(sizes: np.array, label: np.array, colormap: Callable = None, numlabels: int = 5, **kwargs):
     """Pass through to squarify, with some customisation: ...
      * Apply the colormap specified
      * Only give label a selection of the segments
@@ -867,7 +868,7 @@ def squarify_neat(sizes: np.array, label: np.array, colormap: Callable, numlabel
     squarify.plot(
         sizes=sizes,
         label=[_label if _label in to_label else '' for _label in label],
-        color=[colormap(_x) for _x in label],
+        color=[colormap(_x) for _x in label] if colormap is not None else None,
         **kwargs,
     )
 
@@ -1217,7 +1218,8 @@ def get_parameters_for_improved_healthsystem_and_healthcare_seeking(
 
 def mix_scenarios(*dicts) -> Dict:
     """Helper function to combine a Dicts that show which parameters should be over-written.
-     * Warnings are generated if a parameter appears in more than one Dict with a different value;
+     * If a parameter appears in more than one Dict, the value in the last-added dict is taken, and a UserWarning
+      is raised;
      * Items under the same top-level key (i.e., for the Module) are merged rather than being over-written."""
 
     d = defaultdict(lambda: defaultdict(dict))

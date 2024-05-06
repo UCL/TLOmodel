@@ -10,7 +10,7 @@ jobs:
   scaled_sim:
     uses: ./.github/workflows/run-on-comment.yml
     with:
-      runs-on: self-hosted
+      runs-on: '["self-hosted", "test"]'
       keyword: scaled-sim
       commands: tox -v -e profile
       description: Profiled scale run of model
@@ -23,10 +23,10 @@ jobs:
   multiple_seed_tests:
     uses: ./.github/workflows/run-on-comment.yml
     with:
-      runs-on: self-hosted
+      runs-on: '["self-hosted", "test"]'
       keyword: multiple-seed-tests
       commands: |
-        tox -v -e py38,report -- pytest --seed 2671936806 3512589365 --cov --cov-report=term-missing -vv tests
+        tox -v -e py311,report -- pytest --seed 2671936806 3512589365 --cov --cov-report=term-missing -vv tests
       description: Run of tests over multiple seeds
       timeout-minutes: 8640
       application-organization: UCL
@@ -37,7 +37,7 @@ jobs:
   python311_pandas15_fast_tests:
     uses: ./.github/workflows/run-on-comment.yml
     with:
-      runs-on: self-hosted
+      runs-on: '["self-hosted", "test"]'
       keyword: python3.11-pandas1.5-fast-tests
       commands: |
         tox -v -e py311-pandas15,report -- pytest --skip-slow --cov --cov-report=term-missing -vv tests
@@ -51,7 +51,7 @@ jobs:
   python311_pandas15_all_tests:
     uses: ./.github/workflows/run-on-comment.yml
     with:
-      runs-on: self-hosted
+      runs-on: '["self-hosted", "test"]'
       keyword: python3.11-pandas1.5-all-tests
       commands: |
         tox -v -e py311-pandas15,report -- pytest --cov --cov-report=term-missing -vv tests
@@ -65,7 +65,7 @@ jobs:
   python311_pandas20_fast_tests:
     uses: ./.github/workflows/run-on-comment.yml
     with:
-      runs-on: self-hosted
+      runs-on: '["self-hosted", "test"]'
       keyword: python3.11-pandas2.0-fast-tests
       commands: |
         tox -v -e py311-pandas20,report -- pytest --skip-slow --cov --cov-report=term-missing -vv tests
@@ -79,7 +79,7 @@ jobs:
   python311_pandas20_all_tests:
     uses: ./.github/workflows/run-on-comment.yml
     with:
-      runs-on: self-hosted
+      runs-on: '["self-hosted", "test"]'
       keyword: python3.11-pandas2.0-all-tests
       commands: |
         tox -v -e py311-pandas20,report -- pytest --cov --cov-report=term-missing -vv tests
@@ -93,7 +93,7 @@ jobs:
   python311_pandas21_fast_tests:
     uses: ./.github/workflows/run-on-comment.yml
     with:
-      runs-on: self-hosted
+      runs-on: '["self-hosted", "test"]'
       keyword: python3.11-pandas2.1-fast-tests
       commands: |
         tox -v -e py311-pandas21,report -- pytest --skip-slow --cov --cov-report=term-missing -vv tests
@@ -107,7 +107,7 @@ jobs:
   python311_pandas21_all_tests:
     uses: ./.github/workflows/run-on-comment.yml
     with:
-      runs-on: self-hosted
+      runs-on: '["self-hosted", "test"]'
       keyword: python3.11-pandas2.1-all-tests
       commands: |
         tox -v -e py311-pandas21,report -- pytest --cov --cov-report=term-missing -vv tests
@@ -121,7 +121,7 @@ jobs:
   dummy_job:
     uses: ./.github/workflows/run-on-comment.yml
     with:
-      runs-on: self-hosted
+      runs-on: '["self-hosted", "test"]'
       keyword: dummy-job
       commands: 'true'
       description: Dummy job for testing workflow

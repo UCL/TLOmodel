@@ -28,7 +28,8 @@ resourcefilepath = Path("./resources")
 outputpath = Path("./outputs")
 
 # Declare path for output graphs from this script
-make_graph_file_name = lambda name: outputpath / f"Schisto_{name}.png"  # noqa: E73
+def make_graph_file_name(name):
+    return outputpath / f"Schisto_{name}.png"
 
 # Districts that are high prevalence and for which this model has been calibrated:
 fitted_districts = ['Blantyre', 'Chiradzulu', 'Mulanje', 'Nsanje', 'Nkhotakota', 'Phalombe']

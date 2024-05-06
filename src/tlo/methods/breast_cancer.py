@@ -4,20 +4,26 @@ Breast Cancer Disease Module
 Limitations to note:
 * Footprints of HSI -- pending input from expert on resources required.
 """
+from __future__ import annotations
 
 from pathlib import Path
+from typing import TYPE_CHECKING, List
 
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import IndividualPropertyUpdates
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
-from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.symptommanager import Symptom
+
+if TYPE_CHECKING:
+    from tlo.population import PatientDetails
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -559,6 +565,22 @@ class BreastCancer(Module):
 
         return disability_series_for_alive_persons
 
+    def do_at_generic_first_appt(
+        self,
+        patient_id: int,
+        patient_details: PatientDetails,
+        symptoms: List[str],
+        **kwargs,
+    ) -> IndividualPropertyUpdates:
+        # If the patient is not a child and symptoms include breast
+        # lump discernible
+        if patient_details.age_years > 5 and "breast_lump_discernible" in symptoms:
+            event = HSI_BreastCancer_Investigation_Following_breast_lump_discernible(
+                person_id=patient_id,
+                module=self,
+            )
+            self.healthsystem.schedule_hsi_event(event, topen=self.sim.date, priority=0)
+
 
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
@@ -574,7 +596,7 @@ class BreastCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
-        # scheduled to run every 3 months: do not change as this is hard-wired into the values of all the parameters.
+        # scheduled to run every month: do not change as this is hard-wired into the values of all the parameters.
 
     def apply(self, population):
         df = population.props  # shortcut to dataframe
@@ -645,7 +667,7 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
 
         self.TREATMENT_ID = "BreastCancer_Investigation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1, "Mammography": 1})
-        self.ACCEPTED_FACILITY_LEVEL = '3'  # Mammography only available at level 3 and above.
+        self.ACCEPTED_FACILITY_LEVEL = '3'  # Biopsy only available at level 3 and above.
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
