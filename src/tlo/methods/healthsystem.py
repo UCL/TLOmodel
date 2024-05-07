@@ -2510,10 +2510,6 @@ class HealthSystemSummaryCounter:
         #                                                           treatment_id. Key is of the form:
         #                                                           "<TREATMENT_ID>:<HSI_EVENT_NAME>"
 
-        # <<<< todo FROM MY ORIGINAL APPROACH
-        self._frac_time_used_by_officertype_and_facilitylevel = []  # Running record of the usage of the healthcare
-        #                                                              system
-
     def record_hsi_event(self,
                          treatment_id: str,
                          hsi_event_name: str,
@@ -2562,10 +2558,6 @@ class HealthSystemSummaryCounter:
         self._frac_time_used_overall.append(fraction_time_used_across_all_facilities)
         for officer_type_facility_level, fraction_time in fraction_time_used_by_officer_type_and_level.items():
             self._sum_of_daily_frac_time_used_by_officer_type_and_level[officer_type_facility_level] += fraction_time
-
-        # <<<< todo FROM MY ORIGINAL APPROACH
-        self._frac_time_used_by_officertype_and_facilitylevel.append(
-            fraction_time_used_by_officer_type_and_level)
 
     def write_to_log_and_reset_counters(self):
         """Log summary statistics reset the data structures. This usually occurs at the end of the year."""
