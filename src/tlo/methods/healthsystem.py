@@ -2635,7 +2635,7 @@ class HealthSystemSummaryCounter:
             }
             return pd.Series(
                 index=pd.MultiIndex.from_tuples(
-                    self._sum_of_daily_frac_time_used_by_officer_type_and_level.keys(),
+                    mean_frac_time_used.keys(),
                     names=['OfficerType', 'FacilityLevel']
                 ),
                 data=mean_frac_time_used.values()
