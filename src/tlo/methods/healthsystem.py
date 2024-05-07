@@ -7,7 +7,7 @@ from collections import Counter, defaultdict
 from collections.abc import Iterable
 from itertools import repeat
 from pathlib import Path
-from typing import Dict, List, NamedTuple, Optional, Tuple
+from typing import Dict, List, NamedTuple, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -928,7 +928,7 @@ class HealthSystem(Module):
             # Only rescale if rescaling factor is greater than 1 (i.e. don't reduce
             # available capabilities if these were under-used the previous year).
             rescaling_factor = self._summary_counter.frac_time_used_by_officer_type_and_level(
-                officer_type, level
+                officer_type=officer_type, level=level
             )
             if rescaling_factor > 1 and rescaling_factor != float("inf"):
                 self._daily_capabilities[officer] *= rescaling_factor
@@ -2607,40 +2607,47 @@ class HealthSystemSummaryCounter:
             },
         )
 
-        # todo <<<< FROM MY ORIGINAL APPROACH
-        # Compute mean of 'fraction time used by officer type and facility level' from daily entries from the previous
+        # Log mean of 'fraction time used by officer type and facility level' from daily entries from the previous
         # year.
-        mean_of_frac_time_used_by_officertype_and_facilitylevel = pd.DataFrame(
-            self._frac_time_used_by_officertype_and_facilitylevel).mean()
-        # Set-up multiindex with names to facilitate logging
-        mean_of_frac_time_used_by_officertype_and_facilitylevel.index = pd.MultiIndex.from_tuples(
-            mean_of_frac_time_used_by_officertype_and_facilitylevel.index, names=('OfficerType', 'FacilityLevel'))
-
-        # todo - this should be:
-        # mean_of_frac_time_used_by_officertype_and_facilitylevel = {
-        #     f'{officer}_{level}': self.frac_time_used_by_officer_type_and_level(officer, level)
-        #     for officer, level in zip(officer, level)
-        # }
-
-        # todo <<<< FROM MY ORIGINAL APPROACH
         logger_summary.info(
             key="Capacity_By_OfficerType_And_FacilityLevel",
             description="The fraction of healthcare worker time that is used each day, averaged over this "
                         "calendar year, for each officer type at each facility level.",
             data=flatten_multi_index_series_into_dict_for_logging(
-                mean_of_frac_time_used_by_officertype_and_facilitylevel),
+                self.frac_time_used_by_officer_type_and_level()),
         )
 
         self._reset_internal_stores()
 
-    def frac_time_used_by_officer_type_and_level(self, officer_type, level):
-        """Average fraction of time used by officer type and level since last reset."""
-        # Use len(self._frac_time_used_overall) as proxy for number of days in past year.
-        return (
-            self._sum_of_daily_frac_time_used_by_officer_type_and_level[officer_type, level]
-            / len(self._frac_time_used_overall)
-        )
+    def frac_time_used_by_officer_type_and_level(
+        self,
+        officer_type: Optional[str]=None,
+        level: Optional[str]=None,
+    ) -> Union[float, pd.Series]:
+        """Average fraction of time used by officer type and level since last reset.
+        If `officer_type` and/or `level` is not provided (left to default to `None`) then a pd.Series with a multi-index
+        is returned giving the result for all officer_types/levels."""
 
+        if (officer_type is not None) and (level is not None):
+            return (
+                self._sum_of_daily_frac_time_used_by_officer_type_and_level[officer_type, level]
+                / len(self._frac_time_used_overall)
+                # Use len(self._frac_time_used_overall) as proxy for number of days in past year.
+            )
+        else:
+            # Return multiple in the form of a pd.Series with multiindex
+            mean_frac_time_used = {
+                (_officer_type, _level): v / len(self._frac_time_used_overall)
+                for (_officer_type, _level), v in self._sum_of_daily_frac_time_used_by_officer_type_and_level.items()
+                if (_officer_type == officer_type or officer_type is None) and (_level == level or level is None)
+            }
+            return pd.Series(
+                index=pd.MultiIndex.from_tuples(
+                    self._sum_of_daily_frac_time_used_by_officer_type_and_level.keys(),
+                    names=['OfficerType', 'FacilityLevel']
+                ),
+                data=mean_frac_time_used.values()
+            ).sort_index()
 
 class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
     """Event that causes certain internal parameters of the HealthSystem to be changed; specifically:
