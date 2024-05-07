@@ -50,6 +50,7 @@ class Types(Enum):
     DATA_FRAME = auto()
     STRING = auto()
     DICT = auto()
+    BITSET = auto()
 
 
 class Specifiable:
@@ -67,7 +68,8 @@ class Specifiable:
         Types.SERIES: object,
         Types.DATA_FRAME: object,
         Types.STRING: object,
-        Types.DICT: object
+        Types.DICT: object,
+        Types.BITSET: np.uint32,
     }
 
     # Map our Types to Python types
@@ -82,7 +84,8 @@ class Specifiable:
         Types.SERIES: pd.Series,
         Types.DATA_FRAME: pd.DataFrame,
         Types.STRING: object,
-        Types.DICT: dict
+        Types.DICT: dict,
+        Types.BITSET: int,
     }
 
     def __init__(self, type_, description, categories=None):
@@ -138,6 +141,7 @@ class Property(Specifiable):
         float: float("nan"),
         "category": float("nan"),
         object: float("nan"),
+        np.uint32: 0,
     }
 
     def __init__(self, type_, description, categories=None, *, ordered=False):
