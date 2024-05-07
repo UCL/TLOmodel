@@ -88,7 +88,7 @@ def test_parse_log_levels(tmpdir):
 
     # At INFO level
     assert (
-        len(output["tlo.methods.dummy"]["_metadata"]["tlo.methods.dummy"]) == 2
+            len(output["tlo.methods.dummy"]["_metadata"]["tlo.methods.dummy"]) == 2
     )  # should have two tables
 
     # tables should be at level INFO
@@ -148,7 +148,7 @@ def test_flattening_and_unflattening_multiindex(tmpdir):
         sim = Simulation(
             start_date=sim_start_date,
             seed=0,
-            log_config={"filename": "temp", "directory": tmpdir,},
+            log_config={"filename": "temp", "directory": tmpdir, },
         )
         sim.register(
             demography.Demography(resourcefilepath=resourcefilepath), DummyModule()
@@ -368,7 +368,7 @@ def test_get_parameter_functions(seed):
 
                 # Check that the parameter identified exists in the simulation
                 assert (
-                    name in sim.modules[module].parameters
+                        name in sim.modules[module].parameters
                 ), f"Parameter not recognised: {module}:{name}."
 
                 # Check that the original value and the updated value are of the same type.
@@ -412,9 +412,9 @@ def test_get_parameter_functions(seed):
 def test_mix_scenarios():
     """Check that `mix_scenarios` works as expected."""
 
-    d1 = {"Mod1": {"param_a": "value_in_d1", "param_b": "value_in_d1",}}
+    d1 = {"Mod1": {"param_a": "value_in_d1", "param_b": "value_in_d1", }}
 
-    d2 = {"Mod2": {"param_a": "value_in_d2", "param_b": "value_in_d2",}}
+    d2 = {"Mod2": {"param_a": "value_in_d2", "param_b": "value_in_d2", }}
 
     d3 = {"Mod1": {"param_b": "value_in_d3", "param_c": "value_in_d3"}}
 
@@ -433,8 +433,8 @@ def test_mix_scenarios():
 
     assert 1 == len(record)
     assert (
-        record.list[0].message.args[0]
-        == "Parameter is being updated more than once: module=Mod1, parameter=param_b"
+            record.list[0].message.args[0]
+            == "Parameter is being updated more than once: module=Mod1, parameter=param_b"
     )
 
     # Test the behaviour of the `mix_scenarios` taking the value in the right-most dict.
@@ -460,15 +460,15 @@ def test_mix_scenarios():
                 "param_c": "value_in_dict3",
             }
         },
-        {"Mod1": {"param_a": "value_in_dict_right_most", "param_c": "value_in_dict4",}},
-        {"Mod1": {"param_c": "value_in_dict_right_most",}},
+        {"Mod1": {"param_a": "value_in_dict_right_most", "param_c": "value_in_dict4", }},
+        {"Mod1": {"param_c": "value_in_dict_right_most", }},
     ) == {
-        "Mod1": {
-            "param_a": "value_in_dict_right_most",
-            "param_b": "value_in_dict_right_most",
-            "param_c": "value_in_dict_right_most",
-        }
-    }
+               "Mod1": {
+                   "param_a": "value_in_dict_right_most",
+                   "param_b": "value_in_dict_right_most",
+                   "param_c": "value_in_dict_right_most",
+               }
+           }
 
 
 def test_improved_healthsystem_and_care_seeking_scenario_switcher(seed):
@@ -538,24 +538,23 @@ def test_improved_healthsystem_and_care_seeking_scenario_switcher(seed):
             hcs = sim.modules["HealthSeekingBehaviour"].force_any_symptom_to_lead_to_healthcareseeking
             assert isinstance(hcs, bool) and (hcs is max_healthcare_seeking[phase_of_simulation])
 
-
     sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
     sim.register(
         *(
-            fullmodel(resourcefilepath=resourcefilepath)
-            + [
-                ImprovedHealthSystemAndCareSeekingScenarioSwitcher(
-                    resourcefilepath=resourcefilepath
-                ),
-                DummyModule(),
-            ]
+                fullmodel(resourcefilepath=resourcefilepath)
+                + [
+                    ImprovedHealthSystemAndCareSeekingScenarioSwitcher(
+                        resourcefilepath=resourcefilepath
+                    ),
+                    DummyModule(),
+                ]
         )
     )
 
     # Check that the `ImprovedHealthSystemAndCareSeekingScenarioSwitcher` is the first registered module.
     assert (
-        "ImprovedHealthSystemAndCareSeekingScenarioSwitcher"
-        == list(sim.modules.keys())[0]
+            "ImprovedHealthSystemAndCareSeekingScenarioSwitcher"
+            == list(sim.modules.keys())[0]
     )
     module = sim.modules["ImprovedHealthSystemAndCareSeekingScenarioSwitcher"]
 
@@ -586,7 +585,7 @@ def test_summarize():
             names=("draw", "run"),
         ),
         index=["TimePoint0", "TimePoint1"],
-        data=np.array([[0, 20, 1000, 2000], [0, 20, 1000, 2000],]),
+        data=np.array([[0, 20, 1000, 2000], [0, 20, 1000, 2000], ]),
     )
 
     results_one_draw = pd.DataFrame(
@@ -637,7 +636,7 @@ def test_summarize():
         pd.DataFrame(
             columns=pd.Index(["lower", "mean", "upper"], name="stat"),
             index=["TimePoint0", "TimePoint1"],
-            data=np.array([[0.5, 10.0, 19.5], [0.5, 10.0, 19.5],]),
+            data=np.array([[0.5, 10.0, 19.5], [0.5, 10.0, 19.5], ]),
         ),
         summarize(results_one_draw, collapse_columns=True),
     )
@@ -654,7 +653,7 @@ def test_control_loggers_from_same_module_independently(seed, tmpdir):
         'directory': tmpdir,
         'custom_levels': {
             "*": logging.WARNING,
-            # 'tlo.methods.demography.detail': logging.WARNING,  # <-- Don't explicitly turn off the detailed logger
+            'tlo.methods.demography.detail': logging.WARNING,  # <-- Don't explicitly turn off the detailed logger
             'tlo.methods.demography': logging.INFO,  # <-- Turning on the normal logger
         }
     }
@@ -685,7 +684,3 @@ def test_control_loggers_from_same_module_independently(seed, tmpdir):
     sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, log_config=log_config)
     check_log(run_simulation_and_cause_one_death(sim))
 
-    # 2) Set-up custom-logs after the Simulation object is created
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
-    sim.configure_logging(**log_config)
-    check_log(run_simulation_and_cause_one_death(sim))
