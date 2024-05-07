@@ -42,7 +42,7 @@ if not os.path.exists(costing_outputs_folder):
     os.makedirs(costing_outputs_folder)
 
 # Declare period for which the results will be generated (defined inclusively)
-TARGET_PERIOD = (Date(2000, 1, 1), Date(2050, 12, 31))
+TARGET_PERIOD = (Date(2015, 1, 1), Date(2015, 12, 31))
 def drop_outside_period(_df):
     """Return a dataframe which only includes for which the date is within the limits defined by TARGET_PERIOD"""
     return _df.drop(index=_df.index[~_df['date'].between(*TARGET_PERIOD)])
@@ -288,15 +288,21 @@ unit_cost_equipment['replacement_cost_annual'] = unit_cost_equipment.apply(lambd
 # 4. Facility running costs
 # Average running costs by facility level and district times the number of facilities  in the simulation
 
+# Extract all costs to a .csv
+scenario_cost_financial.to_csv(costing_outputs_folder / 'scenario_cost.csv')
+
+
 # Compare financial costs with actual budget data
 ####################################################
 # Import budget data
 budget_data = workbook_cost["budget_validation"]
-list_of_costs_for_comparison = ['total_salary_for_all_staff', 'total_cost_of_consumables_dispensed']
+list_of_costs_for_comparison = ['total_salary_for_all_staff', 'total_cost_of_consumables_dispensed', 'total_cost_of_consumables_stocked']
 real_budget = [budget_data[budget_data['Category'] == list_of_costs_for_comparison[0]]['Budget_in_2023USD'].values[0],
+               budget_data[budget_data['Category'] == list_of_costs_for_comparison[1]]['Budget_in_2023USD'].values[0],
                budget_data[budget_data['Category'] == list_of_costs_for_comparison[1]]['Budget_in_2023USD'].values[0]]
 model_cost = [scenario_cost_financial[scenario_cost_financial['Cost_Sub-category'] == list_of_costs_for_comparison[0]]['Value_2023USD'].values[0],
-              scenario_cost_financial[scenario_cost_financial['Cost_Sub-category'] == list_of_costs_for_comparison[1]]['Value_2023USD'].values[0]]
+              scenario_cost_financial[scenario_cost_financial['Cost_Sub-category'] == list_of_costs_for_comparison[1]]['Value_2023USD'].values[0],
+              scenario_cost_financial[scenario_cost_financial['Cost_Sub-category'] == list_of_costs_for_comparison[2]]['Value_2023USD'].values[0]]
 
 plt.clf()
 plt.scatter(real_budget, model_cost)
@@ -311,8 +317,9 @@ plt.gca().xaxis.set_major_formatter(formatter)
 plt.gca().yaxis.set_major_formatter(formatter)
 # Add labels for each point
 hr_label = 'HR_salary ' + f'{round(model_cost[0] / real_budget[0], 2)}'
-consumables_label = 'Consumables ' + f'{round(model_cost[1] / real_budget[1], 2)}'
-plotlabels = [hr_label, consumables_label]
+consumables_label1= 'Consumables dispensed ' + f'{round(model_cost[1] / real_budget[1], 2)}'
+consumables_label2 = 'Consumables stocked ' + f'{round(model_cost[2] / real_budget[2], 2)}'
+plotlabels = [hr_label, consumables_label1, consumables_label2]
 for i, txt in enumerate(plotlabels):
     plt.text(real_budget[i], model_cost[i], txt, ha='right')
 
