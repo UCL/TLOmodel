@@ -285,9 +285,41 @@ unit_cost_equipment['replacement_cost_annual'] = unit_cost_equipment.apply(lambd
 # TODO Multiply quantity needed with cost per item (this is the repair, replacement, and maintenance cost)
 # TODO Which equipment needs to be newly purchased (currently no assumption made for equipment with cost > $250,000)
 
-
 # 4. Facility running costs
 # Average running costs by facility level and district times the number of facilities  in the simulation
+
+# Compare financial costs with actual budget data
+####################################################
+# Import budget data
+budget_data = workbook_cost["budget_validation"]
+list_of_costs_for_comparison = ['total_salary_for_all_staff', 'total_cost_of_consumables_dispensed']
+real_budget = [budget_data[budget_data['Category'] == list_of_costs_for_comparison[0]]['Budget_in_2023USD'].values[0],
+               budget_data[budget_data['Category'] == list_of_costs_for_comparison[1]]['Budget_in_2023USD'].values[0]]
+model_cost = [scenario_cost_financial[scenario_cost_financial['Cost_Sub-category'] == list_of_costs_for_comparison[0]]['Value_2023USD'].values[0],
+              scenario_cost_financial[scenario_cost_financial['Cost_Sub-category'] == list_of_costs_for_comparison[1]]['Value_2023USD'].values[0]]
+
+plt.clf()
+plt.scatter(real_budget, model_cost)
+# Plot a line representing a 45-degree angle
+min_val = min(min(real_budget), min(model_cost))
+max_val = max(max(real_budget), max(model_cost))
+plt.plot([min_val, max_val], [min_val, max_val], 'r--', label='45-degree line')
+
+# Format x and y axis labels to display in millions
+formatter = FuncFormatter(lambda x, _: '{:,.0f}M'.format(x / 1e6))
+plt.gca().xaxis.set_major_formatter(formatter)
+plt.gca().yaxis.set_major_formatter(formatter)
+# Add labels for each point
+hr_label = 'HR_salary ' + f'{round(model_cost[0] / real_budget[0], 2)}'
+consumables_label = 'Consumables ' + f'{round(model_cost[1] / real_budget[1], 2)}'
+plotlabels = [hr_label, consumables_label]
+for i, txt in enumerate(plotlabels):
+    plt.text(real_budget[i], model_cost[i], txt, ha='right')
+
+plt.xlabel('Real Budget')
+plt.ylabel('Model Cost')
+plt.title('Real Budget vs Model Cost')
+plt.savefig(costing_outputs_folder /  'Cost_validation.png')
 
 # Explore the ratio of consumable inflows to outflows
 ######################################################
@@ -319,37 +351,6 @@ plot_inflow_to_outflow_ratio(inflow_to_outflow_ratio, 'fac_type_tlo')
 plot_inflow_to_outflow_ratio(inflow_to_outflow_ratio, 'district')
 plot_inflow_to_outflow_ratio(inflow_to_outflow_ratio, 'item_code')
 plot_inflow_to_outflow_ratio(inflow_to_outflow_ratio, 'category')
-
-# Compare financial costs with actual budget data
-####################################################
-salary_budget_2018 = 69478749
-consuambles_budget_2018 = 228934188
-real_budget = [salary_budget_2018, consuambles_budget_2018]
-model_cost = [scenario_cost_financial['HR'][0], scenario_cost_financial['Consumables'][0]]
-labels = ['HR_salary', 'Consumables']
-
-plt.clf()
-plt.scatter(real_budget, model_cost)
-# Plot a line representing a 45-degree angle
-min_val = min(min(real_budget), min(model_cost))
-max_val = max(max(real_budget), max(model_cost))
-plt.plot([min_val, max_val], [min_val, max_val], 'r--', label='45-degree line')
-
-# Format x and y axis labels to display in millions
-formatter = FuncFormatter(lambda x, _: '{:,.0f}M'.format(x / 1e6))
-plt.gca().xaxis.set_major_formatter(formatter)
-plt.gca().yaxis.set_major_formatter(formatter)
-# Add labels for each point
-hr_label = 'HR_salary ' + f'{round(model_cost[0] / real_budget[0], 2)}'
-consumables_label = 'Consumables ' + f'{round(model_cost[1] / real_budget[1], 5)}'
-plotlabels = [hr_label, consumables_label]
-for i, txt in enumerate(plotlabels):
-    plt.text(real_budget[i], model_cost[i], txt, ha='right')
-
-plt.xlabel('Real Budget')
-plt.ylabel('Model Cost')
-plt.title('Real Budget vs Model Cost')
-plt.savefig(costing_outputs_folder /  'Cost_validation.png')
 
 # Plot fraction staff time used
 fraction_stafftime_average = salary_staffneeded_df.groupby('Officer_Category')['Value'].sum()
