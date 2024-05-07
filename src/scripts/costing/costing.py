@@ -117,19 +117,19 @@ current_staff_count_by_level_and_officer_type['OfficerType_FacilityLevel'] = 'Of
 used_staff_count_by_level_and_officer_type = current_staff_count_by_level_and_officer_type[current_staff_count_by_level_and_officer_type['OfficerType_FacilityLevel'].isin(list_of_cadre_and_level_combinations_used)]
 
 # Calculate various components of HR cost
-# 1. Salary cost for modelled health workforce (Staff count X Annual salary)
+# 1.1 Salary cost for modelled health workforce (Staff count X Annual salary)
 salary_for_all_staff = pd.merge(current_staff_count_by_level_and_officer_type[['OfficerType_FacilityLevel', 'Staff_Count']],
                                      hr_annual_salary[['OfficerType_FacilityLevel', 'Value']], on = ['OfficerType_FacilityLevel'], how = "left")
 salary_for_all_staff['Total_salary_by_cadre_and_level'] = salary_for_all_staff['Value'] * salary_for_all_staff['Staff_Count']
 total_salary_for_all_staff = salary_for_all_staff['Total_salary_by_cadre_and_level'].sum()
 
-# 2. Salary cost for current total staff
+# 1.2 Salary cost for current total staff
 salary_for_staff_used_in_scenario = pd.merge(used_staff_count_by_level_and_officer_type[['OfficerType_FacilityLevel', 'Staff_Count']],
                                      hr_annual_salary[['OfficerType_FacilityLevel', 'Value']], on = ['OfficerType_FacilityLevel'], how = "left")
 salary_for_staff_used_in_scenario['Total_salary_by_cadre_and_level'] = salary_for_staff_used_in_scenario['Value'] * salary_for_staff_used_in_scenario['Staff_Count']
 total_salary_for_staff_used_in_scenario = salary_for_staff_used_in_scenario['Total_salary_by_cadre_and_level'].sum()
 
-# 3. Recruitment cost to fill gap created by attrition
+# 1.3 Recruitment cost to fill gap created by attrition
 def merge_cost_and_model_data(cost_df, model_df, varnames):
     merged_df = model_df.copy()
     for varname in varnames:
@@ -151,7 +151,7 @@ recruitment_cost_df['annual_recruitment_cost'] = recruitment_cost_df['annual_att
                       recruitment_cost_df['recruitment_cost_per_person_recruited_usd']
 recruitment_cost_for_attrited_workers = recruitment_cost_df['annual_recruitment_cost'].sum()
 
-# 4. Pre-service training cost to fill gap created by attrition
+# 1.4 Pre-service training cost to fill gap created by attrition
 preservice_training_cost_df = merge_cost_and_model_data(cost_df = hr_cost_parameters, model_df = used_staff_count_by_level_and_officer_type,
                                                      varnames = ['annual_attrition_rate',
                                                                  'licensure_exam_passing_rate', 'graduation_rate',
@@ -163,7 +163,7 @@ preservice_training_cost_df['annual_preservice_training_cost'] = preservice_trai
                                                 preservice_training_cost_df['annual_preservice_training_cost_percapita_usd']
 preservice_training_cost_for_attrited_workers = preservice_training_cost_df['annual_preservice_training_cost'].sum()
 
-# 5. In-service training cost to train all staff
+# 1.5 In-service training cost to train all staff
 inservice_training_cost_df = merge_cost_and_model_data(cost_df = hr_cost_parameters, model_df = used_staff_count_by_level_and_officer_type,
                                                      varnames = ['annual_inservice_training_cost_usd'])
 inservice_training_cost_df['annual_inservice_training_cost'] = inservice_training_cost_df['Staff_Count'] * inservice_training_cost_df['annual_inservice_training_cost_usd']
@@ -171,31 +171,49 @@ inservice_training_cost_for_staff_used_in_scenario = inservice_training_cost_df[
 # TODO check why annual_inservice_training_cost for DCSA is NaN in the merged_df
 
 # Create a dataframe to store financial costs
-#scenario_cost_financial = pd.DataFrame({'HR': salary_for_modelled_staff['Total_salary_by_cadre_and_level'].sum()}, index=[0])
 hr_cost_subcategories = ['total_salary_for_all_staff', 'total_salary_for_staff_used_in_scenario',
                          'recruitment_cost_for_attrited_workers', 'preservice_training_cost_for_attrited_workers',
                          'inservice_training_cost_for_staff_used_in_scenario']
 scenario_cost_financial = pd.DataFrame({
     'Cost_Category': ['Human Resources for Health'] * len(hr_cost_subcategories),
     'Cost_Sub-category': hr_cost_subcategories,
-    'Value_2023USD': [total_salary_for_all_staff, total_salary_for_staff_used_in_scenario, recruitment_cost_for_attrited_workers, preservice_training_cost_for_attrited_workers, inservice_training_cost_for_staff_used_in_scenario]#print('[' + ', '.join(hr_cost_subcategories) + ']')
+    'Value_2023USD': [total_salary_for_all_staff, total_salary_for_staff_used_in_scenario, recruitment_cost_for_attrited_workers, preservice_training_cost_for_attrited_workers, inservice_training_cost_for_staff_used_in_scenario]
 })
 
+# TODO 'Value_2023USD' - use hr_cost_subcategories rather than the hardcoded list
 # TODO Consider calculating economic cost of HR by multiplying salary times staff count with cadres_utilisation_rate
 
 # 2. Consumables cost
-# 2.1 Consumables cost - Financial (What needs to be purchased given what is dispensed)
-_df = log['tlo.methods.healthsystem.summary']['Consumables']
+def get_counts_of_items_requested(_df):
+    _df = drop_outside_period(_df)
+    counts_of_available = defaultdict(int)
+    counts_of_not_available = defaultdict(int)
+    for _, row in _df.iterrows():
+        for item, num in row['Item_Available'].items():
+            counts_of_available[item] += num
+        for item, num in row['Item_NotAvailable'].items():
+            counts_of_not_available[item] += num
+    return pd.concat(
+        {'Available': pd.Series(counts_of_available), 'Not_Available': pd.Series(counts_of_not_available)},
+        axis=1
+    ).fillna(0).astype(int).stack()
 
-counts_of_available = defaultdict(int)
-counts_of_not_available = defaultdict(int)
-for _, row in _df.iterrows():
-    for item, num in row['Item_Available'].items(): # if using 'tlo.methods.healthsystem' eval(row['Item_Available'])
-        counts_of_available[item] += num
+cons_req = extract_results(
+        results_folder,
+        module='tlo.methods.healthsystem.summary',
+        key='Consumables',
+        custom_generate_series=get_counts_of_items_requested,
+        do_scaling=True)
 
-counts_of_available = defaultdict(int, {int(key): value for key, value in counts_of_available.items()}) # Convert string keys to integer
-# for consistency with other dictionaries
+# Mean of results across the runs
+summarized_cons_req = summarize(cons_req, only_mean=True, collapse_columns=True)
 
+# Consumables to be costed (only available, i.e. dispensed)
+cons_dispensed = summarized_cons_req.xs("Available", level=1)
+cons_dispensed = cons_dispensed.to_dict()
+cons_dispensed = defaultdict(int, {int(key): value for key, value in cons_dispensed.items()}) # Convert string keys to integer
+
+# 2.1 Cost of consumables dispensed
 # Load consumables cost data
 unit_price_consumable = workbook_cost["consumables"]
 unit_price_consumable = unit_price_consumable.rename(columns=unit_price_consumable.iloc[0])
@@ -205,10 +223,10 @@ unit_price_consumable = unit_price_consumable.set_index('Item_Code').to_dict(ori
 
 # Multiply number of items needed by cost of consumable
 cost_of_consumables_dispensed = dict(zip(unit_price_consumable, (unit_price_consumable[key]['Final_price_per_chosen_unit (USD, 2023)'] *
-                                                counts_of_available[key] for key in unit_price_consumable)))
+                                                cons_dispensed[key] for key in unit_price_consumable)))
 total_cost_of_consumables_dispensed = sum(value for value in cost_of_consumables_dispensed.values() if not np.isnan(value))
 
-# Cost of consumables stocked
+# 2.2 Cost of consumables stocked (quantity needed for what is dispensed)
 # Estimate the stock to dispensed ratio from OpenLMIS data
 lmis_consumable_usage = pd.read_csv(path_for_new_resourcefiles / "ResourceFile_Consumables_availability_and_usage.csv")
 # Collapse individual facilities
@@ -236,12 +254,20 @@ inflow_to_outflow_ratio_by_consumable = inflow_to_outflow_ratio.groupby(level='i
 inflow_to_outflow_ratio_by_consumable = inflow_to_outflow_ratio_by_consumable.to_dict()
 # TODO Consider whether a more disaggregated version of the ratio dictionary should be applied
 cost_of_consumables_stocked = dict(zip(unit_price_consumable, (unit_price_consumable[key]['Final_price_per_chosen_unit (USD, 2023)'] *
-                                                counts_of_available[key] *
+                                                cons_dispensed[key] *
                                                 inflow_to_outflow_ratio_by_consumable.get(key, average_inflow_to_outflow_ratio_ratio)
                                                 for key in counts_of_available)))
 total_cost_of_consumables_stocked = sum(value for value in cost_of_consumables_stocked.values() if not np.isnan(value))
 
-scenario_cost_financial['Consumables'] = total_cost_of_consumables_stocked
+# Add consumable costs to the financial cost dataframe
+consumable_cost_subcategories = ['total_cost_of_consumables_dispensed', 'total_cost_of_consumables_stocked']
+consumable_costs = pd.DataFrame({
+    'Cost_Category': ['Consumables'] * len(consumable_cost_subcategories),
+    'Cost_Sub-category': consumable_cost_subcategories,
+    'Value_2023USD': [total_cost_of_consumables_dispensed, total_cost_of_consumables_stocked]
+})
+# Append new_data to scenario_cost_financial
+scenario_cost_financial = pd.concat([scenario_cost_financial, consumable_costs], ignore_index=True)
 
 # 3. Equipment cost
 # Total cost of equipment required as per SEL (HSSP-III) only at facility IDs where it been used in the simulation
