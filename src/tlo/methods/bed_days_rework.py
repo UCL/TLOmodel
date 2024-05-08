@@ -1,10 +1,12 @@
 from dataclasses import dataclass
-from typing import List, Literal, Optional, Tuple
+from typing import Dict, List, Literal, Optional, Tuple, TypeAlias
 
 import numpy as np
 import pandas as pd
 
 from tlo import Date
+
+BedDaysFootprint: TypeAlias = Dict[str, float | int]
 
 @dataclass
 class BedOccupancy:
@@ -29,7 +31,6 @@ class BedDaysRework:
     # List of bed occupancies, on removal from the queue, the resources an occupancy takes up
     # are returned to the DF
     occupancies: List[BedOccupancy]
-    occupied_beds: pd.DataFrame
 
     bed_types: Tuple[str]
 
@@ -79,32 +80,28 @@ class BedDaysRework:
         # Set the initial list of bed occupancies as an empty list
         self.occupancies = []
 
-    def is_inpatient(self, person_id: int) -> bool:
+    def is_inpatient(self, patient_id: int, on_date: Date) -> bool:
         """
-        Return True if the person with the given index is an inpatient.
+        Return True if the person with the given index is currently
+        an inpatient.
         
-        A person is an inpatient if they are currently occupying a bed
+        A person is an inpatient if they are currently occupying a bed.
+
+        :param patient_id: Index of the patient in the population DataFrame.
+        :param on_date: The date on which to determine if they are an inpatient. 
         """
+        return bool(self.find_occupancies(patient_id=patient_id, end_on_or_before=on_date))
 
     def occupancy_ends(self, occupancy: BedOccupancy) -> None:
         """
         Action taken when a bed occupancy in the list of occupancies
         is to end, for any reason.
 
-        The occupancy is removed from the list of events, and the
-        resources it consumed are made available again.
+        The occupancy is removed from the list of events.
 
         :param occupancy: The BedOccupancy that has ended.
         """
         self.occupancies.remove(occupancy)
-        # Reallocate the occupancy's resources
-        self.occupied_beds.loc[occupancy.facility, occupancy.bed_type] -= 1
-
-    def occupancy_starts(self, occupancy: BedOccupancy) -> None:
-        """
-        Action taken when a scheduled bed occupancy 
-        """
-        self.occupied_beds.loc[occupancy.facility, occupancy.bed_type] += 1
 
     def start_of_day(self, todays_date: Date) -> None:
         """
@@ -112,26 +109,90 @@ class BedDaysRework:
 
         - End any bed occupancies that are set to be freed today.
         """
-        # End bed occupancies that are set to expire today.
-        for expired_occupancy in [
-            o for o in self.occupancies if o.freed_date <= todays_date
-        ]:
-            self.occupancy_ends(expired_occupancy)
+        # End bed occupancies that expired yesterday
+        for o in self.find_occupancies(
+            end_on_or_before=todays_date - pd.DateOffset(days=1)
+        ):
+            self.occupancy_ends(o)
 
-        # Start bed occupancies that are due to start today.
-        for starting_occupancy in [
-            o for o in self.occupancies if o.start_date 
-        ]:
-            self.occupied_beds
+    def find_occupancies(
+        self,
+        end_on_or_before: Optional[Date] = None,
+        facility: Optional[List[int] | int] = None,
+        patient_id: Optional[List[int] | int] = None,
+        start_on_or_after: Optional[Date] = None,
+    ) -> List[BedOccupancy]:
+        """
+        Find all occupancies in the current list that match the criteria given.
 
-    def end_occupancies_for_people(
-        self, *person_id: int,
-    ) -> None:
+        :param end_on_or_before: Only match occupancies that are scheduled to end on or before the date provided.
+        :param facility: Only match occupancies that take place at the given facility (or facilities if list).
+        :param patient_id: Only match occupancies scheduled for the given person (or persons if list).
+        :param start_on_or_after: Only match occupancies that are scheduled to start on or after the date provided.
         """
-        End all bed occupancies for the given person(s).
-        
-        Typical use case is when a death occurs in the simulation.
-        """
-        for id in person_id:
-            for occupancy in [o for o in self.occupancies if o.patient_id == id]:
-                self.occupancy_ends(occupancy)
+        # Cast single-values to lists to make parsing easier
+        if isinstance(patient_id, int):
+            patient_id = [patient_id]
+        if isinstance(facility, int):
+            facility = [facility]
+
+        matches = [
+            o
+            for o in self.occupancies
+            if (patient_id is None or o.patient_id in patient_id)
+            and (facility is None or o.facility in facility)
+            and (start_on_or_after is None or o.start_date < start_on_or_after)
+            and (end_on_or_before is None or end_on_or_before < o.freed_date)
+        ]
+        return matches
+
+    # THESE MAY NOT BE NEEDED BUT ARE THERE TO KEEP THE HEALTHSYSTEM REWORK HEALTHY
+
+    @property
+    def availability(self) -> None:
+        # don't think this attribute needs to be tracked anymore,
+        # but there's a random event that thinks it should change it.
+        # But then the codebase doesn't actually use the value
+        # of this attribute AFTER that point in the simulation anyway.
+        raise ValueError("Tried to access BedDays.availability")
+
+    def remove_beddays_footprint(self, *args, **kwargs) -> None:
+        pass
+
+    def check_beddays_footprint_format(self, *args, **kwargs) -> None:
+        pass
+
+    def pre_initialise_population(self, *args, **kwargs) -> None:
+        pass
+
+    def get_facility_id_for_beds(self, *args, **kwargs) -> None:
+        # should be a hs module method!
+        pass
+    
+    def get_blank_beddays_footprint(self, *args, **kwargs) -> Dict[str, float | int]:
+        # we shouldn't need this, just rework to not require all the fields...
+        return {}
+
+    def get_inpatient_appts(self, *args, **kwargs) -> None:
+        pass
+
+    def initialise_population(self, *args, **kwargs) -> None:
+        pass
+
+    def issue_bed_days_according_to_availability(self, *args, **kwargs) -> None:
+        pass
+
+    def on_birth(self, *args, **kwargs) -> None:
+        pass
+
+    def on_start_of_day(self, *args, **kwargs) -> None:
+        pass
+
+    def on_end_of_day(self, *args, **kwargs) -> None:
+        pass
+
+    def on_end_of_year(self, **kwargs) -> None:
+        pass
+
+    def on_simulation_end(self, *args, **kwargs) -> None:
+        pass
