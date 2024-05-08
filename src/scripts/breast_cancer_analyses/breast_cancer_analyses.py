@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from tlo import Date, Simulation
+from tlo import Date, Simulation, logging
 from tlo.analysis.utils import make_age_grp_types, parse_log_file
 from tlo.methods import (
     breast_cancer,
@@ -50,8 +50,13 @@ popsize = 10000
 
 
 def run_sim(service_availability):
+    # configure logging
+    log_config = {
+        'filename': 'LogFile',
+        'directory': outputpath,
+    }
     # Establish the simulation object and set the seed
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -71,14 +76,11 @@ def run_sim(service_availability):
                  breast_cancer.BreastCancer(resourcefilepath=resourcefilepath)
                  )
 
-    # Establish the logger
-    logfile = sim.configure_logging(filename="LogFile")
-
     # Run the simulation
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    return logfile
+    return sim.log_filepath
 
 
 def get_summary_stats(logfile):
