@@ -27,6 +27,7 @@ from tlo.methods.consumables import (
     get_item_codes_from_package_name,
 )
 from tlo.methods.dxmanager import DxManager
+from tlo.methods.equipment import Equipment
 from tlo.methods.hsi_event import (
     LABEL_FOR_MERGED_FACILITY_LEVELS_1B_AND_2,
     FacilityInfo,
@@ -193,13 +194,17 @@ class HealthSystem(Module):
             "Availability of beds. If 'default' then use the availability specified in the ResourceFile; if "
             "'none', then let no beds be  ever be available; if 'all', then all beds are always available. NB. This "
             "parameter is over-ridden if an argument is provided to the module initialiser."),
-        'Equipment': Parameter(
-            Types.DATA_FRAME, "Data on equipment items, packages, and availability probabilities by facility level."),
+        'EquipmentCatalogue': Parameter(
+            Types.DATA_FRAME, "Data on equipment items and packages."),
+        'equipment_availability_estimates': Parameter(
+            Types.DATA_FRAME, "Data on the availability of equipment items and packages."
+        ),
         'equip_availability': Parameter(
             Types.STRING,
-            "Availability of equipment. If 'default' then use the availability specified in the ResourceFile;"
-            " if 'none', then let no equipment ever be available; if 'all', then all equipment is always available. NB."
-            " This parameter is over-ridden if an argument is provided to the module initialiser."),
+            "What to assume about the availability of equipment. If 'default' then use the availability specified in "
+            "the ResourceFile; if 'none', then let no equipment ever be available; if 'all', then all equipment is "
+            "always available. NB. This parameter is over-ridden if an argument is provided to the module initialiser."
+        ),
 
         # Service Availability
         'Service_Availability': Parameter(
@@ -542,8 +547,14 @@ class HealthSystem(Module):
             path_to_resourcefiles_for_healthsystem / 'infrastructure_and_equipment' / 'ResourceFile_Bed_Capacity.csv')
 
         # Read in ResourceFile_Equipment
-        self.parameters['Equipment'] = pd.read_csv(
-            path_to_resourcefiles_for_healthsystem / 'infrastructure_and_equipment' / 'ResourceFile_Equipment.csv')
+        self.parameters['EquipmentCatalogue'] = pd.read_csv(
+            path_to_resourcefiles_for_healthsystem
+            / 'infrastructure_and_equipment'
+            / 'ResourceFile_EquipmentCatalogue.csv')
+        self.parameters['equipment_availability_estimates'] = pd.read_csv(
+            path_to_resourcefiles_for_healthsystem
+            / 'infrastructure_and_equipment'
+            / 'ResourceFile_Equipment_Availability_Estimates.csv')
 
         # Data on the priority of each Treatment_ID that should be adopted in the queueing system according to different
         # priority policies. Load all policies at this stage, and decide later which one to adopt.
@@ -600,6 +611,7 @@ class HealthSystem(Module):
         self.rng_for_hsi_queue = np.random.RandomState(self.rng.randint(2 ** 31 - 1))
         self.rng_for_dx = np.random.RandomState(self.rng.randint(2 ** 31 - 1))
         rng_for_consumables = np.random.RandomState(self.rng.randint(2 ** 31 - 1))
+        rng_for_equipment = np.random.RandomState(self.rng.randint(2 ** 31 - 1))
 
         # Determine mode_appt_constraints
         self.mode_appt_constraints = self.get_mode_appt_constraints()
@@ -625,8 +637,13 @@ class HealthSystem(Module):
         )
 
         # Determine equip_availability
-        # todo - create Equipment class here
-        self.equip_availability = self.get_equip_availability()
+        self.equipment = Equipment(
+            catalogue=self.parameters['EquipmentCatalogue'],
+            data_availability=self.parameters['equipment_availability_estimates'],
+            rng=rng_for_equipment,
+            master_facilities_list=self.parameters['Master_Facilities_List'],
+            availability=self.get_equip_availability(),
+        )
 
         self.tclose_overwrite = self.parameters['tclose_overwrite']
         self.tclose_days_offset_overwrite = self.parameters['tclose_days_offset_overwrite']
@@ -713,6 +730,8 @@ class HealthSystem(Module):
         """Put out to the log the information from the tracker of the last day of the simulation"""
         self.bed_days.on_simulation_end()
         self.consumables.on_simulation_end()
+        self.equipment.on_simulation_end()
+
         if self._hsi_event_count_log_period == "simulation":
             self._write_hsi_event_counts_to_log_and_reset()
             self._write_never_ran_hsi_event_counts_to_log_and_reset()
@@ -2169,9 +2188,19 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             # Run the list of population-level HSI events
             self.module.run_population_level_events(list_of_population_hsi_event_tuples_due_today)
 
-            # Run the list of individual-level events
+            # For each individual level event, check whether the equipment it has already declared is available. If it
+            # is not, then call the HSI's never_run function, and do not take it forward for running; if it is then
+            # add it to the list of events to run.
+            list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment = list()
+            for item in list_of_individual_hsi_event_tuples_due_today:
+                if not item.hsi_event.is_all_declared_equipment_available:
+                    self.module.call_and_record_never_ran_hsi_event(hsi_event=item.hsi_event, priority=item.priority)
+                else:
+                    list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment.append(item)
+
+            # Try to run the list of individual-level events that have their essential equipment
             _to_be_held_over = self.module.run_individual_level_events_in_mode_0_or_1(
-                list_of_individual_hsi_event_tuples_due_today,
+                list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment,
             )
             hold_over.extend(_to_be_held_over)
 
@@ -2198,7 +2227,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         list_of_population_hsi_event_tuples_due_today = list()
         list_of_events_not_due_today = list()
 
-        # todo - check if essential equipment available and do not run if not - in any mode
         # Traverse the queue and run events due today until have capabilities still available
         while len(self.module.HSI_EVENT_QUEUE) > 0:
 
@@ -2308,58 +2336,66 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             assert event.facility_info is not None, \
                                 f"Cannot run HSI {event.TREATMENT_ID} without facility_info being defined."
 
-                            # Expected appt footprint before running event
-                            _appt_footprint_before_running = event.EXPECTED_APPT_FOOTPRINT
-                            # Run event & get actual footprint
-                            actual_appt_footprint = event.run(squeeze_factor=squeeze_factor)
-
-                            # Check if the HSI event returned updated_appt_footprint, and if so adjust original_call
-                            if actual_appt_footprint is not None:
-
-                                # check its formatting:
-                                assert self.module.appt_footprint_is_valid(actual_appt_footprint)
-
-                                # Update call that will be used to compute capabilities used
-                                updated_call = self.module.get_appt_footprint_as_time_request(
-                                    facility_info=event.facility_info,
-                                    appt_footprint=actual_appt_footprint
+                            # Check if equipment declared is available. If not, call `never_ran` and do not run the
+                            # event.
+                            if not event.is_all_declared_equipment_available:
+                                self.module.call_and_record_never_ran_hsi_event(
+                                    hsi_event=event,
+                                    priority=next_event_tuple.priority
                                 )
                             else:
-                                actual_appt_footprint = _appt_footprint_before_running
-                                updated_call = original_call
+                                # Expected appt footprint before running event
+                                _appt_footprint_before_running = event.EXPECTED_APPT_FOOTPRINT
+                                # Run event & get actual footprint
+                                actual_appt_footprint = event.run(squeeze_factor=squeeze_factor)
 
-                            # Recalculate call on officers based on squeeze factor.
-                            for k in updated_call.keys():
-                                updated_call[k] = updated_call[k]/(squeeze_factor + 1.)
+                                # Check if the HSI event returned updated_appt_footprint, and if so adjust original_call
+                                if actual_appt_footprint is not None:
 
-                            # Subtract this from capabilities used so-far today
-                            capabilities_monitor.subtract(updated_call)
+                                    # check its formatting:
+                                    assert self.module.appt_footprint_is_valid(actual_appt_footprint)
 
-                            # If any of the officers have run out of time by performing this hsi,
-                            # remove them from list of available officers.
-                            for officer, call in updated_call.items():
-                                if capabilities_monitor[officer] <= 0:
-                                    if officer in set_capabilities_still_available:
-                                        set_capabilities_still_available.remove(officer)
-                                    else:
-                                        logger.warning(
-                                            key="message",
-                                            data=(f"{event.TREATMENT_ID} actual_footprint requires different"
-                                                  f"officers than expected_footprint.")
-                                        )
+                                    # Update call that will be used to compute capabilities used
+                                    updated_call = self.module.get_appt_footprint_as_time_request(
+                                        facility_info=event.facility_info,
+                                        appt_footprint=actual_appt_footprint
+                                    )
+                                else:
+                                    actual_appt_footprint = _appt_footprint_before_running
+                                    updated_call = original_call
 
-                            # Update today's footprint based on actual call and squeeze factor
-                            self.module.running_total_footprint -= original_call
-                            self.module.running_total_footprint += updated_call
+                                # Recalculate call on officers based on squeeze factor.
+                                for k in updated_call.keys():
+                                    updated_call[k] = updated_call[k]/(squeeze_factor + 1.)
 
-                            # Write to the log
-                            self.module.record_hsi_event(
-                                hsi_event=event,
-                                actual_appt_footprint=actual_appt_footprint,
-                                squeeze_factor=squeeze_factor,
-                                did_run=True,
-                                priority=_priority
-                            )
+                                # Subtract this from capabilities used so-far today
+                                capabilities_monitor.subtract(updated_call)
+
+                                # If any of the officers have run out of time by performing this hsi,
+                                # remove them from list of available officers.
+                                for officer, call in updated_call.items():
+                                    if capabilities_monitor[officer] <= 0:
+                                        if officer in set_capabilities_still_available:
+                                            set_capabilities_still_available.remove(officer)
+                                        else:
+                                            logger.warning(
+                                                key="message",
+                                                data=(f"{event.TREATMENT_ID} actual_footprint requires different"
+                                                      f"officers than expected_footprint.")
+                                            )
+
+                                # Update today's footprint based on actual call and squeeze factor
+                                self.module.running_total_footprint -= original_call
+                                self.module.running_total_footprint += updated_call
+
+                                # Write to the log
+                                self.module.record_hsi_event(
+                                    hsi_event=event,
+                                    actual_appt_footprint=actual_appt_footprint,
+                                    squeeze_factor=squeeze_factor,
+                                    did_run=True,
+                                    priority=_priority
+                                )
 
             # Don't have any capabilities at all left for today, no
             # point in going through the queue to check what's left to do today.
@@ -2714,8 +2750,7 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
             self.module.bed_days.availability = self._parameters['beds_availability']
 
         if 'equip_availability' in self._parameters:
-            # todo - is this being directed to right place?
-            self.module.equip_availability = self._parameters['equip_availability']
+            self.module.equipment.update_availability(self._parameters['equip_availability'])
 
 
 class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
