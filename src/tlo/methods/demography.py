@@ -85,8 +85,7 @@ class Demography(Module):
         self.other_death_poll = None    # will hold pointer to the OtherDeathPoll object
         self.districts = None  # will store all the districts in a list
 
-    OPTIONAL_INIT_DEPENDENCIES = {'ScenarioSwitcher'}  # <-- Forces the 'ScenarioSwitcher' to be the first registered
-    #                                                        module, if it's registered.
+    OPTIONAL_INIT_DEPENDENCIES = {'ImprovedHealthSystemAndCareSeekingScenarioSwitcher'}
 
     AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = create_age_range_lookup(
         min_age=MIN_AGE_FOR_RANGE,
