@@ -33,7 +33,6 @@ from tlo.methods.causes import (
     get_gbd_causes_not_represented_in_disease_modules,
 )
 from tlo.util import DEFAULT_MOTHER_ID, create_age_range_lookup, get_person_id_to_inherit_from
-from tlo.simulation import Simulation
 
 # Standard logger
 logger = logging.getLogger(__name__)
