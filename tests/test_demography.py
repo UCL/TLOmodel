@@ -374,3 +374,29 @@ def test_ageing_of_old_people_up_to_max_age(simulation):
     # All persons should have died, with a cause of 'Other'
     assert not df.loc[ever_alive].is_alive.any()
     assert (df.loc[ever_alive, 'cause_of_death'] == 'Other').all()
+
+
+def test_equal_allocation_by_district(seed):
+    """
+    check when argument equal_allocation_by_district=True in class Simulation
+    that pop_size refers to the population within each district
+    and each district has idential population size
+    """
+
+    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+    popsize = 10
+    sim = Simulation(start_date=start_date, seed=seed, equal_allocation_by_district=True)
+    core_module = demography.Demography(resourcefilepath=resourcefilepath)
+    sim.register(core_module)
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=sim.start_date)
+
+    # check final population size
+    df = sim.population.props
+    assert len(df) == popsize * 32  # 32 districts
+
+    # check total within each district is identical and equals popsize
+    district_counts = df.groupby('district_of_residence').size()
+    assert (district_counts == popsize).all()
+
+
