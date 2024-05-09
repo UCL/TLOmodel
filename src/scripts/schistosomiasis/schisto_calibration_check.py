@@ -32,20 +32,21 @@ outputpath = Path("./outputs")
 def make_graph_file_name(name):
     return outputpath / f"Schisto_{name}.png"
 
+
 # Districts that are high prevalence and for which this model has been calibrated:
 fitted_districts = ['Blantyre', 'Chiradzulu', 'Mulanje', 'Nsanje', 'Nkhotakota', 'Phalombe']
 
 # Name of species that being considered:
 species = ('mansoni', 'haematobium')
 
-
 # %% Run the simulation
-popsize = 30_000
+equal_allocation_by_district = True
+popsize = 50  # if equal_allocation_by_district=True then this is the popsize in each district
 
 
 def run_simulation(popsize=popsize, mda_execute=True):
     start_date = Date(2010, 1, 1)
-    end_date = Date(2030, 2, 1)
+    end_date = Date(2011, 2, 1)
 
     # For logging, set all modules to WARNING threshold, then alters `Schisto` to level "INFO"
     custom_levels = {
@@ -56,7 +57,8 @@ def run_simulation(popsize=popsize, mda_execute=True):
 
     # Establish the simulation object
     sim = Simulation(start_date=start_date, seed=0, log_config={"filename": __file__[-19:-3],
-                                                                "custom_levels": custom_levels}
+                                                                "custom_levels": custom_levels, },
+                     equal_allocation_by_district=equal_allocation_by_district
                      )
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
@@ -79,6 +81,7 @@ def run_simulation(popsize=popsize, mda_execute=True):
 
 
 sim, output = run_simulation(popsize=popsize, mda_execute=False)
+
 
 # %% Extract and process the `pd.DataFrame`s needed
 
@@ -129,6 +132,7 @@ def get_model_prevalence_by_district_over_time(spec: str):
 
     return prop_infected
 
+
 # ----------- PLOTS -----------------
 
 # Districts with prevalence fitted
@@ -164,7 +168,6 @@ for i, _spec in enumerate(species):
 fig.tight_layout()
 # fig.savefig(make_graph_file_name('prev_in_districts_fitted'))
 fig.show()
-
 
 # All Districts = prevalence by year
 fig, axes = plt.subplots(1, 2, sharey=True)
