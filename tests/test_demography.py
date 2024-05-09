@@ -396,7 +396,7 @@ def test_equal_allocation_by_district(seed):
     assert len(df) == popsize * 32  # 32 districts
 
     # check total within each district is identical and equals popsize
-    district_counts = df.groupby('District').size()
+    district_counts = df.groupby('district_of_residence').size()
     assert (district_counts == popsize).all()
 
 
