@@ -179,8 +179,6 @@ def batch_submit(ctx, scenario_file, keep_pool_alive, image_tag=None):
         image_name = f"{image_name}:{config['REGISTRY']['DEFAULT_TAG']}"
     else:
         image_name = f"{image_name}:{image_tag}"
-    # Name of the image in the registry
-    image_name = config["REGISTRY"]["SERVER"] + "/" + config["REGISTRY"]["IMAGE_NAME"]
 
     # Create container configuration, prefetching Docker images from the container registry
     container_conf = batch_models.ContainerConfiguration(
