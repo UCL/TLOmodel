@@ -40,7 +40,7 @@ dependencies = [
 description = "Thanzi la Onse Epidemiology Model"
 dynamic = ["version"]
 license = {file = "LICENSE.txt"}
-readme = "README.rst"
+readme = "README.md"
 requires-python = ">=3.8"
 
 [project.optional-dependencies]

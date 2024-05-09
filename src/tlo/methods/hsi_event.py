@@ -12,6 +12,7 @@ from tlo.population import Population
 
 if TYPE_CHECKING:
     from tlo import Module, Simulation
+    from tlo.methods.healthsystem import HealthSystem
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -135,7 +136,7 @@ class HSI_Event:
         return self.module.sim
 
     @property
-    def healthcare_system(self) -> Module:
+    def healthcare_system(self) -> HealthSystem:
         """The healthcare module being used by the Simulation."""
         return self.sim.modules["HealthSystem"]
 

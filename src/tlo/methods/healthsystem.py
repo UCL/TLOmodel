@@ -7,7 +7,7 @@ from collections import Counter, defaultdict
 from collections.abc import Iterable
 from itertools import repeat
 from pathlib import Path
-from typing import Dict, List, NamedTuple, Optional, Set, Tuple
+from typing import Dict, List, NamedTuple, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -209,8 +209,14 @@ class HealthSystem(Module):
         'policy_name': Parameter(
             Types.STRING, "Name of priority policy adopted"),
         'year_mode_switch': Parameter(
-            Types.INT, "Year in which mode switch in enforced"),
-
+            Types.INT, "Year in which mode switch is enforced"),
+        'scale_to_effective_capabilities': Parameter(
+            Types.BOOL, "In year in which mode switch takes place, will rescale available capabilities to match those"
+                        "that were effectively used (on average) in the past year if this is set to True. This way,"
+                        "we can approximate overtime and rushing of appts even in mode 2."),
+        'year_cons_availability_switch': Parameter(
+            Types.INT, "Year in which consumable availability switch is enforced. The change happens"
+                       "on 1st January of that year.)"),
         'priority_rank': Parameter(
             Types.DICT, "Data on the priority ranking of each of the Treatment_IDs to be adopted by "
                         " the queueing system under different policies, where the lower the number the higher"
@@ -295,7 +301,10 @@ class HealthSystem(Module):
                        ' to the module initialiser.',
         ),
         'mode_appt_constraints_postSwitch': Parameter(
-            Types.INT, 'Mode considered after a mode switch in year_mode_switch.')
+            Types.INT, 'Mode considered after a mode switch in year_mode_switch.'),
+        'cons_availability_postSwitch': Parameter(
+            Types.STRING, 'Consumables availability after switch in `year_cons_availability_switch`. Acceptable values'
+                          'are the same as those for Parameter `cons_availability`.')
     }
 
     PROPERTIES = {
@@ -489,13 +498,6 @@ class HealthSystem(Module):
                 "'year', 'simulation' or None."
             )
 
-        self._hsi_event_names_missing_ess_equip = set()  # The names of HSI events for which the settings of essential
-        #                                                   equipment is missing.
-        self._equip_items_missing_in_RF = dict()  # The equipment item names called for an HSI event, but are missing in
-        #                                           the RF_Equipment.
-        self._equip_pkgs_missing_in_RF = dict()  # The equipment pkg names called for an HSI event, but are missing in
-        #                                           the RF_Equipment.
-
     def read_parameters(self, data_folder):
 
         path_to_resourcefiles_for_healthsystem = Path(self.resourcefilepath) / 'healthsystem'
@@ -623,6 +625,7 @@ class HealthSystem(Module):
         )
 
         # Determine equip_availability
+        # todo - create Equipment class here
         self.equip_availability = self.get_equip_availability()
 
         self.tclose_overwrite = self.parameters['tclose_overwrite']
@@ -677,6 +680,17 @@ class HealthSystem(Module):
         sim.schedule_event(HealthSystemChangeMode(self),
                            Date(self.parameters["year_mode_switch"], 1, 1))
 
+        # Schedule a consumables availability switch
+        sim.schedule_event(
+            HealthSystemChangeParameters(
+                self,
+                parameters={
+                    'cons_availability': self.parameters['cons_availability_postSwitch']
+                }
+            ),
+            Date(self.parameters["year_cons_availability_switch"], 1, 1)
+        )
+
         # Schedule a one-off rescaling of _daily_capabilities broken down by officer type and level.
         # This occurs on 1st January of the year specified in the parameters.
         sim.schedule_event(ConstantRescalingHRCapabilities(self),
@@ -696,9 +710,7 @@ class HealthSystem(Module):
         self.bed_days.on_birth(self.sim.population.props, mother_id, child_id)
 
     def on_simulation_end(self):
-        """Put out to the log the information from the tracker of the last day of the simulation.
-        Raise warning and enter to log the set of hsi event names which were initialised but the settings of essential
-        equipment is missing."""
+        """Put out to the log the information from the tracker of the last day of the simulation"""
         self.bed_days.on_simulation_end()
         self.consumables.on_simulation_end()
         if self._hsi_event_count_log_period == "simulation":
@@ -723,47 +735,6 @@ class HealthSystem(Module):
                     }
                 }
             )
-
-        if self._hsi_event_names_missing_ess_equip:
-            hsi_event_names_missing_ess_equip = sorted(self._hsi_event_names_missing_ess_equip)
-            warnings.warn(UserWarning(f"Missing settings of essential equipment for HSI events:/n"
-                                      f"{hsi_event_names_missing_ess_equip}"))
-            logger_summary.info(
-                key="hsi_event_names_missing_ess_equip",
-                data={"event_names": hsi_event_names_missing_ess_equip}
-            )
-            # TODO: smt odd is going on, some hsi events were logged, according to my equipment_catalogue script,
-            #  for which the essential equipment is not define, but they are not included in this warning.
-            #  E.g. HSI_BladderCancer_Investigation_Following_Blood_Urine, HSI_BladderCancer_StartTreatment,
-            #  HSI_BreastCancer_Investigation_Following_breast_lump_discernible, ...
-
-        def sort_dict_for_print(dict_to_sort: Dict) -> Dict:
-            sorted_list = sorted(dict_to_sort.items())
-            sorted_dict = {}
-            for key, value in sorted_list:
-                sorted_dict[key] = sorted(value)
-            return sorted_dict
-
-        if self._equip_items_missing_in_RF:
-            sorted_equip_items_missing_in_RF = sort_dict_for_print(self._equip_items_missing_in_RF)
-            warnings.warn(UserWarning(f"Equipment item names were not recognised:/n"
-                                      f"{sorted_equip_items_missing_in_RF}"))
-
-            for _hsi_event_name, _item_names in sorted_equip_items_missing_in_RF.items():
-                logger_summary.info(
-                    key="equip_items_missing_in_RF",
-                    data={_hsi_event_name: _item_names}
-                )
-
-        if self._equip_pkgs_missing_in_RF:
-            sorted_equip_pkgs_missing_in_RF = sort_dict_for_print(self._equip_pkgs_missing_in_RF)
-            warnings.warn(UserWarning(f"Equipment pkg names were not recognised:/n"
-                                      f"{sorted_equip_pkgs_missing_in_RF}"))
-            for _hsi_event_name, _pkg_names in sorted_equip_pkgs_missing_in_RF.items():
-                logger_summary.info(
-                    key="equip_pkgs_missing_in_RF",
-                    data={_hsi_event_name: _pkg_names}
-                )
 
     def setup_priority_policy(self):
 
@@ -957,6 +928,27 @@ class HealthSystem(Module):
         # return the pd.Series of `Total_Minutes_Per_Day' indexed for each type of officer at each facility
         return capabilities_ex['Total_Minutes_Per_Day']
 
+    def _rescale_capabilities_to_capture_effective_capability(self):
+        # Notice that capabilities will only be expanded through this process
+        # (i.e. won't reduce available capabilities if these were under-used in the last year).
+        # Note: Currently relying on module variable rather than parameter for
+        # scale_to_effective_capabilities, in order to facilitate testing. However
+        # this may eventually come into conflict with the Switcher functions.
+        pattern = r"FacilityID_(\w+)_Officer_(\w+)"
+        for officer in self._daily_capabilities.keys():
+            matches = re.match(pattern, officer)
+            # Extract ID and officer type from
+            facility_id = int(matches.group(1))
+            officer_type = matches.group(2)
+            level = self._facility_by_facility_id[facility_id].level
+            # Only rescale if rescaling factor is greater than 1 (i.e. don't reduce
+            # available capabilities if these were under-used the previous year).
+            rescaling_factor = self._summary_counter.frac_time_used_by_officer_type_and_level(
+                officer_type=officer_type, level=level
+            )
+            if rescaling_factor > 1 and rescaling_factor != float("inf"):
+                self._daily_capabilities[officer] *= rescaling_factor
+
     def update_consumables_availability_to_represent_merging_of_levels_1b_and_2(self, df_original):
         """To represent that facility levels '1b' and '2' are merged together under the label '2', we replace the
         availability of consumables at level 2 with new values."""
@@ -1087,31 +1079,6 @@ class HealthSystem(Module):
                     )
 
         return _equip_availability
-
-    def get_equip_item_availability(self, equip_item_code: int) -> bool:
-        # TODO: update with implementation of essential equipment availability for the HSI event to run
-        #  for now, always available
-        if equip_item_code in [243, 41]:  # 243 = Pulse oximeter, 41 = 'Lamp, Anglepoise'
-            return False
-        return True  # True of False
-
-    def get_essential_equip_availability(self, essential_equip_set: Set[int]) -> bool:
-        if not isinstance(essential_equip_set, set) or any(not isinstance(item, int) for item in essential_equip_set):
-            raise ValueError(
-                "Argument to get_essential_equip_availability should be a set of integers."
-            )
-        if self.equip_availability == 'all':
-            # Always all equipment available
-            return True
-        elif self.equip_availability == 'default':
-            # True if all items of essential equipment available; False if any unavailable
-            return all(self.get_equip_item_availability(item_code) for item_code in essential_equip_set)
-        elif self.equip_availability == 'none':
-            # True if no essential equipment requested, otherwise False as assumed no equipment available
-            # TODO: Should no equipment be logged then?
-            return not bool(essential_equip_set)
-        else:
-            raise ValueError("Value for self.equip_availability invalid, it should be 'all', 'default', or 'none'.")
 
     def schedule_to_call_never_ran_on_date(self, hsi_event: 'HSI_Event', tdate: datetime.datetime):
         """Function to schedule never_ran being called on a given date"""
@@ -1668,7 +1635,7 @@ class HealthSystem(Module):
                 'did_run': did_run,
                 'Facility_Level': event_details.facility_level if event_details.facility_level is not None else -99,
                 'Facility_ID': facility_id if facility_id is not None else -99,
-                'equipment': equipment,
+                'equipment': sorted(equipment),
             },
             description="record of each HSI event"
         )
@@ -1747,7 +1714,7 @@ class HealthSystem(Module):
     def log_current_capabilities_and_usage(self):
         """
         This will log the percentage of the current capabilities that is used at each Facility Type, according the
-        `runnning_total_footprint`.
+        `runnning_total_footprint`. This runs every day.
         """
         current_capabilities = self.capabilities_today
         total_footprint = self.running_total_footprint
@@ -1793,7 +1760,9 @@ class HealthSystem(Module):
                     description='daily summary of utilisation and capacity of health system resources')
 
         self._summary_counter.record_hs_status(
-            fraction_time_used_across_all_facilities=fraction_time_used_overall)
+            fraction_time_used_across_all_facilities=fraction_time_used_overall,
+            fraction_time_used_by_officer_type_and_level=summary_by_officer["Fraction_Time_Used"].to_dict()
+        )
 
     def remove_beddays_footprint(self, person_id):
         # removing bed_days from a particular individual if any
@@ -1879,6 +1848,11 @@ class HealthSystem(Module):
 
     def on_end_of_year(self) -> None:
         """Write to log the current states of the summary counters and reset them."""
+        # If we are at the end of the year preceeding the mode switch, and if wanted
+        # to rescale capabilities to capture effective availability as was recorded, on
+        # average, in the past year, do so here.
+        if (self.sim.date.year == self.parameters['year_mode_switch'] - 1) and self.parameters['scale_to_effective_capabilities']:
+            self._rescale_capabilities_to_capture_effective_capability()
         self._summary_counter.write_to_log_and_reset_counters()
         self.consumables.on_end_of_year()
         self.bed_days.on_end_of_year()
@@ -1941,7 +1915,8 @@ class HealthSystem(Module):
 
                 # Mode 0: All HSI Event run, with no squeeze
                 # Mode 1: All HSI Events run with squeeze provided latter is not inf
-                ok_to_run = self.get_essential_equip_availability(event.ESSENTIAL_EQUIPMENT)
+                ok_to_run = True
+                # todo - also consider whether essential equipment is available
                 if self.mode_appt_constraints == 1 and squeeze_factor == float('inf'):
                     ok_to_run = False
 
@@ -2223,6 +2198,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         list_of_population_hsi_event_tuples_due_today = list()
         list_of_events_not_due_today = list()
 
+        # todo - check if essential equipment available and do not run if not - in any mode
         # Traverse the queue and run events due today until have capabilities still available
         while len(self.module.HSI_EVENT_QUEUE) > 0:
 
@@ -2279,25 +2255,18 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         # based on queue information, and we assume no squeeze ever takes place.
                         squeeze_factor = 0.
 
-                        # Check if all essential equipment available and the officers required available.
-                        ok_to_run = \
-                            self.module.sim.modules['HealthSystem'].get_essential_equip_availability(
-                                next_event_tuple.hsi_event.ESSENTIAL_EQUIPMENT
-                            )  # True if all essential equipment available
-
-                        if ok_to_run:
-                            for officer, call in original_call.items():
-                                # If any of the officers are not available, we are out of resources, hence not ok_to_run
-                                if officer not in set_capabilities_still_available:
-                                    ok_to_run = False
-                                    if not ok_to_run:
-                                        break
+                        # Check if any of the officers required have run out.
+                        out_of_resources = False
+                        for officer, call in original_call.items():
+                            # If any of the officers are not available, then out of resources
+                            if officer not in set_capabilities_still_available:
+                                out_of_resources = True
                         # If officers still available, run event. Note: in current logic, a little
                         # overtime is allowed to run last event of the day. This seems more realistic
                         # than medical staff leaving earlier than
                         # planned if seeing another patient would take them into overtime.
 
-                        if not ok_to_run:
+                        if out_of_resources:
 
                             # Do not run,
                             # Call did_not_run for the hsi_event
@@ -2322,7 +2291,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                 priority=_priority
                             )
 
-                        # Have enough capabilities left to run event, ie ok_to_run
+                        # Have enough capabilities left to run event
                         else:
                             # Notes-to-self: Shouldn't this be done after checking the footprint?
                             # Compute the bed days that are allocated to this HSI and provide this
@@ -2505,8 +2474,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         treatment_id='Inpatient_Care',
                         facility_level=self.module._facility_by_facility_id[_fac_id].level,
                         appt_footprint=tuple(sorted(_inpatient_appts.items())),
-                        beddays_footprint=(),
-                        equipment=()  # TODO: what should be in here?
+                        beddays_footprint=()
                     ),
                     person_id=-1,
                     facility_id=_fac_id,
@@ -2575,6 +2543,7 @@ class HealthSystemSummaryCounter:
         self._never_ran_appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
 
         self._frac_time_used_overall = []  # Running record of the usage of the healthcare system
+        self._sum_of_daily_frac_time_used_by_officer_type_and_level = Counter()
         self._squeeze_factor_by_hsi_event_name = defaultdict(list)  # Running record the squeeze-factor applying to each
         #                                                           treatment_id. Key is of the form:
         #                                                           "<TREATMENT_ID>:<HSI_EVENT_NAME>"
@@ -2617,14 +2586,19 @@ class HealthSystemSummaryCounter:
             self._never_ran_appts[appt_type] += number
             self._never_ran_appts_by_level[level][appt_type] += number
 
-    def record_hs_status(self, fraction_time_used_across_all_facilities: float) -> None:
+    def record_hs_status(
+        self,
+        fraction_time_used_across_all_facilities: float,
+        fraction_time_used_by_officer_type_and_level: Dict[Tuple[str, int], float],
+    ) -> None:
         """Record a current status metric of the HealthSystem."""
-
         # The fraction of all healthcare worker time that is used:
         self._frac_time_used_overall.append(fraction_time_used_across_all_facilities)
+        for officer_type_facility_level, fraction_time in fraction_time_used_by_officer_type_and_level.items():
+            self._sum_of_daily_frac_time_used_by_officer_type_and_level[officer_type_facility_level] += fraction_time
 
     def write_to_log_and_reset_counters(self):
-        """Log summary statistics reset the data structures."""
+        """Log summary statistics reset the data structures. This usually occurs at the end of the year."""
 
         logger_summary.info(
             key="HSI_Event",
@@ -2663,8 +2637,47 @@ class HealthSystemSummaryCounter:
             },
         )
 
+        # Log mean of 'fraction time used by officer type and facility level' from daily entries from the previous
+        # year.
+        logger_summary.info(
+            key="Capacity_By_OfficerType_And_FacilityLevel",
+            description="The fraction of healthcare worker time that is used each day, averaged over this "
+                        "calendar year, for each officer type at each facility level.",
+            data=flatten_multi_index_series_into_dict_for_logging(
+                self.frac_time_used_by_officer_type_and_level()),
+        )
+
         self._reset_internal_stores()
 
+    def frac_time_used_by_officer_type_and_level(
+        self,
+        officer_type: Optional[str]=None,
+        level: Optional[str]=None,
+    ) -> Union[float, pd.Series]:
+        """Average fraction of time used by officer type and level since last reset.
+        If `officer_type` and/or `level` is not provided (left to default to `None`) then a pd.Series with a multi-index
+        is returned giving the result for all officer_types/levels."""
+
+        if (officer_type is not None) and (level is not None):
+            return (
+                self._sum_of_daily_frac_time_used_by_officer_type_and_level[officer_type, level]
+                / len(self._frac_time_used_overall)
+                # Use len(self._frac_time_used_overall) as proxy for number of days in past year.
+            )
+        else:
+            # Return multiple in the form of a pd.Series with multiindex
+            mean_frac_time_used = {
+                (_officer_type, _level): v / len(self._frac_time_used_overall)
+                for (_officer_type, _level), v in self._sum_of_daily_frac_time_used_by_officer_type_and_level.items()
+                if (_officer_type == officer_type or officer_type is None) and (_level == level or level is None)
+            }
+            return pd.Series(
+                index=pd.MultiIndex.from_tuples(
+                    mean_frac_time_used.keys(),
+                    names=['OfficerType', 'FacilityLevel']
+                ),
+                data=mean_frac_time_used.values()
+            ).sort_index()
 
 class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
     """Event that causes certain internal parameters of the HealthSystem to be changed; specifically:
@@ -2701,6 +2714,7 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
             self.module.bed_days.availability = self._parameters['beds_availability']
 
         if 'equip_availability' in self._parameters:
+            # todo - is this being directed to right place?
             self.module.equip_availability = self._parameters['equip_availability']
 
 
@@ -2781,7 +2795,7 @@ class RescaleHRCapabilities_ByDistrict(Event, PopulationScopeEventMixin):
 
     def apply(self, population):
 
-        # Get the set of scaling_factors that are specified by the 'HR_scaling_by_level_and_officer_type_mode' assumption
+        # Get the set of scaling_factors that are specified by 'HR_scaling_by_level_and_officer_type_mode'
         HR_scaling_factor_by_district = self.module.parameters['HR_scaling_by_district_table'][
             self.module.parameters['HR_scaling_by_district_mode']
         ].set_index('District').to_dict()

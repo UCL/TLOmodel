@@ -1,6 +1,3 @@
-.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.10144015.svg
-  :target: https://zenodo.org/doi/10.5281/zenodo.10144015
-
 =====================
 Getting Started
 =====================
@@ -22,7 +19,8 @@ you prefer, you can carry out the setup using the command line:
 
 ::
 
-    conda create -n tlo python=3.8
+    cd TLOmodel
+    conda create -n tlo python=3.11
     conda activate tlo
     pip install -r requirements/dev.txt
     pip install -e .
