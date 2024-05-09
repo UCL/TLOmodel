@@ -85,8 +85,9 @@ def scenario_run(scenario_file, draw_only, draw: tuple, output_dir=None):
 @cli.command()
 @click.argument("scenario_file", type=click.Path(exists=True))
 @click.option("--keep-pool-alive", type=bool, default=False, is_flag=True, hidden=True)
+@click.option("--image-tag", type=str, help="Tag of the Docker image to use.")
 @click.pass_context
-def batch_submit(ctx, scenario_file, keep_pool_alive):
+def batch_submit(ctx, scenario_file, keep_pool_alive, image_tag=None):
     """Submit a scenario to the batch system.
 
     SCENARIO_FILE is path to file containing scenario class.
@@ -170,6 +171,14 @@ def batch_submit(ctx, scenario_file, keep_pool_alive):
         password=config["REGISTRY"]["KEY"],
     )
 
+    # url of the docker image to run the tasks
+    image_name = f"{config['REGISTRY']['SERVER']}/{config['REGISTRY']['IMAGE']}"
+
+    # use the supplied image tag if provided, otherwise use the default
+    if image_tag is None:
+        image_name = f"{image_name}:{config['REGISTRY']['DEFAULT_TAG']}"
+    else:
+        image_name = f"{image_name}:{image_tag}"
     # Name of the image in the registry
     image_name = config["REGISTRY"]["SERVER"] + "/" + config["REGISTRY"]["IMAGE_NAME"]
 
