@@ -4741,7 +4741,7 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
             get_item_code('Pethidine, 50 mg/ml, 2 ml ampoule'): 1,
             # administer antibiotic
             get_item_code("Ampicillin injection 500mg, PFR_each_CMST"): 1,
-            # consumables used by surgeon, gloves and facemask
+            # equipment used by surgeon, gloves and facemask
             get_item_code('Disposables gloves, powder free, 100 pieces per box'): 1,
             get_item_code('surgical face mask, disp., with metal nose piece_50_IDA'): 1,
             # request syringe
@@ -5077,7 +5077,7 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
             get_item_code('Pethidine, 50 mg/ml, 2 ml ampoule'): 1,
             # administer antibiotic
             get_item_code("Ampicillin injection 500mg, PFR_each_CMST"): 1,
-            # consumables used by surgeon, gloves and facemask
+            # equipment used by surgeon, gloves and facemask
             get_item_code('Disposables gloves, powder free, 100 pieces per box'): 1,
             get_item_code('surgical face mask, disp., with metal nose piece_50_IDA'): 1,
             # request syringe

@@ -668,7 +668,6 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
         self.TREATMENT_ID = "BreastCancer_Investigation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1, "Mammography": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'  # Biopsy only available at level 3 and above.
-        # TODO: but the appt footprints suggests mammography to be provided
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -685,7 +684,7 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
         if not pd.isnull(df.at[person_id, "brc_date_diagnosis"]):
             return hs.get_blank_appt_footprint()
 
-        df.at[person_id, 'brc_breast_lump_discernible_investigated'] = True
+        df.brc_breast_lump_discernible_investigated = True
 
         # Use a biopsy to diagnose whether the person has breast Cancer:
         # todo: request consumables needed for this

@@ -91,7 +91,6 @@ class Contraception(Module):
         'max_number_of_runs_of_hsi_if_consumable_not_available': Parameter(
             Types.INT, "The maximum number of time an HSI can run (repeats occur if the consumables are not "
                        "available)."),
-        # TODO: We don't have anything like this for equipment, should we?
 
         'max_days_delay_between_decision_to_change_method_and_hsi_scheduled': Parameter(
             Types.INT, "The maximum delay (in days) between the decision for a contraceptive to change and the `topen` "
@@ -1111,20 +1110,6 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         self.TREATMENT_ID = "Contraception_Routine"
         self.ACCEPTED_FACILITY_LEVEL = _facility_level
 
-        # Set essential equipment based on the contraception method
-        if new_contraceptive == 'female_sterilization':
-            self.set_equipment_essential_to_run_event({
-                'Cusco’s/ bivalved Speculum (small, medium, large)', 'Lamp, Anglepoise'
-            })
-            # + 'Minor Surgery' pkg
-            # TODO: How to set pkg as essential?
-        elif new_contraceptive == 'IUD':
-            self.set_equipment_essential_to_run_event({
-                'Cusco’s/ bivalved Speculum (small, medium, large)', 'Sponge Holding Forceps'
-            })
-        else:
-            self.set_equipment_essential_to_run_event({''})
-
     @property
     def EXPECTED_APPT_FOOTPRINT(self):
         """Return the expected appt footprint based on contraception method and whether the HSI has been rescheduled."""
@@ -1159,12 +1144,6 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         # Record the date that Family Planning Appointment happened for this person
         self.sim.population.props.at[person_id, "co_date_of_last_fp_appt"] = self.sim.date
 
-        # Measure weight, height and BP even if contraception not administrated
-        # TODO: Always or only if it's not a rescheduled appt?
-        self.add_equipment({
-            'Weighing scale', 'Height Pole (Stadiometer)', 'Blood pressure machine'
-        })
-
         # Determine essential and optional items
         # TODO: we don't distinguish essential X optional for contraception methods yet, will need to update once we do
         items_essential = self.module.cons_codes[self.new_contraceptive]
@@ -1191,8 +1170,7 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         items_all = {**items_essential, **items_optional}
 
         # Determine whether the contraception is administrated (ie all essential items are available),
-        # if so do log the availability of all items and update used equipment if any, if not set the contraception to
-        # "not_using":
+        # if so do log the availability of all items, if not set the contraception to "not_using":
         co_administrated = all(v for k, v in cons_available.items() if k in items_essential)
 
         if co_administrated:
@@ -1216,22 +1194,6 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
                              )
 
             _new_contraceptive = self.new_contraceptive
-
-            # Add equipment if any used with the method
-            if _new_contraceptive == 'female_sterilization':
-                self.add_equipment({
-                    'Cusco’s/ bivalved Speculum (small, medium, large)', 'Lamp, Anglepoise'
-                })
-                self.add_equipment_from_pkg({
-                    'Minor Surgery'
-                })
-                # TODO: this is just an example - update once figured out what we want in the pkgs
-                #  (! Update also the RF_Equipment accordingly !)
-            elif _new_contraceptive == 'IUD':
-                self.add_equipment({
-                    'Cusco’s/ bivalved Speculum (small, medium, large)', 'Sponge Holding Forceps'
-                })
-
         else:
             _new_contraceptive = "not_using"
 
@@ -1246,10 +1208,6 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
 
         # If the intended change was not possible due to non-available consumable, reschedule the appointment
         if (not co_administrated) and (
-            # TODO: the max nmb of runs is set to 1000, so they will be coming back every day for 1000 consecutive days?
-            #  -- but only 8 footprints for did_not_run event when switch to f. steril when consumables available but
-            #  equipment not available in test_contraception (test_record_of_appt_footprint_for_switching_to_methods).
-            #  What am I missing? ????
             self._number_of_times_run < self.module.parameters['max_number_of_runs_of_hsi_if_consumable_not_available']
         ):
             self.reschedule()

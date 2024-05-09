@@ -54,7 +54,7 @@ def _get_person_id(df, age_bounds: tuple = (0.0, np.inf)) -> int:
         ].index[0]
 
 
-def get_sim(tmpdir, seed, cons_available, equip_available='all'):
+def get_sim(tmpdir, seed, cons_available, equip_available):
     """Return simulation objection with Alri and other necessary modules registered."""
     sim = Simulation(
         start_date=start_date,

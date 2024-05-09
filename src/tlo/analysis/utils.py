@@ -18,7 +18,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import squarify
-from pandas.api.types import is_numeric_dtype
 
 from tlo import Date, Simulation, logging, util
 from tlo.logging.reader import LogData
@@ -294,10 +293,7 @@ def extract_results(results_folder: Path,
                 df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
                 output_from_eval: pd.Series = generate_series(df)
                 assert pd.Series == type(output_from_eval), 'Custom command does not generate a pd.Series'
-                if is_numeric_dtype(output_from_eval):
-                    res[draw_run] = output_from_eval * get_multiplier(draw, run)
-                else:
-                    res[draw_run] = output_from_eval
+                res[draw_run] = output_from_eval * get_multiplier(draw, run)
 
             except KeyError:
                 # Some logs could not be found - probably because this run failed.
