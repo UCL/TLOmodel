@@ -42,6 +42,49 @@ IN_PATIENT_DAY_FIRST_DAY = {"InpatientDays": 0}
 IN_PATIENT_DAY_SUBSEQUENT_DAYS = {"InpatientDays": 1}
 # Care required on days after the day of admission (including the day of discharge).
 
+
+class BedDays_Footprint(dict):
+    """
+    Represents an allocation of bed days, otherwise acts as a dictionary.
+
+    Is initialised with attributes corresponding to the different types of
+    available beds in the simulation. After instantiation, no additional
+    keys may be added to the object, but the number of days the beds are
+    requested for may be updated, if necessary.
+
+    It is necessary for footprints to track 0-day bed requests so that when
+    it comes to allocating bed days, higher-priority bed requests that
+    cannot be fulfilled can be cascaded down to lower-priority bed requests.
+    """
+
+    def __init__(
+        self, permitted_bed_types: List[str], **initial_values: Dict[str, int | float]
+    ) -> None:
+        """ """
+        super().__init__({b: 0 for b in permitted_bed_types})
+
+        for bed_type, n_days in initial_values.items():
+            self[bed_type] = n_days
+
+    def __setitem__(self, bed_type: str, n_days: int | float) -> None:
+        """ """
+        assert (
+            bed_type in self.keys()
+        ), f"{bed_type} is not a valid bed type for a bed occupancy footprint."
+        assert (
+            n_days >= 0
+        ), f"Cannot assign negative amount of days ({n_days}) to bed of type {bed_type}."
+        super().__setitem__(bed_type, n_days)
+
+    def total_days(self) -> int | float:
+        """
+        Total number of bed days that this footprint imposes.
+
+        Specifically, the sum of the values.
+        """
+        return sum(self.values())
+
+
 class BedDaysRework:
     """
     Tracks bed days resources, in a better way than using dataframe columns
