@@ -1414,6 +1414,19 @@ class HealthSystem(Module):
         the_level = hsi_event.ACCEPTED_FACILITY_LEVEL
         return self._facilities_for_each_district[the_level][the_district]
 
+    def get_facility_id_for_beds(self, patient_id: int) -> None:
+        """
+        Helper function to find the facility at which an HSI event that requires
+        a bed footprint will take place.
+
+        Return the ID of facility available to this person.
+        Note that all beds are pooled at one particular level.
+        """
+        the_district = self.sim.population.props.at[patient_id, 'district_of_residence']
+        return self._facilities_for_each_district[self.bed_days.bed_facility_level][
+            the_district
+        ][0]
+
     def get_appt_footprint_as_time_request(self, facility_info: FacilityInfo, appt_footprint: dict):
         """
         This will take an APPT_FOOTPRINT and return the required appointments in terms of the
@@ -1803,7 +1816,7 @@ class HealthSystem(Module):
 
     def on_end_of_day(self) -> None:
         """Do jobs to be done at the end of the day (after all HSI run)"""
-        self.bed_days.on_end_of_day()
+        self.bed_days.on_end_of_day(day_that_is_ending=self.sim.date)
         if self._hsi_event_count_log_period == "day":
             self._write_hsi_event_counts_to_log_and_reset()
             self._write_never_ran_hsi_event_counts_to_log_and_reset()
@@ -1894,8 +1907,9 @@ class HealthSystem(Module):
                     if sum(event.BEDDAYS_FOOTPRINT.values()):
                         event._received_info_about_bed_days = \
                             self.bed_days.issue_bed_days_according_to_availability(
-                                facility_id=self.bed_days.get_facility_id_for_beds(persons_id=event.target),
-                                footprint=event.BEDDAYS_FOOTPRINT
+                                start_date=self.sim.date,
+                                facility_id=self.get_facility_id_for_beds(patient_id=event.target),
+                                requested_footprint=event.BEDDAYS_FOOTPRINT
                             )
 
                     # Check that a facility has been assigned to this HSI
@@ -2268,9 +2282,9 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             if sum(event.BEDDAYS_FOOTPRINT.values()):
                                 event._received_info_about_bed_days = \
                                     self.module.bed_days.issue_bed_days_according_to_availability(
-                                        facility_id=self.module.bed_days.get_facility_id_for_beds(
-                                                                           persons_id=event.target),
-                                        footprint=event.BEDDAYS_FOOTPRINT
+                                        facility_id=self.module.get_facility_id_for_beds(
+                                                                           patient_id=event.target),
+                                        requested_footprint=event.BEDDAYS_FOOTPRINT
                                     )
 
                             # Check that a facility has been assigned to this HSI
@@ -2426,7 +2440,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         self.module.consumables.on_start_of_day(self.sim.date)
 
         # Compute footprint that arise from in-patient bed-days
-        inpatient_appts = self.module.bed_days.get_inpatient_appts()
+        inpatient_appts = self.module.bed_days.get_inpatient_appts(date=self.sim.date)
         inpatient_footprints = Counter()
         for _fac_id, _footprint in inpatient_appts.items():
             inpatient_footprints.update(self.module.get_appt_footprint_as_time_request(

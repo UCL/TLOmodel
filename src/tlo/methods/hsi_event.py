@@ -168,7 +168,10 @@ class HSI_Event:
         """Impose the bed-days footprint (if target of the HSI is a person_id)"""
         if isinstance(self.target, int):
             self.healthcare_system.bed_days.impose_beddays_footprint(
-                person_id=self.target, footprint=self.bed_days_allocated_to_this_event
+                footprint=self.bed_days_allocated_to_this_event,
+                facility=self.facility_info.id,
+                first_day=self.sim.date,
+                patient_id=self.target,
             )
 
     def run(self, squeeze_factor):
