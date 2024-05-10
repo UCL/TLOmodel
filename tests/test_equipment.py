@@ -1,15 +1,13 @@
 """This file contains all the tests to do with Equipment use logging and availability checks."""
 import os
-import time
 from pathlib import Path
-from typing import Union, Dict, Iterable
-
-import pytest
+from typing import Dict, Iterable
 
 import numpy as np
 import pandas as pd
+import pytest
 
-from tlo import Simulation, Module, Date, logging
+from tlo import Date, Module, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.events import IndividualScopeEventMixin
 from tlo.methods import Metadata, demography, healthsystem
@@ -94,7 +92,8 @@ def test_core_functionality_of_equipment_class(seed):
 
     # - calling an item for which data on availability is not provided (should not raise error)
     eq_default.is_all_items_available(item_codes={3}, facility_id=1)
-    # - calling an item at a facility that for which data is not provided (should give average behaviour for other facilities)
+    # - calling an item at a facility that for which data is not provided (should give average behaviour for other
+    #   facilities)
     assert not eq_default.is_all_items_available(item_codes={0}, facility_id=2)
     assert eq_default.is_all_items_available(item_codes={1}, facility_id=2)
     # - calling a recognised item for which no data at a facility with no data (should not error)
@@ -147,7 +146,8 @@ def test_core_functionality_of_equipment_class(seed):
 
     # Lookup the item_codes that belong in a particular package.
     # - When package is recognised
-    assert {2, 3} == eq_default.lookup_item_codes_from_pkg_name(pkg_name='PkgWith2+3')  # these items are in the same package
+    assert {2, 3} == eq_default.lookup_item_codes_from_pkg_name(pkg_name='PkgWith2+3')  # these items are in the same
+    #                                                                                     package
     # - Error thrown when package is not recognised
     with pytest.raises(ValueError):
         eq_default.lookup_item_codes_from_pkg_name(pkg_name='')

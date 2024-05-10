@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
-from typing import TYPE_CHECKING, Dict, Literal, NamedTuple, Optional, Set, Tuple, Union, Iterable
+from typing import TYPE_CHECKING, Dict, Iterable, Literal, NamedTuple, Optional, Set, Tuple, Union
 
 import numpy as np
 
@@ -172,11 +172,20 @@ class HSI_Event:
         logger.debug(key="message", data=f"{self.__class__.__name__}: was never run.")
 
     def post_apply_hook(self) -> None:
-        """Impose the bed-days footprint (if target of the HSI is a person_id)"""
+        """
+        Do things following the event's `apply` function running.
+         * Impose the bed-days footprint (if target of the HSI is a person_id)
+         * Record the equipment that has been added before and during the course of the HSI Event.
+        """
         if isinstance(self.target, int):
             self.healthcare_system.bed_days.impose_beddays_footprint(
                 person_id=self.target, footprint=self.bed_days_allocated_to_this_event
             )
+
+        self.healthcare_system.equipment.record_use_of_equipment(
+            item_codes=self._EQUIPMENT,
+            facility_id=self.facility_info.id
+        )
 
     def run(self, squeeze_factor):
         """Make the event happen."""
@@ -402,13 +411,6 @@ class HSI_Event:
                 sorted((k, v) for k, v in self.BEDDAYS_FOOTPRINT.items() if v > 0)
             ),
             equipment=(tuple(sorted(self._EQUIPMENT))),
-        )
-
-    def post_apply_hook(self):
-        """Record the equipment that has been added before and during the course of the HSI Event."""
-        self.healthcare_system.equipment.record_use_of_equipment(
-            item_codes=self._EQUIPMENT,
-            facility_id=self.facility_info.id
         )
 
 

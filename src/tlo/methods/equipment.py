@@ -1,6 +1,6 @@
 import warnings
 from collections import defaultdict
-from typing import Dict, Set, Iterable, Union, Counter, Optional, Any
+from typing import Counter, Dict, Iterable, Optional, Set, Union
 
 import numpy as np
 import pandas as pd
@@ -45,21 +45,19 @@ class Equipment:
         self.master_facilities_list = master_facilities_list
 
         # Create internal storage structures
-        self._items_available: Dict = dict()  # Will be the internal store of which items are available at each
+        self._items_available: Dict = dict()  # <-- Will be the internal store of which items are available at each
         #                                       facility_id. This is of the form {facility_id: {items_available}}.
 
-        self._record_of_equipment_used_by_facility_id = defaultdict(Counter)  # Will be the internal store of which
+        self._record_of_equipment_used_by_facility_id = defaultdict(Counter)  # <-- Will be the internal store of which
         # items have been used at each facility_id This is of the form {facility_id: {item_code: count}}.
 
-        # Set up the internal stores of equipment items that are available, ready for calls.
+        # Data structures for quick look-ups for items and descriptors
+        self._item_code_lookup = self.catalogue.set_index('Item_Description')['Item_Code'].to_dict()
+        self._all_item_descriptors = set(self._item_code_lookup.keys())
+        self._all_item_codes = set(self._item_code_lookup.values())
+
+        # Initialise the internal stores of equipment items that are available, ready for calls.
         self._set_equipment_items_available(availability=availability)
-
-        # Set up internal lookup for item_descriptor -> item_code, and validating codes/desciptors
-        self.item_code_lookup = self.catalogue.set_index('Item_Description')['Item_Code'].to_dict()
-        self._all_item_descriptors = set(self.item_code_lookup.keys())
-        self._all_item_codes = set(self.item_code_lookup.values())
-
-        self._history_of_items_checked = set()   # All the arguments provided to parse_items
 
     def on_simulation_end(self):
         """Things to do when the simulation end:
@@ -67,14 +65,14 @@ class Equipment:
         """
         self.write_to_log()
 
-    def update_availability(self, availability) -> None:
+    def update_availability(self, availability: str) -> None:
         """Update the availability of equipment. This is expected to be called midway through the simulation if
         the assumption of the equipment availability needs to change."""
         self._set_equipment_items_available(availability=availability)
 
     def _set_equipment_items_available(self, availability: str):
         """Update internal store of which items of equipment are available. This is called at the beginning of the
-        simulation and whenever an update in `availability` is needed."""
+        simulation and whenever an update in `availability` is done by `update_availability`."""
 
         # For any facility_id in the data
         all_fac_ids = self.master_facilities_list['Facility_ID'].unique()
@@ -128,7 +126,7 @@ class Equipment:
          either, and return as a set of item_code (integers). For any item_code/descriptor not recognised, a
          `UserWarning` is issued."""
 
-        def check_item_code_recognised(item_codes: set[int]):
+        def check_item_codes_recognised(item_codes: set[int]):
             if not item_codes.issubset(self._all_item_codes):
                 warnings.warn(f'Item code(s) "{item_codes}" not recognised.')
 
@@ -145,18 +143,18 @@ class Equipment:
         items_are_ints = all(isinstance(element, int) for element in items)
 
         if items_are_ints:
-            check_item_code_recognised(items)
+            check_item_codes_recognised(items)
             # In the return, any unrecognised item_codes are silently ignored.
             return items.intersection(self._all_item_codes)
         else:
             check_item_descriptors_recognised(items)  # Warn for any unrecognised descriptors
             # In the return, any unrecognised descriptors are silently ignored.
-            return set(filter(lambda item: item is not None, map(self.item_code_lookup.get, items)))
+            return set(filter(lambda item: item is not None, map(self._item_code_lookup.get, items)))
 
     def is_all_items_available(
         self, item_codes: Set[int], facility_id: int
     ) -> bool:
-        """Determine if all equipments are available at the given facility_id (or from the default if the faciluty_id
+        """Determine if all equipments are available at the given facility_id (or from the default if the facility_id
         is not recognised). Returns True only if all items are available at the facility_id, otherwise returns False."""
         try:
             return item_codes.issubset(self._items_available[facility_id])
