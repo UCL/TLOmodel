@@ -2537,14 +2537,14 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         treatment_id='Inpatient_Care',
                         facility_level=self.module._facility_by_facility_id[_fac_id].level,
                         appt_footprint=tuple(sorted(_inpatient_appts.items())),
-                        beddays_footprint=()
+                        beddays_footprint=(),
+                        equipment=set(),
                     ),
                     person_id=-1,
                     facility_id=_fac_id,
                     squeeze_factor=0.0,
                     priority=-1,
                     did_run=True,
-                    equipment=set(),  # TODO: explore more, should it be non-empty in some cases?
                 )
 
         # Restart the total footprint of all calls today, beginning with those due to existing in-patients.
