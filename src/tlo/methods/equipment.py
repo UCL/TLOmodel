@@ -25,8 +25,9 @@ class Equipment:
      specified in the ResourceFile; if 'none', then let no equipment be ever be available; if 'all', then all
      equipment is always available.
 
-    If an item_code is requested that is not recognised (not included in `data`), a `UserWarning` is issued, and the
-     result returned is on the basis of the average availability of other consumables in that facility in that month.
+     :param `: `master_facilities_list`: The pd.DataFrame with line-list of all the facilities in the HealthSystem.
+
+    If an item_code is referred that is not recognised (not included in `catalogue`), a `UserWarning` is issued.
     """
 
     def __init__(
@@ -47,15 +48,18 @@ class Equipment:
         self._items_available: Dict = dict()  # Will be the internal store of which items are available at each
         #                                       facility_id. This is of the form {facility_id: {items_available}}.
 
-        self._record_of_equipment_used = defaultdict(Counter)  # Will be the internal store of which items have been
-        #                                                        used at each facility_id. This is of the form
-        #                                                        {facility_id: {item_code: count}}.
+        self._record_of_equipment_used_by_facility_id = defaultdict(Counter)  # Will be the internal store of which
+        # items have been used at each facility_id This is of the form {facility_id: {item_code: count}}.
 
         # Set up the internal stores of equipment items that are available, ready for calls.
         self._set_equipment_items_available(availability=availability)
 
-        # Set up internal lookup for item_descriptor -> item_code
-        self.item_code_lookup = self.catalogue.set_index('Description')['Item_Code'].to_dict()
+        # Set up internal lookup for item_descriptor -> item_code, and validating codes/desciptors
+        self.item_code_lookup = self.catalogue.set_index('Item_Description')['Item_Code'].to_dict()
+        self._all_item_descriptors = set(self.item_code_lookup.keys())
+        self._all_item_codes = set(self.item_code_lookup.values())
+
+        self._history_of_items_checked = set()   # All the arguments provided to parse_items
 
     def on_simulation_end(self):
         """Things to do when the simulation end:
@@ -119,57 +123,58 @@ class Equipment:
             lambda x: set(x[x].index.get_level_values("Item_Code"))
         ).to_dict()
 
-    def _parse_items(self, items: Union[int, str, Iterable[int | str]]) -> Set[int]:
+    def parse_items(self, items: Union[int, str, Iterable[int | str]]) -> Set[int]:
         """Parse equipment items specified as an item_code (integer), an item descriptor (string), or an iterable of
-         either, and return as a set of item_code (integers)."""
+         either, and return as a set of item_code (integers). For any item_code/descriptor not recognised, a
+         `UserWarning` is issued."""
 
-        def first_element_in_iterable(it: Iterable[Any]) -> Any | None:
-            for el in it:
-                return el
+        def check_item_code_recognised(item_codes: set[int]):
+            if not item_codes.issubset(self._all_item_codes):
+                warnings.warn(f'Item code(s) "{item_codes}" not recognised.')
 
-        if isinstance(items, str):
-            # Single descriptor
-            return set([self.item_code_lookup(items)])
-        elif isinstance(items, int):
-            # Single item_code provided
-            return set([items])
-        elif isinstance(items, Iterable) and len(items) == 0:
-            # Iterable of length 0
-            return set()
-        elif isinstance(items, Iterable) and isinstance(first_element_in_iterable(items), str):
-            # Iterable of descriptors
-            return set(map(self.item_code_lookup, items))
-        elif isinstance(items, Iterable) and isinstance(first_element_in_iterable(items), int):
-            # Iterable of item_cods
-            return set(items)
+        def check_item_descriptors_recognised(item_descriptors: set[str]):
+            if not item_descriptors.issubset(self._all_item_descriptors):
+                warnings.warn(f'Item descriptor(s) "{item_descriptors}" not recognised.')
 
+        # Make into a set if it is not one already
+        if isinstance(items, (str, int)):
+            items = set([items])
         else:
-            raise ValueError(f'Item_Code format not recognised: {items=}')
+            items = set(items)
 
-        if isinstance(items, int):
-            item_codes = set([items])  # If single int provided, place it into a list
-        elif isinstance(items, list):
-            item_codes = set(items)
+        items_are_ints = all(isinstance(element, int) for element in items)
 
+        if items_are_ints:
+            check_item_code_recognised(items)
+            # In the return, any unrecognised item_codes are silently ignored.
+            return items.intersection(self._all_item_codes)
+        else:
+            check_item_descriptors_recognised(items)  # Warn for any unrecognised descriptors
+            # In the return, any unrecognised descriptors are silently ignored.
+            return set(filter(lambda item: item is not None, map(self.item_code_lookup.get, items)))
 
     def is_all_items_available(
-        self, item_codes: Union[int, str, Iterable[int | str]], facility_id: int
+        self, item_codes: Set[int], facility_id: int
     ) -> bool:
         """Determine if all equipments are available at the given facility_id (or from the default if the faciluty_id
         is not recognised). Returns True only if all items are available at the facility_id, otherwise returns False."""
-        return self._parse_items(item_codes).issubset(self._items_available[facility_id])
-
+        try:
+            return item_codes.issubset(self._items_available[facility_id])
+        except KeyError:
+            raise ValueError(f'Not recognised {facility_id=}')
 
     def record_use_of_equipment(
-        self, item_codes: Union[int, str, Iterable[int | str]], facility_id: int
+        self, item_codes: Set[int], facility_id: int
     ) -> None:
         """Update internal record of the usage of items at equipment at the specified facility_id."""
-        self._record_of_equipment_used[facility_id].update(self._parse_items(item_codes))
+        self._record_of_equipment_used_by_facility_id[facility_id].update(item_codes)
 
     def write_to_log(self) -> None:
         """Write to the log:
-         * Summary of the equipment that was _ever_ used at each facility_level
-         * For each facility_id, a set of the equipment items ever used.
+         * Summary of the equipment that was _ever_ used at each district/facility level.
+         Note that the info-level health system logger (key: `hsi_event_counts`) contains logging of the equipment used
+         in each HSI event (if further finer splits are needed). Alternatively, different aggregations could be created
+         here for the summary logger, using the same pattern as used here.
         """
 
         mfl = self.master_facilities_list
@@ -183,7 +188,7 @@ class Equipment:
                 return None
 
         set_of_equipment_ever_used_at_each_facility_id = pd.Series({
-            fac_id: set_of_keys_or_empty_set(self._record_of_equipment_used.get(fac_id, set()))
+            fac_id: set_of_keys_or_empty_set(self._record_of_equipment_used_by_facility_id.get(fac_id, set()))
             for fac_id in mfl['Facility_ID']
         }, name='EquipmentEverUsed').astype(str)
 
@@ -202,3 +207,14 @@ class Equipment:
                             'equipment items that are ever used.',
                 data=row.to_dict(),
             )
+
+    def lookup_item_codes_from_pkg_name(self, pkg_name: str) -> Set[int]:
+        """Convenience function to find the set of item_codes that are grouped under a package name in the catalogue.
+        It is expected that this is used by the disease module once and then the resulting equipment item_codes are
+        saved on th at module. Note that all interaction with the `Equipment` module is using set of item_codes."""
+        df = self.catalogue
+
+        if pkg_name not in df['Pkg_Name'].unique():
+            raise ValueError(f'That Pkg_Name is not in the catalogue: {pkg_name=}')
+
+        return set(df.loc[df['Pkg_Name'] == pkg_name, 'Item_Code'].values)

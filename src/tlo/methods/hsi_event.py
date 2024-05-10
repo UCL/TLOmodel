@@ -113,8 +113,6 @@ class HSI_Event:
         self._received_info_about_bed_days = None
         self.expected_time_requests = {}
         self.facility_info = None
-        self.ESSENTIAL_EQUIPMENT = None
-        self.EQUIPMENT = set()   # todo should this be private, and should we add setter methods
 
         self.TREATMENT_ID = ""
         self.ACCEPTED_FACILITY_LEVEL = None
@@ -272,22 +270,26 @@ class HSI_Event:
         )
 
     def add_equipment(self, item_codes: Union[int, str, Iterable[int | str]]):
-        """Declare that piece(s) of equipment are used in this HSI_Event."""
-        self._EQUIPMENT.update(self.healthcare_system.equipment._parse_items(item_codes))
+        """Declare that piece(s) of equipment are used in this HSI_Event.
+        Checks are done on the validity of the item_codes/item descriptions and warnings issued if they are not
+        recognised."""
+        self._EQUIPMENT.update(self.healthcare_system.equipment.parse_items(item_codes))
 
     @property
     def is_all_declared_equipment_available(self) -> bool:
-        """Returns True if all the declared items of equipment are available. This is called before the HSI is run
-        so is looking only at those items that are declared when this instance was created."""
+        """Returns `True` if all the declared items of equipment are available. This is called before the HSI is run
+        and so is looking only at those items that are declared when this instance was created."""
         return self.healthcare_system.equipment.is_all_items_available(
             item_codes=self._EQUIPMENT,
             facility_id=self.facility_info.id,
         )
 
-    def is_equipment_available(self, item_codes: Union[int, Iterable[int]]) -> bool:
-        """Check whether all the equipment item_codes are available."""
+    def is_equipment_available(self, item_codes: Union[int, str, Iterable[int | str]]) -> bool:
+        """Check whether all the equipment item_codes are available. This does not imply that the equipment is being
+        used and no logging happens. It is provided as a convenience to disease module authors in case the logic of
+        during an HSI Event depends on the availability of a piece of equipment."""
         return self.healthcare_system.equipment.is_all_items_available(
-            item_codes=item_codes,
+            item_codes=self.healthcare_system.equipment.parse_items(item_codes),
             facility_id=self.facility_info.id,
         )
 
@@ -399,7 +401,7 @@ class HSI_Event:
             beddays_footprint=tuple(
                 sorted((k, v) for k, v in self.BEDDAYS_FOOTPRINT.items() if v > 0)
             ),
-            equipment=(tuple(sorted(self.EQUIPMENT))),  # todo check if this is defined in HSIEventDetails and whether we want this here
+            equipment=(tuple(sorted(self._EQUIPMENT))),
         )
 
     def post_apply_hook(self):

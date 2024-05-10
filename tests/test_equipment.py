@@ -25,10 +25,10 @@ def test_core_functionality_of_equipment_class(seed):
     # Create toy data
     catalogue = pd.DataFrame(
         [
-            {"Description": "ItemZero", "Item_Code": 0},
-            {"Description": "ItemOne", "Item_Code": 1},
-            {"Description": "ItemTwo", "Item_Code": 2},
-            {"Description": "ItemThree", "Item_Code": 3},
+            {"Item_Description": "ItemZero", "Item_Code": 0, "Pkg_Name": float('nan')},
+            {"Item_Description": "ItemOne", "Item_Code": 1, "Pkg_Name": float('nan')},
+            {"Item_Description": "ItemTwo", "Item_Code": 2, "Pkg_Name": 'PkgWith2+3'},
+            {"Item_Description": "ItemThree", "Item_Code": 3, "Pkg_Name": 'PkgWith2+3'},
         ]
     )
     data_availability = pd.DataFrame(
@@ -61,23 +61,47 @@ def test_core_functionality_of_equipment_class(seed):
         master_facilities_list=mfl,
         availability="default",
     )
-    # - using single integer for one item_code (item should be available)
-    assert eq_default.is_all_items_available(item_codes=1, facility_id=1)
-    # - using list of integers for item_codes (items should be available)
-    assert eq_default.is_all_items_available(item_codes=[1, 2], facility_id=1)
-    # - calling an item for which data on availability is not provided (should not raise error)
-    eq_default.is_all_items_available(item_codes=3, facility_id=1)
-    # - calling an item at a facility that for which data is not provided (should give average behaviour for other facilities)
-    assert not eq_default.is_all_items_available(item_codes=0, facility_id=2)
-    assert eq_default.is_all_items_available(item_codes=1, facility_id=2)
-    # - calling an item for which no data at a facility with no data (should not error)
-    eq_default.is_all_items_available(item_codes=3, facility_id=2)
+
+    # Checks on parsing equipment items
+    # - using single integer for one item_code
+    assert {1} == eq_default.parse_items(1)
+    # - using list of integers for item_codes
+    assert {1, 2} == eq_default.parse_items([1, 2])
+    # - using single string for one item descriptor
+    assert eq_default.parse_items('ItemOne')
+    # - using list of strings for item descriptors
+    assert eq_default.parse_items(['ItemOne', 'ItemTwo'])
+    # - an empty iterable of equipment should always be work whether expressed as list/tuple/set
+    assert set() == eq_default.parse_items(list())
+    assert set() == eq_default.parse_items(tuple())
+    assert set() == eq_default.parse_items(set())
+
+    # - Calling for unrecognised item_codes (should raise warning)
+    with pytest.warns():
+        eq_default.parse_items(10001)
+    with pytest.warns():
+        eq_default.parse_items('ItemThatIsNotDefined')
+
+    # Testing checking on available of items
     # - calling when all items available (should be true)
-    assert eq_default.is_all_items_available(item_codes=[1, 2], facility_id=1)
+    assert eq_default.is_all_items_available(item_codes={1, 2}, facility_id=1)
     # - calling when no items available (should be false)
-    assert not eq_default.is_all_items_available(item_codes=[0, 2], facility_id=0)
+    assert not eq_default.is_all_items_available(item_codes={0, 2}, facility_id=0)
     # - calling when some items available (should be false)
-    assert not eq_default.is_all_items_available(item_codes=[1, 2], facility_id=0)
+    assert not eq_default.is_all_items_available(item_codes={1, 2}, facility_id=0)
+    # - calling for empty set of equipment (should always be available)
+    assert eq_default.is_all_items_available(item_codes=set(), facility_id=0)
+
+    # - calling an item for which data on availability is not provided (should not raise error)
+    eq_default.is_all_items_available(item_codes={3}, facility_id=1)
+    # - calling an item at a facility that for which data is not provided (should give average behaviour for other facilities)
+    assert not eq_default.is_all_items_available(item_codes={0}, facility_id=2)
+    assert eq_default.is_all_items_available(item_codes={1}, facility_id=2)
+    # - calling a recognised item for which no data at a facility with no data (should not error)
+    eq_default.is_all_items_available(item_codes={3}, facility_id=2)
+    # -- calling for an unrecognised facility_id (should error)
+    with pytest.raises(ValueError):
+        eq_default.is_all_items_available(item_codes={1}, facility_id=1001)
 
     # -- when using `none` availability behaviour: everything should not be available!
     eq_none = Equipment(
@@ -88,11 +112,13 @@ def test_core_functionality_of_equipment_class(seed):
         master_facilities_list=mfl,
     )
     # - calling when all items available (should be false because using 'none' behaviour)
-    assert not eq_none.is_all_items_available(item_codes=[1, 2], facility_id=1)
+    assert not eq_none.is_all_items_available(item_codes={1, 2}, facility_id=1)
     # - calling when no items available (should be false)
-    assert not eq_none.is_all_items_available(item_codes=[0, 2], facility_id=0)
+    assert not eq_none.is_all_items_available(item_codes={0, 2}, facility_id=0)
     # - calling when some items available (should be false)
-    assert not eq_none.is_all_items_available(item_codes=[1, 2], facility_id=0)
+    assert not eq_none.is_all_items_available(item_codes={1, 2}, facility_id=0)
+    # - calling for empty set of equipment (should always be available)
+    assert eq_none.is_all_items_available(item_codes=set(), facility_id=0)
 
     # -- when using `all` availability behaviour: everything should not be available!
     eq_all = Equipment(
@@ -103,22 +129,29 @@ def test_core_functionality_of_equipment_class(seed):
         master_facilities_list=mfl,
     )
     # - calling when all items available (should be true)
-    assert eq_all.is_all_items_available(item_codes=[1, 2], facility_id=1)
+    assert eq_all.is_all_items_available(item_codes={1, 2}, facility_id=1)
     # - calling when no items available (should be true because using 'all' behaviour)
-    assert eq_all.is_all_items_available(item_codes=[0, 2], facility_id=0)
+    assert eq_all.is_all_items_available(item_codes={0, 2}, facility_id=0)
     # - calling when some items available (should be true because using 'all' behaviour)
-    assert eq_all.is_all_items_available(item_codes=[1, 2], facility_id=0)
+    assert eq_all.is_all_items_available(item_codes={1, 2}, facility_id=0)
+    # - calling for empty set of equipment (should always be available)
+    assert eq_all.is_all_items_available(item_codes=set(), facility_id=0)
 
     # Check recording use of equipment
     # - Add records, using calls with integers and list to different facility_id
-    eq_default.record_use_of_equipment(item_codes=1, facility_id=0)
-    eq_default.record_use_of_equipment(item_codes=[0, 1], facility_id=0)
-    eq_default.record_use_of_equipment(item_codes=[0, 1], facility_id=1)
+    eq_default.record_use_of_equipment(item_codes={1}, facility_id=0)
+    eq_default.record_use_of_equipment(item_codes={0, 1}, facility_id=0)
+    eq_default.record_use_of_equipment(item_codes={0, 1}, facility_id=1)
     # - Check that internal record is as expected
-    assert dict(eq_default._record_of_equipment_used) == {0: {0: 1, 1: 2}, 1: {0: 1, 1: 1}}
+    assert dict(eq_default._record_of_equipment_used_by_facility_id) == {0: {0: 1, 1: 2}, 1: {0: 1, 1: 1}}
 
-    # Do the logging
-    eq_default.write_to_log()
+    # Lookup the item_codes that belong in a particular package.
+    # - When package is recognised
+    assert {2, 3} == eq_default.lookup_item_codes_from_pkg_name(pkg_name='PkgWith2+3')  # these items are in the same package
+    # - Error thrown when package is not recognised
+    with pytest.raises(ValueError):
+        eq_default.lookup_item_codes_from_pkg_name(pkg_name='')
+
 
 
 equipment_item_code_that_is_available = [0, 1, ]
@@ -268,8 +301,6 @@ def test_equipment_use_is_logged(seed, tmpdir):
     )
 
 
-
-
 def test_hsi_does_not_run_if_essential_equipment_is_not_available(seed, tmpdir):
     """Check that an HSI which declares an item of equipment that is essential does run if that item is available
     and does not run if that item is not available."""
@@ -307,15 +338,77 @@ def test_hsi_does_not_run_if_essential_equipment_is_not_available(seed, tmpdir):
     )
 
 
-def test_lookup_equipment_item_code_from_item_name():
-    # todo incorporate into calls above, different forms of calling.
-    pass
-
-
-def test_lookup_equipment_item_code_from_pkg_name():
-    pass
-
-
-def test_change_equipment_availability():
+def test_change_equipment_availability(seed):
     """Test that we can change the availability of equipment midway through the simulation."""
-    pass
+    # Set-up simulation that starts with `all` availability and then changes to  `none` after one year. In the
+    # simulation a DummyModule schedules a DummyHSI that runs every month and tries to get a piece of equipment.
+    # Check that this piece of equipment is available for the first year but not the second year of the simulation.
+
+    class DummyHSIEvent(HSI_Event, IndividualScopeEventMixin):
+        def __init__(
+            self,
+            module,
+            person_id,
+        ):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = "DummyHSIEvent"
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+            self.ACCEPTED_FACILITY_LEVEL = '1a'
+            self.store_of_equipment_checks = dict()
+
+        def apply(self, person_id, squeeze_factor):
+            # Check availability of a piece of equipment, with item_code = 0
+            self.store_of_equipment_checks.update(
+                {
+                    self.sim.date: self.is_equipment_available(item_codes={0})
+                }
+            )
+
+            # Schedule recurrence of this event in one month's time
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                hsi_event=self,
+                do_hsi_event_checks=False,
+                topen=self.sim.date + pd.DateOffset(months=1),
+                tclose=None,
+                priority=0,
+            )
+
+    class DummyModule(Module):
+        METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHSYSTEM}
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            # Schedule the HSI_Event to occur on the first day of the simulation (it will schedule its own repeats)
+            self.the_hsi_event = DummyHSIEvent(person_id=0, module=self)
+
+            sim.modules["HealthSystem"].schedule_hsi_event(
+                hsi_event=self.the_hsi_event,
+                do_hsi_event_checks=False,
+                topen=sim.date,
+                tclose=None,
+                priority=0,
+            )
+
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        DummyModule(),
+    )
+    # Modify the parameters of the healthsystem to effect a change in the availability of equipment
+    sim.modules['HealthSystem'].parameters['equip_availability'] = 'all'
+    sim.modules['HealthSystem'].parameters['equip_availability_postSwitch'] = 'none'
+    sim.modules['HealthSystem'].parameters['year_equip_availability_switch'] = 2011
+
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=sim.start_date + pd.DateOffset(years=2))
+
+    # Get store & check for availabilities of the equipment
+    log = pd.Series(sim.modules['DummyModule'].the_hsi_event.store_of_equipment_checks)
+    assert log[log.index < Date(2011, 1, 1)].all()
+    assert not log[log.index >= Date(2011, 1, 1)].any()

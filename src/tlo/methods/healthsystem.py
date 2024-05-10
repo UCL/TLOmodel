@@ -205,6 +205,16 @@ class HealthSystem(Module):
             "the ResourceFile; if 'none', then let no equipment ever be available; if 'all', then all equipment is "
             "always available. NB. This parameter is over-ridden if an argument is provided to the module initialiser."
         ),
+        'equip_availability_postSwitch': Parameter(
+            Types.STRING,
+            "What to assume about the availability of equipment after the switch (see `year_equip_availability_switch`"
+            "). The options for this are the same as `equip_availability`."
+        ),
+        'year_equip_availability_switch': Parameter(
+            Types.INT,
+            "Year in which the assumption for `equip_availability` changes (The change happens on 1st January of that "
+            "year.)"
+        ),
 
         # Service Availability
         'Service_Availability': Parameter(
@@ -707,6 +717,18 @@ class HealthSystem(Module):
             ),
             Date(self.parameters["year_cons_availability_switch"], 1, 1)
         )
+
+        # Schedule an equipment availability switch
+        sim.schedule_event(
+            HealthSystemChangeParameters(
+                self,
+                parameters={
+                    'equip_availability': self.parameters['equip_availability_postSwitch']
+                }
+            ),
+            Date(self.parameters["year_equip_availability_switch"], 1, 1)
+        )
+
 
         # Schedule a one-off rescaling of _daily_capabilities broken down by officer type and level.
         # This occurs on 1st January of the year specified in the parameters.
@@ -1628,7 +1650,6 @@ class HealthSystem(Module):
                 squeeze_factor=_squeeze_factor,
                 did_run=did_run,
                 priority=priority,
-                equipment=hsi_event.EQUIPMENT,
             )
 
     def write_to_hsi_log(
@@ -1639,9 +1660,9 @@ class HealthSystem(Module):
         squeeze_factor: float,
         did_run: bool,
         priority: int,
-        equipment: set,
     ):
         """Write the log `HSI_Event` and add to the summary counter."""
+        # Debug logger gives simple line-list for every HSI event
         logger.debug(
             key="HSI_Event",
             data={
@@ -1654,16 +1675,19 @@ class HealthSystem(Module):
                 'did_run': did_run,
                 'Facility_Level': event_details.facility_level if event_details.facility_level is not None else -99,
                 'Facility_ID': facility_id if facility_id is not None else -99,
-                'equipment': sorted(equipment),
+                'Equipment': sorted(event_details.equipment),
             },
             description="record of each HSI event"
         )
         if did_run:
             if self._hsi_event_count_log_period is not None:
+                # Do logging for HSI Event using counts of each 'unique type' of HSI event (as defined by
+                # `HSIEventDetails`).
                 event_details_key = self._hsi_event_details.setdefault(
                     event_details, len(self._hsi_event_details)
                 )
                 self._hsi_event_counts_log_period[event_details_key] += 1
+            # Do logging for 'summary logger'
             self._summary_counter.record_hsi_event(
                 treatment_id=event_details.treatment_id,
                 hsi_event_name=event_details.event_name,
