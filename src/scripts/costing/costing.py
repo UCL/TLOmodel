@@ -223,7 +223,7 @@ unit_price_consumable = unit_price_consumable.set_index('Item_Code').to_dict(ori
 
 # Multiply number of items needed by cost of consumable
 cost_of_consumables_dispensed = dict(zip(unit_price_consumable, (unit_price_consumable[key]['Final_price_per_chosen_unit (USD, 2023)'] *
-                                                cons_dispensed[key] for key in unit_price_consumable)))
+                                                cons_dispensed[key] for key in cons_dispensed)))
 total_cost_of_consumables_dispensed = sum(value for value in cost_of_consumables_dispensed.values() if not np.isnan(value))
 
 # 2.2 Cost of consumables stocked (quantity needed for what is dispensed)
@@ -256,7 +256,8 @@ inflow_to_outflow_ratio_by_consumable = inflow_to_outflow_ratio_by_consumable.to
 cost_of_consumables_stocked = dict(zip(unit_price_consumable, (unit_price_consumable[key]['Final_price_per_chosen_unit (USD, 2023)'] *
                                                 cons_dispensed[key] *
                                                 inflow_to_outflow_ratio_by_consumable.get(key, average_inflow_to_outflow_ratio_ratio)
-                                                for key in counts_of_available)))
+                                                for key in cons_dispensed)))
+# TODO Make sure that the above code runs
 total_cost_of_consumables_stocked = sum(value for value in cost_of_consumables_stocked.values() if not np.isnan(value))
 
 # Add consumable costs to the financial cost dataframe
