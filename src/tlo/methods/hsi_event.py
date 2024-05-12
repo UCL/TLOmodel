@@ -182,10 +182,12 @@ class HSI_Event:
                 person_id=self.target, footprint=self.bed_days_allocated_to_this_event
             )
 
-        self.healthcare_system.equipment.record_use_of_equipment(
-            item_codes=self._EQUIPMENT,
-            facility_id=self.facility_info.id
-        )
+        if self.facility_info is not None:
+            # If there is a facility_info (e.g., healthsystem not running in disabled mode), then record equipment used
+            self.healthcare_system.equipment.record_use_of_equipment(
+                item_codes=self._EQUIPMENT,
+                facility_id=self.facility_info.id
+            )
 
     def run(self, squeeze_factor):
         """Make the event happen."""

@@ -2538,7 +2538,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         facility_level=self.module._facility_by_facility_id[_fac_id].level,
                         appt_footprint=tuple(sorted(_inpatient_appts.items())),
                         beddays_footprint=(),
-                        equipment=set(),
+                        equipment=tuple(),  # Equipment is normally a set, but this has to be hashable.
                     ),
                     person_id=-1,
                     facility_id=_fac_id,
