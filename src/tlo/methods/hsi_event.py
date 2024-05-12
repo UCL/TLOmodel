@@ -109,10 +109,11 @@ class HSI_Event:
         self.module = module
         super().__init__(*args, **kwargs)
 
-        # Information that will later be received about this HSI
+        # Information that will later be received/computed about this HSI
         self._received_info_about_bed_days = None
         self.expected_time_requests = {}
         self.facility_info = None
+        self._is_all_declared_equipment_available = None
 
         self.TREATMENT_ID = ""
         self.ACCEPTED_FACILITY_LEVEL = None
@@ -288,18 +289,28 @@ class HSI_Event:
 
     @property
     def is_all_declared_equipment_available(self) -> bool:
-        """Returns `True` if all the declared items of equipment are available. This is called before the HSI is run
-        and so is looking only at those items that are declared when this instance was created."""
-        return self.healthcare_system.equipment.is_all_items_available(
-            item_codes=self._EQUIPMENT,
-            facility_id=self.facility_info.id,
-        )
+        """Returns `True` if all the declared items of equipment are available. This is called by the HealthSystem
+        before the HSI is run and so is looking only at those items that are declared when this instance was created.
+        The evaluation of whether equipment is available is only done _once_ for this instance of the event: i.e., if
+        the equipment is not available for the instance of the HSI_Event, then it will remain not available if the
+        same event is re-scheduled/re-entered into the HealthSystem queue. This is representing that if the facility
+        that a particular person attends for the HSI_Event does not have the equipment available, then it will not
+        be available on another day."""
 
-    def is_equipment_available(self, item_codes: Union[int, str, Iterable[int | str]]) -> bool:
-        """Check whether all the equipment item_codes are available. This does not imply that the equipment is being
-        used and no logging happens. It is provided as a convenience to disease module authors in case the logic of
-        during an HSI Event depends on the availability of a piece of equipment."""
-        return self.healthcare_system.equipment.is_all_items_available(
+        if self._is_all_declared_equipment_available is None:
+            # Availability has not already been evaluated: determine availability
+            self._is_all_declared_equipment_available = self.healthcare_system.equipment.is_all_items_available(
+                item_codes=self._EQUIPMENT,
+                facility_id=self.facility_info.id,
+            )
+        return self._is_all_declared_equipment_available
+
+    def probability_equipment_available(self, item_codes: Union[int, str, Iterable[int | str]]) -> float:
+        """Returns the probability that all the equipment item_codes are available. This does not imply that the
+        equipment is being used and no logging happens. It is provided as a convenience to disease module authors in
+        case the logic of during an HSI Event depends on the availability of a piece of equipment. This function
+        accepts the item codes/descriptions in a variety of formats, so this needs to be parsed."""
+        return self.healthcare_system.equipment.probability_equipment_available(
             item_codes=self.healthcare_system.equipment.parse_items(item_codes),
             facility_id=self.facility_info.id,
         )

@@ -1,6 +1,6 @@
 import warnings
 from collections import defaultdict
-from typing import Counter, Dict, Iterable, Optional, Set, Union
+from typing import Counter, Iterable, Optional, Set, Union
 
 import numpy as np
 import pandas as pd
@@ -13,6 +13,33 @@ logger_summary = logging.getLogger("tlo.methods.healthsystem.summary")
 class Equipment:
     """This is the Equipment Class. It maintains a current record of the availability of equipment in the
      HealthSystem. It is expected that this is instantiated by the `HealthSystem` module.
+
+     The basic paradigm is that an HSI_Event can declare equipment that is required for delivering the healthcare
+     service that the HSI_Event represents. The HSI_Event uses `self.add_equipment()` to make these declaration, with
+     reference to the items of equipment that are defined in `ResourceFile_EquipmentCatalogue.csv`. (These declaration
+     can be in the form of the descriptor or the equipment item code). These declarations can be used when the HSI_Event
+     is created but before it is run (in `__init__`), or during execution of the HSI_Event (in `apply`).
+
+     As the HSI_Event can declare equipment that is required before it is run, the HealthSystem _can_ use this to
+     prevent an HSI_Event running if the equipment declared is not available. Note that for equipment that is declared
+     whilst the HSI_Event is running, there are no checks on availabilty, and the HSI_Event is allowed to continue
+     running even if equipment is declared that is not available. For this reason, HSI_Event should declare equipment
+     that is _essential_ for the healthcare service in its `__init__` method. If the logic inside the `__apply__` method
+     of the HSI_Event depends on the availability of equipment, then the events can find the probability with which
+     item(s) will be available to it, using `self.probability_equipment_available()`.
+
+     The data on the availability of equipment data refers to the proportion of facilities in a district of a
+     particular level (i.e., the Facility_ID) that do have that piece of equipment. In the model, we do not know
+     which facility the person is attending (there are many actual facilities grouped together into one Facility_ID in
+     the model). Therefore, the determination of whether equipment is available is made probabilistically for the
+     HSI_Event (i.e., the probability that the actual facility being attended by the person has the equipment is
+     represented by the proportion of such facilities that do have that equipment). It is assumed that the probabilities
+     of each item being available are independent of one other (so that the probability of all items being available is
+     the product of the probabilities of each item). This probabilistic determination of availability is only done
+     _once_ for the HSI_Event: i.e., if the equipment is not available for the instance of the HSI_Event, then it will
+     remain not available if the same event is re-scheduled/re-entered into the HealthSystem queue. This represents
+     that if the facility that a particular person attends for the HSI_Event does not have the equipment available, then
+     it will not be available on another day.
 
     :param: 'catalogue': The database of all recognised item_codes.
 
@@ -45,18 +72,18 @@ class Equipment:
         self.master_facilities_list = master_facilities_list
 
         # Create internal storage structures
-        self._items_available: Dict = dict()  # <-- Will be the internal store of which items are available at each
-        #                                       facility_id. This is of the form {facility_id: {items_available}}.
+        # - Probabilities of items being available at each facility_id
+        self._probabilities_of_items_available = pd.DataFrame()
+        # - Internal store of which items have been used at each facility_id This is of the form
+        # {facility_id: {item_code: count}}.
+        self._record_of_equipment_used_by_facility_id = defaultdict(Counter)  # <-- Will be the
 
-        self._record_of_equipment_used_by_facility_id = defaultdict(Counter)  # <-- Will be the internal store of which
-        # items have been used at each facility_id This is of the form {facility_id: {item_code: count}}.
-
-        # Data structures for quick look-ups for items and descriptors
+        # - Data structures for quick look-ups for items and descriptors
         self._item_code_lookup = self.catalogue.set_index('Item_Description')['Item_Code'].to_dict()
         self._all_item_descriptors = set(self._item_code_lookup.keys())
         self._all_item_codes = set(self._item_code_lookup.values())
 
-        # Initialise the internal stores of equipment items that are available, ready for calls.
+        # Initialise the internal stores of the probability with which equipment items that are available.
         self._set_equipment_items_available(availability=availability)
 
     def on_simulation_end(self):
@@ -111,15 +138,7 @@ class Equipment:
         else:
             raise KeyError(f"Unknown equipment availability specified: {availability}")
 
-        # Sample these probability to find which items are actually available
-        is_available = df > self.rng.random(size=len(df))
-
-        # Organise into dict of set, of the form: {facility_id: {items_available}} for known facility_ids
-        # (N.B. Has to be done this way around in order to guarantee that we have each known facility_id in the keys
-        #  even if there are no item available.)
-        self._items_available: Dict = is_available.groupby("Facility_ID").agg(
-            lambda x: set(x[x].index.get_level_values("Item_Code"))
-        ).to_dict()
+        self._probabilities_of_items_available = df
 
     def parse_items(self, items: Union[int, str, Iterable[int | str]]) -> Set[int]:
         """Parse equipment items specified as an item_code (integer), an item descriptor (string), or an iterable of
@@ -151,15 +170,24 @@ class Equipment:
             # In the return, any unrecognised descriptors are silently ignored.
             return set(filter(lambda item: item is not None, map(self._item_code_lookup.get, items)))
 
+    def probability_equipment_available(
+        self, item_codes: Set[int], facility_id: int
+    ) -> float:
+        """Returns the probability that all the equipment item_codes are available. It does so by looking at the
+        probabilities of each equipment item being available and multiplying these together to find the probability
+        that _all_ are available."""
+        try:
+            return self._probabilities_of_items_available.loc[(facility_id, list(item_codes))].prod()
+        except KeyError:
+            raise ValueError(f'Not recognised {facility_id=}')
+
     def is_all_items_available(
         self, item_codes: Set[int], facility_id: int
     ) -> bool:
-        """Determine if all equipments are available at the given facility_id (or from the default if the facility_id
-        is not recognised). Returns True only if all items are available at the facility_id, otherwise returns False."""
-        try:
-            return item_codes.issubset(self._items_available[facility_id])
-        except KeyError:
-            raise ValueError(f'Not recognised {facility_id=}')
+        """Determine if all equipments are available at the given facility_id. Returns True only if all items are
+        available at the facility_id, otherwise returns False."""
+        return self.rng.random_sample() < self.probability_equipment_available(item_codes=item_codes,
+                                                                               facility_id=facility_id)
 
     def record_use_of_equipment(
         self, item_codes: Set[int], facility_id: int

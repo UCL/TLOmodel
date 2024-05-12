@@ -339,7 +339,7 @@ def test_hsi_does_not_run_if_essential_equipment_is_not_available(seed, tmpdir):
 
 
 def test_change_equipment_availability(seed):
-    """Test that we can change the availability of equipment midway through the simulation."""
+    """Test that we can change the probability of the availability of equipment midway through the simulation."""
     # Set-up simulation that starts with `all` availability and then changes to  `none` after one year. In the
     # simulation a DummyModule schedules a DummyHSI that runs every month and tries to get a piece of equipment.
     # Check that this piece of equipment is available for the first year but not the second year of the simulation.
@@ -360,7 +360,7 @@ def test_change_equipment_availability(seed):
             # Check availability of a piece of equipment, with item_code = 0
             self.store_of_equipment_checks.update(
                 {
-                    self.sim.date: self.is_equipment_available(item_codes={0})
+                    self.sim.date: self.probability_equipment_available(item_codes={0})
                 }
             )
 
@@ -410,5 +410,5 @@ def test_change_equipment_availability(seed):
 
     # Get store & check for availabilities of the equipment
     log = pd.Series(sim.modules['DummyModule'].the_hsi_event.store_of_equipment_checks)
-    assert log[log.index < Date(2011, 1, 1)].all()
-    assert not log[log.index >= Date(2011, 1, 1)].any()
+    assert (1.0 == log[log.index < Date(2011, 1, 1)]).all()
+    assert (0.0 == log[log.index >= Date(2011, 1, 1)]).all()
