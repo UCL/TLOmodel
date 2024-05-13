@@ -149,10 +149,10 @@ class Equipment:
 
         return dat
 
-    def parse_items(self, items: Union[int, str, Iterable[Union[int, str]]]) -> Set[int]:
+    def parse_items(self, items: Union[int, str, Iterable[int], Iterable[str]]) -> Set[int]:
         """Parse equipment items specified as an item_code (integer), an item descriptor (string), or an iterable of
-         either, and return as a set of item_code (integers). For any item_code/descriptor not recognised, a
-         `UserWarning` is issued."""
+         item_codes or descriptors (but not a mix of the two), and return as a set of item_code (integers). For any
+         item_code/descriptor not recognised, a ``UserWarning`` is issued."""
 
         def check_item_codes_recognised(item_codes: set[int]):
             if not item_codes.issubset(self._all_item_codes):
