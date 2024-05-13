@@ -99,7 +99,7 @@ def test_core_functionality_of_equipment_class(seed):
     # - calling a recognised item for which no data at a facility with no data (should not error)
     eq_default.is_all_items_available(item_codes={3}, facility_id=2)
     # -- calling for an unrecognised facility_id (should error)
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         eq_default.is_all_items_available(item_codes={1}, facility_id=1001)
 
     # -- when using `none` availability behaviour: everything should not be available!
@@ -360,7 +360,7 @@ def test_change_equipment_availability(seed):
             # Check availability of a piece of equipment, with item_code = 0
             self.store_of_equipment_checks.update(
                 {
-                    self.sim.date: self.probability_equipment_available(item_codes={0})
+                    self.sim.date: self.probability_all_equipment_available(item_codes={0})
                 }
             )
 
