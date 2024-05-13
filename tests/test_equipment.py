@@ -1,4 +1,4 @@
-"""This file contains all the tests to do with Equipment use logging and availability checks."""
+"""This file contains all the tests to do with Equipment."""
 import os
 from pathlib import Path
 from typing import Dict, Iterable
@@ -158,9 +158,9 @@ equipment_item_code_that_is_available = [0, 1, ]
 equipment_item_code_that_is_not_available = [2, 3,]
 
 def run_simulation_and_return_log(
-    seed, tmpdir, essential_equipment: Iterable[str], other_equipment: Iterable[str]
+    seed, tmpdir, equipment_in_init, equipment_in_apply
 ) -> Dict:
-    """Returns the parsed logs from `tlo.methods.healthsystem.summary:EquipmentEverUsed_ByFacilityID` from a
+    """Returns the parsed logs from `tlo.methods.healthsystem.summary` from a
     simulation object in which a single event has been run with the specified equipment usage. The
     availability of equipment has been manipulated so that the item_codes given in
     `equipment_item_code_that_is_available` and `equipment_item_code_that_is_not_available` are as expected. """
@@ -222,7 +222,7 @@ def run_simulation_and_return_log(
         demography.Demography(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
         DummyModule(
-            essential_equipment=essential_equipment, other_equipment=other_equipment
+            essential_equipment=equipment_in_init, other_equipment=equipment_in_apply
         ),
     )
 
@@ -253,7 +253,7 @@ def test_equipment_use_is_logged(seed, tmpdir):
     another_item_code = equipment_item_code_that_is_available[1]
 
     def all_equipment_ever_used(log: Dict) -> set:
-        """With the log of equipment used in the simulation, return a set of the equipments item that have been used
+        """With the log of equipment used in the simulation, return a set of the equipment item that have been used
         (at any facility)."""
         s = set()
         for i in log["EquipmentEverUsed_ByFacilityID"]['EquipmentEverUsed']:
@@ -265,45 +265,45 @@ def test_equipment_use_is_logged(seed, tmpdir):
         run_simulation_and_return_log(
             seed=seed,
             tmpdir=tmpdir,
-            essential_equipment=set(),
-            other_equipment=set(),
+            equipment_in_init=set(),
+            equipment_in_apply=set(),
         )
     )
 
-    # * An HSI that declares use of equipment during its `apply` method (but no essential equipment)
+    # * An HSI that declares use of equipment only during its `apply` method.
     assert {the_item_code} == all_equipment_ever_used(
         run_simulation_and_return_log(
             seed=seed,
             tmpdir=tmpdir,
-            essential_equipment=set(),
-            other_equipment=the_item_code,
+            equipment_in_init=set(),
+            equipment_in_apply=the_item_code,
         )
     )
 
-    # * An HSI that declare use of essential equipment but nothing in its `apply` method`;
+    # * An HSI that declare use of equipment only in its `__init__` method
     assert {the_item_code} == all_equipment_ever_used(
         run_simulation_and_return_log(
             seed=seed,
             tmpdir=tmpdir,
-            essential_equipment=the_item_code,
-            other_equipment=set(),
+            equipment_in_init=the_item_code,
+            equipment_in_apply=set(),
         )
     )
 
-    # * An HSI that declare use of essential equipment and equipment during its `apply` method;
+    # * An HSI that declare use of equipment in `__init__` _and_ `apply`.
     assert {the_item_code, another_item_code} == all_equipment_ever_used(
         run_simulation_and_return_log(
             seed=seed,
             tmpdir=tmpdir,
-            essential_equipment=the_item_code,
-            other_equipment=another_item_code,
+            equipment_in_init=the_item_code,
+            equipment_in_apply=another_item_code,
         )
     )
 
 
-def test_hsi_does_not_run_if_essential_equipment_is_not_available(seed, tmpdir):
-    """Check that an HSI which declares an item of equipment that is essential does run if that item is available
-    and does not run if that item is not available."""
+def test_hsi_does_not_run_if_equipment_declared_in_init_is_not_available(seed, tmpdir):
+    """Check that an HSI which declares an item of equipment that is declared in the HSI_Event's __init__ does run if
+    that item is available and does not run if that item is not available."""
 
     def did_the_hsi_run(log: Dict) -> bool:
         """Read the log to work out if the `DummyHSIEvent` ran or not."""
@@ -322,8 +322,8 @@ def test_hsi_does_not_run_if_essential_equipment_is_not_available(seed, tmpdir):
         run_simulation_and_return_log(
             seed=seed,
             tmpdir=tmpdir,
-            essential_equipment=equipment_item_code_that_is_available,
-            other_equipment=set(),
+            equipment_in_init=equipment_item_code_that_is_available,
+            equipment_in_apply=set(),
         )
     )
 
@@ -332,8 +332,8 @@ def test_hsi_does_not_run_if_essential_equipment_is_not_available(seed, tmpdir):
         run_simulation_and_return_log(
             seed=seed,
             tmpdir=tmpdir,
-            essential_equipment=equipment_item_code_that_is_not_available,
-            other_equipment=set(),
+            equipment_in_init=equipment_item_code_that_is_not_available,
+            equipment_in_apply=set(),
         )
     )
 
@@ -341,8 +341,8 @@ def test_hsi_does_not_run_if_essential_equipment_is_not_available(seed, tmpdir):
 def test_change_equipment_availability(seed):
     """Test that we can change the probability of the availability of equipment midway through the simulation."""
     # Set-up simulation that starts with `all` availability and then changes to  `none` after one year. In the
-    # simulation a DummyModule schedules a DummyHSI that runs every month and tries to get a piece of equipment.
-    # Check that this piece of equipment is available for the first year but not the second year of the simulation.
+    # simulation a DummyModule schedules a DummyHSI that runs every month and tries to get a piece of equipment;
+    # then, check that the probability that this piece of equipment is available each month during the simulation.
 
     class DummyHSIEvent(HSI_Event, IndividualScopeEventMixin):
         def __init__(
