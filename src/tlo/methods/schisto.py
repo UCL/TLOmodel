@@ -73,6 +73,8 @@ class Schisto(Module):
         'delay_till_hsi_b_repeated': Parameter(Types.REAL,
                                                'Time till seeking healthcare again after not being sent to '
                                                'schisto test: end'),
+        'rr_WASH': Parameter(Types.REAL, 'proportional reduction in population susceptible to schistosoma '
+                                         'infection with improved WASH'),
         'PZQ_efficacy': Parameter(Types.REAL,
                                   'The efficacy of Praziquantel in clearing burden of any Schistosomiasis '
                                   'worm species'),
@@ -945,12 +947,15 @@ class SchistoMDAEvent(Event, PopulationScopeEventMixin):
 
 
 class SchistoWashScaleUp(RegularEvent, PopulationScopeEventMixin):
-    """ This event increases the proportion of the population who have access to
+    """
+    When WASH is implemented, two processes will occur:
+    *1 increase the proportion of the population who have access to
     sanitation and clean drinking water
-    It is initially scheduled by initialise_simulation on date specified by parameter
-    Then can be regularly scheduled or left as a one-off event
-    Each scale-up will reduce the proportion of people susceptible to schisto by
-    a fixed amount
+    *2 scale the proportion of the population susceptible to schisto infection
+    assuming that WASH reduces individual risk of infection by 0.6
+
+    Event is initially scheduled by initialise_simulation on specified date
+    This is a one-off event
     """
 
     def __init__(self, module):
@@ -968,6 +973,22 @@ class SchistoWashScaleUp(RegularEvent, PopulationScopeEventMixin):
         df.loc['li_no_clean_drinking_water'] = False
 
         # change proportion susceptible uniformly across the districts
+        # from everyone currently susceptible, reduce by 60%
+        # if do this separately for both species, will it over-estimate effect?
+        # allow those currently infected to be selected, their exposure now reduces
+        susceptible_haem = df.loc[df.is_alive & (df.ss_sh_susceptibility == 1)].index
+        reduce_susceptibility = (
+            self.module.rng.random_sample(len(susceptible_haem))
+            < p["rr_WASH"]
+        )
+        df.loc[reduce_susceptibility, 'ss_sh_susceptibility'] = 0
+
+        susceptible_mansoni = df.loc[df.is_alive & (df.ss_sm_susceptibility == 1)].index
+        reduce_susceptibility = (
+            self.module.rng.random_sample(len(susceptible_mansoni))
+            < p["rr_WASH"]
+        )
+        df.loc[reduce_susceptibility, 'ss_sm_susceptibility'] = 0
 
 
 class HSI_Schisto_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin):
