@@ -30,7 +30,7 @@ from typing import List
 import numpy as np
 import pandas as pd
 
-from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
+from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging, Date
 from tlo.core import IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
@@ -50,12 +50,21 @@ class Hiv(Module):
     The HIV Disease Module
     """
 
-    def __init__(self, name=None, resourcefilepath=None, run_with_checks=False):
+    def __init__(self, name=None, resourcefilepath=None, run_with_checks=False,
+                 scaleup_hiv=False, scaleup_tb=False, scaleup_malaria=False,
+                 scaleup_start_date=pd.NaT):
+
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
         assert isinstance(run_with_checks, bool)
         self.run_with_checks = run_with_checks
+
+        # determine whether to scale-up programs on a specified date
+        self.scaleup_hiv = scaleup_hiv
+        self.scaleup_tb = scaleup_tb
+        self.scaleup_malaria = scaleup_malaria
+        self.scaleup_start_date = scaleup_start_date
 
         self.stored_test_numbers = []  # create empty list for storing hiv test numbers
 
@@ -389,6 +398,11 @@ class Hiv(Module):
             Types.REAL,
             "length of prescription for ARVs in months, same for all PLHIV",
         ),
+        # ------------------ scale-up parameters for scenario analysis ------------------ #
+        "scaleup_parameters": Parameter(
+            Types.DATA_FRAME,
+            "list of parameters and values changed in scenario analysis",
+        ),
     }
 
     def read_parameters(self, data_folder):
@@ -425,6 +439,9 @@ class Hiv(Module):
 
         # Load spectrum estimates of treatment cascade
         p["treatment_cascade"] = workbook["spectrum_treatment_cascade"]
+
+        # load parameters for scale-up projections
+        p["scaleup_parameters"] = workbook["scaleup_parameters"]
 
         # DALY weights
         # get the DALY weight that this module will use from the weight database (these codes are just random!)
@@ -895,6 +912,14 @@ class Hiv(Module):
         # 2) Schedule the Logging Event
         sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(years=1))
 
+        # Optional: Schedule the scale-up of programs
+        assert isinstance(self.scaleup_start_date, Date), "Value is not a Date object"
+        # Check if scale-up start date is on or after sim start date
+        assert self.scaleup_start_date >= Date(2010, 1, 1), \
+            f"Date {self.scaleup_start_date} is before January 1, 2010"
+
+        sim.schedule_event(ScaleUpSetupEvent(self), self.scaleup_start_date)
+
         # 3) Determine who has AIDS and impose the Symptoms 'aids_symptoms'
 
         # Those on ART currently (will not get any further events scheduled):
@@ -1097,6 +1122,141 @@ class Hiv(Module):
                     self.item_codes_for_consumables_required['gloves']]
             )
         )
+
+    def update_parameters(self):
+
+        p = self.parameters
+        scaled_params = p["scaleup_parameters"]
+
+        scaleup_hiv = self.scaleup_hiv
+        scaleup_tb = self.scaleup_tb
+        scaleup_malaria = self.scaleup_malaria
+
+        if scaleup_hiv:
+            # scale-up HIV program
+            # reduce risk of HIV - applies to whole adult population
+            self.sim.modules["Hiv"].parameters["beta"] = self.sim.modules["Hiv"].parameters["beta"] * \
+                                                         scaled_params.loc[
+                                                             scaled_params.parameter == "reduction_in_hiv_beta", "scaleup_value"].value[
+                                                             0]
+
+            # increase PrEP coverage for FSW after HIV test
+            self.sim.modules["Hiv"].parameters["prob_prep_for_fsw_after_hiv_test"] = scaled_params.loc[
+                scaled_params.parameter == "prob_prep_for_fsw_after_hiv_test", "scaleup_value"].value[0]
+
+            # prep poll for AGYW - target to the highest risk
+            # increase retention to 75% for FSW and AGYW
+            self.sim.modules["Hiv"].parameters["prob_prep_for_agyw"] = scaled_params.loc[
+                scaled_params.parameter == "prob_prep_for_agyw", "scaleup_value"].value[0]
+            self.sim.modules["Hiv"].parameters[
+                "probability_of_being_retained_on_prep_every_3_months"] = scaled_params.loc[
+                scaled_params.parameter == "probability_of_being_retained_on_prep_every_3_months", "scaleup_value"].value[
+                0]
+
+            # increase probability of VMMC after hiv test
+            self.sim.modules["Hiv"].parameters["prob_circ_after_hiv_test"] = scaled_params.loc[
+                scaled_params.parameter == "prob_circ_after_hiv_test", "scaleup_value"].value[0]
+
+            # increase testing/diagnosis rates, default 2020 0.03/0.25 -> 93% dx
+            self.sim.modules["Hiv"].parameters["hiv_testing_rates"]["annual_testing_rate_children"] = \
+                scaled_params.loc[
+                    scaled_params.parameter == "annual_testing_rate_children", "scaleup_value"].value[0]
+            self.sim.modules["Hiv"].parameters["hiv_testing_rates"]["annual_testing_rate_adults"] = \
+                scaled_params.loc[
+                    scaled_params.parameter == "annual_testing_rate_adults", "scaleup_value"].value[0]
+
+            # ANC testing - value for mothers and infants testing
+            self.sim.modules["Hiv"].parameters["prob_hiv_test_at_anc_or_delivery"] = scaled_params.loc[
+                scaled_params.parameter == "prob_hiv_test_at_anc_or_delivery", "scaleup_value"].value[0]
+            self.sim.modules["Hiv"].parameters["prob_hiv_test_for_newborn_infant"] = scaled_params.loc[
+                scaled_params.parameter == "prob_hiv_test_for_newborn_infant", "scaleup_value"].value[0]
+
+            # prob ART start if dx, this is already 95% at 2020
+            # self.sim.modules["Hiv"].parameters["prob_start_art_after_hiv_test"] = scaled_params.loc[
+            #                 scaled_params.parameter ==
+            #   "prob_start_art_after_hiv_test", "value"].values[0]
+
+            # viral suppression rates
+            # adults already at 95% by 2020
+            # change all column values
+            self.sim.modules["Hiv"].parameters["prob_start_art_or_vs"]["virally_suppressed_on_art"] = \
+                scaled_params.loc[
+                    scaled_params.parameter == "virally_suppressed_on_art", "scaleup_value"].value[0]
+
+        if scaleup_tb:
+            # scale-up TB program
+            # use NTP treatment rates
+            self.sim.modules["Tb"].parameters["rate_testing_active_tb"]["treatment_coverage"] = scaled_params.loc[
+                scaled_params.parameter == "tb_treatment_coverage", "scaleup_value"].value[0]
+
+            # increase tb treatment success rates
+            self.sim.modules["Tb"].parameters["prob_tx_success_ds"] = scaled_params.loc[
+                scaled_params.parameter == "tb_prob_tx_success_ds", "scaleup_value"].value[0]
+            self.sim.modules["Tb"].parameters["prob_tx_success_mdr"] = scaled_params.loc[
+                scaled_params.parameter == "tb_prob_tx_success_mdr", "scaleup_value"].value[0]
+            self.sim.modules["Tb"].parameters["prob_tx_success_0_4"] = scaled_params.loc[
+                scaled_params.parameter == "tb_prob_tx_success_0_4", "scaleup_value"].value[0]
+            self.sim.modules["Tb"].parameters["prob_tx_success_5_14"] = scaled_params.loc[
+                scaled_params.parameter == "tb_prob_tx_success_5_14", "scaleup_value"].value[0]
+            self.sim.modules["Tb"].parameters["prob_tx_success_shorter"] = scaled_params.loc[
+                scaled_params.parameter == "tb_prob_tx_success_shorter", "scaleup_value"].value[0]
+
+            # change first-line testing for TB to xpert
+            p["first_line_test"] = scaled_params.loc[
+                scaled_params.parameter == "first_line_test", "scaleup_value"].value[0]
+            p["second_line_test"] = scaled_params.loc[
+                scaled_params.parameter == "second_line_test", "scaleup_value"].value[0]
+
+            # increase coverage of IPT
+            p["ipt_coverage"]["coverage_plhiv"] = scaled_params.loc[
+                scaled_params.parameter == "ipt_coverage_plhiv", "scaleup_value"].value[0]
+            p["ipt_coverage"]["coverage_paediatric"] = scaled_params.loc[
+                scaled_params.parameter == "ipt_coverage_paediatric", "scaleup_value"].value[0]
+
+        if scaleup_malaria:
+            # scale-up malaria program
+            # testing reaches XX
+            prob_malaria_case_tests=0.4
+
+            # gen pop testing rates
+            # annual Rate_rdt_testing=0.47 at 2023
+            self.sim.modules["Malaria"].parameters["rdt_testing_rates"]["Rate_rdt_testing"] = \
+                scaled_params.loc[
+                    scaled_params.parameter == "rdt_testing_rates", "scaleup_value"].value[0]
+
+
+            # treatment reaches XX
+            # no default between testing and treatment, governed by tx availability
+
+            # coverage IPTp reaches XX
+
+            # treatment success reaches 1
+            self.sim.modules["Malaria"].parameters["prob_of_treatment_success"] = scaled_params.loc[
+                scaled_params.parameter == "prob_of_treatment_success", "scaleup_value"].value[0]
+
+
+            # bednet and ITN coverage
+            # set IRS to 0 for all districts
+            # lookup table created in malaria read_parameters
+            # produces self.itn_irs called by malaria poll to draw incidence
+            # need to overwrite this
+            self.sim.modules["Malaria"].itn_irs['irs_rate'] = treatment_effects.loc[
+                treatment_effects.parameter == "irs_district", "no_effect"].values[0]
+
+            # set ITN to 0 for all districts
+            # itn_district
+            self.sim.modules["Malaria"].itn_irs['itn_rate'] = treatment_effects.loc[
+                treatment_effects.parameter == "itn_district", "no_effect"].values[0]
+
+            # itn rates for 2019 onwards
+            self.sim.modules["Malaria"].parameters["itn"] = treatment_effects.loc[
+                treatment_effects.parameter == "itn", "no_effect"].values[0]
+
+
+
+
+
+
 
     def on_birth(self, mother_id, child_id):
         """
@@ -2258,6 +2418,21 @@ class Hiv_DecisionToContinueTreatment(Event, IndividualScopeEventMixin):
                 tclose=None,
                 priority=0,
             )
+
+
+class ScaleUpSetupEvent(RegularEvent, PopulationScopeEventMixin):
+    """ This event exists to change parameters or functions
+    depending on the scenario for projections which has been set
+    It only occurs once on date: scaleup_start_date,
+    called by initialise_simulation
+    """
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(years=100))
+
+    def apply(self, population):
+
+        self.module.update_parameters(self)
 
 
 # ---------------------------------------------------------------------------
