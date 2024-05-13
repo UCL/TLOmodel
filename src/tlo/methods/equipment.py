@@ -95,6 +95,15 @@ class Equipment:
         """
         self.write_to_log()
 
+    @property
+    def availability(self):
+        return self._availability
+
+    @availability.setter
+    def availability(self, value: Literal["all", "default", "none"]):
+        assert value in {"all", "none", "default"}, f"New availability value {value} not recognised."
+        self._availability = value
+
     def update_availability(
         self, availability: Literal["all", "default", "none"]
     ) -> None:

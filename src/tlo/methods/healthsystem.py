@@ -2778,7 +2778,7 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
             self.module.bed_days.availability = self._parameters['beds_availability']
 
         if 'equip_availability' in self._parameters:
-            self.module.equipment.update_availability(self._parameters['equip_availability'])
+            self.module.equipment.availability = self._parameters['equip_availability']
 
 
 class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
