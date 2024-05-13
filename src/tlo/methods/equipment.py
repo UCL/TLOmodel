@@ -55,37 +55,35 @@ class Equipment:
      that item is then silently ignored. If a facility_id is ever referred that is not recognised (not included in
      `master_facilities_list`), an `AssertionError` is raised.
 
-    :param: 'catalogue': The database of all recognised item_codes.
-
-    :param: `data_availability`: Specifies the probability with which each equipment (identified by an `item_code`) is
-     available at a facility level. Note that information is not necessarily provided for every item in the `catalogue`
-     or every facility_id in the `master_facilities_list`.
-
-    :param: `rng`: The Random Number Generator object to use for random numbers.
-
+    :param: `catalogue`: The database of all recognised item_codes. If a Path to a file is provided, load this
+    information from the file.
+    :param: `data_on_equipment_availability`: Specifies the probability with which each equipment (identified by an `item_code`) is available at a facility level. Note that information is not necessarily provided for every item in the `catalogue` or every facility_id in the `master_facilities_list`. If a Path to a file is provided, load this
+    information from the file.
+    :param `: `master_facilities_list`: pd.DataFrame with the line-list of all the facilities in the HealthSystem.
     :param: `availability`: Determines the mode availability of the equipment. If 'default' then use the availability
-     specified in the `data_availability`; if 'none', then let no equipment be ever be available; if 'all', then all
-     equipment is always available.
-
-    :param `: `master_facilities_list`: The pd.DataFrame with the line-list of all the facilities in the HealthSystem.
-
+    specified in the `data_on_equipment_availability`; if 'none', then let no equipment be ever be available; if 'all',then all equipment is always available.
+    :param `logger`: Logger object to write logs to.
+    :param: `rng`: The Random Number Generator object to use for random numbers.
     """
 
     def __init__(
         self,
-        path_to_equipment_resources: Path,
+        catalogue: pd.DataFrame | Path,
+        data_on_equipment_availability: pd.DataFrame | Path,
         master_facilities_list: pd.DataFrame,
         availability: Optional[Literal["all", "default", "none"]] = "default",
         logger: Optional[Logger] = None,
         rng: Optional[np.random.RandomState] = None,
     ) -> None:
-        # Read resources from the input files
-        self.catalogue = pd.read_csv(
-            path_to_equipment_resources / "ResourceFile_EquipmentCatalogue.csv"
+        # Read resources from the input files,
+        # unless overwrites have been provided
+        self.catalogue = (
+            pd.read_csv(catalogue) if isinstance(catalogue, Path) else catalogue
         )
-        self.data_availability = pd.read_csv(
-            path_to_equipment_resources
-            / "ResourceFile_Equipment_Availability_Estimates.csv"
+        self.data_availability = (
+            pd.read_csv(data_on_equipment_availability)
+            if isinstance(data_on_equipment_availability, Path)
+            else data_on_equipment_availability
         )
 
         # Store other input arguments needed on initialisation

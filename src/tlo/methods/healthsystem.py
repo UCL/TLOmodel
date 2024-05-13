@@ -634,9 +634,14 @@ class HealthSystem(Module):
 
         # Determine equip_availability
         self.equipment = Equipment(
-            path_to_equipment_resources=Path(self.resourcefilepath)
+            catalogue=Path(self.resourcefilepath)
             / "healthsystem"
-            / "infrastructure_and_equipment",
+            / "infrastructure_and_equipment"
+            / "ResourceFile_EquipmentCatalogue.csv",
+            data_on_equipment_availability=Path(self.resourcefilepath)
+            / "healthsystem"
+            / "infrastructure_and_equipment"
+            / "ResourceFile_Equipment_Availability_Estimates.csv",
             master_facilities_list=self.parameters["Master_Facilities_List"],
             availability=(
                 self.equipment_availability_override
@@ -644,7 +649,7 @@ class HealthSystem(Module):
                 else self.parameters["equip_availability"]
             ),
             logger=logger,
-            rng=self.rng.randint(2 ** 31 - 1),
+            rng=self.rng.randint(2**31 - 1),
         )
 
         self.tclose_overwrite = self.parameters['tclose_overwrite']
