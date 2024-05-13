@@ -169,7 +169,7 @@ class Simulation:
 
             self.modules[module.name] = module
             module.sim = self
-            module.read_parameters(data_folder=self.data_folder)
+            module.read_parameters('')
 
         if self._custom_log_levels:
             logging.set_logging_levels(self._custom_log_levels)
