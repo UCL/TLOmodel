@@ -54,7 +54,7 @@ def test_core_functionality_of_equipment_class(seed):
     # -- when using `default` behaviour:
     eq_default = Equipment(
         catalogue=catalogue,
-        data_availability=data_availability,
+        data_on_equipment_availability=data_availability,
         rng=np.random.RandomState(np.random.MT19937(np.random.SeedSequence(seed))),
         master_facilities_list=mfl,
         availability="default",
@@ -105,7 +105,7 @@ def test_core_functionality_of_equipment_class(seed):
     # -- when using `none` availability behaviour: everything should not be available!
     eq_none = Equipment(
         catalogue=catalogue,
-        data_availability=data_availability,
+        data_on_equipment_availability=data_availability,
         rng=np.random.RandomState(np.random.MT19937(np.random.SeedSequence(seed))),
         availability="none",
         master_facilities_list=mfl,
@@ -122,7 +122,7 @@ def test_core_functionality_of_equipment_class(seed):
     # -- when using `all` availability behaviour: everything should not be available!
     eq_all = Equipment(
         catalogue=catalogue,
-        data_availability=data_availability,
+        data_on_equipment_availability=data_availability,
         rng=np.random.RandomState(np.random.MT19937(np.random.SeedSequence(seed))),
         availability="all",
         master_facilities_list=mfl,
@@ -151,7 +151,6 @@ def test_core_functionality_of_equipment_class(seed):
     # - Error thrown when package is not recognised
     with pytest.raises(ValueError):
         eq_default.lookup_item_codes_from_pkg_name(pkg_name='')
-
 
 
 equipment_item_code_that_is_available = [0, 1, ]
@@ -237,7 +236,6 @@ def run_simulation_and_return_log(
 
     # Return the parsed log of `tlo.methods.healthsystem.summary`
     return parse_log_file(sim.log_filepath)["tlo.methods.healthsystem.summary"]
-
 
 
 def test_equipment_use_is_logged(seed, tmpdir):
