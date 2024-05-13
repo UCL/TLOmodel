@@ -281,21 +281,22 @@ class HSI_Event:
             "values"
         )
 
-    def add_equipment(self, item_codes: Union[int, str, Iterable[int | str]]):
-        """Declare that piece(s) of equipment are used in this HSI_Event.
-        Checks are done on the validity of the item_codes/item descriptions and warnings issued if they are not
+    def add_equipment(self, item_codes: Union[int, str, Iterable[int | str]]) -> None:
+        """Declare that piece(s) of equipment are used in this HSI_Event. Equipment items can be identified by their
+        item_codes (int) or descriptors (str); a singular item or an iterable of items can be defined at once. Checks
+        are done on the validity of the item_codes/item descriptions and a warning issued if any are not
         recognised."""
         self._EQUIPMENT.update(self.healthcare_system.equipment.parse_items(item_codes))
 
     @property
     def is_all_declared_equipment_available(self) -> bool:
-        """Returns `True` if all the declared items of equipment are available. This is called by the HealthSystem
-        before the HSI is run and so is looking only at those items that are declared when this instance was created.
-        The evaluation of whether equipment is available is only done _once_ for this instance of the event: i.e., if
-        the equipment is not available for the instance of the HSI_Event, then it will remain not available if the
-        same event is re-scheduled/re-entered into the HealthSystem queue. This is representing that if the facility
-        that a particular person attends for the HSI_Event does not have the equipment available, then it will not
-        be available on another day."""
+        """Returns `True` if all the (currently) declared items of equipment are available. This is called by the
+        `HealthSystem` module before the HSI is run and so is looking only at those items that are declared when this
+        instance was created. The evaluation of whether equipment is available is only done _once_ for this instance of
+        the event: i.e., if the equipment is not available for the instance of this `HSI_Event`, then it will remain not
+        available if the same event is re-scheduled/re-entered into the HealthSystem queue. This is representing that
+        if the facility that a particular person attends for the HSI_Event does not have the equipment available, then
+        it will also not be available on another day."""
 
         if self._is_all_declared_equipment_available is None:
             # Availability has not already been evaluated: determine availability
@@ -308,9 +309,9 @@ class HSI_Event:
     def probability_equipment_available(self, item_codes: Union[int, str, Iterable[int | str]]) -> float:
         """Returns the probability that all the equipment item_codes are available. This does not imply that the
         equipment is being used and no logging happens. It is provided as a convenience to disease module authors in
-        case the logic of during an HSI Event depends on the availability of a piece of equipment. This function
-        accepts the item codes/descriptions in a variety of formats, so this needs to be parsed."""
-        return self.healthcare_system.equipment.probability_equipment_available(
+        case the logic during an `HSI_Event` depends on the availability of a piece of equipment. This function
+        accepts the item codes/descriptions in a variety of formats, so the argument needs to be parsed."""
+        return self.healthcare_system.equipment.probability_all_equipment_available(
             item_codes=self.healthcare_system.equipment.parse_items(item_codes),
             facility_id=self.facility_info.id,
         )
