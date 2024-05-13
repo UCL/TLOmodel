@@ -145,7 +145,7 @@ class Equipment:
 
         return dat
 
-    def parse_items(self, items: Union[int, str, Iterable[int | str]]) -> Set[int]:
+    def parse_items(self, items: Union[int, str, Iterable[Union[int, str]]]) -> Set[int]:
         """Parse equipment items specified as an item_code (integer), an item descriptor (string), or an iterable of
          either, and return as a set of item_code (integers). For any item_code/descriptor not recognised, a
          `UserWarning` is issued."""
