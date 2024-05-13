@@ -1532,7 +1532,6 @@ class HSI_Diarrhoea_Treatment_Outpatient(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Under5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
 
-
     def apply(self, person_id, squeeze_factor):
         """Run `do_treatment` for this person from an out-potient setting."""
 
@@ -1556,7 +1555,6 @@ class HSI_Diarrhoea_Treatment_Inpatient(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 2})
-
 
     def apply(self, person_id, squeeze_factor):
         """Run `do_treatment` for this person from an in-potient setting."""

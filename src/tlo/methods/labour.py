@@ -696,7 +696,6 @@ class Labour(Module):
         get_list_of_items = pregnancy_helper_functions.get_list_of_items
 
         # ---------------------------------- IV DRUG ADMIN CONSUMABLES  -----------------------------------------------
-
         self.item_codes_lab_consumables['iv_drug_cons'] = \
             get_list_of_items(self, ['Cannula iv  (winged with injection pot) 18_each_CMST',
                                      'Giving set iv administration + needle 15 drops/ml_each_CMST',
@@ -2141,7 +2140,7 @@ class Labour(Module):
             else:
                 # If the treatment is unsuccessful then women will require a hysterectomy to stop the bleeding
 
-                # Add used equipment
+                # todo @Eva Add used equipment
                 # Todo: link to surgical equipment package when that exists
                 hsi_event.add_equipment(
                     {'Hysterectomy set'})
@@ -2893,7 +2892,6 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': 2})
 
-
     def apply(self, person_id, squeeze_factor):
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         df = self.sim.population.props
@@ -3077,7 +3075,6 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = self._get_facility_level_for_pnc(person_id)
 
-
     def apply(self, person_id, squeeze_factor):
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         df = self.sim.population.props
@@ -3212,7 +3209,6 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
         self.timing = timing
 
-
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
@@ -3243,7 +3239,7 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
             elif (avail and sf_check) or (mni[person_id]['cs_indication'] == 'other'):
 
                 # If intervention is delivered - add used equipment
-                # Todo: link to surgical equipment package when that exsists
+                # todo: @Eva link to surgical equipment package when that exsists
                 self.add_equipment(
                     {'Infusion pump', 'Drip stand', 'Laparotomy Set', 'Blood pressure machine', 'Pulse oximeter'})
 
@@ -3280,8 +3276,7 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
                 # Unsuccessful repair will lead to this woman requiring a hysterectomy. Hysterectomy will also reduce
                 # risk of death from uterine rupture but leads to permanent infertility in the simulation
                 else:
-                    self.add_equipment(
-                        {'Hysterectomy set'})
+                    self.add_equipment({'Hysterectomy set'})
                     df.at[person_id, 'la_has_had_hysterectomy'] = True
 
         # ============================= SURGICAL MANAGEMENT OF POSTPARTUM HAEMORRHAGE==================================
@@ -3349,7 +3344,6 @@ class HSI_Labour_PostnatalWardInpatientCare(HSI_Event, IndividualScopeEventMixin
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': 5})
-
 
     def apply(self, person_id, squeeze_factor):
         logger.debug(key='message', data='HSI_Labour_PostnatalWardInpatientCare now running to capture '

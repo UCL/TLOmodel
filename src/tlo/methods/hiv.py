@@ -2128,7 +2128,6 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"VCTNegative": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
 
-
     def apply(self, person_id, squeeze_factor):
         """Do the testing and referring to other services"""
 
@@ -2266,7 +2265,6 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.number_of_occurrences = 0
 
-
     def apply(self, person_id, squeeze_factor):
         """ Do the circumcision for this man. If he is already circumcised, this is a follow-up appointment."""
         self.number_of_occurrences += 1  # The current appointment is included in the count.
@@ -2326,7 +2324,6 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.referred_from = referred_from
         self.repeat_visits = repeat_visits
-
 
     def apply(self, person_id, squeeze_factor):
         """
@@ -2396,7 +2393,6 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"PharmDispensing": 1, "VCTNegative": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
 
-
     def apply(self, person_id, squeeze_factor):
         """Start PrEP for this person; or continue them on PrEP for 3 more months"""
 
@@ -2457,7 +2453,6 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
         self.counter_for_drugs_not_available = 0
         self.counter_for_did_not_run = 0
-
 
     def apply(self, person_id, squeeze_factor):
         """This is a Health System Interaction Event - start or continue HIV treatment for 6 more months"""

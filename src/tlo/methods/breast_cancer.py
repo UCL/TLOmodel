@@ -673,7 +673,7 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1, "Mammography": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'  # Biopsy only available at level 3 and above.
 
-
+        # todo Eva/Andrew - please resolve this
         # TODO: Eva's dummy equipment example (not sure if it actually needs to be added and if it is in the RF)
         #  {'Slice Master sample processing Unit', 'Paraffin Dispense', 'Whatever used with biopsy'}
 
@@ -770,7 +770,7 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = '3'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({"general_bed": 5})
 
-
+        # todo - @Eva/Andrew - please resolve
         # ap_oct23 - I believe this will almost always be mastectomy surgery with chemotherapy, so I think for equipment
         # we just need the standard surgery equipment list. We may need to add radiotherapy when more available.
 
@@ -826,6 +826,7 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, "brc_date_treatment"] = self.sim.date
             df.at[person_id, "brc_stage_at_which_treatment_given"] = df.at[person_id, "brc_status"]
 
+            # todo - Eva - please resolve
             # TODO: Eva's dummy equipment example - it needs to be replaced by real items from the RF
             # Add used equipment
             # self.add_equipment({'Anything used for mastectomy'})
@@ -856,8 +857,7 @@ class HSI_BreastCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "BreastCancer_Treatment"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
-
-
+        # todo @Eva/Andrew - please resolve
         # ap_oct23 - Eva, I'm not aware of any equipment needed here.  Clinical guidelines do not specify what
         # checks or monitoring are indicated
 
@@ -916,9 +916,7 @@ class HSI_BreastCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '2'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 15})
-
-
-    # not sure there is any need for equipment here
+        # todo @Eva - not sure there is any need for equipment here
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props

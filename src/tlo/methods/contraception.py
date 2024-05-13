@@ -1110,7 +1110,6 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         self.TREATMENT_ID = "Contraception_Routine"
         self.ACCEPTED_FACILITY_LEVEL = _facility_level
 
-
     @property
     def EXPECTED_APPT_FOOTPRINT(self):
         """Return the expected appt footprint based on contraception method and whether the HSI has been rescheduled."""

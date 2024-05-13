@@ -659,7 +659,7 @@ class HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom(
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
 
-
+        # todo @Eva
         # equipment: investigations will differ by presenting symptom, but suggest we have biopsy and histology
         # and ultrasound
 
@@ -727,7 +727,6 @@ class HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom(
                     )
 
 
-
 class HSI_OtherAdultCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     """
     This event is scheduled by HSI_OtherAdultCancer_Investigation_Following_other_adult_ca_symptom following a diagnosis
@@ -742,9 +741,7 @@ class HSI_OtherAdultCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"MajorSurg": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({"general_bed": 5})
-
-
-        # equipment: a proportion of these cancers will require surgery - also radiotherapy in some cases when available
+        # todo @Eva - equipment: a proportion of these cancers will require surgery - also radiotherapy in some cases when available
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -816,9 +813,7 @@ class HSI_OtherAdultCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMix
         self.TREATMENT_ID = "OtherAdultCancer_Treatment"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
-
-
-        # equipment: some checks will involve further biopsy, ultrasound, histology
+        # todo @Eva - equipment: some checks will involve further biopsy, ultrasound, histology
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -879,8 +874,7 @@ class HSI_OtherAdultCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '2'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 15})
-
-        # equipment: in general not required I don't think
+        # todo @Eva equipment: in general not required I don't think
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props

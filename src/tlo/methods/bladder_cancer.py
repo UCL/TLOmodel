@@ -2,7 +2,7 @@
 Bladder Cancer Disease Module
 
 Limitations to note:
-* Needs to represent the the DxTest 'cystoscopy_blood_urine_bladder_cancer' requires use of a cystoscope
+* Needs to represent the DxTest 'cystoscopy_blood_urine_bladder_cancer' requires use of a cystoscope
 * Footprints of HSI -- pending input from expert on resources required.
 """
 from __future__ import annotations
@@ -693,9 +693,7 @@ class HSI_BladderCancer_Investigation_Following_Blood_Urine(HSI_Event, Individua
         self.TREATMENT_ID = "BladderCancer_Investigation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-
-
-        # equipment: (ultrsound guided) biopsy, lab equipment for histology
+        # todo @Eva equipment: (ultrsound guided) biopsy, lab equipment for histology
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -713,7 +711,7 @@ class HSI_BladderCancer_Investigation_Following_Blood_Urine(HSI_Event, Individua
             return hs.get_blank_appt_footprint()
 
         # Check consumables are available
-        # TODO: replace with cystoscope
+        # TODO: @Eva replace with cystoscope
         cons_avail = self.get_consumables(item_codes=self.module.item_codes_bladder_can['screening_biopsy_core'],
                                           optional_item_codes=
                                           self.module.item_codes_bladder_can['screening_biopsy_optional'])
@@ -770,9 +768,7 @@ class HSI_BladderCancer_Investigation_Following_pelvic_pain(HSI_Event, Individua
         self.TREATMENT_ID = "BladderCancer_Investigation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-
-
-        # equipment: (ultrsound guided) biopsy, lab equipment for histology
+        # todo @Eva equipment: (ultrsound guided) biopsy, lab equipment for histology
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -790,7 +786,7 @@ class HSI_BladderCancer_Investigation_Following_pelvic_pain(HSI_Event, Individua
             return hs.get_blank_appt_footprint()
 
         # Check consumables are available
-        # TODO: replace with cystoscope
+        # TODO: @Eva replace with cystoscope
         cons_avail = self.get_consumables(item_codes=self.module.item_codes_bladder_can['screening_biopsy_core'],
                                           optional_item_codes=self.module.item_codes_bladder_can[
                                               'screening_biopsy_optional'])
@@ -852,9 +848,7 @@ class HSI_BladderCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MajorSurg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5})
-
-
-        # equipment: standard equipment for surgery
+        # todo @Eva equipment: standard equipment for surgery
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -891,7 +885,7 @@ class HSI_BladderCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         if cons_avail:
             # If consumables are available and the treatment will go ahead - update the equipment
-            # TODO: link to surgical equipment package when that exists
+            # TODO: @Eva link to surgical equipment package when that exists
             self.add_equipment({'Infusion pump', 'Drip stand', 'Laparotomy Set',
                                    'Blood pressure machine', 'Pulse oximeter'})
 
@@ -925,9 +919,7 @@ class HSI_BladderCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin)
         self.TREATMENT_ID = "BladderCancer_Treatment"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
-
-
-        # I assume ultrasound (Ultrasound scanning machine) and biopsy
+        # todo @Eva I assume ultrasound (Ultrasound scanning machine) and biopsy
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -984,9 +976,7 @@ class HSI_BladderCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '2'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 15})
-
-
-        # no equipment as far as I am aware
+        # todo @Eva no equipment as far as I am aware
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props

@@ -549,7 +549,6 @@ class HSI_Stunting_ComplementaryFeeding(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'U5Malnutr': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
 
-
     def apply(self, person_id, squeeze_factor):
 
         df = self.sim.population.props

@@ -949,7 +949,6 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
         )
         self.ACCEPTED_FACILITY_LEVEL = '1a' if (self.facility_level == '1a') else '1b'
 
-
     def apply(self, person_id, squeeze_factor):
 
         df = self.sim.population.props
@@ -1047,7 +1046,6 @@ class HSI_Malaria_rdt_community(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ConWithDCSA': 1})
         self.ACCEPTED_FACILITY_LEVEL = '0'
 
-
     def apply(self, person_id, squeeze_factor):
 
         df = self.sim.population.props
@@ -1099,7 +1097,6 @@ class HSI_Malaria_Treatment(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
             ('Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD'): 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-
 
     def apply(self, person_id, squeeze_factor):
 
@@ -1194,7 +1191,6 @@ class HSI_Malaria_Treatment_Complicated(HSI_Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5})
 
-
     def apply(self, person_id, squeeze_factor):
 
         df = self.sim.population.props
@@ -1253,7 +1249,6 @@ class HSI_MalariaIPTp(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Malaria_Prevention_Iptp'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-
 
     def apply(self, person_id, squeeze_factor):
 

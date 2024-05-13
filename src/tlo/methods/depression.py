@@ -871,7 +871,6 @@ class HSI_Depression_TalkingTherapy(HSI_Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.num_of_sessions_had = 0  # A counter for the number of sessions of talking therapy had
 
-
     def apply(self, person_id, squeeze_factor):
         """Set the property `de_ever_talk_ther` to be True and schedule the next session in the course if the person
         has not yet had 5 sessions."""
@@ -903,7 +902,6 @@ class HSI_Depression_Start_Antidepressant(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Depression_Treatment'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MentOPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -945,7 +943,6 @@ class HSI_Depression_Refill_Antidepressant(HSI_Event, IndividualScopeEventMixin)
         self.TREATMENT_ID = 'Depression_Treatment'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props

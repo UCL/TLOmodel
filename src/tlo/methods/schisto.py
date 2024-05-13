@@ -900,7 +900,6 @@ class HSI_Schisto_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin)
         self.TREATMENT_ID = 'Schisto_Treatment'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Under5OPD' if under_5 else 'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-
         self._num_occurrences = 0
 
     def apply(self, person_id, squeeze_factor):
@@ -962,7 +961,6 @@ class HSI_Schisto_TreatmentFollowingDiagnosis(HSI_Event, IndividualScopeEventMix
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Under5OPD' if under_5 else 'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
 
-
     def apply(self, person_id, squeeze_factor):
         """Do the treatment for this person."""
         if self.get_consumables(item_codes=self.module.item_code_for_praziquantel):
@@ -992,7 +990,6 @@ class HSI_Schisto_MDA(HSI_Event, IndividualScopeEventMixin):
         # `self.EXPECTED_APPT_FOOTPRINT` show that this requires 1 * that appointment type.
 
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-
 
     def apply(self, person_id, squeeze_factor):
         """Provide the treatment to the beneficiaries of this HSI."""

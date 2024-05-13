@@ -395,7 +395,6 @@ class HsiBaseVaccine(HSI_Event, IndividualScopeEventMixin):
 
         self.TREATMENT_ID = self.treatment_id()
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
-          # no equipment required
 
     def treatment_id(self):
         """subclasses should implement this method to return the TREATMENT_ID"""

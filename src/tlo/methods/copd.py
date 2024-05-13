@@ -566,7 +566,6 @@ class HSI_Copd_TreatmentOnSevereExacerbation(HSI_Event, IndividualScopeEventMixi
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 2})
 
-
     def apply(self, person_id, squeeze_factor):
         """What to do when someone presents for care with an exacerbation.
          * Provide treatment: whatever is available at this facility at this time (no referral).

@@ -431,7 +431,6 @@ class HSI_Measles_Treatment(HSI_Event, IndividualScopeEventMixin):
             ('Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD'): 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
 
-
     def apply(self, person_id, squeeze_factor):
         logger.debug(key="HSI_Measles_Treatment",
                      data=f"HSI_Measles_Treatment: treat person {person_id} for measles")

@@ -1416,7 +1416,6 @@ class HSI_CardioMetabolicDisorders_CommunityTestingForHypertension(HSI_Event, In
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
 
-
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         person = df.loc[person_id]
@@ -1469,7 +1468,6 @@ class HSI_CardioMetabolicDisorders_Investigations(HSI_Event, IndividualScopeEven
         self.conditions_to_investigate = conditions_to_investigate
         self.has_any_cmd_symptom = has_any_cmd_symptom
 
-
     def do_for_each_condition(self, _c) -> bool:
         """What to do for each condition that will be investigated. Returns `bool` signalling whether a follow-up HSI
         has been scheduled."""
@@ -1516,8 +1514,9 @@ class HSI_CardioMetabolicDisorders_Investigations(HSI_Event, IndividualScopeEven
             return hs.get_blank_appt_footprint()
 
         # Do test and trigger treatment (if necessary) for each condition:
-        if any(cond in self.conditions_to_investigate for cond in
-               ('diabetes', 'chronic_kidney_disease', 'chronic_ischemic_hd')):
+        if set(self.conditions_to_investigate).intersection(
+            ['diabetes', 'chronic_kidney_disease', 'chronic_ischemic_hd']
+        ):
             self.add_equipment({'Analyser, Haematology', 'Analyser, Combined Chemistry and Electrolytes'})
 
         hsi_scheduled = [self.do_for_each_condition(_c) for _c in self.conditions_to_investigate]
@@ -1580,7 +1579,6 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
         self.TREATMENT_ID = 'CardioMetabolicDisorders_Prevention_WeightLoss'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-
 
         self.condition = condition
 
@@ -1652,7 +1650,6 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
 
-
         self.condition = condition
 
     def apply(self, person_id, squeeze_factor):
@@ -1723,7 +1720,6 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
         self.TREATMENT_ID = 'CardioMetabolicDisorders_Treatment'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '2'
-
         self.events_to_investigate = events_to_investigate
 
     def do_for_each_event_to_be_investigated(self, _ev):
@@ -1794,7 +1790,7 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
             data=('This is HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment: '
                   f'The squeeze-factor is {squeeze_factor}.'),
         )
-        # TODO: link to surgical equipment package when that exists
+        # TODO: @Eva link to surgical equipment package when that exists
         self.add_equipment({'Analyser, Combined Chemistry and Electrolytes',
                                'Analyser, Haematology',
                                'Patient monitor', 'Drip stand',
