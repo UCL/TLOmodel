@@ -116,7 +116,7 @@ class Equipment:
         assert availability in ["all", "none", "default"], f"New availability parameter {availability} not recognised."
         self.availability = availability
 
-    def _calculate_equipment_availability_probabilities(self) -> pd.DataFrame:
+    def _calculate_equipment_availability_probabilities(self) -> pd.Series:
         """
         Compute the probabilities that each equipment item is available (at a given
         facility), for use when the equipment availability is set to "default".
@@ -153,18 +153,7 @@ class Equipment:
         # Check no missing values
         assert not df.isnull().any()
 
-        # # Over-write these data if `availability` argument specifies that `none` or `all` items should be available
-        # if availability == "default":
-        #     pass
-        # elif availability == "all":
-        #     df = (df + 1).clip(upper=1.0)  # All probabilities -> 1.0
-        # elif availability == "none":
-        #     df = df.mul(0.0)  # All probabilities -> 0.0
-        # else:
-        #     raise KeyError(f"Unknown equipment availability specified: {availability=}")
-
-        # Save
-        self._probabilities_of_items_available = df
+        return df
 
     def parse_items(self, items: Union[int, str, Iterable[int | str]]) -> Set[int]:
         """Parse equipment items specified as an item_code (integer), an item descriptor (string), or an iterable of
