@@ -168,7 +168,7 @@ class Equipment:
         else:
             check_item_descriptors_recognised(items)  # Warn for any unrecognised descriptors
             # In the return, any unrecognised descriptors are silently ignored.
-            return set(filter(lambda item: item is not None, map(self._item_code_lookup.get, items)))
+            return set(self._item_code_lookup[i] for i in items if i in self._item_code_lookup)
 
     def probability_all_equipment_available(
         self, facility_id: int, item_codes: Set[int]
