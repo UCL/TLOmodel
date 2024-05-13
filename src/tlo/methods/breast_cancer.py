@@ -15,7 +15,8 @@ from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.core import IndividualPropertyUpdates
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods import Metadata, cancer_consumables
+from tlo.methods import Metadata
+from tlo.methods.cancer_consumables import get_consumable_item_codes_cancers
 from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
@@ -349,7 +350,7 @@ class BreastCancer(Module):
         """
         # We call the following function to store the required consumables for the simulation run within the appropriate
         # dictionary
-        cancer_consumables.get_consumable_item_codes_cancers(self, self.item_codes_breast_can)
+        self.item_codes_breast_can = get_consumable_item_codes_cancers(self)
 
         # ----- SCHEDULE LOGGING EVENTS -----
         # Schedule logging event to happen immediately

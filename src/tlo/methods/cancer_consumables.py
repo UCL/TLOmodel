@@ -1,20 +1,25 @@
 """
 This file stores defines the consumables required within the cancer modules
 """
+from typing import Dict
+
+from tlo import Module
 
 
-def get_consumable_item_codes_cancers(self, cons_dict):
+def get_consumable_item_codes_cancers(cancer_module: Module) -> Dict[str, int]:
     """
-    This function stores the relevant item codes for cancer consumables across the five cancer modules to prevent
+    Returns dict the relevant item_codes for the consumables across the five cancer modules. This is intended to prevent
     repetition within module code.
     """
 
     def get_list_of_items(item_list):
-        item_code_function = self.sim.modules['HealthSystem'].get_item_code_from_item_name
-        codes = [item_code_function(item) for item in item_list]
-        return codes
+        item_lookup_fn = cancer_module.sim.modules['HealthSystem'].get_item_code_from_item_name
+        return list(map(item_lookup_fn, item_list))
 
-    # to do: add syringes, dressing
+    cons_dict = dict()
+
+    # Add items that are needed for all cancer modules
+    # todo: @Eva - add syringes, dressing
     cons_dict['screening_biopsy_core'] = get_list_of_items(['Biopsy needle'])
 
     cons_dict['screening_biopsy_optional'] = \
@@ -35,10 +40,10 @@ def get_consumable_item_codes_cancers(self, cons_dict):
                            'Gauze, absorbent 90cm x 40m_each_CMST',
                            'Cannula iv  (winged with injection pot) 18_each_CMST'])
 
-    # This is not an exhaustive list of drugs required for palliation
     cons_dict['palliation'] = \
         get_list_of_items(['morphine sulphate 10 mg/ml, 1 ml, injection (nt)_10_IDA',
                            'Diazepam, injection, 5 mg/ml, in 2 ml ampoule',
+                           # N.B. This is not an exhaustive list of drugs required for palliation
                            ])
 
     cons_dict['iv_drug_cons'] = \
@@ -47,18 +52,19 @@ def get_consumable_item_codes_cancers(self, cons_dict):
                            'Disposables gloves, powder free, 100 pieces per box'
                            ])
 
-    if ('BreastCancer' in self.sim.modules) and (self == self.sim.modules['BreastCancer']):
+    # Add items that are specific to each cancer module
+    if 'BreastCancer' == cancer_module.name:
 
-        # TODO: chemotharpy protocols??: TAC(Taxotere, Adriamycin, and Cyclophosphamide), AC (anthracycline and
+        # TODO: @Eva chemotharpy protocols??: TAC(Taxotere, Adriamycin, and Cyclophosphamide), AC (anthracycline and
         #  cyclophosphamide) +/-Taxane, TC (Taxotere and cyclophosphamide), CMF (cyclophosphamide, methotrexate,
         #  and fluorouracil), FEC-75 (5-Fluorouracil, Epirubicin, Cyclophosphamide). HER 2 +: Add Trastuzumab
 
         # only chemotherapy i consumable list which is also in suggested protocol is cyclo
         cons_dict['treatment_chemotherapy'] = get_list_of_items(['Cyclophosphamide, 1 g'])
 
-    elif ('ProstateCancer' in self.sim.modules) and (self == self.sim.modules['ProstateCancer']):
+    elif 'ProstateCancer' == cancer_module.name:
 
-        # TODO: Prostate specific antigen test is listed in ResourceFile_Consumables_availability_and_usage but not
+        # TODO: @Eva Prostate specific antigen test is listed in ResourceFile_Consumables_availability_and_usage but not
         #  ResourceFile_Consumables_Items_and_Package
         # cons_dict['screening_psa_test_core'] = get_list_of_items(['Prostate specific antigen test'])
 
@@ -66,18 +72,18 @@ def get_consumable_item_codes_cancers(self, cons_dict):
             get_list_of_items(['Blood collecting tube, 5 ml',
                                'Disposables gloves, powder free, 100 pieces per box'])
 
-    elif ('BladderCancer' in self.sim.modules) and (self == self.sim.modules['BladderCancer']):
+    elif 'BladderCancer' == cancer_module.name:
         # Note: bladder cancer is not in the malawi STG 2023 therefore no details on chemotherapy
 
-        # TODO: cytoscope is listed in ResourceFile_Consumables_availability_and_usage but not
+        # TODO: @Eva cytoscope is listed in ResourceFile_Consumables_availability_and_usage but not
         #  ResourceFile_Consumables_Items_and_Packages
         # cons_dict['screening_cystoscopy_core'] = get_list_of_items(['Cytoscope'])
 
         cons_dict['screening_cystoscope_optional'] = get_list_of_items(['Specimen container'])
 
-    elif ('OesophagealCancer' in self.sim.modules) and (self == self.sim.modules['OesophagealCancer']):
+    elif 'OesophagealCancer' == cancer_module.name:
 
-        # TODO: endoscope is listed in ResourceFile_Consumables_availability_and_usage but not
+        # TODO: @Eva endoscope is listed in ResourceFile_Consumables_availability_and_usage but not
         #  ResourceFile_Consumables_Items_and_Packages
         # cons_dict['screening_endoscope_core'] = get_list_of_items(['Endoscope'])
 
@@ -87,3 +93,4 @@ def get_consumable_item_codes_cancers(self, cons_dict):
 
         cons_dict['treatment_chemotherapy'] = get_list_of_items(['Cisplatin 50mg Injection'])
 
+    return cons_dict
