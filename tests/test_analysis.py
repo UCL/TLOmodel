@@ -27,7 +27,7 @@ from tlo.analysis.utils import (
 )
 from tlo.dependencies import ModuleDependencyError
 from tlo.events import PopulationScopeEventMixin, RegularEvent
-from tlo.methods import demography, copd
+from tlo.methods import copd, demography
 from tlo.methods.fullmodel import fullmodel
 from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScenarioSwitcher
 
