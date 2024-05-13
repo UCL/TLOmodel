@@ -1,5 +1,5 @@
 """Tests for automatic checking and ordering of method module dependencies."""
-
+import logging
 import os
 from pathlib import Path
 from random import seed as set_seed
@@ -17,6 +17,7 @@ from tlo.dependencies import (
     get_module_class_map,
     topologically_sort_modules,
 )
+from tlo.methods import copd, demography
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / "../resources"
@@ -281,3 +282,42 @@ def test_module_dependencies_all_required(sim, module_and_dependency_pair):
             'does not appear to be required to run simulation without errors and so '
             f'should be removed from the dependencies of {module_class.__name__}.'
         )
+
+
+def test_auto_register_module_dependencies(tmpdir):
+    """ check if module dependencies are registered as expected when an argument to auto register modules in simulation
+    is set to True """
+    # define a path to resource files folder
+    resourcefilepath = Path('../resources')
+    # configure logging
+    log_config = {
+        'filename': 'LogFile',
+        'directory': tmpdir,
+        'custom_levels': {
+            '*': logging.CRITICAL,
+            'tlo.method.demography': logging.INFO
+        }
+    }
+    # set simulation start date
+    start_date = Date(2010, 1, 1)
+    # configure simulation
+    sim = Simulation(start_date=start_date, seed=0, log_config=log_config, resourcefilepath=resourcefilepath)
+    # register required modules for a simple simulation. We have included copd for as it has some dependencies. We want
+    # to test if the dependencies can be automatically registered when the auto register argument in simulation
+    # is set to True
+    with pytest.raises(ModuleDependencyError, match='missing'):
+        # the lines below should fail with missing dependencies
+        sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                     copd.Copd(resourcefilepath=resourcefilepath))
+
+    # re-register modules with auto-register-module argument set to True
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 copd.Copd(resourcefilepath=resourcefilepath),
+                 auto_register_dependencies=True)
+    # get module dependencies
+    required_dependencies = get_all_required_dependencies(sim.modules["Copd"])
+    # check registered dependencies
+    registered_module_names = set(sim.modules.keys())
+    # all required dependencies should be available in registered dependencies
+    assert required_dependencies <= registered_module_names
+

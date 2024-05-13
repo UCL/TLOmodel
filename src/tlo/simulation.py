@@ -44,7 +44,7 @@ class Simulation:
     """
 
     def __init__(self, *, start_date: Date, seed: int = None, log_config: dict = None,
-                 show_progress_bar=False):
+                 show_progress_bar=False, resourcefilepath: Optional[Path] = None):
         """Create a new simulation.
 
         :param start_date: the date the simulation begins; must be given as
@@ -53,6 +53,7 @@ class Simulation:
         :param log_config: sets up the logging configuration for this simulation
         :param show_progress_bar: whether to show a progress bar instead of the logger
             output during the simulation
+        :param resourcefilepath: Path to resource files folder. assign none if no path is provided
         """
         # simulation
         self.date = self.start_date = start_date
@@ -63,6 +64,7 @@ class Simulation:
         self.population: Optional[Population] = None
 
         self.show_progress_bar = show_progress_bar
+        self.resourcefilepath = resourcefilepath
 
         # logging
         if log_config is None:
@@ -125,7 +127,7 @@ class Simulation:
         """The path to the log file, if one has been set."""
         return self._log_filepath
 
-    def register(self, *modules, sort_modules=True, check_all_dependencies=True):
+    def register(self, *modules, sort_modules=True, check_all_dependencies=True, auto_register_dependencies: bool = False):
         """Register one or more disease modules with the simulation.
 
         :param modules: the disease module(s) to use as part of this simulation.
@@ -143,9 +145,13 @@ class Simulation:
             ``ADDITIONAL_DEPENDENCIES`` attributes) have been included in the set of
             modules to be registered. A ``ModuleDependencyError`` exception will
             be raised if there are missing dependencies.
+        :param auto_register_dependencies: Whether to register missing module dependencies or not. If this argument is
+         set to True, all module dependencies will be automatically registered.
         """
         if sort_modules:
-            modules = list(topologically_sort_modules(modules))
+            modules = list(topologically_sort_modules(module_instances=modules,
+                                                      resourcefilepath=self.resourcefilepath,
+                                                      auto_register_dependencies=auto_register_dependencies))
         if check_all_dependencies:
             check_dependencies_present(modules)
         # Iterate over modules and per-module seed sequences spawned from simulation
