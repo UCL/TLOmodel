@@ -519,7 +519,7 @@ class Depression(Module):
     ):
         """
         Returns True if any signs of depression are present, otherwise False.
-        
+
         Raises an error if the treatment type cannot be identified.
         """
         if treatment_id == "FirstAttendance_NonEmergency":
@@ -574,7 +574,7 @@ class Depression(Module):
         """
         This is called by any HSI event when depression is suspected or otherwise investigated.
 
-        At least one of the diagnosis_function or hsi_event arguments must be provided; if both 
+        At least one of the diagnosis_function or hsi_event arguments must be provided; if both
         are provided, the hsi_event argument is ignored.
         - If the hsi_event argument is provided, that event is used to access the diagnosis
         manager and run diagnosis tests.
@@ -870,7 +870,7 @@ class HSI_Depression_TalkingTherapy(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MentOPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.num_of_sessions_had = 0  # A counter for the number of sessions of talking therapy had
-        self.set_equipment_essential_to_run_event({''})
+
 
     def apply(self, person_id, squeeze_factor):
         """Set the property `de_ever_talk_ther` to be True and schedule the next session in the course if the person
@@ -903,7 +903,7 @@ class HSI_Depression_Start_Antidepressant(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Depression_Treatment'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MentOPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.set_equipment_essential_to_run_event({''})
+
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -945,7 +945,7 @@ class HSI_Depression_Refill_Antidepressant(HSI_Event, IndividualScopeEventMixin)
         self.TREATMENT_ID = 'Depression_Treatment'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.set_equipment_essential_to_run_event({''})
+
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props

@@ -1415,7 +1415,7 @@ class HSI_CardioMetabolicDisorders_CommunityTestingForHypertension(HSI_Event, In
         self.TREATMENT_ID = "CardioMetabolicDisorders_Prevention_CommunityTestingForHypertension"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.set_equipment_essential_to_run_event({''})
+
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -1468,7 +1468,7 @@ class HSI_CardioMetabolicDisorders_Investigations(HSI_Event, IndividualScopeEven
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.conditions_to_investigate = conditions_to_investigate
         self.has_any_cmd_symptom = has_any_cmd_symptom
-        self.set_equipment_essential_to_run_event({''})
+
 
     def do_for_each_condition(self, _c) -> bool:
         """What to do for each condition that will be investigated. Returns `bool` signalling whether a follow-up HSI
@@ -1580,7 +1580,7 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
         self.TREATMENT_ID = 'CardioMetabolicDisorders_Prevention_WeightLoss'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.set_equipment_essential_to_run_event({''})
+
 
         self.condition = condition
 
@@ -1651,7 +1651,7 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
         self.TREATMENT_ID = 'CardioMetabolicDisorders_Treatment'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.set_equipment_essential_to_run_event({''})
+
 
         self.condition = condition
 
@@ -1723,7 +1723,7 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
         self.TREATMENT_ID = 'CardioMetabolicDisorders_Treatment'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '2'
-        self.set_equipment_essential_to_run_event({''})
+
         self.events_to_investigate = events_to_investigate
 
     def do_for_each_event_to_be_investigated(self, _ev):

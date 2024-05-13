@@ -1722,7 +1722,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Tb_Test_Screening"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.set_equipment_essential_to_run_event({''})
+
 
     def apply(self, person_id, squeeze_factor):
         """Do the screening and referring to next tests"""
@@ -1967,7 +1967,7 @@ class HSI_Tb_ClinicalDiagnosis(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Tb_Test_Clinical"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Under5OPD": 0.5})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.set_equipment_essential_to_run_event({''})
+
 
     def apply(self, person_id, squeeze_factor):
         """ Do the screening and referring process """
@@ -2035,7 +2035,7 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Tb_Test_Xray"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.set_equipment_essential_to_run_event({''})
+
 
     def apply(self, person_id, squeeze_factor):
 
@@ -2110,7 +2110,7 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Tb_Test_Xray"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1})
         self.ACCEPTED_FACILITY_LEVEL = '2'
-        self.set_equipment_essential_to_run_event({''})
+
 
     def apply(self, person_id, squeeze_factor):
 
@@ -2182,7 +2182,7 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         self.TREATMENT_ID = "Tb_Treatment"
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.set_equipment_essential_to_run_event({''})
+
         self.number_of_occurrences = 0
 
     @property
@@ -2331,7 +2331,7 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Tb_Test_FollowUp"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"TBFollowUp": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.set_equipment_essential_to_run_event({''})
+
 
     def apply(self, person_id, squeeze_factor):
         p = self.module.parameters
@@ -2469,7 +2469,7 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Tb_Prevention_Ipt"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.set_equipment_essential_to_run_event({''})
+
         self.number_of_occurrences = 0
 
     def apply(self, person_id, squeeze_factor):

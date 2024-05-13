@@ -565,7 +565,7 @@ class HSI_Copd_TreatmentOnSevereExacerbation(HSI_Event, IndividualScopeEventMixi
         self.ACCEPTED_FACILITY_LEVEL = self.all_facility_levels[self.facility_levels_index]
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 2})
-        self.set_equipment_essential_to_run_event({''})
+
 
     def apply(self, person_id, squeeze_factor):
         """What to do when someone presents for care with an exacerbation.

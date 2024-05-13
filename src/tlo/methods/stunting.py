@@ -548,7 +548,7 @@ class HSI_Stunting_ComplementaryFeeding(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Undernutrition_Feeding'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'U5Malnutr': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.set_equipment_essential_to_run_event({''})
+
 
     def apply(self, person_id, squeeze_factor):
 
