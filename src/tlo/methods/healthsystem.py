@@ -474,8 +474,6 @@ class HealthSystem(Module):
         # Create the pointer that will be to the instance of BedDays used to track in-patient bed days
         self.bed_days = None
 
-        self.equipment = None
-
         # Create the pointer that will be to the instance of Consumables used to determine availability of consumables.
         self.consumables = None
 
