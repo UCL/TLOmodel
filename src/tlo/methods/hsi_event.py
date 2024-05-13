@@ -424,7 +424,7 @@ class HSI_Event:
             beddays_footprint=tuple(
                 sorted((k, v) for k, v in self.BEDDAYS_FOOTPRINT.items() if v > 0)
             ),
-            equipment=(tuple(sorted(self._EQUIPMENT))),
+            equipment=tuple(sorted(self._EQUIPMENT)),
         )
 
 
