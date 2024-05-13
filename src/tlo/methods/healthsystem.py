@@ -1105,8 +1105,9 @@ class HealthSystem(Module):
         return _beds_availability
 
     def get_equip_availability(self) -> str:
-        """Returns equipment availability. (Should be equal to what is specified by the parameter, but overwrite with
-        what was provided in argument if an argument was specified -- provided for backward compatibility/debugging.)"""
+        """Returns equipment availability. (Should be equal to what is specified by the parameter, but can be
+        overwritten with what was provided in argument if an argument was specified -- provided for backward
+        compatibility/debugging.)"""
 
         if self.arg_equip_availability is None:
             _equip_availability = self.parameters['equip_availability']
@@ -1894,10 +1895,7 @@ class HealthSystem(Module):
         # If we are at the end of the year preceeding the mode switch, and if wanted
         # to rescale capabilities to capture effective availability as was recorded, on
         # average, in the past year, do so here.
-        if (
-            (self.sim.date.year == self.parameters['year_mode_switch'] - 1)
-            and self.parameters['scale_to_effective_capabilities']
-        ):
+        if (self.sim.date.year == self.parameters['year_mode_switch'] - 1) and self.parameters['scale_to_effective_capabilities']:
             self._rescale_capabilities_to_capture_effective_capability()
         self._summary_counter.write_to_log_and_reset_counters()
         self.consumables.on_end_of_year()
@@ -1962,7 +1960,7 @@ class HealthSystem(Module):
                 # Mode 0: All HSI Event run, with no squeeze
                 # Mode 1: All HSI Events run with squeeze provided latter is not inf
                 ok_to_run = True
-                # todo - also consider whether essential equipment is available
+
                 if self.mode_appt_constraints == 1 and squeeze_factor == float('inf'):
                     ok_to_run = False
 
