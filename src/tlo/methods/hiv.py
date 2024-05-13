@@ -476,7 +476,11 @@ class Hiv(Module):
         ]
 
         conditional_predictors = [
-            Predictor('ss_sh_infection_status').when('High-infection', p['rr_schisto']),
+            Predictor().when(
+                '(ss_sh_infection_status == "High-infection") &'
+                '(sex == "F")',
+                p["rr_schisto"]
+            ),
         ] if "Schisto" in self.sim.modules else []
 
         self.lm["rr_of_infection"] = LinearModel.multiplicative(
