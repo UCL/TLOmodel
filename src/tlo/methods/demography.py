@@ -776,7 +776,7 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.module.popsize_by_year[self.sim.date.year] = df.is_alive.sum()
 
         # 2) Compute Statistics for the log
-        sex_count = df[df.is_alive].groupby('sex', observed=False).size()
+        sex_count = df[df.is_alive].groupby('sex').size()
 
         logger.info(
             key='population',
@@ -787,8 +787,8 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # (nb. if you groupby both sex and age_range, you weirdly lose categories where size==0, so
         # get the counts separately.)
-        m_age_counts = df[df.is_alive & (df.sex == 'M')].groupby('age_range', observed=False).size()
-        f_age_counts = df[df.is_alive & (df.sex == 'F')].groupby('age_range', observed=False).size()
+        m_age_counts = df[df.is_alive & (df.sex == 'M')].groupby('age_range').size()
+        f_age_counts = df[df.is_alive & (df.sex == 'F')].groupby('age_range').size()
 
         logger.info(key='age_range_m', data=m_age_counts.to_dict())
 
