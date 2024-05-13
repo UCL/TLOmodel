@@ -634,7 +634,7 @@ class HealthSystem(Module):
 
         # Determine equip_availability
         self.equipment = Equipment(
-            resourcefilepath=Path(self.resourcefilepath)
+            path_to_equipment_resources=Path(self.resourcefilepath)
             / "healthsystem"
             / "infrastructure_and_equipment",
             master_facilities_list=self.parameters["Master_Facilities_List"],
