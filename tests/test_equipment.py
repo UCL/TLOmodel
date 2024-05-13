@@ -1,7 +1,7 @@
 """This file contains all the tests to do with Equipment."""
 import os
 from pathlib import Path
-from typing import Dict, Iterable
+from typing import Dict
 
 import numpy as np
 import pandas as pd
