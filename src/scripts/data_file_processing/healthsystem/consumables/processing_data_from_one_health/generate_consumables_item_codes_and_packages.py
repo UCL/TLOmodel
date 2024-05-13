@@ -21,8 +21,7 @@ import pandas as pd
 
 # Set local Dropbox source
 path_to_dropbox = Path(  # <-- point to the TLO dropbox locally
-    #'/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE'
-    '/Users/sm2511/Dropbox/Thanzi la Onse')
+    '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE')
 
 resourcefilepath = Path("./resources")
 path_for_new_resourcefiles = resourcefilepath / "healthsystem/consumables"
@@ -327,40 +326,6 @@ cons = add_record(
         'Expected_Units_Per_Case': 1.0,
         'Unit_Cost': 1.0
     },
-)
-
-
-cons = cons.append({
-    'Intervention_Cat': "Added by SM (Recommended by EJ)",
-    'Intervention_Pkg': "Misc",
-    'Intervention_Pkg_Code': -99,
-    'Items': "Cystoscope",
-    'Item_Code': 285,
-    'Expected_Units_Per_Case': 1.0,
-    'Unit_Cost': np.nan},
-    ignore_index=True
-)
-
-cons = cons.append({
-    'Intervention_Cat': "Added by SM (Recommended by EJ)",
-    'Intervention_Pkg': "Misc",
-    'Intervention_Pkg_Code': -99,
-    'Items': "Endoscope",
-    'Item_Code': 280,
-    'Expected_Units_Per_Case': 1.0,
-    'Unit_Cost': np.nan},
-    ignore_index=True
-)
-
-cons = cons.append({
-    'Intervention_Cat': "Added by SM (Recommended by EJ)",
-    'Intervention_Pkg': "Misc",
-    'Intervention_Pkg_Code': -99,
-    'Items': "Prostate specific antigen test",
-    'Item_Code': 281,
-    'Expected_Units_Per_Case': 1.0,
-    'Unit_Cost': np.nan},
-    ignore_index=True
 )
 
 # --------------
