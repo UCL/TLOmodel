@@ -400,5 +400,5 @@ def test_equal_allocation_by_district(seed):
     assert sum(df.is_alive) == popsize
 
     # check total within each district is (close to being) identical and matches the target population of each district
-    pop_size_by_district = df.groupby('district_of_residence').size()
+    pop_size_by_district = df.loc[df.is_alive].groupby('district_of_residence').size()
     assert np.allclose(pop_size_by_district.values, pop_size_by_district, rtol=0.05)
