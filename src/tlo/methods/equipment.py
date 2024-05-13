@@ -1,11 +1,17 @@
+from __future__ import annotations
+
 import warnings
 from collections import defaultdict
-from typing import Counter, Iterable, Literal, Optional, Set, Union
+from pathlib import Path
+from typing import TYPE_CHECKING, Counter, Iterable, Literal, Optional, Set, Union
 
 import numpy as np
 import pandas as pd
 
 from tlo import logging
+
+if TYPE_CHECKING:
+    from tlo.logging.core import Logger
 
 logger_summary = logging.getLogger("tlo.methods.healthsystem.summary")
 
@@ -67,18 +73,36 @@ class Equipment:
 
     def __init__(
         self,
-        catalogue: pd.DataFrame,
-        data_availability: pd.DataFrame,
-        rng: np.random,
+        path_to_equipment_resources: Path,
         master_facilities_list: pd.DataFrame,
         availability: Optional[Literal["all", "default", "none"]] = "default",
+        logger: Optional[Logger] = None,
+        rng: Optional[np.random.RandomState] = None,
     ) -> None:
-        # - Store arguments
-        self.catalogue = catalogue
-        self.rng = rng
-        self.data_availability = data_availability
+        # Read resources from the input files
+        self.catalogue = pd.read_csv(
+            path_to_equipment_resources / "ResourceFile_EquipmentCatalogue.csv"
+        )
+        self.data_availability = pd.read_csv(
+            path_to_equipment_resources
+            / "ResourceFile_Equipment_Availability_Estimates.csv"
+        )
+
+        # Store other input arguments needed on initialisation
+        if rng is not None:
+            self.rng = rng
+        else:
+            self.rng = np.random.RandomState(self.rng.randint(2 ** 31 - 1))
+
         self.availability = availability
         self.master_facilities_list = master_facilities_list
+
+        # Log the equipment availability
+        logger.info(
+            key="message",
+            data=f"Running Health System With the Following Equipment Availability: "
+            f"{self.availability}",
+        )
 
         # - Data structures for quick look-ups for items and descriptors
         self._item_code_lookup = self.catalogue.set_index('Item_Description')['Item_Code'].to_dict()
@@ -92,7 +116,6 @@ class Equipment:
         # - Internal store of which items have been used at each facility_id This is of the form
         # {facility_id: {item_code: count}}.
         self._record_of_equipment_used_by_facility_id = defaultdict(Counter)
-
 
     def on_simulation_end(self):
         """Things to do when the simulation ends:

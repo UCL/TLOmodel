@@ -194,11 +194,6 @@ class HealthSystem(Module):
             "Availability of beds. If 'default' then use the availability specified in the ResourceFile; if "
             "'none', then let no beds be  ever be available; if 'all', then all beds are always available. NB. This "
             "parameter is over-ridden if an argument is provided to the module initialiser."),
-        'EquipmentCatalogue': Parameter(
-            Types.DATA_FRAME, "Data on equipment items and packages."),
-        'equipment_availability_estimates': Parameter(
-            Types.DATA_FRAME, "Data on the availability of equipment items and packages."
-        ),
         'equip_availability': Parameter(
             Types.STRING,
             "What to assume about the availability of equipment. If 'default' then use the availability specified in "
@@ -327,6 +322,8 @@ class HealthSystem(Module):
             Types.BOOL, 'Whether or not the person is currently an in-patient at any medical facility'
         ),
     }
+
+    equipment: Equipment
 
     def __init__(
         self,
@@ -463,7 +460,7 @@ class HealthSystem(Module):
         self.arg_beds_availability = beds_availability
 
         assert equip_availability in (None, 'default', 'all', 'none')
-        self.arg_equip_availability = equip_availability
+        self.equipment_availability_override = equip_availability
 
         # `compute_squeeze_factor_to_district_level` is a Boolean indicating whether the computation of squeeze_factors
         # should be specific to each district (when `True`), or if the computation of squeeze_factors should be on the
@@ -476,6 +473,8 @@ class HealthSystem(Module):
 
         # Create the pointer that will be to the instance of BedDays used to track in-patient bed days
         self.bed_days = None
+
+        self.equipment = None
 
         # Create the pointer that will be to the instance of Consumables used to determine availability of consumables.
         self.consumables = None
@@ -556,16 +555,6 @@ class HealthSystem(Module):
         self.parameters['BedCapacity'] = pd.read_csv(
             path_to_resourcefiles_for_healthsystem / 'infrastructure_and_equipment' / 'ResourceFile_Bed_Capacity.csv')
 
-        # Read in ResourceFile_Equipment
-        self.parameters['EquipmentCatalogue'] = pd.read_csv(
-            path_to_resourcefiles_for_healthsystem
-            / 'infrastructure_and_equipment'
-            / 'ResourceFile_EquipmentCatalogue.csv')
-        self.parameters['equipment_availability_estimates'] = pd.read_csv(
-            path_to_resourcefiles_for_healthsystem
-            / 'infrastructure_and_equipment'
-            / 'ResourceFile_Equipment_Availability_Estimates.csv')
-
         # Data on the priority of each Treatment_ID that should be adopted in the queueing system according to different
         # priority policies. Load all policies at this stage, and decide later which one to adopt.
         self.parameters['priority_rank'] = pd.read_excel(path_to_resourcefiles_for_healthsystem / 'priority_policies' /
@@ -621,7 +610,6 @@ class HealthSystem(Module):
         self.rng_for_hsi_queue = np.random.RandomState(self.rng.randint(2 ** 31 - 1))
         self.rng_for_dx = np.random.RandomState(self.rng.randint(2 ** 31 - 1))
         rng_for_consumables = np.random.RandomState(self.rng.randint(2 ** 31 - 1))
-        rng_for_equipment = np.random.RandomState(self.rng.randint(2 ** 31 - 1))
 
         # Determine mode_appt_constraints
         self.mode_appt_constraints = self.get_mode_appt_constraints()
@@ -648,11 +636,16 @@ class HealthSystem(Module):
 
         # Determine equip_availability
         self.equipment = Equipment(
-            catalogue=self.parameters['EquipmentCatalogue'],
-            data_availability=self.parameters['equipment_availability_estimates'],
-            rng=rng_for_equipment,
-            master_facilities_list=self.parameters['Master_Facilities_List'],
-            availability=self.get_equip_availability(),
+            resourcefilepath=Path(self.resourcefilepath)
+            / "healthsystem"
+            / "infrastructure_and_equipment",
+            master_facilities_list=self.parameters["Master_Facilities_List"],
+            availability=(
+                self.equipment_availability_override
+                if self.equipment_availability_override is not None
+                else self.parameters["equip_availability"]
+            ),
+            logger=logger,
         )
 
         self.tclose_overwrite = self.parameters['tclose_overwrite']
@@ -728,7 +721,6 @@ class HealthSystem(Module):
             ),
             Date(self.parameters["year_equip_availability_switch"], 1, 1)
         )
-
 
         # Schedule a one-off rescaling of _daily_capabilities broken down by officer type and level.
         # This occurs on 1st January of the year specified in the parameters.
@@ -1103,24 +1095,6 @@ class HealthSystem(Module):
                     )
 
         return _beds_availability
-
-    def get_equip_availability(self) -> str:
-        """Returns equipment availability. (Should be equal to what is specified by the parameter, but can be
-        overwritten with what was provided in argument if an argument was specified -- provided for backward
-        compatibility/debugging.)"""
-
-        if self.arg_equip_availability is None:
-            _equip_availability = self.parameters['equip_availability']
-        else:
-            _equip_availability = self.arg_equip_availability
-
-        # Log the equip_availability
-        logger.info(key="message",
-                    data=f"Running Health System With the Following Equipment Availability: "
-                         f"{_equip_availability}"
-                    )
-
-        return _equip_availability
 
     def schedule_to_call_never_ran_on_date(self, hsi_event: 'HSI_Event', tdate: datetime.datetime):
         """Function to schedule never_ran being called on a given date"""
