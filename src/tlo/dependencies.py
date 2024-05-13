@@ -4,6 +4,7 @@ import importlib
 import inspect
 import os
 import pkgutil
+from pathlib import Path
 from typing import Any, Callable, Generator, Iterable, Mapping, Optional, Set, Type, Union
 
 import tlo.methods
@@ -76,7 +77,8 @@ def get_all_required_dependencies(
 
 def topologically_sort_modules(
     module_instances: Iterable[Module],
-    get_dependencies: DependencyGetter = get_init_dependencies,
+    get_dependencies: DependencyGetter = get_init_dependencies, data_folder: Path = None, auto_register_modules: bool =
+        False
 ) -> Generator[Module, None, None]:
     """Generator which yields topological sort of modules based on their dependencies.
 
@@ -91,6 +93,8 @@ def topologically_sort_modules(
     :param get_dependencies: Function which given a module gets the set of module
         dependencies. Defaults to returing the ``Module.INIT_DEPENDENCIES`` class
         attribute.
+    :param data_folder: resource files folder
+    :param auto_register_modules: whether to register missing modules or not
 
     :raises ModuleDependencyError: Raised when a module dependency is missing from
         ``module_instances`` or a module has circular dependencies.
@@ -122,27 +126,33 @@ def topologically_sort_modules(
             )
             for dependency in sorted(dependencies):
                 if dependency not in module_instance_map:
-                    alternatives_with_instances = [
-                        name for name, instance in module_instance_map.items()
-                        if dependency in instance.ALTERNATIVE_TO
-                    ]
-                    if len(alternatives_with_instances) != 1:
-                        message = (
-                            f'Module {module} depends on {dependency} which is '
-                            'missing from modules to register'
-                        )
-                        if len(alternatives_with_instances) == 0:
-                            message += f' as are any alternatives to {dependency}.'
-                        else:
-                            message += (
-                                ' and there are multiple alternatives '
-                                f'({alternatives_with_instances}) so which '
-                                'to use to resolve dependency is ambiguous.'
-                            )
-                        raise ModuleDependencyError(message)
-
+                    if auto_register_modules:
+                        # add missing dependencies and associated classes in module instance map dictionary
+                        module_class = get_module_class_map(set())[dependency](resourcefilepath=data_folder)
+                        module_instance_map.update({dependency: module_class})
+                        yield from depth_first_search(dependency)
                     else:
-                        yield from depth_first_search(alternatives_with_instances[0])
+                        alternatives_with_instances = [
+                            name for name, instance in module_instance_map.items()
+                            if dependency in instance.ALTERNATIVE_TO
+                        ]
+                        if len(alternatives_with_instances) != 1:
+                            message = (
+                                f'Module {module} depends on {dependency} which is '
+                                'missing from modules to register'
+                            )
+                            if len(alternatives_with_instances) == 0:
+                                message += f' as are any alternatives to {dependency}.'
+                            else:
+                                message += (
+                                    ' and there are multiple alternatives '
+                                    f'({alternatives_with_instances}) so which '
+                                    'to use to resolve dependency is ambiguous.'
+                                )
+                            raise ModuleDependencyError(message)
+
+                        else:
+                            yield from depth_first_search(alternatives_with_instances[0])
 
                 else:
                     yield from depth_first_search(dependency)
