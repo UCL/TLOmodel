@@ -42,8 +42,9 @@ class Simulation:
         Note that individual modules also have their own random number generator
         with independent state.
     """
+
     def __init__(self, *, start_date: Date, seed: int = None, log_config: dict = None,
-                 show_progress_bar=False, equal_allocation_by_district: bool = False):
+                 show_progress_bar=False):
         """Create a new simulation.
 
         :param start_date: the date the simulation begins; must be given as
@@ -60,11 +61,6 @@ class Simulation:
         self.end_date = None
         self.output_file = None
         self.population: Optional[Population] = None
-
-        if equal_allocation_by_district is None:
-            self.equal_allocation_by_district = False
-        else:
-            self.equal_allocation_by_district = equal_allocation_by_district
 
         self.show_progress_bar = show_progress_bar
 
@@ -187,10 +183,6 @@ class Simulation:
             module.pre_initialise_population()
 
         # Make the initial population
-        # if equal_allocation_by_district=True, then n=number of people in each district
-        if self.equal_allocation_by_district:
-            n = n * 32
-
         self.population = Population(self, n)
         for module in self.modules.values():
             start1 = time.time()
