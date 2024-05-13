@@ -178,7 +178,7 @@ class Equipment:
         at the given facility.
 
         It does so by looking at the probabilities of each equipment item being
-        available and multiplying these together to find the probability that _all_
+        available and multiplying these together to find the probability that *all*
         are available.
 
         NOTE: This will error if the facility ID or any of the item codes is not recognised.
