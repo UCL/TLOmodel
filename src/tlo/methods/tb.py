@@ -601,6 +601,13 @@ class Tb(Module):
             ),
         ]
 
+        scenario = self.sim.modules['Hiv'].parameters['scenario']
+        if (scenario == 2) or (scenario == 5):
+            predictors = [
+                Predictor("tb_smear").when(True, p['death_rate_smear_pos_untreated']),
+                Predictor("tb_smear").when(False, p['death_rate_smear_neg_untreated']),
+            ]
+
         conditional_predictors = [
             Predictor("nc_diabetes").when(True, p['rr_death_diabetes']),
         ] if "CardioMetabolicDisorders" in self.sim.modules else []

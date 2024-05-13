@@ -196,17 +196,20 @@ py0 = extract_results(
 # select draw 0 and draw 4
 new_df = py0.loc[:, py0.columns.get_level_values('draw').isin([0, 4])]
 # Append a new row with column means to the DataFrame
-new_df.loc['Mean'] = new_df.mean()
+# new_df.loc['Mean'] = new_df.mean()
+
+
+
 
 # plot population size for baseline and Excl HTM
 
 col = ['#343579', '#F8485E']
 col_repeated = [color for color in col for _ in range(5)]
-i=0
+i = 0
 
 for column in new_df.columns:
-    plt.plot(new_df[column], label=column, color=col_repeated[i])
-    i+=1
+    plt.plot(new_df[column], label=column, color=col_repeated[i], linewidth=0.5)
+    i += 1
 
 plt.yticks(ticks=[14000000, 15000000, 16000000, 17000000, 18000000, 19000000],
     labels=['14.0', '15.0', '16.0', '17.0', '18.0', '19.0'])
@@ -217,7 +220,7 @@ plt.ylabel('Population size, millions')
 plt.title('')
 
 legend_labels = ['Status quo', 'Excluding HTM']
-legend_handles = [Line2D([0], [0], color=color, lw=2) for color in col]
+legend_handles = [Line2D([0], [0], color=color, lw=1) for color in col]
 plt.legend(handles=legend_handles, labels=legend_labels)
 
 plt.savefig(outputspath / "Apr2024_HTMresults/PopulationSize.png")

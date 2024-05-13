@@ -974,6 +974,14 @@ class Hiv(Module):
             self.sim.modules["Tb"].parameters["prob_tx_success_5_14"] = treatment_effects.loc[
                 treatment_effects.parameter == "prob_tx_success_5_14", "no_effect"].values[0]
 
+            # risk of relapse with treatment
+            self.sim.modules["Tb"].parameters["monthly_prob_relapse_tx_complete"] = treatment_effects.loc[
+                treatment_effects.parameter == "monthly_prob_relapse_tx_complete", "no_effect"].values[0]
+
+            # treatment effect on AIDS death risk if HIV-TB co-infected
+            self.sim.modules["Hiv"].parameters["aids_tb_treatment_adjustment"] = treatment_effects.loc[
+                treatment_effects.parameter == "aids_tb_treatment_adjustment", "no_effect"].values[0]
+
         # scenario 3: remove malaria treatment effects
         if (scenario == 3) or (scenario == 5):
             # Malaria
