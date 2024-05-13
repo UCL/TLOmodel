@@ -66,7 +66,7 @@ class Equipment:
         data_availability: pd.DataFrame,
         rng: np.random.RandomState,
         master_facilities_list: pd.DataFrame,
-        availability: Optional[Literal["all", "default", "none"]] = "default",
+        availability: Literal["all", "default", "none"] = "default",
     ) -> None:
         # - Store arguments
         self.catalogue = catalogue
