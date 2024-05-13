@@ -87,6 +87,7 @@ class Demography(Module):
         self.districts = None  # will store all the districts in a list
 
     OPTIONAL_INIT_DEPENDENCIES = {'ImprovedHealthSystemAndCareSeekingScenarioSwitcher'}
+    # <-- this forces that module to be the first registered module, if it's registered.
 
     AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = create_age_range_lookup(
         min_age=MIN_AGE_FOR_RANGE,
