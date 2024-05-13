@@ -1,19 +1,16 @@
 from dataclasses import dataclass
-from typing import Any, Dict, List, Literal, Optional, Tuple, TypeAlias
+from typing import Any, Dict, Iterable, List, Literal, Optional, Tuple
 
 import numpy as np
 import pandas as pd
 
 from tlo import Date
 
-BedDaysFootprint: TypeAlias = Dict[str, float | int]
-
 @dataclass
 class BedOccupancy:
     """
     Logs an allocation of bed-days resources, and when it will be freed up.
     """
-
     bed_type: str
     facility: int
     freed_date: Date
@@ -25,25 +22,12 @@ class BedOccupancy:
         Post-init checks for BedOccupancies:
         - start_date is not later than freed_date
         """
-        assert (
-            self.start_date <= self.freed_date
-        ), f"BedOccupancy created which starts ({self.start_date}) later than it finishes ({self.freed_date})!"
+        assert self.start_date <= self.freed_date, (
+            f"BedOccupancy created which starts ({self.start_date.strftime('%Y-%m-%d')}) "
+            f"later than it finishes ({self.freed_date.strftime('%Y-%m-%d')})!"
+        )
 
-# Define the appointment types that should be associated with the use of bed-days (of any type), for a given number of
-# patients.
-IN_PATIENT_ADMISSION = {"IPAdmission": 2}
-# One of these appointments is for the admission and the other is for the discharge (even patients who die whilst an
-# in-patient require discharging). The limitation is that the discharge appointment occurs on the same day as the
-# admission. See: https://github.com/UCL/TLOmodel/issues/530
-
-IN_PATIENT_DAY_FIRST_DAY = {"InpatientDays": 0}
-# There is no in-patient appointment day needed on the first day, as the care is covered under the admission.
-
-IN_PATIENT_DAY_SUBSEQUENT_DAYS = {"InpatientDays": 1}
-# Care required on days after the day of admission (including the day of discharge).
-
-
-class BedDays_Footprint(dict):
+class BedDaysFootprint(dict):
     """
     Represents an allocation of bed days, otherwise acts as a dictionary.
 
@@ -57,8 +41,15 @@ class BedDays_Footprint(dict):
     cannot be fulfilled can be cascaded down to lower-priority bed requests.
     """
 
+    def __bool__(self) -> bool:
+        """
+        Implicit boolean-ness equates to whether this footprint imposes any
+        bed days or not.
+        """
+        return bool(self.total_days())
+
     def __init__(
-        self, permitted_bed_types: List[str], **initial_values: Dict[str, int | float]
+        self, permitted_bed_types: Iterable[str], **initial_values: int | float
     ) -> None:
         """ """
         super().__init__({b: 0 for b in permitted_bed_types})
@@ -76,6 +67,41 @@ class BedDays_Footprint(dict):
         ), f"Cannot assign negative amount of days ({n_days}) to bed of type {bed_type}."
         super().__setitem__(bed_type, n_days)
 
+    def as_occupancies(
+        self,
+        first_day: Date,
+        facility: int,
+        patient_id: int,
+    ) -> List[BedOccupancy]:
+        """
+        Covert a bed days footprint to a list of bed occupancies, with the first
+        bed-day occurring on the date provided.
+
+        :param footprint: Bed days footprint to apply.
+        :param first_day: Bed occupation of this footprint will start from the date
+        provided.
+        :param facility: The facility that will host the patient.
+        :param patient_id: DataFrame index of the patient who will occupy the bed.
+        """
+        start_date_of_occupancy = first_day
+        new_occupancies = []
+        for bed_type, occupancy_length in self.without_0s().items():
+            new_occupancy = BedOccupancy(
+                bed_type=bed_type,
+                facility=facility,
+                patient_id=patient_id,
+                start_date=start_date_of_occupancy,
+                freed_date=start_date_of_occupancy
+                + pd.DateOffset(
+                    days=occupancy_length - 1
+                ),  # 1 day occupancy starts and ends on same day!
+            )
+            # Next occupancy will start the day after this one ended
+            start_date_of_occupancy += pd.DateOffset(occupancy_length)
+            # Record the occupancy and move on to the next
+            new_occupancies.append(new_occupancy)
+        return new_occupancies
+
     def total_days(self) -> int | float:
         """
         Total number of bed days that this footprint imposes.
@@ -84,6 +110,24 @@ class BedDays_Footprint(dict):
         """
         return sum(self.values())
 
+    def without_0s(self) -> Dict[str, int | float]:
+        """
+        Return a copy of the object without key: value pairs where the value is 0.
+        """
+        return {bed: n_days for bed, n_days in self.items() if n_days > 0}
+
+# Define the appointment types that should be associated with the use of bed-days (of any type), for a given number of
+# patients.
+IN_PATIENT_ADMISSION = {"IPAdmission": 2}
+# One of these appointments is for the admission and the other is for the discharge (even patients who die whilst an
+# in-patient require discharging). The limitation is that the discharge appointment occurs on the same day as the
+# admission. See: https://github.com/UCL/TLOmodel/issues/530
+
+IN_PATIENT_DAY_FIRST_DAY = {"InpatientDays": 0}
+# There is no in-patient appointment day needed on the first day, as the care is covered under the admission.
+
+IN_PATIENT_DAY_SUBSEQUENT_DAYS = {"InpatientDays": 1}
+# Care required on days after the day of admission (including the day of discharge).
 
 class BedDaysRework:
     """
@@ -134,15 +178,6 @@ class BedDaysRework:
         {key: value * _num for key, value in _footprint.items()}
         """
         return {appt_type: num_needed * _num for appt_type, num_needed in _footprint.items()}
-
-    @staticmethod
-    def total_footprint_days(_footprint: Dict[Any, int | float]) -> int:
-        """
-        The total number of days that this beddays footprint requires.
-
-        Specifically, the sum of the values of the keys.
-        """
-        return sum(_footprint.values())
 
     def __init__(
         self,
@@ -456,17 +491,15 @@ class BedDaysRework:
         TODO: Validate then remove this method and it's call in the new HealthSystem"""
         pass
 
-    def get_blank_beddays_footprint(self, *args, **kwargs) -> Dict[str, float | int]:
+    def get_blank_beddays_footprint(self, *args, **kwargs) -> BedDaysFootprint:
         """
-        Provides a dictionary whose keys are the bed types and initial values are 0.
-
-        It is necessary for footprints to track 0-day requests so that when it comes
-        to allocating bed days, higher-priority bed requests that cannot be fulfilled
-        can be cascaded down to lower-priority bed requests.
+        Provide a BedDaysFootprint with 0 days allocated to each bed type.
         """
-        return {bed_type: 0 for bed_type in self.bed_types}
+        return BedDaysFootprint(self.bed_types)
 
-    def get_inpatient_appts(self, date: Date, *args, **kwargs) -> None:
+    def get_inpatient_appts(
+        self, date: Date, *args, **kwargs
+    ) -> Dict[str, Dict[str, int | float]]:
         """
         Return a dictionary of the form {<facility_id>: APPT_FOOTPRINT},
         giving the total APPT_FOOTPRINT required for the servicing of the
@@ -491,45 +524,6 @@ class BedDaysRework:
         }
         return inpatient_appointments
 
-    def footprint_to_occupancies(
-        self,
-        footprint: BedDaysFootprint,
-        first_day: Date,
-        facility: int,
-        patient_id: int,
-    ) -> List[BedOccupancy]:
-        """
-        Covert a bed days footprint to a list of bed occupancies, with the first
-        bed-day occurring on the date provided.
-
-        :param footprint: Bed days footprint to apply.
-        :param first_day: Bed occupation of this footprint will start from the date
-        provided.
-        :param facility: The facility that will host the patient.
-        :param patient_id: DataFrame index of the patient who will occupy the bed.
-        """
-        # Don't pollute the list of occupancies with 0-length objects.
-        footprint_without_0s = {
-            bed_type: length for bed_type, length in footprint.items() if length > 0
-        }
-
-        start_date_of_occupancy = first_day
-        new_occupancies = []
-        for bed_type, occupancy_length in footprint_without_0s.items():
-            new_occupancy = BedOccupancy(
-                bed_type=bed_type,
-                facility=facility,
-                patient_id=patient_id,
-                start_date=start_date_of_occupancy,
-                freed_date=start_date_of_occupancy
-                + pd.DateOffset(days=occupancy_length - 1), # 1 day occupancy starts and ends on same day!
-            )
-            # Next occupancy will start the day after this one ended
-            start_date_of_occupancy += pd.DateOffset(occupancy_length)
-            # Record the occupancy and move on to the next
-            new_occupancies.append(new_occupancy)
-        return new_occupancies
-
     def impose_beddays_footprint(
         self, footprint: BedDaysFootprint, facility: int, first_day: Date, patient_id: int,
     ) -> None:
@@ -537,14 +531,14 @@ class BedDaysRework:
         Impose the footprint provided on the availability of beds.
         """
         # Exit if the footprint is empty
-        if self.total_footprint_days(footprint) == 0:
+        if not footprint:
             return
 
         new_footprint_end_date = first_day + pd.DateOffset(
-            days=self.total_footprint_days(footprint) - 1
+            days=footprint.total_days() - 1
         )
-        new_occupancies = self.footprint_to_occupancies(
-            footprint, first_day, facility, patient_id
+        new_occupancies = footprint.as_occupancies(
+            first_day, facility, patient_id
         )
 
         scheduled_occupancies = self.is_inpatient(patient_id=patient_id)
@@ -602,12 +596,11 @@ class BedDaysRework:
         :param facility_id: The facility at which beds will be used.
         :param requested_footprint: The bed days footprint to attempt to allocate.
         """
-        # Compute footprint that can be provided
-        # First, check the forecast bed availability for this facility
-        footprint_length = self.total_footprint_days(requested_footprint)
+        available_footprint = self.get_blank_beddays_footprint()
         # If footprint is empty, then the returned footprint is empty too.
-        if footprint_length == 0:
-            return self.get_blank_beddays_footprint()
+        if not requested_footprint:
+            return available_footprint
+        footprint_length = requested_footprint.total_days()
 
         forecast_availability = self.forecast_availability(
             start_date=start_date,
@@ -617,7 +610,6 @@ class BedDaysRework:
             int_indexing=True,
         )
 
-        available_footprint = {}
         # This tracks how many days of the previous bed type we could not provide,
         # and thus must attempt to provide with the following bed type.
         day_deficit = 0
