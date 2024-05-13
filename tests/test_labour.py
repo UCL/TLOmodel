@@ -230,8 +230,9 @@ def test_event_scheduling_for_care_seeking_during_home_birth(seed):
     mni[mother_id]['sought_care_labour_phase'] = 'none'
     sim.date = sim.date + pd.DateOffset(days=5)
 
-    # force a complication
+    # force a complication and care seeking
     params['prob_pph_uterine_atony'] = 1.0
+    params['prob_careseeking_for_complication_pn'] = 1.0
 
     # run postpartum home event
     home_birth_pp = labour.BirthAndPostnatalOutcomesEvent(mother_id=mother_id, module=sim.modules['Labour'])
@@ -523,7 +524,7 @@ def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_const
 
     # create a dummy hsi event that the treatment functions will call
     from tlo.events import IndividualScopeEventMixin
-    from tlo.methods.healthsystem import HSI_Event
+    from tlo.methods.hsi_event import HSI_Event
 
     class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
         def __init__(self, module, person_id):

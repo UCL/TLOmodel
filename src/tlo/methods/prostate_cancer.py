@@ -4,20 +4,26 @@ Prostate Cancer Disease Module
 Limitations to note:
 * Footprints of HSI -- pending input from expert on resources required.
 """
+from __future__ import annotations
 
 from pathlib import Path
+from typing import TYPE_CHECKING, List
 
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import IndividualPropertyUpdates
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, cancer_consumables
 from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
-from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.symptommanager import Symptom
+
+if TYPE_CHECKING:
+    from tlo.population import PatientDetails
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -278,14 +284,14 @@ class ProstateCancer(Module):
             disease_module=self
         )
 
-#       above code replaced with below when running for n=1 -
+        #       above code replaced with below when running for n=1 -
 
-#       self.sim.modules['SymptomManager'].change_symptom(
-#           person_id=1,
-#           symptom_string='pelvic_pain',
-#           add_or_remove='+',
-#           disease_module=self
-#       )
+        #       self.sim.modules['SymptomManager'].change_symptom(
+        #           person_id=1,
+        #           symptom_string='pelvic_pain',
+        #           add_or_remove='+',
+        #           disease_module=self
+        #       )
 
         # ----- Impose the symptom of random sample of those in each cancer stage to have urinary symptoms:
         lm_init_urinary = LinearModel.multiplicative(
@@ -307,14 +313,14 @@ class ProstateCancer(Module):
             disease_module=self
         )
 
-#       above code replaced with below when running for n=1 -
+        #       above code replaced with below when running for n=1 -
 
-#       self.sim.modules['SymptomManager'].change_symptom(
-#           person_id=1,
-#           symptom_string='pelvic_pain',
-#           add_or_remove='+',
-#           disease_module=self
-#       )
+        #       self.sim.modules['SymptomManager'].change_symptom(
+        #           person_id=1,
+        #           symptom_string='pelvic_pain',
+        #           add_or_remove='+',
+        #           disease_module=self
+        #       )
         # -------------------- pc_date_diagnosis -----------
 
         # for those with symptoms set to initially diagnosed
@@ -580,6 +586,32 @@ class ProstateCancer(Module):
             ] = self.daly_wts['metastatic_palliative_care']
 
         return disability_series_for_alive_persons
+
+    def do_at_generic_first_appt(
+        self,
+        patient_id: int,
+        patient_details: PatientDetails,
+        symptoms: List[str],
+        **kwargs
+    ) -> IndividualPropertyUpdates:
+        # If the patient is not a child, and symptoms are indicative,
+        # begin investigation for prostate cancer
+        scheduling_options = {
+            "priority": 0,
+            "topen": self.sim.date,
+        }
+        if patient_details.age_years > 5:
+            if "urinary" in symptoms:
+                event = HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms(
+                    person_id=patient_id, module=self
+                )
+                self.healthsystem.schedule_hsi_event(event, **scheduling_options)
+
+            if "pelvic_pain" in symptoms:
+                event = HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(
+                    person_id=patient_id, module=self
+                )
+                self.healthsystem.schedule_hsi_event(event, **scheduling_options)
 
 
 # ---------------------------------------------------------------------------------------------------------
