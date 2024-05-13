@@ -41,7 +41,7 @@ class HSIEventDetails(NamedTuple):
     facility_level: Optional[str]
     appt_footprint: Tuple[Tuple[str, int]]
     beddays_footprint: Tuple[Tuple[str, int]]
-    equipment: set
+    equipment: Tuple[str]
 
 
 class HSIEventQueueItem(NamedTuple):
