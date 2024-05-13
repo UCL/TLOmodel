@@ -98,11 +98,12 @@ class Equipment:
         self.master_facilities_list = master_facilities_list
 
         # Log the equipment availability
-        logger.info(
-            key="message",
-            data=f"Running Health System With the Following Equipment Availability: "
-            f"{self.availability}",
-        )
+        if logger is not None:
+            logger.info(
+                key="message",
+                data=f"Running Health System With the Following Equipment Availability: "
+                f"{self.availability}",
+            )
 
         # - Data structures for quick look-ups for items and descriptors
         self._item_code_lookup = self.catalogue.set_index('Item_Description')['Item_Code'].to_dict()
