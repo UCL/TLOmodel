@@ -1,6 +1,6 @@
 import warnings
 from collections import defaultdict
-from typing import Counter, Iterable, Optional, Set, Union
+from typing import Counter, Iterable, Literal, Optional, Set, Union
 
 import numpy as np
 import pandas as pd
@@ -70,17 +70,18 @@ class Equipment:
         data_availability: pd.DataFrame,
         rng: np.random,
         master_facilities_list: pd.DataFrame,
-        availability: Optional[str] = "default",
+        availability: Optional[Literal["all", "default", "none"]] = "default",
     ) -> None:
         # Store arguments
         self.catalogue = catalogue
         self.rng = rng
         self.data_availability = data_availability
+        self.availability = availability
         self.master_facilities_list = master_facilities_list
 
         # Create internal storage structures
         # - Probabilities of items being available at each facility_id
-        self._probabilities_of_items_available = pd.DataFrame()
+        self._probabilities_of_items_available = self._calculate_equipment_availability_probabilities()
         # - Internal store of which items have been used at each facility_id This is of the form
         # {facility_id: {item_code: count}}.
         self._record_of_equipment_used_by_facility_id = defaultdict(Counter)  # <-- Will be the
@@ -90,8 +91,12 @@ class Equipment:
         self._all_item_descriptors = set(self._item_code_lookup.keys())
         self._all_item_codes = set(self._item_code_lookup.values())
 
-        # Initialise the internal stores of the probability with which equipment items that are available.
-        self._set_equipment_items_available(availability=availability)
+        # Initialise the internal stores of the probability with which
+        # equipment items that are available.
+        # This DF will not be used if availability is not all or none,
+        # but creating it here prevent _re_ computing it should the
+        # availability be updated mid-simulation.
+        self._calculate_equipment_availability_probabilities()
 
     def on_simulation_end(self):
         """Things to do when the simulation ends:
@@ -99,15 +104,28 @@ class Equipment:
         """
         self.write_to_log()
 
-    def update_availability(self, availability: str) -> None:
-        """Update the availability of equipment. This is expected to be called midway through the simulation if
-        the assumption of the equipment availability is changed."""
-        self._set_equipment_items_available(availability=availability)
+    def update_availability(
+        self, availability: Literal["all", "default", "none"]
+    ) -> None:
+        """
+        Update the availability of equipment.
+        
+        This is expected to be called midway through the simulation if the
+        assumption of the equipment availability is changed.
+        """
+        assert availability in ["all", "none", "default"], f"New availability parameter {availability} not recognised."
+        self.availability = availability
 
-    def _set_equipment_items_available(self, availability: str):
-        """Update internal store of probabilities of items of equipment being available. This is called at the beginning
-         of the simulation and whenever an update in `availability` is done by `update_availability`."""
+    def _calculate_equipment_availability_probabilities(self) -> pd.DataFrame:
+        """
+        Compute the probabilities that each equipment item is available (at a given
+        facility), for use when the equipment availability is set to "default".
 
+        The probabilities computed in this method are constant throughout the simulation,
+        however they will not be used when the equipment availability is "all" or "none".
+        Computing them once and storing the result allows us to avoid repeating this
+        calculation if the equipment availability change event occurs during the simulation.
+        """
         # All facility_id in the simulation
         all_fac_ids = self.master_facilities_list['Facility_ID'].unique()
 
@@ -135,15 +153,15 @@ class Equipment:
         # Check no missing values
         assert not df.isnull().any()
 
-        # Over-write these data if `availability` argument specifies that `none` or `all` items should be available
-        if availability == "default":
-            pass
-        elif availability == "all":
-            df = (df + 1).clip(upper=1.0)  # All probabilities -> 1.0
-        elif availability == "none":
-            df = df.mul(0.0)  # All probabilities -> 0.0
-        else:
-            raise KeyError(f"Unknown equipment availability specified: {availability=}")
+        # # Over-write these data if `availability` argument specifies that `none` or `all` items should be available
+        # if availability == "default":
+        #     pass
+        # elif availability == "all":
+        #     df = (df + 1).clip(upper=1.0)  # All probabilities -> 1.0
+        # elif availability == "none":
+        #     df = df.mul(0.0)  # All probabilities -> 0.0
+        # else:
+        #     raise KeyError(f"Unknown equipment availability specified: {availability=}")
 
         # Save
         self._probabilities_of_items_available = df
@@ -179,23 +197,49 @@ class Equipment:
             return set(filter(lambda item: item is not None, map(self._item_code_lookup.get, items)))
 
     def probability_all_equipment_available(
-        self, item_codes: Set[int], facility_id: int
+        self, facility_id: int, *item_codes: int
     ) -> float:
-        """Returns the probability that all the equipment item_codes are available. It does so by looking at the
-        probabilities of each equipment item being available and multiplying these together to find the probability
-        that _all_ are available."""
-        try:
-            return self._probabilities_of_items_available.loc[(facility_id, list(item_codes))].prod()
-        except KeyError:
-            raise ValueError(f'Not recognised {facility_id=}')
+        """
+        Returns the probability that all the equipment item_codes are available
+        at the given facility.
+        
+        It does so by looking at the probabilities of each equipment item being
+        available and multiplying these together to find the probability that _all_
+        are available.
+
+        :param facility_id: Facility at which to check for the equipment.
+        :param item_codes: Integer item codes corresponding to the equipment to check.
+        """
+        # NOTE: Preserving the current implementation here - IE we always error if
+        # the facility ID or any of the item codes is not recognised.
+        # Not sure if this is intended behaviour or not
+        assert (
+            facility_id in self._probabilities_of_items_available.index
+        ), f"Unrecognised facility ID: {facility_id}"
+        assert all(
+            [item_codes in self._probabilities_of_items_available.columns]
+        ), "At least one item code was unrecognised."
+
+        if self.availability == "all":
+            return 1
+        elif self.availability == "none":
+            return 0
+        return self._probabilities_of_items_available.loc[
+            (facility_id, list(item_codes))
+        ].prod()
 
     def is_all_items_available(
         self, item_codes: Set[int], facility_id: int
     ) -> bool:
-        """Determine if all equipment items are available at the given facility_id. Returns True only if all items are
-        available at the facility_id, otherwise returns False."""
-        return self.rng.random_sample() < self.probability_all_equipment_available(item_codes=item_codes,
-                                                                                   facility_id=facility_id)
+        """
+        Determine if all equipment items are available at the given facility_id.
+        Returns True only if all items are available at the facility_id,
+        otherwise returns False.
+        """
+        return self.rng.random_sample() < self.probability_all_equipment_available(
+            facility_id=facility_id,
+            *item_codes
+        )
 
     def record_use_of_equipment(
         self, item_codes: Set[int], facility_id: int
