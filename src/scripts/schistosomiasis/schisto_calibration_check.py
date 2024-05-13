@@ -44,9 +44,9 @@ equal_allocation_by_district = True
 popsize = 500  # if equal_allocation_by_district=True then this is the popsize in each district
 
 
-def run_simulation(popsize=popsize, mda_execute=True):
+def run_simulation(popsize=popsize, mda_execute=False):
     start_date = Date(2010, 1, 1)
-    end_date = Date(2041, 1, 1)
+    end_date = Date(2061, 1, 1)
 
     # For logging, set all modules to WARNING threshold, then alters `Schisto` to level "INFO"
     custom_levels = {
