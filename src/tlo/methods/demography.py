@@ -73,9 +73,10 @@ class Demography(Module):
     The core demography module.
     """
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None, resourcefilepath=None, equal_allocation_by_district: bool = False):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
+        self.equal_allocation_by_district = equal_allocation_by_district
         self.initial_model_to_data_popsize_ratio = None  # will store scaling factor
         self.popsize_by_year = dict()  # will store total population size each year
         self.causes_of_death = dict()  # will store all the causes of death that are possible in the simulation
