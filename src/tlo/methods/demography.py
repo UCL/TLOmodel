@@ -384,7 +384,8 @@ class Demography(Module):
         _df.prob = _df.prob / _df.prob.sum()  # Rescale `prob` so that it sums to 1.0
         return _df.reset_index(drop=True)
 
-    def _edit_init_pop_so_that_equal_number_in_each_district(self, df) -> pd.DataFrame:
+    @staticmethod
+    def _edit_init_pop_so_that_equal_number_in_each_district(df) -> pd.DataFrame:
         """Return an edited version of the `pd.DataFrame` describing the probability of persons in the population being
         created with certain characteristics to reflect the constraint of there being an equal number of persons
         in each district."""
