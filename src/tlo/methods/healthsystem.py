@@ -644,6 +644,7 @@ class HealthSystem(Module):
                 else self.parameters["equip_availability"]
             ),
             logger=logger,
+            rng=self.rng.randint(2 ** 31 - 1),
         )
 
         self.tclose_overwrite = self.parameters['tclose_overwrite']

@@ -92,7 +92,7 @@ class Equipment:
         if rng is not None:
             self.rng = rng
         else:
-            self.rng = np.random.RandomState(self.rng.randint(2 ** 31 - 1))
+            self.rng = np.random.RandomState(np.random.randint(2 ** 31 - 1))
 
         self.availability = availability
         self.master_facilities_list = master_facilities_list
