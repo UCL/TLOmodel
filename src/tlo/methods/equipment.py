@@ -104,18 +104,6 @@ class Equipment:
         assert value in {"all", "none", "default"}, f"New availability value {value} not recognised."
         self._availability = value
 
-    def update_availability(
-        self, availability: Literal["all", "default", "none"]
-    ) -> None:
-        """
-        Update the availability of equipment.
-
-        This is expected to be called midway through the simulation if the
-        assumption of the equipment availability is changed.
-        """
-        assert availability in ["all", "none", "default"], f"New availability parameter {availability} not recognised."
-        self.availability = availability
-
     def _calculate_equipment_availability_probabilities(self) -> pd.Series:
         """
         Compute the probabilities that each equipment item is available (at a given
