@@ -1216,8 +1216,10 @@ class Hiv(Module):
 
         if scaleup_malaria:
             # scale-up malaria program
-            # testing reaches XX
-            prob_malaria_case_tests=0.4
+            # increase testing
+            # prob_malaria_case_tests=0.4 default
+            p_mal["prob_malaria_case_tests"] = scaled_params.loc[
+                scaled_params.parameter == "prob_malaria_case_tests", "scaleup_value"].values[0]
 
             # gen pop testing rates
             # annual Rate_rdt_testing=0.64 at 2023
@@ -1226,38 +1228,31 @@ class Hiv(Module):
                     scaled_params.parameter == "rdt_testing_rates", "scaleup_value"].values[0]
 
 
-        #     # treatment reaches XX
-        #     # no default between testing and treatment, governed by tx availability
-        #
-        #     # coverage IPTp reaches XX
-        #
-        #     # treatment success reaches 1
-        #     self.sim.modules["Malaria"].parameters["prob_of_treatment_success"] = scaled_params.loc[
-        #         scaled_params.parameter == "prob_of_treatment_success", "scaleup_value"].value[0]
+            # treatment reaches XX
+            # no default between testing and treatment, governed by tx availability
 
+            # coverage IPTp reaches XX
+
+            # treatment success reaches 1
+            self.sim.modules["Malaria"].parameters["prob_of_treatment_success"] = scaled_params.loc[
+                scaled_params.parameter == "prob_of_treatment_success", "scaleup_value"].values[0]
 
             # bednet and ITN coverage
-            # set IRS to 0 for all districts
+            # set IRS for all districts
             # lookup table created in malaria read_parameters
             # produces self.itn_irs called by malaria poll to draw incidence
             # need to overwrite this
-            # self.sim.modules["Malaria"].itn_irs['irs_rate'] = treatment_effects.loc[
-            #     treatment_effects.parameter == "irs_district", "no_effect"].values[0]
-            #
-            # # set ITN to 0 for all districts
-            # # itn_district
-            # self.sim.modules["Malaria"].itn_irs['itn_rate'] = treatment_effects.loc[
-            #     treatment_effects.parameter == "itn_district", "no_effect"].values[0]
-            #
-            # # itn rates for 2019 onwards
-            # self.sim.modules["Malaria"].parameters["itn"] = treatment_effects.loc[
-            #     treatment_effects.parameter == "itn", "no_effect"].values[0]
+            self.sim.modules["Malaria"].itn_irs['irs_rate'] = scaled_params.loc[
+                scaled_params.parameter == "irs_district", "scaleup_value"].values[0]
 
+            # set ITN or all districts
+            # itn_district
+            self.sim.modules["Malaria"].itn_irs['itn_rate'] = scaled_params.loc[
+                scaled_params.parameter == "itn_district", "scaleup_value"].values[0]
 
-
-
-
-
+            # itn rates for 2019 onwards
+            self.sim.modules["Malaria"].parameters["itn"] = scaled_params.loc[
+                scaled_params.parameter == "itn", "scaleup_value"].values[0]
 
     def on_birth(self, mother_id, child_id):
         """

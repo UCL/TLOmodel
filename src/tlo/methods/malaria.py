@@ -591,6 +591,7 @@ class Malaria(Module):
         rates are set to match rdt usage reports from WHO / NMCP
         """
         df = population.props
+        df = population.props
         rng = self.rng
         p = self.parameters
 
