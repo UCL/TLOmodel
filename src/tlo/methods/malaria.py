@@ -596,10 +596,12 @@ class Malaria(Module):
 
         # extract annual testing rates from NMCP reports
         # this is the # rdts issued divided by population size
+        year = self.sim.date.year if self.sim.date.year <= 2024 else 2024
+
         test_rates = (
             p["rdt_testing_rates"].set_index("Year")["Rate_rdt_testing"].dropna()
         )
-        rdt_rate = test_rates.loc[min(test_rates.index.max(), self.sim.date.year)] / 12
+        rdt_rate = test_rates.loc[min(test_rates.index.max(), year)] / 12
 
         # adjust rdt usage reported rate to reflect consumables availability
         rdt_rate = rdt_rate * p["scaling_factor_for_rdt_availability"]
@@ -773,7 +775,7 @@ class Malaria(Module):
         Optional arguments are used by the logger,
         and are not needed in the diagnosis.
         """
-        
+
         # Call the DxTest RDT to diagnose malaria
         dx_result = diagnosis_function('malaria_rdt')
 
@@ -797,7 +799,7 @@ class Malaria(Module):
             return 'clinical_malaria'
         else:
             return "negative_malaria_test"
-          
+
     def do_at_generic_first_appt(
         self,
         patient_id: int,

@@ -34,8 +34,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2016, 1, 1)
-popsize = 300
+end_date = Date(2014, 1, 1)
+popsize = 100
 
 
 # set up the log config
@@ -78,6 +78,8 @@ sim.register(
     ),
     hiv.Hiv(
         resourcefilepath=resourcefilepath,
+        scaleup_hiv=True, scaleup_tb=True, scaleup_malaria=True,
+        scaleup_start_date=Date(2010, 2, 1)
     ),
     epi.Epi(
         resourcefilepath=resourcefilepath,
