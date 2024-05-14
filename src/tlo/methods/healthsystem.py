@@ -7,7 +7,7 @@ from collections import Counter, defaultdict
 from collections.abc import Iterable
 from itertools import repeat
 from pathlib import Path
-from typing import Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import Dict, List, NamedTuple, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -402,7 +402,6 @@ class HealthSystem(Module):
                                        'LCOA_EHP']
         self.arg_policy_name = policy_name
 
-
         self.tclose_overwrite = None
         self.tclose_days_offset_overwrite = None
 
@@ -577,7 +576,6 @@ class HealthSystem(Module):
         # Ensure that a value for the year at the start of the simulation is provided.
         assert all(2010 in sheet['year'].values for sheet in self.parameters['yearly_HR_scaling'].values())
 
-
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
 
@@ -597,8 +595,15 @@ class HealthSystem(Module):
         )
 
         # Initialise the BedDays class
-        self.bed_days = BedDays(hs_module=self,
-                                availability=self.get_beds_availability())
+        capacity_scaling_factor = self.get_beds_availability()
+        if capacity_scaling_factor not in ["all", "none"]:
+            capacity_scaling_factor = self.sim.modules[
+                "Demography"
+            ].initial_model_to_data_popsize_ratio
+        self.bed_days = BedDays(
+            bed_capacities=self.parameters["BedCapacity"],
+            capacity_scaling_factor=capacity_scaling_factor,
+        )
         self.bed_days.pre_initialise_population()
 
         # Initialise the Consumables class
@@ -619,9 +624,9 @@ class HealthSystem(Module):
         # Set up framework for considering a priority policy
         self.setup_priority_policy()
 
-
     def initialise_population(self, population):
         self.bed_days.initialise_population(population.props)
+        pass
 
     def initialise_simulation(self, sim):
         # If capabilities coefficient was not explicitly specified, use initial population scaling factor
@@ -629,9 +634,9 @@ class HealthSystem(Module):
             self.capabilities_coefficient = self.sim.modules['Demography'].initial_model_to_data_popsize_ratio
 
         # Set the tracker in preparation for the simulation
-        self.bed_days.initialise_beddays_tracker(
-            model_to_data_popsize_ratio=self.sim.modules['Demography'].initial_model_to_data_popsize_ratio
-        )
+        # self.bed_days.initialise_beddays_tracker(
+        #     model_to_data_popsize_ratio=self.sim.modules['Demography'].initial_model_to_data_popsize_ratio
+        # )
 
         # Set the consumables modules in preparation for the simulation
         self.consumables.on_start_of_day(sim.date)
@@ -690,6 +695,7 @@ class HealthSystem(Module):
 
     def on_birth(self, mother_id, child_id):
         self.bed_days.on_birth(self.sim.population.props, mother_id, child_id)
+        pass
 
     def on_simulation_end(self):
         """Put out to the log the information from the tracker of the last day of the simulation"""
@@ -743,8 +749,6 @@ class HealthSystem(Module):
 
     def process_human_resources_files(self, use_funded_or_actual_staffing: str):
         """Create the data-structures needed from the information read into the parameters."""
-
-
 
         # * Define Facility Levels
         self._facility_levels = set(self.parameters['Master_Facilities_List']['Facility_Level']) - {'5'}
@@ -928,7 +932,7 @@ class HealthSystem(Module):
             # Only rescale if rescaling factor is greater than 1 (i.e. don't reduce
             # available capabilities if these were under-used the previous year).
             rescaling_factor = self._summary_counter.frac_time_used_by_officer_type_and_level(
-                officer_type=officer_type, level=level
+                officer_type, level
             )
             if rescaling_factor > 1 and rescaling_factor != float("inf"):
                 self._daily_capabilities[officer] *= rescaling_factor
@@ -1410,6 +1414,19 @@ class HealthSystem(Module):
         the_level = hsi_event.ACCEPTED_FACILITY_LEVEL
         return self._facilities_for_each_district[the_level][the_district]
 
+    def get_facility_id_for_beds(self, patient_id: int) -> None:
+        """
+        Helper function to find the facility at which an HSI event that requires
+        a bed footprint will take place.
+
+        Return the ID of facility available to this person.
+        Note that all beds are pooled at one particular level.
+        """
+        the_district = self.sim.population.props.at[patient_id, 'district_of_residence']
+        return self._facilities_for_each_district[self.bed_days.bed_facility_level][
+            the_district
+        ][0]
+
     def get_appt_footprint_as_time_request(self, facility_info: FacilityInfo, appt_footprint: dict):
         """
         This will take an APPT_FOOTPRINT and return the required appointments in terms of the
@@ -1678,7 +1695,7 @@ class HealthSystem(Module):
     def log_current_capabilities_and_usage(self):
         """
         This will log the percentage of the current capabilities that is used at each Facility Type, according the
-        `runnning_total_footprint`. This runs every day.
+        `runnning_total_footprint`.
         """
         current_capabilities = self.capabilities_today
         total_footprint = self.running_total_footprint
@@ -1799,7 +1816,7 @@ class HealthSystem(Module):
 
     def on_end_of_day(self) -> None:
         """Do jobs to be done at the end of the day (after all HSI run)"""
-        self.bed_days.on_end_of_day()
+        self.bed_days.on_end_of_day(day_that_is_ending=self.sim.date)
         if self._hsi_event_count_log_period == "day":
             self._write_hsi_event_counts_to_log_and_reset()
             self._write_never_ran_hsi_event_counts_to_log_and_reset()
@@ -1890,8 +1907,9 @@ class HealthSystem(Module):
                     if sum(event.BEDDAYS_FOOTPRINT.values()):
                         event._received_info_about_bed_days = \
                             self.bed_days.issue_bed_days_according_to_availability(
-                                facility_id=self.bed_days.get_facility_id_for_beds(persons_id=event.target),
-                                footprint=event.BEDDAYS_FOOTPRINT
+                                start_date=self.sim.date,
+                                facility_id=self.get_facility_id_for_beds(patient_id=event.target),
+                                requested_footprint=event.BEDDAYS_FOOTPRINT
                             )
 
                     # Check that a facility has been assigned to this HSI
@@ -2039,6 +2057,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
     Here is where we can have multiple types of assumption regarding how these capabilities are modelled.
     """
+
+    module: HealthSystem
 
     def __init__(self, module: HealthSystem):
         super().__init__(module, frequency=DateOffset(days=1), priority=Priority.END_OF_DAY)
@@ -2262,9 +2282,9 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             if sum(event.BEDDAYS_FOOTPRINT.values()):
                                 event._received_info_about_bed_days = \
                                     self.module.bed_days.issue_bed_days_according_to_availability(
-                                        facility_id=self.module.bed_days.get_facility_id_for_beds(
-                                                                           persons_id=event.target),
-                                        footprint=event.BEDDAYS_FOOTPRINT
+                                        facility_id=self.module.get_facility_id_for_beds(
+                                                                           patient_id=event.target),
+                                        requested_footprint=event.BEDDAYS_FOOTPRINT
                                     )
 
                             # Check that a facility has been assigned to this HSI
@@ -2420,7 +2440,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         self.module.consumables.on_start_of_day(self.sim.date)
 
         # Compute footprint that arise from in-patient bed-days
-        inpatient_appts = self.module.bed_days.get_inpatient_appts()
+        inpatient_appts = self.module.bed_days.get_inpatient_appts(date=self.sim.date)
         inpatient_footprints = Counter()
         for _fac_id, _footprint in inpatient_appts.items():
             inpatient_footprints.update(self.module.get_appt_footprint_as_time_request(
@@ -2506,6 +2526,7 @@ class HealthSystemSummaryCounter:
 
         self._frac_time_used_overall = []  # Running record of the usage of the healthcare system
         self._sum_of_daily_frac_time_used_by_officer_type_and_level = Counter()
+
         self._squeeze_factor_by_hsi_event_name = defaultdict(list)  # Running record the squeeze-factor applying to each
         #                                                           treatment_id. Key is of the form:
         #                                                           "<TREATMENT_ID>:<HSI_EVENT_NAME>"
@@ -2560,7 +2581,7 @@ class HealthSystemSummaryCounter:
             self._sum_of_daily_frac_time_used_by_officer_type_and_level[officer_type_facility_level] += fraction_time
 
     def write_to_log_and_reset_counters(self):
-        """Log summary statistics reset the data structures. This usually occurs at the end of the year."""
+        """Log summary statistics reset the data structures."""
 
         logger_summary.info(
             key="HSI_Event",
@@ -2599,47 +2620,16 @@ class HealthSystemSummaryCounter:
             },
         )
 
-        # Log mean of 'fraction time used by officer type and facility level' from daily entries from the previous
-        # year.
-        logger_summary.info(
-            key="Capacity_By_OfficerType_And_FacilityLevel",
-            description="The fraction of healthcare worker time that is used each day, averaged over this "
-                        "calendar year, for each officer type at each facility level.",
-            data=flatten_multi_index_series_into_dict_for_logging(
-                self.frac_time_used_by_officer_type_and_level()),
-        )
-
         self._reset_internal_stores()
 
-    def frac_time_used_by_officer_type_and_level(
-        self,
-        officer_type: Optional[str]=None,
-        level: Optional[str]=None,
-    ) -> Union[float, pd.Series]:
-        """Average fraction of time used by officer type and level since last reset.
-        If `officer_type` and/or `level` is not provided (left to default to `None`) then a pd.Series with a multi-index
-        is returned giving the result for all officer_types/levels."""
+    def frac_time_used_by_officer_type_and_level(self, officer_type, level):
+        """Average fraction of time used by officer type and level since last reset."""
+        # Use len(self._frac_time_used_overall) as proxy for number of days in past year.
+        return (
+            self._sum_of_daily_frac_time_used_by_officer_type_and_level[officer_type, level]
+            / len(self._frac_time_used_overall)
+        )
 
-        if (officer_type is not None) and (level is not None):
-            return (
-                self._sum_of_daily_frac_time_used_by_officer_type_and_level[officer_type, level]
-                / len(self._frac_time_used_overall)
-                # Use len(self._frac_time_used_overall) as proxy for number of days in past year.
-            )
-        else:
-            # Return multiple in the form of a pd.Series with multiindex
-            mean_frac_time_used = {
-                (_officer_type, _level): v / len(self._frac_time_used_overall)
-                for (_officer_type, _level), v in self._sum_of_daily_frac_time_used_by_officer_type_and_level.items()
-                if (_officer_type == officer_type or officer_type is None) and (_level == level or level is None)
-            }
-            return pd.Series(
-                index=pd.MultiIndex.from_tuples(
-                    mean_frac_time_used.keys(),
-                    names=['OfficerType', 'FacilityLevel']
-                ),
-                data=mean_frac_time_used.values()
-            ).sort_index()
 
 class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
     """Event that causes certain internal parameters of the HealthSystem to be changed; specifically:
@@ -2649,6 +2639,8 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
         * `cons_availability`
         * `beds_availability`
     Note that no checking is done here on the suitability of values of each parameter."""
+
+    module: HealthSystem
 
     def __init__(self, module: HealthSystem, parameters: Dict):
         super().__init__(module)
