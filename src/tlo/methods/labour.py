@@ -768,7 +768,7 @@ class Labour(Module):
 
         # --------------------------------------- ORAL ANTIHYPERTENSIVES ---------------------------------------------
         self.item_codes_lab_consumables['oral_antihypertensives'] = \
-            {ic('Hydralazine, powder for injection, 20 mg ampoule'): 1}
+            {ic('Methyldopa 250mg_1000_CMST'): 1}
 
         # ----------------------------------  SEVERE PRE-ECLAMPSIA/ECLAMPSIA  -----------------------------------------
         self.item_codes_lab_consumables['magnesium_sulfate'] = \
@@ -1790,8 +1790,9 @@ class Labour(Module):
                 elif (labour_stage == 'pp') and (df.at[person_id, 'pn_htn_disorders'] == 'severe_gest_htn'):
                     df.at[person_id, 'pn_htn_disorders'] = 'gest_htn'
 
-                avail = hsi_event.get_consumables(
-                    item_codes=self.item_codes_lab_consumables['oral_antihypertensives'])
+                dose = (7 * 4) * 6 # approximating 4 tablets a day, for 6 weeks
+                cons = {_i: dose for _i in self.item_codes_lab_consumables['oral_antihypertensives']}
+                avail = hsi_event.get_consumables(item_codes=cons)
 
                 if avail:
                     df.at[person_id, 'la_gest_htn_on_treatment'] = True
