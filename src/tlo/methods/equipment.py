@@ -17,43 +17,41 @@ logger_summary = logging.getLogger("tlo.methods.healthsystem.summary")
 
 
 class Equipment:
-    """This is the Equipment Class. It maintains a current record of the availability of equipment in the
-     HealthSystem. It is expected that this is instantiated by the `HealthSystem` module.
+    """This is the equipment class. It maintains a current record of the availability of equipment in the
+     health system. It is expected that this is instantiated by the :py:class:`~.HealthSystem` module.
 
-     The basic paradigm is that an `HSI_Event` can declare equipment that is required for delivering the healthcare
-     service that the `HSI_Event` represents. The `HSI_Event` uses `self.add_equipment()` to make these declaration,
-     with reference to the items of equipment that are defined in `ResourceFile_EquipmentCatalogue.csv`. (These
+     The basic paradigm is that an :py:class:`~.HSI_Event` can declare equipment that is required for delivering the healthcare
+     service that the ``HSI_Event`` represents. The ``HSI_Event`` uses :py:meth:`HSI_event.add_equipment` to make these declarations,
+     with reference to the items of equipment that are defined in ``ResourceFile_EquipmentCatalogue.csv``. (These
      declaration can be in the form of the descriptor or the equipment item code). These declarations can be used when
-     the `HSI_Event` is created but before it is run (in `__init__`), or during execution of the HSI_Event (in `apply`).
+     the ``HSI_Event`` is created but before it is run (in ``__init__``), or during execution of the ``HSI_Event`` (in :py:meth:`.HSI_Event.apply`).
 
-     As the HSI_Event can declare equipment that is required before it is run, the HealthSystem _can_ use this to
-     prevent an HSI_Event running if the equipment declared is not available. Note that for equipment that is declared
-     whilst the HSI_Event is running, there are no checks on availability, and the HSI_Event is allowed to continue
-     running even if equipment is declared is not available. For this reason, the `HSI_Event` should declare equipment
-     that is _essential_ for the healthcare service in its `__init__` method. If the logic inside the `apply` method
-     of the `HSI_Event` depends on the availability of equipment, then it can find the probability with which
-     item(s) will be available using `self.probability_equipment_available()`.
+     As the ``HSI_Event`` can declare equipment that is required before it is run, the HealthSystem *can* use this to
+     prevent an ``HSI_Event`` running if the equipment declared is not available. Note that for equipment that is declared
+     whilst the ``HSI_Event`` is running, there are no checks on availability, and the ``HSI_Event`` is allowed to continue
+     running even if equipment is declared is not available. For this reason, the ``HSI_Event`` should declare equipment
+     that is *essential* for the healthcare service in its ``__init__`` method. If the logic inside the ``apply`` method
+     of the ``HSI_Event`` depends on the availability of equipment, then it can find the probability with which
+     item(s) will be available using :py:meth:`.HSI_Event.probability_equipment_available`.
 
      The data on the availability of equipment data refers to the proportion of facilities in a district of a
-     particular level (i.e., the `Facility_ID`) that do have that piece of equipment. In the model, we do not know
+     particular level (i.e., the ``Facility_ID``) that do have that piece of equipment. In the model, we do not know
      which actual facility the person is attending (there are many actual facilities grouped together into one
-     `Facility_ID` in the model). Therefore, the determination of whether equipment is available is made
-     probabilistically for the `HSI_Event` (i.e., the probability that the actual facility being attended by the
+     ``Facility_ID`` in the model). Therefore, the determination of whether equipment is available is made
+     probabilistically for the ``HSI_Event`` (i.e., the probability that the actual facility being attended by the
      person has the equipment is represented by the proportion of such facilities that do have that equipment). It is
      assumed that the probabilities of each item being available are independent of one other (so that the
      probability of all items being available is the product of the probabilities for each item). This probabilistic
-     determination of availability is only done _once_ for the `HSI_Event`: i.e., if the equipment is determined to
-     not be available for the instance of the `HSI_Event`, then it will remain not available if the same event is
-     re-scheduled / re-entered into the HealthSystem queue. This represents that if the facility that a particular
-     person attends for the `HSI_Event` does not have the equipment available, then it will still not be available on
+     determination of availability is only done _once_ for the ``HSI_Event``: i.e., if the equipment is determined to
+     not be available for the instance of the ``HSI_Event``, then it will remain not available if the same event is
+     re-scheduled / re-entered into the ``HealthSystem`` queue. This represents that if the facility that a particular
+     person attends for the ``HSI_Event`` does not have the equipment available, then it will still not be available on
      another day.
 
      Where data on availability is not provided for an item, the probability of availability is inferred from the
-     average availability of other items in that `Facility_ID`. Likewise, the probability of an item being available
-     at `Facility_ID` is inferred from the average availability of that item at other facilities. If an item_code is
-     referred in `add_equipment() that is not recognised (not included in `catalogue`), a `UserWarning` is issued, but
-     that item is then silently ignored. If a facility_id is ever referred that is not recognised (not included in
-     `master_facilities_list`), an `AssertionError` is raised.
+     average availability of other items in that facility ID. Likewise, the probability of an item being available
+     at a facility ID is inferred from the average availability of that item at other facilities. If an item code is
+     referred in ``add_equipment`` that is not recognised (not included in :py:attr:`catalogue`), a :py:exc:`UserWarning` is issued, but that item is then silently ignored. If a facility ID is ever referred that is not recognised (not included in :py:attr:`master_facilities_list`), an :py:exc:`AssertionError` is raised.
 
     :param: `catalogue`: The database of all recognised item_codes. If a Path to a file is provided, load this
     information from the file.
@@ -122,6 +120,15 @@ class Equipment:
         """
         self.write_to_log()
 
+    @property
+    def availability(self):
+        return self._availability
+
+    @availability.setter
+    def availability(self, value: Literal["all", "default", "none"]):
+        assert value in {"all", "none", "default"}, f"New availability value {value} not recognised."
+        self._availability = value
+
     def update_availability(
         self, availability: Literal["all", "default", "none"]
     ) -> None:
@@ -167,10 +174,10 @@ class Equipment:
 
         return dat
 
-    def parse_items(self, items: Union[int, str, Iterable[int | str]]) -> Set[int]:
+    def parse_items(self, items: Union[int, str, Iterable[int], Iterable[str]]) -> Set[int]:
         """Parse equipment items specified as an item_code (integer), an item descriptor (string), or an iterable of
-         either, and return as a set of item_code (integers). For any item_code/descriptor not recognised, a
-         `UserWarning` is issued."""
+         item_codes or descriptors (but not a mix of the two), and return as a set of item_code (integers). For any
+         item_code/descriptor not recognised, a ``UserWarning`` is issued."""
 
         def check_item_codes_recognised(item_codes: set[int]):
             if not item_codes.issubset(self._all_item_codes):
@@ -195,7 +202,7 @@ class Equipment:
         else:
             check_item_descriptors_recognised(items)  # Warn for any unrecognised descriptors
             # In the return, any unrecognised descriptors are silently ignored.
-            return set(filter(lambda item: item is not None, map(self._item_code_lookup.get, items)))
+            return set(self._item_code_lookup[i] for i in items if i in self._item_code_lookup)
 
     def probability_all_equipment_available(
         self, facility_id: int, item_codes: Set[int]
@@ -205,7 +212,7 @@ class Equipment:
         at the given facility.
 
         It does so by looking at the probabilities of each equipment item being
-        available and multiplying these together to find the probability that _all_
+        available and multiplying these together to find the probability that *all*
         are available.
 
         NOTE: This will error if the facility ID or any of the item codes is not recognised.
