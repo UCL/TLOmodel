@@ -68,18 +68,18 @@ def test_beddays_in_isolation(tmpdir, seed):
     footprint = {'bedtype1': dur_bedtype1, 'bedtype2': 0}
 
     sim.date = start_date
-    hs.bed_days.impose_beddays_footprint(person_id=person_id, footprint=footprint)
+    hs.bed_days.impose_beddays_footprint(patient_id=person_id, footprint=footprint, first_day=start_date, facility=level2_facility_ids[0])
     tracker = hs.bed_days.bed_tracker['bedtype1'][hs.bed_days.get_facility_id_for_beds(person_id)][0: days_sim]
 
     # check if impose footprint works as expected
     assert ([cap_bedtype1 - 1] * dur_bedtype1 + [cap_bedtype1] * (days_sim - dur_bedtype1) == tracker.values).all()
 
     # 2) cause someone to die and relieve their footprint from the bed-days tracker
-    hs.bed_days.remove_beddays_footprint(person_id)
+    hs.bed_days.remove_patient_footprint(person_id)
     assert ([cap_bedtype1] * days_sim == tracker.values).all()
 
     # 3) check that removing bed-days from a person without bed-days does nothing
-    hs.bed_days.remove_beddays_footprint(2)
+    hs.bed_days.remove_patient_footprint(2)
     assert ([cap_bedtype1] * days_sim == tracker.values).all()
 
 
@@ -148,7 +148,7 @@ def test_bed_days_basics(tmpdir, seed):
     )
     sim.make_initial_population(n=100)
     sim.simulate(end_date=start_date + pd.DateOffset(days=100))
-    hs = sim.modules['HealthSystem']
+    hs: healthsystem.HealthSystem = sim.modules['HealthSystem']
 
     # 0) Check that structure of the log is as expected (if the healthsystem was not disabled)
     log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']
@@ -176,8 +176,8 @@ def test_bed_days_basics(tmpdir, seed):
     hsi_bd = HSI_Dummy(module=sim.modules['DummyModule'], person_id=person_id)
 
     # 2) Check that HSI_Event come with correctly formatted bed-days footprints, whether explicitly defined or not.
-    hs.bed_days.check_beddays_footprint_format(hsi_nobd.BEDDAYS_FOOTPRINT)
-    hs.bed_days.check_beddays_footprint_format(hsi_bd.BEDDAYS_FOOTPRINT)
+    hs.bed_days.assert_valid_footprint(hsi_nobd.BEDDAYS_FOOTPRINT)
+    hs.bed_days.assert_valid_footprint(hsi_bd.BEDDAYS_FOOTPRINT)
 
     # 3) Check that helper-function to make footprints works as expected:
     assert {k: 0 for k in bed_types} == hsi_nobd.BEDDAYS_FOOTPRINT
@@ -625,7 +625,7 @@ def test_the_use_of_beds_from_multiple_facilities(seed):
 
     # impose bed days footprint for each of the persons in Northern and Central districts
     for _person_id in [0, 1]:
-        hs.bed_days.impose_beddays_footprint(person_id=_person_id, footprint=footprint)
+        hs.bed_days.impose_beddays_footprint(patient_id=_person_id, footprint=footprint, first_day=sim.date, facility=129+_person_id)
 
         # get facility_id that should be receive this footprint
         _fac_id = person_info[_person_id][1]
@@ -640,9 +640,9 @@ def test_the_use_of_beds_from_multiple_facilities(seed):
         ).all()
 
     # -- Check that there is an error if there is demand for beddays in a region for which no capacity is defined
-    # person 2 is in the Southern region for which no beddays capacity is defimed
+    # person 2 is in the Southern region for which no beddays capacity is defined
     with pytest.raises(KeyError):
-        hs.bed_days.impose_beddays_footprint(person_id=2, footprint=footprint)
+        hs.bed_days.impose_beddays_footprint(patient_id=2, footprint=footprint, first_day=sim.date, facility=128)
 
 
 def test_bed_days_allocation_to_HSI(seed):

@@ -604,7 +604,6 @@ class HealthSystem(Module):
             bed_capacities=self.parameters["BedCapacity"],
             capacity_scaling_factor=capacity_scaling_factor,
         )
-        self.bed_days.pre_initialise_population()
 
         # Initialise the Consumables class
         self.consumables = Consumables(
@@ -625,7 +624,6 @@ class HealthSystem(Module):
         self.setup_priority_policy()
 
     def initialise_population(self, population):
-        self.bed_days.initialise_population(population.props)
         pass
 
     def initialise_simulation(self, sim):
@@ -694,7 +692,6 @@ class HealthSystem(Module):
         sim.schedule_event(DynamicRescalingHRCapabilities(self), Date(sim.date))
 
     def on_birth(self, mother_id, child_id):
-        self.bed_days.on_birth(self.sim.population.props, mother_id, child_id)
         pass
 
     def on_simulation_end(self):
@@ -1266,7 +1263,7 @@ class HealthSystem(Module):
                 f"In the HSI with TREATMENT_ID={hsi_event.TREATMENT_ID}, the ACCEPTED_FACILITY_LEVEL (=" \
                 f"{hsi_event.ACCEPTED_FACILITY_LEVEL}) is not recognised."
 
-            self.bed_days.check_beddays_footprint_format(hsi_event.BEDDAYS_FOOTPRINT)
+            self.bed_days.assert_valid_footprint(hsi_event.BEDDAYS_FOOTPRINT)
 
             # Check that this can accept the squeeze argument
             assert _accepts_argument(hsi_event.run, 'squeeze_factor')
@@ -1744,10 +1741,6 @@ class HealthSystem(Module):
             fraction_time_used_across_all_facilities=fraction_time_used_overall,
             fraction_time_used_by_officer_type_and_level=summary_by_officer["Fraction_Time_Used"].to_dict()
         )
-
-    def remove_beddays_footprint(self, person_id):
-        # removing bed_days from a particular individual if any
-        self.bed_days.remove_beddays_footprint(person_id=person_id)
 
     def find_events_for_person(self, person_id: int):
         """Find the events in the HSI_EVENT_QUEUE for a particular person.
@@ -2282,6 +2275,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             if sum(event.BEDDAYS_FOOTPRINT.values()):
                                 event._received_info_about_bed_days = \
                                     self.module.bed_days.issue_bed_days_according_to_availability(
+                                        start_date=self.sim.date,
                                         facility_id=self.module.get_facility_id_for_beds(
                                                                            patient_id=event.target),
                                         requested_footprint=event.BEDDAYS_FOOTPRINT
@@ -2436,7 +2430,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
 
         # Refresh information ready for new day:
-        self.module.bed_days.on_start_of_day()
         self.module.consumables.on_start_of_day(self.sim.date)
 
         # Compute footprint that arise from in-patient bed-days

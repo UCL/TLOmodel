@@ -11,6 +11,7 @@ from tlo.population import Population
 
 if TYPE_CHECKING:
     from tlo import Module, Simulation
+    from tlo.methods.bed_days import BedDaysFootprint
     from tlo.methods.healthsystem import HealthSystem
 
 logger = logging.getLogger(__name__)
@@ -110,7 +111,7 @@ class HSI_Event:
         self.TREATMENT_ID = ""
         self.ACCEPTED_FACILITY_LEVEL = None
         # Set "dynamic" default value
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({})
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint()
 
     @property
     def bed_days_allocated_to_this_event(self):
@@ -226,22 +227,16 @@ class HSI_Event:
         else:
             return rtn
 
-    def make_beddays_footprint(self, dict_of_beddays) -> Dict[str, Union[float, int]]:
-        """Helper function to make a correctly-formed 'bed-days footprint'"""
-
-        # get blank footprint
-        footprint = self.healthcare_system.bed_days.get_blank_beddays_footprint()
-
-        # do checks on the dict_of_beddays provided.
-        assert isinstance(dict_of_beddays, dict)
-        assert all((k in footprint.keys()) for k in dict_of_beddays.keys())
-        assert all(isinstance(v, (float, int)) for v in dict_of_beddays.values())
-
-        # make footprint (defaulting to zero where a type of bed-days is not specified)
-        for k, v in dict_of_beddays.items():
-            footprint[k] = v
-
-        return footprint
+    def make_beddays_footprint(
+        self, dict_of_beddays: Dict[str, int | float] = {}
+    ) -> BedDaysFootprint:
+        """
+        Helper function to make a correctly-formed 'bed-days footprint',
+        may be overwritten by subclasses.
+        """
+        return self.healthcare_system.bed_days.get_blank_beddays_footprint(
+            **dict_of_beddays
+        )
 
     def is_all_beddays_allocated(self) -> bool:
         """Check if the entire footprint requested is allocated"""

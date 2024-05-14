@@ -481,7 +481,7 @@ class Demography(Module):
         # Release any beds-days that would be used by this person:
         if 'HealthSystem' in self.sim.modules:
             if person.hs_is_inpatient:
-                self.sim.modules['HealthSystem'].remove_beddays_footprint(person_id=individual_id)
+                self.sim.modules['HealthSystem'].bed_days.remove_patient_footprint(patient_id=individual_id)
 
     def create_mappers_from_causes_of_death_to_label(self):
         """Use a helper function to create mappers for causes of death to label."""

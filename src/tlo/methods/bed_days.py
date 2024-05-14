@@ -1,3 +1,4 @@
+from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List, Literal, Optional, Tuple
 
@@ -138,21 +139,57 @@ IN_PATIENT_DAY_SUBSEQUENT_DAYS = {"InpatientDays": 1}
 
 class BedDays:
     """
-    Tracks bed days resources, in a better way than using dataframe columns
+    Tracks bed days resources, in a better way than using dataframe columns...
+    TODO: Docstring
+
+    bed_capacities is intended to replace self.hs_module.parameters["BedCapacity"]
+    availability has been superseded by capacity_scaling_factor
+
+    :param capacity_scaling_factor: Capacities read from resource files are scaled
+    by this factor. "all" will map to 1.0 (use provided occupancies), whilst "none"
+    will map to 0.0 (no beds available anywhere). Default is 1.
     """
 
+    # Class-wide variable: the name given to the "bed_type" that actually
+    # indicates there are no beds available at a particular facility.
+    __NO_BEDS_BED_TYPE: str = "non_bed_space"
+
+    _bed_types: Tuple[str]
     # Index: FacilityID, Cols: max capacity of given bed type
     _max_capacities: pd.DataFrame
+
     # List of current bed occupancies, scheduled and waiting
     occupancies: List[BedOccupancy]
     # All available bed types, including the "non_bed_space".
     # Tuple order dictates bed priority (earlier beds are higher priority).
-    bed_types: Tuple[str]
 
     @property
     def bed_facility_level(self) -> str:
         """Facility level at which all beds are taken to be pooled."""
         return "3"
+
+    @property
+    def bed_types(self) -> Tuple[str]:
+        """
+        All available bed types, including the bed type that corresponds to no
+        space being available in a facility.
+
+        Tuple order dictates bed priority: beds types that appear first in the
+        tuple are higher priority than those which follow, with the no space
+        available bed being the lowest priority.
+        """
+        return self._bed_types
+
+    @bed_types.setter
+    def bed_types(self, bed_names: Iterable[str]) -> None:
+        assert (
+            self.__NO_BEDS_BED_TYPE in bed_names
+            and self.__NO_BEDS_BED_TYPE == bed_names[-1]
+        ), (
+            "Lowest priority bed type (corresponding to no available bed space)"
+            f" must be {self.__NO_BEDS_BED_TYPE}"
+        )
+        self._bed_types = tuple(x for x in bed_names)
 
     @staticmethod
     def date_ranges_overlap(
@@ -203,12 +240,6 @@ class BedDays:
         capacity_scaling_factor: float | Literal["all", "none"] = 1.0,
     ) -> None:
         """
-        bed_capacities is intended to replace self.hs_module.parameters["BedCapacity"]
-        availability has been superseded by capacity_scaling_factor
-
-        :param capacity_scaling_factor: Capacities read from resource files are scaled
-        by this factor. "all" will map to 1.0 (use provided occupancies), whilst "none"
-        will map to 0.0 (no beds available anywhere). Default is 1.
         """
         self.bed_types = tuple(x for x in bed_capacities.columns if x != "Facility_ID")
 
@@ -495,40 +526,37 @@ class BedDays:
             )
         return reconciled_occupancies
 
-    # THESE MAY NOT BE NEEDED BUT ARE THERE TO KEEP THE REWORK HAPPY
-    # Will change all these to be raising errors once we know what needs replacing
-
-    @property
-    def availability(self) -> None:
-        # don't think this attribute needs to be tracked anymore,
-        # but there's a random event that thinks it should change it.
-        # But then the codebase doesn't actually use the value
-        # of this attribute AFTER that point in the simulation anyway.
-        raise ValueError("Tried to access BedDays.availability")
-
-    def remove_beddays_footprint(self, *args, **kwargs) -> None:
-        raise ValueError("Will you need to impliment this method")
-
-    def check_beddays_footprint_format(self, *args, **kwargs) -> None:
+    def remove_patient_footprint(self, patient_id: int) -> None:
         """
-        Checking for a valid beddays footprint format is done like 20+ times in the entire codebase and it's getting both old and redundant. We don't need to check this if we're adhering to a strict format!
-        """
-        pass
+        Remove all occupancies scheduled by the patient.
+        Typically used when a patient dies or is otherwise removed
+        from the simulation.
 
-    def pre_initialise_population(self, *args, **kwargs) -> None:
-        """We don't need to do anything, I think...
-        TODO: Validate then remove this method and it's call in the new HealthSystem"""
-        pass
-
-    def get_blank_beddays_footprint(self, *args, **kwargs) -> BedDaysFootprint:
+        :param patient_id: Index in the population DataFrame of the
+        individual whose occupancies are to be cancelled.
         """
-        Provide a BedDaysFootprint with 0 days allocated to each bed type.
-        """
-        return BedDaysFootprint(self.bed_types)
+        self.end_occupancies(*self.find_occupancies(patient_id=patient_id))
 
-    def get_inpatient_appts(
-        self, date: Date, *args, **kwargs
-    ) -> Dict[str, Dict[str, int | float]]:
+    def assert_valid_footprint(self, footprint: BedDaysFootprint) -> None:
+        """
+        Assert that the footprint provided does not allocate any
+        time to the no-beds-available bed type (and is thus invalid).
+        """
+        assert footprint[self.__NO_BEDS_BED_TYPE] == 0, (
+            "Invalid footprint: "
+            "requests non-zero allocation of days to the no-beds-available type."
+        )
+
+    def get_blank_beddays_footprint(
+        self, **initial_values: int | float
+    ) -> BedDaysFootprint:
+        """
+        Return a BedDaysFootprint with the given days allocated to each bed type,
+        or zero days if not specified.
+        """
+        return BedDaysFootprint(self.bed_types, **initial_values)
+
+    def get_inpatient_appts(self, date: Date) -> Dict[str, Dict[str, int | float]]:
         """
         Return a dictionary of the form {<facility_id>: APPT_FOOTPRINT},
         giving the total APPT_FOOTPRINT required for the servicing of the
@@ -537,14 +565,9 @@ class BedDays:
         # For each facility, compute the total number of beds that are occupied
         # total_inpatients has n_facilities elements that are the number of beds occupied
         active_occupancies_today = self.find_occupancies(on_date=date)
-        total_inpatients: Dict[int, int] = {}
+        total_inpatients: Dict[int, int] = defaultdict(int)
         for o in active_occupancies_today:
-            try:
-                total_inpatients[o.facility] += 1
-            except KeyError:
-                # This facility has not been added as a key yet,
-                # so start the counter at 1
-                total_inpatients[o.facility] = 1
+            total_inpatients[o.facility] += 1
 
         # Construct the appointment footprint for all facilities with inpatients
         inpatient_appointments = {
@@ -599,11 +622,6 @@ class BedDays:
         # Schedule the new occupancies, which are now conflict-free
         # (if they weren't already)
         self.schedule_occupancies(*new_occupancies)
-
-    def initialise_population(self, *args, **kwargs) -> None:
-        """We don't need to do anything, I think...
-        TODO: Validate then remove this method and it's call in the new HealthSystem"""
-        pass
 
     def issue_bed_days_according_to_availability(
         self, start_date: Date, facility_id: int, requested_footprint: BedDaysFootprint
@@ -683,15 +701,6 @@ class BedDays:
 
         return available_footprint
 
-    def on_birth(self, *args, **kwargs) -> None:
-        raise ValueError("Will you need to impliment this method")
-
-    def on_start_of_day(self, *args, **kwargs) -> None:
-        """
-        Don't think we need to do anything here. But at the end of the day we will need to remove events that expired today.
-        """
-        pass
-
     def on_end_of_day(self, day_that_is_ending: Date) -> None:
         """
         The old method does some logging here and no other activities.
@@ -706,8 +715,23 @@ class BedDays:
 
         print(f"Removed {len(expired_occupancies)} expired bed occupancies.")
 
+        # DO SOME LOGGING HERE!
+
     def on_end_of_year(self, **kwargs) -> None:
+        # SOME LOGGING NEEDS TO BE DONE
         raise ValueError("Will you need to impliment this method")
 
     def on_simulation_end(self, *args, **kwargs) -> None:
-        pass  # legit is the content in the non-rework too
+        pass
+
+    # THESE MAY NOT BE NEEDED BUT ARE THERE TO KEEP THE REWORK HAPPY
+    # Will change all these to be raising errors once we know what needs replacing
+
+    @property
+    def availability(self) -> None:
+        # don't think this attribute needs to be tracked anymore,
+        # but there's a random event that thinks it should change it.
+        # But then the codebase doesn't actually use the value
+        # of this attribute AFTER that point in the simulation anyway.
+        # Have opened https://github.com/UCL/TLOmodel/issues/1346
+        raise ValueError("Tried to access BedDays.availability")
