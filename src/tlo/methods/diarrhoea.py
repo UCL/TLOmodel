@@ -644,18 +644,22 @@ class Diarrhoea(Module):
 
     def look_up_consumables(self):
         """Look up and store the consumables item codes used in each of the HSI."""
-        get_item_codes_from_package_name = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
+        ic = self.sim.modules['HealthSystem'].get_item_code_from_item_name
 
-        self.consumables_used_in_hsi['ORS'] = get_item_codes_from_package_name(
-            package='ORS')
-        self.consumables_used_in_hsi['Treatment_Severe_Dehydration'] = get_item_codes_from_package_name(
-            package='Treatment of severe diarrhea')
-        self.consumables_used_in_hsi['Zinc_Under6mo'] = get_item_codes_from_package_name(
-            package='Zinc for Children 0-6 months')
-        self.consumables_used_in_hsi['Zinc_Over6mo'] = get_item_codes_from_package_name(
-            package='Zinc for Children 6-59 months')
-        self.consumables_used_in_hsi['Antibiotics_for_Dysentery'] = get_item_codes_from_package_name(
-            package='Antibiotics for treatment of dysentery')
+        self.consumables_used_in_hsi['ORS'] = {ic('ORS, sachet'): 1}
+
+        self.consumables_used_in_hsi['Treatment_Severe_Dehydration'] = \
+            {ic('ORS, sachet'): 1,
+             ic('Giving set iv administration + needle 15 drops/ml_each_CMST'): 1,
+             ic("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 1}
+
+        self.consumables_used_in_hsi['Zinc_Under6mo'] = {ic('Zinc, tablet, 20 mg'): 1}
+
+        self.consumables_used_in_hsi['Zinc_Over6mo'] = {ic('Zinc, tablet, 20 mg'): 1}
+
+        self.consumables_used_in_hsi['Antibiotics_for_Dysentery'] = \
+            {ic('Ciprofloxacin 250mg_100_CMST'): 1,
+             ic("Paracetamol syrup 120mg/5ml_0.0119047619047619_CMST"): 1}
 
     def do_when_presentation_with_diarrhoea(self, person_id, hsi_event):
         """This routine is called when Diarrhoea is a symptom for a child attending a Generic HSI Appointment. It
