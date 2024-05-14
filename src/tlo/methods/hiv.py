@@ -2624,11 +2624,9 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
 
             if df.at[person_id, "li_is_sexworker"]:
                 df.at[person_id, 'hv_days_on_prep_FSW'] += 90
-                print("test")
 
             elif (df.at[person_id, "sex"] == "F") and (15 <= df.at[person_id, "age_years"] <= 24):
                 df.at[person_id, 'hv_days_on_prep_AGYW'] += 90
-                print("test2")
 
             # Schedule 'decision about whether to continue on PrEP' for 3 months time
             self.sim.schedule_event(
