@@ -283,9 +283,9 @@ class HSI_Event:
 
     def add_equipment(self, item_codes: Union[int, str, Iterable[int], Iterable[str]]) -> None:
         """Declare that piece(s) of equipment are used in this HSI_Event. Equipment items can be identified by their
-        item_codes (int) or descriptors (str); a singular item or an iterable of items can be defined at once. Checks
-        are done on the validity of the item_codes/item descriptions and a warning issued if any are not
-        recognised."""
+        item_codes (int) or descriptors (str); a singular item or an iterable of items (either codes or descriptors but
+        not a mix of both) can be defined at once. Checks are done on the validity of the item_codes/item 
+        descriptions and a warning issued if any are not recognised."""
         self._EQUIPMENT.update(self.healthcare_system.equipment.parse_items(item_codes))
 
     @property
