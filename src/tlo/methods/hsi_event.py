@@ -281,7 +281,7 @@ class HSI_Event:
             "values"
         )
 
-    def add_equipment(self, item_codes: Union[int, str, Iterable[int | str]]) -> None:
+    def add_equipment(self, item_codes: Union[int, str, Iterable[int], Iterable[str]]) -> None:
         """Declare that piece(s) of equipment are used in this HSI_Event. Equipment items can be identified by their
         item_codes (int) or descriptors (str); a singular item or an iterable of items can be defined at once. Checks
         are done on the validity of the item_codes/item descriptions and a warning issued if any are not
