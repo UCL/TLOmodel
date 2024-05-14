@@ -34,5 +34,22 @@ hhfa_equipment = pd.melt(hhfa_equipment_wide, id_vars=['fac_code'], var_name='eq
 hhfa_equipment['equipment'] =  hhfa_equipment['equipment_availability_var'].str.split('_').str[0]
 hhfa_equipment['availability_var'] = hhfa_equipment['equipment_availability_var'].str.split('_').str[1]
 
-# TODO Assign values to Yes, No, Functional, Don't know etc.
+# Preserve only relevant datapoints
+relevant_varlist = ['functional','today', 'today-functional', 'calibrated', 'date-last-calibrated', 'prepared','previous-prep']
+hhfa_equipment_df_for_model = hhfa_equipment[hhfa_equipment['availability_var'].isin(relevant_varlist)]
 
+# Create a dataframe with 6 columns of HHFA data on availability - 'available', 'functional', 'calibrated', 'date_last_calibrated' , 'prepared', 'date_last_prepared'
+# Reshape data
+unique_equipment_df_for_model = hhfa_equipment_df_for_model.pivot(index=['fac_code', 'equipment'], columns='availability_var', values='response')
+unique_equipment_df_for_model = unique_equipment_df_for_model.reset_index()
+
+# Rename data columns
+new_column_names = {'date-last-calibrated': 'date_last_calibrated', 'previous-prep': 'date_last_prepared',
+                    'today': 'available', 'today-functional': 'functional_today'}
+unique_equipment_df_for_model = unique_equipment_df_for_model.rename(columns=new_column_names)
+
+# TODO Mark equipment as avaiable if there is info only on functional, calibrated, prepared etc., similary functional if clibrated or preapred
+
+# TODO Assign values to Yes, No, Functional, Don't know etc.
+unique_combinations = hhfa_equipment[['equipment', 'availability_var']].drop_duplicates()
+print(unique_combinations)
