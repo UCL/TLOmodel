@@ -290,12 +290,12 @@ class HSI_Event:
 
     @property
     def is_all_declared_equipment_available(self) -> bool:
-        """Returns `True` if all the (currently) declared items of equipment are available. This is called by the
-        `HealthSystem` module before the HSI is run and so is looking only at those items that are declared when this
-        instance was created. The evaluation of whether equipment is available is only done _once_ for this instance of
-        the event: i.e., if the equipment is not available for the instance of this `HSI_Event`, then it will remain not
+        """Returns ``True`` if all the (currently) declared items of equipment are available. This is called by the
+        ``HealthSystem`` module before the HSI is run and so is looking only at those items that are declared when this
+        instance was created. The evaluation of whether equipment is available is only done *once* for this instance of
+        the event: i.e., if the equipment is not available for the instance of this ``HSI_Event``, then it will remain not
         available if the same event is re-scheduled/re-entered into the HealthSystem queue. This is representing that
-        if the facility that a particular person attends for the HSI_Event does not have the equipment available, then
+        if the facility that a particular person attends for the ``HSI_Event`` does not have the equipment available, then
         it will also not be available on another day."""
 
         if self._is_all_declared_equipment_available is None:
