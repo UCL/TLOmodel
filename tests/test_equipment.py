@@ -66,9 +66,9 @@ def test_core_functionality_of_equipment_class(seed):
     # - using list of integers for item_codes
     assert {1, 2} == eq_default.parse_items([1, 2])
     # - using single string for one item descriptor
-    assert eq_default.parse_items('ItemOne')
+    assert {1} == eq_default.parse_items('ItemOne')
     # - using list of strings for item descriptors
-    assert eq_default.parse_items(['ItemOne', 'ItemTwo'])
+    assert {1, 2} == eq_default.parse_items(['ItemOne', 'ItemTwo'])
     # - an empty iterable of equipment should always be work whether expressed as list/tuple/set
     assert set() == eq_default.parse_items(list())
     assert set() == eq_default.parse_items(tuple())
@@ -142,7 +142,7 @@ def test_core_functionality_of_equipment_class(seed):
     eq_default.record_use_of_equipment(item_codes={0, 1}, facility_id=0)
     eq_default.record_use_of_equipment(item_codes={0, 1}, facility_id=1)
     # - Check that internal record is as expected
-    assert dict(eq_default._record_of_equipment_used_by_facility_id) == {0: {0: 1, 1: 2}, 1: {0: 1, 1: 1}}
+    assert {0: {0: 1, 1: 2}, 1: {0: 1, 1: 1}} == dict(eq_default._record_of_equipment_used_by_facility_id)
 
     # Lookup the item_codes that belong in a particular package.
     # - When package is recognised
