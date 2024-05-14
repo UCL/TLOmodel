@@ -412,3 +412,67 @@ def test_change_equipment_availability(seed):
     log = pd.Series(sim.modules['DummyModule'].the_hsi_event.store_of_equipment_checks)
     assert (1.0 == log[log.index < Date(2011, 1, 1)]).all()
     assert (0.0 == log[log.index >= Date(2011, 1, 1)]).all()
+
+
+def test_logging_of_equipment_from_multiple_hsi(seed, tmpdir):
+    """Test that we correctly capture in the log the equipment declared by different HSI_Events that run at different
+    levels."""
+
+    item_code_needed_at_each_level = {
+        '0': set({0}), '1a': set({10}), '2': set({30}), '3': set({44}), '4': set()
+    }
+
+    class DummyHSIEvent(HSI_Event, IndividualScopeEventMixin):
+        def __init__(
+            self,
+            module,
+            person_id,
+            level,
+            equipment_item_code
+        ):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = f"DummyHSIEvent_Level:{level}"
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+            self.ACCEPTED_FACILITY_LEVEL = level
+            self.add_equipment(equipment_item_code)
+
+        def apply(self, person_id, squeeze_factor):
+            pass
+
+    class DummyModule(Module):
+        METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHSYSTEM}
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            # Schedule the HSI_Events to occur, with the level determining the item_code used
+            for level, item_code in item_code_needed_at_each_level.items():
+                sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=DummyHSIEvent(person_id=0, module=self, level=level, equipment_item_code=item_code),
+                    do_hsi_event_checks=False,
+                    topen=sim.date,
+                    tclose=None,
+                    priority=0,
+                )
+
+    log_config = {"filename": "log", "directory": tmpdir}
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, log_config=log_config)
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        DummyModule(),
+    )
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=sim.start_date + pd.DateOffset(days=1))
+
+    # Read log to find what equipment used
+    df = parse_log_file(sim.log_filepath)["tlo.methods.healthsystem.summary"]['EquipmentEverUsed_ByFacilityID']
+    df = df.drop(index=df.index[~df['Facility_Level'].isin(item_code_needed_at_each_level.keys())])
+    df['EquipmentEverUsed'] = df['EquipmentEverUsed'].apply(eval).apply(list)
+
+    # Check that equipment used at each level matches expectations
+    assert item_code_needed_at_each_level == df.groupby('Facility_Level')['EquipmentEverUsed'].sum().apply(set).to_dict()
