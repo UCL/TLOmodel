@@ -86,12 +86,6 @@ class HSI_Event:
     # which have been loaded.
     BEDDAYS_FOOTPRINT: Dict[str, Union[float, int]]
 
-    _EQUIPMENT: Set[int] = set()  # The set of equipment that is used in the HSI. If any items in this set are not
-    #                               available at the point when the HSI will be run, then the HSI is not run, and the
-    #                               `never_ran` method is called instead. This is a declaration of resource needs, but
-    #                               is private because users are expected to use `add_equipment` to declare equipment
-    #                               needs.
-
     _received_info_about_bed_days: Dict[str, Union[float, int]] = None
     expected_time_requests: Counter = {}
     facility_info: FacilityInfo = None
@@ -119,6 +113,11 @@ class HSI_Event:
         self.ACCEPTED_FACILITY_LEVEL = None
         # Set "dynamic" default value
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({})
+        self._EQUIPMENT: Set[int] = set()  # The set of equipment that is used in the HSI. If any items in this set are
+        #                                     not available at the point when the HSI will be run, then the HSI is not
+        #                                     run, and the `never_ran` method is called instead. This is a declaration
+        #                                     of resource needs, but is private because users are expected to use
+        #                                     `add_equipment` to declare equipment needs.
 
     @property
     def bed_days_allocated_to_this_event(self):
