@@ -306,7 +306,7 @@ class HSI_Event:
             )
         return self._is_all_declared_equipment_available
 
-    def probability_all_equipment_available(self, item_codes: Union[int, str, Iterable[int | str]]) -> float:
+    def probability_all_equipment_available(self, item_codes: Union[int, str, Iterable[int], Iterable[str]]) -> float:
         """Returns the probability that all the equipment item_codes are available. This does not imply that the
         equipment is being used and no logging happens. It is provided as a convenience to disease module authors in
         case the logic during an `HSI_Event` depends on the availability of a piece of equipment. This function
