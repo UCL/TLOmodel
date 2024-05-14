@@ -1,6 +1,6 @@
 import warnings
 from collections import defaultdict
-from typing import Counter, Iterable, Literal, Optional, Set, Union
+from typing import Counter, Iterable, Literal, Set, Union
 
 import numpy as np
 import pandas as pd
