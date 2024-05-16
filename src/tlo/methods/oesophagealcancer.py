@@ -693,7 +693,6 @@ class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, Individ
 
         if cons_avail:
             # If consumables are available add used equipment and run the dx_test representing the biopsy
-            # todo n.b. endoscope not in equipment list
 
             # Use an endoscope to diagnose whether the person has Oesophageal Cancer:
             dx_result = hs.dx_manager.run_dx_test(
