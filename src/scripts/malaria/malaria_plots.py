@@ -5,12 +5,12 @@ import pickle
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 
 resourcefilepath = Path("./resources")
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
-
 
 # ----------------------------------- CREATE PLOTS-----------------------------------
 
@@ -27,6 +27,11 @@ txMAP_data = pd.read_excel(
 # WHO
 WHO_data = pd.read_excel(
     Path(resourcefilepath) / "ResourceFile_malaria.xlsx", sheet_name="WHO_CaseData2023",
+)
+
+# MAP mortality
+MAP_mort = pd.read_excel(
+    Path(resourcefilepath) / "ResourceFile_malaria.xlsx", sheet_name="mortalityRate_MAPdata",
 )
 
 # MAP commodities
@@ -55,6 +60,7 @@ with open(outputpath / "malaria_run.pickle", "rb") as f:
 inc = output["tlo.methods.malaria"]["incidence"]
 pfpr = output["tlo.methods.malaria"]["prevalence"]
 tx = output["tlo.methods.malaria"]["tx_coverage"]
+coinfection = output["tlo.methods.malaria"]["coinfection_prevalence"]
 
 scaling_factor = output["tlo.methods.population"]["scaling_factor"].values[0][1]
 
@@ -84,7 +90,7 @@ model_years = model_years.dt.year
 years_of_simulation = len(model_years)
 # ------------------------------------- FIGURES -----------------------------------------#
 start_date = 2010
-end_date = 2026
+end_date = model_years.values[-1]
 
 # FIGURES
 plt.style.use("ggplot")
@@ -104,6 +110,7 @@ plt.plot(
 plt.title("Malaria Inc / 1000py")
 plt.xlabel("Year")
 plt.ylabel("Incidence (/1000py)")
+plt.gca().set_ylim(0.0, 500)
 plt.xticks(rotation=90)
 plt.gca().set_xlim(start_date, end_date)
 plt.legend(["MAP", "WHO", "Model"])
@@ -121,7 +128,6 @@ plt.gca().set_xlim(start_date, end_date)
 plt.gca().set_ylim(0.0, 1.0)
 plt.legend(["MAP", "Model"])
 plt.tight_layout()
-
 
 # Malaria rdt usage
 ax3 = plt.subplot(223)  # numrows, numcols, fignum
@@ -156,6 +162,46 @@ plt.show()
 
 plt.close()
 
+# ------------------------------------- FIGURES - co-infection -----------------------------------------#
+
+plt.style.use("ggplot")
+plt.figure(1, figsize=(10, 5))
+
+# malaria prevalence in HIV population
+# model value is whole population, Obebe is pooled prev, Mirz is adults across all years
+ax = plt.subplot(121)  # numrows, numcols, fignum
+plt.plot(model_years, coinfection.prev_malaria_in_hiv_population * 100, color="blue")
+plt.errorbar(
+    model_years[1],
+    16.5,
+    yerr=[[10.6], [21.9]],
+    fmt="o",
+)
+plt.axhline(y=27.34, color='g', linestyle='-')
+plt.title("malaria prevalence in HIV population")
+plt.xlabel("Year")
+plt.ylabel("Prevalence")
+plt.xticks(rotation=90)
+plt.gca().set_xlim(start_date, end_date)
+plt.legend(["Model", "Obebe, 2021", "Mirzohreh, 2022"])
+plt.tight_layout()
+
+# Proportion of malaria cases with HIV
+ax2 = plt.subplot(122)  # numrows, numcols, fignum
+plt.plot(model_years, coinfection.prop_malaria_cases_with_hiv * 100, color="mediumseagreen")  # model
+plt.title("Prop malaria cases with HIV")
+plt.xlabel("Year")
+plt.xticks(rotation=90)
+plt.ylabel("Percent")
+plt.gca().set_xlim(start_date, end_date)
+plt.gca().set_ylim(0.0, 10.0)
+plt.legend(["Model"])
+plt.tight_layout()
+
+plt.show()
+
+plt.close()
+
 # ------------------------------------- plot rdt delivery -----------------------------------------#
 rdt_facilities = output["tlo.methods.malaria"]["rdt_log"]
 
@@ -172,8 +218,7 @@ rdt_child = rdt_facilities.loc[(rdt_facilities.age <= 5) & rdt_facilities.fever_
 # remove tests given for confirmation with treatment
 rdt_child = rdt_child.loc[~(rdt_child.called_by == 'Malaria_Treatment')]
 
-
-colours = ['#B7C3F3', '#DD7596', '#8EB897', '#FFF68F']
+colours = ['#B7C3F3', '#DD7596', '#FFF68F']
 
 plt.rcParams["axes.titlesize"] = 9
 
@@ -181,10 +226,10 @@ ax = plt.subplot(121)  # numrows, numcols, fignum
 # calculate proportion of rdt delivered by facility level
 level0 = rdt_all['facility_level'].value_counts()['0'] / len(rdt_all)
 level1a = rdt_all['facility_level'].value_counts()['1a'] / len(rdt_all)
-level1b = rdt_all['facility_level'].value_counts()['1b'] / len(rdt_all)
+# level1b = rdt_all['facility_level'].value_counts()['1b'] / len(rdt_all)
 level2 = rdt_all['facility_level'].value_counts()['2'] / len(rdt_all)
 
-plt.pie([level0, level1a, level1b, level2], labels=['level 0', 'level 1a', 'level 1b', 'level 2'],
+plt.pie([level0, level1a, level2], labels=['level 0', 'level 1a', 'level 2'],
         wedgeprops={'linewidth': 3, 'edgecolor': 'white'},
         autopct='%.1f%%',
         colors=colours)
@@ -194,14 +239,81 @@ ax2 = plt.subplot(122)  # numrows, numcols, fignum
 # calculate proportion of rdt delivered by facility level - children with fever
 level0 = rdt_child['facility_level'].value_counts()['0'] / len(rdt_child)
 level1a = rdt_child['facility_level'].value_counts()['1a'] / len(rdt_child)
-level1b = rdt_child['facility_level'].value_counts()['1b'] / len(rdt_child)
+# level1b = rdt_child['facility_level'].value_counts()['1b'] / len(rdt_child)
 level2 = rdt_child['facility_level'].value_counts()['2'] / len(rdt_child)
 
-plt.pie([level0, level1a, level1b, level2], labels=['level 0', 'level 1a', 'level 1b', 'level 2'],
+plt.pie([level0, level1a, level2], labels=['level 0', 'level 1a', 'level 2'],
         wedgeprops={'linewidth': 3, 'edgecolor': 'white'},
         autopct='%.1f%%',
         colors=colours)
 plt.title("Facility level giving first rdt  \n children with fever")
+plt.tight_layout()
+
+plt.show()
+
+# ------------------------------------- plot malaria deaths -----------------------------------------#
+
+# person-years all ages (irrespective of HIV status)
+py_ = output["tlo.methods.demography"]["person_years"]
+years = pd.to_datetime(py_["date"]).dt.year
+py = pd.Series(dtype="int64", index=years)
+for year in years:
+    tot_py = (
+        (py_.loc[pd.to_datetime(py_["date"]).dt.year == year]["M"]).apply(pd.Series)
+        + (py_.loc[pd.to_datetime(py_["date"]).dt.year == year]["F"]).apply(pd.Series)
+    ).transpose()
+    py[year] = tot_py.sum().values[0]
+
+py.index = pd.to_datetime(years, format="%Y")
+
+# deaths
+deaths = output["tlo.methods.demography"]["death"].copy()  # outputs individual deaths
+deaths = deaths.set_index("date")
+
+# Malaria deaths
+# keep if cause = malaria
+keep = (deaths.cause == "Malaria")
+deaths = deaths.loc[keep].copy()
+deaths["year"] = deaths.index.year  # count by year
+deaths_yr = deaths.groupby(by=["year"]).size()
+deaths_yr.index = pd.to_datetime(deaths_yr.index, format="%Y")
+
+# malaria mortality rates per 100k person-years
+deaths_rate_100kpy = (deaths_yr / py) * 100_000
+
+# # ---------------------------------------------------------------------- #
+# Malaria deaths
+
+x_labels = pd.to_datetime(deaths_rate_100kpy.index)
+x_labels = x_labels.year
+
+plt.style.use("ggplot")
+plt.figure(1, figsize=(10, 10))
+
+# if some missing values in malaria model deaths
+t_mask = np.isfinite(deaths_rate_100kpy)
+
+# Malaria deaths per 100,000py - all ages
+ax = plt.subplot(111)  # numrows, numcols, fignum
+plt.plot(MAP_mort.Year, MAP_mort.mortality_rate_median * 100_000, color="crimson")  # MAP data
+plt.fill_between(
+    MAP_mort.Year, MAP_mort.mortality_rate_LCI * 100_000, MAP_mort.mortality_rate_UCI * 100_000,
+    color="crimson", alpha=0.5
+)
+plt.plot(WHO_data.Year, WHO_data.MortalityRatePer100_000, color="seagreen")  # WHO data
+plt.fill_between(
+    WHO_data.Year, WHO_data.MortalityRatePer100_000Low, WHO_data.MortalityRatePer100_000_High,
+    color="seagreen", alpha=0.5
+)
+plt.plot(
+    x_labels[t_mask], deaths_rate_100kpy[t_mask], color="blue")  # model
+plt.title("Malaria deaths /100_000py")
+plt.xlabel("Year")
+plt.ylabel("Deaths (/100_000py)")
+plt.gca().set_ylim(0.0, 200)
+plt.xticks(rotation=90)
+# plt.gca().set_xlim(start_date, end_date)
+plt.legend(["MAP", "WHO", "Model"])
 plt.tight_layout()
 
 plt.show()

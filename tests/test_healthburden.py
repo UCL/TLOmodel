@@ -470,6 +470,7 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
     daly_wt = sim.modules['DiseaseThatCausesA'].daly_wt
     death_date = sim.modules['DiseaseThatCausesA'].death_date
     disability_onset_date = sim.modules['DiseaseThatCausesA'].disability_onset_date
+    age_limit_for_yll = sim.modules['HealthBurden'].parameters['Age_Limit_For_YLL']
 
     age_range_at_disability_onset = AGE_RANGE_LOOKUP[
         int(np.round(age_at_date(disability_onset_date, date_of_birth)))
@@ -518,13 +519,13 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
     ].groupby(['year', 'age_range'])['cause_of_death_A'].sum().unstack()
     assert 0.0 == yll_stacked_by_time.loc[
         yll_stacked_by_time.index != death_date.year].sum().sum()  # No Yll for years other than year of death
-    assert approx(68.0, 1 / 364) == yll_stacked_by_time.loc[
-        death_date.year].sum()  # In year of death, 68 years of lost life.
+    assert approx(age_limit_for_yll - 2.0, 1 / 364) == yll_stacked_by_time.loc[
+        death_date.year].sum()  # In year of death, (age_limit_for_yll - 2)    years of lost life.
     assert (yll_stacked_by_time.loc[death_date.year, yll_stacked_by_time.columns[
         yll_stacked_by_time.columns.isin(age_groups_where_yll_are_accrued)]] > 0).all()
     assert 0.0 == yll_stacked_by_time[
         sorted(age_groups_where_yll_are_not_accrued)
-    ].sum().sum()  # There should be no yll for ages above 70 because that is the definition
+    ].sum().sum()  # There should be no yll for ages above `age_limit_for_yll` because that is the definition
 
     # -- YLL (Stacked by age and time)
     yll_stacked_by_age_and_time = log['yll_by_causes_of_death_stacked_by_age_and_time']
@@ -557,7 +558,7 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
     ].groupby(['year', 'age_range'])['Label_A'].sum().unstack()
     assert dalys_by_year_stacked_by_time.loc[sim.start_date.year].sum() == 0.0
     assert dalys_by_year_stacked_by_time.loc[disability_onset_date.year].sum() == approx(0.5, 1 / 364)
-    assert dalys_by_year_stacked_by_time.loc[death_date.year].sum() == approx(68.0, 1 / 364)
+    assert dalys_by_year_stacked_by_time.loc[death_date.year].sum() == approx(age_limit_for_yll - 2.0, 1 / 364)
     assert all([dalys_by_year_stacked_by_time.loc[year].sum() == (approx(0.0, 1 / 364)) for year in
                 range(death_date.year + 1, sim.end_date.year + 1)])
 
@@ -579,7 +580,7 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
 
     ser = fn(log['dalys_stacked'])
     assert ser.loc[(slice(None), 'Label_A')].at[disability_onset_date.year] == approx(0.5, 1 / 364)
-    assert ser.loc[(slice(None), 'Label_A')].at[death_date.year] == approx(68.0, 1 / 364)
+    assert ser.loc[(slice(None), 'Label_A')].at[death_date.year] == approx(age_limit_for_yll - 2.0, 1 / 364)
 
 
 def test_mapper_for_dalys_created(tmpdir, seed):

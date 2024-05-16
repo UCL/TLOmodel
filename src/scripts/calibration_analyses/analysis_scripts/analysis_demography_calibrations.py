@@ -404,7 +404,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     spacing = (np.arange(len(mean_usage_mean)) % 5) == 0
     mean_usage_mean.loc[spacing].plot.bar(stacked=True, ax=ax, legend=False)
     plt.title('Proportion Females 15-49 Using Contraceptive Methods')
-    plt.xlabel('Date')
+    plt.xlabel('Year')
     plt.ylabel('Proportion')
 
     fig.legend(loc=7)

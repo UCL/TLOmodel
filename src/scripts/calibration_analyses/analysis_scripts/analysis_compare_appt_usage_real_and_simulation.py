@@ -344,7 +344,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # Plot Simulation vs Real usage (Across all levels and At each level) (trimmed to 0.1 and 10)
     # format plot
-    def format_and_save(_fig, _ax, _name_of_plot):
+    def format_and_save(_fig, _ax, _name_of_plot, legend=True):
         _ax.set_title(_name_of_plot)
         _ax.set_yscale('log')
         _ax.set_ylim(1 / 20, 20)
@@ -356,6 +356,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _ax.xaxis.grid(True, which='major', linestyle='--')
         _ax.yaxis.grid(True, which='both', linestyle='--')
         _ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+        if not legend:
+            _ax.legend().set_visible(False)
         _fig.tight_layout()
         _fig.savefig(make_graph_file_name(_name_of_plot.replace(',', '').replace('\n', '_').replace(' ', '_')))
         plt.close(_fig)
@@ -383,7 +385,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         if not pd.isna(rel_diff_all_levels[idx]):
             ax.text(idx, rel_diff_all_levels[idx]*(1+0.2), round(rel_diff_all_levels[idx], 1),
                     ha='left', fontsize=8)
-    format_and_save(fig, ax, name_of_plot)
+    format_and_save(fig, ax, name_of_plot, legend=False)
 
     # plot for each level
     rel_diff_by_levels = (
@@ -467,7 +469,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     round(rel_diff_real.loc[idx, 'mean'], 1),
                     ha='left', fontsize=8)
     ax.axhline(1.0, color='r')
-    format_and_save(fig, ax, name_of_plot)
+    format_and_save(fig, ax, name_of_plot, legend=False)
 
     # Plot Simulation vs Real usage by appt type and show fraction of usage at each level
     # Model, Adjusted real and Unadjusted real average annual usage all normalised to 1

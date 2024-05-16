@@ -125,8 +125,6 @@ def test_care_seeking_for_babies_delivered_at_home_who_develop_complications(see
     hsi_events = find_and_return_hsi_events_list(sim, child_id)
     assert newborn_outcomes.HSI_NewbornOutcomes_ReceivesPostnatalCheck in hsi_events
 
-    # todo: normal twin birth logic
-
 
 def test_twin_and_single_twin_still_birth_logic_for_twins(seed):
     """Test that for women who experience a single twin stillbirth only produce one newborn child as expected"""
@@ -289,9 +287,6 @@ def test_on_birth_applies_risk_of_complications_and_death_in_term_newborns_deliv
     assert not sim.population.props.at[child_id, 'nb_preterm_respiratory_distress']
     assert (sim.population.props.at[child_id, 'nb_retinopathy_prem'] == 'none')
 
-    # hsi_events_child_one = find_and_return_hsi_events_list(sim, child_id)
-    # assert newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth not in hsi_events_child_one
-
 
 def test_on_birth_applies_risk_of_complications_and_death_in_preterm_newborns_delivered_at_home_correctly(seed):
     """Test that for preterm neonates (who are at risk of a different complication set) that born at home and develop
@@ -302,9 +297,8 @@ def test_on_birth_applies_risk_of_complications_and_death_in_preterm_newborns_de
 
     # set risk of comps to 1 and force care seeking
     params = sim.modules['NewbornOutcomes'].parameters
-    params['prob_retinopathy_preterm'] = 1.0
+    params['prob_retinopathy_preterm_early'] = 1.0
     params['prob_respiratory_distress_preterm'] = 1.0
-    params['prob_retinopathy_severity'] = [[0, 0, 0, 1], [0, 0, 0, 1]]
 
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 
@@ -329,6 +323,10 @@ def test_on_birth_applies_risk_of_complications_and_death_in_preterm_newborns_de
     # check complications are applied
     assert sim.population.props.at[child_id, 'nb_preterm_respiratory_distress']
     assert sim.population.props.at[child_id, 'nb_not_breathing_at_birth']
+
+    # check retinopathy risk applied during diasbility function
+    sim.modules['NewbornOutcomes'].current_parameters['prob_retinopathy_severity_no_treatment'] = [0, 0, 0, 0, 1]
+    sim.modules['NewbornOutcomes'].set_disability_status(child_id)
     assert (sim.population.props.at[child_id, 'nb_retinopathy_prem'] == 'blindness')
 
 
@@ -389,12 +387,11 @@ def test_newborn_postnatal_check_hsi_delivers_treatment_as_expected(seed):
     sim.make_initial_population(n=100)
 
     # set risk of comps very high and force care seeking
-    params = sim.modules['NewbornOutcomes'].current_parameters
+    params = sim.modules['NewbornOutcomes'].parameters
     la_params = sim.modules['Labour'].parameters
 
     # set probabilities that effect delivery of treatment to 1
-    params['sensitivity_of_assessment_of_neonatal_sepsis_hp'] = 1.0
-    params['sensitivity_of_assessment_of_lbw_hp'] = 1.0
+    params['prob_kmc_available'] = [1.0, 1.0]
     la_params['prob_hcw_avail_iv_abx'] = 1.0
     la_params['mean_hcw_competence_hc'] = [[1.0, 1.0], [1.0, 1.0]]
     la_params['mean_hcw_competence_hp'] = [[1.0, 1.0], [1.0, 1.0]]
@@ -412,6 +409,7 @@ def test_newborn_postnatal_check_hsi_delivers_treatment_as_expected(seed):
     pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
     pregnancy_helper_functions.update_mni_dictionary(sim.modules['Labour'], mother_id)
     sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['delivery_setting'] = 'health_centre'
+    sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['clean_birth_practices'] = True
 
     # do the birth
     child_id = sim.do_birth(mother_id)
@@ -429,13 +427,6 @@ def test_newborn_postnatal_check_hsi_delivers_treatment_as_expected(seed):
     assert (sim.population.props.at[child_id, 'nb_pnc_check'] == 1)
 
     assert sim.population.props.at[child_id, 'nb_supp_care_neonatal_sepsis']
-    assert sim.population.props.at[child_id, 'nb_received_cord_care']
     assert sim.modules['NewbornOutcomes'].newborn_care_info[child_id]['tetra_eye_d']
     assert sim.modules['NewbornOutcomes'].newborn_care_info[child_id]['vit_k']
     assert sim.population.props.at[child_id, 'nb_kangaroo_mother_care']
-
-
-# todo: test breastfeeding logic
-# todo: test daly output
-# todo: hsi did_not_run behaves as expected
-# todo:treatment blocks death (?)"""

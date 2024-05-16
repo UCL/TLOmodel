@@ -20,7 +20,6 @@ import pandas as pd
 from tlo import Date, logging
 from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios
 from tlo.methods.fullmodel import fullmodel
-from tlo.methods.scenario_switcher import ScenarioSwitcher
 from tlo.scenario import BaseScenario
 
 
@@ -49,7 +48,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
         }
 
     def modules(self):
-        return fullmodel(resourcefilepath=self.resources) + [ScenarioSwitcher(resourcefilepath=self.resources)]
+        return fullmodel(resourcefilepath=self.resources)
 
     def draw_parameters(self, draw_number, rng):
         if draw_number < self.number_of_draws:
