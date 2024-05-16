@@ -84,5 +84,12 @@ equipment_crosswalk_only_matched_items = equipment_crosswalk[equipment_crosswalk
 tlo_equipment_availability = pd.merge(equipment_crosswalk_only_matched_items[['Item_code', 'Equipment_name', 'Equipment_name_HHFA']],
                                       unique_equipment_df_for_model[['fac_code','equipment','available', 'functional', 'calibrated','prepared']],
                                       left_on= 'Equipment_name_HHFA', right_on= 'equipment')
-tlo_equipment_availability_duplicates_collapsed = tlo_equipment_availability.groupby(['Item_code', 'Equipment_name', 'fac_code'])[['available', 'functional','calibrated','prepared']].max().reset_index()
+tlo_equipment_availability_duplicates_collapsed = tlo_equipment_availability.groupby(['Item_code', 'Equipment_name', 'fac_code'])[['available', 'functional','calibrated','prepared']].agg(max).reset_index()
 
+# Merge with facility information
+# Load cleaned HHFA data prepared by script - `prepare_hhfa_consumables_data_for_inferential_analysis.py`
+hhfa_facility_data = pd.read_csv(path_to_dropbox / '07 - Data/HHFA_2018-19/2 clean/cleaned_hhfa_2019.csv', usecols = ['fac_code', 'fac_type', 'district'])
+hhfa_facility_data['Facility_level'] = hhfa_facility_data['fac_type'].str.replace('Facility_level_', '')
+hhfa_facility_data = hhfa_facility_data.rename(columns={'district': 'District'})
+final_equipment_availability_df = pd.merge(tlo_equipment_availability_duplicates_collapsed, hhfa_facility_data[['fac_code', 'Facility_level', 'District']], on = 'fac_code')
+final_equipment_availability = final_equipment_availability_df.groupby(['Facility_level', 'District','Item_code', 'Equipment_name' ])[['available', 'functional']].mean().reset_index()
