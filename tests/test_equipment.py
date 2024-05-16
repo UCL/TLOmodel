@@ -66,9 +66,9 @@ def test_core_functionality_of_equipment_class(seed):
     # - using list of integers for item_codes
     assert {1, 2} == eq_default.parse_items([1, 2])
     # - using single string for one item descriptor
-    assert eq_default.parse_items('ItemOne')
+    assert {1} == eq_default.parse_items('ItemOne')
     # - using list of strings for item descriptors
-    assert eq_default.parse_items(['ItemOne', 'ItemTwo'])
+    assert {1, 2} == eq_default.parse_items(['ItemOne', 'ItemTwo'])
     # - an empty iterable of equipment should always be work whether expressed as list/tuple/set
     assert set() == eq_default.parse_items(list())
     assert set() == eq_default.parse_items(tuple())
@@ -99,7 +99,7 @@ def test_core_functionality_of_equipment_class(seed):
     # - calling a recognised item for which no data at a facility with no data (should not error)
     eq_default.is_all_items_available(item_codes={3}, facility_id=2)
     # -- calling for an unrecognised facility_id (should error)
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         eq_default.is_all_items_available(item_codes={1}, facility_id=1001)
 
     # -- when using `none` availability behaviour: everything should not be available!
@@ -142,7 +142,7 @@ def test_core_functionality_of_equipment_class(seed):
     eq_default.record_use_of_equipment(item_codes={0, 1}, facility_id=0)
     eq_default.record_use_of_equipment(item_codes={0, 1}, facility_id=1)
     # - Check that internal record is as expected
-    assert dict(eq_default._record_of_equipment_used_by_facility_id) == {0: {0: 1, 1: 2}, 1: {0: 1, 1: 1}}
+    assert {0: {0: 1, 1: 2}, 1: {0: 1, 1: 1}} == dict(eq_default._record_of_equipment_used_by_facility_id)
 
     # Lookup the item_codes that belong in a particular package.
     # - When package is recognised
@@ -360,7 +360,7 @@ def test_change_equipment_availability(seed):
             # Check availability of a piece of equipment, with item_code = 0
             self.store_of_equipment_checks.update(
                 {
-                    self.sim.date: self.probability_equipment_available(item_codes={0})
+                    self.sim.date: self.probability_all_equipment_available(item_codes={0})
                 }
             )
 
@@ -412,3 +412,67 @@ def test_change_equipment_availability(seed):
     log = pd.Series(sim.modules['DummyModule'].the_hsi_event.store_of_equipment_checks)
     assert (1.0 == log[log.index < Date(2011, 1, 1)]).all()
     assert (0.0 == log[log.index >= Date(2011, 1, 1)]).all()
+
+
+def test_logging_of_equipment_from_multiple_hsi(seed, tmpdir):
+    """Test that we correctly capture in the log the equipment declared by different HSI_Events that run at different
+    levels."""
+
+    item_code_needed_at_each_level = {
+        '0': set({0}), '1a': set({10}), '2': set({30}), '3': set({44}), '4': set()
+    }
+
+    class DummyHSIEvent(HSI_Event, IndividualScopeEventMixin):
+        def __init__(
+            self,
+            module,
+            person_id,
+            level,
+            equipment_item_code
+        ):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = f"DummyHSIEvent_Level:{level}"
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+            self.ACCEPTED_FACILITY_LEVEL = level
+            self.add_equipment(equipment_item_code)
+
+        def apply(self, person_id, squeeze_factor):
+            pass
+
+    class DummyModule(Module):
+        METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHSYSTEM}
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            # Schedule the HSI_Events to occur, with the level determining the item_code used
+            for level, item_code in item_code_needed_at_each_level.items():
+                sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=DummyHSIEvent(person_id=0, module=self, level=level, equipment_item_code=item_code),
+                    do_hsi_event_checks=False,
+                    topen=sim.date,
+                    tclose=None,
+                    priority=0,
+                )
+
+    log_config = {"filename": "log", "directory": tmpdir}
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, log_config=log_config)
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        DummyModule(),
+    )
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=sim.start_date + pd.DateOffset(days=1))
+
+    # Read log to find what equipment used
+    df = parse_log_file(sim.log_filepath)["tlo.methods.healthsystem.summary"]['EquipmentEverUsed_ByFacilityID']
+    df = df.drop(index=df.index[~df['Facility_Level'].isin(item_code_needed_at_each_level.keys())])
+    df['EquipmentEverUsed'] = df['EquipmentEverUsed'].apply(eval).apply(list)
+
+    # Check that equipment used at each level matches expectations
+    assert item_code_needed_at_each_level == df.groupby('Facility_Level')['EquipmentEverUsed'].sum().apply(set).to_dict()

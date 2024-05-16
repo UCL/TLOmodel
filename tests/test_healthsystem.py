@@ -1370,7 +1370,7 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
             _params['capabilities_coefficient'] = hs.capabilities_coefficient
             _params['cons_availability'] = hs.consumables.cons_availability
             _params['beds_availability'] = hs.bed_days.availability
-            _params['equip_availability'] = hs.equip_availability
+            _params['equip_availability'] = hs.equipment.availability
 
             logger = logging.getLogger('tlo.methods.healthsystem')
             logger.info(key='CheckHealthSystemParameters', data=_params)
