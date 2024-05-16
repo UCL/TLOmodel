@@ -77,3 +77,12 @@ unique_equipment_df_for_model.loc[unique_equipment_df_for_model['functional'] ==
 unique_equipment_df_for_model.loc[(unique_equipment_df_for_model['functional'] == 'No')|(unique_equipment_df_for_model['available'] == 0),'functional'] = 0
 
 # Merge with equipment names and item codes from TLO model
+equipment_crosswalk = pd.read_excel((path_to_dropbox / '07 - Data/HHFA_2018-19/2 clean/equipment_and_other_non_consumable_avaibility_hhfa.xlsx'),
+                                    sheet_name = "equipment_crosswalk")
+equipment_crosswalk_only_matched_items = equipment_crosswalk[equipment_crosswalk.Equipment_name_HHFA.notna() &
+                                                            equipment_crosswalk.Equipment_name.notna()]
+tlo_equipment_availability = pd.merge(equipment_crosswalk_only_matched_items[['Item_code', 'Equipment_name', 'Equipment_name_HHFA']],
+                                      unique_equipment_df_for_model[['fac_code','equipment','available', 'functional', 'calibrated','prepared']],
+                                      left_on= 'Equipment_name_HHFA', right_on= 'equipment')
+tlo_equipment_availability_duplicates_collapsed = tlo_equipment_availability.groupby(['Item_code', 'Equipment_name', 'fac_code'])[['available', 'functional','calibrated','prepared']].max().reset_index()
+
