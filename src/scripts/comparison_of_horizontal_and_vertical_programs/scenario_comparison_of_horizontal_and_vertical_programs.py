@@ -61,14 +61,14 @@ class HorizontalAndVerticalPrograms(BaseScenario):
         # 2015-2019 period.
 
         return {
-            # "Baseline": self._baseline(),
+            "Baseline": self._baseline(),
 
             # ***************************
             # HEALTH SYSTEM STRENGTHENING
             # ***************************
 
             # - - - Human Resource for Health - - -
-            
+
              "Reduced Absence":
                 mix_scenarios(
                     self._baseline(),
@@ -79,7 +79,7 @@ class HorizontalAndVerticalPrograms(BaseScenario):
                         }
                     }
                 ),
-            
+
             "Reduced Absence + Double Capacity at Primary Care":
                 mix_scenarios(
                     self._baseline(),
@@ -136,18 +136,18 @@ class HorizontalAndVerticalPrograms(BaseScenario):
                         }
                     },
                 ),
-            
-            # "Perfect Healthcare Seeking":
-            #    mix_scenarios(
-            #        get_parameters_for_status_quo(),
-            #        {
-            #            'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
-            #                'max_healthcare_seeking': [False, True],
-            #                'year_of_switch': self.YEAR_OF_CHANGE,
-            #            }
-            #        },
-            #    ),
-            
+
+            "Perfect Healthcare Seeking":
+               mix_scenarios(
+                   get_parameters_for_status_quo(),
+                   {
+                       'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
+                           'max_healthcare_seeking': [False, True],
+                           'year_of_switch': self.YEAR_OF_CHANGE,
+                       }
+                   },
+               ),
+
             "Perfect Availability of Diagnostics":
                 mix_scenarios(
                     self._baseline(),
@@ -158,7 +158,7 @@ class HorizontalAndVerticalPrograms(BaseScenario):
                         }
                     }
                 ),
-            
+
             "Perfect Availability of Medicines":
             mix_scenarios(
                 self._baseline(),
@@ -180,7 +180,7 @@ class HorizontalAndVerticalPrograms(BaseScenario):
                         }
                     }
                 ),
-            
+
             # - - - FULL PACKAGE OF HEALTH SYSTEM STRENGTHENING - - -
             "FULL PACKAGE":
                 mix_scenarios(
