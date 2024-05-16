@@ -90,6 +90,38 @@ tlo_equipment_availability_duplicates_collapsed = tlo_equipment_availability.gro
 # Load cleaned HHFA data prepared by script - `prepare_hhfa_consumables_data_for_inferential_analysis.py`
 hhfa_facility_data = pd.read_csv(path_to_dropbox / '07 - Data/HHFA_2018-19/2 clean/cleaned_hhfa_2019.csv', usecols = ['fac_code', 'fac_type', 'district'])
 hhfa_facility_data['Facility_level'] = hhfa_facility_data['fac_type'].str.replace('Facility_level_', '')
-hhfa_facility_data = hhfa_facility_data.rename(columns={'district': 'District'})
-final_equipment_availability_df = pd.merge(tlo_equipment_availability_duplicates_collapsed, hhfa_facility_data[['fac_code', 'Facility_level', 'District']], on = 'fac_code')
+final_equipment_availability_df = pd.merge(tlo_equipment_availability_duplicates_collapsed, hhfa_facility_data[['fac_code', 'Facility_level', 'district']], on = 'fac_code')
+
+# Clean district names to match TLO model
+final_equipment_availability_df['District'] = final_equipment_availability_df['district']
+# Define the mapping of districts to their corresponding city names
+district_mapping = {'Lilongwe': 'Lilongwe City', 'Blantyre': 'Blantyre City', 'Mzimba North': 'Mzuzu City', 'Zomba': 'Zomba City'}
+# Iterate over each district in the mapping
+for district, city in district_mapping.items():
+    # Filter rows where 'district' is equal to the current district
+    district_rows = final_equipment_availability_df[final_equipment_availability_df['District'] == district]
+
+    # Duplicate the filtered rows
+    duplicated_district_rows = district_rows.copy()
+
+    # Change the value of 'district' column to the corresponding city name
+    duplicated_district_rows['District'] = city
+
+    # Concatenate the original DataFrame with the duplicated and modified rows
+    final_equipment_availability_df = pd.concat([final_equipment_availability_df, duplicated_district_rows], ignore_index=True)
+
+# For the districts above, drop level 3 for districts because this lies within the city, drop level 4 from Zomba
+final_equipment_availability_df = final_equipment_availability_df.reset_index()
+for district, city in district_mapping.items():
+    final_equipment_availability_df = final_equipment_availability_df.drop(final_equipment_availability_df[(final_equipment_availability_df['District'] == district) & (final_equipment_availability_df['Facility_level'] == '3')].index)
+final_equipment_availability_df = final_equipment_availability_df.drop(final_equipment_availability_df[(final_equipment_availability_df['District'] == 'Zomba') & (final_equipment_availability_df['Facility_level'] == '4')].index)
+
+# Combine Mzimba North and Mzimba South
+final_equipment_availability_df.loc[(final_equipment_availability_df.District == 'Mzimba North') | (final_equipment_availability_df.District == 'Mzimba South'),'District'] = 'Mzimba'
+equipment_data_district_list = final_equipment_availability_df.District.unique()
+model_district_list = pd.read_csv(resourcefilepath / 'demography/ResourceFile_PopulationSize_2018Census.csv')['District'].unique() # Check that the new list of district matches with the model
+assert(set(equipment_data_district_list) == set(model_district_list))
+
+# Collapse data by facility level and district
 final_equipment_availability = final_equipment_availability_df.groupby(['Facility_level', 'District','Item_code', 'Equipment_name' ])[['available', 'functional']].mean().reset_index()
+
