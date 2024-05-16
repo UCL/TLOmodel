@@ -645,7 +645,9 @@ class SchistoSpecies:
 
             # get reservoir in district
             num_infected = (len(in_the_district) * params['prevalence_2010'][district]) if len(in_the_district) else 0
-            reservoir = num_infected * params['mean_worm_burden2010'][district]
+            # mean worm burden is estimated across whole district (not just infected people)
+            # reservoir = num_infected * params['mean_worm_burden2010'][district]
+            reservoir = len(in_the_district) * params['mean_worm_burden2010'][district]
 
             # Determine a 'contact rate' for each person
             contact_rates = pd.Series(1, index=in_the_district, dtype=float)
