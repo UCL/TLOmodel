@@ -187,7 +187,7 @@ class BedDays:
             and self.__NO_BEDS_BED_TYPE == bed_names[-1]
         ), (
             "Lowest priority bed type (corresponding to no available bed space)"
-            f" must be {self.__NO_BEDS_BED_TYPE}"
+            f" must be {self.__NO_BEDS_BED_TYPE}, but it is {bed_names[-1]}"
         )
         self._bed_types = tuple(x for x in bed_names)
 
@@ -330,6 +330,7 @@ class BedDays:
         on_date: Optional[Date] = None,
         patient_id: Optional[List[int] | int] = None,
         start_on_or_after: Optional[Date] = None,
+        logical_or: bool = False
     ) -> List[BedOccupancy]:
         """
         Find all occupancies in the current list that match the criteria given.
@@ -340,6 +341,7 @@ class BedDays:
         will be ignored if provided.
         :param patient_id: Only match occupancies scheduled for the given person (or persons if list).
         :param start_on_or_after: Only match occupancies that are scheduled to start on or after the date provided.
+        :param logical_or: Combine criteria via OR as opposed to AND.
         """
         # Cast single-values to lists to make parsing easier
         if isinstance(patient_id, int):
@@ -348,16 +350,23 @@ class BedDays:
             facility = [facility]
         if on_date is not None:
             # Overwrite any other date inputs if a specific day was requested.
-            end_on_or_before = on_date
-            start_on_or_after = on_date
+            end_on_or_before = None
+            start_on_or_after = None
+        # Correct logical operator to use
+        logic_operation = any if logical_or else all
 
         matches = [
             o
             for o in self.occupancies
-            if (patient_id is None or o.patient_id in patient_id)
-            and (facility is None or o.facility in facility)
-            and (start_on_or_after is None or o.start_date < start_on_or_after)
-            and (end_on_or_before is None or end_on_or_before < o.freed_date)
+            if logic_operation(
+                [
+                    patient_id is None or o.patient_id in patient_id,
+                    facility is None or o.facility in facility,
+                    start_on_or_after is None or o.start_date >= start_on_or_after,
+                    end_on_or_before is None or o.freed_date <= end_on_or_before,
+                    on_date is None or o.start_date <= on_date <= o.freed_date,
+                ]
+            )
         ]
         return matches
 
@@ -392,7 +401,7 @@ class BedDays:
         relevant_occupancies = self.find_occupancies(
             end_on_or_before=final_forecast_day,
             start_on_or_after=start_date,
-            facility=facility_id,
+            facility=facility_id, # NEEDS LLGICAL OR< BUT NOT WITH FACILITY (facility and between dates) 
         )
         facility_max_capacities = self._max_capacities.loc[facility_id, :]
         # Rows = index by date, days into the future (index 0 = start_date)

@@ -23,71 +23,63 @@ start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
 popsize = 200
 
+@pytest.fixture
+def small_bedday_dataset() -> pd.DataFrame:
+    return pd.DataFrame(
+            data={
+                "Facility_ID": [0, 1, 2],
+                "bedtype1": 5,
+                "bedtype2": 100,
+                "non_bed_space": 0,
+            }
+        )
+
 """Suite of tests to examine the use of BedDays class when initialised by the HealthSystem Module"""
 
 
 def test_bed_days_resourcefile_defines_non_bed_space():
-    """Check that "non_bed_space" is defined as the lowest type of bed. """
-    assert 'non_bed_space' == bed_types[-1]
+    """Check that "non_bed_space" is defined as the lowest type of bed."""
+    assert 'non_bed_space' == BedDays.__NO_BEDS_BED_TYPE
 
 
-def test_beddays_in_isolation(tmpdir, seed):
+def test_beddays_in_isolation(small_bedday_dataset):
     """Test the functionalities of BedDays class in the absence of HSI_Events"""
-    sim = Simulation(start_date=start_date, seed=seed)
-    sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+    bd = BedDays(
+        small_bedday_dataset,
+        "all",
     )
 
-    # Update BedCapacity data with a simple table:
-    level2_facility_ids = [128, 129, 130]  # <-- the level 2 facilities for each region
-    cap_bedtype1 = 5
-    cap_bedtype2 = 100
+    # 1) Check if impose footprint works as expected
+    footprint = bd.get_blank_beddays_footprint(bedtype1=2)
 
-    # create a simple bed capacity dataframe
-    hs = sim.modules['HealthSystem']
-    hs.parameters['BedCapacity'] = pd.DataFrame(
-        data={
-            'Facility_ID': level2_facility_ids,
-            'bedtype1': cap_bedtype1,
-            'bedtype2': cap_bedtype2
-        }
+    bd.impose_beddays_footprint(footprint=footprint, facility=0, patient_id=0, first_day=start_date)
+    # There should be a single occupancy now scheduled for the patient
+    assert len(bd.occupancies) == 1
+
+    forecast = bd.forecast_availability(start_date=start_date, n_days=0, facility_id=0, int_indexing=True)
+    # One bed of type 1 should be occupied
+    assert forecast.loc[0, "bedtype1"] == small_bedday_dataset.loc[0, "bedtype1"] - 1
+    # No beds of type 2 should be occupied
+    assert forecast.loc[0, "bedtype2"] == small_bedday_dataset.loc[0, "bedtype2"]
+
+    # 3) Check that removing bed-days from a person without bed-days does nothing
+    bd.remove_patient_footprint(1)
+    forecast = bd.forecast_availability(
+        start_date=start_date, n_days=0, facility_id=0, int_indexing=True
     )
+    # One bed of type 1 should be occupied
+    assert forecast.loc[0, "bedtype1"] == small_bedday_dataset.loc[0, "bedtype1"] - 1
+    # No beds of type 2 should be occupied
+    assert forecast.loc[0, "bedtype2"] == small_bedday_dataset.loc[0, "bedtype2"]
 
-    # Create a 21-day simulation
-    days_sim = 21
-    sim.make_initial_population(n=100)
-    sim.simulate(end_date=start_date + pd.DateOffset(days=days_sim))
-
-    # reset bed days tracker to the start_date of the simulation
-    hs.bed_days.initialise_beddays_tracker()
-
-    # 1) impose a footprint
-    person_id = 0
-    dur_bedtype1 = 2
-    footprint = {'bedtype1': dur_bedtype1, 'bedtype2': 0}
-
-    sim.date = start_date
-    hs.bed_days.impose_beddays_footprint(patient_id=person_id, footprint=footprint, first_day=start_date, facility=level2_facility_ids[0])
-    tracker = hs.bed_days.bed_tracker['bedtype1'][hs.bed_days.get_facility_id_for_beds(person_id)][0: days_sim]
-
-    # check if impose footprint works as expected
-    assert ([cap_bedtype1 - 1] * dur_bedtype1 + [cap_bedtype1] * (days_sim - dur_bedtype1) == tracker.values).all()
-
-    # 2) cause someone to die and relieve their footprint from the bed-days tracker
-    hs.bed_days.remove_patient_footprint(person_id)
-    assert ([cap_bedtype1] * days_sim == tracker.values).all()
-
-    # 3) check that removing bed-days from a person without bed-days does nothing
-    hs.bed_days.remove_patient_footprint(2)
-    assert ([cap_bedtype1] * days_sim == tracker.values).all()
-
-
-def check_dtypes(simulation):
-    # check types of columns
-    df = simulation.population.props
-    orig = simulation.population.new_row
-    assert (df.dtypes == orig.dtypes).all()
+    # 2) Cause someone to die and relieve their footprint from the bed-days tracker
+    bd.remove_patient_footprint(patient_id=0)
+    forecast = bd.forecast_availability(
+        start_date=start_date, n_days=0, facility_id=0, int_indexing=True
+    )
+    # Should have removed the one occupancy that we had
+    assert len(bd.occupancies) == 0
+    assert forecast.loc[0, "bedtype1"] == small_bedday_dataset.loc[0, "bedtype1"]
 
 
 def test_bed_days_basics(tmpdir, seed):
@@ -842,6 +834,7 @@ def test_bed_days_allocation_information_is_provided_to_HSI(seed):
             'Facility_ID': [facility_id],  # The level 2 facility that will be used,
             'bed_A': 1,  # Only one bed of the each of the required type at the facility.
             'bed_B': 1,
+            'non_bed_space': 0
         }
     )
 
