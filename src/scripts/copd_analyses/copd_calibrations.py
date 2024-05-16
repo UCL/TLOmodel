@@ -5,8 +5,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
+from matplotlib.font_manager import FontProperties
 
-from tlo import Date, Simulation
+from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file, unflatten_flattened_multi_index_in_logging
 from tlo.methods import (
     copd,
@@ -100,15 +101,17 @@ class CopdCalibrations:
             )
             ax.legend(["modal", "observed data"])
             _col_counter += 1  # increment column counter
+        plt.figtext(0.5, 0.01, "Prevalence of mild, moderate, severe, very severe COPD at mean age 49 (SD 17 years)*",
+                    ha="center", bbox={"facecolor": "grey", "alpha": 0.5, "pad": 5})
         plt.show()
 
     def rate_of_death_by_lungfunction_category(self):
         """Make the comparison to Alupo P et al. (2021) study. This study found that the rate of COPD death was as
         follows:
-         Persons with Mild COPD Stage: 3.8 deaths per 100 person-years
-         Persons with Moderate COPD Stage: 5.1 deaths per 100 person-years
-         Persons with Severe COPD Stage: 15.3 deaths per 100 person-years
-         Persons with Very Severe COPD Stage: 27.8 deaths per 100 person-years
+         Persons with Mild COPD Stage: 3.8 all-cause deaths per 100 person-years
+         Persons with Moderate COPD Stage: 5.1 all-cause deaths per 100 person-years
+         Persons with Severe COPD Stage: 15.3 all-cause deaths per 100 person-years
+         Persons with Very Severe COPD Stage: 27.8 all-cause deaths per 100 person-years
         We will compare this with fraction of people that die each year, averaged over many years, as an estimate of the
         risk of persons in each stage dying.
         We assume that the disease stages in the model correspond to the study as:
@@ -120,33 +123,32 @@ class CopdCalibrations:
 
         # Get the number of deaths each year in each category of lung function
         output = parse_log_file(self.__logfile_path)  # parse output file
-        demog = output['tlo.methods.demography']['death']  # read deaths from demography module
 
-        model = demog.assign(
-            year=lambda x: x['date'].dt.year).groupby(['year', 'sex', 'age', 'cause'])['person_id'].count()
+        # read deaths from demography detail logger
+        demog = output['tlo.methods.demography.detail']['properties_of_deceased_persons']
 
-        # extract copd deaths:
-        copd_deaths = pd.concat(
-            {
-                'mild': (
-                    model.loc[(slice(None), slice(None), slice(None), ['COPD_cat1'])].groupby('year').sum()
-                    + model.loc[(slice(None), slice(None), slice(None), ['COPD_cat2'])].groupby('year').sum()
-                ),
-                'moderate': (
-                    model.loc[(slice(None), slice(None), slice(None), ["COPD_cat3"])].groupby("year").sum()
-                    + model.loc[(slice(None), slice(None), slice(None), ["COPD_cat4"])].groupby("year").sum()
-                ),
-                'severe': model.loc[(slice(None), slice(None), slice(None), ['COPD_cat5'])].groupby('year').sum(),
-                'very_severe': model.loc[(slice(None), slice(None), slice(None), ['COPD_cat6'])].groupby('year').sum(),
-            },
-            axis=1
-        ).fillna(0).astype(float)
+        # only consider deaths from individuals above 30
+        demog = demog.loc[demog.age_years > 30]
+
+        # assign a function that groups deaths by year and lung function thereafter do count
+        all_deaths = demog.assign(
+            year=lambda x: x['date'].dt.year,
+            cat=lambda x: x['ch_lungfunction']).groupby(['year', 'cat'])['cause_of_death'].count()
+
+        # re-construct the dataframe by transforming lung function categories into columns
+        all_deaths_df = all_deaths.unstack().assign(
+            none=lambda x: x[0],
+            mild=lambda x: x[1] + x[2],
+            moderate=lambda x: x[3] + x[4],
+            severe=lambda x: x[5],
+            very_severe=lambda x: x[6]).drop(columns=[0, 1, 2, 3, 4, 5, 6])
 
         # Get the number of person each year in each category of lung function (irrespective of sex/age/smokingstatus)
         # average within the year
         prev = self.construct_dfs()['copd_prevalence']
         prev = (prev.groupby(axis=1, by=prev.columns.droplevel([0, 1, 2])).sum()
                 .groupby(axis=0, by=prev.index.year).mean())
+        prev['none'] = prev['0']
         prev['mild'] = prev['1'] + prev['2']
         prev['moderate'] = prev['3'] + prev['4']
         prev['severe'] = prev['5']
@@ -155,12 +157,97 @@ class CopdCalibrations:
 
         # Compute fraction that die each year in each category of lung function, average over many years and compare to
         # data
-        death_rate_per100 = (100 * copd_deaths / prev).mean()
-        print(death_rate_per100)
-        # mild           0.000000   (vs 3.8 in Alupo et al)
-        # moderate       0.000000   (vs 5.1 in Alupo et al)
-        # severe         1.674310   (vs 15.3 in Alupo et al)
-        # very_severe    4.507594   (vs 27.8 in Alupo et al)
+        death_rate_per100 = (100 * all_deaths_df.loc[[2021]] / prev.loc[[2021]]).mean()
+
+        model_and_observed_data_dict = {'model': [death_rate_per100.mild, death_rate_per100.moderate,
+                                                  death_rate_per100.severe, death_rate_per100.very_severe],
+                                        'data': [3.8, 5.1, 15.3, 27.8]
+                                        }
+
+        # plot rate of death (per 100 per year) by COPD stage (mild, moderate, severe, very severe)
+        plot_rate_df = pd.DataFrame(index=['mild', 'moderate', 'severe', 'very_severe'],
+                                    data=model_and_observed_data_dict)
+        fig, axes = plt.subplots(ncols=4, sharey=True)
+        _col_counter = 0
+        for _label in plot_rate_df.index:
+            # do plotting
+            ax = plot_rate_df.iloc[_col_counter:1 + _col_counter].plot.line(ax=axes[_col_counter],
+                                                                            title=f"{_label} COPD",
+                                                                            y='model',
+                                                                            marker='o',
+                                                                            color='blue',
+                                                                            ylabel="rate of COPD death per 100 "
+                                                                                   "person years"
+                                                                            )
+
+            plot_rate_df.iloc[_col_counter:1 + _col_counter].plot.line(
+                y='data',
+                marker='^',
+                color='red',
+                ax=ax
+            )
+            _col_counter += 1  # increment column counter
+        # remove all the subplot legends
+        for ax in axes:
+            ax.get_legend().remove()
+
+        fontP = FontProperties()
+        fontP.set_size('small')
+
+        # set legend
+        legend_keys = ['Model (Risk of death per 100 persons)', 'Data (Rate of death per 100 person-years)']
+        plt.legend(legend_keys, bbox_to_anchor=(0.1, 0.74), loc='upper left', prop=fontP)
+        plt.figtext(0.5, 0.01, "Rate of death (per 100 per year) by COPD stage (mild, moderate, severe, very severe)",
+                    ha="center", bbox={"facecolor": "grey", "alpha": 0.5, "pad": 5})
+
+        # show plot
+        plt.show()
+
+        # COMPUTE THE RELATIVE RATES TO NONE
+        rr_death_rate_per100 = (100 * all_deaths_df.loc[[2023]] / prev.loc[[2023]]).mean()
+        rr_rates = rr_death_rate_per100 / rr_death_rate_per100.loc['none']
+
+        rr_model_and_observed_data_dict = {'model': [rr_rates.none, rr_rates.mild, rr_rates.moderate,
+                                                     rr_rates.severe + rr_rates.very_severe],
+                                           'data': [1.0, 2.4, 3.5, 6.6]
+                                           }
+
+        # plot relative rate of (all cause) death according to COPD stage (none, mild, moderate, severe + v severe)
+        plot_rr_rate_df = pd.DataFrame(index=['none', 'mild', 'moderate', 'severe_and_very_severe'],
+                                       data=rr_model_and_observed_data_dict)
+        fig, axes = plt.subplots(ncols=4, sharey=True)
+        _col_counter = 0
+        for _label in plot_rr_rate_df.index:
+            # do plotting
+            ax = plot_rr_rate_df.iloc[_col_counter:1 + _col_counter].plot.line(ax=axes[_col_counter],
+                                                                               title=f"{_label} COPD",
+                                                                               y='model',
+                                                                               marker='o',
+                                                                               color='blue',
+                                                                               ylabel="relative rate of COPD death per "
+                                                                                      "100 "
+                                                                                      "person years"
+                                                                               )
+
+            plot_rr_rate_df.iloc[_col_counter:1 + _col_counter].plot.line(
+                y='data',
+                marker='^',
+                color='red',
+                ax=ax
+            )
+            _col_counter += 1  # increment column counter
+        # remove all the subplot legends
+        for ax in axes:
+            ax.get_legend().remove()
+
+        fontP = FontProperties()
+        fontP.set_size('small')
+        # set legend
+        plt.legend(['Model', 'Data'], bbox_to_anchor=(0.1, 0.74), loc='upper left', prop=fontP)
+        plt.figtext(0.5, 0.01, "Relative rate of (all cause) death according to COPD stage (none, mild, moderate, "
+                               "severe + v severe)", ha="center", bbox={"facecolor": "grey", "alpha": 0.5, "pad": 5})
+        # show plot
+        plt.show()
 
 
 start_date = Date(2010, 1, 1)
@@ -181,6 +268,11 @@ def get_simulation(popsize):
         log_config={
             'filename': 'copd_analyses',
             'directory': outputpath,
+            'custom_levels': {
+                '*': logging.WARNING,
+                'tlo.methods.demography.detail': logging.INFO,
+                'tlo.methods.copd': logging.INFO,
+            }
         },
     )
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -200,9 +292,8 @@ def get_simulation(popsize):
 
 
 # run simulation and store logfile path
-# sim = get_simulation(50000)
-# path_to_logfile = sim.log_filepath
-path_to_logfile = Path('/Users/tbh03/GitHub/TLOmodel/outputs/copd/copd_analyses__2023-08-24T170704.log')
+sim = get_simulation(50000)
+path_to_logfile = sim.log_filepath
 
 # initialise Copd analyses class
 copd_analyses = CopdCalibrations(logfile_path=path_to_logfile)

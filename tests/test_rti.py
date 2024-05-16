@@ -91,7 +91,9 @@ def test_all_injuries_run(seed):
     assert "none" not in sim.population.props['rt_injury_1'].unique()
     assert not sim.population.props['rt_injury_1'].str.contains('P').any()
     # Assign people the emergency care triggering symptom so they enter the health system
-    sim.population.props['sy_severe_trauma'] = 2
+    sim.modules["SymptomManager"].change_symptom(
+        sim.population.props.index, "severe_trauma", "+", sim.modules["RTI"]
+    )
     # Assign an injury date
     sim.population.props['rt_date_inj'] = sim.start_date
     # Show that they have been injured
@@ -160,7 +162,9 @@ def test_all_injuries_run_no_healthsystem(seed):
     assert "none" not in sim.population.props['rt_injury_1'].unique()
     assert not sim.population.props['rt_injury_1'].str.contains('P').any()
     # Assign people the emergency care triggering symptom so they enter the health system
-    sim.population.props['sy_severe_trauma'] = 2
+    sim.modules["SymptomManager"].change_symptom(
+        sim.population.props.index, "severe_trauma", "+", sim.modules["RTI"]
+    )
     # Assign an injury date
     sim.population.props['rt_date_inj'] = sim.start_date
     # Show that they have been injured

@@ -272,7 +272,7 @@ class SymptomManager(Module):
         SymptomManager.PROPERTIES = dict()
         for symptom_name in sorted(self.symptom_names):
             symptom_column_name = self.get_column_name_for_symptom(symptom_name)
-            SymptomManager.PROPERTIES[symptom_column_name] = Property(Types.INT, f'Presence of symptom {symptom_name}')
+            SymptomManager.PROPERTIES[symptom_column_name] = Property(Types.BITSET, f'Presence of symptom {symptom_name}')
 
     def initialise_population(self, population):
         """

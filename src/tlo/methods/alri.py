@@ -19,24 +19,29 @@ of the complications.
 Health care seeking is prompted by the onset of the symptom. The individual can be treated; if successful the risk of
 death is lowered and the person is "cured" (symptom resolved) some days later.
 """
+from __future__ import annotations
 
 import types
 from collections import defaultdict
 from itertools import chain
 from pathlib import Path
-from typing import Dict, List, Tuple, Union
+from typing import TYPE_CHECKING, Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
-from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date, sample_outcome
+
+if TYPE_CHECKING:
+    from tlo.population import PatientDetails
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -1341,21 +1346,6 @@ class Alri(Module):
         else:
             return 'failure'
 
-    def on_presentation(self, person_id, hsi_event):
-        """Action taken when a child (under 5 years old) presents at a generic appointment (emergency or non-emergency)
-         with symptoms of `cough` or `difficult_breathing`."""
-
-        self.record_sought_care_for_alri()
-
-        # All persons have an initial out-patient appointment at the current facility level.
-        self.sim.modules['HealthSystem'].schedule_hsi_event(
-            hsi_event=HSI_Alri_Treatment(person_id=person_id, module=self,
-                                         facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL),
-            topen=self.sim.date,
-            tclose=self.sim.date + pd.DateOffset(days=1),
-            priority=1
-        )
-
     def record_sought_care_for_alri(self):
         """Count that the person is seeking care"""
         self.logging_event.new_seeking_care()
@@ -1432,6 +1422,42 @@ class Alri(Module):
 
         else:
             raise ValueError(f'Classification not recognised: {classification_for_treatment_decision}')
+
+    def do_at_generic_first_appt(
+        self,
+        patient_id: int,
+        patient_details: PatientDetails,
+        symptoms: List[str],
+        facility_level: str,
+        **kwargs,
+    ) -> IndividualPropertyUpdates:
+        # Action taken when a child (under 5 years old) presents at a
+        # generic appointment (emergency or non-emergency) with symptoms
+        # of `cough` or `difficult_breathing`.
+        if patient_details.age_years <= 5 and (
+            ("cough" in symptoms) or ("difficult_breathing" in symptoms)
+        ):
+            self.record_sought_care_for_alri()
+
+            # All persons have an initial out-patient appointment at the current facility level.
+            event = HSI_Alri_Treatment(
+                person_id=patient_id, module=self, facility_level=facility_level
+            )
+            self.healthsystem.schedule_hsi_event(
+                event,
+                topen=self.sim.date,
+                tclose=self.sim.date + pd.DateOffset(days=1),
+                priority=1,
+            )
+
+    def do_at_generic_first_appt_emergency(
+        self,
+        **kwargs,
+    ) -> IndividualPropertyUpdates:
+        # Emergency and non-emergency treatment is identical for alri
+        return self.do_at_generic_first_appt(
+            **kwargs,
+        )
 
 
 class Models:

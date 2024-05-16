@@ -121,7 +121,7 @@ def predict_early_onset_neonatal_sepsis_week_1(self, df, rng=None, **externals):
 
     result[externals['received_abx_for_prom']] *= params['treatment_effect_abx_prom']
     result[df.nb_clean_birth] *= params['treatment_effect_clean_birth']
-    result[df.nb_received_cord_care] *= params['treatment_effect_cord_care']
+    # result[df.nb_received_cord_care] *= params['treatment_effect_cord_care']
     result[df.nb_early_init_breastfeeding] *= params['treatment_effect_early_init_bf']
 
     return result

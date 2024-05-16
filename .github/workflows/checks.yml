@@ -27,7 +27,7 @@ jobs:
         with:
           lfs: false
       - name: Cache tox
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: .tox
           key: tox-${{hashFiles('requirements/*.txt', 'tox.ini')}}

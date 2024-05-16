@@ -610,6 +610,7 @@ def get_filtered_treatment_ids(depth: Optional[int] = None) -> List[str]:
             [
                 "".join(f"{x}_" for i, x in enumerate(t.split('_')) if i < depth).rstrip('_') + '_*'
                 for t in set(_treatments)
+                if t # In the event an abstract base class is detected, that does not set TREATMENT_ID by default
             ]
         )))
 
@@ -1124,6 +1125,7 @@ def get_parameters_for_status_quo() -> Dict:
             "mode_appt_constraints": 1,
             "cons_availability": "default",
             "beds_availability": "default",
+            "equip_availability": "all",  # <--- NB. Existing calibration is assuming all equipment is available
         },
     }
 
@@ -1217,7 +1219,8 @@ def get_parameters_for_improved_healthsystem_and_healthcare_seeking(
 
 def mix_scenarios(*dicts) -> Dict:
     """Helper function to combine a Dicts that show which parameters should be over-written.
-     * Warnings are generated if a parameter appears in more than one Dict with a different value;
+     * If a parameter appears in more than one Dict, the value in the last-added dict is taken, and a UserWarning
+      is raised;
      * Items under the same top-level key (i.e., for the Module) are merged rather than being over-written."""
 
     d = defaultdict(lambda: defaultdict(dict))

@@ -26,19 +26,19 @@ from tlo.methods import (
 from tlo.scenario import BaseScenario
 
 
-class TestScenario(BaseScenario):
+class IncreasedANCScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 55447
+        self.seed = 661184
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2031, 1, 1)
-        self.pop_size = 200_000
+        self.pop_size = 250_000
         self.number_of_draws = 1
         self.runs_per_draw = 20
 
     def log_configuration(self):
         return {
-            'filename': 'increased_anc_cov_200k', 'directory': './outputs',
+            'filename': 'increased_anc_cov_250k', 'directory': './outputs',
             "custom_levels": {
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
@@ -92,7 +92,9 @@ class TestScenario(BaseScenario):
         return {
             'PregnancySupervisor': {'alternative_anc_coverage': True,
                                     'anc_availability_odds': 9.0,
-                                    'analysis_year': 2021},
+                                    'analysis_year': 2023},
+
+            'Labour': {'analysis_year': 2023},
         }
 
 

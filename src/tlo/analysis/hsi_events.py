@@ -465,6 +465,9 @@ def main():
     """Entry point to do the inspection of HSI events when running as script."""
     args = _parse_command_line_args()
     warnings.simplefilter('ignore')
+    if args.json_file is None and args.merge_json_details:
+        msg = "Cannot merge details if JSON file not specified"
+        raise ValueError(msg)
     if args.json_file is not None:
         with open(args.json_file, 'r') as f:
             hsi_event_details = json.load(f)

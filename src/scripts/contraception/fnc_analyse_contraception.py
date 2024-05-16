@@ -871,7 +871,7 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
             # (MWK - Malawi Kwacha) with inflation rate of 81% to 2020
             # TODO?: these 2 parameters are approximated from costs for 2016-2020 - ie not approximation for pop of 2016
             #  as we use it, hence may be used rather as approximation for average pop of 2016-2020 if decided to
-            co_analysis_params = pd.read_csv('resources/ResourceFile_ContraceptionAnalysisParams.csv')
+            co_analysis_params = pd.read_csv('resources/contraception/ResourceFile_ContraceptionAnalysisParams.csv')
             pop_interv_cost_2016 = float(co_analysis_params['value'].loc[co_analysis_params['parameter_name'] ==
                                                                          'pop_intervention_cost']) * 1.81
             ppfp_interv_cost_2016 = float(co_analysis_params['value'].loc[co_analysis_params['parameter_name'] ==

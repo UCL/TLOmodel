@@ -267,10 +267,13 @@ class CopdAnalyses:
     def plot_copd_deaths_by_lungfunction(self):
         """ a function to plot COPD deaths by lung function/obstruction """
         # get COPD deaths by lung function from copd logs
-        deaths_lung_func = self.__logs_dict['copd_deaths_lung_func']
+        deaths_lung_func = \
+            parse_log_file(self.__logfile_path)['tlo.methods.demography.detail']['properties_of_deceased_persons']
+        _plot_deaths = deaths_lung_func.loc[(deaths_lung_func.cause_of_death == 'COPD_cat5') |
+                                            (deaths_lung_func.cause_of_death == 'COPD_cat6')]
 
         # group by date and lung function
-        deaths_grouped = deaths_lung_func.groupby(['date', 'lung_function']).size()
+        deaths_grouped = _plot_deaths.groupby(['date', 'ch_lungfunction']).size()
         unstack_df = deaths_grouped.unstack()
         plot_lung_func_deaths = unstack_df.groupby(unstack_df.index.year).sum()
         plot_lung_func_deaths = plot_lung_func_deaths.apply(lambda row: row / row.sum(), axis=1)
@@ -297,6 +300,7 @@ class CopdAnalyses:
         fig, axs = plt.subplots(nrows=1, ncols=2, sharey=True, sharex=True)
         for _col, sex in enumerate(('M', 'F')):
             plot_df = death_compare.loc[(['2010-2014', '2015-2019'], sex, slice(None), 'COPD')].groupby('period').sum()
+            plot_df = plot_df.loc[['2010-2014', '2015-2019']]
             ax = plot_df['model'].plot.bar(color=self.__plot_colors[6], label='Model', ax=axs[_col], rot=0)
             ax.errorbar(x=plot_df['model'].index, y=plot_df.GBD_mean,
                         yerr=[plot_df.GBD_lower, plot_df.GBD_upper],

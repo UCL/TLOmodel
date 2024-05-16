@@ -33,19 +33,11 @@ Representation of the Healthcare System
 * **Routine Immunization**: The services that deliver a set of immunizations to children. :download:`.docx <./write-ups/EPI.docx>`
 
 
-Contraception, Pregnancy and Labour
+Contraception, Maternal and Newborn Health
 ===================================
-* **Contraception**: Determines fecundity, the usage of contraception (including switching between contraceptives) and the onset of pregnancy. :download:`.docx <./write-ups/Contraception.docx>`
+* **Contraception**: Determines fecundity, the usage of contraception (including switching between contraceptives) and the onset of pregnancy. :download:`.docx <./write-ups/Contraception.docx>` `Journal article (Studies in Family Planning) <https://onlinelibrary.wiley.com/doi/10.1111/sifp.12255>`
 
-* **Pregnancy** Represents the antenatal period of pregnancy (the period from conception to the termination of pregnancy), including complication experienced and emergency care that may be provided. :download:`.docx <./write-ups/PregnancySupervisor.docx>`
-
-* **Care of Women During Pregnancy**: Determines the routine care provided during pregnancy. :download:`.docx <./write-ups/CareOfWomenDuringPregnancy.docx>`
-
-* **Labour**: Represents the labour, birth and the immediate postnatal period, including complications experienced, and the care provided (including 'skilled birth attendance' at basic or comprehensive level emergency obstetric care facilities). :download:`.docx <./write-ups/Labour.docx>`
-
-* **Newborns** Represents the key conditions/complications experienced by a neonate and the treatments associated. :download:`.docx <./write-ups/NewbornOutcomes.docx>`
-
-* **Postnatal Women** Represents the key conditions/complications experienced by a mother (and by association, a neonate) in the period immediately postpartum and the treatments associated. :download:`.docx <./write-ups/PostnatalSupervisor.docx>`
+* **Maternal and Newborn Health** Represents the antenatal period of pregnancy (the period from conception to the termination of pregnancy), labour, birth, the postnatal period, associated complications and healthcare delivered through routine and emergency maternity services. :download:`.pdf <./write-ups/MaternalNewbornHealth.pdf>`
 
 
 Conditions of Early Childhood

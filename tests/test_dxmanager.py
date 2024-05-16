@@ -20,7 +20,7 @@ from tlo.methods import (
 )
 from tlo.methods.consumables import Consumables, create_dummy_data_for_cons_availability
 from tlo.methods.dxmanager import DxManager, DxTest
-from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.hsi_event import HSI_Event
 
 # --------------------------------------------------------------------------
 # Create a very short-run simulation for use in the tests
