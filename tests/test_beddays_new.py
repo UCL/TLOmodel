@@ -1,4 +1,5 @@
 """Test file for the bed-days class"""
+
 import pandas as pd
 import pytest
 
@@ -20,13 +21,14 @@ def bed_days_data() -> pd.DataFrame:
         }
     )
 
+
 @pytest.fixture
 def bed_days(bed_days_data) -> BedDays:
     return BedDays(bed_days_data, "all")
 
+
 def test_find_occupancies(bed_days) -> None:
-    """
-    """
+    """ """
     one_day_after = start_date + pd.DateOffset(days=1)
     two_days_after = start_date + pd.DateOffset(days=2)
     three_days_after = start_date + pd.DateOffset(days=3)
@@ -93,3 +95,27 @@ def test_find_occupancies(bed_days) -> None:
 
     # Filter by on date
     assert len(bed_days.find_occupancies(on_date=one_day_after)) == 2
+    assert len(bed_days.find_occupancies(on_date=start_date)) == 1
+    assert bed_days.find_occupancies(on_date=start_date)[0] == o1
+
+    # Filter by between dates
+    assert (
+        len(
+            bed_days.find_occupancies(
+                occurs_between_dates=[two_days_after, three_days_after]
+            )
+        )
+        == 1
+    )
+    assert (
+        bed_days.find_occupancies(
+            occurs_between_dates=[two_days_after, three_days_after]
+        )[0]
+        == o2
+    )
+    assert (
+        len(
+            bed_days.find_occupancies(occurs_between_dates=[start_date, two_days_after])
+        )
+        == 2
+    )

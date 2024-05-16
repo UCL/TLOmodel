@@ -116,9 +116,8 @@ class BedDaysFootprint(dict):
 
     def without_0s(self) -> Dict[str, int | float]:
         """
-        Return a dictionary representation of the object
-        without the bed_type: n_days pairs where the number of
-        days is 0.
+        Return a dictionary representation of the object without the
+        bed_type: n_days pairs where the number of days is 0.
         """
         return {bed: n_days for bed, n_days in self.items() if n_days > 0}
 
@@ -325,33 +324,36 @@ class BedDays:
 
     def find_occupancies(
         self,
-        end_on_or_before: Optional[Date] = None,
         facility: Optional[List[int] | int] = None,
-        on_date: Optional[Date] = None,
         patient_id: Optional[List[int] | int] = None,
+        logical_or: bool = False,
+        end_on_or_before: Optional[Date] = None,
+        on_date: Optional[Date] = None,
         start_on_or_after: Optional[Date] = None,
-        logical_or: bool = False
+        occurs_between_dates: Optional[Tuple[Date]] = None,
     ) -> List[BedOccupancy]:
         """
         Find all occupancies in the current list that match the criteria given.
+        Unspecified criteria are ignored.
+        
+        Multiple criteria will be combined using logical AND. This behaviour can
+        be toggled with the logical_or argument.
 
-        :param end_on_or_before: Only match occupancies that are scheduled to end on or before the date provided.
-        :param facility: Only match occupancies that take place at the given facility (or facilities if list).
-        :param on_date: Only match occupancies that occur on the given date. end_on_or_before and start_on_or_before
-        will be ignored if provided.
-        :param patient_id: Only match occupancies scheduled for the given person (or persons if list).
-        :param start_on_or_after: Only match occupancies that are scheduled to start on or after the date provided.
-        :param logical_or: Combine criteria via OR as opposed to AND.
+        :param facility: Facility the occupancy takes place at.
+        :param patient_id: ID in the population DataFrame for the inpatient.
+        :param logical_or: Combine criteria via logical OR rather than AND.
+        :param end_on_or_before: Occupancy must end before or on this date.
+        :param occurs_between_dates: At least part of the occupancy must occur
+        between these two dates. Provided as a Tuple of Dates, the first element
+        being the earlier date (inclusive) and the second element the later
+        date (inclusive).
+        :param start_on_or_after: Occupancy must start on or after this date.
         """
         # Cast single-values to lists to make parsing easier
         if isinstance(patient_id, int):
             patient_id = [patient_id]
         if isinstance(facility, int):
             facility = [facility]
-        if on_date is not None:
-            # Overwrite any other date inputs if a specific day was requested.
-            end_on_or_before = None
-            start_on_or_after = None
         # Correct logical operator to use
         logic_operation = any if logical_or else all
 
@@ -365,6 +367,13 @@ class BedDays:
                     start_on_or_after is None or o.start_date >= start_on_or_after,
                     end_on_or_before is None or o.freed_date <= end_on_or_before,
                     on_date is None or o.start_date <= on_date <= o.freed_date,
+                    occurs_between_dates is None
+                    or self.date_ranges_overlap(
+                        o.start_date,
+                        occurs_between_dates[0],
+                        o.freed_date,
+                        occurs_between_dates[1],
+                    ),
                 ]
             )
         ]
@@ -399,9 +408,8 @@ class BedDays:
         """
         final_forecast_day = start_date + pd.DateOffset(days=n_days)
         relevant_occupancies = self.find_occupancies(
-            end_on_or_before=final_forecast_day,
-            start_on_or_after=start_date,
-            facility=facility_id, # NEEDS LLGICAL OR< BUT NOT WITH FACILITY (facility and between dates) 
+            occurs_between_dates=[start_date, final_forecast_day],
+            facility=facility_id,
         )
         facility_max_capacities = self._max_capacities.loc[facility_id, :]
         # Rows = index by date, days into the future (index 0 = start_date)
