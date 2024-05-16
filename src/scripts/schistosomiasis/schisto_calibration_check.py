@@ -57,10 +57,9 @@ def run_simulation(popsize=popsize, mda_execute=False):
 
     # Establish the simulation object
     sim = Simulation(start_date=start_date, seed=0, log_config={"filename": __file__[-19:-3],
-                                                                "custom_levels": custom_levels, },
-                     equal_allocation_by_district=equal_allocation_by_district
-                     )
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                                                                "custom_levels": custom_levels, })
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath,
+                                       equal_allocation_by_district=equal_allocation_by_district),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),

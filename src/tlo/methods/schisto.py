@@ -384,7 +384,6 @@ class SchistoSpecies:
                                       ' Efficacy of praziquantel in reducing worm burden'),
             'mean_worm_burden2010': Parameter(Types.DATA_FRAME,
                                         'Mean worm burden per infected person per district in 2010'),
-
             'prevalence_2010': Parameter(Types.DATA_FRAME,
                                         'Initial prevalence in each district in 2010'),
             'prop_susceptible': Parameter(Types.DATA_FRAME,

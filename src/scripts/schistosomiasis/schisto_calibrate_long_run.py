@@ -40,38 +40,83 @@ fitted_districts = ['Blantyre', 'Chiradzulu', 'Mulanje', 'Nsanje', 'Nkhotakota',
 species = ('mansoni', 'haematobium')
 
 # %% Run the simulation
-equal_allocation_by_district = True
-popsize = 500  # if equal_allocation_by_district=True then this is the popsize in each district
+popsize = 5000  # if equal_allocation_by_district=True then this is the popsize in each district
+
+species_to_calibrate = 'haematobium'
 
 
 def run_simulation(popsize=popsize, mda_execute=False):
     start_date = Date(2010, 1, 1)
-    end_date = Date(2014, 1, 1)
+    end_date = Date(2040, 1, 1)
 
     # For logging, set all modules to WARNING threshold, then alters `Schisto` to level "INFO"
     custom_levels = {
         "*": logging.WARNING,
         "tlo.methods.schisto": logging.INFO,
-        "tlo.methods.healthburden": logging.INFO
+        # "tlo.methods.healthburden": logging.INFO
     }
 
     # Establish the simulation object
     sim = Simulation(start_date=start_date, seed=0, log_config={"filename": __file__[-19:-3],
-                                                                "custom_levels": custom_levels, },
-                     equal_allocation_by_district=equal_allocation_by_district
-                     )
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                                                                "custom_levels": custom_levels, })
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath,
+                                       equal_allocation_by_district=False),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+                 # healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 # healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  schisto.Schisto(resourcefilepath=resourcefilepath, mda_execute=mda_execute),
                  )
 
+    # set prevalence for species
+    if species_to_calibrate == 'haematobium':
+        tmp = sim.modules["Schisto"].parameters["sh_mean_worm_burden2010"]
+        tmp[:] = 5
+        sim.modules["Schisto"].parameters["sh_mean_worm_burden2010"][:] = tmp
+
+        tmp = sim.modules["Schisto"].parameters["sh_prevalence_2010"]
+        tmp[:] = 0.5
+        sim.modules["Schisto"].parameters["sh_prevalence_2010"][:] = tmp
+
+        tmp = sim.modules["Schisto"].parameters["sm_mean_worm_burden2010"]
+        tmp[:] = 0
+        sim.modules["Schisto"].parameters["sm_mean_worm_burden2010"][:] = tmp
+
+        tmp = sim.modules["Schisto"].parameters["sm_prevalence_2010"]
+        tmp[:] = 0
+        sim.modules["Schisto"].parameters["sm_prevalence_2010"][:] = tmp
+
+    else:
+        tmp = sim.modules["Schisto"].parameters["sh_mean_worm_burden2010"]
+        tmp[:] = 0
+        sim.modules["Schisto"].parameters["sh_mean_worm_burden2010"][:] = tmp
+
+        tmp = sim.modules["Schisto"].parameters["sh_prevalence_2010"]
+        tmp[:] = 0
+        sim.modules["Schisto"].parameters["sh_prevalence_2010"][:] = tmp
+
+        tmp = sim.modules["Schisto"].parameters["sm_mean_worm_burden2010"]
+        tmp[:] = 5
+        sim.modules["Schisto"].parameters["sm_mean_worm_burden2010"][:] = tmp
+
+        tmp = sim.modules["Schisto"].parameters["sm_prevalence_2010"]
+        tmp[:] = 0.5
+        sim.modules["Schisto"].parameters["sm_prevalence_2010"][:] = tmp
+
     # initialise the population
     sim.make_initial_population(n=popsize)
+
+    # allocate all population to one district
+    df = sim.population.props
+
+    df['district_num_of_residence'] = df['district_num_of_residence'][0]
+
+    replacement_value = df['district_of_residence'].cat.categories[0]
+    # Assign the replacement value to the entire column while preserving categorical dtype
+    df['district_of_residence'] = pd.Categorical([replacement_value] * len(df),
+                                                 categories=df['district_of_residence'].cat.categories)
 
     # start the simulation
     sim.simulate(end_date=end_date)
@@ -192,36 +237,3 @@ fig.tight_layout()
 fig.show()
 
 
-# %% DALYS
-
-def get_model_dalys_schisto_2010():
-    """Get the DALYS attributed to Schistosomiasis in 2010."""
-    dalys = output['tlo.methods.healthburden']["dalys"]
-    dalys_schisto = dalys.set_index('year').loc[2010].groupby(by='age_range')['Schistosomiasis'].sum()
-    dalys_schisto.index = dalys_schisto.index.astype(make_age_grp_types())
-    dalys_schisto.name = 'Model'
-    return dalys_schisto.sort_index() * output['tlo.methods.population']['scaling_factor']['scaling_factor'][0]
-
-
-def get_gbd_dalys_schisto_2010():
-    """Get the DALYS attributed to Schistosomiasis in 2010"""
-    gbd_all = format_gbd(pd.read_csv(resourcefilepath / 'gbd' / 'ResourceFile_Deaths_And_DALYS_GBD2019.csv'))
-    return gbd_all.loc[
-        (gbd_all.cause_name == 'Schistosomiasis') & (gbd_all.Year == 2010)
-        ].groupby(by='Age_Grp')[['GBD_Est', 'GBD_Lower', 'GBD_Upper']].sum()
-
-
-dat = pd.concat([get_gbd_dalys_schisto_2010(), get_model_dalys_schisto_2010()], axis=1)
-
-fig, ax = plt.subplots()
-ax.plot(dat.index, dat.GBD_Est.values, color='b', label='GBD')
-ax.fill_between(dat.index, dat.GBD_Lower.values, dat.GBD_Upper.values, alpha=0.5, color='b')
-ax.plot(dat.index, dat.Model.values, color='r', label='Model')
-ax.set_title("DALYS")
-ax.set_xlabel('Age-Group')
-ax.set_ylabel('DALYS (2010)')
-ax.set_xticklabels(dat.index, rotation=90)
-ax.legend(loc=1)
-fig.tight_layout()
-# fig.savefig(make_graph_file_name('dalys_2010'))
-fig.show()
