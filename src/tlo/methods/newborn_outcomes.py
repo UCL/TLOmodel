@@ -379,14 +379,14 @@ class NewbornOutcomes(Module):
         """
         get_list_of_items = pregnancy_helper_functions.get_list_of_items
 
-        # ---------------------------------- IV DRUG ADMIN EQUIPMENT  -------------------------------------------------
-        self.item_codes_nb_consumables['iv_drug_equipment'] = \
+        # ---------------------------------- IV DRUG ADMIN CONSUMABLE  -------------------------------------------------
+        self.item_codes_nb_consumables['iv_drug_cons'] = \
             get_list_of_items(self, ['Cannula iv  (winged with injection pot) 18_each_CMST',
                                      'Giving set iv administration + needle 15 drops/ml_each_CMST',
                                      'Disposables gloves, powder free, 100 pieces per box'])
 
-        # ---------------------------------- BLOOD TEST EQUIPMENT ---------------------------------------------------
-        self.item_codes_nb_consumables['blood_test_equipment'] = \
+        # ---------------------------------- BLOOD TEST CONSUMABLES ---------------------------------------------------
+        self.item_codes_nb_consumables['blood_test_cons'] = \
             get_list_of_items(self, ['Disposables gloves, powder free, 100 pieces per box'])
 
         # -------------------------------------------- VITAMIN K ------------------------------------------
@@ -831,7 +831,7 @@ class NewbornOutcomes(Module):
         # We define the consumables
         avail_eyecare = hsi_event.get_consumables(item_codes=cons['eye_care'])
         avail_vit_k = hsi_event.get_consumables(item_codes=cons['vitamin_k'],
-                                                optional_item_codes=cons['iv_drug_equipment'])
+                                                optional_item_codes=cons['iv_drug_cons'])
 
         # If they are available the intervention is delivered, there is limited evidence of the effect of these
         # interventions so currently we are just mapping the consumables
@@ -977,15 +977,21 @@ class NewbornOutcomes(Module):
                     df.at[person_id, 'nb_supp_care_neonatal_sepsis'] = True
                     pregnancy_helper_functions.log_met_need(self, 'neo_sep_supportive_care', hsi_event)
 
+                    # Add used equipment
+                    hsi_event.add_equipment({'Drip stand', 'Infusion pump'})
+
             # The same pattern is then followed for health centre care
             else:
                 avail = pregnancy_helper_functions.return_cons_avail(
                     self, hsi_event, self.item_codes_nb_consumables, core='sepsis_abx',
-                    optional='iv_drug_equipment')
+                    optional='iv_drug_cons')
 
                 if avail and sf_check:
                     df.at[person_id, 'nb_inj_abx_neonatal_sepsis'] = True
                     pregnancy_helper_functions.log_met_need(self, 'neo_sep_abx', hsi_event)
+
+                    # Add used equipment
+                    hsi_event.add_equipment({'Drip stand', 'Infusion pump', 'Oxygen cylinder, with regulator'})
 
     def link_twins(self, child_one, child_two, mother_id):
         """
@@ -1324,6 +1330,7 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
         self.TREATMENT_ID = 'PostnatalCare_Neonatal'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Under5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = self._get_facility_level_for_pnc(person_id)
+        self.set_equipment_essential_to_run_event({''})
 
     def apply(self, person_id, squeeze_factor):
         nci = self.module.newborn_care_info
@@ -1417,6 +1424,7 @@ class HSI_NewbornOutcomes_NeonatalWardInpatientCare(HSI_Event, IndividualScopeEv
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5})
+        self.set_equipment_essential_to_run_event({''})
 
     def apply(self, person_id, squeeze_factor):
 

@@ -900,6 +900,7 @@ class HSI_Schisto_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin)
         self.TREATMENT_ID = 'Schisto_Treatment'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Under5OPD' if under_5 else 'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.set_equipment_essential_to_run_event({''})
         self._num_occurrences = 0
 
     def apply(self, person_id, squeeze_factor):
@@ -917,6 +918,8 @@ class HSI_Schisto_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin)
         )
 
         if will_test:
+            self.add_equipment({'Ordinary Microscope'})
+
             # Determine if they truly are infected (with any of the species)
             is_infected = (person.loc[cols_of_infection_status] != 'Non-infected').any()
 
@@ -958,6 +961,7 @@ class HSI_Schisto_TreatmentFollowingDiagnosis(HSI_Event, IndividualScopeEventMix
         self.TREATMENT_ID = 'Schisto_Treatment'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Under5OPD' if under_5 else 'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.set_equipment_essential_to_run_event({''})
 
     def apply(self, person_id, squeeze_factor):
         """Do the treatment for this person."""
@@ -988,6 +992,7 @@ class HSI_Schisto_MDA(HSI_Event, IndividualScopeEventMixin):
         # `self.EXPECTED_APPT_FOOTPRINT` show that this requires 1 * that appointment type.
 
         self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.set_equipment_essential_to_run_event({''})
 
     def apply(self, person_id, squeeze_factor):
         """Provide the treatment to the beneficiaries of this HSI."""

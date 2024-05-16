@@ -695,14 +695,15 @@ class Labour(Module):
 
         get_list_of_items = pregnancy_helper_functions.get_list_of_items
 
-        # ---------------------------------- IV DRUG ADMIN EQUIPMENT  -------------------------------------------------
-        self.item_codes_lab_consumables['iv_drug_equipment'] = \
+        # ---------------------------------- IV DRUG ADMIN CONSUMABLES  -----------------------------------------------
+
+        self.item_codes_lab_consumables['iv_drug_cons'] = \
             get_list_of_items(self, ['Cannula iv  (winged with injection pot) 18_each_CMST',
                                      'Giving set iv administration + needle 15 drops/ml_each_CMST',
                                      'Disposables gloves, powder free, 100 pieces per box'])
 
-        # ---------------------------------- BLOOD TEST EQUIPMENT ---------------------------------------------------
-        self.item_codes_lab_consumables['blood_test_equipment'] = \
+        # ---------------------------------- BLOOD TEST CONSUMABLES ---------------------------------------------------
+        self.item_codes_lab_consumables['blood_test_cons'] = \
             get_list_of_items(self, ['Blood collecting tube, 5 ml',
                                      'Cannula iv  (winged with injection pot) 18_each_CMST',
                                      'Disposables gloves, powder free, 100 pieces per box'])
@@ -1668,7 +1669,7 @@ class Labour(Module):
 
                 # If she has not already receive antibiotics, we check for consumables
                 avail = pregnancy_helper_functions.return_cons_avail(
-                    self, hsi_event, self.item_codes_lab_consumables, core='abx_for_prom', optional='iv_drug_equipment')
+                    self, hsi_event, self.item_codes_lab_consumables, core='abx_for_prom', optional='iv_drug_cons')
 
                 # Then query if these consumables are available during this HSI And provide if available.
                 # Antibiotics for from reduce risk of newborn sepsis within the first
@@ -1683,7 +1684,7 @@ class Labour(Module):
 
             avail = pregnancy_helper_functions.return_cons_avail(
                 self, hsi_event, self.item_codes_lab_consumables, core='antenatal_steroids',
-                optional='iv_drug_equipment')
+                optional='iv_drug_cons')
 
             # If available they are given. Antenatal steroids reduce a preterm newborns chance of developing
             # respiratory distress syndrome and of death associated with prematurity
@@ -1775,7 +1776,7 @@ class Labour(Module):
             # Then query if these consumables are available during this HSI
             avail = pregnancy_helper_functions.return_cons_avail(
                 self, hsi_event, self.item_codes_lab_consumables, core='iv_antihypertensives',
-                optional='iv_drug_equipment')
+                optional='iv_drug_cons')
 
             # If they are available then the woman is started on treatment. Intravenous antihypertensive reduce a
             # womans risk of progression from mild to severe gestational hypertension ANd reduce risk of death for
@@ -1876,6 +1877,10 @@ class Labour(Module):
                                                                                            hsi_event=hsi_event)
 
                 if avail and sf_check:
+
+                    # Add used equipment
+                    hsi_event.add_equipment({'Delivery Forceps', 'Vacuum extractor'})
+
                     pregnancy_helper_functions.log_met_need(self, f'avd_{indication}', hsi_event)
 
                     # If AVD was successful then we record the mode of delivery. We use this variable to reduce
@@ -2000,7 +2005,7 @@ class Labour(Module):
 
         # Define and check available consumables
         avail = pregnancy_helper_functions.return_cons_avail(
-            self, hsi_event, self.item_codes_lab_consumables, core='amtsl', optional='iv_drug_equipment')
+            self, hsi_event, self.item_codes_lab_consumables, core='amtsl', optional='iv_drug_cons')
 
         # run HCW check
         sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self, sf='uterotonic',
@@ -2121,16 +2126,27 @@ class Labour(Module):
         sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self, sf='surg',
                                                                                    hsi_event=hsi_event)
 
-        # determine if uterine preserving surgery will be successful
-        treatment_success_pph = params['success_rate_pph_surgery'] > self.rng.random_sample()
+        if avail and sf_check:
 
-        # If resources are available and the surgery is a success then a hysterectomy does not occur
-        if treatment_success_pph and avail and sf_check:
-            self.pph_treatment.set(person_id, 'surgery')
+            # Add used equipment
+            # Todo: link to surgical equipment package when that exsists
+            hsi_event.add_equipment(
+                {'Infusion pump', 'Drip stand', 'Laparotomy Set', 'Blood pressure machine', 'Pulse oximeter'})
 
-        elif not treatment_success_pph and avail and sf_check:
-            self.pph_treatment.set(person_id, 'hysterectomy')
-            df.at[person_id, 'la_has_had_hysterectomy'] = True
+            # determine if uterine preserving surgery will be successful
+            treatment_success_pph = params['success_rate_pph_surgery'] > self.rng.random_sample()
+
+            if treatment_success_pph:
+                self.pph_treatment.set(person_id, 'surgery')
+            else:
+                # If the treatment is unsuccessful then women will require a hysterectomy to stop the bleeding
+
+                # Add used equipment
+                # Todo: link to surgical equipment package when that exists
+                hsi_event.add_equipment(
+                    {'Hysterectomy set'})
+                self.pph_treatment.set(person_id, 'hysterectomy')
+                df.at[person_id, 'la_has_had_hysterectomy'] = True
 
         # log intervention delivery
         if self.pph_treatment.has_all(person_id, 'surgery') or df.at[person_id, 'la_has_had_hysterectomy']:
@@ -2151,13 +2167,15 @@ class Labour(Module):
         # Check consumables
         avail = pregnancy_helper_functions.return_cons_avail(
             self, hsi_event, self.item_codes_lab_consumables, core='blood_transfusion', number=2,
-            optional='iv_drug_equipment')
+            optional='iv_drug_cons')
 
         # check HCW
         sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self, sf='blood_tran',
                                                                                    hsi_event=hsi_event)
 
         if avail and sf_check:
+            hsi_event.add_equipment({'Drip stand', 'Infusion pump'})
+
             mni[person_id]['received_blood_transfusion'] = True
             pregnancy_helper_functions.log_met_need(self, 'blood_tran', hsi_event)
 
@@ -2181,11 +2199,14 @@ class Labour(Module):
         mother = df.loc[person_id]
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
+        # Add used equipment
+        hsi_event.add_equipment({'Analyser, Haematology'})
+
         # Use dx_test function to assess anaemia status
         test_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
             dx_tests_to_run='full_blood_count_hb_pn', hsi_event=hsi_event)
 
-        hsi_event.get_consumables(item_codes=self.item_codes_lab_consumables['blood_test_equipment'])
+        hsi_event.get_consumables(item_codes=self.item_codes_lab_consumables['blood_test_cons'])
 
         # Check consumables
         if test_result:
@@ -2871,6 +2892,7 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'NormalDelivery': 1})
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': 2})
+        self.set_equipment_essential_to_run_event({''})
 
     def apply(self, person_id, squeeze_factor):
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
@@ -2906,6 +2928,11 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         avail = pregnancy_helper_functions.return_cons_avail(
             self.module, self, self.module.item_codes_lab_consumables, core='delivery_core',
             optional='delivery_optional')
+
+        # Add used equipment
+        self.add_equipment({'Delivery set', 'Weighing scale', 'Stethoscope, foetal, monaural, Pinard, plastic',
+                               'Resuscitaire', 'Sphygmomanometer', 'Tray, emergency', 'Suction machine',
+                               'Thermometer', 'Drip stand', 'Infusion pump'})
 
         # If the clean delivery kit consumable is available, we assume women benefit from clean delivery
         if avail:
@@ -3049,6 +3076,7 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'PostnatalCare_Maternal'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = self._get_facility_level_for_pnc(person_id)
+        self.set_equipment_essential_to_run_event({''})
 
     def apply(self, person_id, squeeze_factor):
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
@@ -3183,6 +3211,7 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MajorSurg': 1})
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
         self.timing = timing
+        self.set_equipment_essential_to_run_event({''})
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -3212,6 +3241,12 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
                 logger.debug(key='message', data="cs delivery blocked for this analysis")
 
             elif (avail and sf_check) or (mni[person_id]['cs_indication'] == 'other'):
+
+                # If intervention is delivered - add used equipment
+                # Todo: link to surgical equipment package when that exsists
+                self.add_equipment(
+                    {'Infusion pump', 'Drip stand', 'Laparotomy Set', 'Blood pressure machine', 'Pulse oximeter'})
+
                 person = df.loc[person_id]
                 logger.info(key='caesarean_delivery', data=person.to_dict())
                 logger.info(key='cs_indications', data={'id': person_id,
@@ -3245,6 +3280,8 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
                 # Unsuccessful repair will lead to this woman requiring a hysterectomy. Hysterectomy will also reduce
                 # risk of death from uterine rupture but leads to permanent infertility in the simulation
                 else:
+                    self.add_equipment(
+                        {'Hysterectomy set'})
                     df.at[person_id, 'la_has_had_hysterectomy'] = True
 
         # ============================= SURGICAL MANAGEMENT OF POSTPARTUM HAEMORRHAGE==================================
@@ -3312,6 +3349,7 @@ class HSI_Labour_PostnatalWardInpatientCare(HSI_Event, IndividualScopeEventMixin
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': 5})
+        self.set_equipment_essential_to_run_event({''})
 
     def apply(self, person_id, squeeze_factor):
         logger.debug(key='message', data='HSI_Labour_PostnatalWardInpatientCare now running to capture '
