@@ -8,7 +8,7 @@ from tlo.events import Event, IndividualScopeEventMixin
 from tlo.lm import LinearModel
 from tlo.methods import Metadata, demography, newborn_outcomes_lm, pregnancy_helper_functions
 from tlo.methods.causes import Cause
-from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.postnatal_supervisor import PostnatalWeekOneNeonatalEvent
 from tlo.util import BitsetHandler
 
@@ -265,7 +265,7 @@ class NewbornOutcomes(Module):
         'nb_preterm_birth_disab': Property(Types.CATEGORICAL, 'Disability associated with preterm delivery',
                                            categories=['none', 'mild_motor_and_cog', 'mild_motor', 'moderate_motor',
                                                        'severe_motor']),
-        'nb_congenital_anomaly': Property(Types.INT, 'Types of congenital anomaly of the newborn stored as bitset'),
+        'nb_congenital_anomaly': Property(Types.BITSET, 'Types of congenital anomaly of the newborn stored as bitset'),
         'nb_early_onset_neonatal_sepsis': Property(Types.BOOL, 'whether this neonate has developed neonatal sepsis'
                                                                ' following birth'),
         'nb_inj_abx_neonatal_sepsis': Property(Types.BOOL, 'If this neonate has injectable antibiotics as treatment '

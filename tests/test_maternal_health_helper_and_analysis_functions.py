@@ -11,7 +11,7 @@ from tlo.methods import (
     pregnancy_helper_functions,
 )
 from tlo.methods.fullmodel import fullmodel
-from tlo.methods.healthsystem import FacilityInfo
+from tlo.methods.hsi_event import FacilityInfo
 
 start_date = Date(2010, 1, 1)
 
@@ -26,7 +26,7 @@ except NameError:
 def get_dummy_hsi(sim, mother_id, id, fl):
     """create dummy HSI to test that consumables truly are unavailable when using standard method"""
     from tlo.events import IndividualScopeEventMixin
-    from tlo.methods.healthsystem import HSI_Event
+    from tlo.methods.hsi_event import HSI_Event
 
     class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
         def __init__(self, module, person_id):
@@ -626,7 +626,7 @@ def test_analysis_events_circumnavigates_sf_and_competency_parameters(seed):
     params['prob_successful_assisted_vaginal_delivery'] = 1.0
 
     # Next define the actual HSI of interest
-    from tlo.methods.healthsystem import FacilityInfo
+    from tlo.methods.hsi_event import FacilityInfo
 
     # run the event and check the interventions were delivered as expected
     sba = labour.HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(

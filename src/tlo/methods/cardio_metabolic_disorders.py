@@ -10,25 +10,30 @@ The joint Cardio-Metabolic Disorders model determines onset, outcome and treatme
 And:
 * Chronic Lower Back Pain
 """
+from __future__ import annotations
 
 import math
 from itertools import combinations
 from pathlib import Path
-from typing import List
+from typing import TYPE_CHECKING, List
 
 import numpy as np
 import pandas as pd
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods import demography as de
 from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
-from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date
+
+if TYPE_CHECKING:
+    from tlo.population import PatientDetails
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
@@ -36,7 +41,6 @@ from tlo.util import random_date
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
 
 class CardioMetabolicDisorders(Module):
     """
@@ -799,37 +803,51 @@ class CardioMetabolicDisorders(Module):
         """
         pass
 
-    def determine_if_will_be_investigated(self, person_id):
-        """
-        This is called by the HSI generic first appts module whenever a person attends an appointment and determines
-        if the person will be tested for one or more conditions.
-        A maximum of one instance of `HSI_CardioMetabolicDisorders_Investigations` is created for the person, during
-        which multiple conditions can be investigated.
-        """
+    def do_at_generic_first_appt(
+        self,
+        patient_id: int,
+        patient_details: PatientDetails,
+        symptoms: List[str],
+        **kwargs
+    ) -> IndividualPropertyUpdates:
+        # This is called by the HSI generic first appts module whenever a
+        # person attends an appointment and determines if the person will
+        # be tested for one or more conditions.
+        # A maximum of one instance of `HSI_CardioMetabolicDisorders_Investigations`
+        # is created for the person, during which multiple conditions can
+        # be investigated.
+        if patient_details.age_years <= 5:
+            return {}
 
-        def is_next_test_due(current_date, date_of_last_test):
-            return pd.isnull(date_of_last_test) or (current_date - date_of_last_test).days > DAYS_IN_YEAR / 2
-
-        df = self.sim.population.props
-        person = df.loc[person_id, df.columns[df.columns.str.startswith('nc_')]]
-        symptoms = self.sim.modules['SymptomManager'].has_what(person_id=person_id)
-
-        conditions_to_investigate = []   # The list of conditions that will be investigated in follow-up HSI
-        has_any_cmd_symptom = False  # Marker for whether the person has any symptoms of interest
+        # The list of conditions that will be investigated in follow-up HSI
+        conditions_to_investigate = []
+        # Marker for whether the person has any symptoms of interest
+        has_any_cmd_symptom = False
 
         # Determine if there are any conditions that should be investigated:
         for condition in self.conditions:
-            is_already_diagnosed = person[f'nc_{condition}_ever_diagnosed']
-            has_symptom = f'{condition}_symptoms' in symptoms
-            next_test_due = is_next_test_due(
-                current_date=self.sim.date, date_of_last_test=df.at[person_id, f'nc_{condition}_date_last_test']
+            is_already_diagnosed = getattr(patient_details, f"nc_{condition}_ever_diagnosed")
+            has_symptom = f"{condition}_symptoms" in symptoms
+            date_of_last_test = getattr(
+                patient_details, f"nc_{condition}_date_last_test"
             )
-            p_assess_if_no_symptom = self.parameters[f'{condition}_hsi'].get('pr_assessed_other_symptoms')
+            next_test_due = (
+                pd.isnull(date_of_last_test)
+                or (self.sim.date - date_of_last_test).days > DAYS_IN_YEAR / 2
+            )
+            p_assess_if_no_symptom = self.parameters[f"{condition}_hsi"].get(
+                "pr_assessed_other_symptoms"
+            )
 
             if (not is_already_diagnosed) and (
-                has_symptom or (next_test_due and (self.rng.random_sample() < p_assess_if_no_symptom))
+                has_symptom
+                or (
+                    next_test_due
+                    and (self.rng.random_sample() < p_assess_if_no_symptom)
+                )
             ):
-                # If the person is not already diagnosed and either has the symptom or is due a routine check...
+                # If the person is not already diagnosed, and either
+                # has the symptom or is due a routine check,
                 # ... add this condition to be investigated in the appointment.
                 conditions_to_investigate.append(condition)
 
@@ -838,46 +856,48 @@ class CardioMetabolicDisorders(Module):
 
         # Schedule follow-up HSI *if* there are any conditions to investigate:
         if conditions_to_investigate:
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                HSI_CardioMetabolicDisorders_Investigations(
-                    module=self,
-                    person_id=person_id,
-                    conditions_to_investigate=conditions_to_investigate,
-                    has_any_cmd_symptom=has_any_cmd_symptom,
-                ),
-                priority=0,
-                topen=self.sim.date,
-                tclose=None
-              )
+            event = HSI_CardioMetabolicDisorders_Investigations(
+                module=self,
+                person_id=patient_id,
+                conditions_to_investigate=conditions_to_investigate,
+                has_any_cmd_symptom=has_any_cmd_symptom,
+            )
+            self.healthsystem.schedule_hsi_event(event, topen=self.sim.date, priority=0)
 
-    def determine_if_will_be_investigated_events(self, person_id):
-        """
-        This is called by the HSI generic first appts module whenever a person attends an emergency appointment and
-        determines if they will receive emergency care based on the duration of time since symptoms have appeared.
-        A maximum of one instance of `HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment` is created
-        for the person, during which multiple events can be investigated.
-        """
-
-        health_system = self.sim.modules["HealthSystem"]
-        symptoms = self.sim.modules['SymptomManager'].has_what(person_id=person_id)
-
+    def do_at_generic_first_appt_emergency(
+        self,
+        patient_id: int,
+        patient_details: PatientDetails = None,
+        symptoms: List[str] = None,
+        **kwargs,
+    ) -> IndividualPropertyUpdates:
+        # This is called by the HSI generic first appts module whenever
+        # a person attends an emergency appointment and determines if they
+        # will receive emergency care based on the duration of time since
+        # symptoms have appeared. A maximum of one instance of
+        # `HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment`
+        # is created for the person, during which multiple events can be
+        # investigated.
         ev_to_investigate = []
         for ev in self.events:
-            # If the person has symptoms of damage from within the last 3 days, schedule them for emergency care
-            if f'{ev}_damage' in symptoms and \
-                    ((self.sim.date - self.sim.population.props.at[person_id, f'nc_{ev}_date_last_event']).days <= 3):
+            # If the person has symptoms of damage from within the last 3 days,
+            # schedule them for emergency care
+            if f"{ev}_damage" in symptoms and (
+                (
+                    self.sim.date
+                    - getattr(patient_details, f"nc_{ev}_date_last_event")
+                ).days
+                <= 3
+            ):
                 ev_to_investigate.append(ev)
 
         if ev_to_investigate:
-            health_system.schedule_hsi_event(
-                HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(
-                    module=self,
-                    person_id=person_id,
-                    events_to_investigate=ev_to_investigate,
-                ),
-                priority=1,
-                topen=self.sim.date
+            event = HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(
+                module=self,
+                person_id=patient_id,
+                events_to_investigate=ev_to_investigate,
             )
+            self.healthsystem.schedule_hsi_event(event, topen=self.sim.date, priority=1)
 
 
 class Tracker:
@@ -1151,7 +1171,11 @@ class CardioMetabolicDisordersWeightLossEvent(Event, IndividualScopeEventMixin):
             return
         else:
             if self.module.rng.random_sample() < self.module.parameters['pr_bmi_reduction']:
-                df.at[person_id, 'li_bmi'] -= 1
+                # for bmi equal to 1, we decrease it to np.nan to avoid a new category error
+                if not df.at[person_id, 'li_bmi'] > 1:
+                    df.at[person_id, 'li_bmi'] = np.nan
+                else:
+                    df.at[person_id, 'li_bmi'] -= 1
                 df.at[person_id, 'nc_weight_loss_worked'] = True
 
 
