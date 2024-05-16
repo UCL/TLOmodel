@@ -54,7 +54,7 @@ class TestScenario(BaseScenario):
         self.seed = random.randint(0, 50000)
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2051, 1, 1)
-        self.pop_size = 50_000
+        self.pop_size = 150_000
         self.number_of_draws = number_of_draws
         self.runs_per_draw = runs_per_draw
 
