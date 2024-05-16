@@ -892,8 +892,7 @@ class HSI_OesophagealCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin)
             item_codes=self.module.item_codes_oesophageal_can['palliation'])
 
         if cons_available:
-            # If consumables are available and the treatment will go ahead - update the equipment
-            self.add_equipment({'Infusion pump', 'Drip stand'})
+            # If consumables are available and the treatment will go ahead
 
             # Record the start of palliative care if this is first appointment
             if pd.isnull(df.at[person_id, "oc_date_palliative_care"]):
