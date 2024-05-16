@@ -94,9 +94,10 @@ equipment_crosswalk = pd.read_excel((path_to_dropbox / '07 - Data/HHFA_2018-19/2
 equipment_crosswalk_only_matched_items = equipment_crosswalk[equipment_crosswalk.Equipment_name_HHFA.notna() &
                                                             equipment_crosswalk.Equipment_name.notna()]
 tlo_equipment_availability = pd.merge(equipment_crosswalk_only_matched_items[['Item_code', 'Equipment_name', 'Equipment_name_HHFA']],
-                                      unique_equipment_df_for_model[['fac_code','equipment','available', 'functional', 'calibrated','prepared']],
+                                      unique_equipment_df_for_model[['fac_code','equipment','available', 'functional']],
                                       left_on= 'Equipment_name_HHFA', right_on= 'equipment')
-tlo_equipment_availability_duplicates_collapsed = tlo_equipment_availability.groupby(['Item_code', 'Equipment_name', 'fac_code'])[['available', 'functional','calibrated','prepared']].agg(max).reset_index()
+
+tlo_equipment_availability_duplicates_collapsed = tlo_equipment_availability.groupby(['Item_code', 'Equipment_name', 'fac_code'])[['available', 'functional']].agg(max).reset_index()
 
 # Merge with facility information
 # Load cleaned HHFA data prepared by script - `prepare_hhfa_consumables_data_for_inferential_analysis.py`
