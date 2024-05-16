@@ -988,15 +988,21 @@ def test_beddays_availability_switch(seed):
     # get shortcut to HealthSystem Module
     hs: healthsystem.HealthSystem = sim.modules["HealthSystem"]
 
+    # As obtained from the resource file
+    facility_id_with_patient =  128
+    facility_id_without_patient = 129
+    bedtype1_init_capacity = 5
+    bedtype2_init_capacity = 10
+
     # Create a simple bed capacity dataframe with capacity designated for two regions
     hs.parameters["BedCapacity"] = pd.DataFrame(
         data={
             "Facility_ID": [
-                128, #<-- patient 0 is admitted here
-                129,
+                facility_id_with_patient, #<-- patient 0 is admitted here
+                facility_id_without_patient,
             ],
-            "bedtype1": 5,
-            "bedtype2": 10,
+            "bedtype1": bedtype1_init_capacity,
+            "bedtype2": bedtype2_init_capacity,
         }
     )
     sim.make_initial_population(n=100)
@@ -1028,10 +1034,12 @@ def test_beddays_availability_switch(seed):
     bedtype2: pd.DataFrame = bed_days.bed_tracker["bedtype2"]
 
     assert (
-        bedtype1.loc[start_date, 128] == 4 and bedtype1.loc[start_date, 129] == 5
+        bedtype1.loc[start_date, facility_id_with_patient] == bedtype1_init_capacity - 1
+        and bedtype1.loc[start_date, facility_id_without_patient]
+        == bedtype1_init_capacity
     ), "Day 1 capacities were incorrectly affected"
-    assert (bedtype1.loc[day_2:day_3, 128] == -1).all() and (
-        bedtype1.loc[day_2:day_3, 129] == 0
+    assert (bedtype1.loc[day_2:day_3, facility_id_with_patient] == -1).all() and (
+        bedtype1.loc[day_2:day_3, facility_id_without_patient] == 0
     ).all(), "Day 2 & 3 capacities were not updated correctly"
     assert (
         (bedtype1.loc[day_4:, :] == 0).all().all()
@@ -1042,5 +1050,5 @@ def test_beddays_availability_switch(seed):
         (bedtype2.loc[day_2:, :] == 0).all().all()
     ), "Bedtype 2 was not updated correctly"
     assert (
-        (bedtype2.loc[start_date, :] == 10).all().all()
+        (bedtype2.loc[start_date, :] == bedtype2_init_capacity).all().all()
     ), "Bedtype 2 had capacity updated on the incorrect dates"
