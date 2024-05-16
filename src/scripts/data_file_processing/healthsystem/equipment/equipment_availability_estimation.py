@@ -1,3 +1,15 @@
+"""
+This script generates estimates of availability of equipment used by disease modules. The output is:
+* ResourceFile_Equipment_availability.csv
+
+N.B. The file uses `equipment_and_other_non_consumable_avaibility_hhfa.xlsx` in Dropbox as an input.
+
+It creates one row for each equipment code for whether equipment is available and
+ whether equipment is functional at a specific facility level and district.
+
+Equipment availability is measured as probability of each equipment being available within each District at each Facility_level (as recorded by HHFA).
+"""
+
 import calendar
 import datetime
 import os
