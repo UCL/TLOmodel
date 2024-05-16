@@ -27,7 +27,8 @@ resourcefilepath = Path("./resources")
 path_for_new_resourcefiles = resourcefilepath / "healthsystem/infrastructure_and_equipment/"
 
 # Import Raw data
-hhfa_equipment_wide = pd.read_csv(path_to_dropbox / '07 - Data/HHFA_2018-19/2 clean/equipment_and_other_non_consumable_avaibility.csv')
+hhfa_equipment_wide = pd.read_excel((path_to_dropbox / '07 - Data/HHFA_2018-19/2 clean/equipment_and_other_non_consumable_avaibility_hhfa.xlsx'),
+                                    sheet_name = "hhfa_data")
 hhfa_equipment_wide = hhfa_equipment_wide.drop(hhfa_equipment_wide.columns[0], axis=1)
 # Reshape data
 hhfa_equipment = pd.melt(hhfa_equipment_wide, id_vars=['fac_code'], var_name='equipment_availability_var', value_name='response')
@@ -71,7 +72,8 @@ unique_equipment_df_for_model.loc[unique_equipment_df_for_model['calibrated'] ==
 # Convert to binary values
 unique_equipment_df_for_model.loc[unique_equipment_df_for_model['available'].isin(['AT LEAST ONE VALID', 'Available and functional', 'AVAILABLE NON VALID', 'Available not functional', "REPORTED  AVAILABLE BUT NOT SEEN", "Yes"]),'available'] = 1
 unique_equipment_df_for_model.loc[unique_equipment_df_for_model['available'].isin(['NOT AVAILABLE TODAY', 'Not available', 'NEVER AVAILABLE', "Not observed", "No"]),'available'] = 0
-unique_equipment_df_for_model.loc[unique_equipment_df_for_model['functional'] == '3','functional'] = np.nan # 3 implies "Don't know"
+unique_equipment_df_for_model.loc[unique_equipment_df_for_model['functional'] == 3,'functional'] = np.nan # 3 implies "Don't know"
 unique_equipment_df_for_model.loc[unique_equipment_df_for_model['functional'] == 'Yes','functional'] = 1
 unique_equipment_df_for_model.loc[(unique_equipment_df_for_model['functional'] == 'No')|(unique_equipment_df_for_model['available'] == 0),'functional'] = 0
 
+# Merge with equipment names and item codes from TLO model
