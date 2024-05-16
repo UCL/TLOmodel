@@ -865,7 +865,6 @@ class HSI_OtherAdultCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '2'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 15})
-        # todo @Eva equipment: in general not required I don't think
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
