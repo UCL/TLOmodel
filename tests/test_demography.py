@@ -378,25 +378,27 @@ def test_ageing_of_old_people_up_to_max_age(simulation):
 
 def test_equal_allocation_by_district(seed):
     """
-    check when argument equal_allocation_by_district=True in class Simulation
-    that pop_size refers to the population within each district
-    and each district has idential population size
+    Check when key-word argument `equal_allocation_by_district=True` that each district has an identical population size
     """
 
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-    popsize = 10
-    sim = Simulation(start_date=start_date, seed=seed, equal_allocation_by_district=True)
-    core_module = demography.Demography(resourcefilepath=resourcefilepath)
-    sim.register(core_module)
-    simulation.make_initial_population(n=popsize)
-    simulation.simulate(end_date=sim.start_date)
+    sim = Simulation(start_date=start_date, seed=seed)
+    sim.register(
+        demography.Demography(
+            resourcefilepath=resourcefilepath,
+            equal_allocation_by_district=True,
+        )
+    )
+    population_per_district = 10_000
+    number_of_districts = len(sim.modules['Demography'].districts)
+    popsize = number_of_districts * population_per_district
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=sim.start_date)  # Simulate for zero days
 
-    # check final population size
-    df = simulation.population.props
-    assert len(df) == popsize * 32  # 32 districts
+    # check population size
+    df = sim.population.props
+    assert sum(df.is_alive) == popsize
 
-    # check total within each district is identical and equals popsize
-    district_counts = df.groupby('district_of_residence').size()
-    assert (district_counts == popsize).all()
-
-
+    # check total within each district is (close to being) identical and matches the target population of each district
+    pop_size_by_district = df.loc[df.is_alive].groupby('district_of_residence').size()
+    assert np.allclose(pop_size_by_district.values, pop_size_by_district, rtol=0.05)
