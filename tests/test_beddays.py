@@ -973,3 +973,74 @@ def test_in_patient_appt_included_and_logged(tmpdir, seed):
     # Check that the facility_id is included for each entry in the `HSI_Events` log, including HSI Events for
     # in-patient appointments.
     assert not (log_hsi['Facility_ID'] == -99).any()
+
+def test_beddays_availability_switch(seed):
+    """
+    Test that calling bed_days.switch_beddays_availability correctly updates the
+    bed capacities and adjusts the existing trackers to reflect the new capacities.
+    """
+    sim = Simulation(start_date=start_date, seed=seed)
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+    )
+
+    # get shortcut to HealthSystem Module
+    hs: healthsystem.HealthSystem = sim.modules["HealthSystem"]
+
+    # Create a simple bed capacity dataframe with capacity designated for two regions
+    hs.parameters["BedCapacity"] = pd.DataFrame(
+        data={
+            "Facility_ID": [
+                128, #<-- patient 0 is admitted here
+                129,
+            ],
+            "bedtype1": 5,
+            "bedtype2": 10,
+        }
+    )
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=start_date)
+
+    day_2 = start_date + pd.DateOffset(days=1)
+    day_3 = start_date + pd.DateOffset(days=2)
+    day_4 = start_date + pd.DateOffset(days=3)
+
+    bed_days = hs.bed_days
+    # Reset the bed occupancies
+    bed_days.initialise_beddays_tracker()
+    # Have a patient occupy a bed at the start of the simulation
+    bed_days.impose_beddays_footprint(person_id=0, footprint={"bedtype1": 3, "bedtype2": 0})
+
+    # Have the bed_days availability switch to "none" on the 2nd simulation day
+    bed_days.switch_beddays_availability("none", effective_on_and_from=day_2)
+
+    # We should now see that the scaled capacities are all zero
+    assert (
+        not bed_days._scaled_capacity.any().any()
+    ), "At least one bed capacity was not set to 0"
+    # We should also see that bedtype1 should have -1 beds available for days 2 and 3 of the simulation,
+    # due to the existing occupancy and the new capacity of 0.
+    # It should have 4 beds available on the first day (since the original capacity was 5 and the availability
+    # switch happens day 2).
+    # It should then have 0 beds available after (not including) day 3
+    bedtype1: pd.DataFrame = bed_days.bed_tracker["bedtype1"]
+    bedtype2: pd.DataFrame = bed_days.bed_tracker["bedtype2"]
+
+    assert (
+        bedtype1.loc[start_date, 128] == 4 and bedtype1.loc[start_date, 129] == 5
+    ), "Day 1 capacities were incorrectly affected"
+    assert (bedtype1.loc[day_2:day_3, 128] == -1).all() and (
+        bedtype1.loc[day_2:day_3, 129] == 0
+    ).all(), "Day 2 & 3 capacities were not updated correctly"
+    assert (
+        (bedtype1.loc[day_4:, :] == 0).all().all()
+    ), "Day 4 onwards did not have correct capacity"
+
+    # Bedtype 2 should have also have been updated, but there is no funny business here.
+    assert (
+        (bedtype2.loc[day_2:, :] == 0).all().all()
+    ), "Bedtype 2 was not updated correctly"
+    assert (
+        (bedtype2.loc[start_date, :] == 10).all().all()
+    ), "Bedtype 2 had capacity updated on the incorrect dates"
