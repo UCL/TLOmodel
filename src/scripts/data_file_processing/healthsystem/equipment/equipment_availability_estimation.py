@@ -125,3 +125,5 @@ assert(set(equipment_data_district_list) == set(model_district_list))
 # Collapse data by facility level and district
 final_equipment_availability = final_equipment_availability_df.groupby(['Facility_level', 'District','Item_code', 'Equipment_name' ])[['available', 'functional']].mean().reset_index()
 
+# Extract final availability data to ResourceFile
+final_equipment_availability.to_csv(resourcefilepath / 'healthsystem/infrastructure_and_equipment/ResourceFile_Equipment_availability.csv')
