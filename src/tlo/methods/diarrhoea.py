@@ -664,10 +664,10 @@ class Diarrhoea(Module):
 
         # For weight based treatment for children under five, we've averaged the median weight for each for years
         # 0-5 as 12kg.
-        # So for cipro/para - 10mg/kg 12 hrly for 7 days = ((10*12)*2) * 7 (same dose reccomended)
+        # So for cipro/para - 10mg/kg 12 hrly for 7 days = ((10*12)*2) * 7 (same dose in mg reccomended)
         self.consumables_used_in_hsi['Antibiotics_for_Dysentery'] = \
             {ic('Ciprofloxacin 250mg_100_CMST'): 1680,
-             ic("Paracetamol syrup 120mg/5ml_0.0119047619047619_CMST"): 1680}
+             ic("Paracetamol syrup 120mg/5ml_0.0119047619047619_CMST"): 70}  # 24mg/ml so 1680/24 = 70ml per dose
 
     def do_treatment(self, person_id, hsi_event):
         """Method called by the HSI that enacts decisions about a treatment and its effect for diarrhoea caused by a
@@ -970,7 +970,7 @@ class Diarrhoea(Module):
             self.rng.rand() < self.parameters["prob_hospitalization_on_danger_signs"]
         )
         hsi_event_class = (
-            HSI_Diarrhoea_Treatment_Inpatient if is_inpatient else 
+            HSI_Diarrhoea_Treatment_Inpatient if is_inpatient else
             HSI_Diarrhoea_Treatment_Outpatient
         )
         event = hsi_event_class(person_id=patient_id, module=self)
