@@ -1,23 +1,41 @@
-name: Calibration
+name: "Calibration (reusable)"
 
 on:
+  workflow_call:
+    inputs:
+      commit:
+        description: '40-character commit hash'
+        required: true
+        default: ''
+        type: string
+      model:
+        description: 'Model'
+        required: true
+        default: ''
+        type: string
   workflow_dispatch:
     inputs:
       commit:
         description: '40-character commit hash'
         required: true
-        default: ""
+        default: ''
         type: string
-  schedule:
-    - cron: 31 2 * * *
+      model:
+        description: 'Model'
+        required: true
+        default: ''
+        type: choice
+        options:
+        - 'mode1'
+        - 'mode2'
 
 env:
   REPO_PATH:       /mnt/tlo/TLOmodel
   OUTPUT_ROOT:     /mnt/tlodev2stg/tlo-dev-fs-2/task-runner/output
   RUNS_NUMBER:     10
   PYTHON_VER:      3.11
-  RUN_NAME:        021_long_run_all_diseases_run
-  PROCESS_NAME:    022_long_run_all_diseases_process
+  RUN_NAME:        021_long_run_all_diseases_${{ inputs.model }}_run
+  PROCESS_NAME:    022_long_run_all_diseases_${{ inputs.model }}_process
 
 jobs:
 
@@ -27,7 +45,7 @@ jobs:
   # `actions/checkout` workflow.
   setup:
     name: Setup
-    runs-on: [tlo-dev-vm-1]
+    runs-on: [tlo-dev-vm-3]
     strategy:
       fail-fast: false
     outputs:
@@ -43,17 +61,13 @@ jobs:
       - name: Generate environment variables
         id: vars
         run: |
-          if [[ ${{ github.event_name }} == 'workflow_dispatch' ]] && [[ -n "${{ inputs.commit }}" ]]; then
-              SHA=${{ inputs.commit }}
-          else
-              SHA=${{ github.sha }}
-          fi
-          ENV="/mnt/tlo/env-${SHA}"
+          SHA=${{ inputs.commit }}
+          ENV="/mnt/tlo/env-${{ inputs.model }}-${SHA}"
           if [[ -d "${ENV}" ]]; then
               echo "Virtual environment directory ${ENV} already exists, leaving..."
               exit 1
           fi
-          WORKTREE_PATH="/mnt/tlo/${SHA}"
+          WORKTREE_PATH="/mnt/tlo/${{ inputs.model }}-${SHA}"
           if [[ -d "${WORKTREE_PATH}" ]]; then
               echo "Worktree directory ${WORKTREE_PATH} already exists, leaving..."
               exit 1
@@ -134,7 +148,7 @@ jobs:
   tasks:
     needs: setup
     name: Run task ${{ matrix.index }}
-    runs-on: [tlo-dev-vm-1, tasks] # Use only runners dedicated to running the tasks.
+    runs-on: [tlo-dev-vm-3, tasks, ${{ inputs.model }}] # Use only runners dedicated to running the tasks.
     timeout-minutes: 5760 # = 4 * 24 * 60 minutes = 4 days
     strategy:
       fail-fast: false
@@ -159,7 +173,7 @@ jobs:
   postprocess:
     name: Post processing
     needs: [setup, tasks]
-    runs-on: [tlo-dev-vm-1, postprocess] # Use only the runners dedicated to postprocessing
+    runs-on: [tlo-dev-vm-3, postprocess] # Use only the runners dedicated to postprocessing
     strategy:
       fail-fast: false
     steps:
@@ -190,7 +204,7 @@ jobs:
     # `setup` was successful, to avoid cleaning up existing worktrees and
     # environments used by other builds.
     if: ${{ always() && needs.setup.result == 'success' }}
-    runs-on: [tlo-dev-vm-1]
+    runs-on: [tlo-dev-vm-3]
     strategy:
       fail-fast: false
     steps:

@@ -1,0 +1,18 @@
+name: "Calibrations (nightly)"
+
+on:
+  schedule:
+    - cron: 31 2 * * *
+
+jobs:
+  name: "Calibration for model ${{ matrix.model }}"
+  version-matrix:
+    strategy:
+      fail-fast: false
+      matrix:
+        model: [mode1, mode2]
+    uses: ./.github/workflows/calibrations_common.yaml
+    with:
+      model: ${{ matrix.model }}
+      commit: ${{ github.sha }}
+    secrets: inherit
