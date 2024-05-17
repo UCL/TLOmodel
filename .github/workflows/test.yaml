@@ -1,0 +1,13 @@
+name: Test
+
+on:
+  push:
+
+jobs:
+  test:
+    name: Test job
+    runs-on: ["self-hosted", "profiling"]
+    steps:
+      - name: Test
+        run: |
+          echo "Hello world"
