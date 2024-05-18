@@ -396,9 +396,9 @@ class SampleRunner:
         logger.info(key="message", data=f"Running draw {sample['draw_number']}, sample {sample['sample_number']}")
 
         # if user has specified a restore simulation, we load it from a pickle file
-        if self.scenario.restore_simulation is not None:
+        if self.scenario.resume_simulation is not None:
             sim = Simulation.load_from_pickle(
-                pickle_path=Path(self.scenario.get_log_config()["directory"]) / self.scenario.restore_simulation / str(draw_number) / str(sample_number) / "suspended_simulation.pickle",
+                pickle_path=Path(self.scenario.get_log_config()["directory"]) / self.scenario.resume_simulation / str(draw_number) / str(sample_number) / "suspended_simulation.pickle",
             )
             sim.configure_logging(**log_config)
         else:
@@ -418,9 +418,9 @@ class SampleRunner:
         if self.scenario.suspend_date is not None:
             sim.initialise(end_date=self.scenario.end_date)
             sim.run_simulation_to(to_date=self.scenario.suspend_date)
-            sim.save_to_pickle(pickle_path=log_config["directory"] / "suspended_simulation.pickle")
+            sim.save_to_pickle(pickle_path=Path(log_config["directory"]) / "suspended_simulation.pickle")
             sim.finalise()
-        elif self.scenario.restore_simulation is not None:
+        elif self.scenario.resume_simulation is not None:
             sim.run_simulation_to(to_date=self.scenario.end_date)
             sim.finalise()
         else:
