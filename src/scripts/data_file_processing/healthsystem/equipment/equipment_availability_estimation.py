@@ -267,7 +267,7 @@ pd.testing.assert_series_equal(
 )
 
 # Save final availability data to ResourceFile
-final_equipment_availability_export.reset_index().to_csv(
+final_equipment_availability_export_full.reset_index().to_csv(
     resourcefilepath / 'healthsystem/infrastructure_and_equipment/ResourceFile_Equipment_Availability_Estimates.csv',
     index=False
 )
