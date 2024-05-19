@@ -21,7 +21,7 @@ import pandas as pd
 
 # Set local Dropbox source
 path_to_dropbox = Path(  # <-- point to the TLO dropbox locally
-    '/Users/sm2511/Dropbox/Thanzi la Onse'
+    '/Users/tbh03/SPH Imperial College Dropbox/Tim Hallett/Thanzi la Onse Theme 1 SHARE'
 )
 
 path_to_files_in_the_tlo_dropbox = path_to_dropbox / "05 - Resources/Module-healthsystem/equipment/"
@@ -138,5 +138,136 @@ assert(set(equipment_data_district_list) == set(model_district_list))
 # Collapse data by facility level and district
 final_equipment_availability = final_equipment_availability_df.groupby(['Facility_level', 'District','Item_code', 'Equipment_name' ])[['available', 'functional']].mean().reset_index()
 
-# Extract final availability data to ResourceFile
-final_equipment_availability.to_csv(resourcefilepath / 'healthsystem/infrastructure_and_equipment/ResourceFile_Equipment_Availability_Estimates.csv', index = False)
+# -------------------------------------------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------------------------------------
+# Final formatting for compatability with the `Equipment` class
+
+final_equipment_availability_export = final_equipment_availability.copy()
+
+# - Drop any rows with missing data
+final_equipment_availability_export = final_equipment_availability_export.dropna()
+
+# - 'Item_Code' is the name expected in the Equipment class, and this should of type `int`
+final_equipment_availability_export['Item_Code'] = final_equipment_availability_export['Item_code'].astype(int)
+
+# Rename 'facility_level'
+final_equipment_availability_export = final_equipment_availability_export.rename(columns={'Facility_level': 'Facility_Level'})
+
+# Check that every row specifies a facility_level
+assert final_equipment_availability_export['Facility_Level'].isin([
+    '0', '1a', '1b', '2', '3', '4', '5'
+]).all()
+assert final_equipment_availability_export['Facility_Level'].notnull().all()
+
+# - 'Pr_Available' is the name expected in the Equipment class, and is taken to be the probability that an item of equipment is available for use
+#   which is taken to be equivalent to it to being "functional"
+final_equipment_availability_export['Pr_Available'] = final_equipment_availability['functional'].astype(float)
+assert final_equipment_availability_export['Pr_Available'].notnull().any()
+
+# - Specify region (needed for merging in facility_ids)
+region_lookup = pd.read_csv(resourcefilepath / 'demography/ResourceFile_PopulationSize_2018Census.csv').set_index('District')['Region'].to_dict()
+final_equipment_availability_export['Region'] = final_equipment_availability_export['District'].map(region_lookup)
+
+# -- Drop not needed columns
+final_equipment_availability_export = final_equipment_availability_export[[
+    'Facility_Level', 'Region', 'District', 'Item_Code', 'Pr_Available'
+]]
+
+# - Merge in 'Facility_ID' (which specifies the level and the district of the facilities)
+mfl = pd.read_csv(
+    resourcefilepath / 'healthsystem' / 'organisation' / 'ResourceFile_Master_Facilities_List.csv'
+)
+
+# Merge in district-specific facilities (matching on level and district)
+final_equipment_availability_export = final_equipment_availability_export.merge(
+    mfl[['Facility_ID', 'Facility_Level', 'District']],
+    left_on=['Facility_Level', 'District'],
+    right_on=['Facility_Level', 'District'],
+    how='left',
+)
+
+# Merge in region-level facilities (level 3) (matching on region only)
+
+# - First, ensure that there is only one set of facility_level 3 entries for each region. (In the current dataframe
+#   entries for level 3 of Blantyre City and Zomba City could both inform on level 3 in the Southern region.)
+#   Do this by taking the mean of Pr_Available across those rows that are facility_level 3 in the same region.
+#   Create a 'reconciled' set of data facility level 3.
+mask_to_level_3 = final_equipment_availability_export['Facility_Level'] == '3'
+reconciled_level_3_data = final_equipment_availability_export.loc[mask_to_level_3].groupby(
+    ['Region', 'Facility_Level', 'Item_Code']
+)['Pr_Available'].mean().reset_index()
+reconciled_level_3_data['District'] = float('nan')  # District is not used for region-level facilities
+level_3_lookup = mfl.loc[mfl['Facility_Level'] == '3'].set_index('Region')['Facility_ID'].to_dict()
+reconciled_level_3_data['Facility_ID'] = reconciled_level_3_data['Region'].map(level_3_lookup)
+
+# - Update dataset with the reconciled data for facility level 3
+final_equipment_availability_export = final_equipment_availability_export.drop(
+    final_equipment_availability_export.index[mask_to_level_3]
+)
+final_equipment_availability_export = pd.concat(
+    [final_equipment_availability_export, reconciled_level_3_data],
+    ignore_index=True
+)
+
+# Set national-level facility_ids (levels 4/5) (depends on only on facility_level)
+levels_4_and_5_lookup = mfl.loc[mfl['Facility_Level'].isin(['4', '5'])].set_index('Facility_Level')['Facility_ID'].to_dict()
+mask_to_levels_4_and_5 = final_equipment_availability_export['Facility_Level'].isin(['4', '5'])
+final_equipment_availability_export.loc[mask_to_levels_4_and_5, 'Facility_ID'] = \
+    final_equipment_availability_export.loc[mask_to_levels_4_and_5, 'Facility_Level'].map(levels_4_and_5_lookup)
+
+assert final_equipment_availability_export['Facility_ID'].notnull().all()
+final_equipment_availability_export['Facility_ID'] = final_equipment_availability_export['Facility_ID'].astype(int)
+
+# - Format as a pd.Series with multi-index (Facility_ID, Item_Code)
+final_equipment_availability_export = final_equipment_availability_export.set_index(['Facility_ID', 'Item_Code'])['Pr_Available']
+
+# Extrapolate so that there is an estimated availability for every item at every level
+# - Create "full" dataset, where we force that there is probability of availability for every item_code at every
+#  observed facility
+_all_fac_ids = mfl.Facility_ID.unique()
+_all_item_codes = pd.read_csv(
+    resourcefilepath /'healthsystem/infrastructure_and_equipment/ResourceFile_EquipmentCatalogue.csv'
+)['Item_Code'].unique()
+final_equipment_availability_export_full = pd.Series(
+    index=pd.MultiIndex.from_product(
+        [_all_fac_ids, _all_item_codes],
+        names=["Facility_ID", "Item_Code"]
+    ),
+    data=float("nan"),
+    name='Pr_Available'
+).combine_first(final_equipment_availability_export)
+
+print(f''
+      f'Fraction of missing data when requiring data for all items at all facilities = '
+      f'{round(100 * final_equipment_availability_export_full.isnull().sum() / len(final_equipment_availability_export_full))}'
+      f'%')
+
+# Impute availability of missing item_codes in a facility_id... from the mean availability of the same items in other facilities of the same level
+facility_levels = final_equipment_availability_export_full.index.get_level_values('Facility_ID').map(
+    mfl.set_index('Facility_ID')['Facility_Level'].to_dict()
+)
+final_equipment_availability_export_full = final_equipment_availability_export_full.groupby(['Item_Code', facility_levels]).transform(lambda x: x.fillna(x.mean()))
+
+# Remaining misising data include those item_codes that are never seen anywhere: interpolate these from the average availability of all other items, stratified by level
+final_equipment_availability_export_full = final_equipment_availability_export_full.groupby([facility_levels]).transform(lambda x: x.fillna(x.mean()))
+
+# Remaining missing data are for items_codes in facility_ids for which there is no information at all in the facility_level
+# Impute the availability for these items in facilities as ... the average of other items available at other facilities
+final_equipment_availability_export_full = final_equipment_availability_export_full.groupby("Item_Code").transform(lambda x: x.fillna(x.mean()))
+
+# - Check no missing values
+assert final_equipment_availability_export_full.notnull().all()
+
+# - Check that we've preserved the right estimates where there is data
+pd.testing.assert_series_equal(
+    final_equipment_availability_export,
+    #    <-- the data before any extrapolations
+    final_equipment_availability_export_full[final_equipment_availability_export.index]
+    #    <-- the full data limited to those facilities/item for which there was data originally
+)
+
+# Save final availability data to ResourceFile
+final_equipment_availability_export.reset_index().to_csv(
+    resourcefilepath / 'healthsystem/infrastructure_and_equipment/ResourceFile_Equipment_Availability_Estimates.csv',
+    index=False
+)
