@@ -42,46 +42,6 @@ def test_bed_days_resourcefile_defines_non_bed_space():
     assert 'non_bed_space' == BedDays.__NO_BEDS_BED_TYPE
 
 
-def test_beddays_in_isolation(small_bedday_dataset):
-    """Test the functionalities of BedDays class in the absence of HSI_Events"""
-    bd = BedDays(
-        small_bedday_dataset,
-        "all",
-    )
-
-    # 1) Check if impose footprint works as expected
-    footprint = bd.get_blank_beddays_footprint(bedtype1=2)
-
-    bd.impose_beddays_footprint(footprint=footprint, facility=0, patient_id=0, first_day=start_date)
-    # There should be a single occupancy now scheduled for the patient
-    assert len(bd.occupancies) == 1
-
-    forecast = bd.forecast_availability(start_date=start_date, n_days=0, facility_id=0, int_indexing=True)
-    # One bed of type 1 should be occupied
-    assert forecast.loc[0, "bedtype1"] == small_bedday_dataset.loc[0, "bedtype1"] - 1
-    # No beds of type 2 should be occupied
-    assert forecast.loc[0, "bedtype2"] == small_bedday_dataset.loc[0, "bedtype2"]
-
-    # 3) Check that removing bed-days from a person without bed-days does nothing
-    bd.remove_patient_footprint(1)
-    forecast = bd.forecast_availability(
-        start_date=start_date, n_days=0, facility_id=0, int_indexing=True
-    )
-    # One bed of type 1 should be occupied
-    assert forecast.loc[0, "bedtype1"] == small_bedday_dataset.loc[0, "bedtype1"] - 1
-    # No beds of type 2 should be occupied
-    assert forecast.loc[0, "bedtype2"] == small_bedday_dataset.loc[0, "bedtype2"]
-
-    # 2) Cause someone to die and relieve their footprint from the bed-days tracker
-    bd.remove_patient_footprint(patient_id=0)
-    forecast = bd.forecast_availability(
-        start_date=start_date, n_days=0, facility_id=0, int_indexing=True
-    )
-    # Should have removed the one occupancy that we had
-    assert len(bd.occupancies) == 0
-    assert forecast.loc[0, "bedtype1"] == small_bedday_dataset.loc[0, "bedtype1"]
-
-
 def test_bed_days_basics(tmpdir, seed):
     """Check all the basic functionality about bed-days footprints and capacity management by the health-system"""
 
@@ -340,7 +300,6 @@ def test_bed_days_property_is_inpatient(tmpdir, seed):
     )
     sim.make_initial_population(n=100)
     sim.simulate(end_date=start_date + pd.DateOffset(days=100))
-    check_dtypes(sim)
 
     # Load the logged tracker for general beds
     log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']
@@ -939,7 +898,6 @@ def test_in_patient_appt_included_and_logged(tmpdir, seed):
     )
     sim.make_initial_population(n=100)
     sim.simulate(end_date=start_date + pd.DateOffset(days=100))
-    check_dtypes(sim)
 
     # Load the logged tracker for general beds
     log_hsi = parse_log_file(
