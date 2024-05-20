@@ -22,7 +22,8 @@ from tlo.analysis.utils import (
     make_age_grp_types,
     summarize,
     create_pickles_locally,
-    parse_log_file
+    parse_log_file,
+    unflatten_flattened_multi_index_in_logging
 )
 
 # define a timestamp for script outputs
@@ -118,6 +119,8 @@ used_staff_count_by_level_and_officer_type = current_staff_count_by_level_and_of
 
 # Calculate various components of HR cost
 # 1.1 Salary cost for modelled health workforce (Staff count X Annual salary)
+current_staff_count_by_level_and_officer_type = current_staff_count_by_level_and_officer_type.reset_index()
+current_staff_count_by_level_and_officer_type = current_staff_count_by_level_and_officer_type.drop(current_staff_count_by_level_and_officer_type[current_staff_count_by_level_and_officer_type.Facility_Level == '5'].index)
 salary_for_all_staff = pd.merge(current_staff_count_by_level_and_officer_type[['OfficerType_FacilityLevel', 'Staff_Count']],
                                      hr_annual_salary[['OfficerType_FacilityLevel', 'Value']], on = ['OfficerType_FacilityLevel'], how = "left")
 salary_for_all_staff['Total_salary_by_cadre_and_level'] = salary_for_all_staff['Value'] * salary_for_all_staff['Staff_Count']
