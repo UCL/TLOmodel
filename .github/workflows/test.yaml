@@ -10,4 +10,7 @@ jobs:
     steps:
       - name: Test
         run: |
+          date
           echo "Hello world"
+          sleep 7200 # 2 hours
+          date
