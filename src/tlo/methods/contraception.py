@@ -645,24 +645,89 @@ class Contraception(Module):
         self.schedule_batch_of_contraceptive_changes(ids=[mother_id], old=['not_using'], new=[new_contraceptive])
 
     def get_item_code_for_each_contraceptive(self):
-        """Get the item_code for each contraceptive and for contraceptive initiation."""
+        """Get the item_code and numbers of units per case for each contraceptive and for contraceptive initiation."""
         # TODO: update with optional items (currently all considered essential)
 
-        get_items_from_pkg = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
+        # ### Get item codes and number of units per case from package name
+        # get_items_from_pkg = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
+
+        # _cons_codes = dict()
+        # # items for each method that requires an HSI to switch to
+        # _cons_codes['pill'] = get_items_from_pkg('Pill')
+        # _cons_codes['male_condom'] = get_items_from_pkg('Male condom')
+        # _cons_codes['other_modern'] = get_items_from_pkg('Female Condom')
+        # # NB. The consumable female condom is used for the contraceptive state of "other_modern method"
+        # _cons_codes['IUD'] = get_items_from_pkg('IUD')
+        # _cons_codes['injections'] = get_items_from_pkg('Injectable')
+        # _cons_codes['implant'] = get_items_from_pkg('Implant')
+        # _cons_codes['female_sterilization'] = get_items_from_pkg('Female sterilization')
+        # assert set(_cons_codes.keys()) == set(self.states_that_may_require_HSI_to_switch_to)
+        # # items used when initiating a modern reliable method after not using or switching from non-reliable method
+        # _cons_codes['co_initiation'] = get_items_from_pkg('Contraception initiation')
+
+        # ### Get item codes from item names and define number of units per case here
+        get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
 
         _cons_codes = dict()
-        # items for each method that requires an HSI to switch to
-        _cons_codes['pill'] = get_items_from_pkg('Pill')
-        _cons_codes['male_condom'] = get_items_from_pkg('Male condom')
-        _cons_codes['other_modern'] = get_items_from_pkg('Female Condom')
-        # NB. The consumable female condom is used for the contraceptive state of "other_modern method"
-        _cons_codes['IUD'] = get_items_from_pkg('IUD')
-        _cons_codes['injections'] = get_items_from_pkg('Injectable')
-        _cons_codes['implant'] = get_items_from_pkg('Implant')
-        _cons_codes['female_sterilization'] = get_items_from_pkg('Female sterilization')
+        # # items for each method that requires an HSI to switch to
+        # TODO: @TimH Pills are alternatives, we weight their use by the probabilities (as approximation of use in 80:20
+        #  cases, for each case 0.8 and 0.2 proportion of units is used). Is that okay, or do we want to choose for each
+        #  case only one type of pills? Total usage should be approximately same.
+        # TODO: @Sakshi what are the numbers of pills in monthly packets for both following items?
+        _cons_codes['pill'] =\
+            {get_item_code("Levonorgestrel 0.0375 mg, cycle"): 28*3.75*0.2,  # progesterone-only pills used in 20% cases
+             get_item_code("Levonorgestrel 0.15 mg + Ethinyl estradiol 30 mcg (Microgynon), cycle"): 21*3.75*0.8
+             # combined pills used in other 80% cases
+             }
+        _cons_codes['male_condom'] =\
+            {get_item_code("Condom, male"): 30}
+        _cons_codes['other_modern'] =\
+            {get_item_code("Female Condom_Each_CMST"): 30}
+        _cons_codes['IUD'] =\
+            {get_item_code("Glove disposable powdered latex medium_100_CMST"): 2,
+             get_item_code("IUD, Copper T-380A"): 1}
+        # TODO: originally used "Medroxyprogesterone acetate injection 150mg/mL, 1mL vial with 2ml syringe with 22g 0.7
+        #  X 25mm needle_each_CMST", which is not within the RF_Costing anymore, does it mean we need to add a syringe
+        #  and a needle?
+        _cons_codes['injections'] = \
+            {get_item_code("Depot-Medroxyprogesterone Acetate 150 mg - 3 monthly"): 1,
+             get_item_code("Glove disposable powdered latex medium_100_CMST"): 1,
+             get_item_code("Water for injection, 10ml_Each_CMST"): 1,
+             get_item_code("Povidone iodine, solution, 10 %, 5 ml per injection"): 5,
+             get_item_code("Gauze, swabs 8-ply 10cm x 10cm_100_CMST"): 1}
+        # TODO: trocar may be reusable (we used 0.1 units, indicating 10 uses on average) - need to find out for what
+        #  kind of trocar (reusable or not) we have the cost
+        # Jadelle & Implanon are alternatives, we weight their use by the probabilities (as approximation of use in
+        # 50:50 cases, for each case 0.5 and 0.5 proportion of units is used)
+        # TODO: @TimH Is that okay, or do we want to choose for each case only one type of implant? Total usage should
+        #  be approximately same.
+        # TODO: The chosen unit for Jadelle is '1 implant', does it cover both rods?
+        _cons_codes['implant'] =\
+            {get_item_code("Glove disposable powdered latex medium_100_CMST"): 3,
+             get_item_code("Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml"): 2,
+             get_item_code("Povidone iodine, solution, 10 %, 5 ml per injection"): 1*5,  # unit: 1 ml
+             get_item_code("Syringe, needle + swab"): 2,
+             get_item_code("Trocar"): 1,
+             get_item_code("Needle suture intestinal round bodied ½ circle trocar_6_CMST"): 1,
+             get_item_code("Jadelle (implant), box of 2_CMST"): 1*0.5,  # implant used in 50% cases
+             get_item_code("Implanon (Etonogestrel 68 mg)"): 1*0.5,  # implant used in other 50% cases
+             get_item_code("Gauze, swabs 8-ply 10cm x 10cm_100_CMST"): 1}
+        _cons_codes['female_sterilization'] =\
+            {get_item_code("Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml"): 1,
+             get_item_code("Atropine sulphate  600 micrograms/ml, 1ml_each_CMST"): 0.5,  # used only in 50% cases
+             get_item_code("Diazepam, injection, 5 mg/ml, in 2 ml ampoule"): 1,
+             get_item_code("Syringe, autodestruct, 5ml, disposable, hypoluer with 21g needle_each_CMST"): 3,
+             get_item_code("Gauze, swabs 8-ply 10cm x 10cm_100_CMST"): 2,
+             get_item_code("Needle, suture, assorted sizes, round body"): 3,
+             get_item_code("Suture, catgut, chromic, 0, 150 cm"): 3,
+             get_item_code("Tape, adhesive, 2.5 cm wide, zinc oxide, 5 m roll"): 125,  # unit: 1 cm long (2.5 cm wide)
+             get_item_code("Glove surgeon's size 7 sterile_2_CMST"): 2,
+             get_item_code("Paracetamol, tablet, 500 mg"): 8*500,  # unit: 1 mg
+             get_item_code("Povidone iodine, solution, 10 %, 5 ml per injection"): 2*5,  # unit: 1 ml
+             get_item_code("Cotton wool, 500g_1_CMST"): 100}  # unit: 1 g
         assert set(_cons_codes.keys()) == set(self.states_that_may_require_HSI_to_switch_to)
         # items used when initiating a modern reliable method after not using or switching from non-reliable method
-        _cons_codes['co_initiation'] = get_items_from_pkg('Contraception initiation')
+        _cons_codes['co_initiation'] = {get_item_code('Pregnancy slide test kit_100_CMST'): 1}
 
         return _cons_codes
 
