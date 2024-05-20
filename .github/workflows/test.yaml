@@ -12,5 +12,9 @@ jobs:
         run: |
           date
           echo "Hello world"
-          sleep 7200 # 2 hours
-          date
+          for hour in {0..13}; do
+              for min in {0..5}; do
+                  python3 -c "import time; time.sleep(600)" # 10 minutes
+                  date
+              done
+          done
