@@ -22,6 +22,7 @@ import pandas as pd
 # Set local Dropbox source
 path_to_dropbox = Path(  # <-- point to the TLO dropbox locally
    # '/Users/tbh03/SPH Imperial College Dropbox/Tim Hallett/Thanzi la Onse Theme 1 SHARE'
+    '/Users/sm2511/Dropbox/Thanzi La Onse'
 )
 
 path_to_files_in_the_tlo_dropbox = path_to_dropbox / "05 - Resources/Module-healthsystem/equipment/"
@@ -261,6 +262,10 @@ final_equipment_availability_export_full = final_equipment_availability_export_f
 equipment_categories = final_equipment_availability_export_full.index.get_level_values('Category')
 final_equipment_availability_export_full = final_equipment_availability_export_full.groupby([equipment_categories, facility_levels]).transform(lambda x: x.fillna(x.mean()))
 final_equipment_availability_export_full = final_equipment_availability_export_full.droplevel(level =2) # drop equipment category from the index
+
+# Force availability to be 0 for level 5, where no service delivery occurs
+level_5_lookup = mfl.loc[mfl['Facility_Level'].isin(['5'])].set_index('Facility_Level')['Facility_ID'].to_dict()
+final_equipment_availability_export_full[final_equipment_availability_export_full.index.get_level_values(level = 0) == list(level_5_lookup.values())[0]] = 0
 
 # Remaining missing data are for items_codes in facility_ids for which there is no information at all in the facility_level
 # Impute the availability for these items in facilities as ... the average of other items available at other facilities
