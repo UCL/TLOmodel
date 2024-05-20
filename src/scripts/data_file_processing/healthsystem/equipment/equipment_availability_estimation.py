@@ -21,7 +21,7 @@ import pandas as pd
 
 # Set local Dropbox source
 path_to_dropbox = Path(  # <-- point to the TLO dropbox locally
-    '/Users/tbh03/SPH Imperial College Dropbox/Tim Hallett/Thanzi la Onse Theme 1 SHARE'
+   # '/Users/tbh03/SPH Imperial College Dropbox/Tim Hallett/Thanzi la Onse Theme 1 SHARE'
 )
 
 path_to_files_in_the_tlo_dropbox = path_to_dropbox / "05 - Resources/Module-healthsystem/equipment/"
@@ -248,8 +248,19 @@ facility_levels = final_equipment_availability_export_full.index.get_level_value
 )
 final_equipment_availability_export_full = final_equipment_availability_export_full.groupby(['Item_Code', facility_levels]).transform(lambda x: x.fillna(x.mean()))
 
-# Remaining misising data include those item_codes that are never seen anywhere: interpolate these from the average availability of all other items, stratified by level
-final_equipment_availability_export_full = final_equipment_availability_export_full.groupby([facility_levels]).transform(lambda x: x.fillna(x.mean()))
+# Remaining misising data include those item_codes that are never seen anywhere: interpolate these from the average availability of all other items, stratified by level and category of equipment
+final_equipment_availability_export_full = final_equipment_availability_export_full.reset_index()  # Reset level 0 index to a column for merging
+equipment_crosswalk = equipment_crosswalk[equipment_crosswalk['Item_code'].notna()]
+equipment_crosswalk['Item_Code'] = equipment_crosswalk['Item_code'].astype(int)
+final_equipment_availability_export_full = final_equipment_availability_export_full.merge(
+    equipment_crosswalk[['Item_Code', 'Category']],
+    on='Item_Code',
+    how='left',) # Merge equipment category for interpolation
+final_equipment_availability_export_full = final_equipment_availability_export_full.drop_duplicates(['Facility_ID', 'Item_Code'])
+final_equipment_availability_export_full = final_equipment_availability_export_full.set_index(['Facility_ID','Item_Code', 'Category']).squeeze()
+equipment_categories = final_equipment_availability_export_full.index.get_level_values('Category')
+final_equipment_availability_export_full = final_equipment_availability_export_full.groupby([equipment_categories, facility_levels]).transform(lambda x: x.fillna(x.mean()))
+final_equipment_availability_export_full = final_equipment_availability_export_full.droplevel(level =2) # drop equipment category from the index
 
 # Remaining missing data are for items_codes in facility_ids for which there is no information at all in the facility_level
 # Impute the availability for these items in facilities as ... the average of other items available at other facilities
