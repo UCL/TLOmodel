@@ -171,7 +171,7 @@ class HSI_Event:
         """Called when this event is was entered to the HSI Event Queue, but was never run."""
         logger.debug(key="message", data=f"{self.__class__.__name__}: was never run.")
 
-    def post_apply_hook(self):
+    def post_apply_hook(self) -> None:
         """Do any required processing after apply() completes."""
         pass
 
