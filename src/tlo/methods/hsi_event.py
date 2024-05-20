@@ -171,6 +171,10 @@ class HSI_Event:
         """Called when this event is was entered to the HSI Event Queue, but was never run."""
         logger.debug(key="message", data=f"{self.__class__.__name__}: was never run.")
 
+    def post_apply_hook(self):
+        """Do any required processing after apply() completes."""
+        pass
+
     def _run_after_hsi_event(self) -> None:
         """
         Do things following the event's `apply` and `post_apply_hook` functions running.
@@ -284,7 +288,7 @@ class HSI_Event:
     def add_equipment(self, item_codes: Union[int, str, Iterable[int], Iterable[str]]) -> None:
         """Declare that piece(s) of equipment are used in this HSI_Event. Equipment items can be identified by their
         item_codes (int) or descriptors (str); a singular item or an iterable of items (either codes or descriptors but
-        not a mix of both) can be defined at once. Checks are done on the validity of the item_codes/item 
+        not a mix of both) can be defined at once. Checks are done on the validity of the item_codes/item
         descriptions and a warning issued if any are not recognised."""
         self._EQUIPMENT.update(self.healthcare_system.equipment.parse_items(item_codes))
 
