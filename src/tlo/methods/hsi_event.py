@@ -173,7 +173,7 @@ class HSI_Event:
 
     def _run_after_hsi_event(self) -> None:
         """
-        Do things following the event's `apply` function running.
+        Do things following the event's `apply` and `post_apply_hook` functions running.
          * Impose the bed-days footprint (if target of the HSI is a person_id)
          * Record the equipment that has been added before and during the course of the HSI Event.
         """
