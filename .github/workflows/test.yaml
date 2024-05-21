@@ -7,7 +7,7 @@ jobs:
   test:
     name: Test job
     runs-on: ["self-hosted", "profiling"]
-    timeout-minutes: 10 # 10 minutes
+    timeout-minutes: 3
     steps:
       - name: Collect Workflow Telemetry
         uses: catchpoint/workflow-telemetry-action@v2
@@ -15,12 +15,12 @@ jobs:
         shell: python3 {0}
         run: |
           import time
+          from datetime import datetime
 
-          a = bytearray(1 * 1024 * 1024 * 1024)
-          time.sleep(20)
-          b = bytearray(2 * 1024 * 1024 * 1024)
-          time.sleep(20)
-          c = bytearray(3 * 1024 * 1024 * 1024)
-          time.sleep(20)
-          c = bytearray(4 * 1024 * 1024 * 1024)
-          time.sleep(20)
+          for i in range(17):
+              print(str(datetime.now()))
+              size = i * 1024 ** 3
+              print(f"I am about to allocate {size / 1024 ** 3} GiB of memory")
+              a = bytearray(size)
+              time.sleep(10)
+              a
