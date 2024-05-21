@@ -40,14 +40,15 @@ fitted_districts = ['Blantyre', 'Chiradzulu', 'Mulanje', 'Nsanje', 'Nkhotakota',
 species = ('mansoni', 'haematobium')
 
 # %% Run the simulation
-popsize = 5000  # if equal_allocation_by_district=True then this is the popsize in each district
+popsize = 50_000
 
 species_to_calibrate = 'haematobium'
-
+mwb = 5
+prev = 0.3
 
 def run_simulation(popsize=popsize, mda_execute=False):
     start_date = Date(2010, 1, 1)
-    end_date = Date(2040, 1, 1)
+    end_date = Date(2099, 12, 31)
 
     # For logging, set all modules to WARNING threshold, then alters `Schisto` to level "INFO"
     custom_levels = {
@@ -73,11 +74,11 @@ def run_simulation(popsize=popsize, mda_execute=False):
     # set prevalence for species
     if species_to_calibrate == 'haematobium':
         tmp = sim.modules["Schisto"].parameters["sh_mean_worm_burden2010"]
-        tmp[:] = 5
+        tmp[:] = mwb
         sim.modules["Schisto"].parameters["sh_mean_worm_burden2010"][:] = tmp
 
         tmp = sim.modules["Schisto"].parameters["sh_prevalence_2010"]
-        tmp[:] = 0.5
+        tmp[:] = prev
         sim.modules["Schisto"].parameters["sh_prevalence_2010"][:] = tmp
 
         tmp = sim.modules["Schisto"].parameters["sm_mean_worm_burden2010"]
@@ -98,11 +99,11 @@ def run_simulation(popsize=popsize, mda_execute=False):
         sim.modules["Schisto"].parameters["sh_prevalence_2010"][:] = tmp
 
         tmp = sim.modules["Schisto"].parameters["sm_mean_worm_burden2010"]
-        tmp[:] = 5
+        tmp[:] = mwb
         sim.modules["Schisto"].parameters["sm_mean_worm_burden2010"][:] = tmp
 
         tmp = sim.modules["Schisto"].parameters["sm_prevalence_2010"]
-        tmp[:] = 0.5
+        tmp[:] = prev
         sim.modules["Schisto"].parameters["sm_prevalence_2010"][:] = tmp
 
     # initialise the population
@@ -113,7 +114,8 @@ def run_simulation(popsize=popsize, mda_execute=False):
 
     df['district_num_of_residence'] = df['district_num_of_residence'][0]
 
-    replacement_value = df['district_of_residence'].cat.categories[0]
+    # replacement_value = df['district_of_residence'].cat.categories[0]
+    replacement_value = 'Blantyre'
     # Assign the replacement value to the entire column while preserving categorical dtype
     df['district_of_residence'] = pd.Categorical([replacement_value] * len(df),
                                                  categories=df['district_of_residence'].cat.categories)
@@ -140,6 +142,16 @@ def construct_dfs(schisto_log) -> dict:
 
 
 dfs = construct_dfs(output['tlo.methods.schisto'])
+
+if species_to_calibrate == 'haematobium':
+    df = dfs['infection_status_haematobium']
+else:
+    df = ['infection_status_mansoni']
+
+# select only those columns in district allocated
+filtered_df = df.loc[:, df.columns.get_level_values(1) == 'Blantyre']
+
+filtered_df.to_csv(outputpath / f"Schisto_{species_to_calibrate}_{mwb}_{prev}.csv")
 
 
 # %% Plot the district-level prevalence at the end of the simulation and compare with data
@@ -235,5 +247,3 @@ for i, _spec in enumerate(species):
 fig.tight_layout()
 # fig.savefig(make_graph_file_name('annual_prev_in_districts'))
 fig.show()
-
-
