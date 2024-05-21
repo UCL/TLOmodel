@@ -2,7 +2,7 @@
 import datetime
 from pathlib import Path
 
-import lacroix
+# import lacroix
 import matplotlib.lines as mlines
 import matplotlib.pyplot as plt
 import numpy as np
@@ -100,6 +100,11 @@ d1 = deaths_hivTX.iloc[-1].values - deaths_perfect.iloc[-1, 0:10].values
 d2 = deaths_hivPR.iloc[-1].values - deaths_perfect.iloc[-1, 0:10].values
 d3 = deaths_tbTX.iloc[-1].values - deaths_perfect.iloc[-1, 0:10].values
 d4 = deaths_tbPR.iloc[-1].values - deaths_perfect.iloc[-1, 0:10].values
+
+np.quantile(d1, 0.5)
+np.quantile(d2, 0.5)
+np.quantile(d3, 0.5)
+np.quantile(d4, 0.5)
 
 
 # get DALYs - all-cause - for each scenario

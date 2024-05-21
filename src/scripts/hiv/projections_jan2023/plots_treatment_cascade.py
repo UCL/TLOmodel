@@ -505,8 +505,8 @@ ax4.fill_between(xvals, tb_test0_l, tb_test0_u, color=baseline_colour, alpha=0.2
 ax4.plot(xvals, tb_test1, "-", color=sc1_colour)
 ax4.fill_between(xvals, tb_test1_l, tb_test1_u, color=sc1_colour, alpha=0.2)
 
-ax4.plot(xvals, tb_test0, "-", color=sc2_colour)
-ax4.fill_between(xvals, tb_test0_l, tb_test0_u, color=sc2_colour, alpha=0.2)
+ax4.plot(xvals, tb_test2, "-", color=sc2_colour)
+ax4.fill_between(xvals, tb_test2_l, tb_test2_u, color=sc2_colour, alpha=0.2)
 
 ax4.set_ylim([10, 15])
 ax4.set_xticks(xlabel_pos)
