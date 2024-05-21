@@ -297,13 +297,10 @@ class Stunting(Module):
         # Schedule the HSI for provision of treatment based on the
         # probability of stunting diagnosis, provided the necessary
         # symptoms are there.
-        if (
-            (patient_details.age_years <= 5)
-            and is_stunted
-            and (p_stunting_diagnosed > self.rng.random_sample())
-        ):
+        if (patient_details.age_years <= 5) and is_stunted:
             # Schedule the HSI for provision of treatment based on the
-            # probability of stunting diagnosis
+            # probability of stunting diagnosis.
+            # Only generate a random number if we have to!
             if p_stunting_diagnosed > self.rng.random_sample():
                 event = HSI_Stunting_ComplementaryFeeding(
                     module=self, person_id=patient_id
