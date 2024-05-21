@@ -52,7 +52,7 @@ class Malaria(Module):
         "SymptomManager",
     }
 
-    OPTIONAL_INIT_DEPENDENCIES = {"HealthBurden"}
+    OPTIONAL_INIT_DEPENDENCIES = {"HealthBurden", "Hiv"}
 
     METADATA = {
         Metadata.DISEASE_MODULE,
@@ -338,8 +338,7 @@ class Malaria(Module):
         ]
 
         # people with HIV
-        conditional_predictors = (
-            [
+        conditional_predictors = [
                 Predictor().when(
                     "(hv_inf == True) & (age_years <= 5) & (is_pregnant == False)",
                     p["rr_clinical_malaria_hiv_under5"],
@@ -360,10 +359,7 @@ class Malaria(Module):
                 Predictor("hv_on_cotrimoxazole").when(
                     True, p["rr_clinical_malaria_cotrimoxazole"]
                 ),
-            ]
-            if "Hiv" in self.sim.modules
-            else []
-        )
+            ] if "Hiv" in self.sim.modules else []
 
         self.lm["rr_of_clinical_malaria"] = LinearModel.multiplicative(
             *(predictors + conditional_predictors)
@@ -375,8 +371,7 @@ class Malaria(Module):
         ]
 
         # people with HIV
-        conditional_predictors = (
-            [
+        conditional_predictors = [
                 Predictor().when(
                     "(hv_inf == True) & (age_years <= 5) & (is_pregnant == False)",
                     p["rr_severe_malaria_hiv_under5"],
@@ -389,10 +384,7 @@ class Malaria(Module):
                     "(hv_inf == True) & (is_pregnant == True)",
                     p["rr_severe_malaria_hiv_pregnant"],
                 ),
-            ]
-            if "hiv" in self.sim.modules
-            else []
-        )
+            ] if "hiv" in self.sim.modules else []
 
         self.lm["rr_of_severe_malaria"] = LinearModel.multiplicative(
             *(predictors + conditional_predictors)
@@ -773,7 +765,7 @@ class Malaria(Module):
         Optional arguments are used by the logger,
         and are not needed in the diagnosis.
         """
-        
+
         # Call the DxTest RDT to diagnose malaria
         dx_result = diagnosis_function('malaria_rdt')
 
@@ -797,7 +789,7 @@ class Malaria(Module):
             return 'clinical_malaria'
         else:
             return "negative_malaria_test"
-          
+
     def do_at_generic_first_appt(
         self,
         patient_id: int,
@@ -1657,7 +1649,7 @@ class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         )
         pop = len(df[df.is_alive])
 
-        inc_1000py = (tmp / pop) * 1000
+        inc_1000py = (tmp / pop) * 1000 if pop else 0
 
         # incidence rate clinical (inc severe) in 2-10 yr olds
         tmp2 = len(

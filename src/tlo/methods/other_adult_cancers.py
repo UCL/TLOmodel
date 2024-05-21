@@ -41,7 +41,7 @@ class OtherAdultCancer(Module):
 
     INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
 
-    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'Hiv'}
 
     METADATA = {
         Metadata.DISEASE_MODULE,

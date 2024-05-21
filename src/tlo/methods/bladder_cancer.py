@@ -43,7 +43,7 @@ class BladderCancer(Module):
 
     INIT_DEPENDENCIES = {'Demography', 'Lifestyle', 'HealthSystem', 'SymptomManager'}
 
-    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'Hiv'}
 
     METADATA = {
         Metadata.DISEASE_MODULE,
@@ -249,9 +249,10 @@ class BladderCancer(Module):
             .when('.between(0,14)', 0.0)
         ]
 
-        conditional_predictors = [
-            Predictor('ss_sh_infection_status').when('High-infection', p['rp_bladder_cancer_schisto_h']),
-        ] if "Schisto" in self.sim.modules else []
+        if "Schisto" in self.sim.modules:
+            conditional_predictors = [
+                Predictor('ss_sh_infection_status').when('High-infection', p['rp_bladder_cancer_schisto_h']),
+            ]
 
         lm_init_bc_status_any_stage = LinearModel(
             LinearModelType.MULTIPLICATIVE,

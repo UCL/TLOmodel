@@ -389,6 +389,10 @@ class Hiv(Module):
             Types.REAL,
             "length of prescription for ARVs in months, same for all PLHIV",
         ),
+        "length_of_inpatient_stay_if_terminal": Parameter(
+            Types.LIST,
+            "length of inpatient stay for end-of-life HIV patients",
+        ),
     }
 
     def read_parameters(self, data_folder):
@@ -672,10 +676,8 @@ class Hiv(Module):
             * params["unaids_prevalence_adjustment_factor"]
         )
         # this needs to be series of True/False
-        infec = (
-                    self.rng.random_sample(len(p["overall_prob_of_infec"]))
-                    < p["overall_prob_of_infec"]
-                ) & df.is_alive
+        infec = (self.rng.random_sample(len(p["overall_prob_of_infec"]))
+                 < p["overall_prob_of_infec"]) & df.is_alive
 
         # Assign the designated person as infected in the population.props dataframe:
         df.loc[infec, "hv_inf"] = True
@@ -888,6 +890,7 @@ class Hiv(Module):
         * 7) Look-up and save the codes for consumables
         """
         df = sim.population.props
+        p = self.parameters
 
         # 1) Schedule the Main HIV Regular Polling Event
         sim.schedule_event(HivRegularPollingEvent(self), sim.date + DateOffset(days=0))
@@ -975,7 +978,8 @@ class Hiv(Module):
             )
 
             date_aids_death = (
-                self.sim.date + pd.DateOffset(months=self.rng.randint(low=0, high=18))
+                self.sim.date + pd.DateOffset(
+                months=self.rng.randint(low=0, high=p['mean_months_between_aids_and_death']))
             )
 
             # 30% AIDS deaths have TB co-infection
@@ -987,7 +991,9 @@ class Hiv(Module):
             )
 
             # schedule hospital stay for end of life care if untreated
-            beddays = self.rng.randint(low=14, high=20)
+            beddays = self.rng.randint(
+                low=p['length_of_inpatient_stay_if_terminal'][0],
+                high=p['length_of_inpatient_stay_if_terminal'][1])
             date_admission = date_aids_death - pd.DateOffset(days=beddays)
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 hsi_event=HSI_Hiv_EndOfLifeCare(
@@ -2111,8 +2117,9 @@ class HivAidsTbDeathEvent(Event, IndividualScopeEventMixin):
 
             risk_of_death = p["aids_tb_treatment_adjustment"]
 
-            if "CardioMetabolicDisorders" in self.sim.modules and df.at[person_id, "nc_diabetes"]:
-                risk_of_death *= self.sim.modules["Tb"].parameters["rr_death_diabetes"]
+            if "CardioMetabolicDisorders" in self.sim.modules:
+                if df.at[person_id, "nc_diabetes"]:
+                    risk_of_death *= self.sim.modules["Tb"].parameters["rr_death_diabetes"]
 
             # treatment adjustment reduces probability of death
             if self.module.rng.rand() < risk_of_death:
@@ -2415,9 +2422,8 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
             ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({"VCTNegative": 1})
 
             # set cap for number of repeat tests
-            self.counter_for_test_not_available += (
-                1  # The current appointment is included in the count.
-            )
+            self.counter_for_test_not_available += 1  # The current appointment is included in the count.
+
 
             if (
                 self.counter_for_test_not_available
@@ -2947,7 +2953,7 @@ class HSI_Hiv_EndOfLifeCare(HSI_Event, IndividualScopeEventMixin):
     already within 2 weeks
     """
 
-    def __init__(self, module, person_id, beddays):
+    def __init__(self, module, person_id, beddays=17):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Hiv)
 
@@ -2956,11 +2962,7 @@ class HSI_Hiv_EndOfLifeCare(HSI_Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = "2"
 
         self.beddays = beddays
-        self.BEDDAYS_FOOTPRINT = (
-            self.make_beddays_footprint({"general_bed": self.beddays})
-            if self.beddays
-            else self.make_beddays_footprint({"general_bed": 17})
-        )
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({"general_bed": self.beddays})
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props

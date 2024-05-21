@@ -372,6 +372,10 @@ class Tb(Module):
             Types.INT,
             "last year for which data are available",
         ),
+        "length_of_inpatient_stay_if_terminal": Parameter(
+            Types.LIST,
+            "length of inpatient stay for end-of-life TB patients",
+        ),
     }
 
     def read_parameters(self, data_folder):
@@ -526,6 +530,7 @@ class Tb(Module):
                 p["rr_ipt_adult_hiv"],  # hiv+ adult IPT only
             ),
         ]
+
         conditional_predictors = [
             Predictor("nc_diabetes").when(True, p['rr_tb_diabetes']),
         ] if "CardioMetabolicDisorders" in self.sim.modules else []
@@ -1590,7 +1595,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
 
         self.TREATMENT_ID = "Tb_Test_Screening"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
-        self.ACCEPTED_FACILITY_LEVEL = "1a" if (self.facility_level == "1a") else "2"
+        self.ACCEPTED_FACILITY_LEVEL = "1a" if self.facility_level == "1a" else "2"
 
     def apply(self, person_id, squeeze_factor):
         """Do the screening and referring to next tests"""
@@ -1711,9 +1716,9 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                     )
                     return self.make_appt_footprint({"Over5OPD": 1})
 
-                elif self.facility_level != "1a":
-                    # relevant test depends on smear status (changes parameters on sensitivity/specificity
+                else:
                     if smear_status:
+                        # relevant test depends on smear status (changes parameters on sensitivity/specificity
                         test_result = self.sim.modules[
                             "HealthSystem"
                         ].dx_manager.run_dx_test(
@@ -2144,7 +2149,6 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                 self.number_of_occurrences
                 <= self.module.parameters["tb_healthseekingbehaviour_cap"]
             ):
-                print(self.number_of_occurrences)
 
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     self,
@@ -2413,7 +2417,7 @@ class HSI_Tb_EndOfLifeCare(HSI_Event, IndividualScopeEventMixin):
     already within 2 weeks
     """
 
-    def __init__(self, module, person_id, beddays):
+    def __init__(self, module, person_id, beddays=8):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Tb)
 
@@ -2422,11 +2426,7 @@ class HSI_Tb_EndOfLifeCare(HSI_Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = "2"
 
         self.beddays = beddays
-        self.BEDDAYS_FOOTPRINT = (
-            self.make_beddays_footprint({"general_bed": self.beddays})
-            if self.beddays
-            else self.make_beddays_footprint({"general_bed": 7.5})
-        )
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({"general_bed": self.beddays})
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -2501,6 +2501,7 @@ class TbDecideDeathEvent(Event, IndividualScopeEventMixin):
 
     def apply(self, person_id):
         df = self.sim.population.props
+        p = self.module.parameters
 
         if not df.at[person_id, "is_alive"]:
             return
@@ -2515,12 +2516,15 @@ class TbDecideDeathEvent(Event, IndividualScopeEventMixin):
 
         # use linear model to determine whether this person will die:
         rng = self.module.rng
-        result = self.module.lm["death_rate"].predict(df.loc[[person_id]], rng=rng)
+        will_die = self.module.lm["death_rate"].predict(df.loc[[person_id]], rng=rng)
 
-        if result:
+        if will_die:
             # schedule hospital stay for this person
             # schedule hospital stay
-            beddays = self.module.rng.randint(low=5, high=10)
+            beddays = self.module.rng.randint(
+                low=p['length_of_inpatient_stay_if_terminal'][0],
+                high=p['length_of_inpatient_stay_if_terminal'][1])
+
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 hsi_event=HSI_Tb_EndOfLifeCare(
                     person_id=person_id, module=self.sim.modules["Tb"], beddays=beddays
@@ -2532,7 +2536,7 @@ class TbDecideDeathEvent(Event, IndividualScopeEventMixin):
 
             # schedule death for this person after hospital stay
             self.sim.schedule_event(
-                event=TbDeathEvent(person_id=person_id, module=self.module, cause="TB"),
+                event=TbDeathEvent(person_id=person_id, module=self.module),
                 date=self.sim.date + pd.DateOffset(days=beddays),
             )
 
@@ -2544,9 +2548,8 @@ class TbDeathEvent(Event, IndividualScopeEventMixin):
     will depend on treatment status, smear status and age
     """
 
-    def __init__(self, module, person_id, cause):
+    def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-        self.cause = cause
 
     def apply(self, person_id):
         df = self.sim.population.props
@@ -2564,7 +2567,7 @@ class TbDeathEvent(Event, IndividualScopeEventMixin):
 
         self.sim.modules["Demography"].do_death(
             individual_id=person_id,
-            cause=self.cause,
+            cause="TB",
             originating_module=self.module,
         )
 
