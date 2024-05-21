@@ -18,7 +18,9 @@ jobs:
 
           a = bytearray(1 * 1024 * 1024 * 1024)
           time.sleep(20)
-          b = bytearray(1 * 1024 * 1024 * 1024)
+          b = bytearray(2 * 1024 * 1024 * 1024)
           time.sleep(20)
-          c = bytearray(1 * 1024 * 1024 * 1024)
+          c = bytearray(3 * 1024 * 1024 * 1024)
+          time.sleep(20)
+          c = bytearray(4 * 1024 * 1024 * 1024)
           time.sleep(20)
