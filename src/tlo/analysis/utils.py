@@ -1125,6 +1125,7 @@ def get_parameters_for_status_quo() -> Dict:
             "mode_appt_constraints": 1,
             "cons_availability": "default",
             "beds_availability": "default",
+            "equip_availability": "all",  # <--- NB. Existing calibration is assuming all equipment is available
         },
     }
 
