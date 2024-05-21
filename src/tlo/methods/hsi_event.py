@@ -173,7 +173,6 @@ class HSI_Event:
 
     def post_apply_hook(self) -> None:
         """Do any required processing after apply() completes."""
-        pass
 
     def _run_after_hsi_event(self) -> None:
         """
