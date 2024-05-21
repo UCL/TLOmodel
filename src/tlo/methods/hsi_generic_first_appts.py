@@ -169,6 +169,12 @@ def do_at_generic_first_appt_non_emergency(hsi_event: HSI_Event, squeeze_factor)
                     person_id=person_id, hsi_event=hsi_event
                 )
 
+        # Routine assessments
+        if "Stunting" in modules:
+            modules["Stunting"].do_routine_assessment_for_chronic_undernutrition(
+                person_id=person_id
+            )
+
     else:
         # ----------------------------------- ADULT -----------------------------------
 

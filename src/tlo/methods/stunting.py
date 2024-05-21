@@ -5,13 +5,14 @@ Overview
 --------
 The Stunting module determines the prevalence of stunting for children under 5 years old. A polling event runs
 every month and determines the risk of onset of non-severe stunting, progression to severe stunting or natural
-recovery. The Generic HSI calls do_at_generic_first_appt for any HSI with a child under 5 years old:
-if they have any stunting they are provided with an intervention - `HSI_Stunting_ComplementaryFeeding`.
+recovery. The Generic HSI calls `do_routine_assessment_for_chronic_undernutrition` for any HSI with a child under
+5 years old: if they have any stunting they are provided with an intervention - `HSI_Stunting_ComplementaryFeeding`.
+
 """
 
 from collections import namedtuple
 from pathlib import Path
-from typing import Any, Dict, List, NamedTuple, Tuple, Union
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -274,46 +275,31 @@ class Stunting(Module):
             '-3<=HAZ<-2': 'HAZ>=-2'
         })
 
+    def do_routine_assessment_for_chronic_undernutrition(self, person_id):
+        """This is called by the a generic HSI event for every child aged less than 5 years. It assesses stunting
+        and schedules an HSI as needed."""
+
+        df = self.sim.population.props
+        person = df.loc[person_id]
+        is_stunted = person.un_HAZ_category in ('HAZ<-3', '-3<=HAZ<-2')
+        p_stunting_diagnosed = self.parameters['prob_stunting_diagnosed_at_generic_appt']
+
+        if not is_stunted:
+            return
+
+        # Schedule the HSI for provision of treatment based on the probability of stunting diagnosis
+        if p_stunting_diagnosed > self.rng.random_sample():
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event=HSI_Stunting_ComplementaryFeeding(module=self, person_id=person_id),
+                priority=2,  # <-- lower priority that for wasting and most other HSI
+                topen=self.sim.date)
+
     def do_treatment(self, person_id, prob_success):
         """Represent the treatment with supplementary feeding. If treatment is successful, effect the recovery
         of the person immediately."""
         if prob_success > self.rng.random_sample():
             self.do_recovery([person_id])
 
-    def do_at_generic_first_appt(
-        self,
-        patient_id: int,
-        patient_details: NamedTuple = None,
-        **kwargs,
-    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
-        # This is called by the a generic HSI event for every child aged
-        # less than 5 years.
-        # It assesses stunting and schedules an HSI as needed.
-        event_info = []
-
-        is_stunted = patient_details.un_HAZ_category in ('HAZ<-3', '-3<=HAZ<-2')
-        p_stunting_diagnosed = self.parameters['prob_stunting_diagnosed_at_generic_appt']
-
-        # Schedule the HSI for provision of treatment based on the
-        # probability of stunting diagnosis, provided the necessary
-        # symptoms are there.
-        if (
-            (patient_details.age_years <= 5)
-            and is_stunted
-            and (p_stunting_diagnosed > self.rng.random_sample())
-        ):
-            # Schedule the HSI for provision of treatment based on the
-            # probability of stunting diagnosis
-            if p_stunting_diagnosed > self.rng.random_sample():
-                event = HSI_Stunting_ComplementaryFeeding(
-                    module=self, person_id=patient_id
-                )
-                options = {
-                    "priority": 2,  # <-- lower priority that for wasting and most other HSI
-                    "topen": self.sim.date,
-                }
-                event_info.append((event, options))
-        return event_info, {}
 
 class Models:
     def __init__(self, module):
