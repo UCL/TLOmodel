@@ -17,7 +17,7 @@ jobs:
           import time
           from datetime import datetime
 
-          for i in range(17):
+          for i in range(5):
               print(str(datetime.now()))
               size = i * 1024 ** 3
               print(f"I am about to allocate {size / 1024 ** 3} GiB of memory")
