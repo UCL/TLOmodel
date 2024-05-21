@@ -7,15 +7,12 @@ jobs:
   test:
     name: Test job
     runs-on: ["self-hosted", "profiling"]
-    timeout-minutes: 1080 # 18 hours
+    timeout-minutes: 10 # 10 minutes
     steps:
+      - name: Collect Workflow Telemetry
+        uses: catchpoint/workflow-telemetry-action@v2
       - name: Test
         run: |
           date
-          echo "Hello world"
-          for hour in {0..13}; do
-              for min in {0..5}; do
-                  python3 -c "import time; time.sleep(600)" # 10 minutes
-                  date
-              done
-          done
+          python3 -c 'bytearray(2 * 1024 * 1024 * 1024); import time; time.sleep(60)'
+          date
