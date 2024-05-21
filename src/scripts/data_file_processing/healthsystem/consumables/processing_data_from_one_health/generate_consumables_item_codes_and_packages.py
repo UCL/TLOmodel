@@ -342,6 +342,41 @@ cons = add_record(
     },
 )
 
+cons = add_record(
+    cons,
+    {
+    'Intervention_Cat': "Added by SM (Recommended by EJ)",
+    'Intervention_Pkg': "Misc",
+    'Intervention_Pkg_Code': -99,
+    'Items': "Cystoscope",
+    'Item_Code': 285,
+    'Expected_Units_Per_Case': 1.0,
+    'Unit_Cost': np.nan},
+)
+
+cons = add_record(
+    cons,{
+    'Intervention_Cat': "Added by SM (Recommended by EJ)",
+    'Intervention_Pkg': "Misc",
+    'Intervention_Pkg_Code': -99,
+    'Items': "Endoscope",
+    'Item_Code': 280,
+    'Expected_Units_Per_Case': 1.0,
+    'Unit_Cost': np.nan},
+)
+
+cons = add_record(
+    cons,{
+    'Intervention_Cat': "Added by SM (Recommended by EJ)",
+    'Intervention_Pkg': "Misc",
+    'Intervention_Pkg_Code': -99,
+    'Items': "Prostate specific antigen test",
+    'Item_Code': 281,
+    'Expected_Units_Per_Case': 1.0,
+    'Unit_Cost': np.nan},
+)
+
+
 # --------------
 # --------------
 # --------------
