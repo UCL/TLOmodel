@@ -16,20 +16,27 @@ Health care seeking is prompted by the onset of the symptom diarrhoea. The indiv
  * See todo
 
 """
+from __future__ import annotations
+
 from collections.abc import Iterable
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import DiagnosisFunction, IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
-from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.hsi_event import HSI_Event
 from tlo.util import random_date, sample_outcome
+
+if TYPE_CHECKING:
+    from tlo.population import PatientDetails
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -644,47 +651,23 @@ class Diarrhoea(Module):
 
     def look_up_consumables(self):
         """Look up and store the consumables item codes used in each of the HSI."""
-        get_item_codes_from_package_name = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
+        ic = self.sim.modules['HealthSystem'].get_item_code_from_item_name
 
-        self.consumables_used_in_hsi['ORS'] = get_item_codes_from_package_name(
-            package='ORS')
-        self.consumables_used_in_hsi['Treatment_Severe_Dehydration'] = get_item_codes_from_package_name(
-            package='Treatment of severe diarrhea')
-        self.consumables_used_in_hsi['Zinc_Under6mo'] = get_item_codes_from_package_name(
-            package='Zinc for Children 0-6 months')
-        self.consumables_used_in_hsi['Zinc_Over6mo'] = get_item_codes_from_package_name(
-            package='Zinc for Children 6-59 months')
-        self.consumables_used_in_hsi['Antibiotics_for_Dysentery'] = get_item_codes_from_package_name(
-            package='Antibiotics for treatment of dysentery')
+        self.consumables_used_in_hsi['ORS'] = {ic('ORS, sachet'): 2}
 
-    def do_when_presentation_with_diarrhoea(self, person_id, hsi_event):
-        """This routine is called when Diarrhoea is a symptom for a child attending a Generic HSI Appointment. It
-        checks for danger signs and schedules HSI Events appropriately."""
+        self.consumables_used_in_hsi['Treatment_Severe_Dehydration'] = \
+            {ic('ORS, sachet'): 2,
+             ic('Giving set iv administration + needle 15 drops/ml_each_CMST'): 1,
+             ic("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 1000}
 
-        # 1) Assessment of danger signs
-        danger_signs = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-            dx_tests_to_run="imci_severe_dehydration_visual_inspection", hsi_event=hsi_event)
+        self.consumables_used_in_hsi['Zinc'] = ic('Zinc, tablet, 20 mg')
 
-        # 2) Determine which HSI to use:
-        if danger_signs and (self.rng.rand() < self.parameters['prob_hospitalization_on_danger_signs']):
-            # Danger signs and hospitalized --> In-patient
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                HSI_Diarrhoea_Treatment_Inpatient(
-                    person_id=person_id,
-                    module=self),
-                priority=0,
-                topen=self.sim.date,
-                tclose=None)
-
-        else:
-            # No danger signs or otherwise not hospitalized --> Out-patient
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                HSI_Diarrhoea_Treatment_Outpatient(
-                    person_id=person_id,
-                    module=self),
-                priority=0,
-                topen=self.sim.date,
-                tclose=None)
+        # For weight based treatment for children under five, we've averaged the median weight for each for years
+        # 0-5 as 12kg.
+        # So for cipro/para - 10mg/kg 12 hrly for 7 days = ((10*12)*2) * 7 (same dose in mg reccomended)
+        self.consumables_used_in_hsi['Antibiotics_for_Dysentery'] = \
+            {ic('Ciprofloxacin 250mg_100_CMST'): 1680,
+             ic("Paracetamol syrup 120mg/5ml_0.0119047619047619_CMST"): 70}  # 24mg/ml so 1680/24 = 70ml per dose
 
     def do_treatment(self, person_id, hsi_event):
         """Method called by the HSI that enacts decisions about a treatment and its effect for diarrhoea caused by a
@@ -728,9 +711,10 @@ class Diarrhoea(Module):
 
         # ** Implement the procedure for treatment **
         # STEP ZERO: Get the Zinc consumable (happens irrespective of whether child will die or not)
+        # Dose is 10mg 24hrly for 10 days <6months or 20m for >6mnths
+        dose = 100 if person.age_exact_years < 0.5 else 200
         gets_zinc = hsi_event.get_consumables(
-            item_codes=self.consumables_used_in_hsi[
-                'Zinc_Under6mo' if person.age_exact_years < 0.5 else 'Zinc_Over6mo']
+            item_codes={self.consumables_used_in_hsi['Zinc']: dose}
         )
 
         # STEP ONE: Aim to alleviate dehydration:
@@ -961,6 +945,36 @@ class Diarrhoea(Module):
             set_of_person_id_in_current_episode_before_cure,
         )
         assert set_of_person_id_in_current_episode == has_symptoms
+
+    def do_at_generic_first_appt(
+        self,
+        patient_id: int,
+        patient_details: PatientDetails,
+        diagnosis_function: DiagnosisFunction,
+        **kwargs,
+    ) -> IndividualPropertyUpdates:
+        # This routine is called when Diarrhoea is a symptom for a child
+        # attending a Generic HSI Appointment. It checks for danger signs
+        # and schedules HSI Events appropriately.
+        if patient_details.age_years > 5:
+            return {}
+
+        # 1) Assessment of danger signs
+        danger_signs = diagnosis_function(
+            "imci_severe_dehydration_visual_inspection"
+        )
+
+        # 2) Determine which HSI to use:
+        is_inpatient = (   # Danger signs and hospitalized --> In-patient
+            danger_signs and
+            self.rng.rand() < self.parameters["prob_hospitalization_on_danger_signs"]
+        )
+        hsi_event_class = (
+            HSI_Diarrhoea_Treatment_Inpatient if is_inpatient else
+            HSI_Diarrhoea_Treatment_Outpatient
+        )
+        event = hsi_event_class(person_id=patient_id, module=self)
+        self.healthsystem.schedule_hsi_event(event, priority=0, topen=self.sim.date)
 
 
 class Models:

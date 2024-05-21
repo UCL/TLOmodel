@@ -4,20 +4,27 @@ Prostate Cancer Disease Module
 Limitations to note:
 * Footprints of HSI -- pending input from expert on resources required.
 """
+from __future__ import annotations
 
 from pathlib import Path
+from typing import TYPE_CHECKING, List
 
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import IndividualPropertyUpdates
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
+from tlo.methods.cancer_consumables import get_consumable_item_codes_cancers
 from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
-from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.symptommanager import Symptom
+
+if TYPE_CHECKING:
+    from tlo.population import PatientDetails
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -33,6 +40,7 @@ class ProstateCancer(Module):
         self.lm_prostate_ca_onset_urinary_symptoms = None
         self.lm_onset_pelvic_pain = None
         self.daly_wts = dict()
+        self.item_codes_prostate_can = dict()
 
     INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
 
@@ -277,14 +285,14 @@ class ProstateCancer(Module):
             disease_module=self
         )
 
-#       above code replaced with below when running for n=1 -
+        #       above code replaced with below when running for n=1 -
 
-#       self.sim.modules['SymptomManager'].change_symptom(
-#           person_id=1,
-#           symptom_string='pelvic_pain',
-#           add_or_remove='+',
-#           disease_module=self
-#       )
+        #       self.sim.modules['SymptomManager'].change_symptom(
+        #           person_id=1,
+        #           symptom_string='pelvic_pain',
+        #           add_or_remove='+',
+        #           disease_module=self
+        #       )
 
         # ----- Impose the symptom of random sample of those in each cancer stage to have urinary symptoms:
         lm_init_urinary = LinearModel.multiplicative(
@@ -306,14 +314,14 @@ class ProstateCancer(Module):
             disease_module=self
         )
 
-#       above code replaced with below when running for n=1 -
+        #       above code replaced with below when running for n=1 -
 
-#       self.sim.modules['SymptomManager'].change_symptom(
-#           person_id=1,
-#           symptom_string='pelvic_pain',
-#           add_or_remove='+',
-#           disease_module=self
-#       )
+        #       self.sim.modules['SymptomManager'].change_symptom(
+        #           person_id=1,
+        #           symptom_string='pelvic_pain',
+        #           add_or_remove='+',
+        #           disease_module=self
+        #       )
         # -------------------- pc_date_diagnosis -----------
 
         # for those with symptoms set to initially diagnosed
@@ -368,6 +376,9 @@ class ProstateCancer(Module):
         * Define the Disability-weights
         * Schedule the palliative care appointments for those that are on palliative care at initiation
         """
+        # We call the following function to store the required consumables for the simulation run within the appropriate
+        # dictionary
+        self.item_codes_prostate_can = get_consumable_item_codes_cancers(self)
 
         # ----- SCHEDULE LOGGING EVENTS -----
         # Schedule logging event to happen immediately
@@ -577,6 +588,32 @@ class ProstateCancer(Module):
 
         return disability_series_for_alive_persons
 
+    def do_at_generic_first_appt(
+        self,
+        patient_id: int,
+        patient_details: PatientDetails,
+        symptoms: List[str],
+        **kwargs
+    ) -> IndividualPropertyUpdates:
+        # If the patient is not a child, and symptoms are indicative,
+        # begin investigation for prostate cancer
+        scheduling_options = {
+            "priority": 0,
+            "topen": self.sim.date,
+        }
+        if patient_details.age_years > 5:
+            if "urinary" in symptoms:
+                event = HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms(
+                    person_id=patient_id, module=self
+                )
+                self.healthsystem.schedule_hsi_event(event, **scheduling_options)
+
+            if "pelvic_pain" in symptoms:
+                event = HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(
+                    person_id=patient_id, module=self
+                )
+                self.healthsystem.schedule_hsi_event(event, **scheduling_options)
+
 
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
@@ -695,7 +732,10 @@ class HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms(HSI_Event, Ind
                 hsi_event=self
             )
 
-        if dx_result:
+        # Check consumable availability
+        cons_avail = self.get_consumables(item_codes=self.module.item_codes_prostate_can['screening_psa_test_optional'])
+
+        if dx_result and cons_avail:
             # send for biopsy
             hs.schedule_hsi_event(
                 hsi_event=HSI_ProstateCancer_Investigation_Following_psa_positive(
@@ -740,7 +780,10 @@ class HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(HSI_Event, Individu
             hsi_event=self
         )
 
-        if dx_result:
+        # TODO: replace with PSA test when added to cons list
+        cons_avail = self.get_consumables(item_codes=self.module.item_codes_prostate_can['screening_psa_test_optional'])
+
+        if dx_result and cons_avail:
             # send for biopsy
             hs.schedule_hsi_event(
                     hsi_event=HSI_ProstateCancer_Investigation_Following_psa_positive(
@@ -776,43 +819,49 @@ class HSI_ProstateCancer_Investigation_Following_psa_positive(HSI_Event, Individ
         df.at[person_id, 'pc_date_biopsy'] = self.sim.date
 
         # todo: stratify by pc_status
-        # Use a psa test to assess whether the person has prostate cancer:
-        dx_result = hs.dx_manager.run_dx_test(
-            dx_tests_to_run='biopsy_for_prostate_cancer',
-            hsi_event=self
-        )
 
-        if dx_result:
-            # record date of diagnosis:
-            df.at[person_id, 'pc_date_diagnosis'] = self.sim.date
+        cons_available = self.get_consumables(item_codes=self.module.item_codes_prostate_can['screening_biopsy_core'],
+                                              optional_item_codes=self.module.item_codes_prostate_can[
+                                              'screening_biopsy_optional'])
 
-            # Check if is in metastatic stage:
-            in_metastatic = df.at[person_id, 'pc_status'] == 'metastatic'
-            # If the diagnosis does detect cancer, it is assumed that the classification as metastatic is made
-            # accurately.
+        if cons_available:
+            # Use a biopsy  to assess whether the person has prostate cancer:
+            dx_result = hs.dx_manager.run_dx_test(
+                dx_tests_to_run='biopsy_for_prostate_cancer',
+                hsi_event=self
+            )
 
-            if not in_metastatic:
-                # start treatment:
-                hs.schedule_hsi_event(
-                    hsi_event=HSI_ProstateCancer_StartTreatment(
-                        module=self.module,
-                        person_id=person_id
-                    ),
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None
-                )
-            else:
-                # start palliative care:
-                hs.schedule_hsi_event(
-                    hsi_event=HSI_ProstateCancer_PalliativeCare(
-                        module=self.module,
-                        person_id=person_id
-                    ),
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None
-                )
+            if dx_result:
+                # record date of diagnosis:
+                df.at[person_id, 'pc_date_diagnosis'] = self.sim.date
+
+                # Check if is in metastatic stage:
+                in_metastatic = df.at[person_id, 'pc_status'] == 'metastatic'
+                # If the diagnosis does detect cancer, it is assumed that the classification as metastatic is made
+                # accurately.
+
+                if not in_metastatic:
+                    # start treatment:
+                    hs.schedule_hsi_event(
+                        hsi_event=HSI_ProstateCancer_StartTreatment(
+                            module=self.module,
+                            person_id=person_id
+                        ),
+                        priority=0,
+                        topen=self.sim.date,
+                        tclose=None
+                    )
+                else:
+                    # start palliative care:
+                    hs.schedule_hsi_event(
+                        hsi_event=HSI_ProstateCancer_PalliativeCare(
+                            module=self.module,
+                            person_id=person_id
+                        ),
+                        priority=0,
+                        topen=self.sim.date,
+                        tclose=None
+                    )
 
 
 class HSI_ProstateCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
@@ -858,20 +907,27 @@ class HSI_ProstateCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         assert not pd.isnull(df.at[person_id, "pc_date_diagnosis"])
         assert pd.isnull(df.at[person_id, "pc_date_treatment"])
 
-        # Record date and stage of starting treatment
-        df.at[person_id, "pc_date_treatment"] = self.sim.date
-        df.at[person_id, "pc_stage_at_which_treatment_given"] = df.at[person_id, "pc_status"]
+        cons_available = self.get_consumables(item_codes=self.module.item_codes_prostate_can['treatment_surgery_core'],
+                                              optional_item_codes=self.module.item_codes_prostate_can[
+                                                  'treatment_surgery_optional'])
 
-        # Schedule a post-treatment check for 12 months:
-        hs.schedule_hsi_event(
-            hsi_event=HSI_ProstateCancer_PostTreatmentCheck(
-                module=self.module,
-                person_id=person_id,
-            ),
-            topen=self.sim.date + DateOffset(months=12),
-            tclose=None,
-            priority=0
-        )
+        if cons_available:
+            # If consumables are available the treatment will go ahead
+
+            # Record date and stage of starting treatment
+            df.at[person_id, "pc_date_treatment"] = self.sim.date
+            df.at[person_id, "pc_stage_at_which_treatment_given"] = df.at[person_id, "pc_status"]
+
+            # Schedule a post-treatment check for 12 months:
+            hs.schedule_hsi_event(
+                hsi_event=HSI_ProstateCancer_PostTreatmentCheck(
+                    module=self.module,
+                    person_id=person_id,
+                ),
+                topen=self.sim.date + DateOffset(months=12),
+                tclose=None,
+                priority=0
+            )
 
 
 class HSI_ProstateCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
@@ -955,20 +1011,27 @@ class HSI_ProstateCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         # Check that the person is in metastatic
         assert df.at[person_id, "pc_status"] == 'metastatic'
 
-        # Record the start of palliative care if this is first appointment
-        if pd.isnull(df.at[person_id, "pc_date_palliative_care"]):
-            df.at[person_id, "pc_date_palliative_care"] = self.sim.date
+        # Check consumables are available
+        cons_available = self.get_consumables(
+            item_codes=self.module.item_codes_prostate_can['palliation'])
 
-        # Schedule another instance of the event for one month
-        hs.schedule_hsi_event(
-            hsi_event=HSI_ProstateCancer_PalliativeCare(
-                module=self.module,
-                person_id=person_id
-            ),
-            topen=self.sim.date + DateOffset(months=1),
-            tclose=None,
-            priority=0
-        )
+        if cons_available:
+            # If consumables are available and the treatment will go ahead
+
+            # Record the start of palliative care if this is first appointment
+            if pd.isnull(df.at[person_id, "pc_date_palliative_care"]):
+                df.at[person_id, "pc_date_palliative_care"] = self.sim.date
+
+            # Schedule another instance of the event for one month
+            hs.schedule_hsi_event(
+                hsi_event=HSI_ProstateCancer_PalliativeCare(
+                    module=self.module,
+                    person_id=person_id
+                ),
+                topen=self.sim.date + DateOffset(months=1),
+                tclose=None,
+                priority=0
+            )
 
 
 # ---------------------------------------------------------------------------------------------------------

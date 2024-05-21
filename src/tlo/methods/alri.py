@@ -19,24 +19,29 @@ of the complications.
 Health care seeking is prompted by the onset of the symptom. The individual can be treated; if successful the risk of
 death is lowered and the person is "cured" (symptom resolved) some days later.
 """
+from __future__ import annotations
 
 import types
 from collections import defaultdict
 from itertools import chain
 from pathlib import Path
-from typing import Dict, List, Tuple, Union
+from typing import TYPE_CHECKING, Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
-from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date, sample_outcome
+
+if TYPE_CHECKING:
+    from tlo.population import PatientDetails
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -1009,139 +1014,85 @@ class Alri(Module):
 
         get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
 
-        def get_dosage_for_age_in_months(age_in_whole_months: float, doses_by_age_in_months: Dict[int, float]):
-            """Returns the dose corresponding to age, using the lookup provided in `doses`. The format of `doses` is:
-             {<higher_age_boundary_of_age_group_in_months>: <dose>}."""
-
-            for upper_age_bound_in_months, _dose in sorted(doses_by_age_in_months.items()):
-                if age_in_whole_months < upper_age_bound_in_months:
-                    return _dose
-            return _dose
-
-        # # # # # # Dosages by age # # # # # #
+        # # # # # # Dosages by weight # # # # # #
+        # Assuming average weight of 0-5 is 12kg (abstraction). Doses sourced for WHO Pocket book of hospital care for
+        # children: Second edition 2014
 
         # Antibiotic therapy -------------------
-        # Antibiotics for non-severe pneumonia - oral amoxicillin for 5 days
+        # Antibiotics for non-severe pneumonia - oral amoxicillin for 5 days (40mg/kg BD - ((12*40)*2)*5 =4800mg)
         self.consumables_used_in_hsi['Amoxicillin_tablet_or_suspension_5days'] = {
-            get_item_code(item='Amoxycillin 250mg_1000_CMST'):
-                lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
-                                                          {2: 0, 12: 0.006, 36: 0.012, np.inf: 0.018}
-                                                          ),
-            get_item_code(item='Amoxycillin 125mg/5ml suspension, PFR_0.025_CMST'):
-                lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
-                                                          {2: 0, 12: 1, 36: 2, np.inf: 3}
-                                                          ),
-        }
+            get_item_code(item='Amoxycillin 250mg_1000_CMST'): 4800,
+            get_item_code(item='Amoxycillin 125mg/5ml suspension, PFR_0.025_CMST'): 192}  # 25mg/ml - 4800/25
 
-        # Antibiotics for non-severe pneumonia - oral amoxicillin for 3 days
+        # Antibiotics for non-severe pneumonia - oral amoxicillin for 3 days (40mg/kg BD - ((12*40)*2)*3 =2880mg)
         self.consumables_used_in_hsi['Amoxicillin_tablet_or_suspension_3days'] = {
-            get_item_code(item='Amoxycillin 250mg_1000_CMST'):
-                lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
-                                                          {2: 0, 12: 0.01, 36: 0.02, np.inf: 0.03}
-                                                          ),
-            get_item_code(item='Amoxycillin 125mg/5ml suspension, PFR_0.025_CMST'):
-                lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
-                                                          {2: 0, 12: 1, 36: 2, np.inf: 3}
-                                                          ),
-        }
+            get_item_code(item='Amoxycillin 250mg_1000_CMST'): 2880,
+            get_item_code(item='Amoxycillin 125mg/5ml suspension, PFR_0.025_CMST'): 115}  # 25mg/ml - 2880/25
 
-        # Antibiotics for non-severe pneumonia - oral amoxicillin for 7 days for young infants only
+        # Antibiotics for non-severe pneumonia - oral amoxicillin for 7 days for young infants only (40mg/kg BD -
+        # ((12*40)*2)*7 =6720mg)
         self.consumables_used_in_hsi['Amoxicillin_tablet_or_suspension_7days'] = {
-            get_item_code(item='Amoxycillin 250mg_1000_CMST'):
-                lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
-                                                          {1: 0.004, 2: 0.006, np.inf: 0.01}
-                                                          ),
-            get_item_code(item='Amoxycillin 125mg/5ml suspension, PFR_0.025_CMST'):
-                lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
-                                                          {1: 0.4, 2: 0.5, np.inf: 1}
-                                                          ),
-        }
+            get_item_code(item='Amoxycillin 250mg_1000_CMST'): 6720,
+            get_item_code(item='Amoxycillin 125mg/5ml suspension, PFR_0.025_CMST'): 269}  # 25mg/ml - 6720/25
 
         # Antibiotic therapy for severe pneumonia - ampicillin package
+        # Amp. dose - 50mg/KG QDS 5 days = (50*12)*4)*5 = 12_000mg
+        # Gent. dose -7.5mg/kg per day 5 days = (7.5*12)*5 = 450mg
         self.consumables_used_in_hsi['1st_line_IV_antibiotics'] = {
-            get_item_code(item='Ampicillin injection 500mg, PFR_each_CMST'):
-                lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
-                                                          {1: 3.73, 2: 5.6, 4: 8, 12: 16, 36: 24, np.inf: 40}
-                                                          ),
-            get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST'):
-                lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
-                                                          {1: 0.7, 2: 1.4, 4: 2.81, 12: 4.69, 36: 7.03, np.inf: 9.37}
-                                                          ),
+            get_item_code(item='Ampicillin injection 500mg, PFR_each_CMST'): 24,  # 500mg vial -12_000/500
+            get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST'): 6,  # 80mg/2ml = 450/8
             get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST'): 1,
             get_item_code(item='Syringe, Autodisable SoloShot IX '): 1
         }
 
         # # Antibiotic therapy for severe pneumonia - benzylpenicillin package when ampicillin is not available
+        # Benpen dose - 50_000IU/KG QDS 5 days = (50_000*12)*4)*5 = 12_000_000IU = 8g (approx)
+        # Gent. dose -7.5mg/kg per day 5 days = (7.5*12)*5 = 450mg
         self.consumables_used_in_hsi['Benzylpenicillin_gentamicin_therapy_for_severe_pneumonia'] = {
-            get_item_code(item='Benzylpenicillin 3g (5MU), PFR_each_CMST'):
-                lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
-                                                          {1: 2, 2: 5, 4: 8, 12: 15, 36: 24, np.inf: 34}
-                                                          ),
-            get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST'):
-                lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
-                                                          {1: 0.7, 2: 1.4, 4: 2.81, 12: 4.69, 36: 7.03, np.inf: 9.37}
-                                                          ),
+            get_item_code(item='Benzylpenicillin 3g (5MU), PFR_each_CMST'): 8,
+            get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST'): 6,  # 80mg/2ml = 450/8
             get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST'): 1,
             get_item_code(item='Syringe, Autodisable SoloShot IX '): 1
         }
 
         # Second line of antibiotics for severe pneumonia, if Staph not suspected
+        # Ceft. dose = 80mg/kg per day 5 days = (80*12)*5 = 4800mg
         self.consumables_used_in_hsi['Ceftriaxone_therapy_for_severe_pneumonia'] = {
-            get_item_code(item='Ceftriaxone 1g, PFR_each_CMST'):
-                lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
-                                                          {4: 1.5, 12: 3, 36: 5, np.inf: 7}
-                                                          ),
+            get_item_code(item='Ceftriaxone 1g, PFR_each_CMST'): 1,  # smallest unit is 1g
             get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST'): 1,
             get_item_code(item='Syringe, Autodisable SoloShot IX '): 1
         }
 
         # Second line of antibiotics for severe pneumonia, if Staph is suspected
+        # Flucox. dose = 50mg/kg QDS 7 days = ((50*12)*4)*7 = 16_800mg
+        # Oral flucox dose. = same
         self.consumables_used_in_hsi['2nd_line_Antibiotic_therapy_for_severe_staph_pneumonia'] = {
-            get_item_code(item='Flucloxacillin 250mg, vial, PFR_each_CMST'):
-                lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
-                                                          {2: 21, 4: 22.4, 12: 37.3, 36: 67.2, 60: 93.3, np.inf: 140}
-                                                          ),
-            get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST'):
-                lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
-                                                          {4: 2.81, 12: 4.69, 36: 7.03, 60: 9.37, np.inf: 13.6}
-                                                          ),
+            get_item_code(item='Flucloxacillin 250mg, vial, PFR_each_CMST'): 16_800,
+            get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST'): 6,  # 80mg/2ml = 450/8
             get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST'): 1,
             get_item_code(item='Syringe, Autodisable SoloShot IX '): 1,
-            get_item_code(item='Flucloxacillin 250mg_100_CMST'):
-                lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
-                                                          {4: 0.42, 36: 0.84, 60: 1.68, np.inf: 1.68}
-                                                          ),
-        }
+            get_item_code(item='Flucloxacillin 250mg_100_CMST'): 16_800}
 
         # First dose of antibiotic before referral -------------------
-
+        # single dose of 7.5mg gent and 50mg/g amp. given
         # Referral process in iCCM for severe pneumonia, and at health centres for HIV exposed/infected
         self.consumables_used_in_hsi['First_dose_oral_amoxicillin_for_referral'] = {
-            get_item_code(item='Amoxycillin 250mg_1000_CMST'):
-                lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
-                                                          {12: 0.001, 36: 0.002, np.inf: 0.003}
-                                                          ),
+            get_item_code(item='Amoxycillin 250mg_1000_CMST'): 250,
         }
 
         # Referral process at health centres for severe cases
         self.consumables_used_in_hsi['First_dose_IM_antibiotics_for_referral'] = {
-            get_item_code(item='Ampicillin injection 500mg, PFR_each_CMST'):
-                lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
-                                                          {4: 0.4, 12: 0.8, 36: 1.4, np.inf: 2}
-                                                          ),
-            get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST'):
-                lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
-                                                          {4: 0.56, 12: 0.94, 36: 1.41, np.inf: 1.87}
-                                                          ),
+            get_item_code(item='Ampicillin injection 500mg, PFR_each_CMST'): 2,  # 2 x 500mg vial
+            get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST'): 2,  # assuming single dose at referral
             get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST'): 1,
             get_item_code(item='Syringe, Autodisable SoloShot IX '): 1
         }
 
         # Oxygen, pulse oximetry and x-ray -------------------
 
-        # Oxygen for hypoxaemia
+        # Oxygen for hypoxaemia - 5/l per min (Approx) for 3 days ((24*60)*5)*3
         self.consumables_used_in_hsi['Oxygen_Therapy'] = {
-            get_item_code(item='Oxygen, 1000 liters, primarily with oxygen cylinders'): 1,
+            get_item_code(item='Oxygen, 1000 liters, primarily with oxygen cylinders'): 21_600,
         }
 
         # Pulse oximetry
@@ -1157,10 +1108,7 @@ class Alri(Module):
         # Optional consumables -------------------
         # Paracetamol
         self.consumables_used_in_hsi['Paracetamol_tablet'] = {
-            get_item_code(item='Paracetamol, tablet, 100 mg'):
-                lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
-                                                          {36: 12, np.inf: 18}
-                                                          ),
+            get_item_code(item='Paracetamol, tablet, 100 mg'): 240,  # 20mg/kg
         }
 
         # Maintenance of fluids via nasograstric tube
@@ -1173,11 +1121,6 @@ class Alri(Module):
             get_item_code(item='Salbutamol sulphate 1mg/ml, 5ml_each_CMST'): 2
         }
 
-        # Bronchodilator - oral
-        self.consumables_used_in_hsi['Oral_Brochodilator'] = {
-            get_item_code(item='Salbutamol, syrup, 2 mg/5 ml'): 1,
-            get_item_code(item='Salbutamol, tablet, 4 mg'): 1
-        }
 
     def end_episode(self, person_id):
         """End the episode infection for a person (i.e. reset all properties to show no current infection or
@@ -1341,21 +1284,6 @@ class Alri(Module):
         else:
             return 'failure'
 
-    def on_presentation(self, person_id, hsi_event):
-        """Action taken when a child (under 5 years old) presents at a generic appointment (emergency or non-emergency)
-         with symptoms of `cough` or `difficult_breathing`."""
-
-        self.record_sought_care_for_alri()
-
-        # All persons have an initial out-patient appointment at the current facility level.
-        self.sim.modules['HealthSystem'].schedule_hsi_event(
-            hsi_event=HSI_Alri_Treatment(person_id=person_id, module=self,
-                                         facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL),
-            topen=self.sim.date,
-            tclose=self.sim.date + pd.DateOffset(days=1),
-            priority=1
-        )
-
     def record_sought_care_for_alri(self):
         """Count that the person is seeking care"""
         self.logging_event.new_seeking_care()
@@ -1432,6 +1360,42 @@ class Alri(Module):
 
         else:
             raise ValueError(f'Classification not recognised: {classification_for_treatment_decision}')
+
+    def do_at_generic_first_appt(
+        self,
+        patient_id: int,
+        patient_details: PatientDetails,
+        symptoms: List[str],
+        facility_level: str,
+        **kwargs,
+    ) -> IndividualPropertyUpdates:
+        # Action taken when a child (under 5 years old) presents at a
+        # generic appointment (emergency or non-emergency) with symptoms
+        # of `cough` or `difficult_breathing`.
+        if patient_details.age_years <= 5 and (
+            ("cough" in symptoms) or ("difficult_breathing" in symptoms)
+        ):
+            self.record_sought_care_for_alri()
+
+            # All persons have an initial out-patient appointment at the current facility level.
+            event = HSI_Alri_Treatment(
+                person_id=patient_id, module=self, facility_level=facility_level
+            )
+            self.healthsystem.schedule_hsi_event(
+                event,
+                topen=self.sim.date,
+                tclose=self.sim.date + pd.DateOffset(days=1),
+                priority=1,
+            )
+
+    def do_at_generic_first_appt_emergency(
+        self,
+        **kwargs,
+    ) -> IndividualPropertyUpdates:
+        # Emergency and non-emergency treatment is identical for alri
+        return self.do_at_generic_first_appt(
+            **kwargs,
+        )
 
 
 class Models:

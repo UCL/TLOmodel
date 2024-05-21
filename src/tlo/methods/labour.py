@@ -1,18 +1,28 @@
+from __future__ import annotations
+
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
 import scipy.stats
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType
 from tlo.methods import Metadata, labour_lm, pregnancy_helper_functions
 from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
-from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.postnatal_supervisor import PostnatalWeekOneMaternalEvent
 from tlo.util import BitsetHandler
+
+if TYPE_CHECKING:
+    from numpy.random import RandomState
+
+    from tlo.population import PatientDetails
+
 
 # Standard logger
 logger = logging.getLogger(__name__)
@@ -597,8 +607,8 @@ class Labour(Module):
                                                          'antihypertensives'),
         'la_postpartum_haem': Property(Types.BOOL, 'whether the woman has experienced an postpartum haemorrhage in this'
                                                    'delivery'),
-        'la_postpartum_haem_treatment': Property(Types.INT, ' Treatment for received for postpartum haemorrhage '
-                                                            '(bitset)'),
+        'la_postpartum_haem_treatment': Property(Types.BITSET, ' Treatment for received for postpartum haemorrhage '
+                                                               '(bitset)'),
         'la_has_had_hysterectomy': Property(Types.BOOL, 'whether this woman has had a hysterectomy as treatment for a '
                                                         'complication of labour, and therefore is unable to conceive'),
         'la_date_most_recent_delivery': Property(Types.DATE, 'date of on which this mother last delivered'),
@@ -768,7 +778,7 @@ class Labour(Module):
 
         # --------------------------------------- ORAL ANTIHYPERTENSIVES ---------------------------------------------
         self.item_codes_lab_consumables['oral_antihypertensives'] = \
-            {ic('Hydralazine, powder for injection, 20 mg ampoule'): 1}
+            {ic('Methyldopa 250mg_1000_CMST'): 1}
 
         # ----------------------------------  SEVERE PRE-ECLAMPSIA/ECLAMPSIA  -----------------------------------------
         self.item_codes_lab_consumables['magnesium_sulfate'] = \
@@ -1790,8 +1800,9 @@ class Labour(Module):
                 elif (labour_stage == 'pp') and (df.at[person_id, 'pn_htn_disorders'] == 'severe_gest_htn'):
                     df.at[person_id, 'pn_htn_disorders'] = 'gest_htn'
 
-                avail = hsi_event.get_consumables(
-                    item_codes=self.item_codes_lab_consumables['oral_antihypertensives'])
+                dose = (7 * 4) * 6 # approximating 4 tablets a day, for 6 weeks
+                cons = {_i: dose for _i in self.item_codes_lab_consumables['oral_antihypertensives']}
+                avail = hsi_event.get_consumables(item_codes=cons)
 
                 if avail:
                     df.at[person_id, 'la_gest_htn_on_treatment'] = True
@@ -2310,6 +2321,35 @@ class Labour(Module):
         if hsi_event.timing == 'postpartum':
             self.apply_risk_of_early_postpartum_death(person_id)
 
+    def do_at_generic_first_appt_emergency(
+        self,
+        patient_id: int,
+        patient_details: PatientDetails,
+        random_state: RandomState,
+        **kwargs,
+    ) -> IndividualPropertyUpdates:
+        mni = self.sim.modules["PregnancySupervisor"].mother_and_newborn_info
+        labour_list = self.sim.modules["Labour"].women_in_labour
+
+        if patient_id in labour_list:
+            la_currently_in_labour = patient_details.la_currently_in_labour
+            if (
+                la_currently_in_labour
+                & mni[patient_id]["sought_care_for_complication"]
+                & (mni[patient_id]["sought_care_labour_phase"] == "intrapartum")
+            ):
+                event = HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(
+                    module=self,
+                    person_id=patient_id,
+                    # facility_level_of_this_hsi=random_state.choice(["1a", "1b"]),
+                    facility_level_of_this_hsi=self.rng.choice(["1a", "1b"]),
+                )
+                self.healthsystem.schedule_hsi_event(
+                    event,
+                    priority=0,
+                    topen=self.sim.date,
+                    tclose=self.sim.date + pd.DateOffset(days=1),
+                )
 
 class LabourOnsetEvent(Event, IndividualScopeEventMixin):
     """
