@@ -211,6 +211,7 @@ class Measles(Module):
         symptoms: List[str] = None,
         diagnosis_fn: Callable[[str, bool, bool], Any] = None,
         facility_level: str = None,
+        treatment_id: str = None,
     ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
         event_info = []
         if "rash" in symptoms:

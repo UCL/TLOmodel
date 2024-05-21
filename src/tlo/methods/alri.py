@@ -1425,6 +1425,7 @@ class Alri(Module):
         symptoms: List[str] = None,
         diagnosis_fn: Callable[[str, bool, bool], Any] = None,
         facility_level: str = None,
+        treatment_id: str = None,
     ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
         event_info = []
         # Action taken when a child (under 5 years old) presents at a
@@ -1454,6 +1455,7 @@ class Alri(Module):
         symptoms: List[str] = None,
         diagnosis_fn: Callable[[str, bool, bool], Any] = None,
         facility_level: str = None,
+        treatment_id: str = None,
     ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
         # Emergency and non-emergency treatment is identical for alri
         return self.do_at_generic_first_appt(
@@ -1462,6 +1464,7 @@ class Alri(Module):
             symptoms=symptoms,
             diagnosis_fn=diagnosis_fn,
             facility_level=facility_level,
+            treatment_id=treatment_id,
         )
 
 class Models:

@@ -115,6 +115,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event: HSI_Event, squeeze_factor)
     schedule_hsi = hsi_event.healthcare_system.schedule_hsi_event
     symptoms = hsi_event.sim.modules["SymptomManager"].has_what(person_id)
     facility_level = hsi_event.ACCEPTED_FACILITY_LEVEL
+    treatment_id = hsi_event.TREATMENT_ID
     # Create the diagnosis test runner function
     def diagnosis_fn(tests, use_dict: bool = False, report_tried: bool = False):
         return hsi_event.healthcare_system.dx_manager.run_dx_test(
@@ -138,6 +139,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event: HSI_Event, squeeze_factor)
             symptoms=symptoms,
             diagnosis_fn=diagnosis_fn,
             facility_level=facility_level,
+            treatment_id=treatment_id,
         )
         # Schedule any requested updates
         for info in event_info:
@@ -152,19 +154,6 @@ def do_at_generic_first_appt_non_emergency(hsi_event: HSI_Event, squeeze_factor)
     df.loc[person_id, proposed_df_updates.keys()] = proposed_df_updates.values()
 
     # ----------------------------------- ALL AGES -----------------------------------
-
-    if "Malaria" in modules:
-        malaria_associated_symptoms = {
-            "fever",
-            "headache",
-            "stomachache",
-            "diarrhoea",
-            "vomiting",
-        }
-        if bool(set(symptoms) & malaria_associated_symptoms):
-            modules["Malaria"].do_for_suspected_malaria_case(
-                person_id=person_id, hsi_event=hsi_event
-            )
 
     if patient_details.age_years <= 5:
         # ----------------------------------- CHILD < 5 -----------------------------------
@@ -212,6 +201,7 @@ def do_at_generic_first_appt_emergency(hsi_event: HSI_Event, squeeze_factor):
     df = hsi_event.sim.population.props
     symptoms = hsi_event.sim.modules['SymptomManager'].has_what(person_id=person_id)
     schedule_hsi = hsi_event.sim.modules["HealthSystem"].schedule_hsi_event
+    treatment_id = hsi_event.TREATMENT_ID
 
     # Make top-level reads of information, to avoid repeat accesses.
     person_id = hsi_event.target
@@ -242,6 +232,7 @@ def do_at_generic_first_appt_emergency(hsi_event: HSI_Event, squeeze_factor):
             symptoms=symptoms,
             diagnosis_fn=diagnosis_fn,
             facility_level=facility_level,
+            treatment_id=treatment_id,
         )
         # Schedule any requested updates
         for info in event_info:
@@ -291,11 +282,6 @@ def do_at_generic_first_appt_emergency(hsi_event: HSI_Event, squeeze_factor):
     if "Depression" in sim.modules:
         sim.modules['Depression'].do_on_presentation_to_care(person_id=person_id,
                                                              hsi_event=hsi_event)
-
-    if "Malaria" in sim.modules:
-        if 'severe_malaria' in symptoms:
-            sim.modules['Malaria'].do_on_emergency_presentation_with_severe_malaria(person_id=person_id,
-                                                                                    hsi_event=hsi_event)
 
     # ------ CARDIO-METABOLIC DISORDERS ------
     if 'CardioMetabolicDisorders' in sim.modules:

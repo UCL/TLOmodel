@@ -1509,6 +1509,7 @@ class Hiv(Module):
         symptoms: List[str] = None,
         diagnosis_fn: Callable[[str, bool, bool], Any] = None,
         facility_level: str = None,
+        treatment_id: str = None,
     ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
         # 'Automatic' testing for HIV for everyone attending care with AIDS symptoms:
         #  - suppress the footprint (as it done as part of another appointment)
@@ -1529,6 +1530,7 @@ class Hiv(Module):
             }
             event_info.append((event, options))
         return event_info, {}
+
 
 # ---------------------------------------------------------------------------
 #   Main Polling Event
