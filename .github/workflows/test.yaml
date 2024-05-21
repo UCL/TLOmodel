@@ -12,7 +12,13 @@ jobs:
       - name: Collect Workflow Telemetry
         uses: catchpoint/workflow-telemetry-action@v2
       - name: Test
+        shell: python3 {0}
         run: |
-          date
-          python3 -c 'bytearray(2 * 1024 * 1024 * 1024); import time; time.sleep(60)'
-          date
+          import time
+
+          a = bytearray(1 * 1024 * 1024 * 1024)
+          time.sleep(20)
+          b = bytearray(1 * 1024 * 1024 * 1024)
+          time.sleep(20)
+          c = bytearray(1 * 1024 * 1024 * 1024)
+          time.sleep(20)
