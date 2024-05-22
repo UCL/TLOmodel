@@ -161,6 +161,24 @@ def do_at_generic_first_appt_non_emergency(hsi_event: HSI_Event, squeeze_factor)
     # Perform any DataFrame updates that were requested, all in one go.
     df.loc[person_id, proposed_df_updates.keys()] = proposed_df_updates.values()
 
+    if "CardioMetabolicDisorders" in modules:
+        event_info, _ = modules[
+            "CardioMetabolicDisorders"
+        ].do_at_generic_first_appt(
+            patient_id=person_id,
+            patient_details=patient_details,
+            symptoms=symptoms,
+            diagnosis_fn=diagnosis_fn,
+            consumables_checker=consumables_fn,
+            facility_level=facility_level,
+            treatment_id=treatment_id,
+        )
+        # Schedule any requested updates
+        for info in event_info:
+            event = info[0]
+            options = info[1]
+            schedule_hsi(event, **options)
+
     # ----------------------------------- ALL AGES -----------------------------------
 
     if patient_details.age_years <= 5:
@@ -178,24 +196,6 @@ def do_at_generic_first_appt_non_emergency(hsi_event: HSI_Event, squeeze_factor)
             modules["Depression"].do_on_presentation_to_care(
                 person_id=person_id, hsi_event=hsi_event
             )
-
-        if "CardioMetabolicDisorders" in modules:
-            event_info, _ = modules[
-                "CardioMetabolicDisorders"
-            ].do_at_generic_first_appt(
-                patient_id=person_id,
-                patient_details=patient_details,
-                symptoms=symptoms,
-                diagnosis_fn=diagnosis_fn,
-                consumables_checker=consumables_fn,
-                facility_level=facility_level,
-                treatment_id=treatment_id,
-            )
-            # Schedule any requested updates
-            for info in event_info:
-                event = info[0]
-                options = info[1]
-                schedule_hsi(event, **options)
 
 def do_at_generic_first_appt_emergency(hsi_event: HSI_Event, squeeze_factor):
     """
