@@ -32,8 +32,6 @@ jobs:
           cat /sys/fs/cgroup/memory.high || true
       - name: Collect Workflow Telemetry
         uses: catchpoint/workflow-telemetry-action@v2
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
       - name: Test
         shell: python3 {0}
         run: |
@@ -42,10 +40,10 @@ jobs:
 
           print("Hello, world!", flush=True)
 
-          for i in range(5):
+          for i in range(11):
               print(str(datetime.now()))
-              size = i * 1024 ** 2 * 512
+              size = i * 1024 ** 2 * 256
               print(f"I am about to allocate {size / 1024 ** 3} GiB of memory", flush=True)
               a = bytearray(size)
-              time.sleep(10)
+              time.sleep(5)
               a
