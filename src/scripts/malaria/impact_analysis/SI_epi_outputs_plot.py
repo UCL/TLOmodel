@@ -32,7 +32,13 @@ from tlo.analysis.utils import (
 # outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
 outputspath = Path("./outputs")
 
+# results_folder = Path("./outputs/remove_treatment_effects_Apr2024")
+
+# to produce figure comparing main results with SI:
 results_folder = Path("./outputs/SI_baseline_exclHTM_tx_ineff")
+# 0=baseline
+# 1=excl HTM
+# 2=tx ineff
 
 # look at one log (so can decide what to extract)
 log = load_pickled_dataframes(results_folder)
@@ -517,7 +523,7 @@ ax7.legend(loc='upper right',
 # empty plot
 ax8.axis('off')
 
-fig.savefig(outputspath / "Apr2024_HTMresults/SI_Epi_outputs_excl_htm_mortality.png")
+fig.savefig(outputspath / "Apr2024_HTMresults/SI_Epi_outputs.png")
 
 plt.show()
 

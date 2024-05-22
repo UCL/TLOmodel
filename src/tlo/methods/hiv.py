@@ -1050,7 +1050,7 @@ class Hiv(Module):
         # 3) Determine who has AIDS and impose the Symptoms 'aids_symptoms'
 
         # Those on ART currently (will not get any further events scheduled):
-        on_art_idx = df.loc[df.is_alive & df.hv_inf & (df.hv_art != "not")].index
+        on_art_idx = df.loc[df.is_alive & df.hv_inf & (df.hv_art != "on_VL_suppressed")].index
 
         # Those that lived more than ten years and not currently on ART are assumed to currently have AIDS
         #  (will have AIDS Death event scheduled)
@@ -1058,7 +1058,7 @@ class Hiv(Module):
             df.is_alive
             & df.hv_inf
             & ((self.sim.date - df.hv_date_inf).dt.days > 10 * 365)
-            & (df.hv_art == "not")
+            & (df.hv_art != "on_VL_suppressed")
             ].index
 
         # Those that are in neither category are "before AIDS" (will have AIDS Onset Event scheduled)
