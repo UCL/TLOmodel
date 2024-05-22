@@ -177,6 +177,11 @@ def do_at_generic_first_appt_non_emergency(hsi_event: HSI_Event, squeeze_factor)
                 person_id=person_id, hsi_event=hsi_event
             )
 
+        if "CardioMetabolicDisorders" in modules:
+            modules["CardioMetabolicDisorders"].determine_if_will_be_investigated(
+                person_id=person_id
+            )
+
 
 def do_at_generic_first_appt_emergency(hsi_event: HSI_Event, squeeze_factor):
     """
@@ -279,6 +284,9 @@ def do_at_generic_first_appt_emergency(hsi_event: HSI_Event, squeeze_factor):
                                                              hsi_event=hsi_event)
 
     # ------ CARDIO-METABOLIC DISORDERS ------
+    if 'CardioMetabolicDisorders' in sim.modules:
+        sim.modules['CardioMetabolicDisorders'].determine_if_will_be_investigated_events(person_id=person_id)
+
     if "Epilepsy" in sim.modules:
         if 'seizures' in symptoms:
             schedule_hsi(HSI_Epilepsy_Start_Anti_Epileptic(person_id=person_id,
