@@ -24,9 +24,12 @@ jobs:
       - name: show /proc/self/cgroup
         run: |
           cat /proc/self/cgroup || true
-      - name: show /sys/fs/cgroup/memory/memory.stat
+      - name: show /sys/fs/cgroup/memory.max
         run: |
-          cat /sys/fs/cgroup/memory/memory.stat || true
+          cat /sys/fs/cgroup/memory.max || true
+      - name: show /sys/fs/cgroup/memory.high
+        run: |
+          cat /sys/fs/cgroup/memory.high || true
       - name: Collect Workflow Telemetry
         uses: catchpoint/workflow-telemetry-action@v2
       - name: Setup tmate session
