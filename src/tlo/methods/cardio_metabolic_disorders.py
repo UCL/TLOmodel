@@ -857,12 +857,14 @@ class CardioMetabolicDisorders(Module):
 
         # Schedule follow-up HSI *if* there are any conditions to investigate:
         if conditions_to_investigate:
-            event = HSI_CardioMetabolicDisorders_Investigations(
+            event = (
+                HSI_CardioMetabolicDisorders_Investigations(
                     module=self,
                     person_id=patient_id,
                     conditions_to_investigate=conditions_to_investigate,
                     has_any_cmd_symptom=has_any_cmd_symptom,
-                )
+                ),
+            )
             options = {
                 "priority": 0,
                 "topen": self.sim.date,
@@ -901,11 +903,13 @@ class CardioMetabolicDisorders(Module):
                 ev_to_investigate.append(ev)
 
         if ev_to_investigate:
-            event = HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(
+            event = (
+                HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(
                     module=self,
                     person_id=patient_id,
                     events_to_investigate=ev_to_investigate,
-                )
+                ),
+            )
             options = {
                 "priority": 1,
                 "topen": self.sim.date,
