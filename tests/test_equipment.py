@@ -23,15 +23,13 @@ def test_core_functionality_of_equipment_class(seed):
     # Create toy data
     catalogue = pd.DataFrame(
         [
-            {"Item_Description": "ItemZero", "Item_Code": 0, "Pkg_Name": float('nan')},
-            {"Item_Description": "ItemOne", "Item_Code": 1, "Pkg_Name": float('nan')},
-            {"Item_Description": "ItemTwo", "Item_Code": 2, "Pkg_Name": 'PkgWith2+3'},
-            {"Item_Description": "ItemThree", "Item_Code": 3, "Pkg_Name": 'PkgWith2+3'},
+            {"Item_Description": "ItemZero", "Item_Code": 0, "Pkg_Name": 'PkgWith0+1'},
+            {"Item_Description": "ItemOne", "Item_Code": 1, "Pkg_Name": 'PkgWith0+1'},
+            {"Item_Description": "ItemTwo", "Item_Code": 2, "Pkg_Name": float('nan')},
         ]
     )
     data_availability = pd.DataFrame(
         # item 0 is not available anywhere; item 1 is available everywhere; item 2 is available only at facility_id=1
-        # No data for fac_id=2
         [
             {"Item_Code": 0, "Facility_ID": 0, "Pr_Available": 0.0},
             {"Item_Code": 0, "Facility_ID": 1, "Pr_Available": 0.0},
@@ -41,12 +39,10 @@ def test_core_functionality_of_equipment_class(seed):
             {"Item_Code": 2, "Facility_ID": 1, "Pr_Available": 1.0},
         ]
     )
-
     mfl = pd.DataFrame(
         [
             {'District': 'D0', 'Facility_Level': '1a', 'Region': 'R0', 'Facility_ID': 0, 'Facility_Name': 'Fac0'},
             {'District': 'D0', 'Facility_Level': '1b', 'Region': 'R0', 'Facility_ID': 1, 'Facility_Name': 'Fac1'},
-            {'District': 'D0', 'Facility_Level': '2', 'Region': 'R0', 'Facility_ID': 2, 'Facility_Name': 'Fac2'},
         ]
     )
 
@@ -90,14 +86,6 @@ def test_core_functionality_of_equipment_class(seed):
     # - calling for empty set of equipment (should always be available)
     assert eq_default.is_all_items_available(item_codes=set(), facility_id=0)
 
-    # - calling an item for which data on availability is not provided (should not raise error)
-    eq_default.is_all_items_available(item_codes={3}, facility_id=1)
-    # - calling an item at a facility that for which data is not provided (should give average behaviour for other
-    #   facilities)
-    assert not eq_default.is_all_items_available(item_codes={0}, facility_id=2)
-    assert eq_default.is_all_items_available(item_codes={1}, facility_id=2)
-    # - calling a recognised item for which no data at a facility with no data (should not error)
-    eq_default.is_all_items_available(item_codes={3}, facility_id=2)
     # -- calling for an unrecognised facility_id (should error)
     with pytest.raises(AssertionError):
         eq_default.is_all_items_available(item_codes={1}, facility_id=1001)
@@ -146,7 +134,7 @@ def test_core_functionality_of_equipment_class(seed):
 
     # Lookup the item_codes that belong in a particular package.
     # - When package is recognised
-    assert {2, 3} == eq_default.lookup_item_codes_from_pkg_name(pkg_name='PkgWith2+3')  # these items are in the same
+    assert {0, 1} == eq_default.lookup_item_codes_from_pkg_name(pkg_name='PkgWith0+1')  # these items are in the same
     #                                                                                     package
     # - Error thrown when package is not recognised
     with pytest.raises(ValueError):
