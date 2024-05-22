@@ -29,6 +29,8 @@ jobs:
           cat /sys/fs/cgroup/memory/memory.stat || true
       - name: Collect Workflow Telemetry
         uses: catchpoint/workflow-telemetry-action@v2
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
       - name: Test
         shell: python3 {0}
         run: |
