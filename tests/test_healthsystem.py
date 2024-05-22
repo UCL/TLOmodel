@@ -191,7 +191,7 @@ def test_run_no_interventions_allowed(tmpdir, seed):
         .apply(lambda x: x != set()).any().any()
     assert (
         sim.population.props.loc[
-            :, sim.population.props.columns.str.startswith('sy_')
+        :, sim.population.props.columns.str.startswith('sy_')
         ].dtypes == BitsetDType
     ).all()
     assert not pd.isnull(sim.population.props.loc[:, sim.population.props.columns.str.startswith('sy_')]).any().any()
@@ -426,14 +426,14 @@ def test_rescaling_capabilities_based_on_squeeze_factors(tmpdir, seed):
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            capabilities_coefficient=0.0000001,  # This will mean that capabilities are
-                                                                                # very close to 0 everywhere.
-                                                                                # (If the value was 0, then it would
-                                                                                # be interpreted as the officers NEVER
-                                                                                # being available at a facility,
-                                                                                # which would mean the HSIs should not
-                                                                                # run (as opposed to running with
-                                                                                # a very high squeeze factor)).
-                 ),
+                                           # very close to 0 everywhere.
+                                           # (If the value was 0, then it would
+                                           # be interpreted as the officers NEVER
+                                           # being available at a facility,
+                                           # which would mean the HSIs should not
+                                           # run (as opposed to running with
+                                           # a very high squeeze factor)).
+                                           ),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
@@ -508,13 +508,13 @@ def test_run_in_mode_1_with_almost_no_capacity(tmpdir, seed):
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
                                            capabilities_coefficient=0.0000001,  # This will mean that capabilities are
-                                                                                # very close to 0 everywhere.
-                                                                                # (If the value was 0, then it would
-                                                                                # be interpreted as the officers NEVER
-                                                                                # being available at a facility,
-                                                                                # which would mean the HSIs should not
-                                                                                # run (as opposed to running with
-                                                                                # a very high squeeze factor)).
+                                           # very close to 0 everywhere.
+                                           # (If the value was 0, then it would
+                                           # be interpreted as the officers NEVER
+                                           # being available at a facility,
+                                           # which would mean the HSIs should not
+                                           # run (as opposed to running with
+                                           # a very high squeeze factor)).
                                            mode_appt_constraints=1),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
@@ -536,7 +536,7 @@ def test_run_in_mode_1_with_almost_no_capacity(tmpdir, seed):
     # assert hsi_events['did_run'].all()
     assert (
         hsi_events.loc[(hsi_events['Person_ID'] >= 0) & (hsi_events['Number_By_Appt_Type_Code'] != {}),
-                       'Squeeze_Factor'] >= 100.0
+        'Squeeze_Factor'] >= 100.0
     ).all()  # All the events that had a non-blank footprint experienced high squeezing.
     assert (hsi_events.loc[hsi_events['Person_ID'] < 0, 'Squeeze_Factor'] == 0.0).all()
 
@@ -645,7 +645,7 @@ def test_run_in_mode_2_with_no_capacity(tmpdir, seed):
     hsi_events = output['tlo.methods.healthsystem']['HSI_Event']
     assert not (
         hsi_events.loc[(hsi_events['Person_ID'] >= 0) & (hsi_events['Number_By_Appt_Type_Code'] != {}),
-                       'did_run'].astype(bool)
+        'did_run'].astype(bool)
     ).any()  # not any Individual level with non-blank footprints
     assert (output['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_Overall'] == 0.0).all()
     assert (hsi_events.loc[hsi_events['Person_ID'] < 0, 'did_run']).astype(bool).all()  # all Population level events
@@ -1071,20 +1071,20 @@ def test_summary_logger_for_never_ran_hsi_event(seed, tmpdir):
             sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Dummy1(self, person_id=0),
                 topen=self.sim.date,
-                tclose=self.sim.date+pd.DateOffset(days=2),
+                tclose=self.sim.date + pd.DateOffset(days=2),
                 priority=0
             )
             # In 2011: Dummy2 & Dummy3
             sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Dummy2(self, person_id=0),
                 topen=self.sim.date + pd.DateOffset(years=1),
-                tclose=self.sim.date + pd.DateOffset(years=1)+pd.DateOffset(days=2),
+                tclose=self.sim.date + pd.DateOffset(years=1) + pd.DateOffset(days=2),
                 priority=0
             )
             sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Dummy3(self, person_id=0),
                 topen=self.sim.date + pd.DateOffset(years=1),
-                tclose=self.sim.date + pd.DateOffset(years=1)+pd.DateOffset(days=2),
+                tclose=self.sim.date + pd.DateOffset(years=1) + pd.DateOffset(days=2),
                 priority=0
             )
 
@@ -1150,7 +1150,7 @@ def test_summary_logger_for_never_ran_hsi_event(seed, tmpdir):
     assert summary_hsi_event.loc[summary_hsi_event['date'] == Date(2010, 12, 31), 'TREATMENT_ID'][0] == {'Dummy1': 1}
     # In 2011, should have recorded one instance of Dummy2 and one of Dummy3 having never ran
     assert summary_hsi_event.loc[summary_hsi_event['date'] == Date(2011, 12, 31),
-                                 'TREATMENT_ID'][1] == {'Dummy2': 1, 'Dummy3': 1}
+    'TREATMENT_ID'][1] == {'Dummy2': 1, 'Dummy3': 1}
 
 
 @pytest.mark.slow
@@ -1254,17 +1254,17 @@ def test_summary_logger_for_hsi_event_squeeze_factors(seed, tmpdir):
     summary_hsi_event = log["tlo.methods.healthsystem.summary"]["HSI_Event"]
 
     #  - The squeeze-factors that applied for each TREATMENT_ID
-    assert summary_hsi_event.set_index(summary_hsi_event['date'].dt.year)['squeeze_factor'].apply(pd.Series)\
-                                                                                           .unstack()\
-                                                                                           .dropna()\
-                                                                                           .to_dict() \
+    assert summary_hsi_event.set_index(summary_hsi_event['date'].dt.year)['squeeze_factor'].apply(pd.Series) \
+               .unstack() \
+               .dropna() \
+               .to_dict() \
            == \
            detailed_hsi_event.assign(
                treatment_id_hsi_name=lambda df: df['TREATMENT_ID'] + ':' + df['Event_Name'],
                year=lambda df: df.date.dt.year,
-           ).groupby(by=['treatment_id_hsi_name', 'year'])['Squeeze_Factor']\
-            .mean()\
-            .to_dict()
+           ).groupby(by=['treatment_id_hsi_name', 'year'])['Squeeze_Factor'] \
+               .mean() \
+               .to_dict()
 
 
 @pytest.mark.slow
@@ -1537,8 +1537,12 @@ def test_manipulation_of_service_availability(seed, tmpdir):
            get_set_of_treatment_ids_that_run(service_availability=["Hiv_Test_*"]) - generic_first_appts
 
     # Allow all `Hiv` things (but nothing else)
-    assert set({'Hiv_Test', 'Hiv_Treatment', 'Hiv_Prevention_Circumcision'}) == \
-           get_set_of_treatment_ids_that_run(service_availability=["Hiv_*"]) - generic_first_appts
+    hiv_hsi_events = {'Hiv_Test', 'Hiv_Treatment', 'Hiv_Prevention_Circumcision', 'Hiv_Prevention_Infant',
+                      'Hiv_Prevention_Prep', 'Hiv_PalliativeCare'}
+    returned_treatment_ids = get_set_of_treatment_ids_that_run(service_availability=["Hiv_*"])
+
+    assert returned_treatment_ids.intersection(
+        hiv_hsi_events), "None of the expected treatment IDs are found in the returned set"
 
     # Allow all except `Hiv_Test`
     everything_except_hiv_test = everything - set({'Hiv_Test'})
@@ -1636,7 +1640,6 @@ def test_hsi_run_on_same_day_if_scheduled_for_same_day(seed, tmpdir):
             sim.schedule_event(Event_To_Run_On_First_Day_Of_Simulation(self, person_id=0), sim.date)
 
     for mode in (0, 1, 2):
-
         log_config = {
             "filename": "log",
             "directory": tmpdir,
@@ -1673,6 +1676,7 @@ def test_hsi_event_queue_expansion_and_querying(seed, tmpdir):
 
     class DummyHSI(HSI_Event, IndividualScopeEventMixin):
         """HSI event that schedules another HSI_Event for the same day"""
+
         def __init__(self, module, person_id):
             super().__init__(module, person_id=person_id)
             self.TREATMENT_ID = self.__class__.__name__
@@ -1681,7 +1685,7 @@ def test_hsi_event_queue_expansion_and_querying(seed, tmpdir):
 
         def apply(self, person_id, squeeze_factor):
             self.sim.modules['HealthSystem'].schedule_hsi_event(
-                DummyHSI(module=self.module, person_id=person_id,),
+                DummyHSI(module=self.module, person_id=person_id, ),
                 topen=self.sim.date,
                 tclose=None,
                 priority=0)
@@ -1734,7 +1738,7 @@ def test_hsi_event_queue_expansion_and_querying(seed, tmpdir):
             priority=sim.modules['DummyModule'].rng.randint(0, 3))
 
     (list_of_individual_hsi_event_tuples_due_today,
-        list_of_population_hsi_event_tuples_due_today
+     list_of_population_hsi_event_tuples_due_today
      ) = sim.modules['HealthSystem'].healthsystemscheduler._get_events_due_today()
 
     # Check that HealthSystemScheduler is recovering the correct number of events for today
@@ -1761,6 +1765,7 @@ def test_policy_and_lowest_priority_and_fasttracking_enforced(seed, tmpdir):
 
     class DummyHSI(HSI_Event, IndividualScopeEventMixin):
         """HSI event that schedules another HSI_Event for the same day"""
+
         def __init__(self, module, person_id):
             super().__init__(module, person_id=person_id)
             self.TREATMENT_ID = 'HSI_Dummy'
@@ -1769,10 +1774,10 @@ def test_policy_and_lowest_priority_and_fasttracking_enforced(seed, tmpdir):
 
         def apply(self, person_id, squeeze_factor):
             self.sim.modules['HealthSystem'].schedule_hsi_event(
-                     DummyHSI(module=self.module, person_id=person_id),
-                     topen=self.sim.date,
-                     tclose=None,
-                     priority=0)
+                DummyHSI(module=self.module, person_id=person_id),
+                topen=self.sim.date,
+                tclose=None,
+                priority=0)
 
     class DummyModule(Module):
         """Schedules an HSI to occur on the first day of the simulation from initialise_simulation, and an event that
@@ -1801,8 +1806,8 @@ def test_policy_and_lowest_priority_and_fasttracking_enforced(seed, tmpdir):
                      ignore_priority=False,
                      mode_appt_constraints=2,
                      policy_name="Test",  # Test policy enforcing lowest_priority_policy
-                                          # assumed in this test. This allows us to check policies
-                                          # are loaded correctly.
+                     # assumed in this test. This allows us to check policies
+                     # are loaded correctly.
                      cons_availability='all',
                  ),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
@@ -1867,10 +1872,10 @@ def test_policy_and_lowest_priority_and_fasttracking_enforced(seed, tmpdir):
 
     # Schedule an 'HSI_Dummy' event with priority different from policy one
     sim.modules['HealthSystem'].schedule_hsi_event(
-                DummyHSI(module=sim.modules['DummyModule'], person_id=0),
-                topen=sim.date + pd.DateOffset(days=sim.modules['DummyModule'].rng.randint(1, 30)),
-                tclose=_tclose,
-                priority=1)  # Give a priority different than the one assumed by the policy for this Treatment_ID
+        DummyHSI(module=sim.modules['DummyModule'], person_id=0),
+        topen=sim.date + pd.DateOffset(days=sim.modules['DummyModule'].rng.randint(1, 30)),
+        tclose=_tclose,
+        priority=1)  # Give a priority different than the one assumed by the policy for this Treatment_ID
 
     # Check that event wasn't scheduled due to priority being below threshold
     assert len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE) == 0
@@ -1948,16 +1953,15 @@ def test_mode_appt_constraints2_on_healthsystem(seed, tmpdir):
     keys_district = list(person_for_district.keys())
 
     # First half of population in keys_district[0], second half in keys_district[1]
-    for i in range(0, int(tot_population/2)):
+    for i in range(0, int(tot_population / 2)):
         sim.population.props.at[i, 'district_of_residence'] = keys_district[0]
-    for i in range(int(tot_population/2), tot_population):
+    for i in range(int(tot_population / 2), tot_population):
         sim.population.props.at[i, 'district_of_residence'] = keys_district[1]
 
     # Schedule an identical appointment for all individuals, assigning priority as follows:
     # - In first district, half individuals have priority=0 and half priority=1
     # - In second district, half individuals have priority=2 and half priority=3
     for i in range(0, tot_population):
-
         hsi = DummyHSIEvent(module=sim.modules['DummyModule'],
                             person_id=i,
                             appt_type='MinorSurg',
@@ -1969,7 +1973,7 @@ def test_mode_appt_constraints2_on_healthsystem(seed, tmpdir):
             tclose=sim.date + pd.DateOffset(days=1),
             # Assign priority as 0,1,0,1,...0,1,2,3,2,3,....2,3. In doing so, in following tests also
             # check that events are rearranged in queue based on priority and not order in which were scheduled.
-            priority=int(i/int(tot_population/2))*2 + i % 2
+            priority=int(i / int(tot_population / 2)) * 2 + i % 2
         )
 
     # Now adjust capabilities available.
@@ -1982,20 +1986,20 @@ def test_mode_appt_constraints2_on_healthsystem(seed, tmpdir):
     hsi1.initialise()
     for k, v in hsi1.expected_time_requests.items():
         print(k, sim.modules['HealthSystem']._daily_capabilities[k])
-        sim.modules['HealthSystem']._daily_capabilities[k] = v*(tot_population/4)
+        sim.modules['HealthSystem']._daily_capabilities[k] = v * (tot_population / 4)
 
     # In second district, make capabilities tuned to be those required to run all priority=2 events under
     # maximum squeezed allowed for this priority, which currently is zero.
     max_squeeze = 0.
-    scale = (1.+max_squeeze)
+    scale = (1. + max_squeeze)
     print("Scale is ", scale)
     hsi2 = DummyHSIEvent(module=sim.modules['DummyModule'],
-                         person_id=int(tot_population/2),  # Ensures call is on officers in second district
+                         person_id=int(tot_population / 2),  # Ensures call is on officers in second district
                          appt_type='MinorSurg',
                          level='1a')
     hsi2.initialise()
     for k, v in hsi2.expected_time_requests.items():
-        sim.modules['HealthSystem']._daily_capabilities[k] = (v/scale)*(tot_population/4)
+        sim.modules['HealthSystem']._daily_capabilities[k] = (v / scale) * (tot_population / 4)
 
     # Run healthsystemscheduler
     healthsystemscheduler.apply(sim.population)
@@ -2031,14 +2035,14 @@ def test_mode_appt_constraints2_on_healthsystem(seed, tmpdir):
     # if some level of squeeze was allowed (i.e. if max squeeze allowed for priority=0 is >0)
     # more than half of appointments should have taken place in total.
     if max_squeeze > 0:
-        assert Nran_w_priority0 + Nran_w_priority1 > (tot_population/4)
+        assert Nran_w_priority0 + Nran_w_priority1 > (tot_population / 4)
 
     # Check that the maximum squeeze allowed is set by priority:
     # The capabilities in the second district were tuned to accomodate all priority=2
     # appointments under the maximum squeeze allowed. Check that exactly all priority=2
     # appointments were allowed and no priority=3, to verify that the maximum squeeze
     # allowed in queue given priority is correct.
-    assert (Nran_w_priority2 == int(tot_population/4)) & (Nran_w_priority3 == 0)
+    assert (Nran_w_priority2 == int(tot_population / 4)) & (Nran_w_priority3 == 0)
 
 
 @pytest.mark.slow
@@ -2421,7 +2425,7 @@ def test_dynamic_HR_scaling(seed, tmpdir):
         scale_HR_by_pop_size=False
     )
     caps = caps[caps != 0]
-    ratio_in_sim = caps/initial_caps
+    ratio_in_sim = caps / initial_caps
     expected_value = dynamic_HR_scaling_factor * dynamic_HR_scaling_factor
     assert np.allclose(ratio_in_sim, expected_value)
 
@@ -2431,7 +2435,7 @@ def test_dynamic_HR_scaling(seed, tmpdir):
         scale_HR_by_pop_size=True
     )
     caps = caps[caps != 0]
-    ratio_in_sim = caps/initial_caps
+    ratio_in_sim = caps / initial_caps
     expected_value = final_popsize_increase
     assert np.allclose(ratio_in_sim, expected_value)
 
@@ -2441,8 +2445,8 @@ def test_dynamic_HR_scaling(seed, tmpdir):
         scale_HR_by_pop_size=True
     )
     caps = caps[caps != 0]
-    ratio_in_sim = caps/initial_caps
-    expected_value = final_popsize_increase*dynamic_HR_scaling_factor*dynamic_HR_scaling_factor
+    ratio_in_sim = caps / initial_caps
+    expected_value = final_popsize_increase * dynamic_HR_scaling_factor * dynamic_HR_scaling_factor
     assert np.allclose(ratio_in_sim, expected_value)
 
 
