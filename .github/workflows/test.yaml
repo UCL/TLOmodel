@@ -21,9 +21,9 @@ jobs:
       - name: show /proc/meminfo
         run: |
           cat /proc/meminfo || true
-      - name: show /sys/fs/cgroup/memory/memory.limit_in_bytes
+      - name: show /proc/self/cgroup
         run: |
-          cat /sys/fs/cgroup/memory/memory.limit_in_bytes || true
+          cat /proc/self/cgroup || true
       - name: show /sys/fs/cgroup/memory/memory.stat
         run: |
           cat /sys/fs/cgroup/memory/memory.stat || true
