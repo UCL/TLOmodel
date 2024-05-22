@@ -9,6 +9,24 @@ jobs:
     runs-on: ["self-hosted", "profiling"]
     timeout-minutes: 3
     steps:
+      - name: show /proc/cpuinfo
+        run: |
+          cat /proc/cpuinfo || true
+      - name: show /proc/stat
+        run: |
+          cat /proc/stat || true
+      - name: show /sys/fs/cgroup/cpuset/cpuset.effective_cpus
+        run: |
+          cat /sys/fs/cgroup/cpuset/cpuset.effective_cpus || true
+      - name: show /proc/meminfo
+        run: |
+          cat /proc/meminfo || true
+      - name: show /sys/fs/cgroup/memory/memory.limit_in_bytes
+        run: |
+          cat /sys/fs/cgroup/memory/memory.limit_in_bytes || true
+      - name: show /sys/fs/cgroup/memory/memory.stat
+        run: |
+          cat /sys/fs/cgroup/memory/memory.stat || true
       - name: Collect Workflow Telemetry
         uses: catchpoint/workflow-telemetry-action@v2
       - name: Test
@@ -19,7 +37,7 @@ jobs:
 
           print("Hello, world!", flush=True)
 
-          for i in range(10):
+          for i in range(5):
               print(str(datetime.now()))
               size = i * 1024 ** 2 * 512
               print(f"I am about to allocate {size / 1024 ** 3} GiB of memory", flush=True)
