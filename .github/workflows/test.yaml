@@ -17,9 +17,11 @@ jobs:
           import time
           from datetime import datetime
 
+          print("Hello, world!")
+
           for i in range(5):
               print(str(datetime.now()))
-              size = i * 1024 ** 3
+              size = i * 1024 ** 2 * 256
               print(f"I am about to allocate {size / 1024 ** 3} GiB of memory")
               a = bytearray(size)
               time.sleep(10)
