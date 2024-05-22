@@ -137,7 +137,9 @@ def do_at_generic_first_appt_non_emergency(hsi_event: HSI_Event, squeeze_factor)
 
     proposed_df_updates = {}
 
-    for module in modules.values():
+    for name, module in modules.items():
+        if name == "CardioMetabolicDisorders":
+            continue
         event_info, df_updates = module.do_at_generic_first_appt(
             patient_id=person_id,
             patient_details=patient_details,
@@ -178,10 +180,22 @@ def do_at_generic_first_appt_non_emergency(hsi_event: HSI_Event, squeeze_factor)
             )
 
         if "CardioMetabolicDisorders" in modules:
-            modules["CardioMetabolicDisorders"].determine_if_will_be_investigated(
-                person_id=person_id
+            event_info, _ = modules[
+                "CardioMetabolicDisorders"
+            ].do_at_generic_first_appt(
+                patient_id=person_id,
+                patient_details=patient_details,
+                symptoms=symptoms,
+                diagnosis_fn=diagnosis_fn,
+                consumables_checker=consumables_fn,
+                facility_level=facility_level,
+                treatment_id=treatment_id,
             )
-
+            # Schedule any requested updates
+            for info in event_info:
+                event = info[0]
+                options = info[1]
+                schedule_hsi(event, **options)
 
 def do_at_generic_first_appt_emergency(hsi_event: HSI_Event, squeeze_factor):
     """
@@ -224,7 +238,9 @@ def do_at_generic_first_appt_emergency(hsi_event: HSI_Event, squeeze_factor):
 
     proposed_df_updates = {}
 
-    for module in modules.values():
+    for name, module in modules.items():
+        if name == "CardioMetabolicDisorders":
+            continue
         event_info, df_updates = module.do_at_generic_first_appt_emergency(
             patient_id=person_id,
             patient_details=patient_details,
@@ -285,7 +301,22 @@ def do_at_generic_first_appt_emergency(hsi_event: HSI_Event, squeeze_factor):
 
     # ------ CARDIO-METABOLIC DISORDERS ------
     if 'CardioMetabolicDisorders' in sim.modules:
-        sim.modules['CardioMetabolicDisorders'].determine_if_will_be_investigated_events(person_id=person_id)
+        event_info, _ = modules[
+            "CardioMetabolicDisorders"
+        ].do_at_generic_first_appt_emergency(
+            patient_id=person_id,
+            patient_details=patient_details,
+            symptoms=symptoms,
+            diagnosis_fn=diagnosis_fn,
+            consumables_checker=consumables_fn,
+            facility_level=facility_level,
+            treatment_id=treatment_id,
+        )
+        # Schedule any requested updates
+        for info in event_info:
+            event = info[0]
+            options = info[1]
+            schedule_hsi(event, **options)
 
     if "Epilepsy" in sim.modules:
         if 'seizures' in symptoms:
