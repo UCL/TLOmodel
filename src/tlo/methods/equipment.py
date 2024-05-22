@@ -51,8 +51,8 @@ class Equipment:
 
     :param catalogue: The database of all recognised item_codes.
     :param data_availability: Specifies the probability with which each equipment (identified by an ``item_code``) is
-        available at a facility level. Note that information is not necessarily provided for every item in the :py:attr`catalogue`
-        or every facility ID in the :py:attr`master_facilities_list`.
+        available at a facility level. Note that information must be provided for every item in the :py:attr`catalogue`
+        and every facility ID in the :py:attr`master_facilities_list`.
     :param: rng: The random number generator object to use for random numbers.
     :param availability: Determines the mode availability of the equipment. If 'default' then use the availability
         specified in :py:attr:`data_availability`; if 'none', then let no equipment be ever be available; if 'all', then all
@@ -82,7 +82,7 @@ class Equipment:
         self._all_fac_ids = self.master_facilities_list['Facility_ID'].unique()
 
         # - Probabilities of items being available at each facility_id
-        self._probabilities_of_items_available = self._calculate_equipment_availability_probabilities()
+        self._probabilities_of_items_available = self._get_equipment_availability_probabilities()
 
         # - Internal store of which items have been used at each facility_id This is of the form
         # {facility_id: {item_code: count}}.
@@ -104,35 +104,25 @@ class Equipment:
         assert value in {"all", "none", "default"}, f"New availability value {value} not recognised."
         self._availability = value
 
-    def _calculate_equipment_availability_probabilities(self) -> pd.Series:
+    def _get_equipment_availability_probabilities(self) -> pd.Series:
         """
-        Compute the probabilities that each equipment item is available (at a given
+        Extract the probabilities that each equipment item is available (at a given
         facility), for use when the equipment availability is set to "default".
 
-        The probabilities computed in this method are constant throughout the simulation,
+        The probabilities extracted in this method are constant throughout the simulation,
         however they will not be used when the equipment availability is "all" or "none".
-        Computing them once and storing the result allows us to avoid repeating this
+        Extracting them once and storing the result allows us to avoid repeating this
         calculation if the equipment availability change event occurs during the simulation.
         """
-        # Create "full" dataset, where we force that there is probability of availability for every item_code at every
-        # observed facility
-        dat = pd.Series(
-            index=pd.MultiIndex.from_product(
+        dat = self.data_availability.set_index(
+            [self.data_availability["Facility_ID"].astype(int), self.data_availability["Item_Code"].astype(int)]
+        )["Pr_Available"]
+
+        # Confirm that there is an estimate for every item_code at every facility_id
+        full_index = pd.MultiIndex.from_product(
                 [self._all_fac_ids, self._all_item_codes], names=["Facility_ID", "Item_Code"]
-            ),
-            data=float("nan"),
-        ).combine_first(
-            self.data_availability.set_index(["Facility_ID", "Item_Code"])[
-                "Pr_Available"
-            ]
         )
-
-        # Merge in original dataset and use the mean in that facility_id to impute availability of missing item_codes
-        dat = dat.groupby("Facility_ID").transform(lambda x: x.fillna(x.mean()))
-        # ... and also impute availability for any facility_ids for which no data, based on all other facilities
-        dat = dat.groupby("Item_Code").transform(lambda x: x.fillna(x.mean()))
-
-        # Check no missing values
+        pd.testing.assert_index_equal(full_index, dat.index, check_order=False)
         assert not dat.isnull().any()
 
         return dat
