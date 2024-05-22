@@ -238,9 +238,7 @@ def do_at_generic_first_appt_emergency(hsi_event: HSI_Event, squeeze_factor):
 
     proposed_df_updates = {}
 
-    for name, module in modules.items():
-        if name == "CardioMetabolicDisorders":
-            continue
+    for module in modules.values():
         event_info, df_updates = module.do_at_generic_first_appt_emergency(
             patient_id=person_id,
             patient_details=patient_details,
@@ -300,23 +298,23 @@ def do_at_generic_first_appt_emergency(hsi_event: HSI_Event, squeeze_factor):
                                                              hsi_event=hsi_event)
 
     # ------ CARDIO-METABOLIC DISORDERS ------
-    if 'CardioMetabolicDisorders' in sim.modules:
-        event_info, _ = modules[
-            "CardioMetabolicDisorders"
-        ].do_at_generic_first_appt_emergency(
-            patient_id=person_id,
-            patient_details=patient_details,
-            symptoms=symptoms,
-            diagnosis_fn=diagnosis_fn,
-            consumables_checker=consumables_fn,
-            facility_level=facility_level,
-            treatment_id=treatment_id,
-        )
-        # Schedule any requested updates
-        for info in event_info:
-            event = info[0]
-            options = info[1]
-            schedule_hsi(event, **options)
+    # if 'CardioMetabolicDisorders' in sim.modules:
+    #     event_info, _ = modules[
+    #         "CardioMetabolicDisorders"
+    #     ].do_at_generic_first_appt_emergency(
+    #         patient_id=person_id,
+    #         patient_details=patient_details,
+    #         symptoms=symptoms,
+    #         diagnosis_fn=diagnosis_fn,
+    #         consumables_checker=consumables_fn,
+    #         facility_level=facility_level,
+    #         treatment_id=treatment_id,
+    #     )
+    #     # Schedule any requested updates
+    #     for info in event_info:
+    #         event = info[0]
+    #         options = info[1]
+    #         schedule_hsi(event, **options)
 
     if "Epilepsy" in sim.modules:
         if 'seizures' in symptoms:
