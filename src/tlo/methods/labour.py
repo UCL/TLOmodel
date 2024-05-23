@@ -605,8 +605,8 @@ class Labour(Module):
                                                          'antihypertensives'),
         'la_postpartum_haem': Property(Types.BOOL, 'whether the woman has experienced an postpartum haemorrhage in this'
                                                    'delivery'),
-        'la_postpartum_haem_treatment': Property(Types.INT, ' Treatment for received for postpartum haemorrhage '
-                                                            '(bitset)'),
+        'la_postpartum_haem_treatment': Property(Types.BITSET, ' Treatment for received for postpartum haemorrhage '
+                                                               '(bitset)'),
         'la_has_had_hysterectomy': Property(Types.BOOL, 'whether this woman has had a hysterectomy as treatment for a '
                                                         'complication of labour, and therefore is unable to conceive'),
         'la_date_most_recent_delivery': Property(Types.DATE, 'date of on which this mother last delivered'),

@@ -155,12 +155,16 @@ class HSI_BaseGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
                     **module_patient_updates,
                 }
 
-        # Perform any DataFrame updates that were requested, all in one go.
-        df.loc[self.target, proposed_patient_details_updates.keys()] = proposed_patient_details_updates.values()
+        # Perform any DataFrame updates that were requested, all in one go
+        if proposed_patient_details_updates:
+            df.loc[
+                self.target, proposed_patient_details_updates.keys()
+            ] = proposed_patient_details_updates.values()
 
     def _module_order(self, module_list: Iterable[str]) -> List[str]:
         """"""
         return sort_preserving_order(module_list, self.MODULE_ORDER_ON_APPLY)
+
 
     def apply(self, person_id, squeeze_factor=0.) -> None:
         """

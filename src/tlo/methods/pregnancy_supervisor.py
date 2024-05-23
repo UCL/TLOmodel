@@ -403,7 +403,7 @@ class PregnancySupervisor(Module):
 
         'ps_anc4': Property(Types.BOOL, 'Whether this woman is predicted to attend 4 or more antenatal care visits '
                                         'during her pregnancy'),
-        'ps_abortion_complications': Property(Types.INT, 'Bitset column holding types of abortion complication'),
+        'ps_abortion_complications': Property(Types.BITSET, 'Bitset column holding types of abortion complication'),
         'ps_prev_spont_abortion': Property(Types.BOOL, 'Whether this woman has had any previous pregnancies end in '
                                                        'spontaneous abortion'),
         'ps_prev_stillbirth': Property(Types.BOOL, 'Whether this woman has had any previous pregnancies end in '

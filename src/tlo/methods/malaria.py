@@ -801,7 +801,6 @@ class Malaria(Module):
                     )
         return patient_details_updates
 
-
 class MalariaPollingEventDistrict(RegularEvent, PopulationScopeEventMixin):
     """
     this calls functions to assign new malaria infections

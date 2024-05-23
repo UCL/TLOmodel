@@ -88,9 +88,10 @@ def scenario_run(scenario_file, draw_only, draw: tuple, output_dir=None):
 @click.option("--asserts-on", type=bool, default=False, is_flag=True, help="Enable assertions in simulation run.")
 @click.option("--more-memory", type=bool, default=False, is_flag=True,
               help="Request machine wth more memory (for larger population sizes).")
+@click.option("--image-tag", type=str, help="Tag of the Docker image to use.")
 @click.option("--keep-pool-alive", type=bool, default=False, is_flag=True, hidden=True)
 @click.pass_context
-def batch_submit(ctx, scenario_file, asserts_on, more_memory, keep_pool_alive):
+def batch_submit(ctx, scenario_file, asserts_on, more_memory, keep_pool_alive, image_tag=None):
     """Submit a scenario to the batch system.
 
     SCENARIO_FILE is path to file containing scenario class.
@@ -180,8 +181,14 @@ def batch_submit(ctx, scenario_file, asserts_on, more_memory, keep_pool_alive):
         password=config["REGISTRY"]["KEY"],
     )
 
-    # Name of the image in the registry
-    image_name = config["REGISTRY"]["SERVER"] + "/" + config["REGISTRY"]["IMAGE_NAME"]
+    # url of the docker image to run the tasks
+    image_name = f"{config['REGISTRY']['SERVER']}/{config['REGISTRY']['IMAGE']}"
+
+    # use the supplied image tag if provided, otherwise use the default
+    if image_tag is None:
+        image_name = f"{image_name}:{config['REGISTRY']['DEFAULT_TAG']}"
+    else:
+        image_name = f"{image_name}:{image_tag}"
 
     # Create container configuration, prefetching Docker images from the container registry
     container_conf = batch_models.ContainerConfiguration(
@@ -469,11 +476,11 @@ def print_basic_job_details(job: dict):
 
 
 @cli.command()
-@click.argument("job_id", type=str)
+@click.argument("job_ids", type=str, nargs=-1)
 @click.option("--username", type=str, hidden=True)
 @click.option("--verbose", default=False, is_flag=True, hidden=True)
 @click.pass_context
-def batch_download(ctx, job_id, username, verbose):
+def batch_download(ctx, job_ids, username, verbose):
     """Download output files for a job."""
     config = load_config(ctx.obj["config_file"])
 
@@ -518,17 +525,18 @@ def batch_download(ctx, job_id, username, verbose):
     share_client = ShareClient.from_connection_string(config['STORAGE']['CONNECTION_STRING'],
                                                       config['STORAGE']['FILESHARE'])
 
-    # if the job directory exist, exit with error
-    top_level = f"{username}/{job_id}"
-    destination = Path(".", "outputs", top_level)
-    if os.path.exists(destination):
-        print("ERROR: Local directory already exists. Please move or delete.")
-        print("Directory:", destination)
-        return
+    for job_id in job_ids:
+        # if the job directory exist, print error and continue to next job_id
+        top_level = f"{username}/{job_id}"
+        destination = Path(".", "outputs", top_level)
+        if os.path.exists(destination):
+            print("ERROR: Local directory already exists. Please move or delete.")
+            print("Directory:", destination)
+            continue
 
-    print(f"Downloading {top_level}")
-    walk_fileshare(top_level)
-    print("\rDownload complete.              ")
+        print(f"Downloading {top_level}")
+        walk_fileshare(top_level)
+        print("\rDownload complete.              ")
 
 
 def load_config(config_file):

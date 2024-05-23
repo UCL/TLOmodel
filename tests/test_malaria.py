@@ -40,14 +40,15 @@ def check_dtypes(simulation):
     orig = simulation.population.new_row
     assert (df.dtypes == orig.dtypes).all()
 
-
 # Create the HSI event that is notionally doing the call on diagnostic algorithm
 class DummyHSIEvent(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         self.TREATMENT_ID = "DummyHSIEvent"
 
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+        the_appt_footprint = self.sim.modules[
+            "HealthSystem"
+        ].get_blank_appt_footprint()
         the_appt_footprint["Under5OPD"] = 1  # This requires one out patient
 
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
@@ -56,7 +57,6 @@ class DummyHSIEvent(HSI_Event, IndividualScopeEventMixin):
 
     def apply(self, person_id, squeeze_factor):
         pass
-
 
 @pytest.fixture
 def sim(seed):
@@ -127,7 +127,6 @@ def test_sims(sim):
     # if on treatment, must have treatment start date
     for person in df.index[(df.ma_tx == "uncomplicated")]:
         assert not pd.isnull(df.at[person, "ma_date_tx"])
-
 
 # remove scheduled rdt testing and disable health system, should be no rdts and no treatment
 # increase cfr for severe cases (all severe cases will die)
@@ -225,7 +224,6 @@ def test_schedule_rdt_for_all(sim):
 
     # check clinical counter is working
     assert sum(df["ma_clinical_counter"]) > 0
-
 
 @pytest.fixture
 def setup_simulation_for_dx_algorithm_test(sim):

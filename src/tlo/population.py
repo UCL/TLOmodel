@@ -1,8 +1,7 @@
 """The Person and Population classes."""
-
+from __future__ import annotations
 import math
-from collections import namedtuple
-from typing import Any, Tuple, Type, TypeAlias
+from typing import Any, Dict
 
 import pandas as pd
 
@@ -11,8 +10,29 @@ from tlo import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-PatientDetails: TypeAlias = Tuple[Any]
-PatientDetailsType: TypeAlias = Type[Tuple[Any]]
+class PatientDetails:
+    """Read-only memoized view of population dataframe row."""
+    
+    def __init__(self, population_dataframe: pd.DataFrame, person_id: int):
+        self._population_dataframe = population_dataframe
+        self._person_id = person_id
+        self._property_cache: Dict[str, Any] = {}
+        
+    def __getitem__(self, key: str) -> Any:
+        try:
+            return self._property_cache[key]
+        except KeyError:
+            value = self._population_dataframe.at[self._person_id, key]
+            self._property_cache[key] = value
+            return value     
+        
+    def __getattr__(self, name: str) -> Any:
+        try:
+            return self[name]
+        except KeyError as e:
+            msg = f"'{type(self).__name__}' object has no attribute '{name}'"
+            raise AttributeError(msg) from e
+    
 
 
 class Population:
@@ -28,7 +48,6 @@ class Population:
     """
 
     __slots__ = (
-        "_patient_details_readonly_type",
         "props",
         "sim",
         "initial_size",
@@ -71,12 +90,6 @@ class Population:
 
         # use the person_id of the next person to be added to the dataframe to increase capacity
         self.next_person_id = initial_size
-
-        # create the PatientDetails type now the DataFrame rows have been fixed.
-        # This saves reconstructing the PatientDetailsType each time we want to read a row.
-        self._patient_details_readonly_type: PatientDetailsType = namedtuple(
-            "PatientDetails", self.props.columns
-        )
 
     def _create_props(self, size):
         """Internal helper function to create a properties dataframe.
@@ -141,13 +154,13 @@ class Population:
 
     def row_in_readonly_form(self, patient_index: int) -> PatientDetails:
         """
-        Extract a row from the population DataFrame in read-only format.
+        Extract a lazily evaluated, read-only view of a row of the population dataframe.
         
-        The object returned is a subclass of Tuple, with named attributes
-        corresponding to the DataFrame columns. tHese attributes can be
-        referenced by the . syntax or getattr methods.
+        The object returned represents the properties of an individual with properties
+        accessible either using dot based attribute access or squared bracket based 
+        indexing using string column names.
 
-        :param patient_index: Row index of the DataFrame row to extract.
-        :returns: DataFrame row values for the requested row.
+        :param patient_index: Row index of the dataframe row to extract.
+        :returns: Object allowing read-only access to an individuals properties.
         """
-        return self._patient_details_readonly_type(*self.props.loc[patient_index])
+        return PatientDetails(self.props, patient_index)

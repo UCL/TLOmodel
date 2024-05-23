@@ -1,14 +1,14 @@
-"""This Scenario file run the model under different assumptions for the HealthSystem Mode in order to estimate the
-impact that is achieved under each (relative to there being no health system).
+"""This Scenario file run the model under different assumptions for HR capabilities expansion in order to estimate the
+impact that is achieved under each.
 
 Run on the batch system using:
 ```
-tlo batch-submit src/scripts/healthsystem/impact_of_policy/scenario_impact_of_policy.py
+tlo batch-submit src/scripts/healthsystem/impact_of_policy/scenario_impact_of_const_capabilities_expansion.py
 ```
 
 or locally using:
 ```
-tlo scenario-run src/scripts/healthsystem/impact_of_policy/scenario_impact_of_policy.py
+tlo scenario-run src/scripts/healthsystem/impact_of_policy/scenario_impact_of_const_capabilities_expansion.py
 ```
 
 """
@@ -20,6 +20,7 @@ import pandas as pd
 from tlo import Date, logging
 from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios
 from tlo.methods.fullmodel import fullmodel
+from tlo.methods.scenario_switcher import ScenarioSwitcher
 from tlo.scenario import BaseScenario
 
 
@@ -28,7 +29,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = self.start_date + pd.DateOffset(years=31) #CHECK
+        self.end_date = self.start_date + pd.DateOffset(years=31)
         self.pop_size = 100_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
@@ -48,7 +49,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
         }
 
     def modules(self):
-        return fullmodel(resourcefilepath=self.resources)
+        return fullmodel(resourcefilepath=self.resources) + [ScenarioSwitcher(resourcefilepath=self.resources)]
 
     def draw_parameters(self, draw_number, rng):
         if draw_number < self.number_of_draws:
@@ -71,11 +72,11 @@ class ImpactOfHealthSystemMode(BaseScenario):
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
-                    # MUST ADD SWITCH TO PERFECT CONSUMABLE AVAILABILITY IN 2018
                      "HealthSystem": {
                         "yearly_HR_scaling_mode": "no_scaling",
                         "year_mode_switch": 2019,
                         "mode_appt_constraints_postSwitch": 2,
+                        "scale_to_effective_capabilities": True,
                         "policy_name": "Naive",
                         "tclose_overwrite": 1,
                         "tclose_days_offset_overwrite": 7,
@@ -85,6 +86,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                       },
                     }
                 ),
+                
             "GDP growth":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
@@ -93,6 +95,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                         "yearly_HR_scaling_mode": "GDP_growth",
                         "year_mode_switch": 2019,
                         "mode_appt_constraints_postSwitch": 2,
+                        "scale_to_effective_capabilities": True,
                         "policy_name": "Naive",
                         "tclose_overwrite": 1,
                         "tclose_days_offset_overwrite": 7,
@@ -102,6 +105,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                       },
                     }
                 ),
+                
             "GDP growth fHE growth case 1":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
@@ -110,6 +114,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                         "yearly_HR_scaling_mode": "GDP_growth_fHE_case1",
                         "year_mode_switch": 2019,
                         "mode_appt_constraints_postSwitch": 2,
+                        "scale_to_effective_capabilities": True,
                         "policy_name": "Naive",
                         "tclose_overwrite": 1,
                         "tclose_days_offset_overwrite": 7,
@@ -119,6 +124,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                       },
                     }
                 ),
+                                
             "GDP growth fHE growth case 3":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
@@ -127,6 +133,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                         "yearly_HR_scaling_mode": "GDP_growth_fHE_case3",
                         "year_mode_switch": 2019,
                         "mode_appt_constraints_postSwitch": 2,
+                        "scale_to_effective_capabilities": True,
                         "policy_name": "Naive",
                         "tclose_overwrite": 1,
                         "tclose_days_offset_overwrite": 7,
@@ -136,6 +143,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                       },
                     }
                 ),
+                                                
             "GDP growth fHE growth case 4":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
@@ -144,6 +152,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                         "yearly_HR_scaling_mode": "GDP_growth_fHE_case4",
                         "year_mode_switch": 2019,
                         "mode_appt_constraints_postSwitch": 2,
+                        "scale_to_effective_capabilities": True,
                         "policy_name": "Naive",
                         "tclose_overwrite": 1,
                         "tclose_days_offset_overwrite": 7,
@@ -153,6 +162,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                       },
                     }
                 ),
+                                                
             "GDP growth fHE growth case 6":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
@@ -161,6 +171,83 @@ class ImpactOfHealthSystemMode(BaseScenario):
                         "yearly_HR_scaling_mode": "GDP_growth_fHE_case6",
                         "year_mode_switch": 2019,
                         "mode_appt_constraints_postSwitch": 2,
+                        "scale_to_effective_capabilities": True,
+                        "policy_name": "Naive",
+                        "tclose_overwrite": 1,
+                        "tclose_days_offset_overwrite": 7,
+                        "use_funded_or_actual_staffing": "actual",
+                        "year_cons_availability_switch": 2019,
+                        "cons_availability_postSwitch": "all",
+                      },
+                    }
+                ),
+                
+            "GDP growth FL case 1 const i":
+                mix_scenarios(
+                    get_parameters_for_status_quo(),
+                    {
+                     "HealthSystem": {
+                        "yearly_HR_scaling_mode": "GDP_growth_FL_case1_const_tot_i",
+                        "year_mode_switch": 2019,
+                        "mode_appt_constraints_postSwitch": 2,
+                        "scale_to_effective_capabilities": True,
+                        "policy_name": "Naive",
+                        "tclose_overwrite": 1,
+                        "tclose_days_offset_overwrite": 7,
+                        "use_funded_or_actual_staffing": "actual",
+                        "year_cons_availability_switch": 2019,
+                        "cons_availability_postSwitch": "all",
+                      },
+                    }
+                ),
+                
+            "GDP growth FL case 2 const i":
+                mix_scenarios(
+                    get_parameters_for_status_quo(),
+                    {
+                     "HealthSystem": {
+                        "yearly_HR_scaling_mode": "GDP_growth_FL_case2_const_tot_i",
+                        "year_mode_switch": 2019,
+                        "mode_appt_constraints_postSwitch": 2,
+                        "scale_to_effective_capabilities": True,
+                        "policy_name": "Naive",
+                        "tclose_overwrite": 1,
+                        "tclose_days_offset_overwrite": 7,
+                        "use_funded_or_actual_staffing": "actual",
+                        "year_cons_availability_switch": 2019,
+                        "cons_availability_postSwitch": "all",
+                      },
+                    }
+                ),
+                
+            "GDP growth FL case 1 vary i":
+                mix_scenarios(
+                    get_parameters_for_status_quo(),
+                    {
+                     "HealthSystem": {
+                        "yearly_HR_scaling_mode": "GDP_growth_FL_case1_vary_tot_i",
+                        "year_mode_switch": 2019,
+                        "mode_appt_constraints_postSwitch": 2,
+                        "scale_to_effective_capabilities": True,
+                        "policy_name": "Naive",
+                        "tclose_overwrite": 1,
+                        "tclose_days_offset_overwrite": 7,
+                        "use_funded_or_actual_staffing": "actual",
+                        "year_cons_availability_switch": 2019,
+                        "cons_availability_postSwitch": "all",
+                      },
+                    }
+                ),
+                                
+            "GDP growth FL case 2 vary i":
+                mix_scenarios(
+                    get_parameters_for_status_quo(),
+                    {
+                     "HealthSystem": {
+                        "yearly_HR_scaling_mode": "GDP_growth_FL_case2_vary_tot_i",
+                        "year_mode_switch": 2019,
+                        "mode_appt_constraints_postSwitch": 2,
+                        "scale_to_effective_capabilities": True,
                         "policy_name": "Naive",
                         "tclose_overwrite": 1,
                         "tclose_days_offset_overwrite": 7,

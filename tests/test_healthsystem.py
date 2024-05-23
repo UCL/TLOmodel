@@ -29,6 +29,7 @@ from tlo.methods.consumables import Consumables, create_dummy_data_for_cons_avai
 from tlo.methods.fullmodel import fullmodel
 from tlo.methods.healthsystem import HealthSystem, HealthSystemChangeParameters
 from tlo.methods.hsi_event import HSI_Event
+from tlo.util import BitsetDType
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
@@ -188,7 +189,11 @@ def test_run_no_interventions_allowed(tmpdir, seed):
     # Do the checks for the symptom manager: some symptoms should be registered
     assert sim.population.props.loc[:, sim.population.props.columns.str.startswith('sy_')] \
         .apply(lambda x: x != set()).any().any()
-    assert (sim.population.props.loc[:, sim.population.props.columns.str.startswith('sy_')].dtypes == 'int64').all()
+    assert (
+        sim.population.props.loc[
+            :, sim.population.props.columns.str.startswith('sy_')
+        ].dtypes == BitsetDType
+    ).all()
     assert not pd.isnull(sim.population.props.loc[:, sim.population.props.columns.str.startswith('sy_')]).any().any()
 
     # Check that no one was cured of mockitis:
@@ -393,6 +398,86 @@ def test_run_in_mode_1_with_capacity(tmpdir, seed):
 
     # Check that some mockitis cured occurred (though health system)
     assert any(sim.population.props['mi_status'] == 'P')
+
+
+@pytest.mark.slow
+def test_rescaling_capabilities_based_on_squeeze_factors(tmpdir, seed):
+    # Capabilities should increase when a HealthSystem that has low capabilities changes mode with
+    # the option `scale_to_effective_capabilities` set to `True`.
+
+    # Establish the simulation object
+    sim = Simulation(
+        start_date=start_date,
+        seed=seed,
+        log_config={
+            "filename": "log",
+            "directory": tmpdir,
+            "custom_levels": {
+                "tlo.methods.healthsystem": logging.DEBUG,
+            }
+        }
+    )
+
+    # Register the core modules
+    # Set the year in which mode is changed to start_date + 1 year, and mode after that still 1.
+    # Check that in second year, squeeze factor is smaller on average.
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           capabilities_coefficient=0.0000001,  # This will mean that capabilities are
+                                                                                # very close to 0 everywhere.
+                                                                                # (If the value was 0, then it would
+                                                                                # be interpreted as the officers NEVER
+                                                                                # being available at a facility,
+                                                                                # which would mean the HSIs should not
+                                                                                # run (as opposed to running with
+                                                                                # a very high squeeze factor)).
+                 ),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 mockitis.Mockitis(),
+                 chronicsyndrome.ChronicSyndrome()
+                 )
+
+    # Define the "switch" from Mode 1 to Mode 1, with the rescaling
+    hs_params = sim.modules['HealthSystem'].parameters
+    hs_params['mode_appt_constraints'] = 1
+    hs_params['mode_appt_constraints_postSwitch'] = 1
+    hs_params['year_mode_switch'] = start_date.year + 1
+    hs_params['scale_to_effective_capabilities'] = True
+
+    # Run the simulation
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=end_date)
+    check_dtypes(sim)
+
+    # read the results
+    output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
+
+    # Do the checks
+    assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
+    hsi_events = output['tlo.methods.healthsystem']['HSI_Event']
+    hsi_events['date'] = pd.to_datetime(hsi_events['date']).dt.year
+
+    # Check that all squeeze factors were high in 2010, but not all were high in 2011
+    # thanks to rescaling of capabilities
+    assert (
+        hsi_events.loc[
+            (hsi_events['Person_ID'] >= 0) &
+            (hsi_events['Number_By_Appt_Type_Code'] != {}) &
+            (hsi_events['date'] == 2010),
+            'Squeeze_Factor'
+        ] >= 100.0
+    ).all()  # All the events that had a non-blank footprint experienced high squeezing.
+    assert not (
+        hsi_events.loc[
+            (hsi_events['Person_ID'] >= 0) &
+            (hsi_events['Number_By_Appt_Type_Code'] != {}) &
+            (hsi_events['date'] == 2011),
+            'Squeeze_Factor'
+        ] >= 100.0
+    ).all()  # All the events that had a non-blank footprint experienced high squeezing.
 
 
 @pytest.mark.slow
@@ -863,7 +948,7 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
     detailed_consumables = log["tlo.methods.healthsystem"]['Consumables']
 
     assert {'date', 'TREATMENT_ID', 'did_run', 'Squeeze_Factor', 'priority', 'Number_By_Appt_Type_Code', 'Person_ID',
-            'Facility_Level', 'Facility_ID', 'Event_Name',
+            'Facility_Level', 'Facility_ID', 'Event_Name', 'Equipment'
             } == set(detailed_hsi_event.columns)
     assert {'date', 'Frac_Time_Used_Overall', 'Frac_Time_Used_By_Facility_ID', 'Frac_Time_Used_By_OfficerType',
             } == set(detailed_capacity.columns)
@@ -1261,6 +1346,7 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
         'capabilities_coefficient': 0.5,
         'cons_availability': 'all',
         'beds_availability': 'default',
+        'equip_availability': 'default',
     }
     new_parameters = {
         'mode_appt_constraints': 2,
@@ -1268,6 +1354,7 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
         'capabilities_coefficient': 1.0,
         'cons_availability': 'none',
         'beds_availability': 'none',
+        'equip_availability': 'all',
     }
 
     class CheckHealthSystemParameters(RegularEvent, PopulationScopeEventMixin):
@@ -1283,6 +1370,7 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
             _params['capabilities_coefficient'] = hs.capabilities_coefficient
             _params['cons_availability'] = hs.consumables.cons_availability
             _params['beds_availability'] = hs.bed_days.availability
+            _params['equip_availability'] = hs.equipment.availability
 
             logger = logging.getLogger('tlo.methods.healthsystem')
             logger.info(key='CheckHealthSystemParameters', data=_params)
