@@ -20,3 +20,4 @@ source(paste0(path_to_scripts, "feature_manipulation.R"))
 source(paste0(path_to_scripts, "regression_analysis.R"))
 
 # Prediction
+source(paste0(path_to_scripts, "predict.R"))
