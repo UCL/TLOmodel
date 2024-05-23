@@ -7,7 +7,7 @@ the onset of symptoms. Non-emergency symptoms lead to `HSI_GenericFirstApptAtFac
 lead to `HSI_GenericEmergencyFirstApptAtFacilityLevel1`.
 """
 from collections import namedtuple
-from typing import TYPE_CHECKING, OrderedDict
+from typing import TYPE_CHECKING, Any, Iterable, List, OrderedDict
 
 import pandas as pd
 
@@ -28,6 +28,46 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+
+FIRST_APPT_NON_EMERGENCY_MODULE_ORDER = [
+    "Measles",
+    "Hiv",
+    "RTI",
+    "Schisto",
+    "Malaria",
+    "Diarrhoea",
+    "Alri",
+    "Stunting",
+    "OesophagealCancer",
+    "BladderCancer",
+    "ProstateCancer",
+    "OtherAdultCancer",
+    "BreastCancer",
+    "Depression",
+    "CardioMetabolicDisorders",
+    "Copd",
+]
+
+def sort_preserving_order(to_sort: Iterable[Any], relative_to: Iterable[Any]) -> List:
+    """
+    Sort the items in a given list using the relative ordering of another list.
+
+    Items in the list that do not appear in the relative ordering are assumed
+    to be of the lowest priority (moved to the back of the sorted list).
+
+    :param to_sort: List of values to sort. Sorting returns a copy.
+    :param relative_to: List of values that appear in to_sort,
+    defining relative order.
+    """
+
+    def sort_key(item):
+        try:
+            return relative_to.index(item)
+        except ValueError:
+            return len(relative_to)
+
+    return sorted(to_sort, key=sort_key)
 
 
 class HSI_GenericNonEmergencyFirstAppt(HSI_Event, IndividualScopeEventMixin):
@@ -137,9 +177,9 @@ def do_at_generic_first_appt_non_emergency(hsi_event: HSI_Event, squeeze_factor)
 
     proposed_df_updates = {}
 
-    for name, module in modules.items():
-        if name == "CardioMetabolicDisorders":
-            continue
+    module_order = sort_preserving_order(modules.keys(), FIRST_APPT_NON_EMERGENCY_MODULE_ORDER)
+    for name in module_order:
+        module = modules[name]
         event_info, df_updates = module.do_at_generic_first_appt(
             patient_id=person_id,
             patient_details=patient_details,
@@ -160,24 +200,6 @@ def do_at_generic_first_appt_non_emergency(hsi_event: HSI_Event, squeeze_factor)
 
     # Perform any DataFrame updates that were requested, all in one go.
     df.loc[person_id, proposed_df_updates.keys()] = proposed_df_updates.values()
-
-    if "CardioMetabolicDisorders" in modules:
-        event_info, _ = modules[
-            "CardioMetabolicDisorders"
-        ].do_at_generic_first_appt(
-            patient_id=person_id,
-            patient_details=patient_details,
-            symptoms=symptoms,
-            diagnosis_fn=diagnosis_fn,
-            consumables_checker=consumables_fn,
-            facility_level=facility_level,
-            treatment_id=treatment_id,
-        )
-        # Schedule any requested updates
-        for info in event_info:
-            event = info[0]
-            options = info[1]
-            schedule_hsi(event, **options)
 
     # ----------------------------------- ALL AGES -----------------------------------
 
