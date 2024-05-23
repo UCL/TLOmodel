@@ -2,16 +2,16 @@
 This file defines a batch run through which the hiv and tb modules are run across a set of parameter values
 
 check the batch configuration gets generated without error:
-tlo scenario-run --draw-only src/scripts/schisto/calibration_batch_runs.py
+tlo scenario-run --draw-only src/scripts/schistosomiasis/calibrate_batch_runs.py
 
 Run locally:
-tlo scenario-run src/scripts/schisto/calibration_batch_runs.py
+tlo scenario-run src/scripts/schistosomiasis/calibrate_batch_runs.py
 
 or execute a single run:
-tlo scenario-run src/scripts/schisto/calibration_batch_runs.py --draw 1 0
+tlo scenario-run src/scripts/schistosomiasis/calibrate_batch_runs.py --draw 1 0
 
 Run on the batch system using:
-tlo batch-submit src/scripts/schisto/calibration_batch_runs.py
+tlo batch-submit src/scripts/schistosomiasis/calibrate_batch_runs.py
 
 """
 
