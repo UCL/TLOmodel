@@ -536,6 +536,10 @@ class Demography(Module):
             if person.hs_is_inpatient:
                 self.sim.modules['HealthSystem'].remove_beddays_footprint(person_id=individual_id)
 
+        # create new birth to balance population size
+        if 'ReallySimplifiedBirths' in self.sim.modules:
+            self.sim.modules['ReallySimplifiedBirths'].make_pregnancy()
+
     def create_mappers_from_causes_of_death_to_label(self):
         """Use a helper function to create mappers for causes of death to label."""
         return create_mappers_from_causes_to_label(

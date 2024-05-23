@@ -84,6 +84,8 @@ class Schisto(Module):
         'MDA_coverage_prognosed': Parameter(Types.DATA_FRAME,
                                             'Probability of getting PZQ in the MDA for PSAC, SAC and Adults '
                                             'in future rounds, with the frequency given in months'),
+        'scenario': Parameter(Types.INT,
+                                               'Scenario used to reset parameters to run calibration sims'),
     }
 
     def __init__(self, name=None, resourcefilepath=None, mda_execute=True):
@@ -143,8 +145,89 @@ class Schisto(Module):
     def initialise_population(self, population):
         """Set the property values for the initial population."""
 
+        p = self.parameters
         df = population.props
         df.loc[df.is_alive, f'{self.module_prefix}_last_PZQ_date'] = pd.NaT
+
+        # reset all to one district if doing calibration runs
+        if p['scenario'] > 0:
+
+            df['district_num_of_residence'] = df['district_num_of_residence'][0]
+
+            # replacement_value = df['district_of_residence'].cat.categories[0]
+            replacement_value = 'Blantyre'
+            # Assign the replacement value to the entire column while preserving categorical dtype
+            df['district_of_residence'] = pd.Categorical([replacement_value] * len(df),
+                                                         categories=df['district_of_residence'].cat.categories)
+
+        if p['scenario'] == 1:
+            # select haematobium starting points
+            mwb = 0.005
+            prev = 0.005
+
+            tmp = p["sh_mean_worm_burden2010"]
+            tmp[:] = mwb
+            p["sh_mean_worm_burden2010"][:] = tmp
+
+            tmp = p["sh_prevalence_2010"]
+            tmp[:] = prev
+            p["sh_prevalence_2010"][:] = tmp
+            print(p["sh_prevalence_2010"])
+
+            # set mansoni mwb / prevalence to 0
+            tmp = p["sm_mean_worm_burden2010"]
+            tmp[:] = 0
+            p["sm_mean_worm_burden2010"][:] = tmp
+
+            tmp = p["sm_prevalence_2010"]
+            tmp[:] = 0
+            p["sm_prevalence_2010"][:] = tmp
+
+        if p['scenario'] == 2:
+            # select haematobium starting points
+            mwb = 0.01
+            prev = 0.005
+
+            tmp = p["sh_mean_worm_burden2010"]
+            tmp[:] = mwb
+            p["sh_mean_worm_burden2010"][:] = tmp
+
+            tmp = p["sh_prevalence_2010"]
+            tmp[:] = prev
+            p["sh_prevalence_2010"][:] = tmp
+            print(p["sh_prevalence_2010"])
+
+            # set mansoni mwb / prevalence to 0
+            tmp = p["sm_mean_worm_burden2010"]
+            tmp[:] = 0
+            p["sm_mean_worm_burden2010"][:] = tmp
+
+            tmp = p["sm_prevalence_2010"]
+            tmp[:] = 0
+            p["sm_prevalence_2010"][:] = tmp
+
+        if p['scenario'] == 3:
+            # select haematobium starting points
+            mwb = 0.005
+            prev = 0.01
+
+            tmp = p["sh_mean_worm_burden2010"]
+            tmp[:] = mwb
+            p["sh_mean_worm_burden2010"][:] = tmp
+
+            tmp = p["sh_prevalence_2010"]
+            tmp[:] = prev
+            p["sh_prevalence_2010"][:] = tmp
+            print(p["sh_prevalence_2010"])
+
+            # set mansoni mwb / prevalence to 0
+            tmp = p["sm_mean_worm_burden2010"]
+            tmp[:] = 0
+            p["sm_mean_worm_burden2010"][:] = tmp
+
+            tmp = p["sm_prevalence_2010"]
+            tmp[:] = 0
+            p["sm_prevalence_2010"][:] = tmp
 
         for _spec in self.species.values():
             _spec.initialise_population(population)
@@ -643,7 +726,7 @@ class SchistoSpecies:
             in_the_district = df.index[df['district_of_residence'] == district]
 
             # get reservoir in district
-            num_infected = (len(in_the_district) * params['prevalence_2010'][district]) if len(in_the_district) else 0
+            # num_infected = (len(in_the_district) * params['prevalence_2010'][district]) if len(in_the_district) else 0
             # mean worm burden is estimated across whole district (not just infected people)
             # reservoir = num_infected * params['mean_worm_burden2010'][district]
             reservoir = len(in_the_district) * params['mean_worm_burden2010'][district]

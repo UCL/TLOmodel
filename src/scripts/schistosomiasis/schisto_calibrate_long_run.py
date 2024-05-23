@@ -20,9 +20,13 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     schisto,
-    simplified_births,
+    really_simplified_births,
+    # simplified_births,
     symptommanager,
 )
+
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 resourcefilepath = Path("./resources")
 outputpath = Path("./outputs")
@@ -40,15 +44,16 @@ fitted_districts = ['Blantyre', 'Chiradzulu', 'Mulanje', 'Nsanje', 'Nkhotakota',
 species = ('mansoni', 'haematobium')
 
 # %% Run the simulation
-popsize = 50_000
+popsize = 1_000
 
-species_to_calibrate = 'haematobium'
-mwb = 5
-prev = 0.3
+# species_to_calibrate = 'haematobium'
+# mwb = 0.1
+# prev = 0.2
+
 
 def run_simulation(popsize=popsize, mda_execute=False):
     start_date = Date(2010, 1, 1)
-    end_date = Date(2099, 12, 31)
+    end_date = Date(2028, 12, 31)
 
     # For logging, set all modules to WARNING threshold, then alters `Schisto` to level "INFO"
     custom_levels = {
@@ -58,7 +63,7 @@ def run_simulation(popsize=popsize, mda_execute=False):
     }
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date, seed=0, log_config={"filename": __file__[-19:-3],
+    sim = Simulation(start_date=start_date, seed=0, log_config={"filename": "schisto_test_runs",
                                                                 "custom_levels": custom_levels, })
     sim.register(demography.Demography(resourcefilepath=resourcefilepath,
                                        equal_allocation_by_district=False),
@@ -66,59 +71,65 @@ def run_simulation(popsize=popsize, mda_execute=False):
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  # healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  # healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable_and_reject_all=True),
+                 really_simplified_births.ReallySimplifiedBirths(resourcefilepath=resourcefilepath),
                  schisto.Schisto(resourcefilepath=resourcefilepath, mda_execute=mda_execute),
                  )
 
-    # set prevalence for species
-    if species_to_calibrate == 'haematobium':
-        tmp = sim.modules["Schisto"].parameters["sh_mean_worm_burden2010"]
-        tmp[:] = mwb
-        sim.modules["Schisto"].parameters["sh_mean_worm_burden2010"][:] = tmp
+    # # set prevalence for species
+    # if species_to_calibrate == 'haematobium':
+    #     # select haematobium starting points
+    #     tmp = sim.modules["Schisto"].parameters["sh_mean_worm_burden2010"]
+    #     tmp[:] = mwb
+    #     sim.modules["Schisto"].parameters["sh_mean_worm_burden2010"][:] = tmp
+    #
+    #     tmp = sim.modules["Schisto"].parameters["sh_prevalence_2010"]
+    #     tmp[:] = prev
+    #     sim.modules["Schisto"].parameters["sh_prevalence_2010"][:] = tmp
+    #
+    #     # set mansoni prevalence to 0
+    #     tmp = sim.modules["Schisto"].parameters["sm_mean_worm_burden2010"]
+    #     tmp[:] = 0
+    #     sim.modules["Schisto"].parameters["sm_mean_worm_burden2010"][:] = tmp
+    #
+    #     tmp = sim.modules["Schisto"].parameters["sm_prevalence_2010"]
+    #     tmp[:] = 0
+    #     sim.modules["Schisto"].parameters["sm_prevalence_2010"][:] = tmp
+    #
+    # else:
+    #     # set haematobium prevalence to 0
+    #     tmp = sim.modules["Schisto"].parameters["sh_mean_worm_burden2010"]
+    #     tmp[:] = 0
+    #     sim.modules["Schisto"].parameters["sh_mean_worm_burden2010"][:] = tmp
+    #
+    #     tmp = sim.modules["Schisto"].parameters["sh_prevalence_2010"]
+    #     tmp[:] = 0
+    #     sim.modules["Schisto"].parameters["sh_prevalence_2010"][:] = tmp
+    #
+    #     # select mansoni starting points
+    #     tmp = sim.modules["Schisto"].parameters["sm_mean_worm_burden2010"]
+    #     tmp[:] = mwb
+    #     sim.modules["Schisto"].parameters["sm_mean_worm_burden2010"][:] = tmp
+    #
+    #     tmp = sim.modules["Schisto"].parameters["sm_prevalence_2010"]
+    #     tmp[:] = prev
+    #     sim.modules["Schisto"].parameters["sm_prevalence_2010"][:] = tmp
 
-        tmp = sim.modules["Schisto"].parameters["sh_prevalence_2010"]
-        tmp[:] = prev
-        sim.modules["Schisto"].parameters["sh_prevalence_2010"][:] = tmp
-
-        tmp = sim.modules["Schisto"].parameters["sm_mean_worm_burden2010"]
-        tmp[:] = 0
-        sim.modules["Schisto"].parameters["sm_mean_worm_burden2010"][:] = tmp
-
-        tmp = sim.modules["Schisto"].parameters["sm_prevalence_2010"]
-        tmp[:] = 0
-        sim.modules["Schisto"].parameters["sm_prevalence_2010"][:] = tmp
-
-    else:
-        tmp = sim.modules["Schisto"].parameters["sh_mean_worm_burden2010"]
-        tmp[:] = 0
-        sim.modules["Schisto"].parameters["sh_mean_worm_burden2010"][:] = tmp
-
-        tmp = sim.modules["Schisto"].parameters["sh_prevalence_2010"]
-        tmp[:] = 0
-        sim.modules["Schisto"].parameters["sh_prevalence_2010"][:] = tmp
-
-        tmp = sim.modules["Schisto"].parameters["sm_mean_worm_burden2010"]
-        tmp[:] = mwb
-        sim.modules["Schisto"].parameters["sm_mean_worm_burden2010"][:] = tmp
-
-        tmp = sim.modules["Schisto"].parameters["sm_prevalence_2010"]
-        tmp[:] = prev
-        sim.modules["Schisto"].parameters["sm_prevalence_2010"][:] = tmp
+    sim.modules["Schisto"].parameters["scenario"] = 1
 
     # initialise the population
     sim.make_initial_population(n=popsize)
 
-    # allocate all population to one district
-    df = sim.population.props
-
-    df['district_num_of_residence'] = df['district_num_of_residence'][0]
-
-    # replacement_value = df['district_of_residence'].cat.categories[0]
-    replacement_value = 'Blantyre'
-    # Assign the replacement value to the entire column while preserving categorical dtype
-    df['district_of_residence'] = pd.Categorical([replacement_value] * len(df),
-                                                 categories=df['district_of_residence'].cat.categories)
+    # # allocate all population to one district
+    # df = sim.population.props
+    #
+    # df['district_num_of_residence'] = df['district_num_of_residence'][0]
+    #
+    # # replacement_value = df['district_of_residence'].cat.categories[0]
+    # replacement_value = 'Blantyre'
+    # # Assign the replacement value to the entire column while preserving categorical dtype
+    # df['district_of_residence'] = pd.Categorical([replacement_value] * len(df),
+    #                                              categories=df['district_of_residence'].cat.categories)
 
     # start the simulation
     sim.simulate(end_date=end_date)
@@ -143,15 +154,15 @@ def construct_dfs(schisto_log) -> dict:
 
 dfs = construct_dfs(output['tlo.methods.schisto'])
 
-if species_to_calibrate == 'haematobium':
-    df = dfs['infection_status_haematobium']
-else:
-    df = ['infection_status_mansoni']
-
-# select only those columns in district allocated
-filtered_df = df.loc[:, df.columns.get_level_values(1) == 'Blantyre']
-
-filtered_df.to_csv(outputpath / f"Schisto_{species_to_calibrate}_{mwb}_{prev}.csv")
+# if species_to_calibrate == 'haematobium':
+#     df = dfs['infection_status_haematobium']
+# else:
+#     df = ['infection_status_mansoni']
+#
+# # select only those columns in district allocated
+# filtered_df = df.loc[:, df.columns.get_level_values(1) == 'Blantyre']
+#
+# filtered_df.to_csv(outputpath / f"Schisto_{species_to_calibrate}_{mwb}_{prev}.csv")
 
 
 # %% Plot the district-level prevalence at the end of the simulation and compare with data
@@ -237,7 +248,7 @@ for i, _spec in enumerate(species):
     ax.set_ylabel('End of year prevalence')
     ax.set_ylim(0, 1.00)
     ax.get_legend().remove()
-    data.to_csv(outputpath / (f"{_spec}" + '.csv'))
+    # data.to_csv(outputpath / (f"{_spec}" + '.csv'))
 
     # Plot legend only for the last subplot
     # if i == len(species) -1:
