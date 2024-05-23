@@ -938,13 +938,14 @@ class Diarrhoea(Module):
         self,
         patient_id: int,
         patient_details: NamedTuple = None,
+        symptoms: List[str] = None,
         diagnosis_fn: Callable[[str, bool, bool], Any] = None,
         **kwargs,
     ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
         # This routine is called when Diarrhoea is a symptom for a child
         # attending a Generic HSI Appointment. It checks for danger signs
         # and schedules HSI Events appropriately.
-        if patient_details.age_years > 5:
+        if (patient_details.age_years > 5) or "diarrhoea" not in symptoms:
             return [], {}
 
         event_info = []
