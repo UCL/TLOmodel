@@ -2,7 +2,6 @@
 This is the Depression Module.
 """
 from pathlib import Path
-from typing import Any, Callable, Dict, List, NamedTuple, Tuple
 
 import numpy as np
 import pandas as pd
@@ -508,167 +507,63 @@ class Depression(Module):
 
         return av_daly_wt_last_month
 
-    def do_when_suspected_depression(
-        self,
-        person_id: int,
-        diagnosis_fn: Callable[[str, bool, bool], Any] = None,
-        hsi_event: HSI_Event = None,
-        add_to_queue_immediately: bool = True,
-    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
+    def do_on_presentation_to_care(self, person_id, hsi_event):
+        """This member function is called when a person is in an HSI, and there may need to be screening for depression.
         """
-        This is called by any HSI event when depression is suspected or otherwise investigated.
+        df = self.sim.population.props
+        if hsi_event.TREATMENT_ID == "FirstAttendance_NonEmergency":
+            if self.rng.rand() < self.parameters['pr_assessed_for_depression_in_generic_appt_level1']:
+                self.do_when_suspected_depression(person_id=person_id, hsi_event=hsi_event)
 
-        At least one of the diagnosis_fn or hsi_event arguments must be provided; if both 
-        are provided, the hsi_event argument is ignored.
-        - If the hsi_event argument is provided, that event is used to access the diagnosis
-        manager and run diagnosis tests.
-        - If the diagnosis_fn is passed in directly, it is assumed to be a Callable method that
-        runs diagnosis tests.
+        elif hsi_event.TREATMENT_ID == "FirstAttendance_Emergency":
+            symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
+            if 'Injuries_From_Self_Harm' in symptoms:
+                self.do_when_suspected_depression(person_id=person_id, hsi_event=hsi_event)
+                # TODO: Trigger surgical care for injuries.
 
-        :param person_id: Patient's row index in the population DataFrame.
-        :param diagnosis_fn: A function capable of running diagnosis checks on the population.
-        :param hsi_event: The HSI_Event that triggered this call.
-        :param add_to_queue_immediately: If True, any events and DataFrame updates that this
-        function wants to implement will be done at the conclusion of this function. If False,
-        the HSI_Events and their scheduling options will only be returned as output arguments.
-        :returns: Values as per the output of do_at_generic_first_appt().
-        """
-        event_info = []
-        df_updates = {}
+        elif hsi_event.TREATMENT_ID == "AntenatalCare_Outpatient":  # module care_of_women_during_pregnancy
+            if (not df.at[person_id, 'de_ever_diagnosed_depression']) and (
+                self.rng.rand() < self.parameters['pr_assessed_for_depression_for_perinatal_female']
+            ):
+                self.do_when_suspected_depression(person_id, hsi_event)
 
-        if diagnosis_fn is None:
-            assert isinstance(
-                hsi_event, HSI_Event
-            ), "No diagnosis test function, nor HSI_Event instance, supplied."
+        elif hsi_event.TREATMENT_ID == "PostnatalCare_Maternal":  # module labour
+            if (not df.at[person_id, 'de_ever_diagnosed_depression']) and (
+                self.rng.rand() < self.parameters['pr_assessed_for_depression_for_perinatal_female']
+            ):
+                self.do_when_suspected_depression(person_id=person_id, hsi_event=hsi_event)
 
-            def tmp_dx_fn(tests, use_dict: bool = False, report_tried: bool = False):
-                return hsi_event.healthcare_system.dx_manager.run_dx_test(
-                    tests,
-                    hsi_event=hsi_event,
-                    use_dict_for_single=use_dict,
-                    report_dxtest_tried=report_tried,
-                )
-
-            diagnosis_fn = tmp_dx_fn
-
-        # Assess for depression and initiate treatments for depression if positive diagnosis
-        if diagnosis_fn('assess_depression'):
-            # If depressed: diagnose the person with depression
-            df_updates['de_ever_diagnosed_depression'] = True
-
-            scheduling_options = {"priority": 0, "topen": self.sim.date}
-            # Provide talking therapy
-            # (this can occur even if the person has already had talking therapy before)
-            event_info.append(
-                (
-                    HSI_Depression_TalkingTherapy(module=self, person_id=person_id),
-                    scheduling_options,
-                )
-            )
-            # Initiate person on anti-depressants
-            # (at the same facility level as the HSI event that is calling)
-            event_info.append(
-                (
-                    HSI_Depression_Start_Antidepressant(
-                        module=self, person_id=person_id
-                    ),
-                    scheduling_options,
-                )
-            )
-
-        if add_to_queue_immediately:
-            # Schedule any events and population DataFrame changes immediately.
-            # Occurs when this check is triggered by another HSI that is running,
-            # outside of scheduling generic first appointments.
-            for event_and_opts in event_info:
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    hsi_event=event_and_opts[0], **event_and_opts[1]
-                )
-            self.sim.population.props.loc[person_id, df_updates.keys()] = (
-                df_updates.values()
-            )
-        return event_info, df_updates
-
-    def do_at_generic_first_appt(
-        self,
-        patient_id: int,
-        patient_details: NamedTuple = None,
-        symptoms: List[str] = None,
-        diagnosis_fn: Callable[[str, bool, bool], Any] = None,
-        treatment_id: str = None,
-        **kwargs
-    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
-        if patient_details.age_years <= 5:
-            return [], {}
-        else:
-            return self.do_at_generic_first_appt_emergency(
-                patient_id=patient_id,
-                patient_details=patient_details,
-                symptoms=symptoms,
-                diagnosis_fn=diagnosis_fn,
-                treatment_id=treatment_id,
-            )
-
-    def do_at_generic_first_appt_emergency(
-        self,
-        patient_id: int,
-        patient_details: NamedTuple = None,
-        symptoms: List[str] = None,
-        diagnosis_fn: Callable[[str, bool, bool], Any] = None,
-        treatment_id: str = None,
-        **kwargs,
-    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
-        # This member function is called when a person is in an HSI,
-        # and there may need to be screening for depression
-        event_info = []
-        df_updates = {}
-
-        if treatment_id == "FirstAttendance_NonEmergency" and (
-            self.rng.rand()
-            < self.parameters["pr_assessed_for_depression_in_generic_appt_level1"]
-        ):
-            event_info, df_updates = self.do_when_suspected_depression(
-                person_id=patient_id,
-                diagnosis_fn=diagnosis_fn,
-                add_to_queue_immediately=False,
-            )
-        elif (
-            treatment_id == "FirstAttendance_Emergency"
-            and "Injuries_From_Self_Harm" in symptoms
-        ):
-            event_info, df_updates = self.do_when_suspected_depression(
-                person_id=patient_id,
-                diagnosis_fn=diagnosis_fn,
-                add_to_queue_immediately=False,
-            )
-            # TODO: Trigger surgical care for injuries.
-        elif (treatment_id == "AntenatalCare_Outpatient") and (
-            (not patient_details.de_ever_diagnosed_depression)
-            and (
-                self.rng.rand()
-                < self.parameters["pr_assessed_for_depression_for_perinatal_female"]
-            )
-        ):  # module care_of_women_during_pregnancy
-            event_info, df_updates = self.do_when_suspected_depression(
-                person_id=patient_id,
-                diagnosis_fn=diagnosis_fn,
-                add_to_queue_immediately=False,
-            )
-        elif treatment_id == "PostnatalCare_Maternal" and (
-            (not patient_details.de_ever_diagnosed_depression)
-            and (
-                self.rng.rand()
-                < self.parameters["pr_assessed_for_depression_for_perinatal_female"]
-            )
-        ):  # module labour
-            event_info, df_updates = self.do_when_suspected_depression(
-                person_id=patient_id,
-                diagnosis_fn=diagnosis_fn,
-                add_to_queue_immediately=False,
-            )
         else:
             raise NotImplementedError
-        return event_info, df_updates
+
+    def do_when_suspected_depression(self, person_id, hsi_event):
+        """
+        This is called by the a generic HSI event when depression is suspected or otherwise investigated.
+        :param person_id:
+        :param hsi_event: The HSI event that has called this event
+        :return:
+        """
+
+        # Assess for depression and initiate treatments for depression if positive diagnosis
+        if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='assess_depression',
+                                                                   hsi_event=hsi_event
+                                                                   ):
+            # If depressed: diagnose the person with depression
+            self.sim.population.props.at[person_id, 'de_ever_diagnosed_depression'] = True
+
+            # Provide talking therapy (This can occur even if the person has already had talking therapy before)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event=HSI_Depression_TalkingTherapy(module=self, person_id=person_id),
+                priority=0,
+                topen=self.sim.date
+            )
+
+            # Initiate person on anti-depressants (at the same facility level as the HSI event that is calling)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event=HSI_Depression_Start_Antidepressant(module=self, person_id=person_id),
+                priority=0,
+                topen=self.sim.date
+            )
 
 
 # ---------------------------------------------------------------------------------------------------------
