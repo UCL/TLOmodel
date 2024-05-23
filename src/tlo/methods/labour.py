@@ -19,8 +19,6 @@ from tlo.methods.postnatal_supervisor import PostnatalWeekOneMaternalEvent
 from tlo.util import BitsetHandler
 
 if TYPE_CHECKING:
-    from numpy.random import RandomState
-
     from tlo.population import PatientDetails
 
 
@@ -2304,7 +2302,6 @@ class Labour(Module):
         self,
         patient_id: int,
         patient_details: PatientDetails,
-        random_state: RandomState,
         **kwargs,
     ) -> IndividualPropertyUpdates:
         mni = self.sim.modules["PregnancySupervisor"].mother_and_newborn_info

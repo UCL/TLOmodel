@@ -774,8 +774,8 @@ class Malaria(Module):
         # symptoms of severe malaria.)
         patient_details_updates = {}
 
-        if 'severe_malaria' in symptoms:
-            if patient_details.ma_tx == 'none':
+        if "severe_malaria" in symptoms:
+            if patient_details.ma_tx == "none":
                 # Check if malaria parasitaemia:
                 malaria_test_result = self.check_if_fever_is_caused_by_malaria(
                     true_malaria_infection_type=patient_details.ma_inf_type,
@@ -793,7 +793,8 @@ class Malaria(Module):
 
                     # Launch the HSI for treatment for Malaria, HSI_Malaria_Treatment will determine correct treatment
                     event = HSI_Malaria_Treatment_Complicated(
-                        person_id=patient_id, module=self,
+                        person_id=patient_id,
+                        module=self,
                     )
                     self.healthsystem.schedule_hsi_event(
                         event, priority=0, topen=self.sim.date

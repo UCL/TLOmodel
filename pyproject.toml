@@ -95,6 +95,7 @@ disable = [
     "R",
     "C",
     "W",
+    "E0606",  # possibly-used-before-assignment - gives a lot of false positives
 ]
 
 

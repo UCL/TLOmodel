@@ -1,4 +1,5 @@
 """The Person and Population classes."""
+from __future__ import annotations
 
 import math
 from typing import Any, Dict
@@ -9,7 +10,6 @@ from tlo import logging
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
 
 class PatientDetails:
     """Read-only memoized view of population dataframe row."""
@@ -49,7 +49,6 @@ class Population:
     """
 
     __slots__ = (
-        "_patient_details_readonly_type",
         "props",
         "sim",
         "initial_size",

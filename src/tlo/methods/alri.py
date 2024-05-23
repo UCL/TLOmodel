@@ -1459,7 +1459,6 @@ class Alri(Module):
             **kwargs,
         )
 
-
 class Models:
     """Helper-class to store all the models that specify the natural history of the Alri disease"""
 

@@ -14,8 +14,6 @@ import numpy as np
 import pandas as pd
 
 if TYPE_CHECKING:
-    from numpy.random import RandomState
-
     from tlo.methods.healthsystem import HealthSystem
     from tlo.population import PatientDetails
     from tlo.simulation import Simulation
@@ -395,14 +393,13 @@ class Module:
     def do_at_generic_first_appt(
         self,
         patient_id: int,
-        patient_details: Optional[PatientDetails],
-        symptoms: Optional[List[str]],
-        diagnosis_function: Optional[DiagnosisFunction],
-        consumables_checker: Optional[ConsumablesChecker],
-        facility_level: Optional[str],
-        treatment_id: Optional[str],
-        random_state: Optional[RandomState],
-    ) -> Union[IndividualPropertyUpdates, None]:
+        patient_details: Optional[PatientDetails] = None,
+        symptoms: Optional[List[str]] = None,
+        diagnosis_function: Optional[DiagnosisFunction] = None,
+        consumables_checker: Optional[ConsumablesChecker] = None,
+        facility_level: Optional[str] = None,
+        treatment_id: Optional[str] = None,
+    ) -> IndividualPropertyUpdates:
         """
         Actions to be take during a NON-emergency generic HSI.
 
@@ -459,8 +456,7 @@ class Module:
         consumables_checker: Optional[ConsumablesChecker] = None,
         facility_level: Optional[str] = None,
         treatment_id: Optional[str] = None,
-        random_state: Optional[RandomState] = None,
-    ) -> Union[IndividualPropertyUpdates, None]:
+    ) -> IndividualPropertyUpdates:
         """
         Actions to be take during an EMERGENCY generic HSI.
         Call signature and return values are identical to the

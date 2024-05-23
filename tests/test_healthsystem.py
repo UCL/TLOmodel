@@ -948,7 +948,7 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
     detailed_consumables = log["tlo.methods.healthsystem"]['Consumables']
 
     assert {'date', 'TREATMENT_ID', 'did_run', 'Squeeze_Factor', 'priority', 'Number_By_Appt_Type_Code', 'Person_ID',
-            'Facility_Level', 'Facility_ID', 'Event_Name',
+            'Facility_Level', 'Facility_ID', 'Event_Name', 'Equipment'
             } == set(detailed_hsi_event.columns)
     assert {'date', 'Frac_Time_Used_Overall', 'Frac_Time_Used_By_Facility_ID', 'Frac_Time_Used_By_OfficerType',
             } == set(detailed_capacity.columns)
@@ -1346,6 +1346,7 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
         'capabilities_coefficient': 0.5,
         'cons_availability': 'all',
         'beds_availability': 'default',
+        'equip_availability': 'default',
     }
     new_parameters = {
         'mode_appt_constraints': 2,
@@ -1353,6 +1354,7 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
         'capabilities_coefficient': 1.0,
         'cons_availability': 'none',
         'beds_availability': 'none',
+        'equip_availability': 'all',
     }
 
     class CheckHealthSystemParameters(RegularEvent, PopulationScopeEventMixin):
@@ -1368,6 +1370,7 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
             _params['capabilities_coefficient'] = hs.capabilities_coefficient
             _params['cons_availability'] = hs.consumables.cons_availability
             _params['beds_availability'] = hs.bed_days.availability
+            _params['equip_availability'] = hs.equipment.availability
 
             logger = logging.getLogger('tlo.methods.healthsystem')
             logger.info(key='CheckHealthSystemParameters', data=_params)

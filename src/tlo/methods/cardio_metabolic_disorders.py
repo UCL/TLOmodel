@@ -826,7 +826,9 @@ class CardioMetabolicDisorders(Module):
 
         # Determine if there are any conditions that should be investigated:
         for condition in self.conditions:
-            is_already_diagnosed = getattr(patient_details, f"nc_{condition}_ever_diagnosed")
+            is_already_diagnosed = getattr(
+                patient_details, f"nc_{condition}_ever_diagnosed"
+            )
             has_symptom = f"{condition}_symptoms" in symptoms
             date_of_last_test = getattr(
                 patient_details, f"nc_{condition}_date_last_test"
@@ -850,7 +852,6 @@ class CardioMetabolicDisorders(Module):
                 # has the symptom or is due a routine check,
                 # ... add this condition to be investigated in the appointment.
                 conditions_to_investigate.append(condition)
-
             if (not is_already_diagnosed) and has_symptom:
                 has_any_cmd_symptom = True
 

@@ -8,7 +8,7 @@ lead to `HSI_GenericEmergencyFirstApptAtFacilityLevel1`.
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, OrderedDict
+from typing import TYPE_CHECKING, Any, Iterable, List, Literal, OrderedDict
 
 from tlo import logging
 from tlo.events import IndividualScopeEventMixin
@@ -21,12 +21,70 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+FIRST_APPT_NON_EMERGENCY_MODULE_ORDER = [
+    "Measles",
+    "Hiv",
+    "RTI",
+    "Schisto",
+    "Malaria",
+    "Diarrhoea",
+    "Alri",
+    "Stunting",
+    "OesophagealCancer",
+    "BladderCancer",
+    "ProstateCancer",
+    "OtherAdultCancer",
+    "BreastCancer",
+    "Depression",
+    "CardioMetabolicDisorders",
+    "Copd",
+]
+
+FIRST_APPT_EMERGENCY_MODULE_ORDER = [
+    "PregnancySupervisor",
+    "Labour",
+    "Depression",
+    "Malaria",
+    "CardioMetabolicDisorders",
+    "Epilepsy",
+    "RTI",
+    "Alri",
+    "Copd",
+]
+
+def sort_preserving_order(to_sort: Iterable[Any], relative_to: Iterable[Any]) -> List:
+    """
+    Sort the items in a given list using the relative ordering of another list.
+
+    Items in the list that do not appear in the relative ordering are assumed
+    to be of the lowest priority (moved to the back of the sorted list).
+
+    :param to_sort: List of values to sort. Sorting returns a copy.
+    :param relative_to: List of values that appear in to_sort,
+    defining relative order.
+    """
+
+    def sort_key(item):
+        try:
+            return relative_to.index(item)
+        except ValueError:
+            return len(relative_to)
+
+    return sorted(to_sort, key=sort_key)
+
 class HSI_BaseGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
     """
     """
     MODULE_METHOD_ON_APPLY: Literal[
         "do_at_generic_first_appt", "do_at_generic_first_appt_emergency"
     ]
+
+    @property
+    def MODULE_ORDER_ON_APPLY(self) -> List[str]:
+        if "emergency" in self.MODULE_METHOD_ON_APPLY:
+            return FIRST_APPT_EMERGENCY_MODULE_ORDER
+        else:
+            return FIRST_APPT_NON_EMERGENCY_MODULE_ORDER
 
     def __init__(self, module, person_id) -> None:
         super().__init__(module, person_id=person_id)
@@ -77,7 +135,9 @@ class HSI_BaseGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
 
         proposed_patient_details_updates = {}
 
-        for module in modules.values():
+        module_order = self._module_order(modules.keys())
+        for name in module_order:
+            module = modules[name]
             module_patient_updates = getattr(module, self.MODULE_METHOD_ON_APPLY)(
                 patient_id=self.target,
                 patient_details=patient_details,
@@ -86,7 +146,6 @@ class HSI_BaseGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
                 consumables_checker=self.get_consumables,
                 facility_level=self.ACCEPTED_FACILITY_LEVEL,
                 treatment_id=self.TREATMENT_ID,
-                random_state=self.module.rng,
             )
             # Record any requested DataFrame updates, but do not implement yet
             # NOTE: |= syntax is only available in Python >=3.9
@@ -96,11 +155,16 @@ class HSI_BaseGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
                     **module_patient_updates,
                 }
 
-        # Perform any DataFrame updates that were requested, all in one go.
+        # Perform any DataFrame updates that were requested, all in one go
         if proposed_patient_details_updates:
             df.loc[
                 self.target, proposed_patient_details_updates.keys()
             ] = proposed_patient_details_updates.values()
+
+    def _module_order(self, module_list: Iterable[str]) -> List[str]:
+        """"""
+        return sort_preserving_order(module_list, self.MODULE_ORDER_ON_APPLY)
+
 
     def apply(self, person_id, squeeze_factor=0.) -> None:
         """

@@ -515,8 +515,8 @@ class Depression(Module):
         return av_daly_wt_last_month
 
     def _check_for_suspected_depression(
-        self, symptoms: List[str], treatment_id: str, has_even_been_diagnosed: bool
-    ):
+        self, symptoms: List[str], treatment_id: str, has_ever_been_diagnosed: bool
+    ) -> bool:
         """
         Returns True if any signs of depression are present, otherwise False.
         
@@ -532,19 +532,24 @@ class Depression(Module):
             if "Injuries_From_Self_Harm" in symptoms:
                 return True
                 # TODO: Trigger surgical care for injuries.
-        elif treatment_id == "AntenatalCare_Outpatient":
-            if (not has_even_been_diagnosed) and (
+        elif (
+            treatment_id == "AntenatalCare_Outpatient"
+        ):  # module care_of_women_during_pregnancy
+            if (not has_ever_been_diagnosed) and (
                 self.rng.rand()
                 < self.parameters["pr_assessed_for_depression_for_perinatal_female"]
-            ):  # module care_of_women_during_pregnancy
+            ):
                 return True
         elif treatment_id == "PostnatalCare_Maternal":
-            if (not has_even_been_diagnosed) and self.rng.rand() < self.parameters[
-                "pr_assessed_for_depression_for_perinatal_female"
-            ]:  # module labour
+            if (not has_ever_been_diagnosed) and (
+                self.rng.rand()
+                < self.parameters["pr_assessed_for_depression_for_perinatal_female"]
+            ):  # module labour
                 return True
         else:
-            raise NotImplementedError
+            raise NotImplementedError(
+                f"Depression module does not know how to handle treatment type {treatment_id}"
+            )
         return False
 
     def do_on_presentation_to_care(self, person_id: int, hsi_event: HSI_Event):
@@ -580,7 +585,10 @@ class Depression(Module):
         manager and run diagnosis tests.
         - If the diagnosis_function is passed in directly, it is assumed to be a Callable method that
         runs diagnosis tests.
+<<<<<<< HEAD
+=======
 
+>>>>>>> master
         :param person_id: Patient's row index in the population DataFrame.
         :param diagnosis_function: A function capable of running diagnosis checks on the population.
         :param hsi_event: The HSI_Event that triggered this call.
@@ -623,12 +631,20 @@ class Depression(Module):
 
     def do_at_generic_first_appt(
         self,
+        patient_id: int,
         patient_details: PatientDetails,
-        **kwargs
+        symptoms: List[str],
+        diagnosis_function: DiagnosisFunction,
+        treatment_id: str,
+        **kwargs,
     ) -> IndividualPropertyUpdates:
         if patient_details.age_years > 5:
             return self.do_at_generic_first_appt_emergency(
-                patient_details=patient_details,
+                patient_id = patient_id,
+                patient_details = patient_details,
+                symptoms = symptoms,
+                diagnosis_function = diagnosis_function,
+                treatment_id = treatment_id,
                 **kwargs,
             )
 
