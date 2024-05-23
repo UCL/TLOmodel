@@ -85,6 +85,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                       },
                     }
                 ),
+
             "GDP growth":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
@@ -102,6 +103,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                       },
                     }
                 ),
+
             "GDP growth fHE growth case 1":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
@@ -119,6 +121,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                       },
                     }
                 ),
+
             "GDP growth fHE growth case 3":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
@@ -136,6 +139,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                       },
                     }
                 ),
+
             "GDP growth fHE growth case 4":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
@@ -153,6 +157,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                       },
                     }
                 ),
+
             "GDP growth fHE growth case 6":
                 mix_scenarios(
                     get_parameters_for_status_quo(),

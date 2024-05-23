@@ -18,6 +18,7 @@ Please use the `Installation Guide <https://github.com/UCL/TLOmodel/wiki/Install
 you prefer, you can carry out the setup using the command line:
 
 ::
+
     cd TLOmodel
     conda create -n tlo python=3.11
     conda activate tlo
