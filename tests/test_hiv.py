@@ -148,7 +148,7 @@ def test_initialisation(seed):
     # check that everyone who is infected and has got AIDS event get a future AIDS death event but nothing else
     for idx in aids:
         events_for_this_person = sim.find_events_for_person(idx)
-        assert len(events_for_this_person) >0
+        assert len(events_for_this_person) > 0
         next_event_date, next_event_obj = events_for_this_person[0]
         if isinstance(next_event_obj, hiv.HivAidsOnsetEvent):
             assert True
