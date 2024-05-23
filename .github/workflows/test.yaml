@@ -1,4 +1,4 @@
-name: Test
+name: CI Experiments
 
 on:
   push:
@@ -7,7 +7,6 @@ jobs:
   test:
     name: Test job
     runs-on: ["self-hosted", "profiling"]
-    timeout-minutes: 3
     steps:
       - name: show /proc/cpuinfo
         run: |
@@ -32,7 +31,10 @@ jobs:
           cat /sys/fs/cgroup/memory.high || true
       - name: Collect Workflow Telemetry
         uses: catchpoint/workflow-telemetry-action@v2
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
       - name: Test
+        timeout-minutes: 3
         shell: python3 {0}
         run: |
           import time
