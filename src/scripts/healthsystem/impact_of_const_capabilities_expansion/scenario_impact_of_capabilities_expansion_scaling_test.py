@@ -75,46 +75,33 @@ class ImpactOfHealthSystemMode(BaseScenario):
 
         return {
    
-            # =========== STATUS QUO ============
-            "No growth status quo":
-                mix_scenarios(
-                    self._baseline(),
-                    {
-                     "HealthSystem": {
-                        "yearly_HR_scaling_mode": "no_scaling",
-                      },
-                    }
-                ),
-   
             # =========== PERFECT CONSUMABLES AVAILABILITY ============
-            "No growth perfect consumables":
+            "No growth perfect consumables simple mode 2":
                 mix_scenarios(
                     self._baseline(),
                     {
                      "HealthSystem": {
                         "yearly_HR_scaling_mode": "no_scaling",
+                        "scale_to_effective_capabilities": False,
                         "year_cons_availability_switch": self.YEAR_OF_CHANGE,
                         "cons_availability_postSwitch": "all",
                       },
                     }
                 ),
                 
-            # =========== PERFECT HEALTHSYSTEM ============
-            "No growth perfect healthsystem":
+            "No growth perfect consumables rescaled mode 2":
                 mix_scenarios(
                     self._baseline(),
                     {
-                         'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
-                                'max_healthsystem_function': [False, True],  # <-- switch from False to True mid-way
-                                'year_of_switch': self.YEAR_OF_CHANGE,
-                         },
-                         "HealthSystem": {
-                            "yearly_HR_scaling_mode": "no_scaling",
-                            "year_cons_availability_switch": self.YEAR_OF_CHANGE,
-                            "cons_availability_postSwitch": "all",
-                          },
+                     "HealthSystem": {
+                        "yearly_HR_scaling_mode": "no_scaling",
+                        "scale_to_effective_capabilities": True,
+                        "year_cons_availability_switch": self.YEAR_OF_CHANGE,
+                        "cons_availability_postSwitch": "all",
+                      },
                     }
                 ),
+                
 
         }
         
@@ -127,7 +114,6 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     "mode_appt_constraints": 1,                 # <-- Mode 1 prior to change to preserve calibration
                     "mode_appt_constraints_postSwitch": 2,      # <-- Mode 2 post-change to show effects of HRH
                     "year_mode_switch": self.YEAR_OF_CHANGE,
-                    "scale_to_effective_capabilities": True,
                     "policy_name": "Naive",
                     "tclose_overwrite": 1,
                     "tclose_days_offset_overwrite": 7,
