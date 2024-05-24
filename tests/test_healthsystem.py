@@ -191,7 +191,7 @@ def test_run_no_interventions_allowed(tmpdir, seed):
         .apply(lambda x: x != set()).any().any()
     assert (
         sim.population.props.loc[
-        :, sim.population.props.columns.str.startswith('sy_')
+            :, sim.population.props.columns.str.startswith('sy_')
         ].dtypes == BitsetDType
     ).all()
     assert not pd.isnull(sim.population.props.loc[:, sim.population.props.columns.str.startswith('sy_')]).any().any()
