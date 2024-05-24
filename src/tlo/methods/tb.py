@@ -530,7 +530,6 @@ class Tb(Module):
                 p["rr_ipt_adult_hiv"],  # hiv+ adult IPT only
             ),
         ]
-
         conditional_predictors = [
             Predictor("nc_diabetes").when(True, p['rr_tb_diabetes']),
         ] if "CardioMetabolicDisorders" in self.sim.modules else []
@@ -639,6 +638,7 @@ class Tb(Module):
             )
 
     def select_tb_test(self, person_id):
+
         df = self.sim.population.props
         p = self.parameters
         person = df.loc[person_id]
@@ -738,7 +738,7 @@ class Tb(Module):
                 target_categories=["active"],
                 sensitivity=p["sens_clinical"],
                 specificity=p["spec_clinical"],
-                item_codes=[],
+                item_codes=[]
             )
         )
 
@@ -1952,6 +1952,7 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
         # if consumables not available, refer to level 2
         # return blank footprint as xray did not occur
         if test_result is None:
+
             ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({})
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -2670,22 +2671,22 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         num_latent_adult = len(
             df[(df.tb_inf == "latent") & (df.age_years >= 15) & df.is_alive]
         )
-        prev_latent_adult = (
-            num_latent_adult / len(df[(df.age_years >= 15) & df.is_alive])
-            if len(df[(df.age_years >= 15) & df.is_alive])
-            else 0
-        )
+        prev_latent_adult = num_latent_adult / len(
+            df[(df.age_years >= 15) & df.is_alive]
+        ) if len(
+            df[(df.age_years >= 15) & df.is_alive]
+        ) else 0
         assert prev_latent_adult <= 1
 
         # proportion of population with latent TB - children
         num_latent_child = len(
             df[(df.tb_inf == "latent") & (df.age_years < 15) & df.is_alive]
         )
-        prev_latent_child = (
-            num_latent_child / len(df[(df.age_years < 15) & df.is_alive])
-            if len(df[(df.age_years < 15) & df.is_alive])
-            else 0
-        )
+        prev_latent_child = num_latent_child / len(
+            df[(df.age_years < 15) & df.is_alive]
+        ) if len(
+            df[(df.age_years < 15) & df.is_alive]
+        ) else 0
         assert prev_latent_child <= 1
 
         logger.info(
@@ -2710,7 +2711,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[
                 (df.tb_strain == "mdr")
                 & (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
-            ]
+                ]
         )
 
         if new_mdr_cases:
@@ -2732,8 +2733,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         new_tb_diagnosis = len(
             df[
                 (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
-                & (df.tb_date_diagnosed >= (now - DateOffset(months=self.repeat)))
-            ]
+                & (df.tb_date_diagnosed >= (now - DateOffset(months=self.repeat)))]
         )
 
         if new_tb_diagnosis:
@@ -2747,7 +2747,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[
                 (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
                 & (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
-            ]
+                ]
         )
 
         # treatment coverage: if became active and was treated in last timeperiod
@@ -2758,7 +2758,11 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             tx_coverage = 0
 
         # ipt coverage
-        new_tb_ipt = len(df[(df.tb_date_ipt >= (now - DateOffset(months=self.repeat)))])
+        new_tb_ipt = len(
+            df[
+                (df.tb_date_ipt >= (now - DateOffset(months=self.repeat)))
+            ]
+        )
 
         # this will give ipt among whole population - not just eligible pop
         if new_tb_ipt:
@@ -2786,27 +2790,17 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # adults
         # get index of adults starting tx in last time-period
         # note tb onset may have been up to 3 years prior to treatment
-        adult_tx_idx = df.loc[
-            (df.age_years >= 16)
-            & (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
-        ].index
+        adult_tx_idx = df.loc[(df.age_years >= 16) &
+                              (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))].index
 
         # calculate treatment_date - onset_date for each person in index
-        adult_tx_delays = (
-            df.loc[adult_tx_idx, "tb_date_treated"]
-            - df.loc[adult_tx_idx, "tb_date_active"]
-        ).dt.days
+        adult_tx_delays = (df.loc[adult_tx_idx, "tb_date_treated"] - df.loc[adult_tx_idx, "tb_date_active"]).dt.days
         adult_tx_delays = adult_tx_delays.tolist()
 
         # children
-        child_tx_idx = df.loc[
-            (df.age_years < 16)
-            & (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
-        ].index
-        child_tx_delays = (
-            df.loc[child_tx_idx, "tb_date_treated"]
-            - df.loc[child_tx_idx, "tb_date_active"]
-        ).dt.days
+        child_tx_idx = df.loc[(df.age_years < 16) &
+                              (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))].index
+        child_tx_delays = (df.loc[child_tx_idx, "tb_date_treated"] - df.loc[child_tx_idx, "tb_date_active"]).dt.days
         child_tx_delays = child_tx_delays.tolist()
 
         logger.info(
@@ -2830,7 +2824,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 ~(df.tb_date_active >= (now - DateOffset(months=36)))
                 & (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
                 & (df.age_years >= 16)
-            ]
+                ]
         )
 
         # these are all new adults treated, regardless of tb status
@@ -2838,7 +2832,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[
                 (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
                 & (df.age_years >= 16)
-            ]
+                ]
         )
 
         # proportion of adults starting on treatment who are false positive
@@ -2853,7 +2847,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 ~(df.tb_date_active >= (now - DateOffset(months=36)))
                 & (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
                 & (df.age_years < 16)
-            ]
+                ]
         )
 
         # these are all new children treated, regardless of tb status
@@ -2861,7 +2855,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[
                 (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
                 & (df.age_years < 16)
-            ]
+                ]
         )
 
         # proportion of children starting on treatment who are false positive
@@ -2930,15 +2924,14 @@ class DummyTbModule(Module):
         df = population.props
 
         tb_idx = df.index[
-            df.is_alive
-            & (self.rng.random_sample(len(df.is_alive)) < self.active_tb_prev)
-        ]
+            df.is_alive & (self.rng.random_sample(len(df.is_alive)) < self.active_tb_prev)
+            ]
         df.loc[tb_idx, "tb_inf"] = "active"
 
     def initialise_simulation(self, sim):
         pass
 
     def on_birth(self, mother, child):
-        child_infected = self.rng.random_sample() < self.active_tb_prev
+        child_infected = (self.rng.random_sample() < self.active_tb_prev)
         if child_infected:
             self.sim.population.props.at[child, "tb_inf"] = "active"

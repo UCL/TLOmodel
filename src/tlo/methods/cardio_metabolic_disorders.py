@@ -517,7 +517,7 @@ class CardioMetabolicDisorders(Module):
         # Hypertension is the only condition for which we assume some community-based testing occurs; build LM based on
         # age / sex
         self.lms_testing['hypertension'] = self.build_linear_model('hypertension', self.parameters[
-            'interval_between_polls'], lm_type='testing')
+                'interval_between_polls'], lm_type='testing')
 
         for event in self.events:
             self.lms_event_onset[event] = self.build_linear_model(event, self.parameters['interval_between_polls'],
@@ -865,7 +865,6 @@ class CardioMetabolicDisorders(Module):
 
         # Schedule follow-up HSI *if* there are any conditions to investigate:
         if conditions_to_investigate:
-
             event = HSI_CardioMetabolicDisorders_Investigations(
                 module=self,
                 person_id=patient_id,
@@ -1623,7 +1622,7 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
             # NB. With a probability of 1.0, this will keep occurring, and the person will never give up coming back to
             # pick up medication.
             if (m.rng.random_sample() <
-                m.parameters[f'{self.condition}_hsi'].get('pr_seeking_further_appt_if_drug_not_available')):
+                    m.parameters[f'{self.condition}_hsi'].get('pr_seeking_further_appt_if_drug_not_available')):
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     hsi_event=self,
                     topen=self.sim.date + pd.DateOffset(days=1),
@@ -1688,7 +1687,7 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
             # NB. With a probability of 1.0, this will keep occurring, and the person will never give-up coming back to
             # pick-up medication.
             if (m.rng.random_sample() <
-                m.parameters[f'{self.condition}_hsi'].get('pr_seeking_further_appt_if_drug_not_available')):
+                    m.parameters[f'{self.condition}_hsi'].get('pr_seeking_further_appt_if_drug_not_available')):
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     hsi_event=self,
                     topen=self.sim.date + pd.DateOffset(days=1),
