@@ -162,12 +162,17 @@ class BedDays:
     # Tuple order dictates bed priority (earlier beds are higher priority).
     _bed_types: Tuple[str]
     # Index: FacilityID, Cols: max capacity of given bed type
-    _max_capacities: pd.DataFrame
+    # This is the table passed in from the HealthSystem parameters,
+    # which we need for when the availability switch event fires.
+    _raw_max_capacities: pd.DataFrame
     # Logger to write info, warnings etc to
     _logger: Logger
     # Counter class for the summary statistics
     _summary_counter: BedDaysSummaryCounter
 
+    # Table of maximum bed capacities, subject to availability
+    # constraints
+    max_capacities: pd.DataFrame
     # List of current bed occupancies, scheduled and waiting
     occupancies: List[BedOccupancy]
 
@@ -245,7 +250,7 @@ class BedDays:
     def __init__(
         self,
         bed_capacities: pd.DataFrame,
-        capacity_scaling_factor: float | Literal["all", "none"] = 1.0,
+        capacity_scaling_factor: Optional[float | Literal["all", "none"]] = None,
         logger: Optional[Logger] = None,
         summary_logger: Optional[Logger] = None,
     ) -> None:
@@ -258,32 +263,47 @@ class BedDays:
         one of which is only used by the summary tracker. Move this to main class docstring when you come to write the docstrings Will.
         """
         self._logger = logger
+        self._raw_max_capacities = bed_capacities.set_index("Facility_ID", inplace=False)
         self.bed_types = tuple(x for x in bed_capacities.columns if x != "Facility_ID")
 
-        # Determine the (scaled) bed capacity of each facility, and store the information
-        if isinstance(capacity_scaling_factor, str):
-            if capacity_scaling_factor == "all":
-                capacity_scaling_factor = 1.0
-            elif capacity_scaling_factor == "none":
-                capacity_scaling_factor = 0.0
-            else:
-                raise ValueError(
-                    f"Cannot interpret capacity scaling factor: {capacity_scaling_factor}."
-                    " Provide a numeric value, 'all' (1.0), or 'none' (0.0)."
-                )
-        self._max_capacities = (
-            (
-                bed_capacities.set_index("Facility_ID", inplace=False)
-                * capacity_scaling_factor
-            )
-            .apply(np.ceil)
-            .astype(int)
-        )
+        # Note that the simulation may not have setup the initial population
+        # when the BedDays class is initialised, so we need to account for the
+        # possibility that the scaled bed capacity will be provided later.
+        if capacity_scaling_factor is not None:
+            self.set_max_capacities(capacity_scaling_factor)
 
         # No occupancies on instantiation
         self.occupancies = []
         # Summary counter starts at 0
         self._summary_counter = BedDaysSummaryCounter(logging_target=summary_logger)
+
+    def set_max_capacities(
+        self,
+        capacity_scaling_factor: float | Literal["all", "none"],
+        fallback_value: Optional[float] = None,
+    ) -> None:
+        """
+        Set the new maximum capacities either for the first time, or update them based on
+        a change in availability event during the simulation.
+
+        :param capacity_scaling_factor: The new scaling factor for the raw maximum capacities.
+        :param fallback_value: If the capacity_scaling_factor is given as a string, but is not
+        "all" or "none", use this value as the scaling factor.
+        """
+        # Determine the (scaled) bed capacity of each facility, and store the information
+        if capacity_scaling_factor == "all":
+            capacity_scaling_factor = 1.0
+        elif capacity_scaling_factor == "none":
+            capacity_scaling_factor = 0.0
+        elif isinstance(capacity_scaling_factor, str) and fallback_value is not None:
+            capacity_scaling_factor = fallback_value
+        elif not isinstance(capacity_scaling_factor, (float | int)):
+            raise ValueError(
+                f"Cannot interpret capacity scaling factor: {capacity_scaling_factor}."
+                " Provide a numeric value, 'all' (1.0), or 'none' (0.0)."
+            )
+        # Update new effective bed capacities
+        self.max_capacities = (self._raw_max_capacities * capacity_scaling_factor).apply(np.ceil).astype(int)
 
     def is_inpatient(self, patient_id: int) -> List[BedOccupancy]:
         """
@@ -431,7 +451,7 @@ class BedDays:
             occurs_between_dates=[start_date, final_forecast_day],
             facility=facility_id,
         )
-        facility_max_capacities = self._max_capacities.loc[facility_id, :]
+        facility_max_capacities = self.max_capacities.loc[facility_id, :]
         # Rows = index by date, days into the future (index 0 = start_date)
         # Cols = bed_types for this facility
         forecast = pd.DataFrame(
@@ -751,7 +771,9 @@ class BedDays:
         :param day_that_is_ending: The simulation day that is coming to an end.
         """
         occupancies_today = self.find_occupancies(on_date=day_that_is_ending)
-        bed_type_by_facility: Dict[str, Dict[str, int]] = defaultdict(defaultdict(int))
+        bed_type_by_facility: Dict[str, Dict[str, int]] = {
+            bed_type: defaultdict(int) for bed_type in self.bed_types
+        }
         for o in occupancies_today:
             bed_type_by_facility[o.bed_type][o.facility] += 1
 
@@ -772,7 +794,7 @@ class BedDays:
         }
         # Record the total usage of each bed type today (across all facilities)
         self._summary_counter.record_usage_of_beds(
-            bed_usage, self._max_capacities
+            bed_usage, self.max_capacities
         )
 
         # Remove any occupancies that expire today,

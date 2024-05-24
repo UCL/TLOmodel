@@ -594,15 +594,11 @@ class HealthSystem(Module):
             use_funded_or_actual_staffing=self.get_use_funded_or_actual_staffing()
         )
 
-        # Initialise the BedDays class
-        capacity_scaling_factor = self.get_beds_availability()
-        if capacity_scaling_factor not in ["all", "none"]:
-            capacity_scaling_factor = self.sim.modules[
-                "Demography"
-            ].initial_model_to_data_popsize_ratio
+        # Initialise the BedDays class.
+        # Note that we don't yet have the Demography.model_to_popsize_ratio,
+        # so we will need to initialise the effective max capacities later.
         self.bed_days = BedDays(
             bed_capacities=self.parameters["BedCapacity"],
-            capacity_scaling_factor=capacity_scaling_factor,
             logger=logger,
             summary_logger=logger_summary,
         )
@@ -633,10 +629,9 @@ class HealthSystem(Module):
         if self.capabilities_coefficient is None:
             self.capabilities_coefficient = self.sim.modules['Demography'].initial_model_to_data_popsize_ratio
 
-        # Set the tracker in preparation for the simulation
-        # self.bed_days.initialise_beddays_tracker(
-        #     model_to_data_popsize_ratio=self.sim.modules['Demography'].initial_model_to_data_popsize_ratio
-        # )
+        # Set max BedDays tracker (assuming this has not been done before)
+        # given the model population size and requested availability.
+        self.bed_days.set_max_capacities(self.get_beds_availability())
 
         # Set the consumables modules in preparation for the simulation
         self.consumables.on_start_of_day(sim.date)
@@ -1041,6 +1036,11 @@ class HealthSystem(Module):
         # what arguments/parameters are provided.
         if self.disable:
             _beds_availability = 'all'
+
+        if _beds_availability not in ["all", "none"]:
+            _beds_availability = self.sim.modules[
+                "Demography"
+            ].initial_model_to_data_popsize_ratio
 
         # Log the service_availability
         logger.info(key="message",
@@ -2658,8 +2658,10 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
                                                   availability=self._parameters['cons_availability'])
             self.module.consumables.on_start_of_day(self.module.sim.date)
 
-        if 'beds_availability' in self._parameters:
-            self.module.bed_days.availability = self._parameters['beds_availability']
+        if "beds_availability" in self._parameters:
+            self.module.bed_days.set_max_capacities(
+                self._parameters["beds_availability"], fallback_value=1.0
+            )
 
 
 class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
