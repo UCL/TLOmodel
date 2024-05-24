@@ -12,6 +12,32 @@ from tlo import Date
 if TYPE_CHECKING:
     from tlo.logging.core import Logger
 
+import os
+class Debugger:
+
+    output_dir: str = ".wills-stuff/beddays/"
+
+    first_write: bool = True
+
+    @property
+    def output_file(self) -> str:
+        return self.output_dir + "exp-branch-log.log"
+
+    def __init__(self):
+        os.makedirs(self.output_dir, exist_ok=True)
+
+    def write(self, message: str) -> None:
+        if self.first_write:
+            self.first_write = False
+            if os.path.exists(self.output_file):
+                os.remove(self.output_file)
+        if not message.endswith("\n"):
+            message += "\n"
+        with open(self.output_file, "a") as f:
+            f.write(message)
+
+
+DEBUGGER = Debugger()
 
 @dataclass
 class BedOccupancy:
@@ -308,6 +334,7 @@ class BedDays:
             )
         # Update new effective bed capacities
         self.max_capacities = (self._raw_max_capacities * capacity_scaling_factor).apply(np.ceil).astype(int)
+        DEBUGGER.write(f"Setting max capacities:\n{self.max_capacities}")
 
     def is_inpatient(self, patient_id: int) -> List[BedOccupancy]:
         """
@@ -688,6 +715,13 @@ class BedDays:
         # Schedule the new occupancies, which are now conflict-free
         # (if they weren't already)
         self.schedule_occupancies(*new_occupancies)
+
+        DEBUGGER.write(f"{first_day} scheduling for patient {patient_id} |")
+        for o in new_occupancies:
+            DEBUGGER.write(f"\t{o.bed_type} freed on {o.freed_date}, at facility {o.facility}\n")
+        DEBUGGER.write("\tHaving received footprint:")
+        for bed_type, days in footprint.items():
+            DEBUGGER.write(f"\t\t{bed_type} : {days}")
 
     def issue_bed_days_according_to_availability(
         self, start_date: Date, facility_id: int, requested_footprint: BedDaysFootprint
