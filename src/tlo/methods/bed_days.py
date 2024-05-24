@@ -143,15 +143,35 @@ IN_PATIENT_DAY_SUBSEQUENT_DAYS = {"InpatientDays": 1}
 
 class BedDays:
     """
-    Tracks bed days resources, in a better way than using dataframe columns...
-    TODO: Docstring
+    Tracks the allocation of the BedDays resource.
 
-    bed_capacities is intended to replace self.hs_module.parameters["BedCapacity"]
-    availability has been superseded by capacity_scaling_factor
+    Each facility in the simulation provides a given number of bed spaces for
+    each "bed type", with certain beds being reserved for high-priority cases.
+    As the simulation progresses, patients will be admitted to a facility based
+    on whether the facility has the capacity to provide a bed for them, and
+    once they have recovered their allocation will be freed.
 
+    The class tracks the available number of beds by recording "occupancies".
+    Each time a person needs to be admitted to a facility, they provide a
+    footprint which details how many days (of each bed) that they will need
+    before they recover. This footprint is converted into a set of `BedOccupancies`
+    which this class tracks.
+
+    From this information, this class is able to:
+    - Provide a forecast any number of days into the future on the number of
+    available beds, broken down by type and facility if necessary.
+    - Determine whether or not there is capacity for a person to receive a particular
+    treatment.
+    - Determine which members of the public are currently inpatients.
+    - Log the number of used and free beds.
+
+    :param bed_capacities: DataFrame whose rows consist of the facility IDs of the
+    facilities in the simulation, and the columns their maximum bed capacities.
     :param capacity_scaling_factor: Capacities read from resource files are scaled
     by this factor. "all" will map to 1.0 (use provided occupancies), whilst "none"
     will map to 0.0 (no beds available anywhere). Default is 1.
+    :param logger: Logger object to write outputs and debug information to.
+    :param summary_logger: Logger object to write summary statistics to.
     """
 
     # Class-wide variable: the name given to the "bed_type" that actually
@@ -170,6 +190,9 @@ class BedDays:
     # Counter class for the summary statistics
     _summary_counter: BedDaysSummaryCounter
 
+    # Facility level at which all beds are taken to be pooled.
+    # This is a class-wide variable.
+    bed_facility_level: str = "3"
     # Table of maximum bed capacities, subject to availability
     # constraints
     max_capacities: pd.DataFrame
@@ -177,17 +200,12 @@ class BedDays:
     occupancies: List[BedOccupancy]
 
     @property
-    def bed_facility_level(self) -> str:
-        """Facility level at which all beds are taken to be pooled."""
-        return "3"
-
-    @property
     def bed_types(self) -> Tuple[str]:
         """
         All available bed types, including the bed type that corresponds to no
         space being available in a facility.
 
-        Tuple order dictates bed priority: beds types that appear first in the
+        Tuple order dictates bed priority: bed types that appear first in the
         tuple are higher priority than those which follow, with the no space
         available bed being the lowest priority.
         """
@@ -209,8 +227,8 @@ class BedDays:
         start_1: Date, start_2: Date, end_1: Date, end_2: Date
     ) -> bool:
         """
-        Return True if there is any overlap between the timeboxed intervals [start_1, end_1]
-        and [start_2, end_2].
+        Return True if there is any overlap between the time-boxed intervals
+        [start_1, end_1] and [start_2, end_2].
         Endpoints are included in the date ranges.
         """
         latest_start = max(start_1, start_2)
@@ -225,9 +243,6 @@ class BedDays:
         """Return an APPT_FOOTPRINT with the addition (if not already present)
         of the in-patient admission appointment and the in-patient day
         appointment type (for the first day of the in-patient stay).
-
-        TODO: Not sure why this is a method in BedDays as it doesn't concern BedDays...
-        maybe move elsewhere.
         """
         return {**appt_footprint, **IN_PATIENT_ADMISSION, **IN_PATIENT_DAY_FIRST_DAY}
 
@@ -239,9 +254,6 @@ class BedDays:
         Specifically, multiples all values in a dictionary by a scalar,
         returning the result:
         {key: value * _num for key, value in _footprint.items()}
-
-        TODO: Not sure why this is a method in BedDays as it doesn't concern BedDays...
-        maybe move elsewhere.
         """
         return {
             appt_type: num_needed * _num for appt_type, num_needed in _footprint.items()
@@ -254,14 +266,6 @@ class BedDays:
         logger: Optional[Logger] = None,
         summary_logger: Optional[Logger] = None,
     ) -> None:
-        """
-        TODO
-        NB two loggers because
-                logger = getLogger("tlo.methods.healthsystem")
-        logger_summary = getLogger("tlo.methods.healthsystem.summary")
-
-        one of which is only used by the summary tracker. Move this to main class docstring when you come to write the docstrings Will.
-        """
         self._logger = logger
         self._raw_max_capacities = bed_capacities.set_index("Facility_ID", inplace=False)
         self.bed_types = tuple(x for x in bed_capacities.columns if x != "Facility_ID")
@@ -336,29 +340,21 @@ class BedDays:
         Action taken when a bed occupancy in the list of occupancies
         is to end, for any reason.
 
-        :param occupancy: The BedOccupancy(s) that have ended.
+        :param occupancies: The BedOccupancy(s) that have ended.
         """
         for o in occupancies:
             self.occupancies.remove(o)
 
-    def start_of_day(self, todays_date: Date) -> None:
-        """
-        Actions to take at the start of a new day.
-        Currently:
-        - End any bed occupancies that are set to be freed today.
-
-        :param todays_date: The day that is starting.
-        """
-        # End bed occupancies that expired yesterday
-        for o in self.find_occupancies(
-            end_on_or_before=todays_date - pd.DateOffset(days=1)
-        ):
-            self.end_occupancies(o)
-
     def schedule_occupancies(self, *occupancies: BedOccupancy) -> None:
         """
         Bulk schedule the provided bed occupancies.
-        NOTE: Occupancies are assumed to be valid.
+
+        This method does not check that there is capacity for the
+        occupancies provided to be scheduled. Use the `assert_valid_footprint`
+        and `impose_beddays_footprint` to ensure generated BedOccupancies
+        can be provided.
+
+        :param occupancies: The BedOccupancy(s) to be scheduled.
         """
         self.occupancies.extend(occupancies)
 
@@ -373,8 +369,8 @@ class BedDays:
         occurs_between_dates: Optional[Tuple[Date]] = None,
     ) -> List[BedOccupancy]:
         """
-        Find all occupancies in the current list that match the criteria given.
-        Unspecified criteria are ignored.
+        Find all occupancies in the current list of occupancies that match the
+        criteria given. Unspecified criteria are ignored.
         
         Multiple criteria will be combined using logical AND. This behaviour can
         be toggled with the logical_or argument.
@@ -504,12 +500,17 @@ class BedDays:
         patients are only ever able to attend one facility in their district / region
         for bed care anyway, so this should never arise as an issue.
 
-        It is assumed that the patient is assumed to be scheduled to occupy at least
-        one bed type for each day between the start of the earliest occupancy and end
-        of the last occupancy. If there are any days in this range where the patient
-        is not going to occupy a bed, an AssertionError is raised. In these
-        circumstances, the event which is not in conflict with the others should be
-        removed from one of the lists prior to calling this method.
+        It is assumed that the patient is scheduled to occupy at least one bed type for
+        each day between the start of the earliest occupancy and end of the last occupancy.
+        If there are any days in this range where the patient is not going to occupy a bed,
+        an AssertionError is raised. In these circumstances, the event which is not in
+        conflict with the others should be removed from one of the lists prior to calling
+        this method.
+
+        :param incoming_occupancies: A list of occupancies that are to be scheduled, but
+        conflict with existing occupancies.
+        :param current_occupancies: The occupancies currently scheduled that will conflict
+        with the incoming occupancies.
         """
         all_occupancies = incoming_occupancies + current_occupancies
         # Assume all events have same facility and patient_id
@@ -618,6 +619,8 @@ class BedDays:
         Return a dictionary of the form {<facility_id>: APPT_FOOTPRINT},
         giving the total APPT_FOOTPRINT required for the servicing of the
         in-patients (in beds of any types) for each Facility_ID.
+
+        :param date: Day to extract number of inpatient appointments on.
         """
         # For each facility, compute the total number of beds that are occupied
         # total_inpatients has n_facilities elements that are the number of beds occupied
@@ -644,6 +647,12 @@ class BedDays:
     ) -> None:
         """
         Impose the footprint provided on the availability of beds.
+
+        :param footprint: Footprint to impose.
+        :param facility: Which facility will host this footprint.
+        :param first_day: Day on which this footprint will start.
+        :param patient_id: The index in the population DataFrame of the person
+        occupying this bed.
         """
         # Exit if the footprint is empty
         if not footprint:
@@ -794,7 +803,7 @@ class BedDays:
         }
         # Record the total usage of each bed type today (across all facilities)
         self._summary_counter.record_usage_of_beds(
-            bed_usage, self.max_capacities
+            bed_usage, self.max_capacities.sum(axis=1).to_dict()
         )
 
         # Remove any occupancies that expire today,
@@ -803,25 +812,11 @@ class BedDays:
         for expired in expired_occupancies:
             self.end_occupancies(expired)
 
-    def on_end_of_year(self, **kwargs) -> None:
-        # SOME LOGGING NEEDS TO BE DONE
-        raise ValueError("Will you need to impliment this method")
-
-    def on_simulation_end(self, *args, **kwargs) -> None:
-        pass
-
-    # THESE MAY NOT BE NEEDED BUT ARE THERE TO KEEP THE REWORK HAPPY
-    # Will change all these to be raising errors once we know what needs replacing
-
-    @property
-    def availability(self) -> None:
-        # don't think this attribute needs to be tracked anymore,
-        # but there's a random event that thinks it should change it.
-        # But then the codebase doesn't actually use the value
-        # of this attribute AFTER that point in the simulation anyway.
-        # Have opened https://github.com/UCL/TLOmodel/issues/1346
-        raise ValueError("Tried to access BedDays.availability")
-
+    def on_end_of_year(self) -> None:
+        """
+        Actions to be taken at the end of a simulation year.
+        """
+        self._summary_counter.write_to_log_and_reset_counters()
 
 class BedDaysSummaryCounter:
     """
@@ -831,6 +826,8 @@ class BedDaysSummaryCounter:
         {<bed_type>: <number_of_beddays>}.
     Both the number of bed days used, and the number of bed
     days available, are recorded by this class.
+
+    :param logging_target: The Logger instance to write outputs to.
     """
 
     _bed_days_used: Dict[str, int]
@@ -845,8 +842,14 @@ class BedDaysSummaryCounter:
         self._bed_days_available = defaultdict(int)
 
     def record_usage_of_beds(self, bed_days_used: Dict[str, int], max_capacities: Dict[str, int]) -> None:
-        """Add record of usage of beds. `bed_days_used` is a dict of the form
-        {<bed_type>: <total_beds_available_across_facilities>}.
+        """
+        Record the use of beds, provided as a dictionary.
+
+        :param bed_days_used: Dictionary of the form
+        {<bed_type>: total beds of this type used across all facilities since last record}.
+
+        :param max_capacities: Dictionary of the form
+        {<bed_type>: sum of the maximum capacities of beds of this type across all facilities}.
         """
         for _bed_type, days_used in bed_days_used.items():
             max_cap = max_capacities[_bed_type]
@@ -854,8 +857,6 @@ class BedDaysSummaryCounter:
             self._bed_days_available[_bed_type] += max_cap - days_used
 
     def write_to_log_and_reset_counters(self):
-        """Log summary statistics and reset the data structures."""
-
         if self.logger is not None:
             self.logger.info(
                 key="BedDays",
