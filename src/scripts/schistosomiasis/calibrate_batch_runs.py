@@ -49,7 +49,7 @@ class TestScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'calibration',
+            'filename': 'schisto_calibration',
             'directory': './outputs',
             'custom_levels': {
                 '*': logging.WARNING,
