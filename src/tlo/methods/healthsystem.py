@@ -693,7 +693,6 @@ class HealthSystem(Module):
 
     def on_simulation_end(self):
         """Put out to the log the information from the tracker of the last day of the simulation"""
-        self.bed_days.on_simulation_end()
         self.consumables.on_simulation_end()
         if self._hsi_event_count_log_period == "simulation":
             self._write_hsi_event_counts_to_log_and_reset()

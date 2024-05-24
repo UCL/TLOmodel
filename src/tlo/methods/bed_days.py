@@ -803,7 +803,7 @@ class BedDays:
         }
         # Record the total usage of each bed type today (across all facilities)
         self._summary_counter.record_usage_of_beds(
-            bed_usage, self.max_capacities.sum(axis=1).to_dict()
+            bed_usage, self.max_capacities.sum(axis=0).to_dict()
         )
 
         # Remove any occupancies that expire today,
