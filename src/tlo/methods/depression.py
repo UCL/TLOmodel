@@ -585,10 +585,6 @@ class Depression(Module):
         manager and run diagnosis tests.
         - If the diagnosis_function is passed in directly, it is assumed to be a Callable method that
         runs diagnosis tests.
-<<<<<<< HEAD
-=======
-
->>>>>>> master
         :param person_id: Patient's row index in the population DataFrame.
         :param diagnosis_function: A function capable of running diagnosis checks on the population.
         :param hsi_event: The HSI_Event that triggered this call.
