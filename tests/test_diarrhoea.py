@@ -398,12 +398,14 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration(seed):
         'gi_scheduled_date_recovery': pd.NaT,
         'gi_scheduled_date_death': sim.date + DateOffset(days=2),
         'gi_treatment_date': pd.NaT,
+        'sy_diarrhoea': True,
     }
     df.loc[person_id, props_new.keys()] = props_new.values()
     generic_hsi = HSI_GenericNonEmergencyFirstAppt(
         module=sim.modules["HealthSeekingBehaviour"], person_id=person_id
     )
     patient_details = sim.population.row_in_readonly_form(person_id)
+    symptoms = sim.modules["SymptomManager"].has_what(person_id)
 
     def diagnosis_fn(tests, use_dict: bool = False, report_tried: bool = False):
         return generic_hsi.healthcare_system.dx_manager.run_dx_test(
@@ -419,6 +421,7 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration(seed):
         patient_id=person_id,
         patient_details=patient_details,
         diagnosis_function=diagnosis_fn,
+        symptoms=symptoms,
     )
     evs = sim.modules['HealthSystem'].find_events_for_person(person_id)
 
@@ -432,6 +435,7 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration(seed):
         patient_id=person_id,
         patient_details=patient_details,
         diagnosis_function=diagnosis_fn,
+        symptoms=symptoms,
     )
     evs = sim.modules['HealthSystem'].find_events_for_person(person_id)
     assert 1 == len(evs)
@@ -476,23 +480,25 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration_dxtest_notfuncti
     # Set that person_id=0 is a child with bloody diarrhoea and severe dehydration
     person_id = 0
     props_new = {
-        'age_years': 2,
-        'age_exact_years': 2.0,
-        'gi_has_diarrhoea': True,
-        'gi_pathogen': 'shigella',
-        'gi_type': 'bloody',
-        'gi_dehydration': 'severe',
-        'gi_duration_longer_than_13days': True,
-        'gi_date_of_onset': sim.date,
-        'gi_date_end_of_last_episode': sim.date + DateOffset(days=20),
-        'gi_scheduled_date_recovery': pd.NaT,
-        'gi_scheduled_date_death': sim.date + DateOffset(days=2),
-        'gi_treatment_date': pd.NaT,
+        "age_years": 2,
+        "age_exact_years": 2.0,
+        "gi_has_diarrhoea": True,
+        "gi_pathogen": "shigella",
+        "gi_type": "bloody",
+        "gi_dehydration": "severe",
+        "gi_duration_longer_than_13days": True,
+        "gi_date_of_onset": sim.date,
+        "gi_date_end_of_last_episode": sim.date + DateOffset(days=20),
+        "gi_scheduled_date_recovery": pd.NaT,
+        "gi_scheduled_date_death": sim.date + DateOffset(days=2),
+        "gi_treatment_date": pd.NaT,
+        "sy_diarrhoea": True,
     }
     df.loc[person_id, props_new.keys()] = props_new.values()
     generic_hsi = HSI_GenericNonEmergencyFirstAppt(
         module=sim.modules['HealthSeekingBehaviour'], person_id=person_id)
     patient_details = sim.population.row_in_readonly_form(person_id)
+    symptoms = sim.modules["SymptomManager"].has_what(person_id)
 
     def diagnosis_fn(tests, use_dict: bool = False, report_tried: bool = False):
         return generic_hsi.healthcare_system.dx_manager.run_dx_test(
@@ -509,6 +515,7 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration_dxtest_notfuncti
         patient_id=person_id,
         patient_details=patient_details,
         diagnosis_function=diagnosis_fn,
+        symptoms=symptoms,
     )
     evs = sim.modules['HealthSystem'].find_events_for_person(person_id)
     assert 1 == len(evs)
@@ -552,23 +559,25 @@ def test_do_when_presentation_with_diarrhoea_non_severe_dehydration(seed):
     # Set that person_id=0 is a child with bloody diarrhoea and 'some' dehydration
     person_id = 0
     props_new = {
-        'age_years': 2,
-        'age_exact_years': 2.0,
-        'gi_has_diarrhoea': True,
-        'gi_pathogen': 'shigella',
-        'gi_type': 'bloody',
-        'gi_dehydration': 'some',
-        'gi_duration_longer_than_13days': True,
-        'gi_date_of_onset': sim.date,
-        'gi_date_end_of_last_episode': sim.date + DateOffset(days=20),
-        'gi_scheduled_date_recovery': pd.NaT,
-        'gi_scheduled_date_death': sim.date + DateOffset(days=2),
-        'gi_treatment_date': pd.NaT,
+        "age_years": 2,
+        "age_exact_years": 2.0,
+        "gi_has_diarrhoea": True,
+        "gi_pathogen": "shigella",
+        "gi_type": "bloody",
+        "gi_dehydration": "some",
+        "gi_duration_longer_than_13days": True,
+        "gi_date_of_onset": sim.date,
+        "gi_date_end_of_last_episode": sim.date + DateOffset(days=20),
+        "gi_scheduled_date_recovery": pd.NaT,
+        "gi_scheduled_date_death": sim.date + DateOffset(days=2),
+        "gi_treatment_date": pd.NaT,
+        "sy_diarrhoea": True,
     }
     df.loc[person_id, props_new.keys()] = props_new.values()
     generic_hsi = HSI_GenericNonEmergencyFirstAppt(
         module=sim.modules['HealthSeekingBehaviour'], person_id=person_id)
     patient_details = sim.population.row_in_readonly_form(person_id)
+    symptoms = sim.modules["SymptomManager"].has_what(person_id)
 
     def diagnosis_fn(tests, use_dict: bool = False, report_tried: bool = False):
         return generic_hsi.healthcare_system.dx_manager.run_dx_test(
@@ -580,7 +589,10 @@ def test_do_when_presentation_with_diarrhoea_non_severe_dehydration(seed):
     # 1) Outpatient HSI should be created
     sim.modules["HealthSystem"].reset_queue()
     sim.modules["Diarrhoea"].do_at_generic_first_appt(
-        patient_id=person_id, patient_details=patient_details, diagnosis_function=diagnosis_fn
+        patient_id=person_id,
+        patient_details=patient_details,
+        diagnosis_function=diagnosis_fn,
+        symptoms=symptoms,
     )
     evs = sim.modules["HealthSystem"].find_events_for_person(person_id)
 
