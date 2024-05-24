@@ -84,7 +84,7 @@ class Schisto(Module):
         'MDA_coverage_prognosed': Parameter(Types.DATA_FRAME,
                                             'Probability of getting PZQ in the MDA for PSAC, SAC and Adults '
                                             'in future rounds, with the frequency given in months'),
-        'scenario': Parameter(Types.INT,
+        'scenario': Parameter(Types.REAL,
                                                'Scenario used to reset parameters to run calibration sims'),
     }
 
@@ -151,6 +151,7 @@ class Schisto(Module):
 
         # reset all to one district if doing calibration runs
         if p['scenario'] > 0:
+            print(p['scenario'])
 
             df['district_num_of_residence'] = df['district_num_of_residence'][0]
 
@@ -160,7 +161,7 @@ class Schisto(Module):
             df['district_of_residence'] = pd.Categorical([replacement_value] * len(df),
                                                          categories=df['district_of_residence'].cat.categories)
 
-        if p['scenario'] == 1:
+        if p['scenario'] == 1.0:
             # select haematobium starting points
             mwb = 0.005
             prev = 0.005
@@ -172,7 +173,6 @@ class Schisto(Module):
             tmp = p["sh_prevalence_2010"]
             tmp[:] = prev
             p["sh_prevalence_2010"][:] = tmp
-            print(p["sh_prevalence_2010"])
 
             # set mansoni mwb / prevalence to 0
             tmp = p["sm_mean_worm_burden2010"]
@@ -183,7 +183,7 @@ class Schisto(Module):
             tmp[:] = 0
             p["sm_prevalence_2010"][:] = tmp
 
-        if p['scenario'] == 2:
+        if p['scenario'] == 2.0:
             # select haematobium starting points
             mwb = 0.01
             prev = 0.005
@@ -195,7 +195,6 @@ class Schisto(Module):
             tmp = p["sh_prevalence_2010"]
             tmp[:] = prev
             p["sh_prevalence_2010"][:] = tmp
-            print(p["sh_prevalence_2010"])
 
             # set mansoni mwb / prevalence to 0
             tmp = p["sm_mean_worm_burden2010"]
@@ -206,7 +205,7 @@ class Schisto(Module):
             tmp[:] = 0
             p["sm_prevalence_2010"][:] = tmp
 
-        if p['scenario'] == 3:
+        if p['scenario'] == 3.0:
             # select haematobium starting points
             mwb = 0.005
             prev = 0.01
@@ -218,7 +217,6 @@ class Schisto(Module):
             tmp = p["sh_prevalence_2010"]
             tmp[:] = prev
             p["sh_prevalence_2010"][:] = tmp
-            print(p["sh_prevalence_2010"])
 
             # set mansoni mwb / prevalence to 0
             tmp = p["sm_mean_worm_burden2010"]
@@ -332,6 +330,8 @@ class Schisto(Module):
                             'delay_till_hsi_b_repeated',
                             'prob_sent_to_lab_test_children',
                             'prob_sent_to_lab_test_adults',
+                            'rr_WASH',
+                            'scenario',
             # 'PZQ_efficacy',
                             ):
             parameters[_param_name] = float(param_list[_param_name])

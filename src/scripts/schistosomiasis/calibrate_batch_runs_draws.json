@@ -1,0 +1,33 @@
+{
+  "scenario_script_path": "src/scripts/schistosomiasis/calibrate_batch_runs.py",
+  "scenario_seed": 14881,
+  "runs_per_draw": 1,
+  "draws": [
+    {
+      "draw_number": 0,
+      "parameters": {
+        "Schisto": {
+          "scenario": 1
+        }
+      }
+    },
+    {
+      "draw_number": 1,
+      "parameters": {
+        "Schisto": {
+          "scenario": 2
+        }
+      }
+    },
+    {
+      "draw_number": 2,
+      "parameters": {
+        "Schisto": {
+          "scenario": 3
+        }
+      }
+    }
+  ],
+  "commit": "335bd0a9da4b415768dee93f269c93063c76cc07",
+  "github": "https://github.com/UCL/TLOmodel/tree/335bd0a9da4b415768dee93f269c93063c76cc07"
+}
