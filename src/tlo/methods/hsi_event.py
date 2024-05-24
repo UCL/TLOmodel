@@ -167,6 +167,12 @@ class HSI_Event:
 
     def post_apply_hook(self) -> None:
         """Impose the bed-days footprint (if target of the HSI is a person_id)"""
+
+    def _run_after_hsi_event(self) -> None:
+        """
+        Do things following the event's `apply` and `post_apply_hook` functions running.
+         * Impose the bed-days footprint (if target of the HSI is a person_id)
+        """
         if isinstance(self.target, int):
             self.healthcare_system.bed_days.impose_beddays_footprint(
                 footprint=self.bed_days_allocated_to_this_event,
@@ -179,6 +185,7 @@ class HSI_Event:
         """Make the event happen."""
         updated_appt_footprint = self.apply(self.target, squeeze_factor)
         self.post_apply_hook()
+        self._run_after_hsi_event()
         return updated_appt_footprint
 
     def get_consumables(
