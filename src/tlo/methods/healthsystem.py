@@ -603,6 +603,8 @@ class HealthSystem(Module):
         self.bed_days = BedDays(
             bed_capacities=self.parameters["BedCapacity"],
             capacity_scaling_factor=capacity_scaling_factor,
+            logger=logger,
+            summary_logger=logger_summary,
         )
 
         # Initialise the Consumables class

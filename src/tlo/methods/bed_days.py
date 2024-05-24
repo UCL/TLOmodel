@@ -1,11 +1,16 @@
+from __future__ import annotations
+
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Any, Dict, Iterable, List, Literal, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Literal, Optional, Tuple
 
 import numpy as np
 import pandas as pd
 
 from tlo import Date
+
+if TYPE_CHECKING:
+    from tlo.logging.core import Logger
 
 
 @dataclass
@@ -153,14 +158,18 @@ class BedDays:
     # indicates there are no beds available at a particular facility.
     __NO_BEDS_BED_TYPE: str = "non_bed_space"
 
+    # All available bed types, including the "non_bed_space".
+    # Tuple order dictates bed priority (earlier beds are higher priority).
     _bed_types: Tuple[str]
     # Index: FacilityID, Cols: max capacity of given bed type
     _max_capacities: pd.DataFrame
+    # Logger to write info, warnings etc to
+    _logger: Logger
+    # Counter class for the summary statistics
+    _summary_counter: BedDaysSummaryCounter
 
     # List of current bed occupancies, scheduled and waiting
     occupancies: List[BedOccupancy]
-    # All available bed types, including the "non_bed_space".
-    # Tuple order dictates bed priority (earlier beds are higher priority).
 
     @property
     def bed_facility_level(self) -> str:
@@ -237,9 +246,18 @@ class BedDays:
         self,
         bed_capacities: pd.DataFrame,
         capacity_scaling_factor: float | Literal["all", "none"] = 1.0,
+        logger: Optional[Logger] = None,
+        summary_logger: Optional[Logger] = None,
     ) -> None:
         """
+        TODO
+        NB two loggers because
+                logger = getLogger("tlo.methods.healthsystem")
+        logger_summary = getLogger("tlo.methods.healthsystem.summary")
+
+        one of which is only used by the summary tracker. Move this to main class docstring when you come to write the docstrings Will.
         """
+        self._logger = logger
         self.bed_types = tuple(x for x in bed_capacities.columns if x != "Facility_ID")
 
         # Determine the (scaled) bed capacity of each facility, and store the information
@@ -262,8 +280,10 @@ class BedDays:
             .astype(int)
         )
 
-        # Set the initial list of bed occupancies as an empty list
+        # No occupancies on instantiation
         self.occupancies = []
+        # Summary counter starts at 0
+        self._summary_counter = BedDaysSummaryCounter(logging_target=summary_logger)
 
     def is_inpatient(self, patient_id: int) -> List[BedOccupancy]:
         """
@@ -720,19 +740,46 @@ class BedDays:
 
     def on_end_of_day(self, day_that_is_ending: Date) -> None:
         """
-        The old method does some logging here and no other activities.
-        But we need to clean up the occupancy queue and remove the ones that expired.
+        Actions that are to be taken at the end of a day.
+
+        Current actions are:
+        - Log bed occupancies, per bed type, for today.
+        - Update year-long summary statistics
+        - Remove expired bed occupancies. This must be done after the logging step,
+        since occupancies are still in effect on their freed_date.
 
         :param day_that_is_ending: The simulation day that is coming to an end.
         """
-        expired_occupancies = self.find_occupancies(end_on_or_before=day_that_is_ending)
+        occupancies_today = self.find_occupancies(on_date=day_that_is_ending)
+        bed_type_by_facility: Dict[str, Dict[str, int]] = defaultdict(defaultdict(int))
+        for o in occupancies_today:
+            bed_type_by_facility[o.bed_type][o.facility] += 1
 
+        # Dump today's status of bed-day tracker to the debugging log.
+        # Logger is expected to report {fac: available beds}, for each bed type.
+        if self._logger is not None:
+            for bed_type, occupancy_info in bed_type_by_facility.items():
+                self._logger.info(
+                    key=f"bed_tracker_{bed_type}",
+                    data=occupancy_info,
+                    description=f"Use of bed_type {bed_type}, by day and facility",
+                )
+        # Summary counter is expected to log total bed usage (and remaining capacity) by
+        # bed type.
+        bed_usage = {
+            bed_type: sum(by_facility.values())
+            for bed_type, by_facility in bed_type_by_facility.items()
+        }
+        # Record the total usage of each bed type today (across all facilities)
+        self._summary_counter.record_usage_of_beds(
+            bed_usage, self._max_capacities
+        )
+
+        # Remove any occupancies that expire today,
+        # after having logged their occurrence!
+        expired_occupancies = self.find_occupancies(end_on_or_before=day_that_is_ending)
         for expired in expired_occupancies:
             self.end_occupancies(expired)
-
-        print(f"Removed {len(expired_occupancies)} expired bed occupancies.")
-
-        # DO SOME LOGGING HERE!
 
     def on_end_of_year(self, **kwargs) -> None:
         # SOME LOGGING NEEDS TO BE DONE
@@ -752,3 +799,55 @@ class BedDays:
         # of this attribute AFTER that point in the simulation anyway.
         # Have opened https://github.com/UCL/TLOmodel/issues/1346
         raise ValueError("Tried to access BedDays.availability")
+
+
+class BedDaysSummaryCounter:
+    """
+    Helper class to keep running counts of bed-days used.
+
+    Bed usage is stored in dictionaries, whose structure is:
+        {<bed_type>: <number_of_beddays>}.
+    Both the number of bed days used, and the number of bed
+    days available, are recorded by this class.
+    """
+
+    _bed_days_used: Dict[str, int]
+    _bed_days_available: Dict[str, int]
+
+    def __init__(self, logging_target: Optional[Logger] = None):
+        self.logger = logging_target
+        self._reset_internal_stores()
+
+    def _reset_internal_stores(self) -> None:
+        self._bed_days_used = defaultdict(int)
+        self._bed_days_available = defaultdict(int)
+
+    def record_usage_of_beds(self, bed_days_used: Dict[str, int], max_capacities: Dict[str, int]) -> None:
+        """Add record of usage of beds. `bed_days_used` is a dict of the form
+        {<bed_type>: <total_beds_available_across_facilities>}.
+        """
+        for _bed_type, days_used in bed_days_used.items():
+            max_cap = max_capacities[_bed_type]
+            self._bed_days_used[_bed_type] += days_used
+            self._bed_days_available[_bed_type] += max_cap - days_used
+
+    def write_to_log_and_reset_counters(self):
+        """Log summary statistics and reset the data structures."""
+
+        if self.logger is not None:
+            self.logger.info(
+                key="BedDays",
+                description="Counts of the bed-days that have been used (by type).",
+                data=self._bed_days_used,
+            )
+
+            self.logger.info(
+                key="FractionOfBedDaysUsed",
+                description="Fraction of the bed-days available in the last year that were used (by type).",
+                data={
+                    _bed_type: self._bed_days_used[_bed_type] / _total
+                    for _bed_type, _total in self._bed_days_available.items()
+                },
+            )
+
+        self._reset_internal_stores()
