@@ -176,7 +176,7 @@ class HSI_Event:
         if isinstance(self.target, int):
             self.healthcare_system.bed_days.impose_beddays_footprint(
                 footprint=self.bed_days_allocated_to_this_event,
-                facility=self.facility_info.id,
+                facility=self.healthcare_system.get_facility_id_for_beds(self.target),
                 first_day=self.sim.date,
                 patient_id=self.target,
             )

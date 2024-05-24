@@ -74,6 +74,11 @@ class BedDaysFootprint(dict):
     It is necessary for footprints to track 0-day bed requests so that when
     it comes to allocating bed days, higher-priority bed requests that
     cannot be fulfilled can be cascaded down to lower-priority bed requests.
+
+    NOTE: We encounter
+    https://github.com/pandas-dev/pandas/issues/8757#issuecomment-1479522330
+    in BedDays if we don't explicitly cast the n_days value to a native
+    Python type. For whatever reason, pd.DateOffset doesn't like numpy integers.
     """
 
     def __bool__(self) -> bool:
@@ -100,6 +105,8 @@ class BedDaysFootprint(dict):
         assert (
             n_days >= 0
         ), f"Cannot assign negative amount of days ({n_days}) to bed of type {bed_type}."
+        if type(n_days).__module__ == "numpy":
+            n_days = n_days.item()
         super().__setitem__(bed_type, n_days)
 
     def as_occupancies(
@@ -140,8 +147,6 @@ class BedDaysFootprint(dict):
     def total_days(self) -> int | float:
         """
         Total number of bed days that this footprint imposes.
-
-        Specifically, the sum of the values.
         """
         return sum(self.values())
 
