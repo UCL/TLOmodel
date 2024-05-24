@@ -2768,7 +2768,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
             if facility_level == '1a':
                 _ = self._get_cons('Inhaled_Brochodilator')
             else:
-                # todo: @Eva determine if steroids here are IV (no consumables defined)
+                # n.b. this is never called, see issue 1172
                 _ = self._get_cons('Brochodilator_and_Steroids')
 
     def do_on_follow_up_following_treatment_failure(self):
@@ -2776,12 +2776,11 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
         A further drug will be used but this will have no effect on the chance of the person dying."""
 
         if self._has_staph_aureus():
-            _ = self._get_cons('2nd_line_Antibiotic_therapy_for_severe_staph_pneumonia')
+            cons_avail = self._get_cons('2nd_line_Antibiotic_therapy_for_severe_staph_pneumonia')
         else:
-            _ = self._get_cons('Ceftriaxone_therapy_for_severe_pneumonia')
+            cons_avail = self._get_cons('Ceftriaxone_therapy_for_severe_pneumonia')
 
-        if _:
-            # todo @Eva -- intention here?
+        if cons_avail:
             self.add_equipment({'Infusion pump', 'Drip stand'})
 
     def apply(self, person_id, squeeze_factor):

@@ -1206,7 +1206,7 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
                 self.add_equipment({
                     'Cusco’s/ bivalved Speculum (small, medium, large)', 'Lamp, Anglepoise'
                 })
-                # TODO: add equip for minor surgery
+                # TO DO: @Eva - DISCUSSED add equip for minor surgery
             elif _new_contraceptive == 'IUD':
                 self.add_equipment({
                     'Cusco’s/ bivalved Speculum (small, medium, large)', 'Sponge Holding Forceps'

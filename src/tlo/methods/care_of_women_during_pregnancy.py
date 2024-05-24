@@ -1067,7 +1067,6 @@ class CareOfWomenDuringPregnancy(Module):
                 # she is referred for treatment
                 if avail:
 
-                    # TODO: this actually might be a fasting blood glucose test (not using glucometer)
                     hsi_event.add_equipment({'Glucometer'})
 
                     if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
@@ -1996,7 +1995,6 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
 
     def apply(self, person_id, squeeze_factor):
 
-        # TODO: @Eva - n.b. equipment not added for this HSI but i think it will be deleted with the next PR
 
         df = self.sim.population.props
         mother = df.loc[person_id]

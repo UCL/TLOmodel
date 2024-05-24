@@ -13,7 +13,6 @@ Health care seeking is prompted by the onset of the symptom diarrhoea. The indiv
 
  Outstanding Issues
  * To include rotavirus vaccine
- * See todo
 
 """
 from __future__ import annotations

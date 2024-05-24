@@ -1790,7 +1790,7 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
             data=('This is HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment: '
                   f'The squeeze-factor is {squeeze_factor}.'),
         )
-        # TODO: @Eva link to surgical equipment package when that exists
+        # to do @eva/joe - DISCUSSED, make ICU package and use here
         self.add_equipment({'Analyser, Combined Chemistry and Electrolytes',
                                'Analyser, Haematology',
                                'Patient monitor', 'Drip stand',

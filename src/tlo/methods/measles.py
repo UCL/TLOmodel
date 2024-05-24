@@ -455,7 +455,6 @@ class HSI_Measles_Treatment(HSI_Event, IndividualScopeEventMixin):
                          data=f"HSI_Measles_Treatment: giving required measles treatment to person {person_id}")
 
             if "respiratory_symptoms" in symptoms:
-                # Add used equipment
                 self.add_equipment({'Oxygen concentrator', 'Oxygen cylinder, with regulator'})
 
             # modify person property which is checked when scheduled death occurs (or shouldn't occur)

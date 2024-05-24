@@ -707,7 +707,6 @@ class HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms(HSI_Event, Ind
         self.TREATMENT_ID = "ProstateCancer_Investigation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        # todo @Eva - biopsy equipment needed (perhaps ultrasound to guide).  histology lab equipment.
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -734,7 +733,7 @@ class HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms(HSI_Event, Ind
             )
 
         # Check consumable availability
-        # TODO: @Eva replace with PSA test when added to cons list
+        # TODO: DISCUSSED - but to remain as todo -replace with PSA test when added to cons list
         cons_avail = self.get_consumables(item_codes=self.module.item_codes_prostate_can['screening_psa_test_optional'])
 
         if dx_result and cons_avail:
@@ -757,7 +756,6 @@ class HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(HSI_Event, Individu
         self.TREATMENT_ID = "ProstateCancer_Investigation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        # todo @Eva - biopsy equipment needed (perhaps ultrasound to guide).  histology lab equipment.
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -783,7 +781,7 @@ class HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(HSI_Event, Individu
             hsi_event=self
         )
 
-        # TODO: @Eva - replace with PSA test when added to cons list
+        # TODO: DISCUSSED - but to remain as todo -replace with PSA test when added to cons list
         cons_avail = self.get_consumables(item_codes=self.module.item_codes_prostate_can['screening_psa_test_optional'])
 
         if dx_result and cons_avail:
@@ -885,7 +883,6 @@ class HSI_ProstateCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"MajorSurg": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({"general_bed": 5})
-        # todo: @Eva equipment as required for surgery
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -922,7 +919,7 @@ class HSI_ProstateCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         if cons_available:
 
             # If consumables are available and the treatment will go ahead - update the equipment
-            # TODO: link to surgical equipment package when that exists
+            # TODO: DISCUSSED -link to surgical equipment package when that exists
             self.add_equipment({'Infusion pump', 'Drip stand', 'Laparotomy Set',
                                    'Blood pressure machine', 'Pulse oximeter'})
 
@@ -956,7 +953,6 @@ class HSI_ProstateCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin
         self.TREATMENT_ID = "ProstateCancer_Treatment"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
-        # todo @Eva - possibly biopsy and histology
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -1013,7 +1009,6 @@ class HSI_ProstateCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '2'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 15})
-        # todo @Eva - generally not sure equipment is required as therapy is with drug, but can require castration surgery
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props

@@ -633,8 +633,6 @@ class HSI_Epilepsy_Start_Anti_Epileptic(HSI_Event, IndividualScopeEventMixin):
                                                                        tclose=None,
                                                                        priority=0)
 
-        # todo: @Eva - may need to consider iv diazepam as another hsi
-
 
 class HSI_Epilepsy_Follow_Up(HSI_Event, IndividualScopeEventMixin):
 

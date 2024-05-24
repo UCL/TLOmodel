@@ -3205,8 +3205,7 @@ class HSI_RTI_Imaging_Event(HSI_Event, IndividualScopeEventMixin):
         road_traffic_injuries.rti_injury_diagnosis(person_id, self.EXPECTED_APPT_FOOTPRINT)
 
         if 'DiagRadio' in list(self.EXPECTED_APPT_FOOTPRINT.keys()):
-            # TODO: @Eva - use xray package when available
-            # TODO: @Eva - robbie did not log the 'xray consumable' here as done in other modules (Tb)
+            # TODO: @Eva - DISCUSSED use xray package when available
             self.add_equipment({'X-ray machine', 'X-ray viewer'})
 
         elif 'Tomography' in list(self.EXPECTED_APPT_FOOTPRINT.keys()):
@@ -3514,11 +3513,13 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
 
         if df.loc[person_id, 'rt_ISS_score'] > self.hdu_cut_off_iss_score:
 
-            # TODO: @Eva some general ICU equipment listed below? additional would need to be added dependent on severity
-            #  of illness
-            self.add_equipment({
-                                   'Patient monitor',  'Blood pressure machine',
-                                   'Pulse oximeter', 'Trolley, emergency', 'Stethoscope'})
+            # to do @eva/joe - DISCUSSED, make ICU package and use here
+            self.add_equipment({'Analyser, Combined Chemistry and Electrolytes',
+                                   'Analyser, Haematology',
+                                   'Patient monitor', 'Drip stand',
+                                   'Infusion pump', 'Blood pressure machine',
+                                   'Pulse oximeter', 'Trolley, emergency', 'Stethoscope',
+                                   'Oxygen cylinder, with regulator'})
 
             mean_icu_days = p['mean_icu_days']
             sd_icu_days = p['sd_icu_days']
@@ -4098,7 +4099,7 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
                          data=f"Fracture casts available for person {person_id} {open_fracture_counts} open fractures"
                          )
 
-            # Todo: @Eva link to surgical equipment package when that exsists
+            # Todo: DISCUSSED @Eva link to surgical equipment package when that exsists
             self.add_equipment(
                 {'Infusion pump', 'Drip stand', 'Laparotomy Set', 'Blood pressure machine', 'Pulse oximeter'})
 
@@ -4822,8 +4823,7 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
             assert df.loc[person_id, 'rt_diagnosed'], 'This person has not been through a and e'
             assert df.loc[person_id, 'rt_med_int'], 'This person has not been through rti med int'
 
-            # TODO: @eva - not all surgeries conducted here are laparotomies however likely to have most appropriate equipment
-            #  so should be fine for now
+            # TODO: @eva - DISCUSSED @eva add surgical package
             self.add_equipment({'Laparotomy Set', 'Infusion pump', 'Drip stand'})
 
             # ------------------------ Track permanent disabilities with treatment -------------------------------------
@@ -5141,7 +5141,7 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
         # todo: think about consequences of certain consumables not being available for minor surgery and model health
         #  outcomes
         if request_outcome:
-            # TODO: @Eva link to surgical equipment package when that exists
+            # TODO: DISCUSSED @Eva link to surgical equipment package when that exists
             self.add_equipment({'Laparotomy Set', 'Infusion pump', 'Drip stand'})
 
             # create a dictionary to store the recovery times for each injury in days

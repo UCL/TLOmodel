@@ -2128,7 +2128,7 @@ class Labour(Module):
         if avail and sf_check:
 
             # Add used equipment
-            # Todo: link to surgical equipment package when that exsists
+            # Todo: DISCUSSED - @eva surgical package
             hsi_event.add_equipment(
                 {'Infusion pump', 'Drip stand', 'Laparotomy Set', 'Blood pressure machine', 'Pulse oximeter'})
 
@@ -2139,9 +2139,6 @@ class Labour(Module):
                 self.pph_treatment.set(person_id, 'surgery')
             else:
                 # If the treatment is unsuccessful then women will require a hysterectomy to stop the bleeding
-
-                # todo @Eva Add used equipment
-                # Todo: link to surgical equipment package when that exists
                 hsi_event.add_equipment(
                     {'Hysterectomy set'})
                 self.pph_treatment.set(person_id, 'hysterectomy')
@@ -3239,7 +3236,7 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
             elif (avail and sf_check) or (mni[person_id]['cs_indication'] == 'other'):
 
                 # If intervention is delivered - add used equipment
-                # todo: @Eva link to surgical equipment package when that exsists
+                # todo: DISCUSSED @Eva link to surgical equipment package when that exsists
                 self.add_equipment(
                     {'Infusion pump', 'Drip stand', 'Laparotomy Set', 'Blood pressure machine', 'Pulse oximeter'})
 
