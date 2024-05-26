@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 
 from tlo import Date
-from tlo.scenario import ScenarioLoader, BaseScenario, SampleRunner
+from tlo.scenario import BaseScenario, SampleRunner, ScenarioLoader
 
 
 class TestScenarioStore:
