@@ -130,16 +130,9 @@ class BaseScenario(abc.ABC):
         self.arguments = None
 
     def parse_arguments(self, extra_arguments):
-        """Add scenario-specific arguments to the command line parser.
+        """Base class command line arguments handling for scenarios. This should not be overridden by subclasses.
+        Subclasses can add argument handling to their classes by implementing the `add_arguments` method."""
 
-        This method is called by the CLI to add scenario-specific arguments to the
-        command line parser. The parser is an instance of argparse.ArgumentParser. The
-        method should add arguments to the parser using the add_argument method.
-
-        Example::
-
-            parser.add_argument('--pop-size', type=int, default=20_000, help='Population size')
-        """
         self.arguments = extra_arguments
 
         parser = argparse.ArgumentParser()
@@ -159,7 +152,16 @@ class BaseScenario(abc.ABC):
                 setattr(self, key, value)
 
     def add_arguments(self, parser):
-        """Called to add scenario-specific arguments to the argparse parser. Can be overridden in subclasses."""
+        """Add scenario-specific arguments that can be passed to scenario from the command line.
+
+        This method is called to add scenario-specific arguments to the command line parser. The parser is an
+        instance of argparse.ArgumentParser. The method should add arguments to the parser using the
+        add_argument method.
+
+        Example::
+
+            parser.add_argument('--pop-size', type=int, default=20_000, help='Population size')
+        """
         pass
 
     @abc.abstractmethod
