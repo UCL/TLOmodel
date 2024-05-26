@@ -66,7 +66,7 @@ import json
 import pickle
 from itertools import product
 from pathlib import Path, PurePosixPath
-from typing import Optional
+from typing import Optional, List
 
 import numpy as np
 
@@ -129,7 +129,7 @@ class BaseScenario(abc.ABC):
         self.scenario_path = None
         self.arguments = None
 
-    def parse_arguments(self, extra_arguments):
+    def parse_arguments(self, extra_arguments: List[str]) -> None:
         """Base class command line arguments handling for scenarios. This should not be overridden by subclasses.
         Subclasses can add argument handling to their classes by implementing the `add_arguments` method."""
 
@@ -151,12 +151,13 @@ class BaseScenario(abc.ABC):
                     logger.info(key="message", data=f"Overriding attribute: {key}: {getattr(self, key)} -> {value}")
                 setattr(self, key, value)
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         """Add scenario-specific arguments that can be passed to scenario from the command line.
 
-        This method is called to add scenario-specific arguments to the command line parser. The parser is an
-        instance of argparse.ArgumentParser. The method should add arguments to the parser using the
-        add_argument method.
+        This method is called to add scenario-specific arguments to the command line parser. The method should add
+        arguments to the parser using the `add_argument` method.
+
+        :param parser: An instance of `argparse.ArgumentParser` to which arguments should be added.
 
         Example::
 
