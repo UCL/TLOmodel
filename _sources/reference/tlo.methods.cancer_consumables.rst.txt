@@ -1,0 +1,4 @@
+tlo.methods.cancer_consumables module
+=====================================
+
+.. automodule:: tlo.methods.cancer_consumables

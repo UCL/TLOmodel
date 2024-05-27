@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>HealthSystem parameters (.csv) &mdash; TLOmodel 0.1.dev2392+g4a55807 documentation</title>
+  <title>HealthSystem parameters (.csv) &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../_static/theme_overrides.css?v=6ea10ece" />
@@ -17,8 +17,8 @@
   
         <script src="../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../_static/documentation_options.js?v=2acae80b"></script>
-        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
@@ -160,62 +160,78 @@
 <td><p>2100</p></td>
 </tr>
 <tr class="row-even"><td><p>2</p></td>
+<td><p>scale_to_effective_capabilities</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-odd"><td><p>3</p></td>
 <td><p>Service_Availability</p></td>
 <td><p>[”*”]</p></td>
 </tr>
-<tr class="row-odd"><td><p>3</p></td>
+<tr class="row-even"><td><p>4</p></td>
 <td><p>use_funded_or_actual_staffing</p></td>
 <td><p>funded_plus</p></td>
 </tr>
-<tr class="row-even"><td><p>4</p></td>
+<tr class="row-odd"><td><p>5</p></td>
 <td><p>mode_appt_constraints</p></td>
 <td><p>1</p></td>
 </tr>
-<tr class="row-odd"><td><p>5</p></td>
+<tr class="row-even"><td><p>6</p></td>
 <td><p>mode_appt_constraints_postSwitch</p></td>
 <td><p>1</p></td>
 </tr>
-<tr class="row-even"><td><p>6</p></td>
+<tr class="row-odd"><td><p>7</p></td>
 <td><p>cons_availability</p></td>
 <td><p>default</p></td>
 </tr>
-<tr class="row-odd"><td><p>7</p></td>
+<tr class="row-even"><td><p>8</p></td>
 <td><p>beds_availability</p></td>
 <td><p>default</p></td>
 </tr>
-<tr class="row-even"><td><p>8</p></td>
-<td><p>tclose_overwrite</p></td>
-<td><p>0</p></td>
-</tr>
 <tr class="row-odd"><td><p>9</p></td>
-<td><p>tclose_days_offset_overwrite</p></td>
-<td><p>7</p></td>
+<td><p>equip_availability</p></td>
+<td><p>default</p></td>
 </tr>
 <tr class="row-even"><td><p>10</p></td>
-<td><p>HR_scaling_by_level_and_officer_type_mode</p></td>
+<td><p>equip_availability_postSwitch</p></td>
 <td><p>default</p></td>
 </tr>
 <tr class="row-odd"><td><p>11</p></td>
-<td><p>year_HR_scaling_by_level_and_officer_type</p></td>
+<td><p>year_equip_availability_switch</p></td>
 <td><p>2100</p></td>
 </tr>
 <tr class="row-even"><td><p>12</p></td>
-<td><p>HR_scaling_by_district_mode</p></td>
-<td><p>default</p></td>
+<td><p>tclose_overwrite</p></td>
+<td><p>0</p></td>
 </tr>
 <tr class="row-odd"><td><p>13</p></td>
-<td><p>year_HR_scaling_by_district</p></td>
-<td><p>2100</p></td>
+<td><p>tclose_days_offset_overwrite</p></td>
+<td><p>7</p></td>
 </tr>
 <tr class="row-even"><td><p>14</p></td>
-<td><p>yearly_HR_scaling_mode</p></td>
-<td><p>no_scaling</p></td>
+<td><p>HR_scaling_by_level_and_officer_type_mode</p></td>
+<td><p>default</p></td>
 </tr>
 <tr class="row-odd"><td><p>15</p></td>
-<td><p>year_cons_availability_switch</p></td>
+<td><p>year_HR_scaling_by_level_and_officer_type</p></td>
 <td><p>2100</p></td>
 </tr>
 <tr class="row-even"><td><p>16</p></td>
+<td><p>HR_scaling_by_district_mode</p></td>
+<td><p>default</p></td>
+</tr>
+<tr class="row-odd"><td><p>17</p></td>
+<td><p>year_HR_scaling_by_district</p></td>
+<td><p>2100</p></td>
+</tr>
+<tr class="row-even"><td><p>18</p></td>
+<td><p>yearly_HR_scaling_mode</p></td>
+<td><p>no_scaling</p></td>
+</tr>
+<tr class="row-odd"><td><p>19</p></td>
+<td><p>year_cons_availability_switch</p></td>
+<td><p>2100</p></td>
+</tr>
+<tr class="row-even"><td><p>20</p></td>
 <td><p>cons_availability_postSwitch</p></td>
 <td><p>default</p></td>
 </tr>
@@ -235,7 +251,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Apr 23, 2024.
+      <span class="lastupdated">Last updated on May 27, 2024.
       </span></p>
   </div>
 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.analysis.hsi_events &mdash; TLOmodel 0.1.dev2392+g4a55807 documentation</title>
+  <title>tlo.analysis.hsi_events &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
@@ -16,8 +16,8 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../../_static/documentation_options.js?v=2acae80b"></script>
-        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -582,6 +582,9 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Entry point to do the inspection of HSI events when running as script.&quot;&quot;&quot;</span>
     <span class="n">args</span> <span class="o">=</span> <span class="n">_parse_command_line_args</span><span class="p">()</span>
     <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">json_file</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">args</span><span class="o">.</span><span class="n">merge_json_details</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;Cannot merge details if JSON file not specified&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">json_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">json_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">hsi_event_details</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
@@ -649,7 +652,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Apr 23, 2024.
+      <span class="lastupdated">Last updated on May 27, 2024.
       </span></p>
   </div>
 

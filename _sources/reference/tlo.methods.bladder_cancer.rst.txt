@@ -108,12 +108,12 @@ tlo.methods.bladder_cancer module
         * - rp_bladder_cancer_schisto_h
           - REAL
           - relative prevalence at baseline of bladder cancer if schisto_h
-        * - sensitivity_of_cytoscopy_for_bladder_cancer_blood_urine
+        * - sensitivity_of_cystoscopy_for_bladder_cancer_blood_urine
           - REAL
-          - sensitivity of cytoscopy_for diagnosis of bladder cancer given blood urine
-        * - sensitivity_of_cytoscopy_for_bladder_cancer_pelvic_pain
+          - sensitivity of cystoscopy_for diagnosis of bladder cancer given blood urine
+        * - sensitivity_of_cystoscopy_for_bladder_cancer_pelvic_pain
           - REAL
-          - sensitivity of cytoscopy_for diagnosis of bladder cancer given pelvic pain
+          - sensitivity of cystoscopy_for diagnosis of bladder cancer given pelvic pain
 
 
      **PROPERTIES:**
@@ -148,13 +148,13 @@ tlo.methods.bladder_cancer module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'BladderCancer': <tlo.methods.causes.Cause object at 0x135ee9250>}
+     CAUSES_OF_DEATH : {'BladderCancer': <tlo.methods.causes.Cause object at 0x12e1e8590>}
 
-     CAUSES_OF_DISABILITY : {'BladderCancer': <tlo.methods.causes.Cause object at 0x135eebb10>}
+     CAUSES_OF_DISABILITY : {'BladderCancer': <tlo.methods.causes.Cause object at 0x12e1eac50>}
 
-     INIT_DEPENDENCIES : {'SymptomManager', 'Demography', 'Lifestyle', 'HealthSystem'}
+     INIT_DEPENDENCIES : {'Demography', 'HealthSystem', 'Lifestyle', 'SymptomManager'}
 
-     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHSYSTEM: 3>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 

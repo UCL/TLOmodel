@@ -1,0 +1,3014 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EquipmentCatalogue (.csv) &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
+
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.png"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Equipment Availability Estimates (.csv)" href="ResourceFile_Equipment_Availability_Estimates.csv.html" />
+    <link rel="prev" title="Bed Capacity (.csv)" href="ResourceFile_Bed_Capacity.csv.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            TLOmodel
+          </a>
+              <div class="version">
+                0.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../index.html">Welcome</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../aims.html">Aims &amp; Objectives</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../writeups.html">Model Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../azure_batch.html">Using Azure Batch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../reference/index.html">Reference</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">Resource files</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../cmd/index.html">cmd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../contraception/index.html">contraception</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../demography/index.html">demography</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../epilepsy/index.html">epilepsy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../gbd/index.html">gbd</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">healthsystem</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../consumables/index.html">consumables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../human_resources/index.html">human_resources</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html">infrastructure_and_equipment</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="ResourceFile_Bed_Capacity.csv.html">Bed Capacity (.csv)</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">EquipmentCatalogue (.csv)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="ResourceFile_Equipment_Availability_Estimates.csv.html">Equipment Availability Estimates (.csv)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../organisation/index.html">organisation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../priority_policies/index.html">priority_policies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../real_appt_usage_data/index.html">real_appt_usage_data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ResourceFile_HealthSystem_parameters.csv.html">HealthSystem parameters (.csv)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../malaria/index.html">malaria</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../mapping/index.html">mapping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_AbortionAndMiscarriage.xlsx.html">AbortionAndMiscarriage (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Alri.xlsx.html">Alri (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_AntenatalCare.xlsx.html">AntenatalCare (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Bladder_Cancer.xlsx.html">Bladder Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Breast_Cancer.xlsx.html">Breast Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Childhood_Pneumonia.xlsx.html">Childhood Pneumonia (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Copd.csv.html">Copd (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_DALY_Weights.csv.html">DALY Weights (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Depression.xlsx.html">Depression (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Diarrhoea.xlsx.html">Diarrhoea (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_EPI_WHO_estimates.xlsx.html">EPI WHO estimates (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_EPI_vaccine_coverage.csv.html">EPI vaccine coverage (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_GenericSymptoms_and_HealthSeeking.csv.html">GenericSymptoms and HealthSeeking (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_HIV.xlsx.html">HIV (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_HealthSeekingBehaviour.csv.html">HealthSeekingBehaviour (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_HypertensiveDisordersOfPregnancy.xlsx.html">HypertensiveDisordersOfPregnancy (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking.xlsx.html">Improved Healthsystem And Healthcare Seeking (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_LabourSkilledBirthAttendance.xlsx.html">LabourSkilledBirthAttendance (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Lifestyle_Enhanced.xlsx.html">Lifestyle Enhanced (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Measles.xlsx.html">Measles (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_NewbornOutcomes.xlsx.html">NewbornOutcomes (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Oesophageal_Cancer.xlsx.html">Oesophageal Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Other_Adult_Cancers.xlsx.html">Other Adult Cancers (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_PostnatalSupervisor.xlsx.html">PostnatalSupervisor (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_PregnancySupervisor.xlsx.html">PregnancySupervisor (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Prostate_Cancer.xlsx.html">Prostate Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_RTI.xlsx.html">RTI (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Schisto.xlsx.html">Schisto (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Stunting.xlsx.html">Stunting (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_SymptomManager.csv.html">SymptomManager (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_TB.xlsx.html">TB (.xlsx)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../learning.html">Learning Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributors.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">TLOmodel</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Resource files</a></li>
+          <li class="breadcrumb-item"><a href="../index.html">healthsystem</a></li>
+          <li class="breadcrumb-item"><a href="index.html">infrastructure_and_equipment</a></li>
+      <li class="breadcrumb-item active">EquipmentCatalogue (.csv)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/resources/healthsystem/infrastructure_and_equipment/ResourceFile_EquipmentCatalogue.csv.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="equipmentcatalogue-csv">
+<h1>EquipmentCatalogue (.csv)<a class="headerlink" href="#equipmentcatalogue-csv" title="Link to this heading"></a></h1>
+<p><a class="reference download external" download="" href="https://github.com/UCL/TLOmodel/raw/master/resources/healthsystem/infrastructure_and_equipment/ResourceFile_EquipmentCatalogue.csv"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">original</span> <span class="pre">.csv</span> <span class="pre">file</span> <span class="pre">from</span> <span class="pre">GitHub</span></code></a></p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"></th>
+<th class="head"><p>Item_Description</p></th>
+<th class="head"><p>Item_Code</p></th>
+<th class="head"><p>Pkg_Name</p></th>
+<th class="head"><p>Source_Equip_Item</p></th>
+<th class="head"><p>Alternative item names</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0</p></td>
+<td><p>Height Pole (Stadiometer)</p></td>
+<td><p>0</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Length Boards with ruler, headpiece and foot piece’, ‘Hieght boards sets’</p></td>
+</tr>
+<tr class="row-odd"><td><p>1</p></td>
+<td><p>Weighing scale</p></td>
+<td><p>1</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Salter weighing scale’, ‘Waeighing Scale’</p></td>
+</tr>
+<tr class="row-even"><td><p>2</p></td>
+<td><p>Autoclave</p></td>
+<td><p>2</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘High pressure cooker sterilizer, complete with stove’, ‘Sterilization drums, medium’, ‘Sterilization drum’, ‘Sterilization buckets’, ‘Sterilization buckets (decontamination buckets)’, ‘Sterilization Buckets’, ‘Decontamination drums’, ‘Dressing drum medium’, ‘Dressing drum large’, ‘Dressing drum  small’</p></td>
+</tr>
+<tr class="row-odd"><td><p>3</p></td>
+<td><p>Refrigerator</p></td>
+<td><p>3</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Vaccine refrigerator (solar)’, ‘Vaccine Refrigerator’</p></td>
+</tr>
+<tr class="row-even"><td><p>4</p></td>
+<td><p>Cold box</p></td>
+<td><p>4</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Cold Chain Box-large’, ‘Cold Chain Box-medium’</p></td>
+</tr>
+<tr class="row-odd"><td><p>5</p></td>
+<td><p>Vaccine Carriers</p></td>
+<td><p>5</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>6</p></td>
+<td><p>Blood pressure machine</p></td>
+<td><p>6</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>7</p></td>
+<td><p>Thermometer</p></td>
+<td><p>7</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Thermometers, digital’</p></td>
+</tr>
+<tr class="row-even"><td><p>8</p></td>
+<td><p>Push bike for mobility</p></td>
+<td><p>8</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>9</p></td>
+<td><p>Desk</p></td>
+<td><p>9</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Office desk’</p></td>
+</tr>
+<tr class="row-even"><td><p>10</p></td>
+<td><p>Chair</p></td>
+<td><p>10</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Chairs’</p></td>
+</tr>
+<tr class="row-odd"><td><p>11</p></td>
+<td><p>Bench</p></td>
+<td><p>11</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Wooden benches’, ‘Bench, wood’, ‘Working benches’</p></td>
+</tr>
+<tr class="row-even"><td><p>12</p></td>
+<td><p>Drug box</p></td>
+<td><p>12</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>13</p></td>
+<td><p>Stethoscope</p></td>
+<td><p>13</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Stethoscopes’</p></td>
+</tr>
+<tr class="row-even"><td><p>14</p></td>
+<td><p>Urine dip Stick</p></td>
+<td><p>14</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘urine dipstick’</p></td>
+</tr>
+<tr class="row-odd"><td><p>15</p></td>
+<td><p>Glucometer</p></td>
+<td><p>15</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>16</p></td>
+<td><p>Micro cuvettes (5,000 per haemacue) in packs of 1,000 pieces.</p></td>
+<td><p>16</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>17</p></td>
+<td><p>Haemoglobinometer</p></td>
+<td><p>17</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Haemacue (Haemoglobinometer)’, ‘Hemoglobinometer’</p></td>
+</tr>
+<tr class="row-even"><td><p>18</p></td>
+<td><p>Caliper for assessing skinfold thickness</p></td>
+<td><p>18</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>19</p></td>
+<td><p>Mucous Extractor for neonates</p></td>
+<td><p>19</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>20</p></td>
+<td><p>Penlight</p></td>
+<td><p>20</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>21</p></td>
+<td><p>Water container, 20 litres with tap, on stand with soap</p></td>
+<td><p>21</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Water Tank’, ‘Water container with tap, on stand, Capacity of container 20 Litre, inclusive basin’</p></td>
+</tr>
+<tr class="row-even"><td><p>22</p></td>
+<td><p>Ear Syringe</p></td>
+<td><p>22</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>23</p></td>
+<td><p>Bucket without tap 20 LITRES</p></td>
+<td><p>23</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>24</p></td>
+<td><p>MUAC tape</p></td>
+<td><p>24</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>25</p></td>
+<td><p>Measuring Cup</p></td>
+<td><p>25</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>26</p></td>
+<td><p>Timer</p></td>
+<td><p>26</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Timer (Stopwatch)’</p></td>
+</tr>
+<tr class="row-odd"><td><p>27</p></td>
+<td><p>Trolley, drug</p></td>
+<td><p>27</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Medicine Trolley’</p></td>
+</tr>
+<tr class="row-even"><td><p>28</p></td>
+<td><p>Light, solar</p></td>
+<td><p>28</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Solar Light’, ‘Solar lamps’</p></td>
+</tr>
+<tr class="row-odd"><td><p>29</p></td>
+<td><p>Examination couch</p></td>
+<td><p>29</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Examination couch (community nurses for antenatal and postnatal including family planning)’, ‘Examination couch with stirrups’, ‘Treatment Couch’, ‘Couch, treatment’</p></td>
+</tr>
+<tr class="row-even"><td><p>30</p></td>
+<td><p>Sputum Collection box</p></td>
+<td><p>30</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Sputum container’</p></td>
+</tr>
+<tr class="row-odd"><td><p>31</p></td>
+<td><p>Ordinary Microscope</p></td>
+<td><p>31</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Microscopy’</p></td>
+</tr>
+<tr class="row-even"><td><p>32</p></td>
+<td><p>Basin</p></td>
+<td><p>32</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Basin, wash, p/p, 400 mm diam.’, ‘Metallic Basins’</p></td>
+</tr>
+<tr class="row-odd"><td><p>33</p></td>
+<td><p>Cabinet, filing</p></td>
+<td><p>33</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Cabinet, filling’</p></td>
+</tr>
+<tr class="row-even"><td><p>34</p></td>
+<td><p>Waste Bin</p></td>
+<td><p>34</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Dustbin’, ‘Dustbin with lid’</p></td>
+</tr>
+<tr class="row-odd"><td><p>35</p></td>
+<td><p>Bed, adult</p></td>
+<td><p>35</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Bed labour’, ‘Bed, postnatal’, ‘Beds’, ‘Beds, low’</p></td>
+</tr>
+<tr class="row-even"><td><p>36</p></td>
+<td><p>Mattress for hospital bed, child</p></td>
+<td><p>36</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Mattresses’</p></td>
+</tr>
+<tr class="row-odd"><td><p>37</p></td>
+<td><p>Linen</p></td>
+<td><p>37</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>38</p></td>
+<td><p>Laryngoscope, Macintosh</p></td>
+<td><p>38</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>39</p></td>
+<td><p>Clock, wall type</p></td>
+<td><p>39</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Clock, wall type, with second hand, battery’</p></td>
+</tr>
+<tr class="row-even"><td><p>40</p></td>
+<td><p>Bucket, 10L</p></td>
+<td><p>40</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘10 L buckets’</p></td>
+</tr>
+<tr class="row-odd"><td><p>41</p></td>
+<td><p>Lamp, Anglepoise</p></td>
+<td><p>41</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Angle poised lamp’, ‘Angle poise lamp’</p></td>
+</tr>
+<tr class="row-even"><td><p>42</p></td>
+<td><p>Motorcycle ambulance</p></td>
+<td><p>42</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>43</p></td>
+<td><p>Tray, emergency</p></td>
+<td><p>43</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Emergency tray packs’, ‘Emergency tray’</p></td>
+</tr>
+<tr class="row-even"><td><p>44</p></td>
+<td><p>Incinerator</p></td>
+<td><p>44</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Incenerator’</p></td>
+</tr>
+<tr class="row-odd"><td><p>45</p></td>
+<td><p>Stirring Rods</p></td>
+<td><p>45</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>46</p></td>
+<td><p>Wheelbarrows</p></td>
+<td><p>46</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>47</p></td>
+<td><p>Otto Bins</p></td>
+<td><p>47</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>48</p></td>
+<td><p>Shovels</p></td>
+<td><p>48</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>49</p></td>
+<td><p>Heavy duty apron</p></td>
+<td><p>49</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>50</p></td>
+<td><p>Safety Goggles</p></td>
+<td><p>50</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>51</p></td>
+<td><p>Heavy duty Leather gloves</p></td>
+<td><p>51</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>52</p></td>
+<td><p>Face Shield</p></td>
+<td><p>52</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>53</p></td>
+<td><p>Head Helmet</p></td>
+<td><p>53</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>54</p></td>
+<td><p>Instrument set, insertion/removal, IUCD</p></td>
+<td><p>54</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>55</p></td>
+<td><p>Cupboard</p></td>
+<td><p>55</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Cupboard, dangerous drugs’, ‘Cupboard, low, metal’, ‘Cupboard, instruments, metal, glass door, 750x380x1700mm’</p></td>
+</tr>
+<tr class="row-even"><td><p>56</p></td>
+<td><p>Container, for sharps, for approx. 250 needles</p></td>
+<td><p>56</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>57</p></td>
+<td><p>Trolley, laundry/instrument</p></td>
+<td><p>57</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Trolley’, ‘Trolley, instrument, with s/s shelves, anti-static castors, 600L x 450W x 800H mm’, ‘Trolley, dressing, with shelves, s/s, 600L x 450W x 800H mm.’</p></td>
+</tr>
+<tr class="row-even"><td><p>58</p></td>
+<td><p>Cleaning utensils, set</p></td>
+<td><p>58</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>59</p></td>
+<td><p>Laundry/linen bag</p></td>
+<td><p>59</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>60</p></td>
+<td><p>Light, emergency, solar, with battery backup</p></td>
+<td><p>60</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>61</p></td>
+<td><p>Light, gas</p></td>
+<td><p>61</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>62</p></td>
+<td><p>Suction machine</p></td>
+<td><p>62</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>63</p></td>
+<td><p>Vacuum extractor</p></td>
+<td><p>63</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Vacuum extractor, manual, Bird’s modification of Maelstrom’</p></td>
+</tr>
+<tr class="row-even"><td><p>64</p></td>
+<td><p>Ambu bag, adult with mask</p></td>
+<td><p>64</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Ambu bag, adult’</p></td>
+</tr>
+<tr class="row-odd"><td><p>65</p></td>
+<td><p>Ambu bag, infant with mask</p></td>
+<td><p>65</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Ambu bag, infant’, ‘Neonatal Ambu Bag and Mask’</p></td>
+</tr>
+<tr class="row-even"><td><p>66</p></td>
+<td><p>Manual Vacuum aspiration Set</p></td>
+<td><p>66</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>67</p></td>
+<td><p>Cot, baby (bassinet), hospital-type</p></td>
+<td><p>67</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Cot, baby (bassinette), hospital-type’, ‘Baby Bassinet’</p></td>
+</tr>
+<tr class="row-even"><td><p>68</p></td>
+<td><p>Drip stand</p></td>
+<td><p>68</p></td>
+<td><p>Minor Surgery</p></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Intravenous drip stands’</p></td>
+</tr>
+<tr class="row-odd"><td><p>69</p></td>
+<td><p>Stool, adjustable height</p></td>
+<td><p>69</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Stool, surgeon’s, adjustable height’, ‘Height stool, adjustable’</p></td>
+</tr>
+<tr class="row-even"><td><p>70</p></td>
+<td><p>Sponge Holding Forceps</p></td>
+<td><p>70</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>71</p></td>
+<td><p>Tenaculums</p></td>
+<td><p>71</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Tenacullums’</p></td>
+</tr>
+<tr class="row-even"><td><p>72</p></td>
+<td><p>Foot step, one step</p></td>
+<td><p>72</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Stepping stools’, ‘Steping boards’, ‘Patient step’</p></td>
+</tr>
+<tr class="row-odd"><td><p>73</p></td>
+<td><p>Foot step, two step</p></td>
+<td><p>73</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>74</p></td>
+<td><p>Containers for Decontamination, Cleaning, Instruments and Linen</p></td>
+<td><p>74</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Containers for Decomtamination, Cleaning, Instruments and Linen’</p></td>
+</tr>
+<tr class="row-odd"><td><p>75</p></td>
+<td><p>Bed net, mosquito, single bed</p></td>
+<td><p>75</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>76</p></td>
+<td><p>Lamp, paraffin, hurricane type</p></td>
+<td><p>76</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Lamp, pressure, paraffin, 400mm, 1.1 litres’</p></td>
+</tr>
+<tr class="row-odd"><td><p>77</p></td>
+<td><p>Bedside locker</p></td>
+<td><p>77</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Side bed stools’</p></td>
+</tr>
+<tr class="row-even"><td><p>78</p></td>
+<td><p>Stool basic metal</p></td>
+<td><p>78</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>79</p></td>
+<td><p>Anatomical marker L-R</p></td>
+<td><p>79</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>80</p></td>
+<td><p>Apron protective x-ray lead</p></td>
+<td><p>80</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Lead Apron’</p></td>
+</tr>
+<tr class="row-odd"><td><p>81</p></td>
+<td><p>UPS (uninterruptible power supply)</p></td>
+<td><p>81</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>82</p></td>
+<td><p>Ultrasound quality control</p></td>
+<td><p>82</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Ultrasound quality control equipment’</p></td>
+</tr>
+<tr class="row-odd"><td><p>83</p></td>
+<td><p>Patellar reflex hammer</p></td>
+<td><p>83</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Patella hammer’</p></td>
+</tr>
+<tr class="row-even"><td><p>84</p></td>
+<td><p>Weighing scale, baby</p></td>
+<td><p>84</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Weighing scale, infant, metric, 15.5kgx5g’, ‘Weighing scale, baby, basin type, 16 kg’</p></td>
+</tr>
+<tr class="row-odd"><td><p>85</p></td>
+<td><p>Diagnostic Set</p></td>
+<td><p>85</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Diagnostic Set (needs further detail)’, ‘Diagnostic equipment set for HC’, ‘Diagnostic equipment set for MCH’, ‘Diagnostic equipment set for ward/nurse’</p></td>
+</tr>
+<tr class="row-even"><td><p>86</p></td>
+<td><p>Screen Curtains</p></td>
+<td><p>86</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Screen, four fold, on castors’, ‘patient screen’, ‘Ward Screen’, ‘Patients privacy screens’</p></td>
+</tr>
+<tr class="row-odd"><td><p>87</p></td>
+<td><p>Trolley, food</p></td>
+<td><p>87</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Food Trolley’</p></td>
+</tr>
+<tr class="row-even"><td><p>88</p></td>
+<td><p>Fridge Freezer</p></td>
+<td><p>88</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Deep Freezer’, ‘Compact Chilling/Freezer Unit’</p></td>
+</tr>
+<tr class="row-odd"><td><p>89</p></td>
+<td><p>Fridge Guard</p></td>
+<td><p>89</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>90</p></td>
+<td><p>Air conditioner/fan</p></td>
+<td><p>90</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>91</p></td>
+<td><p>Fridge Freezer Thermometer</p></td>
+<td><p>91</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Frige Freezer Thermometer’, ‘Fridge Thermometer’, ‘Freezer Thermometer’</p></td>
+</tr>
+<tr class="row-even"><td><p>92</p></td>
+<td><p>Lockable Cabinet</p></td>
+<td><p>92</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>93</p></td>
+<td><p>Kettle</p></td>
+<td><p>93</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Kettle (For splinting purposes)’, ‘Electrick Kettle (2 litre)’, ‘Water kettle, boiling, 2ltr’, ‘Water Boiler’</p></td>
+</tr>
+<tr class="row-even"><td><p>94</p></td>
+<td><p>Standing Blocks</p></td>
+<td><p>94</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>95</p></td>
+<td><p>Suspension Slings</p></td>
+<td><p>95</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>96</p></td>
+<td><p>Pulley System</p></td>
+<td><p>96</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>97</p></td>
+<td><p>Board for Cord Knotting</p></td>
+<td><p>97</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>98</p></td>
+<td><p>Wheelchair</p></td>
+<td><p>98</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Wheel chair’</p></td>
+</tr>
+<tr class="row-odd"><td><p>99</p></td>
+<td><p>Built Up (adapted) Utensils</p></td>
+<td><p>99</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>100</p></td>
+<td><p>Universal Cuffs</p></td>
+<td><p>100</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>101</p></td>
+<td><p>Grasp Dynamometer</p></td>
+<td><p>101</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Crasp Dynamometer’</p></td>
+</tr>
+<tr class="row-even"><td><p>102</p></td>
+<td><p>Goniometer</p></td>
+<td><p>102</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>103</p></td>
+<td><p>Pinch Meter</p></td>
+<td><p>103</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>104</p></td>
+<td><p>Medicinal Balls (Sets of 0.5kgs, 1kg, 2kgs, 3kgs, 4kgs, 5kgs)</p></td>
+<td><p>104</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Medicine Balls ( set of ½ kg, 1kg, 2kgs, 3kgs, 4kgs and 5kgs)’, ‘Medicne Ball 3 kgs’, ‘Medicine Ball 5 kgs’</p></td>
+</tr>
+<tr class="row-odd"><td><p>105</p></td>
+<td><p>Box and Block Test</p></td>
+<td><p>105</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>106</p></td>
+<td><p>Foot Sewing Machine</p></td>
+<td><p>106</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>107</p></td>
+<td><p>Ordinary balls</p></td>
+<td><p>107</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>108</p></td>
+<td><p>Light, mobile, Lift-ultra 1500 hydraulic</p></td>
+<td><p>108</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Mobile Lift-ultra light 1500 hydraulic’</p></td>
+</tr>
+<tr class="row-odd"><td><p>109</p></td>
+<td><p>Cognitive kits</p></td>
+<td><p>109</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>110</p></td>
+<td><p>Hand function kits</p></td>
+<td><p>110</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Putty for Hand ExS’</p></td>
+</tr>
+<tr class="row-odd"><td><p>111</p></td>
+<td><p>Patient monitor</p></td>
+<td><p>111</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Patient monitors’</p></td>
+</tr>
+<tr class="row-even"><td><p>112</p></td>
+<td><p>Flip chart stand</p></td>
+<td><p>112</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>113</p></td>
+<td><p>Trolley, patient</p></td>
+<td><p>113</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Patient trolley’, ‘Recovery trolley’</p></td>
+</tr>
+<tr class="row-even"><td><p>114</p></td>
+<td><p>Stretcher</p></td>
+<td><p>114</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>115</p></td>
+<td><p>Casting chairs</p></td>
+<td><p>115</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>116</p></td>
+<td><p>Ruler, steel (1 meter long)</p></td>
+<td><p>116</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Steel Rulers (1 meter long)’</p></td>
+</tr>
+<tr class="row-odd"><td><p>117</p></td>
+<td><p>Measuring tapes</p></td>
+<td><p>117</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Height Measuring Tape’, ‘Tape measure’</p></td>
+</tr>
+<tr class="row-even"><td><p>118</p></td>
+<td><p>Measuring gauges</p></td>
+<td><p>118</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>119</p></td>
+<td><p>X-ray viewer</p></td>
+<td><p>119</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Xray field viewer’</p></td>
+</tr>
+<tr class="row-even"><td><p>120</p></td>
+<td><p>Ruler, square</p></td>
+<td><p>120</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Square rulers’</p></td>
+</tr>
+<tr class="row-odd"><td><p>121</p></td>
+<td><p>Vernier calliper</p></td>
+<td><p>121</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Venier calliper’</p></td>
+</tr>
+<tr class="row-even"><td><p>122</p></td>
+<td><p>Casting apparatus for prosthetics</p></td>
+<td><p>122</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>123</p></td>
+<td><p>Casting platform</p></td>
+<td><p>123</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>124</p></td>
+<td><p>Spinal casting aid</p></td>
+<td><p>124</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>125</p></td>
+<td><p>Analyser, Combined Chemistry and Electrolytes</p></td>
+<td><p>125</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Combined Chemistry and Electolytes analyser’,</p></td>
+</tr>
+<tr class="row-even"><td><p>126</p></td>
+<td><p>Analyser, Chemistry</p></td>
+<td><p>126</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Chemistry Analyser,’</p></td>
+</tr>
+<tr class="row-odd"><td><p>127</p></td>
+<td><p>Analyser, Blood Gas</p></td>
+<td><p>127</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Blood Gas Analyser’</p></td>
+</tr>
+<tr class="row-even"><td><p>128</p></td>
+<td><p>Analyser, Electrolyte (Human HumaLyte Plus) 5, for Na, K, Cl</p></td>
+<td><p>128</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>129</p></td>
+<td><p>Weighing balance, electronic</p></td>
+<td><p>129</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>130</p></td>
+<td><p>Water bath</p></td>
+<td><p>130</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>131</p></td>
+<td><p>Centrifuge</p></td>
+<td><p>131</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘MagFuge Centrifuge and Stirer’</p></td>
+</tr>
+<tr class="row-even"><td><p>132</p></td>
+<td><p>Analyzer, Clinical immunoassay</p></td>
+<td><p>132</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>133</p></td>
+<td><p>Micropipettes, 2 – 20ul</p></td>
+<td><p>133</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>134</p></td>
+<td><p>Micropipettes, 5 - 50ul</p></td>
+<td><p>134</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>135</p></td>
+<td><p>Micropipettes 10 - 100ul</p></td>
+<td><p>135</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>136</p></td>
+<td><p>Micropipettes, 20 - 200ul</p></td>
+<td><p>136</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>137</p></td>
+<td><p>Micropipettes, 50 - 250ul</p></td>
+<td><p>137</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>138</p></td>
+<td><p>Micropipettes, 100 - 1000ul</p></td>
+<td><p>138</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>139</p></td>
+<td><p>Analyser, Hormones</p></td>
+<td><p>139</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Hormones Analyser’</p></td>
+</tr>
+<tr class="row-even"><td><p>140</p></td>
+<td><p>Blood Bank Fridge (2-8 oC)</p></td>
+<td><p>140</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>141</p></td>
+<td><p>Automatic Cell washer</p></td>
+<td><p>141</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>142</p></td>
+<td><p>Blood Bank Centrifuge</p></td>
+<td><p>142</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>143</p></td>
+<td><p>ABO Blood grouping Tiles</p></td>
+<td><p>143</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>144</p></td>
+<td><p>Viewing box</p></td>
+<td><p>144</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>145</p></td>
+<td><p>Donor Bleeding Couch</p></td>
+<td><p>145</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>146</p></td>
+<td><p>Vortex mixer</p></td>
+<td><p>146</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>147</p></td>
+<td><p>Platelet Agitator</p></td>
+<td><p>147</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>148</p></td>
+<td><p>Printer</p></td>
+<td><p>148</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>149</p></td>
+<td><p>Exercise Mats</p></td>
+<td><p>149</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Gym matts’, ‘Adult mats’</p></td>
+</tr>
+<tr class="row-even"><td><p>150</p></td>
+<td><p>Cast cutters (Electrical)</p></td>
+<td><p>150</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Electric Cast Remover’</p></td>
+</tr>
+<tr class="row-odd"><td><p>151</p></td>
+<td><p>Cast cutters (Mechanical)</p></td>
+<td><p>151</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Cast cutters  (Mechanical)’, ‘Manual Cast Remover’</p></td>
+</tr>
+<tr class="row-even"><td><p>152</p></td>
+<td><p>Parallel Bars</p></td>
+<td><p>152</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Remedial Parallel Bars’, ‘Paediatrics parallel bars’, ‘Paediatric parallel bar’</p></td>
+</tr>
+<tr class="row-odd"><td><p>153</p></td>
+<td><p>Abduction splints (Small, medium, large)</p></td>
+<td><p>153</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>154</p></td>
+<td><p>Digital scales</p></td>
+<td><p>154</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>155</p></td>
+<td><p>Pedal bin</p></td>
+<td><p>155</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Pedal Bins’, ‘Dustbin pedal’</p></td>
+</tr>
+<tr class="row-even"><td><p>156</p></td>
+<td><p>Mirror, rehabilitation/physiotherapy</p></td>
+<td><p>156</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Mobile Mirrows’, ‘Mobile Posture Mirrow’, ‘Static  Mirrows’</p></td>
+</tr>
+<tr class="row-odd"><td><p>157</p></td>
+<td><p>Incentive spirometers</p></td>
+<td><p>157</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Incentive Spirometry’</p></td>
+</tr>
+<tr class="row-even"><td><p>158</p></td>
+<td><p>Postural Drainage Couch</p></td>
+<td><p>158</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Postural drainage couches’</p></td>
+</tr>
+<tr class="row-odd"><td><p>159</p></td>
+<td><p>Table</p></td>
+<td><p>159</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Tables’</p></td>
+</tr>
+<tr class="row-even"><td><p>160</p></td>
+<td><p>Gestation Wheels R(Chart)</p></td>
+<td><p>160</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>161</p></td>
+<td><p>Ultrasound scanning machine</p></td>
+<td><p>161</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Mobile Ultrasound scanning general with printer’, ‘Obstetric Ultrasound scan with doppler’, ‘Ultrasound scanning portable’, ‘Detector, foetal heart, ultrasonic, portable, Doppler’</p></td>
+</tr>
+<tr class="row-even"><td><p>162</p></td>
+<td><p>Fetoscope</p></td>
+<td><p>162</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>163</p></td>
+<td><p>Receiver</p></td>
+<td><p>163</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Receivers’</p></td>
+</tr>
+<tr class="row-even"><td><p>164</p></td>
+<td><p>Computed Tomography (CT machine)</p></td>
+<td><p>164</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>165</p></td>
+<td><p>CT scanner accessories</p></td>
+<td><p>165</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>166</p></td>
+<td><p>Automatic injection</p></td>
+<td><p>166</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>167</p></td>
+<td><p>Trolley, Trauma Patient CT</p></td>
+<td><p>167</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Trauma Patient CT Trolley’</p></td>
+</tr>
+<tr class="row-even"><td><p>168</p></td>
+<td><p>Patient transfer roller board</p></td>
+<td><p>168</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘25” Patient transfer roller board’,’Patient transfer roll board’</p></td>
+</tr>
+<tr class="row-odd"><td><p>169</p></td>
+<td><p>Image view station, for conferences</p></td>
+<td><p>169</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>170</p></td>
+<td><p>Infusion pump</p></td>
+<td><p>170</p></td>
+<td><p>Minor Surgery</p></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>171</p></td>
+<td><p>Trolley, emergency</p></td>
+<td><p>171</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Emergency trolley’</p></td>
+</tr>
+<tr class="row-even"><td><p>172</p></td>
+<td><p>Cusco’s/ bivalved Speculum (small, medium, large)</p></td>
+<td><p>172</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Speculums’, ‘Speculum’, ‘Cuscos/ bivalve Speculum (small, medium, large)’</p></td>
+</tr>
+<tr class="row-odd"><td><p>173</p></td>
+<td><p>Cardiotocography</p></td>
+<td><p>173</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>174</p></td>
+<td><p>Delivery Beds with Stirrups</p></td>
+<td><p>174</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Bed, delivery’, ‘Bed, for delivery’</p></td>
+</tr>
+<tr class="row-odd"><td><p>175</p></td>
+<td><p>Light, operating, mobile</p></td>
+<td><p>175</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>176</p></td>
+<td><p>Delivery Trolley</p></td>
+<td><p>176</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>177</p></td>
+<td><p>Step Chairs</p></td>
+<td><p>177</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>178</p></td>
+<td><p>Bucket Stand</p></td>
+<td><p>178</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Stand, bowl, kick about’</p></td>
+</tr>
+<tr class="row-odd"><td><p>179</p></td>
+<td><p>Oxygen concentrator</p></td>
+<td><p>179</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>180</p></td>
+<td><p>Oxygen ports</p></td>
+<td><p>180</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>181</p></td>
+<td><p>Amnio hook</p></td>
+<td><p>181</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>182</p></td>
+<td><p>Delivery Forceps</p></td>
+<td><p>182</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>183</p></td>
+<td><p>Bed pans</p></td>
+<td><p>183</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>184</p></td>
+<td><p>Delivery set</p></td>
+<td><p>184</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Hollow ware’, ‘Hollow ware, set, delivery room’, ‘Hollow ware set, ward, duty station’, ‘Instrument set’, ‘Episiotomy set’</p></td>
+</tr>
+<tr class="row-odd"><td><p>185</p></td>
+<td><p>Incubator, transit</p></td>
+<td><p>185</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Transit Incubator’</p></td>
+</tr>
+<tr class="row-even"><td><p>186</p></td>
+<td><p>Sterilizing unit, steam, non vacuum, vertical, electric, medium, 240 litre</p></td>
+<td><p>186</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>187</p></td>
+<td><p>Tray, instrument, set of 3 sizes, covered, s/s, 305x254x51mm</p></td>
+<td><p>187</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>188</p></td>
+<td><p>Stethoscope, foetal, monaural, Pinard, plastic</p></td>
+<td><p>188</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>189</p></td>
+<td><p>Cupboard, for medicine, lockable</p></td>
+<td><p>189</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Lockable Cupboards for medicine’</p></td>
+</tr>
+<tr class="row-even"><td><p>190</p></td>
+<td><p>Rack for apron and glove x-ray</p></td>
+<td><p>190</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Lead apron rack’</p></td>
+</tr>
+<tr class="row-odd"><td><p>191</p></td>
+<td><p>Pillows of various shapes</p></td>
+<td><p>191</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Square pillow’</p></td>
+</tr>
+<tr class="row-even"><td><p>192</p></td>
+<td><p>Pillow cases</p></td>
+<td><p>192</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>193</p></td>
+<td><p>Light, examination, floor standing, articulated</p></td>
+<td><p>193</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>194</p></td>
+<td><p>Tubal Ligation and Vasectomy Sets</p></td>
+<td><p>194</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Tubal Ligation Set’</p></td>
+</tr>
+<tr class="row-odd"><td><p>195</p></td>
+<td><p>Static Digital Fluoroscopy</p></td>
+<td><p>195</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Static Digital Floroscopy’, ‘Floroscopy’</p></td>
+</tr>
+<tr class="row-even"><td><p>196</p></td>
+<td><p>Static Digital Fluoroscopy accessories</p></td>
+<td><p>196</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Static Digital Floroscopy accessories’</p></td>
+</tr>
+<tr class="row-odd"><td><p>197</p></td>
+<td><p>Crutches, Axillary</p></td>
+<td><p>197</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Axillary crutches’</p></td>
+</tr>
+<tr class="row-even"><td><p>198</p></td>
+<td><p>Crutches, Elbow</p></td>
+<td><p>198</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Metallic Crutches’, ‘Crutches’, ‘Elbow crutches’, ‘Crutches’</p></td>
+</tr>
+<tr class="row-odd"><td><p>199</p></td>
+<td><p>Rollators</p></td>
+<td><p>199</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>200</p></td>
+<td><p>Picture Archiving and Communication System (PACS)</p></td>
+<td><p>200</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>201</p></td>
+<td><p>Digitiser</p></td>
+<td><p>201</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>202</p></td>
+<td><p>X-ray machine</p></td>
+<td><p>202</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘X ray machine’, ‘Static digital x-ray machine’</p></td>
+</tr>
+<tr class="row-odd"><td><p>203</p></td>
+<td><p>Disinfector, boiling water type, electric, s/s</p></td>
+<td><p>203</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Disinfector, boiling water type, electric, s/s, int. dim. 510x310x140mm’, ‘Disinfector, boiling water type, electric, large, s/s, int. dim. 685x508x432mm’</p></td>
+</tr>
+<tr class="row-even"><td><p>204</p></td>
+<td><p>Cradle, burns</p></td>
+<td><p>204</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>205</p></td>
+<td><p>Mattress for hospital bed, adult</p></td>
+<td><p>205</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>206</p></td>
+<td><p>Tray, instrument, set of 12 sizes, covered, s/s, 305x254x51mm</p></td>
+<td><p>206</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>207</p></td>
+<td><p>Dumbbells (Sets of 0.5kgs to 15kgs)</p></td>
+<td><p>207</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Dumbells (Sets of 0.5kgs to 15kgs)’</p></td>
+</tr>
+<tr class="row-even"><td><p>208</p></td>
+<td><p>Hydraulic hand rower machine</p></td>
+<td><p>208</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>209</p></td>
+<td><p>Electro Surgical unit</p></td>
+<td><p>209</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>210</p></td>
+<td><p>LLETZ Machine</p></td>
+<td><p>210</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>211</p></td>
+<td><p>Colposcopes</p></td>
+<td><p>211</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>212</p></td>
+<td><p>Laparotomy Set</p></td>
+<td><p>212</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Laparatomy Set’</p></td>
+</tr>
+<tr class="row-odd"><td><p>213</p></td>
+<td><p>Hysterectomy set</p></td>
+<td><p>213</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Total Abdominal Hysterectomy set’, ‘Vaginal Hysterectomy Set’, ‘Radical Hysterectomy set’</p></td>
+</tr>
+<tr class="row-even"><td><p>214</p></td>
+<td><p>Bipolar Diathermy Machine</p></td>
+<td><p>214</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>215</p></td>
+<td><p>VVF and RVF set</p></td>
+<td><p>215</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>216</p></td>
+<td><p>D&amp;C set</p></td>
+<td><p>216</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>217</p></td>
+<td><p>Evacuation set</p></td>
+<td><p>217</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>218</p></td>
+<td><p>Suction Curettage machine</p></td>
+<td><p>218</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Suction Curettage  machine’</p></td>
+</tr>
+<tr class="row-odd"><td><p>219</p></td>
+<td><p>Molar set</p></td>
+<td><p>219</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>220</p></td>
+<td><p>Trolley, Mayo Instrument</p></td>
+<td><p>220</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Mayo Instrument trolley’</p></td>
+</tr>
+<tr class="row-odd"><td><p>221</p></td>
+<td><p>Analyser, Haematology</p></td>
+<td><p>221</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Haematology analyser Auto’, ‘Haematology analyser Semi’</p></td>
+</tr>
+<tr class="row-even"><td><p>222</p></td>
+<td><p>Westergreen ESR set</p></td>
+<td><p>222</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>223</p></td>
+<td><p>Neubauer Chamber</p></td>
+<td><p>223</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Neuber Chamber’</p></td>
+</tr>
+<tr class="row-even"><td><p>224</p></td>
+<td><p>Shaker</p></td>
+<td><p>224</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>225</p></td>
+<td><p>Differential Mechanical Counter(8 keys)</p></td>
+<td><p>225</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>226</p></td>
+<td><p>Tally Counter</p></td>
+<td><p>226</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Tally Ccounter’</p></td>
+</tr>
+<tr class="row-odd"><td><p>227</p></td>
+<td><p>Coagulation machine</p></td>
+<td><p>227</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>228</p></td>
+<td><p>Slice Master sample processing Unit</p></td>
+<td><p>228</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>229</p></td>
+<td><p>Paraffin Dispense</p></td>
+<td><p>229</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>230</p></td>
+<td><p>Manual Rotary Microtome</p></td>
+<td><p>230</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>231</p></td>
+<td><p>LED Tissue floatation water bath and slide dryer Combo</p></td>
+<td><p>231</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>232</p></td>
+<td><p>Tissue Floatation Water Bath</p></td>
+<td><p>232</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Tissue Floatation  Water Bath’, ‘Tissue Floatation Bath’</p></td>
+</tr>
+<tr class="row-odd"><td><p>233</p></td>
+<td><p>Slide Dryer/Warmer</p></td>
+<td><p>233</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Large Slide Warmers’, ‘Step up slide warmer for 40 slides’, ‘Small Slide Warmers’, ‘Mini Section/Slide Dryers’, ‘Glassware Drier’, ‘Drier’</p></td>
+</tr>
+<tr class="row-even"><td><p>234</p></td>
+<td><p>IHL Slide Manager $ Slide dryer Combo</p></td>
+<td><p>234</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>235</p></td>
+<td><p>Paraffin Block Trimmer</p></td>
+<td><p>235</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Paraffin Block Trmmer’</p></td>
+</tr>
+<tr class="row-even"><td><p>236</p></td>
+<td><p>PELCO BioWave Plot</p></td>
+<td><p>236</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>237</p></td>
+<td><p>Stereo Microscopes</p></td>
+<td><p>237</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>238</p></td>
+<td><p>Biological Microscopes</p></td>
+<td><p>238</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>239</p></td>
+<td><p>Centrifuge, Mini</p></td>
+<td><p>239</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Mini Centrifuges’, ‘Microfuge’</p></td>
+</tr>
+<tr class="row-even"><td><p>240</p></td>
+<td><p>Cell Tec Activation Filters</p></td>
+<td><p>240</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>241</p></td>
+<td><p>UV pipette Carousel</p></td>
+<td><p>241</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘UV pippette Carousal’</p></td>
+</tr>
+<tr class="row-even"><td><p>242</p></td>
+<td><p>Anti-shock garment</p></td>
+<td><p>242</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘anti-shock garmet’</p></td>
+</tr>
+<tr class="row-odd"><td><p>243</p></td>
+<td><p>Pulse oximeter</p></td>
+<td><p>243</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>244</p></td>
+<td><p>Lamination suction system</p></td>
+<td><p>244</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Lamination sunction system’</p></td>
+</tr>
+<tr class="row-odd"><td><p>245</p></td>
+<td><p>Drilling machine</p></td>
+<td><p>245</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>246</p></td>
+<td><p>Router machine</p></td>
+<td><p>246</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>247</p></td>
+<td><p>Band saws</p></td>
+<td><p>247</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>248</p></td>
+<td><p>Fume extractor</p></td>
+<td><p>248</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>249</p></td>
+<td><p>Magnetic resonance imaging (MRI)</p></td>
+<td><p>249</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>250</p></td>
+<td><p>MRI quality control test kits</p></td>
+<td><p>250</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>251</p></td>
+<td><p>Racks, storage, set</p></td>
+<td><p>251</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>252</p></td>
+<td><p>Chair, office</p></td>
+<td><p>252</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Office chairs’</p></td>
+</tr>
+<tr class="row-odd"><td><p>253</p></td>
+<td><p>Biosafety Cabinet (Class II)</p></td>
+<td><p>253</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>254</p></td>
+<td><p>Incubator (O2)</p></td>
+<td><p>254</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>255</p></td>
+<td><p>Incubator (CO2)</p></td>
+<td><p>255</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>256</p></td>
+<td><p>Blood culture incubator</p></td>
+<td><p>256</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>257</p></td>
+<td><p>Anaerobic Jars (AnO2)</p></td>
+<td><p>257</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>258</p></td>
+<td><p>Pipette filler</p></td>
+<td><p>258</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>259</p></td>
+<td><p>Fridge, Domestic</p></td>
+<td><p>259</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Domestic Fridge’</p></td>
+</tr>
+<tr class="row-even"><td><p>260</p></td>
+<td><p>Slide storage box</p></td>
+<td><p>260</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Slide storage boxes’</p></td>
+</tr>
+<tr class="row-odd"><td><p>261</p></td>
+<td><p>Sample roller mixer</p></td>
+<td><p>261</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>262</p></td>
+<td><p>Automatic staining machine</p></td>
+<td><p>262</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>263</p></td>
+<td><p>Dispensing pumps for culture media preparation</p></td>
+<td><p>263</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>264</p></td>
+<td><p>Automated blood culture systems</p></td>
+<td><p>264</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>265</p></td>
+<td><p>Magnetic Stirrer</p></td>
+<td><p>265</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Magnetic Stirer’, ‘Magnetic Induction Stirrers’</p></td>
+</tr>
+<tr class="row-even"><td><p>266</p></td>
+<td><p>Sensitivity disc dispenser</p></td>
+<td><p>266</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>267</p></td>
+<td><p>Oven (dryer)</p></td>
+<td><p>267</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>268</p></td>
+<td><p>Hot plate</p></td>
+<td><p>268</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>269</p></td>
+<td><p>Gene Expert (16 Module)</p></td>
+<td><p>269</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>270</p></td>
+<td><p>Burnsen Burner</p></td>
+<td><p>270</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>271</p></td>
+<td><p>Blood culture rack</p></td>
+<td><p>271</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>272</p></td>
+<td><p>Distiller</p></td>
+<td><p>272</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Distiller, Water, 4L/Hr’</p></td>
+</tr>
+<tr class="row-odd"><td><p>273</p></td>
+<td><p>Led Microscope</p></td>
+<td><p>273</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>274</p></td>
+<td><p>Electron Microscope</p></td>
+<td><p>274</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>275</p></td>
+<td><p>Conventional PCR Equipment set</p></td>
+<td><p>275</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>276</p></td>
+<td><p>Thermal Mixer</p></td>
+<td><p>276</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>277</p></td>
+<td><p>Heat Blocks</p></td>
+<td><p>277</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>278</p></td>
+<td><p>DNA Sequencer</p></td>
+<td><p>278</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>279</p></td>
+<td><p>Ultrasound, combined 2/4 pole interferential with vacuum and dual frequency 1-3MHZ</p></td>
+<td><p>279</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Combined 2/4 pole interferential with vacuum and dual frequency 1-3MHZ ultrasound’</p></td>
+</tr>
+<tr class="row-even"><td><p>280</p></td>
+<td><p>Combined Wax Sterizer &amp; Wax bath 15 litres</p></td>
+<td><p>280</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>281</p></td>
+<td><p>Tunturi E420 Ergometer</p></td>
+<td><p>281</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>282</p></td>
+<td><p>Solitude 11 Platinum Treadmill</p></td>
+<td><p>282</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>283</p></td>
+<td><p>Mega Pulse Senior 265</p></td>
+<td><p>283</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>284</p></td>
+<td><p>Hot Pack Therapy Units</p></td>
+<td><p>284</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>285</p></td>
+<td><p>Voltage Regulators</p></td>
+<td><p>285</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>286</p></td>
+<td><p>Infrared stand</p></td>
+<td><p>286</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>287</p></td>
+<td><p>TENs Unit</p></td>
+<td><p>287</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>288</p></td>
+<td><p>Muscle stimulator</p></td>
+<td><p>288</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>289</p></td>
+<td><p>Lumber &amp; Cervical Traction Units</p></td>
+<td><p>289</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>290</p></td>
+<td><p>3D Thumb</p></td>
+<td><p>290</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>291</p></td>
+<td><p>MVA Set</p></td>
+<td><p>291</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>292</p></td>
+<td><p>Lamp, examination</p></td>
+<td><p>292</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Examination lamp’</p></td>
+</tr>
+<tr class="row-odd"><td><p>293</p></td>
+<td><p>Resuscitaire</p></td>
+<td><p>293</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>294</p></td>
+<td><p>Nasal Prongs</p></td>
+<td><p>294</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>295</p></td>
+<td><p>Dual ergometer</p></td>
+<td><p>295</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Dual Egormeter’</p></td>
+</tr>
+<tr class="row-even"><td><p>296</p></td>
+<td><p>Rehabilitation wall bars</p></td>
+<td><p>296</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>297</p></td>
+<td><p>Sims’ Speculum</p></td>
+<td><p>297</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Simms Speculum’, ‘Vaginal retractors’</p></td>
+</tr>
+<tr class="row-even"><td><p>298</p></td>
+<td><p>Cystoscope</p></td>
+<td><p>298</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>299</p></td>
+<td><p>Cryotherapy unit</p></td>
+<td><p>299</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>300</p></td>
+<td><p>LLETZ Machines</p></td>
+<td><p>300</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>301</p></td>
+<td><p>Stationery bicycles</p></td>
+<td><p>301</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>302</p></td>
+<td><p>Treadmill</p></td>
+<td><p>302</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>303</p></td>
+<td><p>Wobble mat</p></td>
+<td><p>303</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Wable mat’</p></td>
+</tr>
+<tr class="row-even"><td><p>304</p></td>
+<td><p>Sets of sand bags</p></td>
+<td><p>304</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘sand bags (Sets of 0.5kg -15kgs)’</p></td>
+</tr>
+<tr class="row-odd"><td><p>305</p></td>
+<td><p>Knee continuous range of motion machine</p></td>
+<td><p>305</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>306</p></td>
+<td><p>Vacuum system</p></td>
+<td><p>306</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>307</p></td>
+<td><p>Slide drying rack</p></td>
+<td><p>307</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Slide Drier Rack’</p></td>
+</tr>
+<tr class="row-even"><td><p>308</p></td>
+<td><p>Air Extractor</p></td>
+<td><p>308</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>309</p></td>
+<td><p>Applicator sticks jar</p></td>
+<td><p>309</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>310</p></td>
+<td><p>Skin snips equipment set</p></td>
+<td><p>310</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>311</p></td>
+<td><p>Staining Jars</p></td>
+<td><p>311</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Couplin Staining Jars’</p></td>
+</tr>
+<tr class="row-even"><td><p>312</p></td>
+<td><p>Developmental milestone chats</p></td>
+<td><p>312</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>313</p></td>
+<td><p>Wedges of various shapes</p></td>
+<td><p>313</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>314</p></td>
+<td><p>Rolls of various sizes and shapes</p></td>
+<td><p>314</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>315</p></td>
+<td><p>Standing board</p></td>
+<td><p>315</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Standing Boards’</p></td>
+</tr>
+<tr class="row-even"><td><p>316</p></td>
+<td><p>Cerebral Palsy (CP) chair</p></td>
+<td><p>316</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>317</p></td>
+<td><p>Corner seat</p></td>
+<td><p>317</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>318</p></td>
+<td><p>Bulk stores</p></td>
+<td><p>318</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>319</p></td>
+<td><p>Room heater, electric, wall mounted</p></td>
+<td><p>319</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Wall mounted Heaters’</p></td>
+</tr>
+<tr class="row-even"><td><p>320</p></td>
+<td><p>Incubator, infant</p></td>
+<td><p>320</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>321</p></td>
+<td><p>Phototherapy unit, infant, with accessories</p></td>
+<td><p>321</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>322</p></td>
+<td><p>Resuscitator, manual, infant</p></td>
+<td><p>322</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>323</p></td>
+<td><p>HSG set</p></td>
+<td><p>323</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>324</p></td>
+<td><p>Urethrogram set</p></td>
+<td><p>324</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>325</p></td>
+<td><p>Intravenous Pyrography set</p></td>
+<td><p>325</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>326</p></td>
+<td><p>Bone Densitometry</p></td>
+<td><p>326</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>327</p></td>
+<td><p>Posters</p></td>
+<td><p>327</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>328</p></td>
+<td><p>Vices</p></td>
+<td><p>328</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>329</p></td>
+<td><p>Steel rods</p></td>
+<td><p>329</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Steel rodes’</p></td>
+</tr>
+<tr class="row-even"><td><p>330</p></td>
+<td><p>Mixing bowls</p></td>
+<td><p>330</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>331</p></td>
+<td><p>Spatula</p></td>
+<td><p>331</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Spatular’</p></td>
+</tr>
+<tr class="row-even"><td><p>332</p></td>
+<td><p>Blades</p></td>
+<td><p>332</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>333</p></td>
+<td><p>Surforms</p></td>
+<td><p>333</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Surfoms’</p></td>
+</tr>
+<tr class="row-even"><td><p>334</p></td>
+<td><p>Sample Rack</p></td>
+<td><p>334</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>335</p></td>
+<td><p>Tray, Sample</p></td>
+<td><p>335</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Sample Trays’</p></td>
+</tr>
+<tr class="row-even"><td><p>336</p></td>
+<td><p>ELISA (automated)</p></td>
+<td><p>336</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘ELISA  (automated)’</p></td>
+</tr>
+<tr class="row-odd"><td><p>337</p></td>
+<td><p>ELISA (Semi Automated)</p></td>
+<td><p>337</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘ELISA  (Semi Automated)’</p></td>
+</tr>
+<tr class="row-even"><td><p>338</p></td>
+<td><p>ELISA Plate washer</p></td>
+<td><p>338</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>339</p></td>
+<td><p>ELISA Reader</p></td>
+<td><p>339</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>340</p></td>
+<td><p>Flow Cytometer</p></td>
+<td><p>340</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>Flowcytometry</p></td>
+</tr>
+<tr class="row-odd"><td><p>341</p></td>
+<td><p>CD4 Point of Care</p></td>
+<td><p>341</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>342</p></td>
+<td><p>Adaptive communication switches (Infrared switches)</p></td>
+<td><p>342</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Adaptive communication switches (Infrared swiches)’</p></td>
+</tr>
+<tr class="row-odd"><td><p>343</p></td>
+<td><p>Sound measuring apparatus/decibel meter</p></td>
+<td><p>343</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>344</p></td>
+<td><p>Diagnostic stroboscopes</p></td>
+<td><p>344</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>345</p></td>
+<td><p>Tablet computer</p></td>
+<td><p>345</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>346</p></td>
+<td><p>Voice synthesizer</p></td>
+<td><p>346</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>347</p></td>
+<td><p>Analytical software</p></td>
+<td><p>347</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>348</p></td>
+<td><p>Medical software</p></td>
+<td><p>348</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>349</p></td>
+<td><p>Office software</p></td>
+<td><p>349</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>350</p></td>
+<td><p>Speech therapy kit (Kazoo, toobaloo head set, toobaloo, pustefix bubble bear)</p></td>
+<td><p>350</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>351</p></td>
+<td><p>Picture flash cards</p></td>
+<td><p>351</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Verbs flash cards’</p></td>
+</tr>
+<tr class="row-even"><td><p>352</p></td>
+<td><p>Bed sheets</p></td>
+<td><p>352</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Large Bed Sheets’</p></td>
+</tr>
+<tr class="row-odd"><td><p>353</p></td>
+<td><p>Shelves</p></td>
+<td><p>353</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>354</p></td>
+<td><p>Wiper holder</p></td>
+<td><p>354</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>355</p></td>
+<td><p>Static digital accessories</p></td>
+<td><p>355</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>356</p></td>
+<td><p>Radiation Survey meter</p></td>
+<td><p>356</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Radiaton Survey meter’</p></td>
+</tr>
+<tr class="row-odd"><td><p>357</p></td>
+<td><p>Quality control kit (radiology)</p></td>
+<td><p>357</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>358</p></td>
+<td><p>Static digital</p></td>
+<td><p>358</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>359</p></td>
+<td><p>Lead glove protective x-ray pair</p></td>
+<td><p>359</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Glove protective x-ray pair’</p></td>
+</tr>
+<tr class="row-even"><td><p>360</p></td>
+<td><p>Lead gonad shields</p></td>
+<td><p>360</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>361</p></td>
+<td><p>Lead thyroid shield</p></td>
+<td><p>361</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>362</p></td>
+<td><p>Lead google</p></td>
+<td><p>362</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>363</p></td>
+<td><p>exer</p></td>
+<td><p>363</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Thin mattress’</p></td>
+</tr>
+<tr class="row-even"><td><p>364</p></td>
+<td><p>Intravenous Pyelography set</p></td>
+<td><p>364</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>365</p></td>
+<td><p>Oxygen cylinder, with regulator</p></td>
+<td><p>365</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Oxygen cylinder’</p></td>
+</tr>
+<tr class="row-even"><td><p>366</p></td>
+<td><p>Sterilizing unit, steam, non vacuum, vertical, electric, medium, 39 ltr</p></td>
+<td><p>366</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>367</p></td>
+<td><p>Resuscitator</p></td>
+<td><p>367</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>368</p></td>
+<td><p>Computer set</p></td>
+<td><p>368</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Computer set, desktop, ‘Computer, printer’, ‘Computer with printer’</p></td>
+</tr>
+<tr class="row-odd"><td><p>369</p></td>
+<td><p>Laptop</p></td>
+<td><p>369</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>370</p></td>
+<td><p>Backsplit cotton gown</p></td>
+<td><p>370</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>371</p></td>
+<td><p>Bulk stores</p></td>
+<td><p>371</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>372</p></td>
+<td><p>Sphygmomanometer</p></td>
+<td><p>372</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Syphygmomanometer’, ‘Sphygmomamometer’</p></td>
+</tr>
+<tr class="row-odd"><td><p>373</p></td>
+<td><p>Exercise ball</p></td>
+<td><p>373</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Exercise balls’</p></td>
+</tr>
+<tr class="row-even"><td><p>374</p></td>
+<td><p>Wobble board</p></td>
+<td><p>374</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Wable board’</p></td>
+</tr>
+<tr class="row-odd"><td><p>375</p></td>
+<td><p>Stationary bike</p></td>
+<td><p>375</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>376</p></td>
+<td><p>Paediatric mat</p></td>
+<td><p>376</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Paeditric mat’</p></td>
+</tr>
+<tr class="row-odd"><td><p>377</p></td>
+<td><p>Mirror</p></td>
+<td><p>377</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Wall mirrors (2m x 0.5m)’, ‘Mirrors’, ‘wall mounted mirror’</p></td>
+</tr>
+<tr class="row-even"><td><p>378</p></td>
+<td><p>Tilt table</p></td>
+<td><p>378</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Paediatric Tilt table’, ‘Paediatrics tilt table’, ‘Variable Height Tilt Kit’</p></td>
+</tr>
+<tr class="row-odd"><td><p>379</p></td>
+<td><p>Overhead pulley</p></td>
+<td><p>379</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Overhead pulleys’</p></td>
+</tr>
+<tr class="row-even"><td><p>380</p></td>
+<td><p>Dumb bells (Sets of 0.5kg - 15kgs)</p></td>
+<td><p>380</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Dumb bells (Sets of 0.5kg  - 15kgs)’</p></td>
+</tr>
+<tr class="row-odd"><td><p>381</p></td>
+<td><p>Training stairs</p></td>
+<td><p>381</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>382</p></td>
+<td><p>Interferential therapy machine</p></td>
+<td><p>382</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>383</p></td>
+<td><p>Transcutaneous electrical neuromuscular stimulation</p></td>
+<td><p>383</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Transcutaneous electrical neuromascular stimulation’</p></td>
+</tr>
+<tr class="row-even"><td><p>384</p></td>
+<td><p>Walking Frame</p></td>
+<td><p>384</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Walking frames’</p></td>
+</tr>
+<tr class="row-odd"><td><p>385</p></td>
+<td><p>Lumber/Cervical Traction</p></td>
+<td><p>385</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>386</p></td>
+<td><p>Preacher’s Table</p></td>
+<td><p>386</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Preachers table’</p></td>
+</tr>
+<tr class="row-odd"><td><p>387</p></td>
+<td><p>Stress Ball</p></td>
+<td><p>387</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Squeezing Balls’</p></td>
+</tr>
+<tr class="row-even"><td><p>388</p></td>
+<td><p>Patient Transfer Aid</p></td>
+<td><p>388</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Sara stedy Patient Transfer Aid’, ‘Sara stady patient transifer aid’, ‘Etac Turner PRO sit-to-Stand Patient Transfer turning point’, ‘Etac turner Pro sit to stand patient transifer turning aid’</p></td>
+</tr>
+<tr class="row-odd"><td><p>389</p></td>
+<td><p>Gym mat</p></td>
+<td><p>389</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>390</p></td>
+<td><p>Development milestone charts</p></td>
+<td><p>390</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>391</p></td>
+<td><p>Pillow, wedge</p></td>
+<td><p>391</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Wedge pillow’</p></td>
+</tr>
+<tr class="row-even"><td><p>392</p></td>
+<td><p>Pillow, roll</p></td>
+<td><p>392</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Roll pillow’</p></td>
+</tr>
+<tr class="row-odd"><td><p>393</p></td>
+<td><p>Paediatric Standing frame</p></td>
+<td><p>393</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>394</p></td>
+<td><p>Paediatric CP Chair</p></td>
+<td><p>394</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>395</p></td>
+<td><p>Paediatric Corner sit</p></td>
+<td><p>395</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>396</p></td>
+<td><p>Paediatric rollator</p></td>
+<td><p>396</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Padiatric rollator’</p></td>
+</tr>
+<tr class="row-odd"><td><p>397</p></td>
+<td><p>Bobath bed</p></td>
+<td><p>397</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Bobath beds’</p></td>
+</tr>
+<tr class="row-even"><td><p>398</p></td>
+<td><p>Wobble mat</p></td>
+<td><p>398</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>399</p></td>
+<td><p>Walking Cane</p></td>
+<td><p>399</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Walking canes’</p></td>
+</tr>
+<tr class="row-even"><td><p>400</p></td>
+<td><p>Knee continuous passive motion machine</p></td>
+<td><p>400</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td><p>‘Knee continous passive motion machine’</p></td>
+</tr>
+<tr class="row-odd"><td><p>401</p></td>
+<td><p>Shoulder wheel</p></td>
+<td><p>401</p></td>
+<td></td>
+<td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="ResourceFile_Bed_Capacity.csv.html" class="btn btn-neutral float-left" title="Bed Capacity (.csv)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="ResourceFile_Equipment_Availability_Estimates.csv.html" class="btn btn-neutral float-right" title="Equipment Availability Estimates (.csv)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+      <span class="lastupdated">Last updated on May 27, 2024.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

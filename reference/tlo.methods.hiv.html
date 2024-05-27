@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.hiv module &mdash; TLOmodel 0.1.dev2392+g4a55807 documentation</title>
+  <title>tlo.methods.hiv module &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -17,8 +17,8 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=2acae80b"></script>
-        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -483,11 +483,11 @@ still occur.</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ADDITIONAL_DEPENDENCIES : {‘Tb’, ‘NewbornOutcomes’}</p>
-<p>CAUSES_OF_DEATH : {‘AIDS_non_TB’: &lt;tlo.methods.causes.Cause object at 0x124d8fc90&gt;, ‘AIDS_TB’: &lt;tlo.methods.causes.Cause object at 0x124d8c710&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘HIV’: &lt;tlo.methods.causes.Cause object at 0x124d8c310&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘SymptomManager’, ‘Demography’, ‘Lifestyle’, ‘HealthSystem’}</p>
-<p>METADATA : {&lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;}</p>
+<p>ADDITIONAL_DEPENDENCIES : {‘NewbornOutcomes’, ‘Tb’}</p>
+<p>CAUSES_OF_DEATH : {‘AIDS_non_TB’: &lt;tlo.methods.causes.Cause object at 0x11cd8cc10&gt;, ‘AIDS_TB’: &lt;tlo.methods.causes.Cause object at 0x11cd8ea10&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘HIV’: &lt;tlo.methods.causes.Cause object at 0x11cd8d650&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘Demography’, ‘HealthSystem’, ‘Lifestyle’, ‘SymptomManager’}</p>
+<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’}</p>
 <p><strong>Functions (defined or overridden in class Hiv):</strong></p>
 <dl class="py method">
@@ -1276,7 +1276,7 @@ Default the person to being off PrEP</p>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Hiv_StartOrContinueTreatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HSI_Hiv_StartOrContinueTreatment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HSI_Hiv_StartOrContinueTreatment" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event" title="tlo.methods.hsi_event.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_event.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
-<p>EXPECTED_APPT_FOOTPRINT : &lt;property object at 0x124d848b0&gt;</p>
+<p>EXPECTED_APPT_FOOTPRINT : &lt;property object at 0x11cb5e1b0&gt;</p>
 <p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class HSI_Hiv_StartOrContinueTreatment):</strong></p>
 <dl class="py method">
@@ -1525,7 +1525,7 @@ It is a good place to add initial events to the event queue.</p>
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Apr 23, 2024.
+      <span class="lastupdated">Last updated on May 27, 2024.
       </span></p>
   </div>
 

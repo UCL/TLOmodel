@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.hsi_event &mdash; TLOmodel 0.1.dev2392+g4a55807 documentation</title>
+  <title>tlo.methods.hsi_event &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
@@ -16,8 +16,8 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../../_static/documentation_options.js?v=2acae80b"></script>
-        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -90,7 +90,7 @@
 <span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">Counter</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">NamedTuple</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">NamedTuple</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
@@ -130,6 +130,7 @@
     <span class="n">facility_level</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
     <span class="n">appt_footprint</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span>
     <span class="n">beddays_footprint</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span>
+    <span class="n">equipment</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
 
 
 <span class="k">class</span> <span class="nc">HSIEventQueueItem</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
@@ -163,7 +164,7 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Base HSI event class, from which all others inherit.</span>
 
 <span class="sd">    Concrete subclasses should also inherit from one of the EventMixin classes</span>
-<span class="sd">    defined in `src/tlo/events.py`, and implement at least an `apply` and </span>
+<span class="sd">    defined in `src/tlo/events.py`, and implement at least an `apply` and</span>
 <span class="sd">    `did_not_run` method.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -195,16 +196,22 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">module</span> <span class="o">=</span> <span class="n">module</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
-        <span class="c1"># Information that will later be received about this HSI</span>
+        <span class="c1"># Information that will later be received/computed about this HSI</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_received_info_about_bed_days</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">expected_time_requests</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">facility_info</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_is_all_declared_equipment_available</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="c1"># Set &quot;dynamic&quot; default value</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">BEDDAYS_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_beddays_footprint</span><span class="p">({})</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">BEDDAYS_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_beddays_footprint</span><span class="p">({})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EQUIPMENT</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>  <span class="c1"># The set of equipment that is used in the HSI. If any items in this set are</span></div>
 
+        <span class="c1">#                                     not available at the point when the HSI will be run, then the HSI is not</span>
+        <span class="c1">#                                     run, and the `never_ran` method is called instead. This is a declaration</span>
+        <span class="c1">#                                     of resource needs, but is private because users are expected to use</span>
+        <span class="c1">#                                     `add_equipment` to declare equipment needs.</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">bed_days_allocated_to_this_event</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -273,10 +280,27 @@
 <div class="viewcode-block" id="HSI_Event.post_apply_hook">
 <a class="viewcode-back" href="../../../reference/tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event.post_apply_hook">[docs]</a>
     <span class="k">def</span> <span class="nf">post_apply_hook</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Impose the bed-days footprint (if target of the HSI is a person_id)&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Do any required processing after apply() completes.&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="HSI_Event._run_after_hsi_event">
+<a class="viewcode-back" href="../../../reference/tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event._run_after_hsi_event">[docs]</a>
+    <span class="k">def</span> <span class="nf">_run_after_hsi_event</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Do things following the event&#39;s `apply` and `post_apply_hook` functions running.</span>
+<span class="sd">         * Impose the bed-days footprint (if target of the HSI is a person_id)</span>
+<span class="sd">         * Record the equipment that has been added before and during the course of the HSI Event.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">healthcare_system</span><span class="o">.</span><span class="n">bed_days</span><span class="o">.</span><span class="n">impose_beddays_footprint</span><span class="p">(</span>
                 <span class="n">person_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="n">footprint</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bed_days_allocated_to_this_event</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">facility_info</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># If there is a facility_info (e.g., healthsystem not running in disabled mode), then record equipment used</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">healthcare_system</span><span class="o">.</span><span class="n">equipment</span><span class="o">.</span><span class="n">record_use_of_equipment</span><span class="p">(</span>
+                <span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_EQUIPMENT</span><span class="p">,</span>
+                <span class="n">facility_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">facility_info</span><span class="o">.</span><span class="n">id</span>
             <span class="p">)</span></div>
 
 
@@ -286,6 +310,7 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Make the event happen.&quot;&quot;&quot;</span>
         <span class="n">updated_appt_footprint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">post_apply_hook</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_run_after_hsi_event</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">updated_appt_footprint</span></div>
 
 
@@ -383,6 +408,47 @@
             <span class="s2">&quot;Argument to make_appt_footprint should be a dictionary keyed by &quot;</span>
             <span class="s2">&quot;appointment type code strings in Appt_Types_Table with non-negative &quot;</span>
             <span class="s2">&quot;values&quot;</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HSI_Event.add_equipment">
+<a class="viewcode-back" href="../../../reference/tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event.add_equipment">[docs]</a>
+    <span class="k">def</span> <span class="nf">add_equipment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_codes</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Declare that piece(s) of equipment are used in this HSI_Event. Equipment items can be identified by their</span>
+<span class="sd">        item_codes (int) or descriptors (str); a singular item or an iterable of items (either codes or descriptors but</span>
+<span class="sd">        not a mix of both) can be defined at once. Checks are done on the validity of the item_codes/item</span>
+<span class="sd">        descriptions and a warning issued if any are not recognised.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EQUIPMENT</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">healthcare_system</span><span class="o">.</span><span class="n">equipment</span><span class="o">.</span><span class="n">parse_items</span><span class="p">(</span><span class="n">item_codes</span><span class="p">))</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_all_declared_equipment_available</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns ``True`` if all the (currently) declared items of equipment are available. This is called by the</span>
+<span class="sd">        ``HealthSystem`` module before the HSI is run and so is looking only at those items that are declared when this</span>
+<span class="sd">        instance was created. The evaluation of whether equipment is available is only done *once* for this instance of</span>
+<span class="sd">        the event: i.e., if the equipment is not available for the instance of this ``HSI_Event``, then it will remain not</span>
+<span class="sd">        available if the same event is re-scheduled/re-entered into the HealthSystem queue. This is representing that</span>
+<span class="sd">        if the facility that a particular person attends for the ``HSI_Event`` does not have the equipment available, then</span>
+<span class="sd">        it will also not be available on another day.&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_all_declared_equipment_available</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Availability has not already been evaluated: determine availability</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_is_all_declared_equipment_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">healthcare_system</span><span class="o">.</span><span class="n">equipment</span><span class="o">.</span><span class="n">is_all_items_available</span><span class="p">(</span>
+                <span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_EQUIPMENT</span><span class="p">,</span>
+                <span class="n">facility_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">facility_info</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_all_declared_equipment_available</span>
+
+<div class="viewcode-block" id="HSI_Event.probability_all_equipment_available">
+<a class="viewcode-back" href="../../../reference/tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event.probability_all_equipment_available">[docs]</a>
+    <span class="k">def</span> <span class="nf">probability_all_equipment_available</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_codes</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the probability that all the equipment item_codes are available. This does not imply that the</span>
+<span class="sd">        equipment is being used and no logging happens. It is provided as a convenience to disease module authors in</span>
+<span class="sd">        case the logic during an ``HSI_Event`` depends on the availability of a piece of equipment. This function</span>
+<span class="sd">        accepts the item codes/descriptions in a variety of formats, so the argument needs to be parsed.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">healthcare_system</span><span class="o">.</span><span class="n">equipment</span><span class="o">.</span><span class="n">probability_all_equipment_available</span><span class="p">(</span>
+            <span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">healthcare_system</span><span class="o">.</span><span class="n">equipment</span><span class="o">.</span><span class="n">parse_items</span><span class="p">(</span><span class="n">item_codes</span><span class="p">),</span>
+            <span class="n">facility_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">facility_info</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
         <span class="p">)</span></div>
 
 
@@ -505,6 +571,7 @@
             <span class="n">beddays_footprint</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span>
                 <span class="nb">sorted</span><span class="p">((</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">BEDDAYS_FOOTPRINT</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">v</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
             <span class="p">),</span>
+            <span class="n">equipment</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_EQUIPMENT</span><span class="p">)),</span>
         <span class="p">)</span></div>
 </div>
 
@@ -568,7 +635,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Apr 23, 2024.
+      <span class="lastupdated">Last updated on May 27, 2024.
       </span></p>
   </div>
 

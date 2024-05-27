@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.tb module &mdash; TLOmodel 0.1.dev2392+g4a55807 documentation</title>
+  <title>tlo.methods.tb module &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -17,8 +17,8 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=2acae80b"></script>
-        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -486,12 +486,12 @@ for eligible people (HIV+ and paediatric contacts of active TB cases</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>CAUSES_OF_DEATH : {‘TB’: &lt;tlo.methods.causes.Cause object at 0x124debf90&gt;, ‘AIDS_TB’: &lt;tlo.methods.causes.Cause object at 0x124deb910&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘TB’: &lt;tlo.methods.causes.Cause object at 0x124dea190&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘Lifestyle’, ‘HealthSystem’, ‘Epi’, ‘Demography’, ‘SymptomManager’}</p>
-<p>METADATA : {&lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;}</p>
+<p>CAUSES_OF_DEATH : {‘TB’: &lt;tlo.methods.causes.Cause object at 0x11cbb9a90&gt;, ‘AIDS_TB’: &lt;tlo.methods.causes.Cause object at 0x11cbb9590&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘TB’: &lt;tlo.methods.causes.Cause object at 0x11cbb9dd0&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘HealthSystem’, ‘Lifestyle’, ‘SymptomManager’, ‘Epi’, ‘Demography’}</p>
+<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘Hiv’, ‘HealthBurden’}</p>
-<p>SYMPTOMS : {‘night_sweats’, ‘fatigue’}</p>
+<p>SYMPTOMS : {‘fatigue’, ‘night_sweats’}</p>
 <p><strong>Functions (defined or overridden in class Tb):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.Tb.__init__">
@@ -1022,7 +1022,7 @@ constructor, but may also take further keyword arguments.</p>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Tb_StartTreatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#HSI_Tb_StartTreatment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_StartTreatment" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event" title="tlo.methods.hsi_event.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_event.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
-<p>EXPECTED_APPT_FOOTPRINT : &lt;property object at 0x124ad7f10&gt;</p>
+<p>EXPECTED_APPT_FOOTPRINT : &lt;property object at 0x11cb5d850&gt;</p>
 <p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class HSI_Tb_StartTreatment):</strong></p>
 <dl class="py method">
@@ -1051,7 +1051,7 @@ if available, change person’s properties</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.HSI_Tb_StartTreatment.post_apply_hook">
 <span class="sig-name descname"><span class="pre">post_apply_hook</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#HSI_Tb_StartTreatment.post_apply_hook"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_StartTreatment.post_apply_hook" title="Link to this definition"></a></dt>
-<dd><p>Impose the bed-days footprint (if target of the HSI is a person_id)</p>
+<dd><p>Do any required processing after apply() completes.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -1399,7 +1399,7 @@ It is a good place to add initial events to the event queue.</p>
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Apr 23, 2024.
+      <span class="lastupdated">Last updated on May 27, 2024.
       </span></p>
   </div>
 

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.rti module &mdash; TLOmodel 0.1.dev2392+g4a55807 documentation</title>
+  <title>tlo.methods.rti module &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -17,8 +17,8 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=2acae80b"></script>
-        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -1160,18 +1160,18 @@
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ADDITIONAL_DEPENDENCIES : {‘Demography’, ‘Lifestyle’, ‘HealthSystem’}</p>
-<p>CAUSES_OF_DEATH : {‘RTI_death_without_med’: &lt;tlo.methods.causes.Cause object at 0x1362e2dd0&gt;, ‘RTI_death_with_med’: &lt;tlo.methods.causes.Cause object at 0x1362e1d50&gt;, ‘RTI_unavailable_med’: &lt;tlo.methods.causes.Cause object at 0x1362e1290&gt;, ‘RTI_imm_death’: &lt;tlo.methods.causes.Cause object at 0x1362e05d0&gt;, ‘RTI_death_shock’: &lt;tlo.methods.causes.Cause object at 0x1362e3510&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘RTI’: &lt;tlo.methods.causes.Cause object at 0x1362e18d0&gt;}</p>
+<p>ADDITIONAL_DEPENDENCIES : {‘Demography’, ‘HealthSystem’, ‘Lifestyle’}</p>
+<p>CAUSES_OF_DEATH : {‘RTI_death_without_med’: &lt;tlo.methods.causes.Cause object at 0x12df31d10&gt;, ‘RTI_death_with_med’: &lt;tlo.methods.causes.Cause object at 0x12df31050&gt;, ‘RTI_unavailable_med’: &lt;tlo.methods.causes.Cause object at 0x12df32e90&gt;, ‘RTI_imm_death’: &lt;tlo.methods.causes.Cause object at 0x12df30dd0&gt;, ‘RTI_death_shock’: &lt;tlo.methods.causes.Cause object at 0x12df33090&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘RTI’: &lt;tlo.methods.causes.Cause object at 0x12df30690&gt;}</p>
 <p>DATE_TO_REMOVE_DALY_COLUMNS : [‘rt_date_to_remove_daly_1’, ‘rt_date_to_remove_daly_2’, ‘rt_date_to_remove_daly_3’, ‘rt_date_to_remove_daly_4’, ‘rt_date_to_remove_daly_5’, ‘rt_date_to_remove_daly_6’, ‘rt_date_to_remove_daly_7’, ‘rt_date_to_remove_daly_8’]</p>
 <p>FRACTURE_CODES : [‘112’, ‘113’, ‘211’, ‘212’, ‘412’, ‘414’, ‘612’, ‘712’, ‘811’, ‘812’, ‘813’]</p>
-<p>INIT_DEPENDENCIES : {‘SymptomManager’, ‘HealthBurden’}</p>
+<p>INIT_DEPENDENCIES : {‘HealthBurden’, ‘SymptomManager’}</p>
 <p>INJURIES_REQ_IMAGING : [‘112’, ‘113’, ‘211’, ‘212’, ‘412’, ‘414’, ‘612’, ‘712a’, ‘712b’, ‘712c’, ‘811’, ‘812’, ‘813a’, ‘813b’, ‘813c’, ‘822a’, ‘822b’, ‘813bo’, ‘813co’, ‘813do’, ‘813eo’, ‘673’, ‘674’, ‘675’, ‘676’, ‘322’, ‘323’, ‘722’, ‘342’, ‘343’, ‘441’, ‘443’, ‘453’, ‘133’, ‘134’, ‘135’, ‘552’, ‘553’, ‘554’, ‘342’, ‘343’, ‘441’, ‘443’, ‘453’, ‘361’, ‘363’, ‘461’, ‘463’]</p>
 <p>INJURY_CODES : [‘none’, ‘112’, ‘113’, ‘133a’, ‘133b’, ‘133c’, ‘133d’, ‘134a’, ‘134b’, ‘135’, ‘1101’, ‘1114’, ‘211’, ‘212’, ‘241’, ‘2101’, ‘2114’, ‘291’, ‘342’, ‘343’, ‘361’, ‘363’, ‘322’, ‘323’, ‘3101’, ‘3113’, ‘412’, ‘414’, ‘461’, ‘463’, ‘453a’, ‘453b’, ‘441’, ‘442’, ‘443’, ‘4101’, ‘4113’, ‘552’, ‘553’, ‘554’, ‘5101’, ‘5113’, ‘612’, ‘673a’, ‘673b’, ‘674a’, ‘674b’, ‘675a’, ‘675b’, ‘676’, ‘712a’, ‘712b’, ‘712c’, ‘722’, ‘782a’, ‘782b’, ‘782c’, ‘783’, ‘7101’, ‘7113’, ‘811’, ‘813do’, ‘812’, ‘813eo’, ‘813a’, ‘813b’, ‘813bo’, ‘813c’, ‘813co’, ‘822a’, ‘822b’, ‘882’, ‘883’, ‘884’, ‘8101’, ‘8113’, ‘P133a’, ‘P133b’, ‘P133c’, ‘P133d’, ‘P134a’, ‘P134b’, ‘P135’, ‘P673a’, ‘P673b’, ‘P674a’, ‘P674b’, ‘P675a’, ‘P675b’, ‘P676’, ‘P782a’, ‘P782b’, ‘P782c’, ‘P783’, ‘P882’, ‘P883’, ‘P884’]</p>
 <p>INJURY_COLUMNS : [‘rt_injury_1’, ‘rt_injury_2’, ‘rt_injury_3’, ‘rt_injury_4’, ‘rt_injury_5’, ‘rt_injury_6’, ‘rt_injury_7’, ‘rt_injury_8’]</p>
 <p>INJURY_DATE_COLUMN_MAP : {‘rt_injury_1’: ‘rt_date_to_remove_daly_1’, ‘rt_injury_2’: ‘rt_date_to_remove_daly_2’, ‘rt_injury_3’: ‘rt_date_to_remove_daly_3’, ‘rt_injury_4’: ‘rt_date_to_remove_daly_4’, ‘rt_injury_5’: ‘rt_date_to_remove_daly_5’, ‘rt_injury_6’: ‘rt_date_to_remove_daly_6’, ‘rt_injury_7’: ‘rt_date_to_remove_daly_7’, ‘rt_injury_8’: ‘rt_date_to_remove_daly_8’, ‘rt_date_to_remove_daly_1’: ‘rt_injury_1’, ‘rt_date_to_remove_daly_2’: ‘rt_injury_2’, ‘rt_date_to_remove_daly_3’: ‘rt_injury_3’, ‘rt_date_to_remove_daly_4’: ‘rt_injury_4’, ‘rt_date_to_remove_daly_5’: ‘rt_injury_5’, ‘rt_date_to_remove_daly_6’: ‘rt_injury_6’, ‘rt_date_to_remove_daly_7’: ‘rt_injury_7’, ‘rt_date_to_remove_daly_8’: ‘rt_injury_8’}</p>
 <p>INJURY_INDICES : range(1, 9)</p>
-<p>METADATA : {&lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;}</p>
+<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
 <p>NO_TREATMENT_RECOVERY_TIMES_IN_DAYS : {‘112’: 49, ‘113’: 49, ‘1101’: 7, ‘211’: 49, ‘212’: 49, ‘241’: 7, ‘2101’: 7, ‘291’: 7, ‘342’: 42, ‘343’: 42, ‘361’: 7, ‘363’: 14, ‘322’: 42, ‘323’: 42, ‘3101’: 7, ‘3113’: 56, ‘412’: 35, ‘414’: 365, ‘461’: 7, ‘463’: 14, ‘453a’: 84, ‘453b’: 84, ‘441’: 14, ‘442’: 14, ‘4101’: 7, ‘552’: 90, ‘553’: 90, ‘554’: 90, ‘5101’: 7, ‘5113’: 56, ‘612’: 63, ‘712a’: 70, ‘712b’: 70, ‘722’: 84, ‘7101’: 7, ‘7113’: 56, ‘813do’: 240, ‘811’: 70, ‘812’: 70, ‘813eo’: 240, ‘813bo’: 240, ‘813co’: 240, ‘822a’: 60, ‘822b’: 180, ‘8101’: 7, ‘8113’: 56}</p>
 <p>SWAPPING_CODES : [‘712b’, ‘812’, ‘3113’, ‘4113’, ‘5113’, ‘7113’, ‘8113’, ‘813a’, ‘813b’, ‘P673a’, ‘P673b’, ‘P674a’, ‘P674b’, ‘P675a’, ‘P675b’, ‘P676’, ‘P782b’, ‘P783’, ‘P883’, ‘P884’, ‘813bo’, ‘813co’, ‘813do’, ‘813eo’]</p>
 <p><strong>Functions (defined or overridden in class RTI):</strong></p>
@@ -2637,7 +2637,7 @@ This is a regular event that can output current states of people or cumulative e
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Apr 23, 2024.
+      <span class="lastupdated">Last updated on May 27, 2024.
       </span></p>
   </div>
 

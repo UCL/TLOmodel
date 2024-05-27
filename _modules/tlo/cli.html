@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.cli &mdash; TLOmodel 0.1.dev2392+g4a55807 documentation</title>
+  <title>tlo.cli &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../_static/theme_overrides.css?v=6ea10ece" />
@@ -16,8 +16,8 @@
   
         <script src="../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../_static/documentation_options.js?v=2acae80b"></script>
-        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
@@ -176,9 +176,10 @@
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--asserts-on&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">bool</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Enable assertions in simulation run.&quot;</span><span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--more-memory&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">bool</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
               <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Request machine wth more memory (for larger population sizes).&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--image-tag&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Tag of the Docker image to use.&quot;</span><span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--keep-pool-alive&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">bool</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">hidden</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">pass_context</span>
-<span class="k">def</span> <span class="nf">batch_submit</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">scenario_file</span><span class="p">,</span> <span class="n">asserts_on</span><span class="p">,</span> <span class="n">more_memory</span><span class="p">,</span> <span class="n">keep_pool_alive</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">batch_submit</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">scenario_file</span><span class="p">,</span> <span class="n">asserts_on</span><span class="p">,</span> <span class="n">more_memory</span><span class="p">,</span> <span class="n">keep_pool_alive</span><span class="p">,</span> <span class="n">image_tag</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Submit a scenario to the batch system.</span>
 
 <span class="sd">    SCENARIO_FILE is path to file containing scenario class.</span>
@@ -268,8 +269,14 @@
         <span class="n">password</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;REGISTRY&quot;</span><span class="p">][</span><span class="s2">&quot;KEY&quot;</span><span class="p">],</span>
     <span class="p">)</span>
 
-    <span class="c1"># Name of the image in the registry</span>
-    <span class="n">image_name</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;REGISTRY&quot;</span><span class="p">][</span><span class="s2">&quot;SERVER&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;/&quot;</span> <span class="o">+</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;REGISTRY&quot;</span><span class="p">][</span><span class="s2">&quot;IMAGE_NAME&quot;</span><span class="p">]</span>
+    <span class="c1"># url of the docker image to run the tasks</span>
+    <span class="n">image_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;REGISTRY&#39;</span><span class="p">][</span><span class="s1">&#39;SERVER&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;REGISTRY&#39;</span><span class="p">][</span><span class="s1">&#39;IMAGE&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="c1"># use the supplied image tag if provided, otherwise use the default</span>
+    <span class="k">if</span> <span class="n">image_tag</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">image_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">image_name</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;REGISTRY&#39;</span><span class="p">][</span><span class="s1">&#39;DEFAULT_TAG&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">image_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">image_name</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">image_tag</span><span class="si">}</span><span class="s2">&quot;</span>
 
     <span class="c1"># Create container configuration, prefetching Docker images from the container registry</span>
     <span class="n">container_conf</span> <span class="o">=</span> <span class="n">batch_models</span><span class="o">.</span><span class="n">ContainerConfiguration</span><span class="p">(</span>
@@ -929,7 +936,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Apr 23, 2024.
+      <span class="lastupdated">Last updated on May 27, 2024.
       </span></p>
   </div>
 

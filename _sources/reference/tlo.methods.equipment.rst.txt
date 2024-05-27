@@ -1,0 +1,4 @@
+tlo.methods.equipment module
+============================
+
+.. automodule:: tlo.methods.equipment

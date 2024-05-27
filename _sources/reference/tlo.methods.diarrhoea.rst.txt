@@ -367,15 +367,15 @@ tlo.methods.diarrhoea module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'Stunting', 'Alri', 'Epi'}
+     ADDITIONAL_DEPENDENCIES : {'Epi', 'Stunting', 'Alri'}
 
-     CAUSES_OF_DEATH : {'Diarrhoea_rotavirus': <tlo.methods.causes.Cause object at 0x13610b310>, 'Diarrhoea_shigella': <tlo.methods.causes.Cause object at 0x136109590>, 'Diarrhoea_adenovirus': <tlo.methods.causes.Cause object at 0x136109710>, 'Diarrhoea_cryptosporidium': <tlo.methods.causes.Cause object at 0x136108a50>, 'Diarrhoea_campylobacter': <tlo.methods.causes.Cause object at 0x136108d90>, 'Diarrhoea_ETEC': <tlo.methods.causes.Cause object at 0x136109810>, 'Diarrhoea_sapovirus': <tlo.methods.causes.Cause object at 0x136108a10>, 'Diarrhoea_norovirus': <tlo.methods.causes.Cause object at 0x1361097d0>, 'Diarrhoea_astrovirus': <tlo.methods.causes.Cause object at 0x1361086d0>, 'Diarrhoea_tEPEC': <tlo.methods.causes.Cause object at 0x136109a90>}
+     CAUSES_OF_DEATH : {'Diarrhoea_rotavirus': <tlo.methods.causes.Cause object at 0x12e0c16d0>, 'Diarrhoea_shigella': <tlo.methods.causes.Cause object at 0x12e0c1a90>, 'Diarrhoea_adenovirus': <tlo.methods.causes.Cause object at 0x12e0c09d0>, 'Diarrhoea_cryptosporidium': <tlo.methods.causes.Cause object at 0x12e0c1fd0>, 'Diarrhoea_campylobacter': <tlo.methods.causes.Cause object at 0x12e0c37d0>, 'Diarrhoea_ETEC': <tlo.methods.causes.Cause object at 0x12e0c0350>, 'Diarrhoea_sapovirus': <tlo.methods.causes.Cause object at 0x12e0c0a10>, 'Diarrhoea_norovirus': <tlo.methods.causes.Cause object at 0x12e0c2190>, 'Diarrhoea_astrovirus': <tlo.methods.causes.Cause object at 0x12e0c0490>, 'Diarrhoea_tEPEC': <tlo.methods.causes.Cause object at 0x12e0c33d0>}
 
-     CAUSES_OF_DISABILITY : {'Diarrhoea': <tlo.methods.causes.Cause object at 0x136109d50>}
+     CAUSES_OF_DISABILITY : {'Diarrhoea': <tlo.methods.causes.Cause object at 0x12e0c2fd0>}
 
-     INIT_DEPENDENCIES : {'NewbornOutcomes', 'Wasting', 'HealthSystem', 'Lifestyle', 'Hiv', 'Demography', 'SymptomManager'}
+     INIT_DEPENDENCIES : {'NewbornOutcomes', 'Wasting', 'HealthSystem', 'Lifestyle', 'SymptomManager', 'Hiv', 'Demography'}
 
-     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHSYSTEM: 3>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 
@@ -599,7 +599,7 @@ tlo.methods.diarrhoea module
 
      **Class attributes:**
 
-     ALTERNATIVE_TO : {'Stunting', 'Wasting', 'Epi', 'Hiv', 'Alri'}
+     ALTERNATIVE_TO : {'Wasting', 'Hiv', 'Epi', 'Stunting', 'Alri'}
 
      INIT_DEPENDENCIES : {'Demography'}
 

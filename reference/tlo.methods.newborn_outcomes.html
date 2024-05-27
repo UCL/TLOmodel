@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.newborn_outcomes module &mdash; TLOmodel 0.1.dev2392+g4a55807 documentation</title>
+  <title>tlo.methods.newborn_outcomes module &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -17,8 +17,8 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=2acae80b"></script>
-        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -410,7 +410,7 @@ delivered as part of postnatal care via HSI_NewbornOutcomes_ReceivesPostnatalChe
 <td><p>Disability associated with preterm delivery.  Possible values are: [none, mild_motor_and_cog, mild_motor, moderate_motor, severe_motor, ]</p></td>
 </tr>
 <tr class="row-odd"><td><p>nb_congenital_anomaly</p></td>
-<td><p>INT</p></td>
+<td><p>BITSET</p></td>
 <td><p>Types of congenital anomaly of the newborn stored as bitset</p></td>
 </tr>
 <tr class="row-even"><td><p>nb_early_onset_neonatal_sepsis</p></td>
@@ -488,11 +488,11 @@ delivered as part of postnatal care via HSI_NewbornOutcomes_ReceivesPostnatalChe
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ADDITIONAL_DEPENDENCIES : {‘PostnatalSupervisor’, ‘PregnancySupervisor’, ‘CareOfWomenDuringPregnancy’, ‘Labour’}</p>
-<p>CAUSES_OF_DEATH : {‘early_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x1361791d0&gt;, ‘late_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x136179390&gt;, ‘encephalopathy’: &lt;tlo.methods.causes.Cause object at 0x13617aa90&gt;, ‘neonatal_respiratory_depression’: &lt;tlo.methods.causes.Cause object at 0x13617a1d0&gt;, ‘preterm_other’: &lt;tlo.methods.causes.Cause object at 0x13617ab90&gt;, ‘respiratory_distress_syndrome’: &lt;tlo.methods.causes.Cause object at 0x136179910&gt;, ‘congenital_heart_anomaly’: &lt;tlo.methods.causes.Cause object at 0x136179250&gt;, ‘limb_or_musculoskeletal_anomaly’: &lt;tlo.methods.causes.Cause object at 0x13617ab50&gt;, ‘urogenital_anomaly’: &lt;tlo.methods.causes.Cause object at 0x13617a450&gt;, ‘digestive_anomaly’: &lt;tlo.methods.causes.Cause object at 0x136179590&gt;, ‘other_anomaly’: &lt;tlo.methods.causes.Cause object at 0x136179d50&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘Retinopathy of Prematurity’: &lt;tlo.methods.causes.Cause object at 0x13617ab10&gt;, ‘Neonatal Encephalopathy’: &lt;tlo.methods.causes.Cause object at 0x13617ad50&gt;, ‘Neonatal Sepsis Long term Disability’: &lt;tlo.methods.causes.Cause object at 0x13617a490&gt;, ‘Preterm Birth Disability’: &lt;tlo.methods.causes.Cause object at 0x136179ed0&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘Demography’, ‘HealthSystem’}</p>
-<p>METADATA : {&lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;}</p>
+<p>ADDITIONAL_DEPENDENCIES : {‘Labour’, ‘PostnatalSupervisor’, ‘CareOfWomenDuringPregnancy’, ‘PregnancySupervisor’}</p>
+<p>CAUSES_OF_DEATH : {‘early_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x12e1c5d10&gt;, ‘late_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x12e1c65d0&gt;, ‘encephalopathy’: &lt;tlo.methods.causes.Cause object at 0x12e1c7d10&gt;, ‘neonatal_respiratory_depression’: &lt;tlo.methods.causes.Cause object at 0x12e1c6fd0&gt;, ‘preterm_other’: &lt;tlo.methods.causes.Cause object at 0x12e1c7a90&gt;, ‘respiratory_distress_syndrome’: &lt;tlo.methods.causes.Cause object at 0x12e1c7250&gt;, ‘congenital_heart_anomaly’: &lt;tlo.methods.causes.Cause object at 0x12e1c6910&gt;, ‘limb_or_musculoskeletal_anomaly’: &lt;tlo.methods.causes.Cause object at 0x12e1c7c10&gt;, ‘urogenital_anomaly’: &lt;tlo.methods.causes.Cause object at 0x12e1c74d0&gt;, ‘digestive_anomaly’: &lt;tlo.methods.causes.Cause object at 0x12e1c77d0&gt;, ‘other_anomaly’: &lt;tlo.methods.causes.Cause object at 0x12e1c6950&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘Retinopathy of Prematurity’: &lt;tlo.methods.causes.Cause object at 0x12e1c7190&gt;, ‘Neonatal Encephalopathy’: &lt;tlo.methods.causes.Cause object at 0x12e1c5910&gt;, ‘Neonatal Sepsis Long term Disability’: &lt;tlo.methods.causes.Cause object at 0x12e1c6190&gt;, ‘Preterm Birth Disability’: &lt;tlo.methods.causes.Cause object at 0x12e1c4e90&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘HealthSystem’, ‘Demography’}</p>
+<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’}</p>
 <p><strong>Functions (defined or overridden in class NewbornOutcomes):</strong></p>
 <dl class="py method">
@@ -988,7 +988,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Apr 23, 2024.
+      <span class="lastupdated">Last updated on May 27, 2024.
       </span></p>
   </div>
 

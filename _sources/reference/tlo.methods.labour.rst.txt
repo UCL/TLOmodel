@@ -621,7 +621,7 @@ tlo.methods.labour module
           - BOOL
           - whether the woman has experienced an postpartum haemorrhage in thisdelivery
         * - la_postpartum_haem_treatment
-          - INT
+          - BITSET
           -  Treatment for received for postpartum haemorrhage (bitset)
         * - la_has_had_hysterectomy
           - BOOL
@@ -643,15 +643,15 @@ tlo.methods.labour module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'Lifestyle', 'HealthSystem', 'CareOfWomenDuringPregnancy', 'Contraception', 'PregnancySupervisor', 'PostnatalSupervisor', 'NewbornOutcomes'}
+     ADDITIONAL_DEPENDENCIES : {'NewbornOutcomes', 'Contraception', 'HealthSystem', 'Lifestyle', 'PregnancySupervisor', 'PostnatalSupervisor', 'CareOfWomenDuringPregnancy'}
 
-     CAUSES_OF_DEATH : {'uterine_rupture': <tlo.methods.causes.Cause object at 0x135ea4c50>, 'intrapartum_sepsis': <tlo.methods.causes.Cause object at 0x135ea42d0>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x135ea4650>, 'postpartum_sepsis': <tlo.methods.causes.Cause object at 0x135ea4410>, 'postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x135ea4e50>, 'secondary_postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x135ea4b10>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x135ea6990>, 'eclampsia': <tlo.methods.causes.Cause object at 0x135ea4910>}
+     CAUSES_OF_DEATH : {'uterine_rupture': <tlo.methods.causes.Cause object at 0x12e0a7f10>, 'intrapartum_sepsis': <tlo.methods.causes.Cause object at 0x12e0a4e10>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x12e0a7550>, 'postpartum_sepsis': <tlo.methods.causes.Cause object at 0x12e0a7090>, 'postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x12e0a61d0>, 'secondary_postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x12e0a5110>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x12e0a57d0>, 'eclampsia': <tlo.methods.causes.Cause object at 0x12e0a7a90>}
 
-     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x135ea5110>}
+     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x12e0a4610>}
 
      INIT_DEPENDENCIES : {'Demography'}
 
-     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'Stunting'}
 

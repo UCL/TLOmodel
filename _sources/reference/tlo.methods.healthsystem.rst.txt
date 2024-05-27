@@ -60,6 +60,21 @@ tlo.methods.healthsystem module
         * - beds_availability
           - STRING
           - Availability of beds. If 'default' then use the availability specified in the ResourceFile; if 'none', then let no beds be  ever be available; if 'all', then all beds are always available. NB. This parameter is over-ridden if an argument is provided to the module initialiser.
+        * - EquipmentCatalogue
+          - DATA_FRAME
+          - Data on equipment items and packages.
+        * - equipment_availability_estimates
+          - DATA_FRAME
+          - Data on the availability of equipment items and packages.
+        * - equip_availability
+          - STRING
+          - What to assume about the availability of equipment. If 'default' then use the availability specified in the ResourceFile; if 'none', then let no equipment ever be available; if 'all', then all equipment is always available. NB. This parameter is over-ridden if an argument is provided to the module initialiser.
+        * - equip_availability_postSwitch
+          - STRING
+          - What to assume about the availability of equipment after the switch (see `year_equip_availability_switch`). The options for this are the same as `equip_availability`.
+        * - year_equip_availability_switch
+          - INT
+          - Year in which the assumption for `equip_availability` changes (The change happens on 1st January of that year.)
         * - Service_Availability
           - LIST
           - List of services to be available. NB. This parameter is over-ridden if an argument is provided to the module initialiser.
@@ -69,6 +84,9 @@ tlo.methods.healthsystem module
         * - year_mode_switch
           - INT
           - Year in which mode switch is enforced
+        * - scale_to_effective_capabilities
+          - BOOL
+          - In year in which mode switch takes place, will rescale available capabilities to match thosethat were effectively used (on average) in the past year if this is set to True. This way,we can approximate overtime and rushing of appts even in mode 2.
         * - year_cons_availability_switch
           - INT
           - Year in which consumable availability switch is enforced. The change happenson 1st January of that year.)
@@ -135,11 +153,11 @@ tlo.methods.healthsystem module
 
      INIT_DEPENDENCIES : {'Demography'}
 
-     capabilities_today : <property object at 0x12497dad0>
+     capabilities_today : <property object at 0x11ca3b510>
 
-     hsi_event_counts : <property object at 0x12497dc60>
+     hsi_event_counts : <property object at 0x11ca3b6a0>
 
-     never_ran_hsi_event_counts : <property object at 0x12497dcb0>
+     never_ran_hsi_event_counts : <property object at 0x11ca3b6f0>
 
      **Functions (defined or overridden in class HealthSystem):**
 
@@ -163,6 +181,8 @@ tlo.methods.healthsystem module
 
      .. automethod:: format_daily_capabilities
 
+     .. automethod:: _rescale_capabilities_to_capture_effective_capability
+
      .. automethod:: update_consumables_availability_to_represent_merging_of_levels_1b_and_2
 
      .. automethod:: get_service_availability
@@ -170,6 +190,8 @@ tlo.methods.healthsystem module
      .. automethod:: get_cons_availability
 
      .. automethod:: get_beds_availability
+
+     .. automethod:: get_equip_availability
 
      .. automethod:: schedule_to_call_never_ran_on_date
 
@@ -312,7 +334,7 @@ tlo.methods.healthsystem module
 
      __annotations__ : {}
 
-     current_pop_size : <property object at 0x12497dfd0>
+     current_pop_size : <property object at 0x11ca3b9c0>
 
      **Functions (defined or overridden in class DynamicRescalingHRCapabilities):**
 

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.hsi_event module &mdash; TLOmodel 0.1.dev2392+g4a55807 documentation</title>
+  <title>tlo.methods.hsi_event module &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -17,8 +17,8 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=2acae80b"></script>
-        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -103,12 +103,13 @@ defined in <cite>src/tlo/events.py</cite>, and implement at least an <cite>apply
 <p><strong>Class attributes:</strong></p>
 <p>__annotations__ : {‘module’: ‘Module’, ‘target’: ‘int’, ‘TREATMENT_ID’: ‘str’, ‘ACCEPTED_FACILITY_LEVEL’: ‘str’, ‘BEDDAYS_FOOTPRINT’: ‘Dict[str, Union[float, int]]’, ‘_received_info_about_bed_days’: ‘Dict[str, Union[float, int]]’, ‘expected_time_requests’: ‘Counter’, ‘facility_info’: ‘FacilityInfo’}</p>
 <p>_received_info_about_bed_days : None</p>
-<p>bed_days_allocated_to_this_event : &lt;property object at 0x12481efc0&gt;</p>
+<p>bed_days_allocated_to_this_event : &lt;property object at 0x11c6d92b0&gt;</p>
 <p>expected_time_requests : {}</p>
 <p>facility_info : None</p>
-<p>healthcare_system : &lt;property object at 0x12497d800&gt;</p>
-<p>sim : &lt;property object at 0x12497d7b0&gt;</p>
-<p>target_is_alive : &lt;property object at 0x12497d760&gt;</p>
+<p>healthcare_system : &lt;property object at 0x11ca3b1f0&gt;</p>
+<p>is_all_declared_equipment_available : &lt;property object at 0x11ca3b240&gt;</p>
+<p>sim : &lt;property object at 0x11ca3b1a0&gt;</p>
+<p>target_is_alive : &lt;property object at 0x11ca3b150&gt;</p>
 <p><strong>Functions (defined or overridden in class HSI_Event):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.hsi_event.HSI_Event.__init__">
@@ -155,7 +156,19 @@ to allow the rescheduling. This is called each time that the event is tried to b
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.hsi_event.HSI_Event.post_apply_hook">
 <span class="sig-name descname"><span class="pre">post_apply_hook</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/tlo/methods/hsi_event.html#HSI_Event.post_apply_hook"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hsi_event.HSI_Event.post_apply_hook" title="Link to this definition"></a></dt>
-<dd><p>Impose the bed-days footprint (if target of the HSI is a person_id)</p>
+<dd><p>Do any required processing after apply() completes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hsi_event.HSI_Event._run_after_hsi_event">
+<span class="sig-name descname"><span class="pre">_run_after_hsi_event</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/tlo/methods/hsi_event.html#HSI_Event._run_after_hsi_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hsi_event.HSI_Event._run_after_hsi_event" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Do things following the event’s <cite>apply</cite> and <cite>post_apply_hook</cite> functions running.</dt><dd><ul class="simple">
+<li><p>Impose the bed-days footprint (if target of the HSI is a person_id)</p></li>
+<li><p>Record the equipment that has been added before and during the course of the HSI Event.</p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -214,6 +227,24 @@ subset.</p>
 <dd><p>Helper function to make appointment footprint in format expected downstream.</p>
 <p>Should be passed a dictionary keyed by appointment type codes with non-negative
 values.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hsi_event.HSI_Event.add_equipment">
+<span class="sig-name descname"><span class="pre">add_equipment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">item_codes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/tlo/methods/hsi_event.html#HSI_Event.add_equipment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hsi_event.HSI_Event.add_equipment" title="Link to this definition"></a></dt>
+<dd><p>Declare that piece(s) of equipment are used in this HSI_Event. Equipment items can be identified by their
+item_codes (int) or descriptors (str); a singular item or an iterable of items (either codes or descriptors but
+not a mix of both) can be defined at once. Checks are done on the validity of the item_codes/item
+descriptions and a warning issued if any are not recognised.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hsi_event.HSI_Event.probability_all_equipment_available">
+<span class="sig-name descname"><span class="pre">probability_all_equipment_available</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">item_codes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../_modules/tlo/methods/hsi_event.html#HSI_Event.probability_all_equipment_available"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hsi_event.HSI_Event.probability_all_equipment_available" title="Link to this definition"></a></dt>
+<dd><p>Returns the probability that all the equipment item_codes are available. This does not imply that the
+equipment is being used and no logging happens. It is provided as a convenience to disease module authors in
+case the logic during an <code class="docutils literal notranslate"><span class="pre">HSI_Event</span></code> depends on the availability of a piece of equipment. This function
+accepts the item codes/descriptions in a variety of formats, so the argument needs to be parsed.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -300,7 +331,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Apr 23, 2024.
+      <span class="lastupdated">Last updated on May 27, 2024.
       </span></p>
   </div>
 

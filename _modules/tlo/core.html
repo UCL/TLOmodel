@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.core &mdash; TLOmodel 0.1.dev2392+g4a55807 documentation</title>
+  <title>tlo.core &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../_static/theme_overrides.css?v=6ea10ece" />
@@ -16,8 +16,8 @@
   
         <script src="../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../_static/documentation_options.js?v=2acae80b"></script>
-        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
@@ -139,7 +139,8 @@
     <span class="n">SERIES</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
     <span class="n">DATA_FRAME</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
     <span class="n">STRING</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
-    <span class="n">DICT</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span></div>
+    <span class="n">DICT</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">BITSET</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span></div>
 
 
 
@@ -160,7 +161,8 @@
         <span class="n">Types</span><span class="o">.</span><span class="n">SERIES</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
         <span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
         <span class="n">Types</span><span class="o">.</span><span class="n">STRING</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
-        <span class="n">Types</span><span class="o">.</span><span class="n">DICT</span><span class="p">:</span> <span class="nb">object</span>
+        <span class="n">Types</span><span class="o">.</span><span class="n">DICT</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
+        <span class="n">Types</span><span class="o">.</span><span class="n">BITSET</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">,</span>
     <span class="p">}</span>
 
     <span class="c1"># Map our Types to Python types</span>
@@ -175,7 +177,8 @@
         <span class="n">Types</span><span class="o">.</span><span class="n">SERIES</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
         <span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
         <span class="n">Types</span><span class="o">.</span><span class="n">STRING</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
-        <span class="n">Types</span><span class="o">.</span><span class="n">DICT</span><span class="p">:</span> <span class="nb">dict</span>
+        <span class="n">Types</span><span class="o">.</span><span class="n">DICT</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+        <span class="n">Types</span><span class="o">.</span><span class="n">BITSET</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="p">}</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">categories</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -237,6 +240,7 @@
         <span class="nb">float</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">),</span>
         <span class="s2">&quot;category&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">),</span>
         <span class="nb">object</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">),</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
     <span class="p">}</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">categories</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">ordered</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
@@ -609,7 +613,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Apr 23, 2024.
+      <span class="lastupdated">Last updated on May 27, 2024.
       </span></p>
   </div>
 

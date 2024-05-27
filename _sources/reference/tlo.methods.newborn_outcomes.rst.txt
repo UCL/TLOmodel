@@ -237,7 +237,7 @@ tlo.methods.newborn_outcomes module
           - CATEGORICAL
           - Disability associated with preterm delivery.  Possible values are: [none, mild_motor_and_cog, mild_motor, moderate_motor, severe_motor, ]
         * - nb_congenital_anomaly
-          - INT
+          - BITSET
           - Types of congenital anomaly of the newborn stored as bitset
         * - nb_early_onset_neonatal_sepsis
           - BOOL
@@ -298,15 +298,15 @@ tlo.methods.newborn_outcomes module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'PostnatalSupervisor', 'PregnancySupervisor', 'CareOfWomenDuringPregnancy', 'Labour'}
+     ADDITIONAL_DEPENDENCIES : {'Labour', 'PostnatalSupervisor', 'CareOfWomenDuringPregnancy', 'PregnancySupervisor'}
 
-     CAUSES_OF_DEATH : {'early_onset_sepsis': <tlo.methods.causes.Cause object at 0x1361791d0>, 'late_onset_sepsis': <tlo.methods.causes.Cause object at 0x136179390>, 'encephalopathy': <tlo.methods.causes.Cause object at 0x13617aa90>, 'neonatal_respiratory_depression': <tlo.methods.causes.Cause object at 0x13617a1d0>, 'preterm_other': <tlo.methods.causes.Cause object at 0x13617ab90>, 'respiratory_distress_syndrome': <tlo.methods.causes.Cause object at 0x136179910>, 'congenital_heart_anomaly': <tlo.methods.causes.Cause object at 0x136179250>, 'limb_or_musculoskeletal_anomaly': <tlo.methods.causes.Cause object at 0x13617ab50>, 'urogenital_anomaly': <tlo.methods.causes.Cause object at 0x13617a450>, 'digestive_anomaly': <tlo.methods.causes.Cause object at 0x136179590>, 'other_anomaly': <tlo.methods.causes.Cause object at 0x136179d50>}
+     CAUSES_OF_DEATH : {'early_onset_sepsis': <tlo.methods.causes.Cause object at 0x12e1c5d10>, 'late_onset_sepsis': <tlo.methods.causes.Cause object at 0x12e1c65d0>, 'encephalopathy': <tlo.methods.causes.Cause object at 0x12e1c7d10>, 'neonatal_respiratory_depression': <tlo.methods.causes.Cause object at 0x12e1c6fd0>, 'preterm_other': <tlo.methods.causes.Cause object at 0x12e1c7a90>, 'respiratory_distress_syndrome': <tlo.methods.causes.Cause object at 0x12e1c7250>, 'congenital_heart_anomaly': <tlo.methods.causes.Cause object at 0x12e1c6910>, 'limb_or_musculoskeletal_anomaly': <tlo.methods.causes.Cause object at 0x12e1c7c10>, 'urogenital_anomaly': <tlo.methods.causes.Cause object at 0x12e1c74d0>, 'digestive_anomaly': <tlo.methods.causes.Cause object at 0x12e1c77d0>, 'other_anomaly': <tlo.methods.causes.Cause object at 0x12e1c6950>}
 
-     CAUSES_OF_DISABILITY : {'Retinopathy of Prematurity': <tlo.methods.causes.Cause object at 0x13617ab10>, 'Neonatal Encephalopathy': <tlo.methods.causes.Cause object at 0x13617ad50>, 'Neonatal Sepsis Long term Disability': <tlo.methods.causes.Cause object at 0x13617a490>, 'Preterm Birth Disability': <tlo.methods.causes.Cause object at 0x136179ed0>}
+     CAUSES_OF_DISABILITY : {'Retinopathy of Prematurity': <tlo.methods.causes.Cause object at 0x12e1c7190>, 'Neonatal Encephalopathy': <tlo.methods.causes.Cause object at 0x12e1c5910>, 'Neonatal Sepsis Long term Disability': <tlo.methods.causes.Cause object at 0x12e1c6190>, 'Preterm Birth Disability': <tlo.methods.causes.Cause object at 0x12e1c4e90>}
 
-     INIT_DEPENDENCIES : {'Demography', 'HealthSystem'}
+     INIT_DEPENDENCIES : {'HealthSystem', 'Demography'}
 
-     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 

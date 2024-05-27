@@ -1,5 +1,0 @@
-.ResourceFile Consumables.csv (.un~)
-====================================
-
-:download:`Download original .un~ file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/.ResourceFile_Consumables.csv.un~>`
-

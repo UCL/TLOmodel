@@ -40,8 +40,8 @@ parameter_values
   26  rp\_bladder\_cancer\_agege70                                           3
   27  rp\_bladder\_cancer\_tobacco                                           3.5
   28  rp\_bladder\_cancer\_schisto\_h                                        5
-  29  sensitivity\_of\_cytoscopy\_for\_bladder\_cancer\_blood\_urine         1
-  30  sensitivity\_of\_cytoscopy\_for\_bladder\_cancer\_pelvic\_pain         1
+  29  sensitivity\_of\_cystoscopy\_for\_bladder\_cancer\_blood\_urine        1
+  30  sensitivity\_of\_cystoscopy\_for\_bladder\_cancer\_pelvic\_pain        1
   31  init\_prob\_palliative\_care                                           0.95
 ====  =====================================================================  ===========================
 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.prostate_cancer &mdash; TLOmodel 0.1.dev2392+g4a55807 documentation</title>
+  <title>tlo.methods.prostate_cancer &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
@@ -16,8 +16,8 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../../_static/documentation_options.js?v=2acae80b"></script>
-        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -105,6 +105,7 @@
 <span class="kn">from</span> <span class="nn">tlo.events</span> <span class="kn">import</span> <span class="n">IndividualScopeEventMixin</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">,</span> <span class="n">RegularEvent</span>
 <span class="kn">from</span> <span class="nn">tlo.lm</span> <span class="kn">import</span> <span class="n">LinearModel</span><span class="p">,</span> <span class="n">LinearModelType</span><span class="p">,</span> <span class="n">Predictor</span>
 <span class="kn">from</span> <span class="nn">tlo.methods</span> <span class="kn">import</span> <span class="n">Metadata</span>
+<span class="kn">from</span> <span class="nn">tlo.methods.cancer_consumables</span> <span class="kn">import</span> <span class="n">get_consumable_item_codes_cancers</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.causes</span> <span class="kn">import</span> <span class="n">Cause</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.demography</span> <span class="kn">import</span> <span class="n">InstantaneousDeath</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.dxmanager</span> <span class="kn">import</span> <span class="n">DxTest</span>
@@ -131,7 +132,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">linear_models_for_progression_of_pc_status</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lm_prostate_ca_onset_urinary_symptoms</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lm_onset_pelvic_pain</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">daly_wts</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">daly_wts</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_prostate_can</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span></div>
 
 
     <span class="n">INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Demography&#39;</span><span class="p">,</span> <span class="s1">&#39;HealthSystem&#39;</span><span class="p">,</span> <span class="s1">&#39;SymptomManager&#39;</span><span class="p">}</span>
@@ -476,6 +478,9 @@
 <span class="sd">        * Define the Disability-weights</span>
 <span class="sd">        * Schedule the palliative care appointments for those that are on palliative care at initiation</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># We call the following function to store the required consumables for the simulation run within the appropriate</span>
+        <span class="c1"># dictionary</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_prostate_can</span> <span class="o">=</span> <span class="n">get_consumable_item_codes_cancers</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
         <span class="c1"># ----- SCHEDULE LOGGING EVENTS -----</span>
         <span class="c1"># Schedule logging event to happen immediately</span>
@@ -859,7 +864,10 @@
                 <span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span>
             <span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">dx_result</span><span class="p">:</span>
+        <span class="c1"># Check consumable availability</span>
+        <span class="n">cons_avail</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_prostate_can</span><span class="p">[</span><span class="s1">&#39;screening_psa_test_optional&#39;</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">dx_result</span> <span class="ow">and</span> <span class="n">cons_avail</span><span class="p">:</span>
             <span class="c1"># send for biopsy</span>
             <span class="n">hs</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
                 <span class="n">hsi_event</span><span class="o">=</span><span class="n">HSI_ProstateCancer_Investigation_Following_psa_positive</span><span class="p">(</span>
@@ -913,7 +921,10 @@
             <span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span>
         <span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">dx_result</span><span class="p">:</span>
+        <span class="c1"># TODO: replace with PSA test when added to cons list</span>
+        <span class="n">cons_avail</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_prostate_can</span><span class="p">[</span><span class="s1">&#39;screening_psa_test_optional&#39;</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">dx_result</span> <span class="ow">and</span> <span class="n">cons_avail</span><span class="p">:</span>
             <span class="c1"># send for biopsy</span>
             <span class="n">hs</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
                     <span class="n">hsi_event</span><span class="o">=</span><span class="n">HSI_ProstateCancer_Investigation_Following_psa_positive</span><span class="p">(</span>
@@ -958,43 +969,49 @@
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;pc_date_biopsy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
 
         <span class="c1"># todo: stratify by pc_status</span>
-        <span class="c1"># Use a psa test to assess whether the person has prostate cancer:</span>
-        <span class="n">dx_result</span> <span class="o">=</span> <span class="n">hs</span><span class="o">.</span><span class="n">dx_manager</span><span class="o">.</span><span class="n">run_dx_test</span><span class="p">(</span>
-            <span class="n">dx_tests_to_run</span><span class="o">=</span><span class="s1">&#39;biopsy_for_prostate_cancer&#39;</span><span class="p">,</span>
-            <span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span>
-        <span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">dx_result</span><span class="p">:</span>
-            <span class="c1"># record date of diagnosis:</span>
-            <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;pc_date_diagnosis&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
+        <span class="n">cons_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_prostate_can</span><span class="p">[</span><span class="s1">&#39;screening_biopsy_core&#39;</span><span class="p">],</span>
+                                              <span class="n">optional_item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_prostate_can</span><span class="p">[</span>
+                                              <span class="s1">&#39;screening_biopsy_optional&#39;</span><span class="p">])</span>
 
-            <span class="c1"># Check if is in metastatic stage:</span>
-            <span class="n">in_metastatic</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;pc_status&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;metastatic&#39;</span>
-            <span class="c1"># If the diagnosis does detect cancer, it is assumed that the classification as metastatic is made</span>
-            <span class="c1"># accurately.</span>
+        <span class="k">if</span> <span class="n">cons_available</span><span class="p">:</span>
+            <span class="c1"># Use a biopsy  to assess whether the person has prostate cancer:</span>
+            <span class="n">dx_result</span> <span class="o">=</span> <span class="n">hs</span><span class="o">.</span><span class="n">dx_manager</span><span class="o">.</span><span class="n">run_dx_test</span><span class="p">(</span>
+                <span class="n">dx_tests_to_run</span><span class="o">=</span><span class="s1">&#39;biopsy_for_prostate_cancer&#39;</span><span class="p">,</span>
+                <span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span>
+            <span class="p">)</span>
 
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">in_metastatic</span><span class="p">:</span>
-                <span class="c1"># start treatment:</span>
-                <span class="n">hs</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
-                    <span class="n">hsi_event</span><span class="o">=</span><span class="n">HSI_ProstateCancer_StartTreatment</span><span class="p">(</span>
-                        <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span>
-                        <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span>
-                    <span class="p">),</span>
-                    <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                    <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
-                    <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span>
-                <span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="c1"># start palliative care:</span>
-                <span class="n">hs</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
-                    <span class="n">hsi_event</span><span class="o">=</span><span class="n">HSI_ProstateCancer_PalliativeCare</span><span class="p">(</span>
-                        <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span>
-                        <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span>
-                    <span class="p">),</span>
-                    <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                    <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
-                    <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span>
-                <span class="p">)</span></div>
+            <span class="k">if</span> <span class="n">dx_result</span><span class="p">:</span>
+                <span class="c1"># record date of diagnosis:</span>
+                <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;pc_date_diagnosis&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
+
+                <span class="c1"># Check if is in metastatic stage:</span>
+                <span class="n">in_metastatic</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;pc_status&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;metastatic&#39;</span>
+                <span class="c1"># If the diagnosis does detect cancer, it is assumed that the classification as metastatic is made</span>
+                <span class="c1"># accurately.</span>
+
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">in_metastatic</span><span class="p">:</span>
+                    <span class="c1"># start treatment:</span>
+                    <span class="n">hs</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
+                        <span class="n">hsi_event</span><span class="o">=</span><span class="n">HSI_ProstateCancer_StartTreatment</span><span class="p">(</span>
+                            <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span>
+                            <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span>
+                        <span class="p">),</span>
+                        <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                        <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
+                        <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># start palliative care:</span>
+                    <span class="n">hs</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
+                        <span class="n">hsi_event</span><span class="o">=</span><span class="n">HSI_ProstateCancer_PalliativeCare</span><span class="p">(</span>
+                            <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span>
+                            <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span>
+                        <span class="p">),</span>
+                        <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                        <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
+                        <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span>
+                    <span class="p">)</span></div>
 </div>
 
 
@@ -1049,20 +1066,27 @@
         <span class="k">assert</span> <span class="ow">not</span> <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;pc_date_diagnosis&quot;</span><span class="p">])</span>
         <span class="k">assert</span> <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;pc_date_treatment&quot;</span><span class="p">])</span>
 
-        <span class="c1"># Record date and stage of starting treatment</span>
-        <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;pc_date_treatment&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
-        <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;pc_stage_at_which_treatment_given&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;pc_status&quot;</span><span class="p">]</span>
+        <span class="n">cons_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_prostate_can</span><span class="p">[</span><span class="s1">&#39;treatment_surgery_core&#39;</span><span class="p">],</span>
+                                              <span class="n">optional_item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_prostate_can</span><span class="p">[</span>
+                                                  <span class="s1">&#39;treatment_surgery_optional&#39;</span><span class="p">])</span>
 
-        <span class="c1"># Schedule a post-treatment check for 12 months:</span>
-        <span class="n">hs</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
-            <span class="n">hsi_event</span><span class="o">=</span><span class="n">HSI_ProstateCancer_PostTreatmentCheck</span><span class="p">(</span>
-                <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span>
-                <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
-            <span class="p">),</span>
-            <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">12</span><span class="p">),</span>
-            <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">priority</span><span class="o">=</span><span class="mi">0</span>
-        <span class="p">)</span></div>
+        <span class="k">if</span> <span class="n">cons_available</span><span class="p">:</span>
+            <span class="c1"># If consumables are available the treatment will go ahead</span>
+
+            <span class="c1"># Record date and stage of starting treatment</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;pc_date_treatment&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;pc_stage_at_which_treatment_given&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;pc_status&quot;</span><span class="p">]</span>
+
+            <span class="c1"># Schedule a post-treatment check for 12 months:</span>
+            <span class="n">hs</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
+                <span class="n">hsi_event</span><span class="o">=</span><span class="n">HSI_ProstateCancer_PostTreatmentCheck</span><span class="p">(</span>
+                    <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span>
+                    <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
+                <span class="p">),</span>
+                <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">12</span><span class="p">),</span>
+                <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">priority</span><span class="o">=</span><span class="mi">0</span>
+            <span class="p">)</span></div>
 </div>
 
 
@@ -1164,20 +1188,27 @@
         <span class="c1"># Check that the person is in metastatic</span>
         <span class="k">assert</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;pc_status&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;metastatic&#39;</span>
 
-        <span class="c1"># Record the start of palliative care if this is first appointment</span>
-        <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;pc_date_palliative_care&quot;</span><span class="p">]):</span>
-            <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;pc_date_palliative_care&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
+        <span class="c1"># Check consumables are available</span>
+        <span class="n">cons_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
+            <span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_prostate_can</span><span class="p">[</span><span class="s1">&#39;palliation&#39;</span><span class="p">])</span>
 
-        <span class="c1"># Schedule another instance of the event for one month</span>
-        <span class="n">hs</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
-            <span class="n">hsi_event</span><span class="o">=</span><span class="n">HSI_ProstateCancer_PalliativeCare</span><span class="p">(</span>
-                <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span>
-                <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span>
-            <span class="p">),</span>
-            <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
-            <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">priority</span><span class="o">=</span><span class="mi">0</span>
-        <span class="p">)</span></div>
+        <span class="k">if</span> <span class="n">cons_available</span><span class="p">:</span>
+            <span class="c1"># If consumables are available and the treatment will go ahead</span>
+
+            <span class="c1"># Record the start of palliative care if this is first appointment</span>
+            <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;pc_date_palliative_care&quot;</span><span class="p">]):</span>
+                <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;pc_date_palliative_care&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
+
+            <span class="c1"># Schedule another instance of the event for one month</span>
+            <span class="n">hs</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
+                <span class="n">hsi_event</span><span class="o">=</span><span class="n">HSI_ProstateCancer_PalliativeCare</span><span class="p">(</span>
+                    <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span>
+                    <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span>
+                <span class="p">),</span>
+                <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+                <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">priority</span><span class="o">=</span><span class="mi">0</span>
+            <span class="p">)</span></div>
 </div>
 
 
@@ -1279,7 +1310,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Apr 23, 2024.
+      <span class="lastupdated">Last updated on May 27, 2024.
       </span></p>
   </div>
 

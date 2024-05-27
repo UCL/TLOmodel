@@ -4,7 +4,7 @@ tlo.methods.scenario_switcher module
 .. automodule:: tlo.methods.scenario_switcher
 
 
-.. autoclass:: ScenarioSwitcher
+.. autoclass:: ImprovedHealthSystemAndCareSeekingScenarioSwitcher
 
      Bases: :class:`tlo.core.Module`
 
@@ -19,11 +19,14 @@ tlo.methods.scenario_switcher module
           - Type
           - Description
         * - max_healthsystem_function
-          - BOOL
+          - LIST
           - If True, over-writes parameters that define maximal health system function.Parameter passed through to `get_parameters_for_improved_healthsystem_and_healthcare_seeking`.
         * - max_healthcare_seeking
-          - BOOL
+          - LIST
           - If True, over-writes parameters that define maximal healthcare-seeking behaviour. Parameter passed through to `get_parameters_for_improved_healthsystem_and_healthcare_seeking`.
+        * - year_of_switch
+          - INT
+          - The year in which the state changes. The state changes on 1st January of that year.
 
 
 
@@ -35,19 +38,44 @@ tlo.methods.scenario_switcher module
 
      OPTIONAL_INIT_DEPENDENCIES : set()
 
-     **Functions (defined or overridden in class ScenarioSwitcher):**
+     **Functions (defined or overridden in class ImprovedHealthSystemAndCareSeekingScenarioSwitcher):**
 
      .. automethod:: __init__
 
      .. automethod:: read_parameters
 
-     .. automethod:: initialise_population
-
      .. automethod:: pre_initialise_population
+
+     .. automethod:: update_parameters
+
+     .. automethod:: initialise_population
 
      .. automethod:: initialise_simulation
 
      .. automethod:: on_birth
+
+
+
+
+
+
+
+
+.. autoclass:: ScenarioSwitchEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
+     **Functions (defined or overridden in class ScenarioSwitchEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
 
 
 

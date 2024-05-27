@@ -279,13 +279,13 @@ tlo.methods.cardio_metabolic_disorders module
 
      ADDITIONAL_DEPENDENCIES : {'Depression'}
 
-     CAUSES_OF_DEATH : {'diabetes': <tlo.methods.causes.Cause object at 0x1361994d0>, 'chronic_ischemic_hd': <tlo.methods.causes.Cause object at 0x136199b50>, 'ever_heart_attack': <tlo.methods.causes.Cause object at 0x13619a950>, 'ever_stroke': <tlo.methods.causes.Cause object at 0x136198c10>, 'chronic_kidney_disease': <tlo.methods.causes.Cause object at 0x13619a390>}
+     CAUSES_OF_DEATH : {'diabetes': <tlo.methods.causes.Cause object at 0x12e270b90>, 'chronic_ischemic_hd': <tlo.methods.causes.Cause object at 0x12e271150>, 'ever_heart_attack': <tlo.methods.causes.Cause object at 0x12e270e90>, 'ever_stroke': <tlo.methods.causes.Cause object at 0x12e271410>, 'chronic_kidney_disease': <tlo.methods.causes.Cause object at 0x12e273c50>}
 
-     CAUSES_OF_DISABILITY : {'diabetes': <tlo.methods.causes.Cause object at 0x13619b3d0>, 'chronic_ischemic_hd': <tlo.methods.causes.Cause object at 0x13619b610>, 'heart_attack': <tlo.methods.causes.Cause object at 0x13619ac10>, 'stroke': <tlo.methods.causes.Cause object at 0x13619bb50>, 'chronic_kidney_disease': <tlo.methods.causes.Cause object at 0x13619b6d0>, 'lower_back_pain': <tlo.methods.causes.Cause object at 0x13619a150>}
+     CAUSES_OF_DISABILITY : {'diabetes': <tlo.methods.causes.Cause object at 0x12e2727d0>, 'chronic_ischemic_hd': <tlo.methods.causes.Cause object at 0x12e271f50>, 'heart_attack': <tlo.methods.causes.Cause object at 0x12e272990>, 'stroke': <tlo.methods.causes.Cause object at 0x12e270750>, 'chronic_kidney_disease': <tlo.methods.causes.Cause object at 0x12e2700d0>, 'lower_back_pain': <tlo.methods.causes.Cause object at 0x12e2733d0>}
 
-     INIT_DEPENDENCIES : {'SymptomManager', 'Demography', 'Lifestyle', 'HealthSystem'}
+     INIT_DEPENDENCIES : {'Demography', 'HealthSystem', 'Lifestyle', 'SymptomManager'}
 
-     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHSYSTEM: 3>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 

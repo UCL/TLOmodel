@@ -1,8 +1,0 @@
-const_HR_scaling
-================
-
-.. toctree::
-    :maxdepth: 1
-
-    ResourceFile_const_HR_scaling.xlsx
-

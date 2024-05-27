@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.healthsystem &mdash; TLOmodel 0.1.dev2392+g4a55807 documentation</title>
+  <title>tlo.methods.healthsystem &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
@@ -16,8 +16,8 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../../_static/documentation_options.js?v=2acae80b"></script>
-        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -96,7 +96,7 @@
 <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Iterable</span>
 <span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">repeat</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">NamedTuple</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">NamedTuple</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
@@ -116,6 +116,7 @@
     <span class="n">get_item_codes_from_package_name</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.dxmanager</span> <span class="kn">import</span> <span class="n">DxManager</span>
+<span class="kn">from</span> <span class="nn">tlo.methods.equipment</span> <span class="kn">import</span> <span class="n">Equipment</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.hsi_event</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">LABEL_FOR_MERGED_FACILITY_LEVELS_1B_AND_2</span><span class="p">,</span>
     <span class="n">FacilityInfo</span><span class="p">,</span>
@@ -284,6 +285,27 @@
             <span class="s2">&quot;Availability of beds. If &#39;default&#39; then use the availability specified in the ResourceFile; if &quot;</span>
             <span class="s2">&quot;&#39;none&#39;, then let no beds be  ever be available; if &#39;all&#39;, then all beds are always available. NB. This &quot;</span>
             <span class="s2">&quot;parameter is over-ridden if an argument is provided to the module initialiser.&quot;</span><span class="p">),</span>
+        <span class="s1">&#39;EquipmentCatalogue&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">,</span> <span class="s2">&quot;Data on equipment items and packages.&quot;</span><span class="p">),</span>
+        <span class="s1">&#39;equipment_availability_estimates&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">,</span> <span class="s2">&quot;Data on the availability of equipment items and packages.&quot;</span>
+        <span class="p">),</span>
+        <span class="s1">&#39;equip_availability&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">STRING</span><span class="p">,</span>
+            <span class="s2">&quot;What to assume about the availability of equipment. If &#39;default&#39; then use the availability specified in &quot;</span>
+            <span class="s2">&quot;the ResourceFile; if &#39;none&#39;, then let no equipment ever be available; if &#39;all&#39;, then all equipment is &quot;</span>
+            <span class="s2">&quot;always available. NB. This parameter is over-ridden if an argument is provided to the module initialiser.&quot;</span>
+        <span class="p">),</span>
+        <span class="s1">&#39;equip_availability_postSwitch&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">STRING</span><span class="p">,</span>
+            <span class="s2">&quot;What to assume about the availability of equipment after the switch (see `year_equip_availability_switch`&quot;</span>
+            <span class="s2">&quot;). The options for this are the same as `equip_availability`.&quot;</span>
+        <span class="p">),</span>
+        <span class="s1">&#39;year_equip_availability_switch&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">INT</span><span class="p">,</span>
+            <span class="s2">&quot;Year in which the assumption for `equip_availability` changes (The change happens on 1st January of that &quot;</span>
+            <span class="s2">&quot;year.)&quot;</span>
+        <span class="p">),</span>
 
         <span class="c1"># Service Availability</span>
         <span class="s1">&#39;Service_Availability&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
@@ -294,6 +316,10 @@
             <span class="n">Types</span><span class="o">.</span><span class="n">STRING</span><span class="p">,</span> <span class="s2">&quot;Name of priority policy adopted&quot;</span><span class="p">),</span>
         <span class="s1">&#39;year_mode_switch&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
             <span class="n">Types</span><span class="o">.</span><span class="n">INT</span><span class="p">,</span> <span class="s2">&quot;Year in which mode switch is enforced&quot;</span><span class="p">),</span>
+        <span class="s1">&#39;scale_to_effective_capabilities&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">BOOL</span><span class="p">,</span> <span class="s2">&quot;In year in which mode switch takes place, will rescale available capabilities to match those&quot;</span>
+                        <span class="s2">&quot;that were effectively used (on average) in the past year if this is set to True. This way,&quot;</span>
+                        <span class="s2">&quot;we can approximate overtime and rushing of appts even in mode 2.&quot;</span><span class="p">),</span>
         <span class="s1">&#39;year_cons_availability_switch&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
             <span class="n">Types</span><span class="o">.</span><span class="n">INT</span><span class="p">,</span> <span class="s2">&quot;Year in which consumable availability switch is enforced. The change happens&quot;</span>
                        <span class="s2">&quot;on 1st January of that year.)&quot;</span><span class="p">),</span>
@@ -403,6 +429,7 @@
         <span class="n">mode_appt_constraints</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">cons_availability</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">beds_availability</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">equip_availability</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">randomise_queue</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">ignore_priority</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">policy_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -427,6 +454,8 @@
 <span class="sd">        or &#39;none&#39;, requests for consumables are not logged.</span>
 <span class="sd">        :param beds_availability: If &#39;default&#39; then use the availability specified in the ResourceFile; if &#39;none&#39;, then</span>
 <span class="sd">        let no beds be ever be available; if &#39;all&#39;, then all beds are always available.</span>
+<span class="sd">        :param equip_availability: If &#39;default&#39; then use the availability specified in the ResourceFile; if &#39;none&#39;, then</span>
+<span class="sd">        let no equipment ever be available; if &#39;all&#39;, then all equipment is always available.</span>
 <span class="sd">        :param randomise_queue ensure that the queue is not model-dependent, i.e. properly randomised for equal topen</span>
 <span class="sd">            and priority</span>
 <span class="sd">        :param ignore_priority: If ``True`` do not use the priority information in HSI</span>
@@ -491,7 +520,6 @@
                                        <span class="s1">&#39;LCOA_EHP&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">arg_policy_name</span> <span class="o">=</span> <span class="n">policy_name</span>
 
-
         <span class="bp">self</span><span class="o">.</span><span class="n">tclose_overwrite</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tclose_days_offset_overwrite</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -520,12 +548,15 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">HSI_EVENT_QUEUE</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">hsi_event_queue_counter</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># Counter to help with the sorting in the heapq</span>
 
-        <span class="c1"># Store the argument provided for cons_availability</span>
+        <span class="c1"># Store the arguments provided for cons/beds/equip_availability</span>
         <span class="k">assert</span> <span class="n">cons_availability</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;default&#39;</span><span class="p">,</span> <span class="s1">&#39;all&#39;</span><span class="p">,</span> <span class="s1">&#39;none&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">arg_cons_availability</span> <span class="o">=</span> <span class="n">cons_availability</span>
 
         <span class="k">assert</span> <span class="n">beds_availability</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;default&#39;</span><span class="p">,</span> <span class="s1">&#39;all&#39;</span><span class="p">,</span> <span class="s1">&#39;none&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">arg_beds_availability</span> <span class="o">=</span> <span class="n">beds_availability</span>
+
+        <span class="k">assert</span> <span class="n">equip_availability</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;default&#39;</span><span class="p">,</span> <span class="s1">&#39;all&#39;</span><span class="p">,</span> <span class="s1">&#39;none&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">arg_equip_availability</span> <span class="o">=</span> <span class="n">equip_availability</span>
 
         <span class="c1"># `compute_squeeze_factor_to_district_level` is a Boolean indicating whether the computation of squeeze_factors</span>
         <span class="c1"># should be specific to each district (when `True`), or if the computation of squeeze_factors should be on the</span>
@@ -621,6 +652,16 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;BedCapacity&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
             <span class="n">path_to_resourcefiles_for_healthsystem</span> <span class="o">/</span> <span class="s1">&#39;infrastructure_and_equipment&#39;</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_Bed_Capacity.csv&#39;</span><span class="p">)</span>
 
+        <span class="c1"># Read in ResourceFile_Equipment</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;EquipmentCatalogue&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
+            <span class="n">path_to_resourcefiles_for_healthsystem</span>
+            <span class="o">/</span> <span class="s1">&#39;infrastructure_and_equipment&#39;</span>
+            <span class="o">/</span> <span class="s1">&#39;ResourceFile_EquipmentCatalogue.csv&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;equipment_availability_estimates&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
+            <span class="n">path_to_resourcefiles_for_healthsystem</span>
+            <span class="o">/</span> <span class="s1">&#39;infrastructure_and_equipment&#39;</span>
+            <span class="o">/</span> <span class="s1">&#39;ResourceFile_Equipment_Availability_Estimates.csv&#39;</span><span class="p">)</span>
+
         <span class="c1"># Data on the priority of each Treatment_ID that should be adopted in the queueing system according to different</span>
         <span class="c1"># priority policies. Load all policies at this stage, and decide later which one to adopt.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;priority_rank&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">path_to_resourcefiles_for_healthsystem</span> <span class="o">/</span> <span class="s1">&#39;priority_policies&#39;</span> <span class="o">/</span>
@@ -670,7 +711,6 @@
         <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="mi">2010</span> <span class="ow">in</span> <span class="n">sheet</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="k">for</span> <span class="n">sheet</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;yearly_HR_scaling&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">())</span></div>
 
 
-
 <div class="viewcode-block" id="HealthSystem.pre_initialise_population">
 <a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.pre_initialise_population">[docs]</a>
     <span class="k">def</span> <span class="nf">pre_initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -680,6 +720,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">rng_for_hsi_queue</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">2</span> <span class="o">**</span> <span class="mi">31</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rng_for_dx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">2</span> <span class="o">**</span> <span class="mi">31</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
         <span class="n">rng_for_consumables</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">2</span> <span class="o">**</span> <span class="mi">31</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">rng_for_equipment</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">2</span> <span class="o">**</span> <span class="mi">31</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
 
         <span class="c1"># Determine mode_appt_constraints</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mode_appt_constraints</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_mode_appt_constraints</span><span class="p">()</span>
@@ -704,6 +745,15 @@
             <span class="n">availability</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">get_cons_availability</span><span class="p">()</span>
         <span class="p">)</span>
 
+        <span class="c1"># Determine equip_availability</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">equipment</span> <span class="o">=</span> <span class="n">Equipment</span><span class="p">(</span>
+            <span class="n">catalogue</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;EquipmentCatalogue&#39;</span><span class="p">],</span>
+            <span class="n">data_availability</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;equipment_availability_estimates&#39;</span><span class="p">],</span>
+            <span class="n">rng</span><span class="o">=</span><span class="n">rng_for_equipment</span><span class="p">,</span>
+            <span class="n">master_facilities_list</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Master_Facilities_List&#39;</span><span class="p">],</span>
+            <span class="n">availability</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">get_equip_availability</span><span class="p">(),</span>
+        <span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">tclose_overwrite</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;tclose_overwrite&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tclose_days_offset_overwrite</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;tclose_days_offset_overwrite&#39;</span><span class="p">]</span>
 
@@ -713,7 +763,6 @@
 
         <span class="c1"># Set up framework for considering a priority policy</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">setup_priority_policy</span><span class="p">()</span></div>
-
 
 
 <div class="viewcode-block" id="HealthSystem.initialise_population">
@@ -774,6 +823,18 @@
             <span class="n">Date</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;year_cons_availability_switch&quot;</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
         <span class="p">)</span>
 
+        <span class="c1"># Schedule an equipment availability switch</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span>
+            <span class="n">HealthSystemChangeParameters</span><span class="p">(</span>
+                <span class="bp">self</span><span class="p">,</span>
+                <span class="n">parameters</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s1">&#39;equip_availability&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;equip_availability_postSwitch&#39;</span><span class="p">]</span>
+                <span class="p">}</span>
+            <span class="p">),</span>
+            <span class="n">Date</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;year_equip_availability_switch&quot;</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="p">)</span>
+
+
         <span class="c1"># Schedule a one-off rescaling of _daily_capabilities broken down by officer type and level.</span>
         <span class="c1"># This occurs on 1st January of the year specified in the parameters.</span>
         <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">ConstantRescalingHRCapabilities</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
@@ -802,6 +863,8 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Put out to the log the information from the tracker of the last day of the simulation&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bed_days</span><span class="o">.</span><span class="n">on_simulation_end</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">consumables</span><span class="o">.</span><span class="n">on_simulation_end</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">equipment</span><span class="o">.</span><span class="n">on_simulation_end</span><span class="p">()</span>
+
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hsi_event_count_log_period</span> <span class="o">==</span> <span class="s2">&quot;simulation&quot;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_write_hsi_event_counts_to_log_and_reset</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_write_never_ran_hsi_event_counts_to_log_and_reset</span><span class="p">()</span>
@@ -856,8 +919,6 @@
 <a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.process_human_resources_files">[docs]</a>
     <span class="k">def</span> <span class="nf">process_human_resources_files</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">use_funded_or_actual_staffing</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create the data-structures needed from the information read into the parameters.&quot;&quot;&quot;</span>
-
-
 
         <span class="c1"># * Define Facility Levels</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_facility_levels</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Master_Facilities_List&#39;</span><span class="p">][</span><span class="s1">&#39;Facility_Level&#39;</span><span class="p">])</span> <span class="o">-</span> <span class="p">{</span><span class="s1">&#39;5&#39;</span><span class="p">}</span>
@@ -1029,6 +1090,30 @@
         <span class="k">return</span> <span class="n">capabilities_ex</span><span class="p">[</span><span class="s1">&#39;Total_Minutes_Per_Day&#39;</span><span class="p">]</span></div>
 
 
+<div class="viewcode-block" id="HealthSystem._rescale_capabilities_to_capture_effective_capability">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem._rescale_capabilities_to_capture_effective_capability">[docs]</a>
+    <span class="k">def</span> <span class="nf">_rescale_capabilities_to_capture_effective_capability</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Notice that capabilities will only be expanded through this process</span>
+        <span class="c1"># (i.e. won&#39;t reduce available capabilities if these were under-used in the last year).</span>
+        <span class="c1"># Note: Currently relying on module variable rather than parameter for</span>
+        <span class="c1"># scale_to_effective_capabilities, in order to facilitate testing. However</span>
+        <span class="c1"># this may eventually come into conflict with the Switcher functions.</span>
+        <span class="n">pattern</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;FacilityID_(\w+)_Officer_(\w+)&quot;</span>
+        <span class="k">for</span> <span class="n">officer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_daily_capabilities</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">matches</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">officer</span><span class="p">)</span>
+            <span class="c1"># Extract ID and officer type from</span>
+            <span class="n">facility_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">matches</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+            <span class="n">officer_type</span> <span class="o">=</span> <span class="n">matches</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">level</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_facility_by_facility_id</span><span class="p">[</span><span class="n">facility_id</span><span class="p">]</span><span class="o">.</span><span class="n">level</span>
+            <span class="c1"># Only rescale if rescaling factor is greater than 1 (i.e. don&#39;t reduce</span>
+            <span class="c1"># available capabilities if these were under-used the previous year).</span>
+            <span class="n">rescaling_factor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_summary_counter</span><span class="o">.</span><span class="n">frac_time_used_by_officer_type_and_level</span><span class="p">(</span>
+                <span class="n">officer_type</span><span class="o">=</span><span class="n">officer_type</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="n">level</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">rescaling_factor</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">rescaling_factor</span> <span class="o">!=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_daily_capabilities</span><span class="p">[</span><span class="n">officer</span><span class="p">]</span> <span class="o">*=</span> <span class="n">rescaling_factor</span></div>
+
+
 <div class="viewcode-block" id="HealthSystem.update_consumables_availability_to_represent_merging_of_levels_1b_and_2">
 <a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.update_consumables_availability_to_represent_merging_of_levels_1b_and_2">[docs]</a>
     <span class="k">def</span> <span class="nf">update_consumables_availability_to_represent_merging_of_levels_1b_and_2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df_original</span><span class="p">):</span>
@@ -1153,6 +1238,27 @@
                     <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">_beds_availability</span></div>
+
+
+<div class="viewcode-block" id="HealthSystem.get_equip_availability">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_equip_availability">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_equip_availability</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns equipment availability. (Should be equal to what is specified by the parameter, but can be</span>
+<span class="sd">        overwritten with what was provided in argument if an argument was specified -- provided for backward</span>
+<span class="sd">        compatibility/debugging.)&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">arg_equip_availability</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_equip_availability</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;equip_availability&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_equip_availability</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">arg_equip_availability</span>
+
+        <span class="c1"># Log the equip_availability</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">,</span>
+                    <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Running Health System With the Following Equipment Availability: &quot;</span>
+                         <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_equip_availability</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">_equip_availability</span></div>
 
 
 <div class="viewcode-block" id="HealthSystem.schedule_to_call_never_ran_on_date">
@@ -1749,6 +1855,7 @@
         <span class="n">priority</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Write the log `HSI_Event` and add to the summary counter.&quot;&quot;&quot;</span>
+        <span class="c1"># Debug logger gives simple line-list for every HSI event</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
             <span class="n">key</span><span class="o">=</span><span class="s2">&quot;HSI_Event&quot;</span><span class="p">,</span>
             <span class="n">data</span><span class="o">=</span><span class="p">{</span>
@@ -1761,15 +1868,19 @@
                 <span class="s1">&#39;did_run&#39;</span><span class="p">:</span> <span class="n">did_run</span><span class="p">,</span>
                 <span class="s1">&#39;Facility_Level&#39;</span><span class="p">:</span> <span class="n">event_details</span><span class="o">.</span><span class="n">facility_level</span> <span class="k">if</span> <span class="n">event_details</span><span class="o">.</span><span class="n">facility_level</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="o">-</span><span class="mi">99</span><span class="p">,</span>
                 <span class="s1">&#39;Facility_ID&#39;</span><span class="p">:</span> <span class="n">facility_id</span> <span class="k">if</span> <span class="n">facility_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="o">-</span><span class="mi">99</span><span class="p">,</span>
+                <span class="s1">&#39;Equipment&#39;</span><span class="p">:</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">event_details</span><span class="o">.</span><span class="n">equipment</span><span class="p">),</span>
             <span class="p">},</span>
             <span class="n">description</span><span class="o">=</span><span class="s2">&quot;record of each HSI event&quot;</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="n">did_run</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hsi_event_count_log_period</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># Do logging for HSI Event using counts of each &#39;unique type&#39; of HSI event (as defined by</span>
+                <span class="c1"># `HSIEventDetails`).</span>
                 <span class="n">event_details_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hsi_event_details</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span>
                     <span class="n">event_details</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_hsi_event_details</span><span class="p">)</span>
                 <span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_hsi_event_counts_log_period</span><span class="p">[</span><span class="n">event_details_key</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="c1"># Do logging for &#39;summary logger&#39;</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_summary_counter</span><span class="o">.</span><span class="n">record_hsi_event</span><span class="p">(</span>
                 <span class="n">treatment_id</span><span class="o">=</span><span class="n">event_details</span><span class="o">.</span><span class="n">treatment_id</span><span class="p">,</span>
                 <span class="n">hsi_event_name</span><span class="o">=</span><span class="n">event_details</span><span class="o">.</span><span class="n">event_name</span><span class="p">,</span>
@@ -1848,7 +1959,7 @@
     <span class="k">def</span> <span class="nf">log_current_capabilities_and_usage</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This will log the percentage of the current capabilities that is used at each Facility Type, according the</span>
-<span class="sd">        `runnning_total_footprint`.</span>
+<span class="sd">        `runnning_total_footprint`. This runs every day.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">current_capabilities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">capabilities_today</span>
         <span class="n">total_footprint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">running_total_footprint</span>
@@ -1894,7 +2005,9 @@
                     <span class="n">description</span><span class="o">=</span><span class="s1">&#39;daily summary of utilisation and capacity of health system resources&#39;</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_summary_counter</span><span class="o">.</span><span class="n">record_hs_status</span><span class="p">(</span>
-            <span class="n">fraction_time_used_across_all_facilities</span><span class="o">=</span><span class="n">fraction_time_used_overall</span><span class="p">)</span></div>
+            <span class="n">fraction_time_used_across_all_facilities</span><span class="o">=</span><span class="n">fraction_time_used_overall</span><span class="p">,</span>
+            <span class="n">fraction_time_used_by_officer_type_and_level</span><span class="o">=</span><span class="n">summary_by_officer</span><span class="p">[</span><span class="s2">&quot;Fraction_Time_Used&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="HealthSystem.remove_beddays_footprint">
@@ -2013,6 +2126,14 @@
 <a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.on_end_of_year">[docs]</a>
     <span class="k">def</span> <span class="nf">on_end_of_year</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Write to log the current states of the summary counters and reset them.&quot;&quot;&quot;</span>
+        <span class="c1"># If we are at the end of the year preceeding the mode switch, and if wanted</span>
+        <span class="c1"># to rescale capabilities to capture effective availability as was recorded, on</span>
+        <span class="c1"># average, in the past year, do so here.</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">year</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;year_mode_switch&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;scale_to_effective_capabilities&#39;</span><span class="p">]</span>
+        <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_rescale_capabilities_to_capture_effective_capability</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_summary_counter</span><span class="o">.</span><span class="n">write_to_log_and_reset_counters</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">consumables</span><span class="o">.</span><span class="n">on_end_of_year</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bed_days</span><span class="o">.</span><span class="n">on_end_of_year</span><span class="p">()</span>
@@ -2353,9 +2474,19 @@
             <span class="c1"># Run the list of population-level HSI events</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">run_population_level_events</span><span class="p">(</span><span class="n">list_of_population_hsi_event_tuples_due_today</span><span class="p">)</span>
 
-            <span class="c1"># Run the list of individual-level events</span>
+            <span class="c1"># For each individual level event, check whether the equipment it has already declared is available. If it</span>
+            <span class="c1"># is not, then call the HSI&#39;s never_run function, and do not take it forward for running; if it is then</span>
+            <span class="c1"># add it to the list of events to run.</span>
+            <span class="n">list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">list_of_individual_hsi_event_tuples_due_today</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">item</span><span class="o">.</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">is_all_declared_equipment_available</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">call_and_record_never_ran_hsi_event</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">=</span><span class="n">item</span><span class="o">.</span><span class="n">hsi_event</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="n">item</span><span class="o">.</span><span class="n">priority</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+            <span class="c1"># Try to run the list of individual-level events that have their essential equipment</span>
             <span class="n">_to_be_held_over</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">run_individual_level_events_in_mode_0_or_1</span><span class="p">(</span>
-                <span class="n">list_of_individual_hsi_event_tuples_due_today</span><span class="p">,</span>
+                <span class="n">list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="n">hold_over</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">_to_be_held_over</span><span class="p">)</span></div>
 
@@ -2493,6 +2624,15 @@
                             <span class="c1"># Check that a facility has been assigned to this HSI</span>
                             <span class="k">assert</span> <span class="n">event</span><span class="o">.</span><span class="n">facility_info</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> \
                                 <span class="sa">f</span><span class="s2">&quot;Cannot run HSI </span><span class="si">{</span><span class="n">event</span><span class="o">.</span><span class="n">TREATMENT_ID</span><span class="si">}</span><span class="s2"> without facility_info being defined.&quot;</span>
+
+                            <span class="c1"># Check if equipment declared is available. If not, call `never_ran` and do not run the</span>
+                            <span class="c1"># event. (`continue` returns flow to beginning of the `while` loop)</span>
+                            <span class="k">if</span> <span class="ow">not</span> <span class="n">event</span><span class="o">.</span><span class="n">is_all_declared_equipment_available</span><span class="p">:</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">call_and_record_never_ran_hsi_event</span><span class="p">(</span>
+                                    <span class="n">hsi_event</span><span class="o">=</span><span class="n">event</span><span class="p">,</span>
+                                    <span class="n">priority</span><span class="o">=</span><span class="n">next_event_tuple</span><span class="o">.</span><span class="n">priority</span>
+                                <span class="p">)</span>
+                                <span class="k">continue</span>
 
                             <span class="c1"># Expected appt footprint before running event</span>
                             <span class="n">_appt_footprint_before_running</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span>
@@ -2663,7 +2803,8 @@
                         <span class="n">treatment_id</span><span class="o">=</span><span class="s1">&#39;Inpatient_Care&#39;</span><span class="p">,</span>
                         <span class="n">facility_level</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">_facility_by_facility_id</span><span class="p">[</span><span class="n">_fac_id</span><span class="p">]</span><span class="o">.</span><span class="n">level</span><span class="p">,</span>
                         <span class="n">appt_footprint</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">_inpatient_appts</span><span class="o">.</span><span class="n">items</span><span class="p">())),</span>
-                        <span class="n">beddays_footprint</span><span class="o">=</span><span class="p">()</span>
+                        <span class="n">beddays_footprint</span><span class="o">=</span><span class="p">(),</span>
+                        <span class="n">equipment</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(),</span>  <span class="c1"># Equipment is normally a set, but this has to be hashable.</span>
                     <span class="p">),</span>
                     <span class="n">person_id</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
                     <span class="n">facility_id</span><span class="o">=</span><span class="n">_fac_id</span><span class="p">,</span>
@@ -2733,6 +2874,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_never_ran_appts_by_level</span> <span class="o">=</span> <span class="p">{</span><span class="n">_level</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span> <span class="k">for</span> <span class="n">_level</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;0&#39;</span><span class="p">,</span> <span class="s1">&#39;1a&#39;</span><span class="p">,</span> <span class="s1">&#39;1b&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="s1">&#39;3&#39;</span><span class="p">,</span> <span class="s1">&#39;4&#39;</span><span class="p">)}</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_frac_time_used_overall</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># Running record of the usage of the healthcare system</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sum_of_daily_frac_time_used_by_officer_type_and_level</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_squeeze_factor_by_hsi_event_name</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>  <span class="c1"># Running record the squeeze-factor applying to each</span>
         <span class="c1">#                                                           treatment_id. Key is of the form:</span>
         <span class="c1">#                                                           &quot;&lt;TREATMENT_ID&gt;:&lt;HSI_EVENT_NAME&gt;&quot;</span>
@@ -2775,14 +2917,19 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_never_ran_appts</span><span class="p">[</span><span class="n">appt_type</span><span class="p">]</span> <span class="o">+=</span> <span class="n">number</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_never_ran_appts_by_level</span><span class="p">[</span><span class="n">level</span><span class="p">][</span><span class="n">appt_type</span><span class="p">]</span> <span class="o">+=</span> <span class="n">number</span>
 
-    <span class="k">def</span> <span class="nf">record_hs_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fraction_time_used_across_all_facilities</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">record_hs_status</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">fraction_time_used_across_all_facilities</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">fraction_time_used_by_officer_type_and_level</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="nb">float</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Record a current status metric of the HealthSystem.&quot;&quot;&quot;</span>
-
         <span class="c1"># The fraction of all healthcare worker time that is used:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_frac_time_used_overall</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fraction_time_used_across_all_facilities</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">officer_type_facility_level</span><span class="p">,</span> <span class="n">fraction_time</span> <span class="ow">in</span> <span class="n">fraction_time_used_by_officer_type_and_level</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sum_of_daily_frac_time_used_by_officer_type_and_level</span><span class="p">[</span><span class="n">officer_type_facility_level</span><span class="p">]</span> <span class="o">+=</span> <span class="n">fraction_time</span>
 
     <span class="k">def</span> <span class="nf">write_to_log_and_reset_counters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Log summary statistics reset the data structures.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Log summary statistics reset the data structures. This usually occurs at the end of the year.&quot;&quot;&quot;</span>
 
         <span class="n">logger_summary</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
             <span class="n">key</span><span class="o">=</span><span class="s2">&quot;HSI_Event&quot;</span><span class="p">,</span>
@@ -2821,8 +2968,47 @@
             <span class="p">},</span>
         <span class="p">)</span>
 
+        <span class="c1"># Log mean of &#39;fraction time used by officer type and facility level&#39; from daily entries from the previous</span>
+        <span class="c1"># year.</span>
+        <span class="n">logger_summary</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="n">key</span><span class="o">=</span><span class="s2">&quot;Capacity_By_OfficerType_And_FacilityLevel&quot;</span><span class="p">,</span>
+            <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The fraction of healthcare worker time that is used each day, averaged over this &quot;</span>
+                        <span class="s2">&quot;calendar year, for each officer type at each facility level.&quot;</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="n">flatten_multi_index_series_into_dict_for_logging</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">frac_time_used_by_officer_type_and_level</span><span class="p">()),</span>
+        <span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">_reset_internal_stores</span><span class="p">()</span>
 
+    <span class="k">def</span> <span class="nf">frac_time_used_by_officer_type_and_level</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">officer_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">level</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Average fraction of time used by officer type and level since last reset.</span>
+<span class="sd">        If `officer_type` and/or `level` is not provided (left to default to `None`) then a pd.Series with a multi-index</span>
+<span class="sd">        is returned giving the result for all officer_types/levels.&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">officer_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">level</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_sum_of_daily_frac_time_used_by_officer_type_and_level</span><span class="p">[</span><span class="n">officer_type</span><span class="p">,</span> <span class="n">level</span><span class="p">]</span>
+                <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_frac_time_used_overall</span><span class="p">)</span>
+                <span class="c1"># Use len(self._frac_time_used_overall) as proxy for number of days in past year.</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Return multiple in the form of a pd.Series with multiindex</span>
+            <span class="n">mean_frac_time_used</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="p">(</span><span class="n">_officer_type</span><span class="p">,</span> <span class="n">_level</span><span class="p">):</span> <span class="n">v</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_frac_time_used_overall</span><span class="p">)</span>
+                <span class="k">for</span> <span class="p">(</span><span class="n">_officer_type</span><span class="p">,</span> <span class="n">_level</span><span class="p">),</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sum_of_daily_frac_time_used_by_officer_type_and_level</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">_officer_type</span> <span class="o">==</span> <span class="n">officer_type</span> <span class="ow">or</span> <span class="n">officer_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">_level</span> <span class="o">==</span> <span class="n">level</span> <span class="ow">or</span> <span class="n">level</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="p">}</span>
+            <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span>
+                <span class="n">index</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">MultiIndex</span><span class="o">.</span><span class="n">from_tuples</span><span class="p">(</span>
+                    <span class="n">mean_frac_time_used</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span>
+                    <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;OfficerType&#39;</span><span class="p">,</span> <span class="s1">&#39;FacilityLevel&#39;</span><span class="p">]</span>
+                <span class="p">),</span>
+                <span class="n">data</span><span class="o">=</span><span class="n">mean_frac_time_used</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">sort_index</span><span class="p">()</span>
 
 <div class="viewcode-block" id="HealthSystemChangeParameters">
 <a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemChangeParameters">[docs]</a>
@@ -2833,6 +3019,7 @@
 <span class="sd">        * `capabilities_coefficient`</span>
 <span class="sd">        * `cons_availability`</span>
 <span class="sd">        * `beds_availability`</span>
+<span class="sd">        * `equip_availability`</span>
 <span class="sd">    Note that no checking is done here on the suitability of values of each parameter.&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="HealthSystemChangeParameters.__init__">
@@ -2862,7 +3049,10 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">consumables</span><span class="o">.</span><span class="n">on_start_of_day</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="s1">&#39;beds_availability&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">bed_days</span><span class="o">.</span><span class="n">availability</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span><span class="p">[</span><span class="s1">&#39;beds_availability&#39;</span><span class="p">]</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">bed_days</span><span class="o">.</span><span class="n">availability</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span><span class="p">[</span><span class="s1">&#39;beds_availability&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="s1">&#39;equip_availability&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">equipment</span><span class="o">.</span><span class="n">availability</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span><span class="p">[</span><span class="s1">&#39;equip_availability&#39;</span><span class="p">]</span></div>
 </div>
 
 
@@ -2972,7 +3162,7 @@
 <a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.RescaleHRCapabilities_ByDistrict.apply">[docs]</a>
     <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
 
-        <span class="c1"># Get the set of scaling_factors that are specified by the &#39;HR_scaling_by_level_and_officer_type_mode&#39; assumption</span>
+        <span class="c1"># Get the set of scaling_factors that are specified by &#39;HR_scaling_by_level_and_officer_type_mode&#39;</span>
         <span class="n">HR_scaling_factor_by_district</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;HR_scaling_by_district_table&#39;</span><span class="p">][</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;HR_scaling_by_district_mode&#39;</span><span class="p">]</span>
         <span class="p">]</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;District&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
@@ -3027,7 +3217,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Apr 23, 2024.
+      <span class="lastupdated">Last updated on May 27, 2024.
       </span></p>
   </div>
 

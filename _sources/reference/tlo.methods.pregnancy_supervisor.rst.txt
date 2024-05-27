@@ -396,7 +396,7 @@ tlo.methods.pregnancy_supervisor module
           - BOOL
           - Whether this woman is predicted to attend 4 or more antenatal care visits during her pregnancy
         * - ps_abortion_complications
-          - INT
+          - BITSET
           - Bitset column holding types of abortion complication
         * - ps_prev_spont_abortion
           - BOOL
@@ -436,17 +436,17 @@ tlo.methods.pregnancy_supervisor module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'CareOfWomenDuringPregnancy', 'HealthSystem', 'Lifestyle', 'Contraception', 'Labour'}
+     ADDITIONAL_DEPENDENCIES : {'Contraception', 'HealthSystem', 'Lifestyle', 'Labour', 'CareOfWomenDuringPregnancy'}
 
-     CAUSES_OF_DEATH : {'ectopic_pregnancy': <tlo.methods.causes.Cause object at 0x135ea7610>, 'spontaneous_abortion': <tlo.methods.causes.Cause object at 0x135ea5050>, 'induced_abortion': <tlo.methods.causes.Cause object at 0x135db4490>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x135db6b10>, 'severe_gestational_hypertension': <tlo.methods.causes.Cause object at 0x135db4d50>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x135db47d0>, 'eclampsia': <tlo.methods.causes.Cause object at 0x135db49d0>, 'antenatal_sepsis': <tlo.methods.causes.Cause object at 0x135db69d0>}
+     CAUSES_OF_DEATH : {'ectopic_pregnancy': <tlo.methods.causes.Cause object at 0x12e0a76d0>, 'spontaneous_abortion': <tlo.methods.causes.Cause object at 0x12e0a6310>, 'induced_abortion': <tlo.methods.causes.Cause object at 0x12df19a10>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x12df1ac90>, 'severe_gestational_hypertension': <tlo.methods.causes.Cause object at 0x12df18310>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x12dec7910>, 'eclampsia': <tlo.methods.causes.Cause object at 0x12dec5050>, 'antenatal_sepsis': <tlo.methods.causes.Cause object at 0x12dec4190>}
 
-     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x135db5250>}
+     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x12dec6650>}
 
      INIT_DEPENDENCIES : {'Demography'}
 
-     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>}
 
-     OPTIONAL_INIT_DEPENDENCIES : {'CardioMetabolicDisorders', 'Hiv', 'Malaria', 'HealthBurden'}
+     OPTIONAL_INIT_DEPENDENCIES : {'Hiv', 'Malaria', 'HealthBurden', 'CardioMetabolicDisorders'}
 
      **Functions (defined or overridden in class PregnancySupervisor):**
 

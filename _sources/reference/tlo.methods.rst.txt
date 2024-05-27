@@ -11,6 +11,7 @@ Submodules
    tlo.methods.bed_days
    tlo.methods.bladder_cancer
    tlo.methods.breast_cancer
+   tlo.methods.cancer_consumables
    tlo.methods.cardio_metabolic_disorders
    tlo.methods.care_of_women_during_pregnancy
    tlo.methods.causes
@@ -25,6 +26,7 @@ Submodules
    tlo.methods.enhanced_lifestyle
    tlo.methods.epi
    tlo.methods.epilepsy
+   tlo.methods.equipment
    tlo.methods.fullmodel
    tlo.methods.healthburden
    tlo.methods.healthseekingbehaviour

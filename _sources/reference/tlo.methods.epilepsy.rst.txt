@@ -106,13 +106,13 @@ tlo.methods.epilepsy module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'Epilepsy': <tlo.methods.causes.Cause object at 0x135a5d050>}
+     CAUSES_OF_DEATH : {'Epilepsy': <tlo.methods.causes.Cause object at 0x12e331790>}
 
-     CAUSES_OF_DISABILITY : {'Epilepsy': <tlo.methods.causes.Cause object at 0x135a5c690>}
+     CAUSES_OF_DISABILITY : {'Epilepsy': <tlo.methods.causes.Cause object at 0x12e333390>}
 
-     INIT_DEPENDENCIES : {'SymptomManager', 'Demography', 'HealthBurden', 'HealthSystem'}
+     INIT_DEPENDENCIES : {'HealthBurden', 'SymptomManager', 'Demography', 'HealthSystem'}
 
-     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHSYSTEM: 3>}
 
      TREATMENT_ID : antiepileptic
 
