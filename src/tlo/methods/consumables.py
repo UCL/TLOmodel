@@ -24,7 +24,7 @@ class Consumables:
 
     :param: `availability`: Determines the availability of consumables. If 'default' then use the availability
      specified in the ResourceFile; if 'none', then let no consumable be ever be available; if 'all', then all
-     consumables are always available. When using 'all' or 'none', requests for consumables are not logged.
+     consumables are always available. Other options are also available: see `self._options_for_availability`.
 
     If an item_code is requested that is not recognised (not included in `data`), a `UserWarning` is issued, and the
      result returned is on the basis of the average availability of other consumables in that facility in that month.
@@ -47,35 +47,39 @@ class Consumables:
             'all_essential_available',
         }
 
-        self._item_code_designations = item_code_designations
-
-        self.item_codes = set()  # All item_codes that are recognised.
+        # Create internal items:
         self._rng = rng
+        self._availability = None  # Internal storage of availability assumption (only accessed through getter/setter)
         self._prob_item_codes_available = None  # Data on the probability of each item_code being available
         self._is_available = None  # Dict of sets giving the set of item_codes available, by facility_id
         self._is_unknown_item_available = None  # Whether an unknown item is available, by facility_id
         self._not_recognised_item_codes = set()  # The item codes requested but which are not recognised.
+        self._prob_item_codes_available = pd.Series()  # Internal storage for the probabilities of consumable item availabilities
 
-        # Save dataframe with probs of availability from resourcefile
+        # Save designations
+        self._item_code_designations = item_code_designations
+
+        # Save all item_codes that are defined and pd.Series with probs of availability from ResourceFile
         self.item_codes,  self._processed_consumables_data = \
             self._process_consumables_data(availability_data=availability_data)
 
-        # Declare internal storage for the probabilities of consumable item availabilities
-        self._prob_item_codes_available = pd.Series()
-
-        # Set the availability (populates `self._prob_item_codes_available` based on read-in data and the availability
-        #  option.
+        # Set the availability based on the argument provided (this can be updated later after the class is initialised)
         self.availability = availability
 
-        # Create pointer to the `ConsumablesSummaryCounter` helper class
+        # Create (and save pointer to) the `ConsumablesSummaryCounter` helper class
         self._summary_counter = ConsumablesSummaryCounter()
 
     @property
     def availability(self):
+        """Returns the internally stored value for the assumption of availability of consumables."""
         return self._availability
 
     @availability.setter
     def availability(self, value: str):
+        """Changes the effective availability of consumables and updates the internally stored value for that
+        assumption.
+        Note that this overrides any changes effected by `override_availability()`.
+        """
         assert value in self._options_for_availability, f"Argument `cons_availability` is not recognised: {value}."
         self._availability = value
         self._enforce_availability_option(self._availability)
@@ -87,10 +91,11 @@ class Consumables:
         self._refresh_availability_of_consumables(date)
 
     def _enforce_availability_option(self, availability: str):
-        """Saves values for `self._prob_item_codes_available` that enforce the assumption for the availability of the
-        consumables."""
+        """Saves (or re-saves) the values for `self._prob_item_codes_available` that use the processed consumables
+        data (read-in from the ResourceFile) and enforces the assumption for the availability of the consumables by
+        overriding the availability of specific consumables."""
 
-        # Load the original read-in data
+        # Load the original read-in data (create copy so that edits do change the original)
         self._prob_item_codes_available = self._processed_consumables_data.copy()
 
         # Load designations of the consumables
@@ -127,10 +132,9 @@ class Consumables:
     def _process_consumables_data(self, availability_data: pd.DataFrame) -> Tuple[set, pd.Series]:
         """Helper function for processing the consumables data, passed in here as pd.DataFrame that has been read-in by
         the HealthSystem.
-         Returns: (i) the set of all recognised item_codes to `self.item_codes`; (ii) pd.Series of the availability of
-        consumables.
+        Returns: (i) the set of all recognised item_codes; (ii) pd.Series of the availability of
+        each consumable at each facility_id during each month.
         """
-        # Set the probability of availability for each item, based on the data passed it, and return
         return (
             set(availability_data.item_code),
             availability_data.set_index(['month', 'Facility_ID', 'item_code'])['available_prop']
@@ -162,6 +166,8 @@ class Consumables:
         Over-ride the availability (for all months and all facilities) of certain item_codes.
         Note this should not be called directly: Disease modules should call `override_availability_of_consumables` in
          `HealthSystem`.
+        Note that these changes will *not* persist following a change of the overall modulator of consumables
+        availability, `Consumables.availability`.
         :param item_codes: Dictionary of the form {<item_code>: probability_that_item_is_available}
         :return: None
         """
@@ -239,9 +245,9 @@ class Consumables:
 
         if facility_info is None:
             # If `facility_info` is None, it implies that the HSI has not been initialised because the HealthSystem
-            #  is running with `disable=True`. Therefore, accept the default behaviour indicated by the argument saved
-            #  in `self.cons_availability`. If the behaviour is `default`, then let the consumable be available.
-            if self.cons_availability in ('all', 'default'):
+            #  is running with `disable=True`. Therefore, assume the consumable is available if the overall
+            #  availability assumption is 'all' or 'default', and not otherwise.
+            if self.availability in ('all', 'default'):
                 return {_i: True for _i in item_codes}
             else:
                 return {_i: False for _i in item_codes}

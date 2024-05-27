@@ -1855,6 +1855,8 @@ class HealthSystem(Module):
 
     def override_availability_of_consumables(self, item_codes) -> None:
         """Over-ride the availability (for all months and all facilities) of certain consumables item_codes.
+        Note that these changes will *not* persist following a change of the overall modulator of consumables
+        availability, `Consumables.availability`.
         :param item_codes: Dictionary of the form {<item_code>: probability_that_item_is_available}
         :return: None
         """
