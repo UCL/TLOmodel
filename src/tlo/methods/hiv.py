@@ -913,12 +913,13 @@ class Hiv(Module):
         sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(years=1))
 
         # Optional: Schedule the scale-up of programs
-        assert isinstance(self.scaleup_start_date, Date), "Value is not a Date object"
-        # Check if scale-up start date is on or after sim start date
-        assert self.scaleup_start_date >= Date(2010, 1, 1), \
-            f"Date {self.scaleup_start_date} is before January 1, 2010"
+        if self.scaleup_start_date is not pd.NaT:
+            assert isinstance(self.scaleup_start_date, Date), "Value is not a Date object"
+            # Check if scale-up start date is on or after sim start date
+            assert self.scaleup_start_date >= Date(2010, 1, 1), \
+                f"Date {self.scaleup_start_date} is before January 1, 2010"
 
-        sim.schedule_event(ScaleUpSetupEvent(self), self.scaleup_start_date)
+            sim.schedule_event(ScaleUpSetupEvent(self), self.scaleup_start_date)
 
         # 3) Determine who has AIDS and impose the Symptoms 'aids_symptoms'
 
@@ -1134,8 +1135,6 @@ class Hiv(Module):
         scaleup_hiv = self.scaleup_hiv
         scaleup_tb = self.scaleup_tb
         scaleup_malaria = self.scaleup_malaria
-
-        print(scaleup_malaria)
 
         if scaleup_hiv:
 
