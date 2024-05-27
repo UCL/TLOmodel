@@ -1368,7 +1368,7 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
             _params['mode_appt_constraints'] = hs.mode_appt_constraints
             _params['ignore_priority'] = hs.ignore_priority
             _params['capabilities_coefficient'] = hs.capabilities_coefficient
-            _params['cons_availability'] = hs.consumables.cons_availability
+            _params['cons_availability'] = hs.consumables.availability
             _params['beds_availability'] = hs.bed_days.availability
             _params['equip_availability'] = hs.equipment.availability
 
