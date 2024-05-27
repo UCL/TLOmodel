@@ -2,7 +2,7 @@ import datetime
 import warnings
 from collections import defaultdict
 from itertools import repeat
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -37,23 +37,48 @@ class Consumables:
                  availability: str = 'default'
                  ) -> None:
 
-        assert availability in (
-            'none', 'default', 'all',
-            'all_diagnostics_available', 'all_medicines_available', 'all_medicines_and_other_available',
-        ), "Argument `availability` is not recognised."
-        self.cons_availability = availability  # Governs availability  - none/default/all
-        self.item_codes = set()  # All item_codes that are recognised.
+        self._options_for_availability = {
+            'none',
+            'default',
+            'all',
+            'all_diagnostics_available',
+            'all_medicines_available',
+            'all_medicines_and_other_available',
+            'all_essential_and_vital_available',
+        }
 
+        self._item_code_designations = item_code_designations
+
+        self.item_codes = set()  # All item_codes that are recognised.
         self._rng = rng
         self._prob_item_codes_available = None  # Data on the probability of each item_code being available
         self._is_available = None  # Dict of sets giving the set of item_codes available, by facility_id
         self._is_unknown_item_available = None  # Whether an unknown item is available, by facility_id
         self._not_recognised_item_codes = set()  # The item codes requested but which are not recognised.
 
-        self._process_consumables_df(availability_data=availability_data, item_code_designations=item_code_designations)
+        # Save dataframe with probs of availability from resourcefile
+        self.item_codes,  self._processed_consumables_data = \
+            self._process_consumables_data(availability_data=availability_data)
 
-        # Create pointer to the `HealthSystemSummaryCounter` helper class
+        # Declare internal storage for the probabilities of consumable item availabilities
+        self._prob_item_codes_available = pd.Series()
+
+        # Set the availability (populates `self._prob_item_codes_available` based on read-in data and the availability
+        #  option.
+        self.availability = availability
+
+        # Create pointer to the `ConsumablesSummaryCounter` helper class
         self._summary_counter = ConsumablesSummaryCounter()
+
+    @property
+    def availability(self):
+        return self._availability
+
+    @availability.setter
+    def availability(self, value: str):
+        assert value in self._options_for_availability, f"Argument `cons_availability` is not recognised: {value}."
+        self._availability = value
+        self._enforce_availability_option(self._availability)
 
     def on_start_of_day(self, date: datetime.datetime) -> None:
         """Do the jobs at the start of each new day.
@@ -61,42 +86,55 @@ class Consumables:
         """
         self._refresh_availability_of_consumables(date)
 
-    def _process_consumables_df(self, availability_data: pd.DataFrame, item_code_designations: pd.DataFrame) -> None:
-        """Helper function for processing the consumables data, passed in here as pd.DataFrame that has been read-in by
-        the HealthSystem.
-        * Saves the data as `self._prob_item_codes_available`
-        * Saves the set of all recognised item_codes to `self.item_codes`
-        * Over-rides the availability of all items to be always or never available according the specification of the
-         argument `cons_availability`.
-        """
-        self.item_codes = set(availability_data.item_code)  # Record all consumables identified
+    def _enforce_availability_option(self, availability: str):
+        """Saves values for `self._prob_item_codes_available` that enforce the assumption for the availability of the
+        consumables."""
 
-        # Set the probability of availability for each item, based on the data passed it.
-        self._prob_item_codes_available = \
-            availability_data.set_index(['month', 'Facility_ID', 'item_code'])['available_prop']
+        # Load the original read-in data
+        self._prob_item_codes_available = self._processed_consumables_data.copy()
 
-        # Over-ride the data according to parameter for `availability`
-        if self.cons_availability == 'default':
+        # Load designations of the consumables
+        item_code_designations = self._item_code_designations
+
+        # Over-ride the data according to option for `availability`
+        if availability == 'default':
             pass
-        elif self.cons_availability == 'all':
+        elif availability == 'all':
             self.override_availability(dict(zip(self.item_codes, repeat(1.0))))
-        elif self.cons_availability == 'none':
+        elif availability == 'none':
             self.override_availability(dict(zip(self.item_codes, repeat(0.0))))
-        elif self.cons_availability == 'all_diagnostics_available':
+        elif availability == 'all_diagnostics_available':
             item_codes_dx = set(
                 item_code_designations.index[item_code_designations['is_diagnostic']]).intersection(self.item_codes)
             self.override_availability(dict(zip(item_codes_dx, repeat(1.0))))
-        elif self.cons_availability == 'all_medicines_available':
+        elif availability == 'all_medicines_available':
             item_codes_medicines = set(
                 item_code_designations.index[item_code_designations['is_medicine']]).intersection(self.item_codes)
             self.override_availability(dict(zip(item_codes_medicines, repeat(1.0))))
-        elif self.cons_availability == 'all_medicines_and_other_available':
+        elif availability == 'all_medicines_and_other_available':
             item_codes_medicines_and_other = set(
                 item_code_designations.index[item_code_designations['is_medicine'] | item_code_designations['is_other']]
             ).intersection(self.item_codes)
             self.override_availability(dict(zip(item_codes_medicines_and_other, repeat(1.0))))
+        elif availability == 'all_essential_and_vital_available':
+            item_codes_essential_or_vital = set(
+                item_code_designations.index[item_code_designations['is_essential_or_vital']]
+            ).intersection(self.item_codes)
+            self.override_availability(dict(zip(item_codes_essential_or_vital, repeat(1.0))))
         else:
-            raise ValueError(f"Argument for `cons_availability` not recognised: {self.cons_availability}")
+            raise ValueError
+
+    def _process_consumables_data(self, availability_data: pd.DataFrame) -> Tuple[set, pd.Series]:
+        """Helper function for processing the consumables data, passed in here as pd.DataFrame that has been read-in by
+        the HealthSystem.
+         Returns: (i) the set of all recognised item_codes to `self.item_codes`; (ii) pd.Series of the availability of
+        consumables.
+        """
+        # Set the probability of availability for each item, based on the data passed it, and return
+        return (
+            set(availability_data.item_code),
+            availability_data.set_index(['month', 'Facility_ID', 'item_code'])['available_prop']
+        )
 
     def _refresh_availability_of_consumables(self, date: datetime.datetime):
         """Update the availability of all items based on the data for the probability of availability, given the current
