@@ -82,7 +82,7 @@ class Consumables:
         """
         assert value in self._options_for_availability, f"Argument `cons_availability` is not recognised: {value}."
         self._availability = value
-        self._enforce_availability_option(self._availability)
+        self._update_prob_item_codes_available(self._availability)
 
     def on_start_of_day(self, date: datetime.datetime) -> None:
         """Do the jobs at the start of each new day.
@@ -90,7 +90,7 @@ class Consumables:
         """
         self._refresh_availability_of_consumables(date)
 
-    def _enforce_availability_option(self, availability: str):
+    def _update_prob_item_codes_available(self, availability: str):
         """Saves (or re-saves) the values for `self._prob_item_codes_available` that use the processed consumables
         data (read-in from the ResourceFile) and enforces the assumption for the availability of the consumables by
         overriding the availability of specific consumables."""
