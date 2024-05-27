@@ -44,7 +44,7 @@ class Consumables:
             'all_diagnostics_available',
             'all_medicines_available',
             'all_medicines_and_other_available',
-            'all_essential_and_vital_available',
+            'all_essential_available',
         }
 
         self._item_code_designations = item_code_designations
@@ -116,9 +116,9 @@ class Consumables:
                 item_code_designations.index[item_code_designations['is_medicine'] | item_code_designations['is_other']]
             ).intersection(self.item_codes)
             self.override_availability(dict(zip(item_codes_medicines_and_other, repeat(1.0))))
-        elif availability == 'all_essential_and_vital_available':
+        elif availability == 'all_essential_available':
             item_codes_essential_or_vital = set(
-                item_code_designations.index[item_code_designations['is_essential_or_vital']]
+                item_code_designations.index[item_code_designations['is_essential']]
             ).intersection(self.item_codes)
             self.override_availability(dict(zip(item_codes_essential_or_vital, repeat(1.0))))
         else:
