@@ -390,7 +390,7 @@ class Hiv(Module):
         ),
         "length_of_inpatient_stay_if_terminal": Parameter(
             Types.LIST,
-            "length of inpatient stay for end-of-life HIV patients",
+            "length in days of inpatient stay for end-of-life HIV patients: list has two elements [low-bound-inclusive, high-bound-exclusive]",
         ),
     }
 
