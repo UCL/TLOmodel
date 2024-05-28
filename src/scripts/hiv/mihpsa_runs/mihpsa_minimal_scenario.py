@@ -78,7 +78,7 @@ class TestScenario(BaseScenario):
             healthsystem.HealthSystem(
                 resourcefilepath=self.resources,
                 service_availability=["*"],  # all treatment allowed
-                mode_appt_constraints=0,  # mode of constraints to do with officer numbers and time
+                mode_appt_constraints=1,  # mode of constraints to do with officer numbers and time
                 cons_availability="default",  # mode for consumable constraints (if ignored, all consumables available)
                 ignore_priority=False,  # do not use the priority information in HSI event to schedule
                 capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers

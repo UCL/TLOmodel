@@ -1036,8 +1036,11 @@ class Hiv(Module):
             hs.get_item_codes_from_package_name("Viral Load")
         )
 
+        # self.item_codes_for_consumables_required["circ"] = (
+        #     hs.get_item_codes_from_package_name("Male circumcision ")
+        # )
         self.item_codes_for_consumables_required["circ"] = (
-            hs.get_item_codes_from_package_name("Male circumcision ")
+            hs.get_item_code_from_item_name("male circumcision kit, consumables (10 procedures)_1_IDA")
         )
 
         self.item_codes_for_consumables_required["prep"] = {
@@ -2392,6 +2395,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                         x = self.module.lm["lm_circ"].predict(
                             df.loc[[person_id]], self.module.rng
                         )
+                        print(x)
                         if x:
                             self.sim.modules["HealthSystem"].schedule_hsi_event(
                                 HSI_Hiv_Circ(person_id=person_id, module=self.module),
@@ -2452,7 +2456,7 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
 
         self.TREATMENT_ID = "Hiv_Prevention_Circumcision"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"MaleCirc": 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.number_of_occurrences = 0
 
     def apply(self, person_id, squeeze_factor):
@@ -2470,7 +2474,9 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
         if not person["li_is_circ"]:
             # Check/log use of consumables, if materials available, do circumcision and schedule follow-up appts
             # If materials not available, repeat the HSI, i.e., first appt.
+            # todo: set consumables to available as still using full package as requirement
             if self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['circ']):
+            # if person["is_alive"]:
                 # Update circumcision state
                 df.at[person_id, "li_is_circ"] = True
                 # record for logger if VMMC performed
@@ -3247,11 +3253,6 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         N_CSE_15_19_F = 0
         N_CSE_15_19_M = 0
 
-        # after logger, reset yearly logged properties
-        df["hv_VMMC_in_last_year"] = False
-        df["hv_days_on_prep_AGYW"] = 0
-        df["hv_days_on_prep_FSW"] = 0
-
         logger.info(
             key="flow_variables",
             description="Flow variables",
@@ -3302,6 +3303,11 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 "N_CSE_15_19_M": N_CSE_15_19_M,
            },
         )
+
+        # after logger, reset yearly logged properties
+        df["hv_VMMC_in_last_year"] = False
+        df["hv_days_on_prep_AGYW"] = 0
+        df["hv_days_on_prep_FSW"] = 0
 
         # ------------------------------------ TESTING ------------------------------------
         # testing can happen through lm[spontaneous_testing] or symptom-driven or ANC or TB

@@ -28,7 +28,7 @@ outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
 # %% Analyse results of runs
 
 # 0) Find results_folder associated with a given batch_file (and get most recent [-1])
-results_folder = get_scenario_outputs("mihpsa_runs.py.py", outputspath)[-1]
+results_folder = get_scenario_outputs("mihpsa_runs.py", outputspath)[-1]
 
 # Declare path for output graphs from this script
 make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
@@ -181,7 +181,7 @@ stock_variables = [
     "N_VLS_15_UP_F",
 ]
 
-Flow_variables = [
+flow_variables = [
                 "N_BirthAll",
                 "N_BirthHIV",
                 "N_BirthART",
@@ -238,31 +238,22 @@ log0 = load_pickled_dataframes(results_folder, draw=0, run=0)
 log1 = load_pickled_dataframes(results_folder, draw=0, run=1)
 log2 = load_pickled_dataframes(results_folder, draw=0, run=2)
 
+stock0 = log0['tlo.methods.hiv']['stock_variables'].iloc[:, 1:]
+stock1 = log1['tlo.methods.hiv']['stock_variables'].iloc[:, 1:]
+stock2 = log2['tlo.methods.hiv']['stock_variables'].iloc[:, 1:]
+
+mean_values = ((stock0 + stock1 + stock2) / 3) * scaling_factor
+mean_values_rounded = mean_values.round().astype(int)
+mean_values_rounded.to_csv(outputspath / 'MIHPSA_May2024/mihpsa_stock_FULL.csv')
 
 
-# ---------------------------------- HIV ---------------------------------- #
-model_hiv_adult_prev = summarize(
-    extract_results(
-        results_folder,
-        module="tlo.methods.hiv",
-        key="summary_inc_and_prev_for_adults_and_children_and_fsw",
-        column="hiv_prev_adult_15plus",
-        index="date",
-        do_scaling=False,
-    ),
-    collapse_columns=True,
-)
-model_hiv_adult_prev.index = model_hiv_adult_prev.index.year
+flow0 = log0['tlo.methods.hiv']['flow_variables'].iloc[:, 1:]
+flow1 = log1['tlo.methods.hiv']['flow_variables'].iloc[:, 1:]
+flow2 = log2['tlo.methods.hiv']['flow_variables'].iloc[:, 1:]
 
-model_hiv_adult_inc = summarize(
-    extract_results(
-        results_folder,
-        module="tlo.methods.hiv",
-        key="summary_inc_and_prev_for_adults_and_children_and_fsw",
-        column="hiv_adult_inc_1549",
-        index="date",
-        do_scaling=False,
-    ),
-    collapse_columns=True,
-)
-model_hiv_adult_inc.index = model_hiv_adult_inc.index.year
+mean_values = ((flow0 + flow1 + flow2) / 3) * scaling_factor
+mean_values_rounded = mean_values.round().astype(int)
+mean_values_rounded.to_csv(outputspath / 'MIHPSA_May2024/mihpsa_flow_FULL.csv')
+
+
+
