@@ -139,15 +139,15 @@ def test_core_functionality_of_equipment_class(seed):
     # Lookup the item_codes that belong in a particular package.
     # - When package is recognised
     # if items are in the same package (once standing alone, once within multiple pkgs defined for item)
-    assert {0, 1} == eq_default.lookup_item_codes_from_pkg_name(pkg_name='PkgWith0+1')
+    assert {0, 1} == eq_default.from_pkg_names(pkg_name='PkgWith0+1')
     # if the pkg within multiple pkgs defined for item
-    assert {1} == eq_default.lookup_item_codes_from_pkg_name(pkg_name='PkgWith1')
+    assert {1} == eq_default.from_pkg_names(pkg_name='PkgWith1')
     # if the pkg only stands alone
-    assert {3} == eq_default.lookup_item_codes_from_pkg_name(pkg_name='PkgWith3')
+    assert {3} == eq_default.from_pkg_names(pkg_name='PkgWith3')
 
     # - Error thrown when package is not recognised
     with pytest.raises(ValueError):
-        eq_default.lookup_item_codes_from_pkg_name(pkg_name='')
+        eq_default.from_pkg_names(pkg_names='')
 
 
 equipment_item_code_that_is_available = [0, 1, ]
