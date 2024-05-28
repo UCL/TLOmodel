@@ -781,7 +781,7 @@ class Malaria(Module):
         """
 
         # Call the DxTest RDT to diagnose malaria
-        dx_result = diagnosis_function('malaria_rdt')
+        dx_result = diagnosis_function("malaria_rdt")
 
         # Log the test: line-list of summary information about each test
         logger.info(
@@ -797,10 +797,10 @@ class Malaria(Module):
         )
 
         # Severe malaria infection always returns positive RDT
-        if true_malaria_infection_type == 'severe':
-            return 'severe_malaria'
-        elif dx_result and true_malaria_infection_type in ('clinical', 'asym'):
-            return 'clinical_malaria'
+        if true_malaria_infection_type == "severe":
+            return "severe_malaria"
+        elif dx_result and true_malaria_infection_type in ("clinical", "asym"):
+            return "clinical_malaria"
         else:
             return "negative_malaria_test"
 
@@ -844,7 +844,7 @@ class Malaria(Module):
                     event, priority=0, topen=self.sim.date
                 )
 
-            # return type 'clinical_malaria' includes asymptomatic infection
+            # return type "clinical_malaria" includes asymptomatic infection
             elif malaria_test_result == "clinical_malaria":
                 patient_details_updates["ma_dx_counter"] = patient_details.ma_dx_counter + 1
                 event = HSI_Malaria_Treatment(person_id=patient_id, module=self)
@@ -869,8 +869,8 @@ class Malaria(Module):
         # symptoms of severe malaria.)
         patient_details_updates = {}
 
-        if 'severe_malaria' in symptoms:
-            if patient_details.ma_tx == 'none':
+        if "severe_malaria" in symptoms:
+            if patient_details.ma_tx == "none":
                 # Check if malaria parasitaemia:
                 malaria_test_result = self.check_if_fever_is_caused_by_malaria(
                     true_malaria_infection_type=patient_details.ma_inf_type,
@@ -883,8 +883,8 @@ class Malaria(Module):
                 )
 
                 # if any symptoms indicative of malaria and they have parasitaemia (would return a positive rdt)
-                if malaria_test_result in ('severe_malaria', 'clinical_malaria'):
-                    patient_details_updates['ma_dx_counter'] = patient_details.ma_dx_counter + 1
+                if malaria_test_result in ("severe_malaria", "clinical_malaria"):
+                    patient_details_updates["ma_dx_counter"] = patient_details.ma_dx_counter + 1
 
                     # Launch the HSI for treatment for Malaria, HSI_Malaria_Treatment will determine correct treatment
                     event = HSI_Malaria_Treatment_Complicated(
