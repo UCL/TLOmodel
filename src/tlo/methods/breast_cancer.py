@@ -907,7 +907,6 @@ class HSI_BreastCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
             item_codes=self.module.item_codes_breast_can['palliation'])
 
         if cons_available:
-
             # If consumables are available and the treatment will go ahead - add the used equipment
             self.add_equipment({'Infusion pump', 'Drip stand'})
 

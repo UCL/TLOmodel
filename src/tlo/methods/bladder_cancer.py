@@ -712,6 +712,7 @@ class HSI_BladderCancer_Investigation_Following_Blood_Urine(HSI_Event, Individua
 
         # Check consumables are available
         # TODO: DISCUSSED - @Eva replace with cystoscope
+
         cons_avail = self.get_consumables(item_codes=self.module.item_codes_bladder_can['screening_biopsy_core'],
                                           optional_item_codes=
                                           self.module.item_codes_bladder_can['screening_biopsy_optional'])
@@ -786,6 +787,7 @@ class HSI_BladderCancer_Investigation_Following_pelvic_pain(HSI_Event, Individua
 
         # Check consumables are available
         # TODO: DISCUSSED - @Eva replace with cystoscope
+
         cons_avail = self.get_consumables(item_codes=self.module.item_codes_bladder_can['screening_biopsy_core'],
                                           optional_item_codes=self.module.item_codes_bladder_can[
                                               'screening_biopsy_optional'])
@@ -989,7 +991,6 @@ class HSI_BladderCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
             item_codes=self.module.item_codes_bladder_can['palliation'])
 
         if cons_available:
-
             # If consumables are available and the treatment will go ahead - update the equipment
             self.add_equipment({'Infusion pump', 'Drip stand'})
 

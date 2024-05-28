@@ -917,7 +917,6 @@ class HSI_ProstateCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                                                   'treatment_surgery_optional'])
 
         if cons_available:
-
             # If consumables are available and the treatment will go ahead - update the equipment
             # TODO: DISCUSSED -link to surgical equipment package when that exists
             self.add_equipment({'Infusion pump', 'Drip stand', 'Laparotomy Set',

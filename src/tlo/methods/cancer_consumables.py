@@ -56,6 +56,7 @@ def get_consumable_item_codes_cancers(cancer_module: Module) -> Dict[str, int]:
     if 'BreastCancer' == cancer_module.name:
 
         # TODO: @Eva chemotharpy protocols??: TAC(Taxotere, Adriamycin, and Cyclophosphamide), AC (anthracycline and
+
         #  cyclophosphamide) +/-Taxane, TC (Taxotere and cyclophosphamide), CMF (cyclophosphamide, methotrexate,
         #  and fluorouracil), FEC-75 (5-Fluorouracil, Epirubicin, Cyclophosphamide). HER 2 +: Add Trastuzumab
 
