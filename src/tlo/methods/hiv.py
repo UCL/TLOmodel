@@ -2395,7 +2395,6 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                         x = self.module.lm["lm_circ"].predict(
                             df.loc[[person_id]], self.module.rng
                         )
-                        print(x)
                         if x:
                             self.sim.modules["HealthSystem"].schedule_hsi_event(
                                 HSI_Hiv_Circ(person_id=person_id, module=self.module),
