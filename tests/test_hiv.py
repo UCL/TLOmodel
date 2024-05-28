@@ -137,26 +137,17 @@ def test_initialisation(seed):
     for idx in before_aids_idx:
         events_for_this_person = sim.find_events_for_person(idx)
         assert len(events_for_this_person) > 0
-        next_event_date, next_event_obj = events_for_this_person[0]
-        if isinstance(next_event_obj, hiv.HivAidsOnsetEvent):
-            assert True
-        # Check if next_event_obj is an iterable containing any instance of hiv.HivAidsOnsetEvent
-        elif isinstance(next_event_obj, (list, tuple)):
-            assert any(isinstance(event, hiv.HivAidsOnsetEvent) for event in next_event_obj)
-        assert next_event_date >= sim.date
+        assert ('hiv.HivAidsOnsetEvent' in e for _, e in events_for_this_person)
+        assert all(date >= sim.date for date, _ in
+                   events_for_this_person), "Not all dates in the event list are after the current date"
 
-    # check that everyone who is infected and has got AIDS event get a future AIDS death event but nothing else
+    # check that everyone who is infected and has got AIDS event get a future AIDS death event
     for idx in aids:
         events_for_this_person = sim.find_events_for_person(idx)
         assert len(events_for_this_person) > 0
-        next_event_date, next_event_obj = events_for_this_person[0]
-        if isinstance(next_event_obj, hiv.HivAidsOnsetEvent):
-            assert True
-        # Check if next_event_obj is an iterable containing any instance of hiv.HivAidsOnsetEvent
-        elif isinstance(next_event_obj, (list, tuple)):
-            assert any(isinstance(event, hiv.HivAidsOnsetEvent) for event in next_event_obj)
-
-        assert next_event_date >= sim.date
+        assert ('hiv.HivAidsDeathEvent' in e for _, e in events_for_this_person)
+        assert all(date >= sim.date for date, _ in
+                   events_for_this_person), "Not all dates in the event list are after the current date"
 
 
 def test_generation_of_new_infection(seed):

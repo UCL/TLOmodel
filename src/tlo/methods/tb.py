@@ -2436,9 +2436,6 @@ class HSI_Tb_EndOfLifeCare(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, "is_alive"]:
             return hs.get_blank_appt_footprint()
 
-        if df.at[person_id, "hv_art"] == "virally_suppressed":
-            return hs.get_blank_appt_footprint()
-
         logger.debug(
             key="message",
             data=f"HSI_Tb_EndOfLifeCare: inpatient admission for {person_id}",
