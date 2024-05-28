@@ -180,6 +180,8 @@ class Malaria(Module):
         "prob_of_treatment_success": Parameter(
             Types.REAL, "probability malaria treatment cures and clears parasitaemia"
         ),
+        "highrisk_districts": Parameter(Types.LIST, "list of four malaria high-risk districts"
+        ),
     }
 
     PROPERTIES = {
@@ -234,6 +236,7 @@ class Malaria(Module):
 
         p["sev_symp_prob"] = workbook["severe_symptoms"]
         p["rdt_testing_rates"] = workbook["WHO_TestData2023"]
+        p["highrisk_districts"] = workbook["highrisk_districts"]
 
         p["inf_inc"] = pd.read_csv(self.resourcefilepath / "malaria" / "ResourceFile_malaria_InfInc_expanded.csv")
         p["clin_inc"] = pd.read_csv(self.resourcefilepath / "malaria" / "ResourceFile_malaria_ClinInc_expanded.csv")

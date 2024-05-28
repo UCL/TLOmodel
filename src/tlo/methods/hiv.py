@@ -1226,26 +1226,35 @@ class Hiv(Module):
                 scaled_params.loc[
                     scaled_params.parameter == "rdt_testing_rates", "scaleup_value"].values[0]
 
-
             # treatment reaches XX
             # no default between testing and treatment, governed by tx availability
 
             # coverage IPTp reaches XX
+            # given during ANC visits and MalariaIPTp Event which selects ALL eligible women
 
-            # treatment success reaches 1
+            # treatment success reaches 1 - default is currently 1 also
             self.sim.modules["Malaria"].parameters["prob_of_treatment_success"] = scaled_params.loc[
                 scaled_params.parameter == "prob_of_treatment_success", "scaleup_value"].values[0]
 
             # bednet and ITN coverage
-            # set IRS for all districts
+            # set IRS for 4 high-risk districts
             # lookup table created in malaria read_parameters
             # produces self.itn_irs called by malaria poll to draw incidence
             # need to overwrite this
-            self.sim.modules["Malaria"].itn_irs['irs_rate'] = scaled_params.loc[
+            highrisk_distr_num = self.sim.modules["Malaria"].parameters["highrisk_districts"]["district_num"]
+
+            # Find indices where District_Num is in highrisk_distr_num
+            mask = self.sim.modules["Malaria"].itn_irs['irs_rate'].index.get_level_values('District_Num').isin(
+                highrisk_distr_num)
+
+            # IRS values can be 0 or 0.8 - no other value in lookup table
+            self.sim.modules["Malaria"].itn_irs['irs_rate'].loc[mask] = scaled_params.loc[
                 scaled_params.parameter == "irs_district", "scaleup_value"].values[0]
 
-            # set ITN or all districts
-            # itn_district
+            # set ITN for all districts
+            # Set these values to 0.7 - this is the max value possible in lookup table
+            # equivalent to 0.7 of all pop sleeping under bednet
+            # household coverage could be 100%, but not everyone in household sleeping under bednet
             self.sim.modules["Malaria"].itn_irs['itn_rate'] = scaled_params.loc[
                 scaled_params.parameter == "itn_district", "scaleup_value"].values[0]
 
