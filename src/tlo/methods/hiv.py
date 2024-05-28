@@ -2385,7 +2385,7 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
 
         self.TREATMENT_ID = "Hiv_Prevention_Circumcision"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"MaleCirc": 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.number_of_occurrences = 0
 
     def apply(self, person_id, squeeze_factor):
