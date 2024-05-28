@@ -784,9 +784,7 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
 
         if cons_avail:
             # If consumables are available and the treatment will go ahead - update the equipment
-            # TODO: DISCUSSED - add surgery package
-            self.add_equipment({'Infusion pump', 'Drip stand', 'Laparotomy Set',
-                                   'Blood pressure machine', 'Pulse oximeter'})
+            self.add_equipment(self.healthcare_system.equipment.lookup_item_codes_from_pkg_name('Major Surgery'))
 
             # Log chemotherapy consumables
             self.get_consumables(

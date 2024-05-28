@@ -897,9 +897,7 @@ class HSI_BladderCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         if cons_avail:
             # If consumables are available and the treatment will go ahead - update the equipment
-            # TODO: DISCUSSED - replace with package and call here
-            self.add_equipment({'Infusion pump', 'Drip stand', 'Laparotomy Set',
-                                   'Blood pressure machine', 'Pulse oximeter'})
+            self.add_equipment(self.healthcare_system.equipment.lookup_item_codes_from_pkg_name('Major Surgery'))
 
             # Record date and stage of starting treatment
             df.at[person_id, "bc_date_treatment"] = self.sim.date

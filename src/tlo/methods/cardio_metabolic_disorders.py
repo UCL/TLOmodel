@@ -1799,13 +1799,7 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
             data=('This is HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment: '
                   f'The squeeze-factor is {squeeze_factor}.'),
         )
-        # to do @eva/joe - DISCUSSED, make ICU package and use here
-        self.add_equipment({'Analyser, Combined Chemistry and Electrolytes',
-                               'Analyser, Haematology',
-                               'Patient monitor', 'Drip stand',
-                               'Infusion pump', 'Blood pressure machine',
-                               'Pulse oximeter', 'Trolley, emergency', 'Stethoscope',
-                               'Oxygen cylinder, with regulator'})
+        self.add_equipment(self.healthcare_system.equipment.lookup_item_codes_from_pkg_name('ICU'))
 
         for _ev in self.events_to_investigate:
             self.do_for_each_event_to_be_investigated(_ev)
