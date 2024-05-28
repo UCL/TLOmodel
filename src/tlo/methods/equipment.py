@@ -254,7 +254,7 @@ class Equipment:
         saved on the module."""
         df = self.catalogue
 
-        if pkg_name not in df['Pkg_Name'].unique():
+        if pkg_name not in df['Pkg_Name'].unique().split(", "):
             raise ValueError(f'That Pkg_Name is not in the catalogue: {pkg_name=}')
 
         return set(df.loc[df['Pkg_Name'] == pkg_name, 'Item_Code'].values)
