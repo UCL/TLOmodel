@@ -757,6 +757,7 @@ def create_job(batch_service_client, vm_size, pool_node_count, job_id,
         id=job_id,
         pool_info=pool_info,
         on_all_tasks_complete="terminateJob",
+        constraints=batch_models.JobConstraints(max_task_retry_count=0),
     )
 
     batch_service_client.job.add(job)
