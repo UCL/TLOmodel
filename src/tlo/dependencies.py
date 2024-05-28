@@ -126,11 +126,13 @@ def topologically_sort_modules(
             dependencies = get_dependencies(
                 module_instance_map[module], module_instance_map.keys()
             )
+
+            module_class_map = get_module_class_map(set())
             for dependency in sorted(dependencies):
                 if dependency not in module_instance_map:
                     if auto_register_modules:
                         # add missing dependencies and associated classes in module instance map dictionary
-                        module_instance = get_module_class_map(set())[dependency](resourcefilepath=data_folder)
+                        module_instance = module_class_map[dependency](resourcefilepath=data_folder)
                         module_instance_map[dependency] = module_instance
                         yield from depth_first_search(dependency)
                     else:
