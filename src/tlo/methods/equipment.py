@@ -253,8 +253,17 @@ class Equipment:
         It is expected that this is used by the disease module once and then the resulting equipment item_codes are
         saved on the module."""
         df = self.catalogue
+        item_codes = set()
 
-        if pkg_name not in df['Pkg_Name'].unique().split(", "):
+        item_codes.update(df.loc[df['Pkg_Name'] == pkg_name, 'Item_Code'].values)
+
+        all_pkg_names = set(df['Pkg_Name'].unique()[~pd.isnull(df['Pkg_Name'].unique())])
+        all_multiple_pkg_names = [name for name in all_pkg_names if ", " in name]
+        for multiple_pkg_name in all_multiple_pkg_names:
+            if pkg_name in multiple_pkg_name.split(", "):
+                item_codes.update(df.loc[df['Pkg_Name'] == multiple_pkg_name, 'Item_Code'].values)
+
+        if item_codes:
+            return item_codes
+        else:
             raise ValueError(f'That Pkg_Name is not in the catalogue: {pkg_name=}')
-
-        return set(df.loc[df['Pkg_Name'] == pkg_name, 'Item_Code'].values)
