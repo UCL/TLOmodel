@@ -1,5 +1,4 @@
 """Tests for automatic checking and ordering of method module dependencies."""
-import logging
 import os
 from pathlib import Path
 from random import seed as set_seed
@@ -8,7 +7,7 @@ from types import GeneratorType
 
 import pytest
 
-from tlo import Date, Module, Simulation
+from tlo import Date, Module, Simulation, logging
 from tlo.dependencies import (
     ModuleDependencyError,
     get_all_dependencies,
