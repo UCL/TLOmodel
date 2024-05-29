@@ -69,6 +69,7 @@ tlo_availability_df = tlo_availability_df.merge(mfl[['District', 'Facility_Level
 programs = pd.read_csv(path_for_new_resourcefiles / "ResourceFile_Consumables_availability_and_usage.csv")[['category', 'item_code', 'module_name']]
 # TODO See if programs can be extracted from a different location as ResourceFile_Consumables_availability_and_usage.csv is now deprecated in master
 programs = programs.drop_duplicates('item_code')
+# manually add category for the two consumables for which it is missing
 tlo_availability_df = tlo_availability_df.merge(programs, on = ['item_code'], how = 'left')
 
 # 1.2 Import scenario data
@@ -77,10 +78,10 @@ scenario_availability_df = pd.read_csv(outputfilepath / "regression_analysis/pre
 scenario_availability_df = scenario_availability_df.drop(['Unnamed: 0'], axis=1)
 scenario_availability_df = scenario_availability_df.rename({'item': 'item_hhfa'}, axis=1)
 
-# Get Scenario data ready to be merged based on TLO model features
+# Prepare scenario data to be merged to TLO model availability based on TLO model features
 # 1.2.1 Level of care
 #------------------------------------------------------
-scenario_availability_df['fac_type'] = scenario_availability_df['fac_type'].str.replace("Facility_level_", "")
+scenario_availability_df['fac_type'] = scenario_availability_df['fac_type_original'].str.replace("Facility_level_", "")
 
 # 1.2.2 District
 #------------------------------------------------------
@@ -89,7 +90,8 @@ rename_and_collapse_to_model_districts = {
     'Mzimba South': 'Mzimba',
     'Mzimba North': 'Mzimba',
 }
-scenario_availability_df['district_std'] = scenario_availability_df['district'].replace(rename_and_collapse_to_model_districts)
+scenario_availability_df = scenario_availability_df.rename({'district': 'district_original'}, axis=1)
+scenario_availability_df['district'] = scenario_availability_df['district_original'].replace(rename_and_collapse_to_model_districts)
 
 # Cities to get same results as their respective regions
 copy_source_to_destination = {
@@ -100,21 +102,21 @@ copy_source_to_destination = {
     'Nkhata Bay': 'Likoma' # based on anecdotal evidence, assume that they experience the same change in avaiability as a result of interventions based on regression results
 }
 for source, destination in copy_source_to_destination.items():
-    new_rows = scenario_availability_df.loc[scenario_availability_df.district_std == source].copy()
-    new_rows.district_std = destination
+    new_rows = scenario_availability_df.loc[scenario_availability_df.district == source].copy() # standardised district names
+    new_rows.district = destination
     scenario_availability_df = pd.concat([scenario_availability_df, new_rows], ignore_index = True)
 
 # 1.2.3 Facility_ID
 # #------------------------------------------------------
 # Merge-in facility_id
 scenario_availability_facid_merge = scenario_availability_df.merge(mfl[['District', 'Facility_Level', 'Facility_ID']],
-                    left_on=['district_std', 'fac_type'],
+                    left_on=['district', 'fac_type'],
                     right_on=['District', 'Facility_Level'], how='left', indicator=True)
 scenario_availability_facid_merge = scenario_availability_facid_merge.rename({'_merge': 'merge_facid'}, axis=1)
 
 # Extract list of District X Facility Level combinations for which there is no HHFA data
 scenario_availability_df_test = scenario_availability_df.merge(mfl[['District', 'Facility_Level', 'Facility_ID']],
-                    left_on=['district_std', 'fac_type'],
+                    left_on=['district', 'fac_type'],
                     right_on=['District', 'Facility_Level'], how='right', indicator=True)
 cond_no_1b = (scenario_availability_df_test['Facility_Level'].isin(['1b'])) & (scenario_availability_df_test['_merge'] == 'right_only')
 cond_no_1a = (scenario_availability_df_test['Facility_Level'].isin(['1a'])) & (scenario_availability_df_test['_merge'] == 'right_only')
@@ -151,8 +153,11 @@ scenario_availability_facid_merge['category_tlo'] = scenario_availability_facid_
 # 1.2.5 Consumable/Item code
 #------------------------------------------------------
 # Load TLO - HHFA consumable name crosswalk
-consumable_crosswalk_df = pd.read_csv(path_for_new_resourcefiles / 'ResourceFile_consumables_matched.csv', encoding='ISO-8859-1')
+consumable_crosswalk_df = pd.read_csv(path_for_new_resourcefiles / 'ResourceFile_consumables_matched.csv', encoding='ISO-8859-1')[['module_name', 'item_code', 'consumable_name_tlo',
+'item_code_hhfa', 'item_hhfa', 'regression_application', 'notes_on_regression_application']]
 # TODO Check that this crosswalk is complete
+# TODO is module_name used?
+# TODO add new consumables Rifapentine to this?
 
 # Now merge in TLO item codes
 scenario_availability_facid_merge = scenario_availability_facid_merge.reset_index().drop(['index'], axis=1)
@@ -167,47 +172,59 @@ print("Number of item codes from the TLO model for which no match was found in t
 # to represent all facility IDs
 
 # Further a row needs to be added for 1b level under Balaka, Machinga, Mwanza, Ntchisi and Salima
-print("Number of unique facility IDs: \n TLO consumable data = ", tlo_availability_df.Facility_ID.nunique(),
-      "\n Scenario based on regression = ", scenario_availability_facid_itemcode_merge.Facility_ID.nunique(),
-      "\n Number of unique item codes: \n TLO consumable data = ", tlo_availability_df.item_code.nunique(),
-      "\n  Scenario based on regression = ", scenario_availability_facid_itemcode_merge.item_code.nunique())
+print("Number of unique facility IDs: \n - TLO consumable data = ", tlo_availability_df.Facility_ID.nunique(),
+      "\n - Scenario based on regression = ", scenario_availability_facid_itemcode_merge.Facility_ID.nunique(),
+      "\nNumber of unique item codes: \n - TLO consumable availability data = ", tlo_availability_df.item_code.nunique(),
+      "\n - TLO consumable availability repository = ", consumable_crosswalk_df.item_code.nunique(),
+      "\n - Scenario based on regression = ", scenario_availability_facid_itemcode_merge.item_code.nunique())
 
 # 1.2.6 Interpolation/Imputation where data is missing
 #------------------------------------------------------
-# 1.2.6.1 Items not matched
+# 1.2.6.1 Facility IDs not matched
 #------------------------------------------------------
 # Before merging the scenario dataframe with tlo_availability_df, generate rows with all 57 relevant facility IDs for item_codes
 # which are not matched
 df = scenario_availability_facid_itemcode_merge
-df_missing = df.loc[df['Facility_ID'].isna()].reset_index()
-df_missing = df_missing.drop_duplicates('item_code')
+df_missing_facids = df.loc[df['Facility_ID'].isna()].reset_index()
+df_missing_facids = df_missing_facids.drop_duplicates('item_code') # These item_codes don't have separate rows by
+# Facility_ID because they were not found in the HHFA regression analysis
 
-df_existing = df.loc[~df['Facility_ID'].isna()]
+df_with_facids = df.loc[~df['Facility_ID'].isna()] # these are rows with Facility_ID
 
 # Create a cartesian product of unique values in columns 'item_code' and 'Facility_ID' from both dataframes
-df_new = pd.DataFrame({'Facility_ID': np.repeat(df_existing['Facility_ID'].unique(), df_missing['item_code'].nunique()),
-                       'item_code': np.tile(df_missing['item_code'].unique(), df_existing['Facility_ID'].nunique())})
+df_with_all_facids = pd.DataFrame({'Facility_ID': np.repeat(df_with_facids['Facility_ID'].unique(), df_missing_facids['item_code'].nunique()),
+                       'item_code': np.tile(df_missing_facids['item_code'].unique(), df_with_facids['Facility_ID'].nunique())})
 # Merge df_new with df_missing on columns 'item_code' and 'Facility_ID'
-df_new = df_new[['Facility_ID', 'item_code']].merge(df_missing.drop('Facility_ID', axis = 1), on=['item_code'], how='left', validate = "m:1")
+df_with_all_facids = df_with_all_facids[['Facility_ID', 'item_code']].merge(df_missing_facids.drop('Facility_ID', axis = 1), on=['item_code'], how='left', validate = "m:1")
 # df_new = df_new.append(df_existing)
-df_new = pd.concat([df_new, df_existing], ignore_index = True)
+df_with_all_facids = pd.concat([df_with_all_facids, df_with_facids], ignore_index = True)
+# Now all item_codes have all Facility_IDs included in the HHFA regression analysis but no values for scenarios
 
-#df_new.to_csv(outputfilepath / 'temp_scenario_file_with_adequate_rows.csv')
-scenario_final_df = df_new
-len(scenario_final_df[~scenario_final_df['change_proportion_incharge_drug_orders'].isna()])
+scenario_final_df = df_with_all_facids
+#len(scenario_final_df[scenario_final_df['change_proportion_scenario1'].isna()])
 
-# Now provide availability_change_prop for rows where this data is not available
-
+# Now provide scenario data for rows where this data is not available
 # 1.2.6.1 Extract list of TLO consumables which weren't matched with the availability prediction dataframe
 #scenario_availability_facid_itemcode_merge[items_not_matched][['item_code', 'regression_application']].to_csv(outputfilepath / 'temp_items_not_matched.csv')
 
 # Get average  availability_change_prop value by facility_ID and category_tlo
-scenario_final_df = scenario_final_df.drop('module_name', axis = 1).merge(programs,
+scenario_final_df = scenario_final_df.merge(programs[['category', 'item_code']],
                                             on = ['item_code'], validate = "m:1",
                                             how = "left")
 list_of_scenario_variables = ['change_proportion_scenario1', 'change_proportion_scenario2',
        'change_proportion_scenario3', 'change_proportion_scenario4', 'change_proportion_scenario5']
 scenario_averages_by_program_and_facid = scenario_final_df.groupby(['Facility_ID','category'])[list_of_scenario_variables].mean().reset_index()
+
+# check that all consumables have a category assigned to them
+map_items_with_missing_category_to_category= {77:'reproductive_health',
+301:'alri',
+63: 'neonatal_health',
+258: 'cancer',
+1735: 'general'}
+# Update the category column based on item_code
+scenario_final_df['category'] = scenario_final_df.apply(lambda row: map_items_with_missing_category_to_category[row['item_code']]
+                          if row['item_code'] in map_items_with_missing_category_to_category
+                          else row['category'], axis=1)
 
 # a. Some consumables which were matched with a corresponding HHFA item do not appear in the above dataset because
 # they were excluded from the regression analysis due to missing availability information on them
@@ -237,13 +254,20 @@ for var in list_of_scenario_variables:
                                                           how = "left")
     scenario_final_df.loc[(unmatched_items_category1|unmatched_items_category2), var] = scenario_final_df[var_imputed]
 
-# c. 'not relevant to logistic regression analysis'
+# c. if category is missing, take average across items
+cond_missing_category = scenario_final_df.category.isna()
+cond_missing_scenario_data = scenario_final_df.change_proportion_scenario1.isna()
+print("The following items don't have an appropriate category assigned for imputation - ", scenario_final_df[cond_missing_category & cond_missing_scenario_data]['item_code'].unique())
+for var in list_of_scenario_variables:
+    scenario_final_df.loc[cond_missing_category & cond_missing_scenario_data, var] = scenario_final_df[var].mean()
+
+# d. 'not relevant to logistic regression analysis'
 unmatched_items_category3 = (items_not_matched) & (scenario_final_df['regression_application'] == 'not relevant to logistic regression analysis')
 # For category 3, replace availability_change_prop with 1, since we assume that the system-level intervention does not change availability
 for var in list_of_scenario_variables:
     scenario_final_df.loc[unmatched_items_category3,var] = 1
 
-# d. any other categories of unmatched consumables
+# e. any other categories of unmatched consumables
 unmatched_items_category4 = ~unmatched_items_category1 & ~unmatched_items_category2 & ~unmatched_items_category3 & items_not_matched
 assert(sum(unmatched_items_category4) == 0) # check that we haven't missed any consumables
 
@@ -253,8 +277,8 @@ assert(sum(unmatched_items_category4) == 0) # check that we haven't missed any c
 for var in list_of_scenario_variables:
     print(f"Running scenario {var}")
     change_value_is_infinite = scenario_final_df[var].isin([np.inf])
-    print(sum(change_value_is_infinite))
-    '''
+    print("Number of Inf values changed to average = ", sum(change_value_is_infinite))
+'''
     # None of the values is infinite so we don't have to run the code below
     df_inf = scenario_final_df[change_value_is_infinite].reset_index()
 
@@ -264,11 +288,27 @@ for var in list_of_scenario_variables:
                                    on = ['Facility_ID','category'],
                                    how = 'left', validate = "m:1")
     scenario_final_df = pd.concat([scenario_final_df[~change_value_is_infinite], df_inf_replaced], ignore_index = True)
-    '''
+'''
 
-#cond1 = scenario_final_df.District.isin(districts_with_no_scenario_data_for_1b_only)
-#cond2 = scenario_final_df.Facility_Level == '1b'
-#scenario_final_df[cond1 & cond2]
+'''
+# 1.2.6.3 Assume that the availability at level 1b in districts (Balaka, Salima, Ntchisi, Mwanza, Machinga) changes in the same proportion as the average across all
+# districts at level 1b
+cond1 = ~scenario_final_df.District.isin(districts_with_no_scenario_data_for_1b_only)
+cond2 = scenario_final_df.Facility_Level == '1b'
+scenario_averages_by_item_for_level1b = scenario_final_df[cond1 & cond2].groupby(['item_code'])[list_of_scenario_variables].mean().reset_index()
+dfs = []
+for dist in districts_with_no_scenario_data_for_1b_only:
+    df_copy = scenario_averages_by_item_for_level1b.copy()
+    df_copy['district'] = dist
+    dfs.append(df_copy)
+
+result_df = pd.concat(dfs, ignore_index=True)
+result_df['Facility_Level'] = '1b'
+result_df = result_df.merge(mfl[['District', 'Facility_Level', 'Facility_ID']], left_on = ['district', 'Facility_Level'], right_on = ['District', 'Facility_Level'], how = 'left')
+scenario_final_df = pd.concat([scenario_final_df, result_df], ignore_index=True)
+
+'''
+# TODO There are still some items missing for some facility IDs
 
 # 2. Merge TLO model availability data with scenario data using crosswalk
 #*************************************************************************
@@ -351,8 +391,8 @@ pivot_table = pd.pivot_table(new_availability_df_imputed,
                              index=['category'],
                              columns=['Facility_Level'],
                              aggfunc=lambda x: sum(pd.isna(x))/len(x)*100)
-
-print(pivot_table[('change_proportion_all_features', '1b')])
+pivot_table.to_csv(outputfilepath / "temp.csv")
+print(pivot_table[('change_proportion_scenario5', '1b')])
 '''
 Cases which are still missing data:
 1. For the 5 districts without 1b facilities in HHFA (Balaka, Machinga, Mwanza, Ntchisi, Salima), data on 54 items
