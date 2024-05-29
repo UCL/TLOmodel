@@ -52,14 +52,14 @@ columns_to_multiply = log0.columns[1:]
 
 # Multiply selected columns by scaling factor
 log0[columns_to_multiply] = (log0[columns_to_multiply] * scaling_factor).astype(int)
-log0.to_csv(outputspath / 'mihpsa_stock.csv')
+# log0.to_csv(outputspath / 'mihpsa_stock.csv')
 
 
 log0F = log['tlo.methods.hiv']['flow_variables']
 columns_to_multiply = log0F.columns[1:]
 log0F[columns_to_multiply] = (log0F[columns_to_multiply] * scaling_factor).astype(int)
 
-log0F.to_csv(outputspath / 'mihpsa_flow.csv')
+# log0F.to_csv(outputspath / 'mihpsa_flow.csv')
 
 
 # get test outputs
@@ -90,7 +90,7 @@ result = log_tests_filtered.groupby(['hiv_status', 'year']).size().reset_index()
 # scale to full population
 result[0] = (result[0] * scaling_factor).astype(int)
 
-result.to_csv(outputspath / 'mihpsa_tests.csv')
+# result.to_csv(outputspath / 'mihpsa_tests.csv')
 
 
 # get deaths
@@ -113,30 +113,33 @@ deaths['adult'] = deaths['adult'].astype(bool)
 
 deaths_hiv = deaths[deaths['label'] == 'AIDS']
 
+### HIV DEATHS
 # get HIV deaths, child
 result_hiv = deaths_hiv.groupby(['adult', 'year']).size().reset_index()
-result_hiv[0] = (result_hiv[0] * scaling_factor).astype(int)
-result_hiv.to_csv(outputspath / 'mihpsa_hiv_deaths_child.csv')
+result_hiv = deaths_hiv[deaths_hiv['adult'] == False].groupby('year').size().reset_index(name='count')
+result_hiv["count"] = (result_hiv["count"] * scaling_factor).astype(int)
+# result_hiv.to_csv(outputspath / 'mihpsa_hiv_deaths_child.csv')
 
 
-# get HIV deaths, child
-result_hiv_adult = deaths_hiv[deaths_hiv['adult'] == True]
-result_hiv_adult = deaths_hiv.groupby(['year', 'sex']).size().reset_index()
+# get HIV deaths, adult
+# result_hiv_adult = deaths_hiv[deaths_hiv['adult'] == True]
+result_hiv_adult = deaths_hiv[deaths_hiv['adult'] == True].groupby(['year', 'sex']).size().reset_index()
 result_hiv_adult[0] = (result_hiv_adult[0] * scaling_factor).astype(int)
-result_hiv_adult.to_csv(outputspath / 'mihpsa_hiv_deaths_adult.csv')
+# result_hiv_adult.to_csv(outputspath / 'mihpsa_hiv_deaths_adult.csv')
 
 
+### ALL DEATHS
 # get all deaths, child
 result_all = deaths.groupby(['adult', 'year']).size().reset_index()
 result_all[0] = (result_all[0] * scaling_factor).astype(int)
-result_all.to_csv(outputspath / 'mihpsa_all_deaths_child.csv')
+# result_all.to_csv(outputspath / 'mihpsa_all_deaths_child.csv')
 
 
-# get HIV deaths, child
+# get all deaths, adult
 result_all_adult = deaths[deaths['adult'] == True]
 result_all_adult = deaths.groupby(['year', 'sex']).size().reset_index()
 result_all_adult[0] = (result_all_adult[0] * scaling_factor).astype(int)
-result_all_adult.to_csv(outputspath / 'mihpsa_all_deaths_adult.csv')
+# result_all_adult.to_csv(outputspath / 'mihpsa_all_deaths_adult.csv')
 
 
 # get deaths by single years of age, male and female
@@ -257,3 +260,263 @@ mean_values_rounded.to_csv(outputspath / 'MIHPSA_May2024/mihpsa_flow_FULL.csv')
 
 
 
+# ------------------------------------------------------------------------------
+# %% extract deaths  and scale to population size
+
+
+def get_child_hiv_deaths(log, scaling_factor):
+
+    deaths = log['tlo.methods.demography']['death']
+    deaths['date'] = pd.to_datetime(deaths['date'])
+    deaths['year'] = deaths['date'].dt.year
+
+    # Create new column adult=true/false
+    deaths['adult'] = deaths['age'] > 14
+    deaths['adult'] = deaths['adult'].astype(bool)
+
+    # Filter for HIV deaths
+    deaths_hiv = deaths[deaths['label'] == 'AIDS']
+
+    # Get HIV deaths, child
+    result_hiv = deaths_hiv[deaths_hiv['adult'] == False].groupby('year').size().reset_index(name='count')
+    result_hiv["count"] = (result_hiv["count"] * scaling_factor).astype(int)
+
+    return result_hiv
+
+
+def mean_child_hiv_deaths(log0, log1, log2, scaling_factor):
+    # Process each log file
+    df1 = get_child_hiv_deaths(log0, scaling_factor)
+    df2 = get_child_hiv_deaths(log1, scaling_factor)
+    df3 = get_child_hiv_deaths(log2, scaling_factor)
+
+    # Merge dataframes on 'year' and compute the mean counts
+    merged_df = df1.merge(df2, on='year', suffixes=('_1', '_2')).merge(df3, on='year')
+    merged_df['mean_count'] = merged_df[['count_1', 'count_2', 'count']].mean(axis=1)
+
+    # Select relevant columns
+    mean_counts_df = merged_df[['year', 'mean_count']]
+
+    return mean_counts_df
+
+
+child_hiv_deaths = mean_child_hiv_deaths(log0, log1, log2, scaling_factor)
+child_hiv_deaths = child_hiv_deaths.round().astype(int)
+child_hiv_deaths.to_csv(outputspath / 'MIHPSA_May2024/mean_child_hiv_deaths.csv')
+
+
+def get_adult_hiv_deaths(log, scaling_factor):
+
+    deaths = log['tlo.methods.demography']['death']
+    deaths['date'] = pd.to_datetime(deaths['date'])
+    deaths['year'] = deaths['date'].dt.year
+
+    # Create new column adult=true/false
+    deaths['adult'] = deaths['age'] > 14
+    deaths['adult'] = deaths['adult'].astype(bool)
+
+    # Filter for HIV deaths
+    deaths_hiv = deaths[deaths['label'] == 'AIDS']
+
+    # Get HIV deaths, child
+    result_hiv = deaths_hiv[deaths_hiv['adult'] == True].groupby(['year', 'sex']).size().reset_index()
+    result_hiv[0] = (result_hiv[0] * scaling_factor).astype(int)
+
+    return result_hiv
+
+
+def mean_adult_hiv_deaths(log0, log1, log2, scaling_factor):
+    # Process each log file
+    df1 = get_adult_hiv_deaths(log0, scaling_factor)
+    df2 = get_adult_hiv_deaths(log1, scaling_factor)
+    df3 = get_adult_hiv_deaths(log2, scaling_factor)
+
+    # Merge dataframes on 'year' and compute the mean counts
+    merged_df = df1.merge(df2, on=['year', 'sex'], suffixes=('_1', '_2')).merge(df3, on=['year', 'sex'])
+    merged_df['mean_count'] = merged_df[['0_1', '0_2', 0]].mean(axis=1)
+
+    # Select relevant columns
+    mean_counts_df = merged_df[['year', 'sex', 'mean_count']]
+
+    return mean_counts_df
+
+
+adult_hiv_deaths = mean_adult_hiv_deaths(log0, log1, log2, scaling_factor)
+adult_hiv_deaths["mean_count"] = adult_hiv_deaths["mean_count"].round().astype(int)
+adult_hiv_deaths.to_csv(outputspath / 'MIHPSA_May2024/mean_adult_hiv_deaths.csv')
+
+
+# ALL DEATHS
+def get_child_all_deaths(log, scaling_factor):
+
+    deaths = log['tlo.methods.demography']['death']
+    deaths['date'] = pd.to_datetime(deaths['date'])
+    deaths['year'] = deaths['date'].dt.year
+
+    # Create new column adult=true/false
+    deaths['adult'] = deaths['age'] > 14
+    deaths['adult'] = deaths['adult'].astype(bool)
+
+    # Get HIV deaths, child
+    result = deaths[deaths['adult'] == False].groupby('year').size().reset_index(name='count')
+    result["count"] = (result["count"] * scaling_factor).astype(int)
+
+    return result
+
+
+def mean_child_all_deaths(log0, log1, log2, scaling_factor):
+    # Process each log file
+    df1 = get_child_all_deaths(log0, scaling_factor)
+    df2 = get_child_all_deaths(log1, scaling_factor)
+    df3 = get_child_all_deaths(log2, scaling_factor)
+
+    # Merge dataframes on 'year' and compute the mean counts
+    merged_df = df1.merge(df2, on='year', suffixes=('_1', '_2')).merge(df3, on='year')
+    merged_df['mean_count'] = merged_df[['count_1', 'count_2', 'count']].mean(axis=1)
+
+    # Select relevant columns
+    mean_counts_df = merged_df[['year', 'mean_count']]
+
+    return mean_counts_df
+
+
+child_all_deaths = mean_child_all_deaths(log0, log1, log2, scaling_factor)
+child_all_deaths = child_all_deaths.round().astype(int)
+child_all_deaths.to_csv(outputspath / 'MIHPSA_May2024/mean_child_all_deaths.csv')
+
+
+
+def get_adult_all_deaths(log, scaling_factor):
+
+    deaths = log['tlo.methods.demography']['death']
+    deaths['date'] = pd.to_datetime(deaths['date'])
+    deaths['year'] = deaths['date'].dt.year
+
+    # Create new column adult=true/false
+    deaths['adult'] = deaths['age'] > 14
+    deaths['adult'] = deaths['adult'].astype(bool)
+
+    # Get HIV deaths, child
+    result = deaths[deaths['adult'] == True].groupby(['year', 'sex']).size().reset_index()
+    result[0] = (result[0] * scaling_factor).astype(int)
+
+    return result
+
+
+def mean_adult_all_deaths(log0, log1, log2, scaling_factor):
+    # Process each log file
+    df1 = get_adult_all_deaths(log0, scaling_factor)
+    df2 = get_adult_all_deaths(log1, scaling_factor)
+    df3 = get_adult_all_deaths(log2, scaling_factor)
+
+    # Merge dataframes on 'year' and compute the mean counts
+    merged_df = df1.merge(df2, on=['year', 'sex'], suffixes=('_1', '_2')).merge(df3, on=['year', 'sex'])
+    merged_df['mean_count'] = merged_df[['0_1', '0_2', 0]].mean(axis=1)
+
+    # Select relevant columns
+    mean_counts_df = merged_df[['year', 'sex', 'mean_count']]
+
+    return mean_counts_df
+
+
+adult_all_deaths = mean_adult_all_deaths(log0, log1, log2, scaling_factor)
+adult_all_deaths["mean_count"] = adult_all_deaths["mean_count"].round().astype(int)
+adult_all_deaths.to_csv(outputspath / 'MIHPSA_May2024/mean_adult_all_deaths.csv')
+
+
+# -----------------------------------------------------------------------------------
+
+def get_hiv_deaths_by_age(log, scaling_factor):
+
+    deaths = log['tlo.methods.demography']['death']
+    deaths['date'] = pd.to_datetime(deaths['date'])
+    deaths['year'] = deaths['date'].dt.year
+
+    # Filter for HIV deaths
+    deaths_hiv = deaths[deaths['label'] == 'AIDS']
+
+    # Get HIV deaths, child
+    result = deaths_hiv.groupby(['year', 'age', 'sex']).size().reset_index(name='count')
+    result["count"] = (result["count"] * scaling_factor).astype(int)
+
+    return result
+
+
+def mean_hiv_deaths_all_ages(log0, log1, log2, scaling_factor):
+    # Process each log file
+    df1 = get_hiv_deaths_by_age(log0, scaling_factor)
+    df2 = get_hiv_deaths_by_age(log1, scaling_factor)
+    df3 = get_hiv_deaths_by_age(log2, scaling_factor)
+
+    # Generate a complete index for the required years and ages
+    years = range(2010, 2051)
+    ages = list(range(0, 81)) + ['80+']
+    sexes = df1['sex'].unique()
+
+    complete_index = pd.MultiIndex.from_product([years, ages, sexes], names=['year', 'age', 'sex'])
+
+    # Reindex each dataframe to ensure all combinations are present
+    df1 = df1.set_index(['year', 'age', 'sex']).reindex(complete_index, fill_value=0).reset_index()
+    df2 = df2.set_index(['year', 'age', 'sex']).reindex(complete_index, fill_value=0).reset_index()
+    df3 = df3.set_index(['year', 'age', 'sex']).reindex(complete_index, fill_value=0).reset_index()
+
+    # Merge dataframes on 'year' and compute the mean counts
+    merged_df = df1.merge(df2, on=['year', 'age', 'sex'], suffixes=('_1', '_2')).merge(df3, on=['year', 'age', 'sex'])
+    merged_df['mean_count'] = merged_df[['count_1', 'count_2', 'count']].mean(axis=1)
+
+    # Select relevant columns
+    mean_counts_df = merged_df[['year', 'age', 'sex', 'mean_count']]
+
+    return mean_counts_df
+
+
+hiv_deaths_all_ages = mean_hiv_deaths_all_ages(log0, log1, log2, scaling_factor)
+hiv_deaths_all_ages["mean_count"] = hiv_deaths_all_ages["mean_count"].round().astype(int)
+hiv_deaths_all_ages2021 = hiv_deaths_all_ages.loc[hiv_deaths_all_ages.year >= 2021]
+hiv_deaths_all_ages2021.to_csv(outputspath / 'MIHPSA_May2024/hiv_deaths_all_ages.csv')
+
+
+
+# -----------------------------------------------------------------------------------
+
+def process_hiv_tests(log, scaling_factor):
+    # Convert 'datetime' column to datetime type
+    log_tests = log['tlo.methods.hiv']['hiv_test']
+    log_tests['date'] = pd.to_datetime(log_tests['date'])
+
+    # Filter for age 15 years and up
+    log_tests_filtered = log_tests[log_tests['adult'] == True]
+
+    # Extract year from the datetime column
+    log_tests_filtered['year'] = log_tests_filtered['date'].dt.year
+
+    # Group by 'hiv_status' and 'year', then count the number of entries
+    result1 = log_tests_filtered.groupby(['hiv_status', 'year']).size().reset_index(name='count')
+
+    # Scale to full population
+    result1['count'] = (result1['count'] * scaling_factor).astype(int)
+
+    return result1
+
+
+def mean_hiv_tests(log0, log1, log2, scaling_factor):
+    # Process each log file
+    df1 = process_hiv_tests(log0, scaling_factor)
+    df2 = process_hiv_tests(log1, scaling_factor)
+    df3 = process_hiv_tests(log2, scaling_factor)
+
+    # Merge dataframes on 'hiv_status' and 'year'
+    merged_df = df1.merge(df2, on=['hiv_status', 'year'], suffixes=('_1', '_2')).merge(df3, on=['hiv_status', 'year'])
+
+    # Compute the mean of the 'count' columns
+    merged_df['mean_count'] = merged_df[['count_1', 'count_2', 'count']].mean(axis=1)
+
+    # Select relevant columns
+    mean_counts_df = merged_df[['hiv_status', 'year', 'mean_count']]
+
+    return mean_counts_df
+
+
+mean_tests_df = mean_hiv_tests(log0, log1, log2, scaling_factor)
+mean_tests_df["mean_count"] = mean_tests_df["mean_count"].round().astype(int)
+mean_tests_df.to_csv(outputspath / 'MIHPSA_May2024/mean_tests_df.csv')
