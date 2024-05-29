@@ -68,7 +68,8 @@ def get_sim(seed, scaleup_hiv=False, scaleup_tb=False, scaleup_malaria=False, sc
 
 def check_initial_params(sim):
 
-    original_params = pd.read_excel(Path(resourcefilepath) / "ResourceFile_HIV.xlsx", sheet_name='parameters')
+    original_params = pd.read_excel(Path(__file__).parent.parent / 'resources' / 'ResourceFile_HIV.xlsx',
+                                    sheet_name='parameters')
 
     # todo do we need to be exhaustive and check every parameter here?
     # check initial parameters
@@ -88,7 +89,8 @@ def test_hiv_scale_up(seed):
     """ test hiv program scale-up changes parameters correctly
     and on correct date """
 
-    workbook = pd.read_excel(Path(resourcefilepath) / "ResourceFile_HIV.xlsx", sheet_name=None)
+    # workbook = pd.read_excel(Path(resourcefilepath) / "ResourceFile_HIV.xlsx", sheet_name=None)
+    workbook = pd.read_excel(Path(__file__).parent.parent / 'resources' / 'ResourceFile_HIV.xlsx', sheet_name=None)
 
     # Load data on HIV prevalence
     original_params = workbook["parameters"]
@@ -107,7 +109,8 @@ def test_hiv_scale_up(seed):
     sim.simulate(end_date=scaleup_start_date + pd.DateOffset(days=1))
 
     # check HIV parameters changed
-    assert sim.modules["Hiv"].parameters["beta"] < original_params.loc[original_params.parameter_name == "beta", "value"].values[0]
+    assert sim.modules["Hiv"].parameters["beta"] < original_params.loc[
+        original_params.parameter_name == "beta", "value"].values[0]
     assert sim.modules["Hiv"].parameters["prob_prep_for_fsw_after_hiv_test"] == new_params.loc[
         new_params.parameter == "prob_prep_for_fsw_after_hiv_test", "scaleup_value"].values[0]
     assert sim.modules["Hiv"].parameters["prob_prep_for_agyw"] == new_params.loc[
@@ -118,7 +121,8 @@ def test_hiv_scale_up(seed):
         new_params.parameter == "prob_circ_after_hiv_test", "scaleup_value"].values[0]
 
     # check malaria parameters unchanged
-    mal_workbook = pd.read_excel(Path(resourcefilepath) / "malaria" / "ResourceFile_Malaria.xlsx", sheet_name=None)
+    mal_workbook = pd.read_excel(Path(__file__).parent.parent / 'resources' / 'ResourceFile_Malaria.xlsx',
+                                 sheet_name=None)
 
     mal_original_params = mal_workbook["parameters"]
     mal_rdt_testing = mal_workbook["WHO_TestData2023"]
@@ -135,7 +139,8 @@ def test_hiv_scale_up(seed):
         mal_original_params.parameter_name == "itn", "value"].values[0]
 
     # check tb parameters unchanged
-    tb_workbook = pd.read_excel(Path(resourcefilepath) / "ResourceFile_TB.xlsx", sheet_name=None)
+    tb_workbook = pd.read_excel(Path(__file__).parent.parent / 'resources' / 'ResourceFile_TB.xlsx',
+                                sheet_name=None)
 
     tb_original_params = tb_workbook["parameters"]
     tb_testing = tb_workbook["NTP2019"]
@@ -158,7 +163,7 @@ def test_htm_scale_up(seed):
     """ test hiv/tb/malaria program scale-up changes parameters correctly
     and on correct date """
 
-    workbook = pd.read_excel(Path(resourcefilepath) / "ResourceFile_HIV.xlsx", sheet_name=None)
+    workbook = pd.read_excel(Path(__file__).parent.parent / 'resources' / 'ResourceFile_HIV.xlsx', sheet_name=None)
 
     # Load data on HIV prevalence
     original_params = workbook["parameters"]
@@ -178,7 +183,8 @@ def test_htm_scale_up(seed):
     sim.simulate(end_date=scaleup_start_date + pd.DateOffset(days=1))
 
     # check HIV parameters changed
-    assert sim.modules["Hiv"].parameters["beta"] < original_params.loc[original_params.parameter_name == "beta", "value"].values[0]
+    assert sim.modules["Hiv"].parameters["beta"] < original_params.loc[
+        original_params.parameter_name == "beta", "value"].values[0]
     assert sim.modules["Hiv"].parameters["prob_prep_for_fsw_after_hiv_test"] == new_params.loc[
         new_params.parameter == "prob_prep_for_fsw_after_hiv_test", "scaleup_value"].values[0]
     assert sim.modules["Hiv"].parameters["prob_prep_for_agyw"] == new_params.loc[
