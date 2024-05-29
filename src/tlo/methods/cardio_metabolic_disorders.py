@@ -1799,7 +1799,7 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
             data=('This is HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment: '
                   f'The squeeze-factor is {squeeze_factor}.'),
         )
-        self.add_equipment(self.healthcare_system.equipment.lookup_item_codes_from_pkg_name('ICU'))
+        self.add_equipment(self.healthcare_system.equipment.from_pkg_names('ICU'))
 
         for _ev in self.events_to_investigate:
             self.do_for_each_event_to_be_investigated(_ev)

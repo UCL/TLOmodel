@@ -1206,7 +1206,7 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
                 self.add_equipment({
                     'Cusco’s/ bivalved Speculum (small, medium, large)', 'Lamp, Anglepoise'
                 })
-                self.add_equipment(self.healthcare_system.equipment.lookup_item_codes_from_pkg_name('Minor Surgery'))
+                self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Minor Surgery'))
             elif _new_contraceptive == 'IUD':
                 self.add_equipment({
                     'Cusco’s/ bivalved Speculum (small, medium, large)', 'Sponge Holding Forceps'

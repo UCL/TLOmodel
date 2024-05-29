@@ -3205,7 +3205,7 @@ class HSI_RTI_Imaging_Event(HSI_Event, IndividualScopeEventMixin):
         road_traffic_injuries.rti_injury_diagnosis(person_id, self.EXPECTED_APPT_FOOTPRINT)
 
         if 'DiagRadio' in list(self.EXPECTED_APPT_FOOTPRINT.keys()):
-            self.add_equipment(self.healthcare_system.equipment.lookup_item_codes_from_pkg_name('X-ray'))
+            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('X-ray'))
 
         elif 'Tomography' in list(self.EXPECTED_APPT_FOOTPRINT.keys()):
             self.ACCEPTED_FACILITY_LEVEL = '3'
@@ -3512,7 +3512,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
 
         if df.loc[person_id, 'rt_ISS_score'] > self.hdu_cut_off_iss_score:
 
-            self.add_equipment(self.healthcare_system.equipment.lookup_item_codes_from_pkg_name('ICU'))
+            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('ICU'))
 
             mean_icu_days = p['mean_icu_days']
             sd_icu_days = p['sd_icu_days']
@@ -4092,7 +4092,7 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
                          data=f"Fracture casts available for person {person_id} {open_fracture_counts} open fractures"
                          )
 
-            self.add_equipment(self.healthcare_system.equipment.lookup_item_codes_from_pkg_name('Major Surgery'))
+            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
 
             person = df.loc[person_id]
             # update the dataframe to show this person is recieving treatment
@@ -4816,7 +4816,7 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
 
             # TODO: @Joe to confirm major surgery pkg should be used here (as the original set of equipment here was not
             #  the full pkg)
-            self.add_equipment(self.healthcare_system.equipment.lookup_item_codes_from_pkg_name('Major Surgery'))
+            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
 
             # ------------------------ Track permanent disabilities with treatment -------------------------------------
             # --------------------------------- Perm disability from TBI -----------------------------------------------
@@ -5135,7 +5135,7 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
         if request_outcome:
             # TODO: @Joe to confirm major surgery pkg should be used here (as the original set of equipment here was not
             #  the full pkg)
-            self.add_equipment(self.healthcare_system.equipment.lookup_item_codes_from_pkg_name('Major Surgery'))
+            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
 
             # create a dictionary to store the recovery times for each injury in days
             minor_surg_recov_time_days = {

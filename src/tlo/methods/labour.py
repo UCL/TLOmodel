@@ -2128,7 +2128,7 @@ class Labour(Module):
         if avail and sf_check:
 
             # Add used equipment
-            hsi_event.add_equipment(self.healthcare_system.equipment.lookup_item_codes_from_pkg_name('Major Surgery'))
+            hsi_event.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
 
             # determine if uterine preserving surgery will be successful
             treatment_success_pph = params['success_rate_pph_surgery'] > self.rng.random_sample()
@@ -3234,7 +3234,7 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
             elif (avail and sf_check) or (mni[person_id]['cs_indication'] == 'other'):
 
                 # If intervention is delivered - add used equipment
-                self.add_equipment(self.healthcare_system.equipment.lookup_item_codes_from_pkg_name('Major Surgery'))
+                self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
 
                 person = df.loc[person_id]
                 logger.info(key='caesarean_delivery', data=person.to_dict())
