@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from tlo import Date, Simulation
 from tlo.methods import (
@@ -50,6 +51,7 @@ def get_dummy_hsi(sim, mother_id, id, fl):
     return hsi_event
 
 
+@pytest.mark.slow
 def test_analysis_analysis_events_run_as_expected_and_update_parameters(seed):
     """Test that the analysis events run when scheduled and that they update the correct parameters as expected
     when they run"""
@@ -208,6 +210,7 @@ def test_analysis_analysis_events_run_as_expected_when_using_sensitivity_min_par
     assert pn_current_params['prob_care_seeking_postnatal_emergency_neonate'] == pnc_avail_prob
 
 
+@pytest.mark.slow
 def test_analysis_events_force_availability_of_consumables_when_scheduled_in_anc(seed):
     """Test that when analysis is being conducted during a simulation that consumable availability is determined
     via some pre-defined analysis parameter and not via the health system within the ANC HSIs"""
@@ -291,6 +294,7 @@ def test_analysis_events_force_availability_of_consumables_when_scheduled_in_anc
     assert not df.at[mother_id, 'ps_syphilis']
 
 
+@pytest.mark.slow
 def test_analysis_events_force_availability_of_consumables_for_sba_analysis(seed):
     """Test that when analysis is being conducted during a simulation that consumable availability is determined
     via some pre-defined analysis parameter and not via the health system within the SBA HSIs"""
@@ -427,6 +431,7 @@ def test_analysis_events_force_availability_of_consumables_for_sba_analysis(seed
     assert mni[mother_id]['received_blood_transfusion']
 
 
+@pytest.mark.slow
 def test_analysis_events_force_availability_of_consumables_for_pnc_analysis(seed):
     """Test that when analysis is being conducted during a simulation that consumable availability is determined
     via some pre-defined analysis parameter and not via the health system within the PNC HSIs"""
@@ -495,6 +500,7 @@ def test_analysis_events_force_availability_of_consumables_for_pnc_analysis(seed
     assert df.at[mother_id, 'la_sepsis_treatment']
 
 
+@pytest.mark.slow
 def test_analysis_events_force_availability_of_consumables_for_newborn_hsi(seed):
     """Test that when analysis is being conducted during a simulation that consumable availability is determined
     via some pre-defined analysis parameter and not via the health system within the newborn HSIs"""
@@ -565,6 +571,7 @@ def test_analysis_events_force_availability_of_consumables_for_newborn_hsi(seed)
     assert df.at[child_id, 'nb_supp_care_neonatal_sepsis']
 
 
+@pytest.mark.slow
 def test_analysis_events_circumnavigates_sf_and_competency_parameters(seed):
     """Test that the analysis event correctly overrides the parameters which controle whether the B/CEmONC signal
     functions can run"""

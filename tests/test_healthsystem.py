@@ -116,6 +116,7 @@ def test_run_with_healthsystem_no_disease_modules_defined(seed):
     check_dtypes(sim)
 
 
+@pytest.mark.slow
 def test_all_treatment_ids_defined_in_priority_policies(seed, tmpdir):
     """Check that all treatment_IDs included in the fullmodel have been assigned a priority
     in each of the priority policies that could be considered."""
@@ -1491,6 +1492,7 @@ def test_is_treatment_id_allowed():
     assert hs.is_treatment_id_allowed('Epilepsy', ['Epi', 'Epilepsy_*'])
 
 
+@pytest.mark.slow
 def test_manipulation_of_service_availability(seed, tmpdir):
     """Check that the parameter `service_availability` can be used to allow/disallow certain `TREATMENT_ID`s.
     N.B. This is setting service_availability through a change in parameter, as would be done by BatchRunner."""
@@ -1753,7 +1755,6 @@ def test_hsi_event_queue_expansion_and_querying(seed, tmpdir):
         event_prev = next_event_tuple
 
 
-@pytest.mark.slow
 def test_policy_and_lowest_priority_and_fasttracking_enforced(seed, tmpdir):
     """The priority set by the policy should overwrite the priority the event was scheduled with. If the priority
      is below the lowest one considered, the event will not be scheduled (call never_ran at tclose). If a TREATMENT_ID
@@ -2241,6 +2242,7 @@ def test_which_hsi_can_run(seed):
     assert (results.loc[(results['mode_appt_constraints'] == 2) & (results['hsi_did_run']), 'sqz'] <= max_squeeze).all()
 
 
+@pytest.mark.slow
 def test_determinism_of_hsi_that_run_and_consumables_availabilities(seed, tmpdir):
     """Check that two runs of model with the same seed gives the same sequence of HSI that run and the same state of
     the Consumables class at initiation."""
@@ -2287,6 +2289,7 @@ def test_determinism_of_hsi_that_run_and_consumables_availabilities(seed, tmpdir
         pd.testing.assert_frame_equal(next_run['hsi_event'], first_run['hsi_event'])
 
 
+@pytest.mark.slow
 def test_service_availability_can_be_set_using_list_of_treatment_ids_and_asterisk(seed, tmpdir):
     """Check the two identical runs of model can be produced when the service_availability is set using ['*'] and when
      using the list of TREATMENT_IDs that are defined. Repeated for with and without randomisation of the HSI Event

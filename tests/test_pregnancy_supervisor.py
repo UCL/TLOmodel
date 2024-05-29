@@ -475,6 +475,7 @@ def test_induced_abortion_ends_pregnancies_as_expected(seed):
         assert sim.modules['PregnancySupervisor'].mother_and_newborn_info[person]['delete_mni']
 
 
+@pytest.mark.slow
 def test_abortion_complications(seed):
     """Test that complications associate with abortion are correctly applied via the pregnancy supervisor event. Also
      test women seek care and/or experience risk of death as expected """
@@ -884,6 +885,7 @@ def test_pregnancy_supervisor_anaemia(seed):
         assert pd.isnull(sim.modules['PregnancySupervisor'].mother_and_newborn_info[person]['severe_anaemia_onset'])
 
 
+@pytest.mark.slow
 def test_pregnancy_supervisor_placental_conditions_and_antepartum_haemorrhage(seed):
     """Tests the application of risk of placenta praevia, abruption and antenatal haemorrhage within the pregnancy
     supervisor event"""
@@ -959,6 +961,7 @@ def test_pregnancy_supervisor_placental_conditions_and_antepartum_haemorrhage(se
     assert mother_id not in list(sim.modules['PregnancySupervisor'].mother_and_newborn_info)
 
 
+@pytest.mark.slow
 def test_pregnancy_supervisor_pre_eclampsia_and_progression(seed):
     """Tests the application of risk of pre-eclampsia within the pregnancy supervisor event"""
     sim = Simulation(start_date=start_date, seed=seed)
@@ -1101,6 +1104,7 @@ def test_pregnancy_supervisor_gdm(seed):
     assert (sim.population.props.at[mother_id, 'ps_gest_diab'] == 'none')
 
 
+@pytest.mark.slow
 def test_pregnancy_supervisor_chorio_and_prom(seed):
     """Tests the application of risk of chorioamnionitis and PROM within the pregnancy supervisor event"""
 

@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from tlo import Date, Simulation
 from tlo.lm import LinearModel, LinearModelType, Predictor
@@ -113,6 +114,7 @@ def run_sim_for_0_days_get_mother_id(sim):
     return mother_id
 
 
+@pytest.mark.slow
 def test_perfect_run_of_anc_contacts_no_constraints(seed):
     """This test calls all 8 of the ANC contacts for a relevant woman and tests that sequential daisy-chain event
     scheduling is happening correctly and that (when no quality or consumable constraints are applied) women receive all

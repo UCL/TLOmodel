@@ -261,6 +261,7 @@ def test_colormap_coarse_appts():
     )  # All colors recognised
 
 
+@pytest.mark.slow
 def test_get_treatment_ids(tmpdir):
     """Check the function that generates the list of TREATMENT_IDs defined in the model."""
 
@@ -278,6 +279,7 @@ def test_get_treatment_ids(tmpdir):
     assert len(y) < len(x)
 
 
+@pytest.mark.slow
 def test_colormap_short_treatment_id():
     """Check the function that allocates a unique colour to each shortened TREATMENT_ID (i.e. each module)"""
 
@@ -296,6 +298,7 @@ def test_colormap_short_treatment_id():
     )  # All colors recognised
 
 
+@pytest.mark.slow
 def test_colormap_cause_of_death_label(seed):
     """Check that all the Cause-of-Deaths labels defined in the full model are assigned to a unique colour when
      plotting."""

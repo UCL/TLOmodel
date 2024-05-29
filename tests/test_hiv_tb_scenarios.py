@@ -4,7 +4,6 @@ import os
 from pathlib import Path
 
 import pandas as pd
-import pytest
 
 from tlo import Date, Simulation
 from tlo.methods import (
@@ -61,7 +60,6 @@ def get_sim(seed):
     return sim
 
 
-@pytest.mark.slow
 def test_scenario_ipt_expansion(seed):
     """ test scenario IPT expansion is set up correctly
     should be expanded age eligibility in scenario 3
@@ -134,7 +132,6 @@ def test_scenario_ipt_expansion(seed):
     assert (ages_of_ipt_candidates < 6).all()
 
 
-@pytest.mark.slow
 def test_check_tb_test_under_each_scenario(seed):
     """ test correct test is scheduled under each scenario
     """

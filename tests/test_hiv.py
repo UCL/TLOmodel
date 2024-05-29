@@ -1173,6 +1173,7 @@ def test_hsi_art_stopped_if_healthsystem_cannot_run_hsi_but_will_restart(seed):
     ])
 
 
+@pytest.mark.slow
 def test_use_dummy_version(seed):
     """check that the dummy version of the HIV module works ok: provides the hv_inf property as a bool"""
     start_date = Date(2010, 1, 1)

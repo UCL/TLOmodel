@@ -92,6 +92,7 @@ def get_sim(seed, use_simplified_birth=True, disable_HS=False, ignore_con_constr
 
 
 # simple checks
+@pytest.mark.slow
 def test_basic_run(seed):
     """ test basic run and properties assigned correctly
     """
@@ -295,6 +296,7 @@ def test_treatment_schedule(seed):
     assert df.at[person_id, 'tb_strain'] == 'ds'  # should not have changed
 
 
+@pytest.mark.slow
 def test_record_of_appt_of_tb_start_treatment_hsi(tmpdir, seed):
     """
     This is to test the appointment footprint recorded with the trigger of HSI_Tb_StartTreatment:

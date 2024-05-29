@@ -55,6 +55,7 @@ def check_properties(df):
     assert df.loc[df.sex == 'M'].li_is_circ.any()
 
 
+@pytest.mark.slow
 def test_properties_and_dtypes(simulation):
     simulation.make_initial_population(n=popsize)
     check_properties(simulation.population.props)
