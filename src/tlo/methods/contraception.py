@@ -675,9 +675,8 @@ class Contraception(Module):
         _cons_codes = dict()
         _cons_alternatives_probs = dict()
         # # items for each method that requires an HSI to switch to
-        # TODO: to find from Emi - What are the numbers of pills in monthly packets for both following items?
         _cons_codes['pill'] =\
-            {get_item_code("Levonorgestrel 0.0375 mg, cycle"): 28*3.75,
+            {get_item_code("Levonorgestrel 0.0375 mg, cycle"): 21*3.75,
              # (alternative) progesterone-only pills used in other 20% cases (see _cons_alternatives_probs)
              get_item_code("Levonorgestrel 0.15 mg + Ethinyl estradiol 30 mcg (Microgynon), cycle"): 21*3.75
              # combined pills used in 80% cases (see _cons_alternatives_probs)
