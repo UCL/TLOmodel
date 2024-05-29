@@ -581,7 +581,9 @@ def test_consumables_availability_modes_that_depend_on_designations(seed):
     items_diagnostics = set(designations.index[designations['is_diagnostic']]).intersection(consumables.item_codes)
     items_other = set(designations.index[designations['is_other']]).intersection(consumables.item_codes)
     items_vital = set(designations.index[designations['is_vital']]).intersection(consumables.item_codes)
-    items_drug_or_vaccine = set(designations.index[designations['is_drug_or_vaccine']]).intersection(consumables.item_codes)
+    items_drug_or_vaccine = set(
+        designations.index[designations['is_drug_or_vaccine']]
+    ).intersection(consumables.item_codes)
 
     options_for_availability = consumables._options_for_availability
 
