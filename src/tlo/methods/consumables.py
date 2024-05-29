@@ -45,6 +45,7 @@ class Consumables:
             'all_medicines_available',
             'all_medicines_and_other_available',
             'all_vital_available',
+            'all_drug_or_vaccine_available',
         }
 
         # Create internal items:
@@ -125,6 +126,11 @@ class Consumables:
                 item_code_designations.index[item_code_designations['is_vital']]
             ).intersection(self.item_codes)
             self.override_availability(dict(zip(item_codes_essential_or_vital, repeat(1.0))))
+        elif availability == 'all_drug_or_vaccine_available':
+            item_codes_drug_or_vaccine = set(
+                item_code_designations.index[item_code_designations['is_drug_or_vaccine']]
+            ).intersection(self.item_codes)
+            self.override_availability(dict(zip(item_codes_drug_or_vaccine, repeat(1.0))))
         else:
             raise ValueError
 
