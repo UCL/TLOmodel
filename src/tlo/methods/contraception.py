@@ -701,9 +701,7 @@ class Contraception(Module):
              get_item_code("Water for injection, 10ml_Each_CMST"): 1,
              get_item_code("Povidone iodine, solution, 10 %, 5 ml per injection"): 5,
              get_item_code("Gauze, swabs 8-ply 10cm x 10cm_100_CMST"): 1}
-        # TODO: trocar may be reusable (we used 0.1 units, indicating 10 uses on average) - need to find out for what
-        #  kind of trocar (reusable or not) we have the cost
-        # TODO: @Sakshi The chosen unit for Jadelle is '1 implant', does it cover both rods?
+        # TODO: @Sakshi - update the unit to 1 use
         _cons_codes['implant'] =\
             {get_item_code("Glove disposable powdered latex medium_100_CMST"): 3,
              get_item_code("Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml"): 2,
