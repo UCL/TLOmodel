@@ -43,14 +43,14 @@ def get_consumable_item_codes_cancers(self) -> Dict[str, int]:
          get_item_code("Syringe, needle + swab"): 4}
     # N.B. This is not an exhaustive list of drugs required for palliation
 
-    cons_dict['treatment_chemotherapy_core'] = \
+    cons_dict['treatment_chemotherapy'] = \
         {get_item_code("Cyclophosphamide, 1 g"): 16800}
 
     cons_dict['iv_drug_cons'] = \
         {get_item_code("Cannula iv  (winged with injection pot) 18_each_CMST"): 1,
          get_item_code("Giving set iv administration + needle 15 drops/ml_each_CMST"): 1,
          get_item_code("Disposables gloves, powder free, 100 pieces per box"): 1,
-         get_item_code("Gauze, swabs 8-ply 10cm x 10cm_100_FF010800_CMST"): 84}
+         get_item_code("Gauze, swabs 8-ply 10cm x 10cm_100_CMST"): 84}
 
     # Add items that are specific to a particular cancer module
     if 'ProstateCancer' == self.name:
@@ -61,7 +61,7 @@ def get_consumable_item_codes_cancers(self) -> Dict[str, int]:
         cons_dict['screening_psa_test_optional'] = \
             {get_item_code("Blood collecting tube, 5 ml"): 1,
              get_item_code("Disposables gloves, powder free, 100 pieces per box"): 1,
-             get_item_code("Gauze, swabs 8-ply 10cm x 10cm_100_FF010800_CMST"): 1}
+             get_item_code("Gauze, swabs 8-ply 10cm x 10cm_100_CMST"): 1}
 
     elif 'BladderCancer' == self.name:
         # Note: bladder cancer is not in the malawi STG 2023 therefore no details on chemotherapy
