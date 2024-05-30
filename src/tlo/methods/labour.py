@@ -21,7 +21,7 @@ from tlo.util import BitsetHandler
 if TYPE_CHECKING:
     from numpy.random import RandomState
 
-    from tlo.population import PatientDetails
+    from tlo.population import IndividualProperties
 
 
 # Standard logger
@@ -2302,24 +2302,24 @@ class Labour(Module):
 
     def do_at_generic_first_appt_emergency(
         self,
-        patient_id: int,
-        patient_details: PatientDetails,
+        person_id: int,
+        individual_properties: IndividualProperties,
         random_state: RandomState,
         **kwargs,
     ) -> IndividualPropertyUpdates:
         mni = self.sim.modules["PregnancySupervisor"].mother_and_newborn_info
         labour_list = self.sim.modules["Labour"].women_in_labour
 
-        if patient_id in labour_list:
-            la_currently_in_labour = patient_details.la_currently_in_labour
+        if person_id in labour_list:
+            la_currently_in_labour = individual_properties.la_currently_in_labour
             if (
                 la_currently_in_labour
-                & mni[patient_id]["sought_care_for_complication"]
-                & (mni[patient_id]["sought_care_labour_phase"] == "intrapartum")
+                & mni[person_id]["sought_care_for_complication"]
+                & (mni[person_id]["sought_care_labour_phase"] == "intrapartum")
             ):
                 event = HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(
                     module=self,
-                    person_id=patient_id,
+                    person_id=person_id,
                     # facility_level_of_this_hsi=random_state.choice(["1a", "1b"]),
                     facility_level_of_this_hsi=self.rng.choice(["1a", "1b"]),
                 )

@@ -1562,7 +1562,7 @@ class Hiv(Module):
 
     def do_at_generic_first_appt(
         self,
-        patient_id: int,
+        person_id: int,
         symptoms: List[str],
         **kwargs,
     ) -> IndividualPropertyUpdates:
@@ -1571,7 +1571,7 @@ class Hiv(Module):
         #  - do not do referrals if the person is HIV negative (assumed not time for counselling etc).
         if "aids_symptoms" in symptoms:
             event = HSI_Hiv_TestAndRefer(
-                person_id=patient_id,
+                person_id=person_id,
                 module=self,
                 referred_from="hsi_generic_first_appt",
                 suppress_footprint=True,

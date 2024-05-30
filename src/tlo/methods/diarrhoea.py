@@ -36,7 +36,7 @@ from tlo.methods.hsi_event import HSI_Event
 from tlo.util import random_date, sample_outcome
 
 if TYPE_CHECKING:
-    from tlo.population import PatientDetails
+    from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -942,15 +942,15 @@ class Diarrhoea(Module):
 
     def do_at_generic_first_appt(
         self,
-        patient_id: int,
-        patient_details: PatientDetails,
+        person_id: int,
+        individual_properties: IndividualProperties,
         diagnosis_function: DiagnosisFunction,
         **kwargs,
     ) -> IndividualPropertyUpdates:
         # This routine is called when Diarrhoea is a symptom for a child
         # attending a Generic HSI Appointment. It checks for danger signs
         # and schedules HSI Events appropriately.
-        if patient_details.age_years > 5:
+        if individual_properties.age_years > 5:
             return {}
 
         # 1) Assessment of danger signs
@@ -967,7 +967,7 @@ class Diarrhoea(Module):
             HSI_Diarrhoea_Treatment_Inpatient if is_inpatient else 
             HSI_Diarrhoea_Treatment_Outpatient
         )
-        event = hsi_event_class(person_id=patient_id, module=self)
+        event = hsi_event_class(person_id=person_id, module=self)
         self.healthsystem.schedule_hsi_event(event, priority=0, topen=self.sim.date)
 
 

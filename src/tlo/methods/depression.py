@@ -20,7 +20,7 @@ from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.symptommanager import Symptom
 
 if TYPE_CHECKING:
-    from tlo.population import PatientDetails
+    from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -596,11 +596,11 @@ class Depression(Module):
             hsi_event.TREATMENT_ID,
             self.sim.population.props.at[person_id, "de_ever_diagnosed_depression"],
         ):
-            patient_details_updates = self.do_when_suspected_depression(
+            individual_properties_updates = self.do_when_suspected_depression(
                 person_id=person_id, hsi_event=hsi_event
             )
-            self.sim.population.props.loc[person_id, patient_details_updates.keys()] = (
-                patient_details_updates.values()
+            self.sim.population.props.loc[person_id, individual_properties_updates.keys()] = (
+                individual_properties_updates.values()
             )
         return
 
@@ -625,7 +625,7 @@ class Depression(Module):
         :param hsi_event: The HSI_Event that triggered this call.
         :returns: Values as per the output of do_at_generic_first_appt().
         """
-        patient_details_updates = {}
+        individual_properties_updates = {}
 
         if diagnosis_function is None:
             assert isinstance(
@@ -643,7 +643,7 @@ class Depression(Module):
         # Assess for depression and initiate treatments for depression if positive diagnosis
         if diagnosis_function('assess_depression'):
             # If depressed: diagnose the person with depression
-            patient_details_updates['de_ever_diagnosed_depression'] = True
+            individual_properties_updates['de_ever_diagnosed_depression'] = True
 
             scheduling_options = {"priority": 0, "topen": self.sim.date}
             # Provide talking therapy
@@ -658,33 +658,33 @@ class Depression(Module):
                 HSI_Depression_Start_Antidepressant(module=self, person_id=person_id),
                 **scheduling_options,
             )
-        return patient_details_updates
+        return individual_properties_updates
 
     def do_at_generic_first_appt(
         self,
-        patient_details: PatientDetails,
+        individual_properties: IndividualProperties,
         **kwargs
     ) -> IndividualPropertyUpdates:
-        if patient_details.age_years > 5:
+        if individual_properties.age_years > 5:
             return self.do_at_generic_first_appt_emergency(
-                patient_details=patient_details,
+                individual_properties=individual_properties,
                 **kwargs,
             )
 
     def do_at_generic_first_appt_emergency(
         self,
-        patient_id: int,
-        patient_details: PatientDetails,
+        person_id: int,
+        individual_properties: IndividualProperties,
         symptoms: List[str],
         diagnosis_function: DiagnosisFunction,
         treatment_id: str,
         **kwargs,
     ) -> IndividualPropertyUpdates:
         if self._check_for_suspected_depression(
-            symptoms, treatment_id, patient_details.de_ever_diagnosed_depression
+            symptoms, treatment_id, individual_properties.de_ever_diagnosed_depression
         ):
             return self.do_when_suspected_depression(
-                person_id=patient_id,
+                person_id=person_id,
                 diagnosis_function=diagnosis_function,
             )
 

@@ -403,7 +403,7 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration(seed):
     generic_hsi = HSI_GenericNonEmergencyFirstAppt(
         module=sim.modules["HealthSeekingBehaviour"], person_id=person_id
     )
-    patient_details = sim.population.row_in_readonly_form(person_id)
+    individual_properties = sim.population.row_in_readonly_form(person_id)
 
     def diagnosis_fn(tests, use_dict: bool = False, report_tried: bool = False):
         return generic_hsi.healthcare_system.dx_manager.run_dx_test(
@@ -416,8 +416,8 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration(seed):
     sim.modules['HealthSystem'].reset_queue()
     sim.modules['Diarrhoea'].parameters['prob_hospitalization_on_danger_signs'] = 1.0
     sim.modules["Diarrhoea"].do_at_generic_first_appt(
-        patient_id=person_id,
-        patient_details=patient_details,
+        person_id=person_id,
+        individual_properties=individual_properties,
         diagnosis_function=diagnosis_fn,
     )
     evs = sim.modules['HealthSystem'].find_events_for_person(person_id)
@@ -429,8 +429,8 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration(seed):
     sim.modules['HealthSystem'].reset_queue()
     sim.modules['Diarrhoea'].parameters['prob_hospitalization_on_danger_signs'] = 0.0
     sim.modules["Diarrhoea"].do_at_generic_first_appt(
-        patient_id=person_id,
-        patient_details=patient_details,
+        person_id=person_id,
+        individual_properties=individual_properties,
         diagnosis_function=diagnosis_fn,
     )
     evs = sim.modules['HealthSystem'].find_events_for_person(person_id)
@@ -492,7 +492,7 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration_dxtest_notfuncti
     df.loc[person_id, props_new.keys()] = props_new.values()
     generic_hsi = HSI_GenericNonEmergencyFirstAppt(
         module=sim.modules['HealthSeekingBehaviour'], person_id=person_id)
-    patient_details = sim.population.row_in_readonly_form(person_id)
+    individual_properties = sim.population.row_in_readonly_form(person_id)
 
     def diagnosis_fn(tests, use_dict: bool = False, report_tried: bool = False):
         return generic_hsi.healthcare_system.dx_manager.run_dx_test(
@@ -506,8 +506,8 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration_dxtest_notfuncti
     sim.modules['Diarrhoea'].parameters['prob_hospitalization_on_danger_signs'] = 0.0
     sim.modules['HealthSystem'].reset_queue()
     sim.modules["Diarrhoea"].do_at_generic_first_appt(
-        patient_id=person_id,
-        patient_details=patient_details,
+        person_id=person_id,
+        individual_properties=individual_properties,
         diagnosis_function=diagnosis_fn,
     )
     evs = sim.modules['HealthSystem'].find_events_for_person(person_id)
@@ -568,7 +568,7 @@ def test_do_when_presentation_with_diarrhoea_non_severe_dehydration(seed):
     df.loc[person_id, props_new.keys()] = props_new.values()
     generic_hsi = HSI_GenericNonEmergencyFirstAppt(
         module=sim.modules['HealthSeekingBehaviour'], person_id=person_id)
-    patient_details = sim.population.row_in_readonly_form(person_id)
+    individual_properties = sim.population.row_in_readonly_form(person_id)
 
     def diagnosis_fn(tests, use_dict: bool = False, report_tried: bool = False):
         return generic_hsi.healthcare_system.dx_manager.run_dx_test(
@@ -580,7 +580,7 @@ def test_do_when_presentation_with_diarrhoea_non_severe_dehydration(seed):
     # 1) Outpatient HSI should be created
     sim.modules["HealthSystem"].reset_queue()
     sim.modules["Diarrhoea"].do_at_generic_first_appt(
-        patient_id=person_id, patient_details=patient_details, diagnosis_function=diagnosis_fn
+        person_id=person_id, individual_properties=individual_properties, diagnosis_function=diagnosis_fn
     )
     evs = sim.modules["HealthSystem"].find_events_for_person(person_id)
 

@@ -290,7 +290,7 @@ class Mockitis(Module):
 
     def do_at_generic_first_appt_emergency(
         self,
-        patient_id: int,
+        person_id: int,
         symptoms: List[str],
         **kwargs,
     ) -> IndividualPropertyUpdates:
@@ -298,7 +298,7 @@ class Mockitis(Module):
         if "extreme_pain_in_the_nose" in symptoms:
             event = HSI_Mockitis_PresentsForCareWithSevereSymptoms(
                 module=self,
-                person_id=patient_id,
+                person_id=person_id,
             )
             self.healthsystem.schedule_hsi_event(event, priority=1, topen=self.sim.date)
 

@@ -20,7 +20,7 @@ from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.symptommanager import Symptom
 
 if TYPE_CHECKING:
-    from tlo.population import PatientDetails
+    from tlo.population import IndividualProperties
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
@@ -2494,33 +2494,33 @@ class RTI(Module):
 
     def _common_first_appt_steps(
         self,
-        patient_id: int,
-        patient_details: PatientDetails,
+        person_id: int,
+        individual_properties: IndividualProperties,
     ) -> IndividualPropertyUpdates:
         """
         Shared logic steps that are used by the RTI module when a generic HSI
         event is to be scheduled.
         """
-        patient_details_updates = {}
+        individual_properties_updates = {}
         # Things to do upon a person presenting at a Non-Emergency Generic
         # HSI if they have an injury.
         persons_injuries = [
-            getattr(patient_details, injury) for injury in RTI.INJURY_COLUMNS
+            getattr(individual_properties, injury) for injury in RTI.INJURY_COLUMNS
         ]
         if (
-            pd.isnull(patient_details.cause_of_death)
-            and not patient_details.rt_diagnosed
+            pd.isnull(individual_properties.cause_of_death)
+            and not individual_properties.rt_diagnosed
         ):
             if set(RTI.INJURIES_REQ_IMAGING).intersection(set(persons_injuries)):
-                if patient_details.is_alive:
-                    event = HSI_RTI_Imaging_Event(module=self, person_id=patient_id)
+                if individual_properties.is_alive:
+                    event = HSI_RTI_Imaging_Event(module=self, person_id=person_id)
                     self.healthsystem.schedule_hsi_event(
                         event,
                         priority=0,
                         topen=self.sim.date + DateOffset(days=1),
                         tclose=self.sim.date + DateOffset(days=15),
                     )
-            patient_details_updates["rt_diagnosed"] = True
+            individual_properties_updates["rt_diagnosed"] = True
 
             # The injured person has been diagnosed in A&E and needs to progress further
             # through the health system.
@@ -2546,38 +2546,38 @@ class RTI(Module):
             # If they meet the requirements, send them to HSI_RTI_MedicalIntervention for further treatment
             # Using counts condition to stop spurious symptoms progressing people through the model
             if counts > 0:
-                event = HSI_RTI_Medical_Intervention(module=self, person_id=patient_id)
+                event = HSI_RTI_Medical_Intervention(module=self, person_id=person_id)
                 self.healthsystem.schedule_hsi_event(
                     event, priority=0, topen=self.sim.date,
                 )
 
             # We now check if they need shock treatment
-            if patient_details.rt_in_shock and patient_details.is_alive:
-                event = HSI_RTI_Shock_Treatment(module=self, person_id=patient_id)
+            if individual_properties.rt_in_shock and individual_properties.is_alive:
+                event = HSI_RTI_Shock_Treatment(module=self, person_id=person_id)
                 self.healthsystem.schedule_hsi_event(
                     event,
                     priority=0,
                     topen=self.sim.date + DateOffset(days=1),
                     tclose=self.sim.date + DateOffset(days=15),
                 )
-        return patient_details_updates
+        return individual_properties_updates
 
     def do_at_generic_first_appt(
         self,
-        patient_id: int,
-        patient_details: PatientDetails,
+        person_id: int,
+        individual_properties: IndividualProperties,
         symptoms: List[str],
         **kwargs
     ) -> IndividualPropertyUpdates:
         if "injury" in symptoms:
             return self._common_first_appt_steps(
-                patient_id=patient_id, patient_details=patient_details
+                person_id=person_id, individual_properties=individual_properties
             )
 
     def do_at_generic_first_appt_emergency(
         self,
-        patient_id: int,
-        patient_details: PatientDetails,
+        person_id: int,
+        individual_properties: IndividualProperties,
         symptoms: List[str],
         **kwargs
     ) -> IndividualPropertyUpdates:
@@ -2585,8 +2585,8 @@ class RTI(Module):
         # initial symptom check
         if "severe_trauma" in symptoms:
             return self._common_first_appt_steps(
-                patient_id=patient_id,
-                patient_details=patient_details
+                person_id=person_id,
+                individual_properties=individual_properties
             )
 
 

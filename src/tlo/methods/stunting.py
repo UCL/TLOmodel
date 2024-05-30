@@ -26,7 +26,7 @@ from tlo.methods import Metadata
 from tlo.methods.hsi_event import HSI_Event
 
 if TYPE_CHECKING:
-    from tlo.population import PatientDetails
+    from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -287,28 +287,28 @@ class Stunting(Module):
 
     def do_at_generic_first_appt(
         self,
-        patient_id: int,
-        patient_details: PatientDetails,
+        person_id: int,
+        individual_properties: IndividualProperties,
         **kwargs,
     ) -> IndividualPropertyUpdates:
         # This is called by the a generic HSI event for every child aged
         # less than 5 years.
         # It assesses stunting and schedules an HSI as needed.
-        is_stunted = patient_details.un_HAZ_category in ('HAZ<-3', '-3<=HAZ<-2')
+        is_stunted = individual_properties.un_HAZ_category in ('HAZ<-3', '-3<=HAZ<-2')
         p_stunting_diagnosed = self.parameters['prob_stunting_diagnosed_at_generic_appt']
 
         # Schedule the HSI for provision of treatment based on the
         # probability of stunting diagnosis, provided the necessary
         # symptoms are there.
         if (
-            (patient_details.age_years <= 5)
+            (individual_properties.age_years <= 5)
             and is_stunted
         ):
             # Schedule the HSI for provision of treatment based on the
             # probability of stunting diagnosis
             if p_stunting_diagnosed > self.rng.random_sample():
                 event = HSI_Stunting_ComplementaryFeeding(
-                    module=self, person_id=patient_id
+                    module=self, person_id=person_id
                 )
                 self.healthsystem.schedule_hsi_event(
                     event,

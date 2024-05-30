@@ -41,7 +41,7 @@ from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date, sample_outcome
 
 if TYPE_CHECKING:
-    from tlo.population import PatientDetails
+    from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -1425,8 +1425,8 @@ class Alri(Module):
 
     def do_at_generic_first_appt(
         self,
-        patient_id: int,
-        patient_details: PatientDetails,
+        person_id: int,
+        individual_properties: IndividualProperties,
         symptoms: List[str],
         facility_level: str,
         **kwargs,
@@ -1434,14 +1434,14 @@ class Alri(Module):
         # Action taken when a child (under 5 years old) presents at a
         # generic appointment (emergency or non-emergency) with symptoms
         # of `cough` or `difficult_breathing`.
-        if patient_details.age_years <= 5 and (
+        if individual_properties.age_years <= 5 and (
             ("cough" in symptoms) or ("difficult_breathing" in symptoms)
         ):
             self.record_sought_care_for_alri()
 
             # All persons have an initial out-patient appointment at the current facility level.
             event = HSI_Alri_Treatment(
-                person_id=patient_id, module=self, facility_level=facility_level
+                person_id=person_id, module=self, facility_level=facility_level
             )
             self.healthsystem.schedule_hsi_event(
                 event,

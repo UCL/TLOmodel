@@ -24,7 +24,7 @@ from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.symptommanager import Symptom
 
 if TYPE_CHECKING:
-    from tlo.population import PatientDetails
+    from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -590,8 +590,8 @@ class ProstateCancer(Module):
 
     def do_at_generic_first_appt(
         self,
-        patient_id: int,
-        patient_details: PatientDetails,
+        person_id: int,
+        individual_properties: IndividualProperties,
         symptoms: List[str],
         **kwargs
     ) -> IndividualPropertyUpdates:
@@ -601,16 +601,16 @@ class ProstateCancer(Module):
             "priority": 0,
             "topen": self.sim.date,
         }
-        if patient_details.age_years > 5:
+        if individual_properties.age_years > 5:
             if "urinary" in symptoms:
                 event = HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms(
-                    person_id=patient_id, module=self
+                    person_id=person_id, module=self
                 )
                 self.healthsystem.schedule_hsi_event(event, **scheduling_options)
 
             if "pelvic_pain" in symptoms:
                 event = HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(
-                    person_id=patient_id, module=self
+                    person_id=person_id, module=self
                 )
                 self.healthsystem.schedule_hsi_event(event, **scheduling_options)
 

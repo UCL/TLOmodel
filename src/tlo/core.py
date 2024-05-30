@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from numpy.random import RandomState
 
     from tlo.methods.healthsystem import HealthSystem
-    from tlo.population import PatientDetails
+    from tlo.population import IndividualProperties
     from tlo.simulation import Simulation
 
 DiagnosisFunction: TypeAlias = Callable[[str, bool, bool], Any]
@@ -394,8 +394,8 @@ class Module:
 
     def do_at_generic_first_appt(
         self,
-        patient_id: int,
-        patient_details: Optional[PatientDetails],
+        person_id: int,
+        individual_properties: Optional[IndividualProperties],
         symptoms: Optional[List[str]],
         diagnosis_function: Optional[DiagnosisFunction],
         consumables_checker: Optional[ConsumablesChecker],
@@ -440,8 +440,8 @@ class Module:
         module-specific method necessitates the explicit return).
         - Return None (not recommended, use "return" on its own, as above).
 
-        :param patient_id: Row index (ID) of the individual target of the HSI event in the population DataFrame.
-        :param patient_details: Patient details as provided in the population DataFrame.
+        :param person_id: Row index (ID) of the individual target of the HSI event in the population DataFrame.
+        :param individual_properties: Patient details as provided in the population DataFrame.
         :param symptoms: List of symptoms the patient is experiencing.
         :param diagnosis_function: A function that can run diagnosis tests based on the patient's symptoms.
         :param consumables_checker: A function that can query the HealthSystem to check for available consumables.
@@ -452,8 +452,8 @@ class Module:
 
     def do_at_generic_first_appt_emergency(
         self,
-        patient_id: int,
-        patient_details: Optional[PatientDetails] = None,
+        person_id: int,
+        individual_properties: Optional[IndividualProperties] = None,
         symptoms: Optional[List[str]] = None,
         diagnosis_function: Optional[DiagnosisFunction] = None,
         consumables_checker: Optional[ConsumablesChecker] = None,

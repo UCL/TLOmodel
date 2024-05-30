@@ -17,7 +17,7 @@ from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date
 
 if TYPE_CHECKING:
-    from tlo.population import PatientDetails
+    from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -212,8 +212,8 @@ class Copd(Module):
 
     def _common_first_appt(
         self,
-        patient_id: int,
-        patient_details: PatientDetails,
+        person_id: int,
+        individual_properties: IndividualProperties,
         symptoms: List[str],
         consumables_checker: ConsumablesChecker,
     ):
@@ -223,51 +223,51 @@ class Copd(Module):
         * Otherwise --> just give inhaler.
         """
         if ('breathless_moderate' in symptoms) or ('breathless_severe' in symptoms):
-            patient_details_updates = {}
+            individual_properties_updates = {}
             # Give inhaler if patient does not already have one
-            if not patient_details.ch_has_inhaler and consumables_checker(
+            if not individual_properties.ch_has_inhaler and consumables_checker(
                 self.item_codes["bronchodilater_inhaler"]
             ):
-                patient_details_updates["ch_has_inhaler"] = True
+                individual_properties_updates["ch_has_inhaler"] = True
 
             if "breathless_severe" in symptoms:
                 event = HSI_Copd_TreatmentOnSevereExacerbation(
-                    module=self, person_id=patient_id
+                    module=self, person_id=person_id
                 )
                 self.healthsystem.schedule_hsi_event(
                     event, topen=self.sim.date, priority=0
                 )
-            return patient_details_updates
+            return individual_properties_updates
 
     def do_at_generic_first_appt(
         self,
-        patient_id: int,
-        patient_details: PatientDetails,
+        person_id: int,
+        individual_properties: IndividualProperties,
         symptoms: List[str],
         consumables_checker: ConsumablesChecker,
         **kwargs,
     ) -> IndividualPropertyUpdates:
         # Non-emergency appointments are only forwarded if
         # the patient is over 5 years old
-        if patient_details.age_years > 5:
+        if individual_properties.age_years > 5:
             return self._common_first_appt(
-                patient_id=patient_id,
-                patient_details=patient_details,
+                person_id=person_id,
+                individual_properties=individual_properties,
                 symptoms=symptoms,
                 consumables_checker=consumables_checker,
             )
 
     def do_at_generic_first_appt_emergency(
         self,
-        patient_id: int,
-        patient_details: PatientDetails,
+        person_id: int,
+        individual_properties: IndividualProperties,
         symptoms: List[str],
         consumables_checker: ConsumablesChecker,
         **kwargs,
     ) -> IndividualPropertyUpdates:
         return self._common_first_appt(
-            patient_id=patient_id,
-            patient_details=patient_details,
+            person_id=person_id,
+            individual_properties=individual_properties,
             symptoms=symptoms,
             consumables_checker=consumables_checker,
         )

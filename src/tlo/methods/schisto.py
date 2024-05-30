@@ -326,7 +326,7 @@ class Schisto(Module):
 
     def do_at_generic_first_appt(
         self,
-        patient_id: int,
+        person_id: int,
         symptoms: List[str],
         **kwargs
     ) -> IndividualPropertyUpdates:
@@ -336,7 +336,7 @@ class Schisto(Module):
 
         if set_of_symptoms_indicative_of_schisto.issubset(symptoms):
             event = HSI_Schisto_TestingFollowingSymptoms(
-                module=self, person_id=patient_id
+                module=self, person_id=person_id
             )
             self.healthsystem.schedule_hsi_event(event, priority=0, topen=self.sim.date)
 

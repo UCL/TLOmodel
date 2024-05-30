@@ -73,14 +73,14 @@ class HSI_BaseGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
         # Dynamically create immutable container with the target's details stored.
         # This will avoid repeat DataFrame reads when we call the module-level functions.
         df = self.sim.population.props
-        patient_details = self.sim.population.row_in_readonly_form(self.target)
+        individual_properties = self.sim.population.row_in_readonly_form(self.target)
 
-        proposed_patient_details_updates = {}
+        proposed_individual_properties_updates = {}
 
         for module in modules.values():
             module_patient_updates = getattr(module, self.MODULE_METHOD_ON_APPLY)(
-                patient_id=self.target,
-                patient_details=patient_details,
+                person_id=self.target,
+                individual_properties=individual_properties,
                 symptoms=symptoms,
                 diagnosis_function=self._diagnosis_function,
                 consumables_checker=self.get_consumables,
@@ -91,16 +91,16 @@ class HSI_BaseGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
             # Record any requested DataFrame updates, but do not implement yet
             # NOTE: |= syntax is only available in Python >=3.9
             if module_patient_updates:
-                proposed_patient_details_updates = {
-                    **proposed_patient_details_updates,
+                proposed_individual_properties_updates = {
+                    **proposed_individual_properties_updates,
                     **module_patient_updates,
                 }
 
         # Perform any DataFrame updates that were requested, all in one go.
-        if proposed_patient_details_updates:
+        if proposed_individual_properties_updates:
             df.loc[
-                self.target, proposed_patient_details_updates.keys()
-            ] = proposed_patient_details_updates.values()
+                self.target, proposed_individual_properties_updates.keys()
+            ] = proposed_individual_properties_updates.values()
 
     def apply(self, person_id, squeeze_factor=0.) -> None:
         """

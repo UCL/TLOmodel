@@ -33,7 +33,7 @@ from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date
 
 if TYPE_CHECKING:
-    from tlo.population import PatientDetails
+    from tlo.population import IndividualProperties
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
@@ -814,8 +814,8 @@ class CardioMetabolicDisorders(Module):
 
     def do_at_generic_first_appt(
         self,
-        patient_id: int,
-        patient_details: PatientDetails,
+        person_id: int,
+        individual_properties: IndividualProperties,
         symptoms: List[str],
         **kwargs
     ) -> IndividualPropertyUpdates:
@@ -825,7 +825,7 @@ class CardioMetabolicDisorders(Module):
         # A maximum of one instance of `HSI_CardioMetabolicDisorders_Investigations`
         # is created for the person, during which multiple conditions can
         # be investigated.
-        if patient_details.age_years <= 5:
+        if individual_properties.age_years <= 5:
             return {}
 
         # The list of conditions that will be investigated in follow-up HSI
@@ -835,10 +835,10 @@ class CardioMetabolicDisorders(Module):
 
         # Determine if there are any conditions that should be investigated:
         for condition in self.conditions:
-            is_already_diagnosed = getattr(patient_details, f"nc_{condition}_ever_diagnosed")
+            is_already_diagnosed = getattr(individual_properties, f"nc_{condition}_ever_diagnosed")
             has_symptom = f"{condition}_symptoms" in symptoms
             date_of_last_test = getattr(
-                patient_details, f"nc_{condition}_date_last_test"
+                individual_properties, f"nc_{condition}_date_last_test"
             )
             next_test_due = (
                 pd.isnull(date_of_last_test)
@@ -867,7 +867,7 @@ class CardioMetabolicDisorders(Module):
         if conditions_to_investigate:
             event = HSI_CardioMetabolicDisorders_Investigations(
                 module=self,
-                person_id=patient_id,
+                person_id=person_id,
                 conditions_to_investigate=conditions_to_investigate,
                 has_any_cmd_symptom=has_any_cmd_symptom,
             )
@@ -875,8 +875,8 @@ class CardioMetabolicDisorders(Module):
 
     def do_at_generic_first_appt_emergency(
         self,
-        patient_id: int,
-        patient_details: PatientDetails = None,
+        person_id: int,
+        individual_properties: IndividualProperties = None,
         symptoms: List[str] = None,
         **kwargs,
     ) -> IndividualPropertyUpdates:
@@ -894,7 +894,7 @@ class CardioMetabolicDisorders(Module):
             if f"{ev}_damage" in symptoms and (
                 (
                     self.sim.date
-                    - getattr(patient_details, f"nc_{ev}_date_last_event")
+                    - getattr(individual_properties, f"nc_{ev}_date_last_event")
                 ).days
                 <= 3
             ):
@@ -903,7 +903,7 @@ class CardioMetabolicDisorders(Module):
         if ev_to_investigate:
             event = HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(
                 module=self,
-                person_id=patient_id,
+                person_id=person_id,
                 events_to_investigate=ev_to_investigate,
             )
             self.healthsystem.schedule_hsi_event(event, topen=self.sim.date, priority=1)

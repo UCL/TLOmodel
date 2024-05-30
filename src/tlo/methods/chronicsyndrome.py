@@ -280,7 +280,7 @@ class ChronicSyndrome(Module):
 
     def do_at_generic_first_appt_emergency(
         self,
-        patient_id: int,
+        person_id: int,
         symptoms: List[str],
         **kwargs,
     ) -> IndividualPropertyUpdates:
@@ -288,7 +288,7 @@ class ChronicSyndrome(Module):
         if "craving_sandwiches" in symptoms:
             event = HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(
                 module=self,
-                person_id=patient_id,
+                person_id=person_id,
             )
             self.healthsystem.schedule_hsi_event(event, topen=self.sim.date, priority=1)
 

@@ -255,14 +255,14 @@ class HealthSeekingBehaviour(Module):
 
     def do_at_generic_first_appt_emergency(
         self,
-        patient_id: int,
+        person_id: int,
         symptoms: List[str],
         **kwargs,
     ) -> IndividualPropertyUpdates:
         if "spurious_emergency_symptom" in symptoms:
             event = HSI_EmergencyCare_SpuriousSymptom(
                 module=self.sim.modules["HealthSeekingBehaviour"],
-                person_id=patient_id,
+                person_id=person_id,
             )
             self.healthsystem.schedule_hsi_event(event, priority=0, topen=self.sim.date)
 

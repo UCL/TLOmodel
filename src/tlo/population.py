@@ -61,9 +61,6 @@ class IndividualProperties:
             column.values[row_index] = self._property_cache[key]
 
 
-PatientDetails = IndividualProperties
-
-
 class Population:
     """A complete population of individuals.
 

@@ -30,7 +30,7 @@ from tlo.methods.causes import Cause
 from tlo.util import BitsetHandler
 
 if TYPE_CHECKING:
-    from tlo.population import PatientDetails
+    from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -1673,8 +1673,8 @@ class PregnancySupervisor(Module):
 
     def do_at_generic_first_appt_emergency(
         self,
-        patient_id: int,
-        patient_details: PatientDetails,
+        person_id: int,
+        individual_properties: IndividualProperties,
         **kwargs,
     ) -> IndividualPropertyUpdates:
         scheduling_options = {
@@ -1684,10 +1684,10 @@ class PregnancySupervisor(Module):
             }
 
         # -----  ECTOPIC PREGNANCY  -----
-        if patient_details.ps_ectopic_pregnancy != 'none':
+        if individual_properties.ps_ectopic_pregnancy != 'none':
             event = HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(
                 module=self.sim.modules["CareOfWomenDuringPregnancy"],
-                person_id=patient_id,
+                person_id=person_id,
             )
             self.healthsystem.schedule_hsi_event(event, **scheduling_options)
 
@@ -1696,11 +1696,11 @@ class PregnancySupervisor(Module):
             "PregnancySupervisor"
         ].abortion_complications
         if abortion_complications.has_any(
-            [patient_id], "sepsis", "injury", "haemorrhage", first=True
+            [person_id], "sepsis", "injury", "haemorrhage", first=True
         ):
             event = HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(
                 module=self.sim.modules["CareOfWomenDuringPregnancy"],
-                person_id=patient_id,
+                person_id=person_id,
             )
             self.healthsystem.schedule_hsi_event(event, **scheduling_options)
 
