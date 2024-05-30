@@ -106,6 +106,8 @@ for source, destination in copy_source_to_destination.items():
     new_rows.district = destination
     scenario_availability_df = pd.concat([scenario_availability_df, new_rows], ignore_index = True)
 
+assert sorted(set(districts)) == sorted(set(pd.unique(scenario_availability_df.district)))
+
 # 1.2.3 Facility_ID
 # #------------------------------------------------------
 # Merge-in facility_id
