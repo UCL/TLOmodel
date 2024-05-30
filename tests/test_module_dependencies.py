@@ -286,8 +286,6 @@ def test_module_dependencies_all_required(sim, module_and_dependency_pair):
 def test_auto_register_module_dependencies(tmpdir):
     """ check if module dependencies are registered as expected when an argument to auto register modules in simulation
     is set to True """
-    # define a path to resource files folder
-    resourcefilepath = Path('../resources')
     # configure logging
     log_config = {
         'filename': 'LogFile',
