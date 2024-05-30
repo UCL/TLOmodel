@@ -2010,7 +2010,7 @@ class HealthSystem(Module):
                         original_call = footprints_of_all_individual_level_hsi_event[ev_num]
                         footprints_of_all_individual_level_hsi_event[ev_num] = updated_call
                         self.running_total_footprint -= original_call
-                        self.running_total_footprint += updated_call
+                        self.running_total_footprint.update(updated_call)
 
                         # Don't recompute for mode=0
                         if self.mode_appt_constraints != 0:
@@ -2425,8 +2425,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                         )
 
                             # Update today's footprint based on actual call and squeeze factor
-                            self.module.running_total_footprint -= original_call
-                            self.module.running_total_footprint += updated_call
+                            self.module.running_total_footprint.update(updated_call)
 
                             # Write to the log
                             self.module.record_hsi_event(
