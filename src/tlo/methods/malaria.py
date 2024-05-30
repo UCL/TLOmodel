@@ -1577,14 +1577,14 @@ class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             )
 
             # prevalence of malaria in HIV population
-            prev_malaria_in_hiv_population = coinfection_num / hiv_infected
+            prev_malaria_in_hiv_population = coinfection_num / hiv_infected if hiv_infected else 0
 
             # proportion of malaria cases with concurrent HIV infection
             malaria_infected = len(
                 df[df.is_alive & (df.ma_inf_type != 'none')]
             )
 
-            prop_malaria_cases_with_hiv = coinfection_num / malaria_infected
+            prop_malaria_cases_with_hiv = coinfection_num / malaria_infected if malaria_infected else 0
 
             coinfection_prevalence = {
                 'coinfection_num': coinfection_num,
