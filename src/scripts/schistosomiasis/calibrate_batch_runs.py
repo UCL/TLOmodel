@@ -43,7 +43,7 @@ class TestScenario(BaseScenario):
         self.seed = random.randint(0, 50000)
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2099, 12, 31)  # todo reset
-        self.pop_size = 100_000  # todo reset
+        self.pop_size = 75_000  # todo reset
         self.number_of_draws = number_of_draws
         self.runs_per_draw = runs_per_draw
 
