@@ -12,7 +12,6 @@ from typing import TYPE_CHECKING, List
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.core import IndividualPropertyUpdates
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -576,10 +575,10 @@ class BreastCancer(Module):
         individual_properties: IndividualProperties,
         symptoms: List[str],
         **kwargs,
-    ) -> IndividualPropertyUpdates:
+    ) -> None:
         # If the patient is not a child and symptoms include breast
         # lump discernible
-        if individual_properties.age_years > 5 and "breast_lump_discernible" in symptoms:
+        if individual_properties["age_years"] > 5 and "breast_lump_discernible" in symptoms:
             event = HSI_BreastCancer_Investigation_Following_breast_lump_discernible(
                 person_id=person_id,
                 module=self,

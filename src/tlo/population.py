@@ -1,7 +1,8 @@
 """The Person and Population classes."""
 
 import math
-from typing import Any, Dict, Set
+from typing import Any, Dict, Optional, Set, Type
+from types import TracebackType
 
 import pandas as pd
 
@@ -13,7 +14,7 @@ logger.setLevel(logging.INFO)
 
 class IndividualProperties:
     """Memoized view of population dataframe row that is optionally read-only."""
-    
+
     def __init__(
         self,
         population_dataframe: pd.DataFrame,
@@ -25,7 +26,7 @@ class IndividualProperties:
         self._read_only = read_only
         self._property_cache: Dict[str, Any] = {}
         self._properties_updated: Set[str] = set()
-        
+
     def __getitem__(self, key: str) -> Any:
         try:
             return self._property_cache[key]
@@ -33,7 +34,7 @@ class IndividualProperties:
             value = self._population_dataframe.at[self._person_id, key]
             self._property_cache[key] = value
             return value     
-        
+
     def __getattr__(self, name: str) -> Any:
         try:
             return self[name]
@@ -47,15 +48,27 @@ class IndividualProperties:
             raise ValueError(msg)
         self._properties_updated.add(key)
         self._property_cache[key] = value
-        
+
     def __setattr__(self, name: str, value: Any) -> None:
         self[name] = value
+
+    def __enter__(self) -> "IndividualProperties":
+        return self
+
+    def __exit__(
+        self,
+        exception_type: Optional[Type[BaseException]],
+        exception_value: Optional[BaseException],
+        exception_traceback: Optional[TracebackType],
+    ) -> bool:
+        self.synchronize_updates_to_dataframe()
+        return False
 
     def synchronize_updates_to_dataframe(self):
         row_index = self._population_dataframe.index.get_loc(self._person_id)
         for key in self._properties_updated:
             # This chained indexing approach to setting dataframe values is
-            # significantly (~3 to 4 times) quicker than using at / iat indexers, but 
+            # significantly (~3 to 4 times) quicker than using at / iat indexers, but
             # will fail when copy-on-write is enabled which will be default in Pandas 3
             column = self._population_dataframe[key]
             column.values[row_index] = self._property_cache[key]
@@ -178,7 +191,9 @@ class Population:
         size = self.initial_size if self.props.empty else len(self.props)
         self.props[name] = prop.create_series(name, size)
 
-    def row_in_readonly_form(self, person_id: int) -> IndividualProperties:
+    def individual_properties(
+        self, person_id: int, read_only: bool = True
+    ) -> IndividualProperties:
         """
         Extract a lazily evaluated memoized view of a row of the population dataframe.
         
@@ -187,6 +202,10 @@ class Population:
         indexing using string column names.
 
         :param person_id: Row index of the dataframe row to extract.
-        :returns: Object allowing read-only access to an individuals properties.
+        :param read_only: Whether view is read-only or allows updating properties. If 
+            ``True`` :py:meth:`IndividualProperties.synchronize_updates_to_dataframe` 
+            method needs to be called for any updates to be written back to population
+            dataframe.
+        :returns: Object allowing memoized access to an individual's properties.
         """
-        return IndividualProperties(self.props, person_id)
+        return IndividualProperties(self.props, person_id, read_only=read_only)

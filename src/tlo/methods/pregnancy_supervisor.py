@@ -18,7 +18,6 @@ from tlo import (
     logging,
     util,
 )
-from tlo.core import IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel
 from tlo.methods import Metadata, labour, pregnancy_helper_functions, pregnancy_supervisor_lm
@@ -1676,7 +1675,7 @@ class PregnancySupervisor(Module):
         person_id: int,
         individual_properties: IndividualProperties,
         **kwargs,
-    ) -> IndividualPropertyUpdates:
+    ) -> None:
         scheduling_options = {
                 "priority": 0,
                 "topen": self.sim.date,
@@ -1684,7 +1683,7 @@ class PregnancySupervisor(Module):
             }
 
         # -----  ECTOPIC PREGNANCY  -----
-        if individual_properties.ps_ectopic_pregnancy != 'none':
+        if individual_properties["ps_ectopic_pregnancy"] != 'none':
             event = HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(
                 module=self.sim.modules["CareOfWomenDuringPregnancy"],
                 person_id=person_id,

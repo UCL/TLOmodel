@@ -12,7 +12,6 @@ from typing import TYPE_CHECKING, List, Literal, Optional, Union
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.core import DiagnosisFunction, IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, Predictor
 from tlo.methods import Metadata
@@ -23,6 +22,7 @@ from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date
 
 if TYPE_CHECKING:
+    from tlo.core import DiagnosisFunction
     from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
@@ -721,9 +721,7 @@ class Malaria(Module):
         facility_level: str,
         treatment_id: str,
         **kwargs,
-    ) -> IndividualPropertyUpdates:
-        individual_properties_updates = {}
-
+    ) -> None:
         malaria_associated_symptoms = {
             "fever",
             "headache",
@@ -733,20 +731,20 @@ class Malaria(Module):
         }
         if (
             bool(set(symptoms) & malaria_associated_symptoms)
-            and individual_properties.ma_tx == "none"
+            and individual_properties["ma_tx"] == "none"
         ):
             malaria_test_result = self.check_if_fever_is_caused_by_malaria(
-                true_malaria_infection_type=individual_properties.ma_inf_type,
+                true_malaria_infection_type=individual_properties["ma_inf_type"],
                 diagnosis_function=diagnosis_function,
                 person_id=person_id,
                 fever_is_a_symptom="fever" in symptoms,
-                patient_age=individual_properties.age_years,
+                patient_age=individual_properties["age_years"],
                 facility_level=facility_level,
                 treatment_id=treatment_id,
             )
             # Treat / refer based on diagnosis
             if malaria_test_result == "severe_malaria":
-                individual_properties_updates["ma_dx_counter"] = individual_properties.ma_dx_counter + 1
+                individual_properties["ma_dx_counter"] += 1
                 event = HSI_Malaria_Treatment_Complicated(person_id=person_id, module=self)
                 self.healthsystem.schedule_hsi_event(
                     event, priority=0, topen=self.sim.date
@@ -754,12 +752,11 @@ class Malaria(Module):
 
             # return type 'clinical_malaria' includes asymptomatic infection
             elif malaria_test_result == "clinical_malaria":
-                individual_properties_updates["ma_dx_counter"] = individual_properties.ma_dx_counter + 1
+                individual_properties["ma_dx_counter"] += 1
                 event = HSI_Malaria_Treatment(person_id=person_id, module=self)
                 self.healthsystem.schedule_hsi_event(
                     event, priority=1, topen=self.sim.date
                 )
-        return individual_properties_updates
 
     def do_at_generic_first_appt_emergency(
         self,
@@ -770,29 +767,27 @@ class Malaria(Module):
         facility_level: str,
         treatment_id: str,
         **kwargs,
-    ) -> IndividualPropertyUpdates:
+    ) -> None:
         # This is called for a person (of any age) that attends an
         # emergency generic HSI and has a fever.
         # (Quick diagnosis algorithm - just perfectly recognises the
         # symptoms of severe malaria.)
-        individual_properties_updates = {}
-
         if 'severe_malaria' in symptoms:
-            if individual_properties.ma_tx == 'none':
+            if individual_properties["ma_tx"] == 'none':
                 # Check if malaria parasitaemia:
                 malaria_test_result = self.check_if_fever_is_caused_by_malaria(
-                    true_malaria_infection_type=individual_properties.ma_inf_type,
+                    true_malaria_infection_type=individual_properties["ma_inf_type"],
                     diagnosis_function=diagnosis_function,
                     person_id=person_id,
                     fever_is_a_symptom="fever" in symptoms,
-                    patient_age=individual_properties.age_years,
+                    patient_age=individual_properties["age_years"],
                     facility_level=facility_level,
                     treatment_id=treatment_id,
                 )
 
                 # if any symptoms indicative of malaria and they have parasitaemia (would return a positive rdt)
                 if malaria_test_result in ('severe_malaria', 'clinical_malaria'):
-                    individual_properties_updates['ma_dx_counter'] = individual_properties.ma_dx_counter + 1
+                    individual_properties['ma_dx_counter'] += 1
 
                     # Launch the HSI for treatment for Malaria, HSI_Malaria_Treatment will determine correct treatment
                     event = HSI_Malaria_Treatment_Complicated(
@@ -801,7 +796,6 @@ class Malaria(Module):
                     self.healthsystem.schedule_hsi_event(
                         event, priority=0, topen=self.sim.date
                     )
-        return individual_properties_updates
 
 class MalariaPollingEventDistrict(RegularEvent, PopulationScopeEventMixin):
     """

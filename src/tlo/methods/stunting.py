@@ -19,7 +19,6 @@ import pandas as pd
 from scipy.stats import norm
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
-from tlo.core import IndividualPropertyUpdates
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -290,22 +289,22 @@ class Stunting(Module):
         person_id: int,
         individual_properties: IndividualProperties,
         **kwargs,
-    ) -> IndividualPropertyUpdates:
-        # This is called by the a generic HSI event for every child aged
-        # less than 5 years.
-        # It assesses stunting and schedules an HSI as needed.
-        is_stunted = individual_properties.un_HAZ_category in ('HAZ<-3', '-3<=HAZ<-2')
-        p_stunting_diagnosed = self.parameters['prob_stunting_diagnosed_at_generic_appt']
+    ) -> None:
+        # This is called by the a generic HSI event for every child aged less than 5
+        # years. It assesses stunting and schedules an HSI as needed.
+        is_stunted = individual_properties["un_HAZ_category"] in (
+            "HAZ<-3",
+            "-3<=HAZ<-2",
+        )
+        p_stunting_diagnosed = self.parameters[
+            "prob_stunting_diagnosed_at_generic_appt"
+        ]
 
-        # Schedule the HSI for provision of treatment based on the
-        # probability of stunting diagnosis, provided the necessary
-        # symptoms are there.
-        if (
-            (individual_properties.age_years <= 5)
-            and is_stunted
-        ):
-            # Schedule the HSI for provision of treatment based on the
-            # probability of stunting diagnosis
+        # Schedule the HSI for provision of treatment based on the probability of
+        # stunting diagnosis, provided the necessary symptoms are there.
+        if individual_properties["age_years"] <= 5 and is_stunted:
+            # Schedule the HSI for provision of treatment based on the probability of
+            # stunting diagnosis
             if p_stunting_diagnosed > self.rng.random_sample():
                 event = HSI_Stunting_ComplementaryFeeding(
                     module=self, person_id=person_id

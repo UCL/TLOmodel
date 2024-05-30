@@ -21,7 +21,6 @@ import numpy as np
 import pandas as pd
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
-from tlo.core import IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -818,15 +817,15 @@ class CardioMetabolicDisorders(Module):
         individual_properties: IndividualProperties,
         symptoms: List[str],
         **kwargs
-    ) -> IndividualPropertyUpdates:
+    ) -> None:
         # This is called by the HSI generic first appts module whenever a
         # person attends an appointment and determines if the person will
         # be tested for one or more conditions.
         # A maximum of one instance of `HSI_CardioMetabolicDisorders_Investigations`
         # is created for the person, during which multiple conditions can
         # be investigated.
-        if individual_properties.age_years <= 5:
-            return {}
+        if individual_properties["age_years"] <= 5:
+            return
 
         # The list of conditions that will be investigated in follow-up HSI
         conditions_to_investigate = []
@@ -835,11 +834,11 @@ class CardioMetabolicDisorders(Module):
 
         # Determine if there are any conditions that should be investigated:
         for condition in self.conditions:
-            is_already_diagnosed = getattr(individual_properties, f"nc_{condition}_ever_diagnosed")
+            is_already_diagnosed = individual_properties[
+                f"nc_{condition}_ever_diagnosed"
+            ]
             has_symptom = f"{condition}_symptoms" in symptoms
-            date_of_last_test = getattr(
-                individual_properties, f"nc_{condition}_date_last_test"
-            )
+            date_of_last_test = individual_properties[f"nc_{condition}_date_last_test"]
             next_test_due = (
                 pd.isnull(date_of_last_test)
                 or (self.sim.date - date_of_last_test).days > DAYS_IN_YEAR / 2
@@ -879,22 +878,19 @@ class CardioMetabolicDisorders(Module):
         individual_properties: IndividualProperties = None,
         symptoms: List[str] = None,
         **kwargs,
-    ) -> IndividualPropertyUpdates:
-        # This is called by the HSI generic first appts module whenever
-        # a person attends an emergency appointment and determines if they
-        # will receive emergency care based on the duration of time since
-        # symptoms have appeared. A maximum of one instance of
-        # `HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment`
-        # is created for the person, during which multiple events can be
-        # investigated.
+    ) -> None:
+        # This is called by the HSI generic first appts module whenever a person attends
+        # an emergency appointment and determines if they will receive emergency care
+        # based on the duration of time since symptoms have appeared. A maximum of one
+        # instance of `HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment`
+        # is created for the person, during which multiple events can be investigated.
         ev_to_investigate = []
         for ev in self.events:
-            # If the person has symptoms of damage from within the last 3 days,
-            # schedule them for emergency care
+            # If the person has symptoms of damage from within the last 3 days, schedule
+            # them for emergency care
             if f"{ev}_damage" in symptoms and (
                 (
-                    self.sim.date
-                    - getattr(individual_properties, f"nc_{ev}_date_last_event")
+                    self.sim.date - individual_properties[f"nc_{ev}_date_last_event"]
                 ).days
                 <= 3
             ):

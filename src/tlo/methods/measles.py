@@ -5,7 +5,6 @@ from typing import List
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.core import IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
@@ -210,7 +209,7 @@ class Measles(Module):
         person_id: int,
         symptoms: List[str],
         **kwargs,
-    ) -> IndividualPropertyUpdates:
+    ) -> None:
         if "rash" in symptoms:
             event = HSI_Measles_Treatment(person_id=person_id, module=self)
             self.healthsystem.schedule_hsi_event(event, priority=0, topen=self.sim.date)

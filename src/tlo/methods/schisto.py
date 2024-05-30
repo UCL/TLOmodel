@@ -6,7 +6,6 @@ import pandas as pd
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
-from tlo.core import IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
@@ -329,7 +328,7 @@ class Schisto(Module):
         person_id: int,
         symptoms: List[str],
         **kwargs
-    ) -> IndividualPropertyUpdates:
+    ) -> None:
         # Do when person presents to the GenericFirstAppt.
         # If the person has certain set of symptoms, refer ta HSI for testing.
         set_of_symptoms_indicative_of_schisto = {'anemia', 'haematuria', 'bladder_pathology'}

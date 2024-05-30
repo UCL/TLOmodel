@@ -8,7 +8,6 @@ import pandas as pd
 import scipy.stats
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
-from tlo.core import IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType
 from tlo.methods import Metadata, labour_lm, pregnancy_helper_functions
@@ -19,8 +18,6 @@ from tlo.methods.postnatal_supervisor import PostnatalWeekOneMaternalEvent
 from tlo.util import BitsetHandler
 
 if TYPE_CHECKING:
-    from numpy.random import RandomState
-
     from tlo.population import IndividualProperties
 
 
@@ -2304,14 +2301,13 @@ class Labour(Module):
         self,
         person_id: int,
         individual_properties: IndividualProperties,
-        random_state: RandomState,
         **kwargs,
-    ) -> IndividualPropertyUpdates:
+    ) -> None:
         mni = self.sim.modules["PregnancySupervisor"].mother_and_newborn_info
         labour_list = self.sim.modules["Labour"].women_in_labour
 
         if person_id in labour_list:
-            la_currently_in_labour = individual_properties.la_currently_in_labour
+            la_currently_in_labour = individual_properties["la_currently_in_labour"]
             if (
                 la_currently_in_labour
                 & mni[person_id]["sought_care_for_complication"]
@@ -2320,7 +2316,6 @@ class Labour(Module):
                 event = HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(
                     module=self,
                     person_id=person_id,
-                    # facility_level_of_this_hsi=random_state.choice(["1a", "1b"]),
                     facility_level_of_this_hsi=self.rng.choice(["1a", "1b"]),
                 )
                 self.healthsystem.schedule_hsi_event(

@@ -14,7 +14,6 @@ from typing import TYPE_CHECKING, List
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.core import IndividualPropertyUpdates
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -582,10 +581,10 @@ class OesophagealCancer(Module):
         individual_properties: IndividualProperties,
         symptoms: List[str],
         **kwargs,
-    ) -> IndividualPropertyUpdates:
+    ) -> None:
         # If the symptoms include dysphagia, and the patient is not a child,
         # begin investigation for Oesophageal Cancer:
-        if individual_properties.age_years > 5 and "dysphagia" in symptoms:
+        if individual_properties["age_years"] > 5 and "dysphagia" in symptoms:
             event = HSI_OesophagealCancer_Investigation_Following_Dysphagia(
                 person_id=person_id, module=self
             )

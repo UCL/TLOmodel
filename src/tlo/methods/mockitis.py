@@ -3,7 +3,6 @@ from typing import List
 import pandas as pd
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
-from tlo.core import IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
@@ -293,7 +292,7 @@ class Mockitis(Module):
         person_id: int,
         symptoms: List[str],
         **kwargs,
-    ) -> IndividualPropertyUpdates:
+    ) -> None:
         # Example for mockitis
         if "extreme_pain_in_the_nose" in symptoms:
             event = HSI_Mockitis_PresentsForCareWithSevereSymptoms(

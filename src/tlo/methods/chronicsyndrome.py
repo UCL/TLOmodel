@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
-from tlo.core import IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
@@ -283,7 +282,7 @@ class ChronicSyndrome(Module):
         person_id: int,
         symptoms: List[str],
         **kwargs,
-    ) -> IndividualPropertyUpdates:
+    ) -> None:
         """Example for CHRONIC SYNDROME"""
         if "craving_sandwiches" in symptoms:
             event = HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(

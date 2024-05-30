@@ -12,7 +12,6 @@ from typing import TYPE_CHECKING, List
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.core import IndividualPropertyUpdates
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -580,8 +579,8 @@ class OtherAdultCancer(Module):
         individual_properties: IndividualProperties,
         symptoms: List[str],
         **kwargs
-    ) -> IndividualPropertyUpdates:
-        if individual_properties.age_years > 5 and "early_other_adult_ca_symptom" in symptoms:
+    ) -> None:
+        if individual_properties["age_years"] > 5 and "early_other_adult_ca_symptom" in symptoms:
             event = HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom(
                 person_id=person_id,
                 module=self,

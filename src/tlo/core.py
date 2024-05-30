@@ -28,7 +28,6 @@ ConsumablesChecker: TypeAlias = Callable[
     ],
     Union[bool, Dict],
 ]
-IndividualPropertyUpdates: TypeAlias = Dict[str, Any]
 
 class Types(Enum):
     """Possible types for parameters and properties.
@@ -402,52 +401,42 @@ class Module:
         facility_level: Optional[str],
         treatment_id: Optional[str],
         random_state: Optional[RandomState],
-    ) -> Union[IndividualPropertyUpdates, None]:
+    ) -> None:
         """
-        Actions to be take during a NON-emergency generic HSI.
+        Actions to be take during a non-emergency generic HSI.
 
-        Derived classes should overwrite this method so that they are
-        compatible with the HealthSystem module, and can schedule HSI
-        events when a patient presents symptoms indicative of the
-        corresponding illness or condition.
+        Derived classes should overwrite this method so that they are compatible with
+        the :py:class:`HealthSystem module`, and can schedule HSI events when a
+        individual presents symptoms indicative of the corresponding illness or
+        condition.
 
-        When overwriting, arguments that are not required can be left out
-        of the definition.
-        If done so, the method MUST take a **kwargs input to avoid errors
-        when looping over all disease modules and running their generic
-        HSI methods.
+        When overwriting, arguments that are not required can be left out of the
+        definition. If done so, the method **must** take a ``**kwargs`` input to avoid
+        errors when looping over all disease modules and running their generic HSI
+        methods.
 
-        HSI_Events should be scheduled by the Module implementing this
-        method using the :py:meth:`Module.healthsystem.schedule_hsi` method.
-        However, they should not write updates back to the population
-        DataFrame in this method - these values should be returned as a
-        dictionary as described below:
+        HSI events should be scheduled by the :py:class:`Module` subclass implementing
+        this method using the :py:meth:`HealthSystem.schedule_hsi` method.
+        
+        Implementations of this method should **not** make any update to the population
+        dataframe directly - if the target individuals properties need to be updated
+        this should be performed by updating the ``individual_properties`` argument.
 
-        The return value of this function should be a dictionary
-        containing any changes that need to be made to the individual's
-        row in the population DataFrame.
-        Key/value pairs should be the column name and the new value to
-        assign to the patient.
-        In the event no updates are required; return an object that evaluates
-        to False when cast to a bool. Your options are:
-        - Omit a return statement and value (preferred).
-        - Return an empty dictionary. Use this case when patient details
-        might need updating conditionally, on EG patient symptoms or consumable
-        availability. In which case, an empty dictionary should be created and
-        key-value pairs added to this dictionary as such conditionals are checked.
-        If no conditionals are met, the empty dictionary will be returned.
-        - Use a return statement with no values (use if the logic of your
-        module-specific method necessitates the explicit return).
-        - Return None (not recommended, use "return" on its own, as above).
-
-        :param person_id: Row index (ID) of the individual target of the HSI event in the population DataFrame.
-        :param individual_properties: Patient details as provided in the population DataFrame.
+        :param person_id: Row index (ID) of the individual target of the HSI event in 
+            the population dataframe.
+        :param individual_properties: Properties of individual target as provided in the
+            population dataframe. Updates to individual properties may be written to
+            this object.
         :param symptoms: List of symptoms the patient is experiencing.
-        :param diagnosis_function: A function that can run diagnosis tests based on the patient's symptoms.
-        :param consumables_checker: A function that can query the HealthSystem to check for available consumables.
+        :param diagnosis_function: A function that can run diagnosis tests based on the
+            patient's symptoms.
+        :param consumables_checker: A function that can query the HealthSystem to check
+            for available consumables.
         :param facility_level: The level of the facility that the patient presented at.
-        :param treatment_id: The treatment id of the HSI event triggering the generic appointment.
-        :param random_state: Random number generator to be used when making random choices during event creation.
+        :param treatment_id: The treatment id of the HSI event triggering the generic
+            appointment.
+        :param random_state: Random number generator to be used when making random
+            choices during event creation.
         """
 
     def do_at_generic_first_appt_emergency(
@@ -460,13 +449,15 @@ class Module:
         facility_level: Optional[str] = None,
         treatment_id: Optional[str] = None,
         random_state: Optional[RandomState] = None,
-    ) -> Union[IndividualPropertyUpdates, None]:
+    ) -> None:
         """
-        Actions to be take during an EMERGENCY generic HSI.
-        Call signature and return values are identical to the
-        :py:meth:`~Module.do_at_generic_first_appt` method.
-        Derived classes should overwrite this method so that they are
-        compatible with the HealthSystem module, and can schedule HSI
-        events when a patient presents symptoms indicative of the
-        corresponding illness or condition.
+        Actions to be take during an emergency generic HSI.
+        
+        Call signature is identical to the :py:meth:`~Module.do_at_generic_first_appt`
+        method.
+
+        Derived classes should overwrite this method so that they are compatible with
+        the :py:class`HealthSystem` module, and can schedule HSI events when a
+        individual presents symptoms indicative of the corresponding illness or
+        condition.
         """

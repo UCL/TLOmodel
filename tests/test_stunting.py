@@ -235,7 +235,7 @@ def test_routine_assessment_for_chronic_undernutrition_if_stunted_and_correctly_
     person_id = 0
     df.loc[person_id, 'age_years'] = 2
     df.loc[person_id, "un_HAZ_category"] = "-3<=HAZ<-2"
-    individual_properties = sim.population.row_in_readonly_form(person_id)
+    individual_properties = sim.population.individual_properties(person_id)
 
     # Make the probability of stunting checking/diagnosis as 1.0
     sim.modules['Stunting'].parameters['prob_stunting_diagnosed_at_generic_appt'] = 1.0
@@ -302,7 +302,7 @@ def test_routine_assessment_for_chronic_undernutrition_if_stunted_but_no_checkin
     person_id = 0
     df.loc[person_id, 'age_years'] = 2
     df.loc[person_id, "un_HAZ_category"] = "HAZ<-3"
-    individual_properties = sim.population.row_in_readonly_form(person_id)
+    individual_properties = sim.population.individual_properties(person_id)
 
     # Make the probability of stunting checking/diagnosis as 0.0
     sim.modules['Stunting'].parameters['prob_stunting_diagnosed_at_generic_appt'] = 0.0
@@ -346,7 +346,7 @@ def test_routine_assessment_for_chronic_undernutrition_if_not_stunted(seed):
     person_id = 0
     df.loc[person_id, 'age_years'] = 2
     df.loc[person_id, 'un_HAZ_category'] = 'HAZ>=-2'
-    individual_properties = sim.population.row_in_readonly_form(person_id)
+    individual_properties = sim.population.individual_properties(person_id)
 
     # Subject the person to `do_at_generic_first_appt`
     sim.modules["Stunting"].do_at_generic_first_appt(person_id=person_id, individual_properties=individual_properties)

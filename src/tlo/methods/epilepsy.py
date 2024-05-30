@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.core import IndividualPropertyUpdates
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
@@ -398,7 +397,7 @@ class Epilepsy(Module):
         person_id: int,
         symptoms: List[str],
         **kwargs,
-    ) -> IndividualPropertyUpdates:
+    ) -> None:
         if "seizures" in symptoms:
             event = HSI_Epilepsy_Start_Anti_Epileptic(person_id=person_id, module=self)
             self.healthsystem.schedule_hsi_event(event, priority=0, topen=self.sim.date)

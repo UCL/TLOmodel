@@ -13,7 +13,6 @@ from typing import TYPE_CHECKING, List
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.core import IndividualPropertyUpdates
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -599,9 +598,9 @@ class BladderCancer(Module):
         individual_properties: IndividualProperties,
         symptoms: List[str],
         **kwargs,
-    ) -> IndividualPropertyUpdates:
+    ) -> None:
         # Only investigate if the patient is not a child
-        if individual_properties.age_years > 5:
+        if individual_properties["age_years"] > 5:
             # Begin investigation if symptoms are present.
             if "blood_urine" in symptoms:
                 event = HSI_BladderCancer_Investigation_Following_Blood_Urine(

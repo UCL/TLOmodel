@@ -31,7 +31,6 @@ import numpy as np
 import pandas as pd
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
-from tlo.core import IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -1430,11 +1429,11 @@ class Alri(Module):
         symptoms: List[str],
         facility_level: str,
         **kwargs,
-    ) -> IndividualPropertyUpdates:
+    ) -> None:
         # Action taken when a child (under 5 years old) presents at a
         # generic appointment (emergency or non-emergency) with symptoms
         # of `cough` or `difficult_breathing`.
-        if individual_properties.age_years <= 5 and (
+        if individual_properties["age_years"] <= 5 and (
             ("cough" in symptoms) or ("difficult_breathing" in symptoms)
         ):
             self.record_sought_care_for_alri()
@@ -1450,14 +1449,9 @@ class Alri(Module):
                 priority=1,
             )
 
-    def do_at_generic_first_appt_emergency(
-        self,
-        **kwargs,
-    ) -> IndividualPropertyUpdates:
+    def do_at_generic_first_appt_emergency(self, **kwargs) -> None:
         # Emergency and non-emergency treatment is identical for alri
-        return self.do_at_generic_first_appt(
-            **kwargs,
-        )
+        self.do_at_generic_first_appt(**kwargs)
 
 
 class Models:

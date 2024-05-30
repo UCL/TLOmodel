@@ -7,7 +7,6 @@ import pandas as pd
 
 from tlo import Module, Parameter, Property, Types, logging
 from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
-from tlo.core import ConsumablesChecker, IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -17,6 +16,7 @@ from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date
 
 if TYPE_CHECKING:
+    from tlo.core import ConsumablesChecker
     from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
@@ -223,12 +223,11 @@ class Copd(Module):
         * Otherwise --> just give inhaler.
         """
         if ('breathless_moderate' in symptoms) or ('breathless_severe' in symptoms):
-            individual_properties_updates = {}
             # Give inhaler if patient does not already have one
-            if not individual_properties.ch_has_inhaler and consumables_checker(
+            if not individual_properties["ch_has_inhaler"] and consumables_checker(
                 self.item_codes["bronchodilater_inhaler"]
             ):
-                individual_properties_updates["ch_has_inhaler"] = True
+                individual_properties["ch_has_inhaler"] = True
 
             if "breathless_severe" in symptoms:
                 event = HSI_Copd_TreatmentOnSevereExacerbation(
@@ -237,7 +236,6 @@ class Copd(Module):
                 self.healthsystem.schedule_hsi_event(
                     event, topen=self.sim.date, priority=0
                 )
-            return individual_properties_updates
 
     def do_at_generic_first_appt(
         self,
@@ -246,10 +244,10 @@ class Copd(Module):
         symptoms: List[str],
         consumables_checker: ConsumablesChecker,
         **kwargs,
-    ) -> IndividualPropertyUpdates:
+    ) -> None:
         # Non-emergency appointments are only forwarded if
         # the patient is over 5 years old
-        if individual_properties.age_years > 5:
+        if individual_properties["age_years"] > 5:
             return self._common_first_appt(
                 person_id=person_id,
                 individual_properties=individual_properties,
@@ -264,7 +262,7 @@ class Copd(Module):
         symptoms: List[str],
         consumables_checker: ConsumablesChecker,
         **kwargs,
-    ) -> IndividualPropertyUpdates:
+    ) -> None:
         return self._common_first_appt(
             person_id=person_id,
             individual_properties=individual_properties,

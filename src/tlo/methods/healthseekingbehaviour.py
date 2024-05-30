@@ -12,7 +12,6 @@ import numpy as np
 import pandas as pd
 
 from tlo import Date, DateOffset, Module, Parameter, Types
-from tlo.core import IndividualPropertyUpdates
 from tlo.events import PopulationScopeEventMixin, Priority, RegularEvent
 from tlo.lm import LinearModel
 from tlo.methods import Metadata
@@ -258,7 +257,7 @@ class HealthSeekingBehaviour(Module):
         person_id: int,
         symptoms: List[str],
         **kwargs,
-    ) -> IndividualPropertyUpdates:
+    ) -> None:
         if "spurious_emergency_symptom" in symptoms:
             event = HSI_EmergencyCare_SpuriousSymptom(
                 module=self.sim.modules["HealthSeekingBehaviour"],

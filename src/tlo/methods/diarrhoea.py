@@ -26,7 +26,6 @@ import numpy as np
 import pandas as pd
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
-from tlo.core import DiagnosisFunction, IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -36,6 +35,7 @@ from tlo.methods.hsi_event import HSI_Event
 from tlo.util import random_date, sample_outcome
 
 if TYPE_CHECKING:
+    from tlo.core import DiagnosisFunction
     from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
@@ -946,12 +946,12 @@ class Diarrhoea(Module):
         individual_properties: IndividualProperties,
         diagnosis_function: DiagnosisFunction,
         **kwargs,
-    ) -> IndividualPropertyUpdates:
+    ) -> None:
         # This routine is called when Diarrhoea is a symptom for a child
         # attending a Generic HSI Appointment. It checks for danger signs
         # and schedules HSI Events appropriately.
-        if individual_properties.age_years > 5:
-            return {}
+        if individual_properties["age_years"] > 5:
+            return
 
         # 1) Assessment of danger signs
         danger_signs = diagnosis_function(

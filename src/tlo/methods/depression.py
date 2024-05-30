@@ -10,7 +10,6 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.core import DiagnosisFunction, IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -20,6 +19,7 @@ from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.symptommanager import Symptom
 
 if TYPE_CHECKING:
+    from tlo.core import DiagnosisFunction
     from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
@@ -607,9 +607,10 @@ class Depression(Module):
     def do_when_suspected_depression(
         self,
         person_id: int,
+        individual_properties: IndividualProperties,
         diagnosis_function: Optional[DiagnosisFunction] = None,
         hsi_event: Optional[HSI_Event] = None,
-    ) -> IndividualPropertyUpdates:
+    ) -> None:
         """
         This is called by any HSI event when depression is suspected or otherwise investigated.
 
@@ -623,10 +624,7 @@ class Depression(Module):
         :param person_id: Patient's row index in the population DataFrame.
         :param diagnosis_function: A function capable of running diagnosis checks on the population.
         :param hsi_event: The HSI_Event that triggered this call.
-        :returns: Values as per the output of do_at_generic_first_appt().
         """
-        individual_properties_updates = {}
-
         if diagnosis_function is None:
             assert isinstance(
                 hsi_event, HSI_Event
@@ -643,7 +641,7 @@ class Depression(Module):
         # Assess for depression and initiate treatments for depression if positive diagnosis
         if diagnosis_function('assess_depression'):
             # If depressed: diagnose the person with depression
-            individual_properties_updates['de_ever_diagnosed_depression'] = True
+            individual_properties['de_ever_diagnosed_depression'] = True
 
             scheduling_options = {"priority": 0, "topen": self.sim.date}
             # Provide talking therapy
@@ -658,15 +656,12 @@ class Depression(Module):
                 HSI_Depression_Start_Antidepressant(module=self, person_id=person_id),
                 **scheduling_options,
             )
-        return individual_properties_updates
 
     def do_at_generic_first_appt(
-        self,
-        individual_properties: IndividualProperties,
-        **kwargs
-    ) -> IndividualPropertyUpdates:
-        if individual_properties.age_years > 5:
-            return self.do_at_generic_first_appt_emergency(
+        self, individual_properties: IndividualProperties, **kwargs
+    ) -> None:
+        if individual_properties["age_years"] > 5:
+            self.do_at_generic_first_appt_emergency(
                 individual_properties=individual_properties,
                 **kwargs,
             )
@@ -679,12 +674,15 @@ class Depression(Module):
         diagnosis_function: DiagnosisFunction,
         treatment_id: str,
         **kwargs,
-    ) -> IndividualPropertyUpdates:
+    ) -> None:
         if self._check_for_suspected_depression(
-            symptoms, treatment_id, individual_properties.de_ever_diagnosed_depression
+            symptoms,
+            treatment_id,
+            individual_properties["de_ever_diagnosed_depression"],
         ):
-            return self.do_when_suspected_depression(
+            self.do_when_suspected_depression(
                 person_id=person_id,
+                individual_properties=individual_properties,
                 diagnosis_function=diagnosis_function,
             )
 
