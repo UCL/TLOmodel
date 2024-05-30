@@ -649,7 +649,6 @@ class Contraception(Module):
     def get_item_codes_for_each_contraceptive_and_probs_for_cons_alternatives(self):
         """Get the item_code and numbers of units per case for each contraceptive and for contraceptive initiation.
         Save the probs for consumable alternatives."""
-        # TODO: update with optional items (currently all considered essential)
 
         # ### Get item codes and number of units per case from package name
         # (note: this version does not deal with consumable alternatives)
@@ -1224,7 +1223,6 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         self.sim.population.props.at[person_id, "co_date_of_last_fp_appt"] = self.sim.date
 
         # Determine essential and optional items
-        # TODO: we don't distinguish essential X optional for contraception methods yet, will need to update once we do
         if self.new_contraceptive in self.module.cons_alternatives_probs:
             # administrate one of the alternative consumables (item code -99 means, no alternative used)
             alternatives = list(self.module.cons_alternatives_probs[self.new_contraceptive].keys())
