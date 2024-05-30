@@ -350,7 +350,7 @@ class BreastCancer(Module):
         """
         # We call the following function to store the required consumables for the simulation run within the appropriate
         # dictionary
-        self.item_codes_breast_can = get_consumable_item_codes_cancers(self)
+        self.item_codes_breast_can = get_consumable_item_codes_cancers(self, self.__module__)
 
         # ----- SCHEDULE LOGGING EVENTS -----
         # Schedule logging event to happen immediately
