@@ -146,6 +146,9 @@ def test_core_functionality_of_equipment_class(seed):
     assert {1} == eq_default.from_pkg_names(pkg_names='PkgWith1')
     # if the pkg only stands alone
     assert {3} == eq_default.from_pkg_names(pkg_names='PkgWith3')
+    # Lookup the item_codes that belong to multiple specified packages.
+    assert {0, 1, 3} == eq_default.from_pkg_names(pkg_names={'PkgWith0+1', 'PkgWith3'})
+    assert {1, 3} == eq_default.from_pkg_names(pkg_names={'PkgWith1', 'PkgWith3'})
 
     # - Error thrown when package is not recognised
     with pytest.raises(ValueError):
