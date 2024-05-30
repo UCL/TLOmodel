@@ -3,10 +3,8 @@ This file stores defines the consumables required within the cancer modules
 """
 from typing import Dict
 
-from tlo import Module
 
-
-def get_consumable_item_codes_cancers(self, cancer_module: Module) -> Dict[str, int]:
+def get_consumable_item_codes_cancers(self) -> Dict[str, int]:
     """
     Returns dict the relevant item_codes for the consumables across the five cancer modules. This is intended to prevent
     repetition within module code.
@@ -55,7 +53,7 @@ def get_consumable_item_codes_cancers(self, cancer_module: Module) -> Dict[str, 
          get_item_code("Gauze, swabs 8-ply 10cm x 10cm_100_FF010800_CMST"): 84}
 
     # Add items that are specific to a particular cancer module
-    if 'ProstateCancer' == cancer_module.name:
+    if 'ProstateCancer' == self.name:
 
         cons_dict['screening_psa_test_core'] = \
             {get_item_code("Prostate specific antigen test"): 1}
@@ -65,7 +63,7 @@ def get_consumable_item_codes_cancers(self, cancer_module: Module) -> Dict[str, 
              get_item_code("Disposables gloves, powder free, 100 pieces per box"): 1,
              get_item_code("Gauze, swabs 8-ply 10cm x 10cm_100_FF010800_CMST"): 1}
 
-    elif 'BladderCancer' == cancer_module.name:
+    elif 'BladderCancer' == self.name:
         # Note: bladder cancer is not in the malawi STG 2023 therefore no details on chemotherapy
 
         cons_dict['screening_cystoscopy_core'] = \
@@ -78,7 +76,7 @@ def get_consumable_item_codes_cancers(self, cancer_module: Module) -> Dict[str, 
              get_item_code("Disposables gloves, powder free, 100 pieces per box"): 1,
              get_item_code("Syringe, needle + swab"): 1}
 
-    elif 'OesophagealCancer' == cancer_module.name:
+    elif 'OesophagealCancer' == self.name:
 
         cons_dict['screening_endoscope_core'] = \
             {get_item_code("Endoscope"): 1}
