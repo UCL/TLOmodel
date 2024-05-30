@@ -33,6 +33,7 @@ from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date
 
 if TYPE_CHECKING:
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
     from tlo.population import IndividualProperties
 
 # ---------------------------------------------------------------------------------------------------------
@@ -817,6 +818,7 @@ class CardioMetabolicDisorders(GenericFirstApptModule):
         person_id: int,
         individual_properties: IndividualProperties,
         symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
         **kwargs
     ) -> None:
         # This is called by the HSI generic first appts module whenever a
@@ -871,13 +873,14 @@ class CardioMetabolicDisorders(GenericFirstApptModule):
                 conditions_to_investigate=conditions_to_investigate,
                 has_any_cmd_symptom=has_any_cmd_symptom,
             )
-            self.healthsystem.schedule_hsi_event(event, topen=self.sim.date, priority=0)
+            schedule_hsi_event(event, topen=self.sim.date, priority=0)
 
     def do_at_generic_first_appt_emergency(
         self,
         person_id: int,
-        individual_properties: IndividualProperties = None,
-        symptoms: List[str] = None,
+        individual_properties: IndividualProperties,
+        symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
         **kwargs,
     ) -> None:
         # This is called by the HSI generic first appts module whenever a person attends
@@ -903,7 +906,7 @@ class CardioMetabolicDisorders(GenericFirstApptModule):
                 person_id=person_id,
                 events_to_investigate=ev_to_investigate,
             )
-            self.healthsystem.schedule_hsi_event(event, topen=self.sim.date, priority=1)
+            schedule_hsi_event(event, topen=self.sim.date, priority=1)
 
 
 class Tracker:

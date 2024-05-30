@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import math
 import os
-from typing import List
+from typing import TYPE_CHECKING, List
 
 import pandas as pd
 
@@ -12,6 +14,9 @@ from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstApptModule
 from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date
+
+if TYPE_CHECKING:
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -209,11 +214,12 @@ class Measles(GenericFirstApptModule):
         self,
         person_id: int,
         symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
         **kwargs,
     ) -> None:
         if "rash" in symptoms:
             event = HSI_Measles_Treatment(person_id=person_id, module=self)
-            self.healthsystem.schedule_hsi_event(event, priority=0, topen=self.sim.date)
+            schedule_hsi_event(event, priority=0, topen=self.sim.date)
 
 
 class MeaslesEvent(RegularEvent, PopulationScopeEventMixin):

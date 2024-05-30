@@ -24,6 +24,7 @@ from tlo.methods.hsi_generic_first_appts import GenericFirstApptModule
 from tlo.methods.symptommanager import Symptom
 
 if TYPE_CHECKING:
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
     from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
@@ -579,6 +580,7 @@ class OtherAdultCancer(GenericFirstApptModule):
         person_id: int,
         individual_properties: IndividualProperties,
         symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
         **kwargs
     ) -> None:
         if individual_properties["age_years"] > 5 and "early_other_adult_ca_symptom" in symptoms:
@@ -586,7 +588,7 @@ class OtherAdultCancer(GenericFirstApptModule):
                 person_id=person_id,
                 module=self,
             )
-            self.healthsystem.schedule_hsi_event(event, priority=0, topen=self.sim.date)
+            schedule_hsi_event(event, priority=0, topen=self.sim.date)
 
 
 # ---------------------------------------------------------------------------------------------------------

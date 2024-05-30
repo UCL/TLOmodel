@@ -24,6 +24,7 @@ from tlo.methods.hsi_generic_first_appts import GenericFirstApptModule
 from tlo.methods.symptommanager import Symptom
 
 if TYPE_CHECKING:
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
     from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
@@ -593,6 +594,7 @@ class ProstateCancer(GenericFirstApptModule):
         person_id: int,
         individual_properties: IndividualProperties,
         symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
         **kwargs
     ) -> None:
         # If the patient is not a child, and symptoms are indicative,
@@ -606,13 +608,13 @@ class ProstateCancer(GenericFirstApptModule):
                 event = HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms(
                     person_id=person_id, module=self
                 )
-                self.healthsystem.schedule_hsi_event(event, **scheduling_options)
+                schedule_hsi_event(event, **scheduling_options)
 
             if "pelvic_pain" in symptoms:
                 event = HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(
                     person_id=person_id, module=self
                 )
-                self.healthsystem.schedule_hsi_event(event, **scheduling_options)
+                schedule_hsi_event(event, **scheduling_options)
 
 
 # ---------------------------------------------------------------------------------------------------------

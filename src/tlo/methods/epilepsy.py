@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from pathlib import Path
-from typing import List, Union
+from typing import TYPE_CHECKING, List, Union
 
 import numpy as np
 import pandas as pd
@@ -11,6 +13,9 @@ from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.symptommanager import Symptom
+
+if TYPE_CHECKING:
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -396,11 +401,12 @@ class Epilepsy(Module):
         self,
         person_id: int,
         symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
         **kwargs,
     ) -> None:
         if "seizures" in symptoms:
             event = HSI_Epilepsy_Start_Anti_Epileptic(person_id=person_id, module=self)
-            self.healthsystem.schedule_hsi_event(event, priority=0, topen=self.sim.date)
+            schedule_hsi_event(event, priority=0, topen=self.sim.date)
 
 
 class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):

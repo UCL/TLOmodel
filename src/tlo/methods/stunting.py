@@ -26,6 +26,7 @@ from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstApptModule
 
 if TYPE_CHECKING:
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
     from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
@@ -289,6 +290,7 @@ class Stunting(GenericFirstApptModule):
         self,
         person_id: int,
         individual_properties: IndividualProperties,
+        schedule_hsi_event: HSIEventScheduler,
         **kwargs,
     ) -> None:
         # This is called by the a generic HSI event for every child aged less than 5
@@ -310,7 +312,7 @@ class Stunting(GenericFirstApptModule):
                 event = HSI_Stunting_ComplementaryFeeding(
                     module=self, person_id=person_id
                 )
-                self.healthsystem.schedule_hsi_event(
+                schedule_hsi_event(
                     event,
                     priority=2,  # <-- lower priority that for wasting and most other HSI
                     topen=self.sim.date,

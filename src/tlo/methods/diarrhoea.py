@@ -36,7 +36,7 @@ from tlo.methods.hsi_generic_first_appts import GenericFirstApptModule
 from tlo.util import random_date, sample_outcome
 
 if TYPE_CHECKING:
-    from tlo.methods.hsi_generic_first_appts import DiagnosisFunction
+    from tlo.methods.hsi_generic_first_appts import DiagnosisFunction, HSIEventScheduler
     from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
@@ -945,6 +945,7 @@ class Diarrhoea(GenericFirstApptModule):
         self,
         person_id: int,
         individual_properties: IndividualProperties,
+        schedule_hsi_event: HSIEventScheduler,
         diagnosis_function: DiagnosisFunction,
         **kwargs,
     ) -> None:
@@ -969,7 +970,7 @@ class Diarrhoea(GenericFirstApptModule):
             HSI_Diarrhoea_Treatment_Outpatient
         )
         event = hsi_event_class(person_id=person_id, module=self)
-        self.healthsystem.schedule_hsi_event(event, priority=0, topen=self.sim.date)
+        schedule_hsi_event(event, priority=0, topen=self.sim.date)
 
 
 class Models:

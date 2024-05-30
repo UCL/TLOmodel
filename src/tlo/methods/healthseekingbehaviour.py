@@ -5,8 +5,10 @@ This module determines if care is sought once a symptom is developed.
 The write-up of these estimates is: Health-seeking behaviour estimates for adults and children.docx
 
 """
+from __future__ import annotations
+
 from pathlib import Path
-from typing import List
+from typing import TYPE_CHECKING, List
 
 import numpy as np
 import pandas as pd
@@ -21,6 +23,9 @@ from tlo.methods.hsi_generic_first_appts import (
     HSI_GenericEmergencyFirstAppt,
     HSI_GenericNonEmergencyFirstAppt,
 )
+
+if TYPE_CHECKING:
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
@@ -257,6 +262,7 @@ class HealthSeekingBehaviour(GenericFirstApptModule):
         self,
         person_id: int,
         symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
         **kwargs,
     ) -> None:
         if "spurious_emergency_symptom" in symptoms:
@@ -264,7 +270,7 @@ class HealthSeekingBehaviour(GenericFirstApptModule):
                 module=self.sim.modules["HealthSeekingBehaviour"],
                 person_id=person_id,
             )
-            self.healthsystem.schedule_hsi_event(event, priority=0, topen=self.sim.date)
+            schedule_hsi_event(event, priority=0, topen=self.sim.date)
 
 # ---------------------------------------------------------------------------------------------------------
 #   REGULAR POLLING EVENT

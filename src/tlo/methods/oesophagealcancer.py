@@ -26,6 +26,7 @@ from tlo.methods.hsi_generic_first_appts import GenericFirstApptModule
 from tlo.methods.symptommanager import Symptom
 
 if TYPE_CHECKING:
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
     from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
@@ -581,6 +582,7 @@ class OesophagealCancer(GenericFirstApptModule):
         person_id: int,
         individual_properties: IndividualProperties,
         symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
         **kwargs,
     ) -> None:
         # If the symptoms include dysphagia, and the patient is not a child,
@@ -589,7 +591,7 @@ class OesophagealCancer(GenericFirstApptModule):
             event = HSI_OesophagealCancer_Investigation_Following_Dysphagia(
                 person_id=person_id, module=self
             )
-            self.healthsystem.schedule_hsi_event(event, priority=0, topen=self.sim.date)
+            schedule_hsi_event(event, priority=0, topen=self.sim.date)
 
 
 # ---------------------------------------------------------------------------------------------------------

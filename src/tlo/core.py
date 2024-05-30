@@ -15,6 +15,7 @@ import pandas as pd
 
 if TYPE_CHECKING:
     from typing import Optional
+
     from tlo.simulation import Simulation
 
 class Types(Enum):

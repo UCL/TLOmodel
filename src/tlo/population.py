@@ -1,8 +1,8 @@
 """The Person and Population classes."""
 
 import math
-from typing import Any, Dict, Optional, Set, Type
 from types import TracebackType
+from typing import Any, Dict, Optional, Set, Type
 
 import pandas as pd
 

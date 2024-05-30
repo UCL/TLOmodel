@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from pathlib import Path
-from typing import List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, List, Optional, Sequence, Union
 
 import numpy as np
 import pandas as pd
@@ -13,6 +15,9 @@ from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstApptModule
 from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date
+
+if TYPE_CHECKING:
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -328,6 +333,7 @@ class Schisto(GenericFirstApptModule):
         self,
         person_id: int,
         symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
         **kwargs
     ) -> None:
         # Do when person presents to the GenericFirstAppt.
@@ -338,7 +344,7 @@ class Schisto(GenericFirstApptModule):
             event = HSI_Schisto_TestingFollowingSymptoms(
                 module=self, person_id=person_id
             )
-            self.healthsystem.schedule_hsi_event(event, priority=0, topen=self.sim.date)
+            schedule_hsi_event(event, priority=0, topen=self.sim.date)
 
 
 class SchistoSpecies:

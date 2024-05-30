@@ -25,6 +25,7 @@ from tlo.methods.hsi_generic_first_appts import GenericFirstApptModule
 from tlo.methods.symptommanager import Symptom
 
 if TYPE_CHECKING:
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
     from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
@@ -598,6 +599,7 @@ class BladderCancer(GenericFirstApptModule):
         person_id: int,
         individual_properties: IndividualProperties,
         symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
         **kwargs,
     ) -> None:
         # Only investigate if the patient is not a child
@@ -607,7 +609,7 @@ class BladderCancer(GenericFirstApptModule):
                 event = HSI_BladderCancer_Investigation_Following_Blood_Urine(
                     person_id=person_id, module=self
                 )
-                self.healthsystem.schedule_hsi_event(
+                schedule_hsi_event(
                     event, topen=self.sim.date, priority=0
                 )
 
@@ -615,7 +617,7 @@ class BladderCancer(GenericFirstApptModule):
                 event = HSI_BladderCancer_Investigation_Following_pelvic_pain(
                     person_id=person_id, module=self
                 )
-                self.healthsystem.schedule_hsi_event(
+                schedule_hsi_event(
                     event, topen=self.sim.date, priority=0
                 )
 

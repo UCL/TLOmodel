@@ -23,9 +23,10 @@ If PrEP is not available due to limitations in the HealthSystem, the person defa
     * Cotrimoxazole is not included - either in effect of consumption of the drug (because the effect is not known).
     * Calibration has not been done: most things look OK - except HIV-AIDS deaths
 """
+from __future__ import annotations
 
 import os
-from typing import List
+from typing import TYPE_CHECKING, List
 
 import numpy as np
 import pandas as pd
@@ -39,6 +40,9 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.symptommanager import Symptom
 from tlo.util import create_age_range_lookup
+
+if TYPE_CHECKING:
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -1563,6 +1567,7 @@ class Hiv(Module):
         self,
         person_id: int,
         symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
         **kwargs,
     ) -> None:
         # 'Automatic' testing for HIV for everyone attending care with AIDS symptoms:
@@ -1576,7 +1581,7 @@ class Hiv(Module):
                 suppress_footprint=True,
                 do_not_refer_if_neg=True,
             )
-            self.healthsystem.schedule_hsi_event(event, priority=0, topen=self.sim.date)
+            schedule_hsi_event(event, priority=0, topen=self.sim.date)
 
 # ---------------------------------------------------------------------------
 #   Main Polling Event

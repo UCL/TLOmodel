@@ -4,7 +4,7 @@ This is the Depression Module.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -20,7 +20,7 @@ from tlo.methods.hsi_generic_first_appts import GenericFirstApptModule
 from tlo.methods.symptommanager import Symptom
 
 if TYPE_CHECKING:
-    from tlo.methods.hsi_generic_first_appts import DiagnosisFunction
+    from tlo.methods.hsi_generic_first_appts import DiagnosisFunction, HSIEventScheduler
     from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
@@ -597,18 +597,23 @@ class Depression(GenericFirstApptModule):
             hsi_event.TREATMENT_ID,
             self.sim.population.props.at[person_id, "de_ever_diagnosed_depression"],
         ):
-            individual_properties_updates = self.do_when_suspected_depression(
-                person_id=person_id, hsi_event=hsi_event
+            individual_properties = {}
+            self.do_when_suspected_depression(
+                person_id=person_id,
+                individual_properties=individual_properties,
+                schedule_hsi_event=self.sim.modules["HealthSystem"].schedule_hsi_event,
+                hsi_event=hsi_event
             )
-            self.sim.population.props.loc[person_id, individual_properties_updates.keys()] = (
-                individual_properties_updates.values()
+            self.sim.population.props.loc[person_id, individual_properties.keys()] = (
+                individual_properties.values()
             )
         return
 
     def do_when_suspected_depression(
         self,
         person_id: int,
-        individual_properties: IndividualProperties,
+        individual_properties: Union[dict, IndividualProperties],
+        schedule_hsi_event: HSIEventScheduler,
         diagnosis_function: Optional[DiagnosisFunction] = None,
         hsi_event: Optional[HSI_Event] = None,
     ) -> None:
@@ -623,6 +628,8 @@ class Depression(GenericFirstApptModule):
         runs diagnosis tests.
 
         :param person_id: Patient's row index in the population DataFrame.
+        :param individual_properties: Indexable object to write individual property updates to.
+        :param schedule_hsi_event: Function to schedule subsequent HSI events.
         :param diagnosis_function: A function capable of running diagnosis checks on the population.
         :param hsi_event: The HSI_Event that triggered this call.
         """
@@ -647,13 +654,13 @@ class Depression(GenericFirstApptModule):
             scheduling_options = {"priority": 0, "topen": self.sim.date}
             # Provide talking therapy
             # (this can occur even if the person has already had talking therapy before)
-            self.healthsystem.schedule_hsi_event(
+            schedule_hsi_event(
                 HSI_Depression_TalkingTherapy(module=self, person_id=person_id),
                 **scheduling_options,
             )
             # Initiate person on anti-depressants
             # (at the same facility level as the HSI event that is calling)
-            self.healthsystem.schedule_hsi_event(
+            schedule_hsi_event(
                 HSI_Depression_Start_Antidepressant(module=self, person_id=person_id),
                 **scheduling_options,
             )
@@ -672,6 +679,7 @@ class Depression(GenericFirstApptModule):
         person_id: int,
         individual_properties: IndividualProperties,
         symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
         diagnosis_function: DiagnosisFunction,
         treatment_id: str,
         **kwargs,
@@ -685,6 +693,7 @@ class Depression(GenericFirstApptModule):
                 person_id=person_id,
                 individual_properties=individual_properties,
                 diagnosis_function=diagnosis_function,
+                schedule_hsi_event=schedule_hsi_event,
             )
 
 

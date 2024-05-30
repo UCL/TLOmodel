@@ -29,6 +29,7 @@ from tlo.methods.hsi_generic_first_appts import GenericFirstApptModule
 from tlo.util import BitsetHandler
 
 if TYPE_CHECKING:
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
     from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
@@ -1674,6 +1675,7 @@ class PregnancySupervisor(GenericFirstApptModule):
         self,
         person_id: int,
         individual_properties: IndividualProperties,
+        schedule_hsi_event: HSIEventScheduler,
         **kwargs,
     ) -> None:
         scheduling_options = {
@@ -1688,7 +1690,7 @@ class PregnancySupervisor(GenericFirstApptModule):
                 module=self.sim.modules["CareOfWomenDuringPregnancy"],
                 person_id=person_id,
             )
-            self.healthsystem.schedule_hsi_event(event, **scheduling_options)
+            schedule_hsi_event(event, **scheduling_options)
 
         # -----  COMPLICATIONS OF ABORTION  -----
         abortion_complications = self.sim.modules[
@@ -1701,7 +1703,7 @@ class PregnancySupervisor(GenericFirstApptModule):
                 module=self.sim.modules["CareOfWomenDuringPregnancy"],
                 person_id=person_id,
             )
-            self.healthsystem.schedule_hsi_event(event, **scheduling_options)
+            schedule_hsi_event(event, **scheduling_options)
 
 class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
     """ This is the PregnancySupervisorEvent, it is a weekly event which has four primary functions.

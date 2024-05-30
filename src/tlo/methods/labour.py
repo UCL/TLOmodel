@@ -19,6 +19,7 @@ from tlo.methods.postnatal_supervisor import PostnatalWeekOneMaternalEvent
 from tlo.util import BitsetHandler
 
 if TYPE_CHECKING:
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
     from tlo.population import IndividualProperties
 
 
@@ -2302,6 +2303,7 @@ class Labour(GenericFirstApptModule):
         self,
         person_id: int,
         individual_properties: IndividualProperties,
+        schedule_hsi_event: HSIEventScheduler,
         **kwargs,
     ) -> None:
         mni = self.sim.modules["PregnancySupervisor"].mother_and_newborn_info
@@ -2319,7 +2321,7 @@ class Labour(GenericFirstApptModule):
                     person_id=person_id,
                     facility_level_of_this_hsi=self.rng.choice(["1a", "1b"]),
                 )
-                self.healthsystem.schedule_hsi_event(
+                schedule_hsi_event(
                     event,
                     priority=0,
                     topen=self.sim.date,

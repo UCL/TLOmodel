@@ -23,7 +23,7 @@ from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date
 
 if TYPE_CHECKING:
-    from tlo.methods.hsi_generic_first_appts import DiagnosisFunction
+    from tlo.methods.hsi_generic_first_appts import DiagnosisFunction, HSIEventScheduler
     from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
@@ -718,6 +718,7 @@ class Malaria(GenericFirstApptModule):
         person_id: int,
         individual_properties: IndividualProperties,
         symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
         diagnosis_function: DiagnosisFunction,
         facility_level: str,
         treatment_id: str,
@@ -747,7 +748,7 @@ class Malaria(GenericFirstApptModule):
             if malaria_test_result == "severe_malaria":
                 individual_properties["ma_dx_counter"] += 1
                 event = HSI_Malaria_Treatment_Complicated(person_id=person_id, module=self)
-                self.healthsystem.schedule_hsi_event(
+                schedule_hsi_event(
                     event, priority=0, topen=self.sim.date
                 )
 
@@ -755,7 +756,7 @@ class Malaria(GenericFirstApptModule):
             elif malaria_test_result == "clinical_malaria":
                 individual_properties["ma_dx_counter"] += 1
                 event = HSI_Malaria_Treatment(person_id=person_id, module=self)
-                self.healthsystem.schedule_hsi_event(
+                schedule_hsi_event(
                     event, priority=1, topen=self.sim.date
                 )
 
@@ -764,6 +765,7 @@ class Malaria(GenericFirstApptModule):
         person_id: int,
         individual_properties: IndividualProperties,
         symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
         diagnosis_function: DiagnosisFunction,
         facility_level: str,
         treatment_id: str,
@@ -794,7 +796,7 @@ class Malaria(GenericFirstApptModule):
                     event = HSI_Malaria_Treatment_Complicated(
                         person_id=person_id, module=self,
                     )
-                    self.healthsystem.schedule_hsi_event(
+                    schedule_hsi_event(
                         event, priority=0, topen=self.sim.date
                     )
 

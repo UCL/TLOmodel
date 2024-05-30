@@ -20,6 +20,7 @@ from tlo.methods.hsi_generic_first_appts import GenericFirstApptModule
 from tlo.methods.symptommanager import Symptom
 
 if TYPE_CHECKING:
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
     from tlo.population import IndividualProperties
 
 # ---------------------------------------------------------------------------------------------------------
@@ -2496,6 +2497,7 @@ class RTI(GenericFirstApptModule):
         self,
         person_id: int,
         individual_properties: IndividualProperties,
+        schedule_hsi_event: HSIEventScheduler,
     ) -> None:
         """
         Shared logic steps that are used by the RTI module when a generic HSI
@@ -2513,7 +2515,7 @@ class RTI(GenericFirstApptModule):
             if set(RTI.INJURIES_REQ_IMAGING).intersection(set(persons_injuries)):
                 if individual_properties["is_alive"]:
                     event = HSI_RTI_Imaging_Event(module=self, person_id=person_id)
-                    self.healthsystem.schedule_hsi_event(
+                    schedule_hsi_event(
                         event,
                         priority=0,
                         topen=self.sim.date + DateOffset(days=1),
@@ -2546,7 +2548,7 @@ class RTI(GenericFirstApptModule):
             # Using counts condition to stop spurious symptoms progressing people through the model
             if counts > 0:
                 event = HSI_RTI_Medical_Intervention(module=self, person_id=person_id)
-                self.healthsystem.schedule_hsi_event(
+                schedule_hsi_event(
                     event,
                     priority=0,
                     topen=self.sim.date,
@@ -2558,7 +2560,7 @@ class RTI(GenericFirstApptModule):
                 and individual_properties["is_alive"]
             ):
                 event = HSI_RTI_Shock_Treatment(module=self, person_id=person_id)
-                self.healthsystem.schedule_hsi_event(
+                schedule_hsi_event(
                     event,
                     priority=0,
                     topen=self.sim.date + DateOffset(days=1),
@@ -2570,11 +2572,14 @@ class RTI(GenericFirstApptModule):
         person_id: int,
         individual_properties: IndividualProperties,
         symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
         **kwargs
     ) -> None:
         if "injury" in symptoms:
             return self._common_first_appt_steps(
-                person_id=person_id, individual_properties=individual_properties
+                person_id=person_id,
+                individual_properties=individual_properties,
+                schedule_hsi_event=schedule_hsi_event,
             )
 
     def do_at_generic_first_appt_emergency(
@@ -2582,6 +2587,7 @@ class RTI(GenericFirstApptModule):
         person_id: int,
         individual_properties: IndividualProperties,
         symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
         **kwargs
     ) -> None:
         # Same process is followed for emergency and non emergency appointments, except the
@@ -2589,7 +2595,8 @@ class RTI(GenericFirstApptModule):
         if "severe_trauma" in symptoms:
             return self._common_first_appt_steps(
                 person_id=person_id,
-                individual_properties=individual_properties
+                individual_properties=individual_properties,
+                schedule_hsi_event=schedule_hsi_event,
             )
 
 

@@ -418,6 +418,7 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration(seed):
     sim.modules["Diarrhoea"].do_at_generic_first_appt(
         person_id=person_id,
         individual_properties=individual_properties,
+        schedule_hsi_event=sim.modules["HealthSystem"].schedule_hsi_event,
         diagnosis_function=diagnosis_fn,
     )
     evs = sim.modules['HealthSystem'].find_events_for_person(person_id)
@@ -431,6 +432,7 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration(seed):
     sim.modules["Diarrhoea"].do_at_generic_first_appt(
         person_id=person_id,
         individual_properties=individual_properties,
+        schedule_hsi_event=sim.modules["HealthSystem"].schedule_hsi_event,
         diagnosis_function=diagnosis_fn,
     )
     evs = sim.modules['HealthSystem'].find_events_for_person(person_id)
@@ -508,6 +510,7 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration_dxtest_notfuncti
     sim.modules["Diarrhoea"].do_at_generic_first_appt(
         person_id=person_id,
         individual_properties=individual_properties,
+        schedule_hsi_event=sim.modules["HealthSystem"].schedule_hsi_event,
         diagnosis_function=diagnosis_fn,
     )
     evs = sim.modules['HealthSystem'].find_events_for_person(person_id)
@@ -580,7 +583,10 @@ def test_do_when_presentation_with_diarrhoea_non_severe_dehydration(seed):
     # 1) Outpatient HSI should be created
     sim.modules["HealthSystem"].reset_queue()
     sim.modules["Diarrhoea"].do_at_generic_first_appt(
-        person_id=person_id, individual_properties=individual_properties, diagnosis_function=diagnosis_fn
+        person_id=person_id,
+        individual_properties=individual_properties,
+        schedule_hsi_event=sim.modules["HealthSystem"].schedule_hsi_event,
+        diagnosis_function=diagnosis_fn
     )
     evs = sim.modules["HealthSystem"].find_events_for_person(person_id)
 

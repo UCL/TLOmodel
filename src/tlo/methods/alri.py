@@ -41,6 +41,7 @@ from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date, sample_outcome
 
 if TYPE_CHECKING:
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
     from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
@@ -1428,6 +1429,7 @@ class Alri(GenericFirstApptModule):
         person_id: int,
         individual_properties: IndividualProperties,
         symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
         facility_level: str,
         **kwargs,
     ) -> None:
@@ -1443,7 +1445,7 @@ class Alri(GenericFirstApptModule):
             event = HSI_Alri_Treatment(
                 person_id=person_id, module=self, facility_level=facility_level
             )
-            self.healthsystem.schedule_hsi_event(
+            schedule_hsi_event(
                 event,
                 topen=self.sim.date,
                 tclose=self.sim.date + pd.DateOffset(days=1),

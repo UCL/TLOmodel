@@ -17,7 +17,7 @@ from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date
 
 if TYPE_CHECKING:
-    from tlo.methods.hsi_generic_first_appts import ConsumablesChecker
+    from tlo.methods.hsi_generic_first_appts import ConsumablesChecker, HSIEventScheduler
     from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
@@ -216,6 +216,7 @@ class Copd(GenericFirstApptModule):
         person_id: int,
         individual_properties: IndividualProperties,
         symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
         consumables_checker: ConsumablesChecker,
     ):
         """What to do when a person presents at the generic first appt HSI
@@ -234,7 +235,7 @@ class Copd(GenericFirstApptModule):
                 event = HSI_Copd_TreatmentOnSevereExacerbation(
                     module=self, person_id=person_id
                 )
-                self.healthsystem.schedule_hsi_event(
+                schedule_hsi_event(
                     event, topen=self.sim.date, priority=0
                 )
 
@@ -243,6 +244,7 @@ class Copd(GenericFirstApptModule):
         person_id: int,
         individual_properties: IndividualProperties,
         symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
         consumables_checker: ConsumablesChecker,
         **kwargs,
     ) -> None:
@@ -253,6 +255,7 @@ class Copd(GenericFirstApptModule):
                 person_id=person_id,
                 individual_properties=individual_properties,
                 symptoms=symptoms,
+                schedule_hsi_event=schedule_hsi_event,
                 consumables_checker=consumables_checker,
             )
 
@@ -261,6 +264,7 @@ class Copd(GenericFirstApptModule):
         person_id: int,
         individual_properties: IndividualProperties,
         symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
         consumables_checker: ConsumablesChecker,
         **kwargs,
     ) -> None:
@@ -268,6 +272,7 @@ class Copd(GenericFirstApptModule):
             person_id=person_id,
             individual_properties=individual_properties,
             symptoms=symptoms,
+            schedule_hsi_event=schedule_hsi_event,
             consumables_checker=consumables_checker,
         )
 

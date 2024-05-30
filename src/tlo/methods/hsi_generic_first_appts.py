@@ -8,19 +8,19 @@ system, which are triggered by the onset of symptoms. Non-emergency symptoms lea
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Dict, List, Protocol, Set, Union
 
 import numpy as np
 
-from tlo import logging, Module
+from tlo import Date, Module, logging
 from tlo.events import IndividualScopeEventMixin
 from tlo.methods.hsi_event import HSI_Event
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-    from typing import Any, Dict, List, Set, TypeAlias, Union
+    from typing import Optional, TypeAlias
+
     from tlo.methods.dxmanager import DiagnosisTestReturnType
-    from tlo.methods.healthsystem import HealthSystem
     from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
@@ -36,18 +36,36 @@ ConsumablesChecker: TypeAlias = Callable[
     Union[bool, Dict],
 ]
 
+
+class HSIEventScheduler(Protocol):
+
+    def __call__(
+        self,
+        hsi_event: HSI_Event,
+        priority: int,
+        topen: Date,
+        tclose: Optional[Date] = None,
+    ) -> None: ...
+
+
 class GenericFirstApptModule(Module):
     """Base class for modules with actions to perform on generic first appointments."""
-    
+
     @property
-    def healthsystem(self) -> HealthSystem:
-        return self.sim.modules["HealthSystem"]
+    def schedule_hsi_event(self) -> Callable:
+        """Alias of :py:meth:`HealthSystem.schedule_hsi_event` method.
+
+        Refers to method of instance of :py:class:`HealthSystem` registered in
+        simulation.
+        """
+        return self.sim.modules["HealthSystem"].schedule_hsi_event
 
     def do_at_generic_first_appt(
         self,
         person_id: int,
         individual_properties: IndividualProperties,
         symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
         diagnosis_function: DiagnosisFunction,
         consumables_checker: ConsumablesChecker,
         facility_level: str,
@@ -67,18 +85,19 @@ class GenericFirstApptModule(Module):
         methods.
 
         HSI events should be scheduled by the :py:class:`Module` subclass implementing
-        this method using the :py:meth:`HealthSystem.schedule_hsi` method.
-        
+        this method using the ``schedule_hsi_event`` argument..
+
         Implementations of this method should **not** make any update to the population
         dataframe directly - if the target individuals properties need to be updated
         this should be performed by updating the ``individual_properties`` argument.
 
-        :param person_id: Row index (ID) of the individual target of the HSI event in 
+        :param person_id: Row index (ID) of the individual target of the HSI event in
             the population dataframe.
         :param individual_properties: Properties of individual target as provided in the
             population dataframe. Updates to individual properties may be written to
             this object.
         :param symptoms: List of symptoms the patient is experiencing.
+        :param schedule_hsi_event: A function that can schedule sussequent HSI events.
         :param diagnosis_function: A function that can run diagnosis tests based on the
             patient's symptoms.
         :param consumables_checker: A function that can query the HealthSystem to check
@@ -93,6 +112,7 @@ class GenericFirstApptModule(Module):
         person_id: int,
         individual_properties: IndividualProperties,
         symptoms: str,
+        schedule_hsi_event: HSIEventScheduler,
         diagnosis_function: DiagnosisFunction,
         consumables_checker: ConsumablesChecker,
         facility_level: str,
@@ -100,7 +120,7 @@ class GenericFirstApptModule(Module):
     ) -> None:
         """
         Actions to be take during an emergency generic HSI.
-        
+
         Call signature is identical to the :py:meth:`~Module.do_at_generic_first_appt`
         method.
 
@@ -139,7 +159,7 @@ class _BaseHSIGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
         be carried out due to EG lack of consumables, etc.
         :returns: Test results as dictionary key/value pairs.
         """
-        return self.healthcare_system.dx_manager.run_dx_test(
+        return self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
             tests,
             hsi_event=self,
             use_dict_for_single=use_dict,
@@ -172,12 +192,14 @@ class _BaseHSIGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
             # Pre-evaluate symptoms for individual to avoid repeat accesses
             # TODO: Use individual_properties to populate symptoms
             symptoms = self.sim.modules["SymptomManager"].has_what(self.target)
+            schedule_hsi_event = self.sim.modules["HealthSystem"].schedule_hsi_event
             for module in self.sim.modules.values():
                 if isinstance(module, GenericFirstApptModule):
                     self._do_at_generic_first_appt_for_module(module=module)(
                         person_id=self.target,
                         individual_properties=individual_properties,
                         symptoms=symptoms,
+                        schedule_hsi_event=schedule_hsi_event,
                         diagnosis_function=self._diagnosis_function,
                         consumables_checker=self.get_consumables,
                         facility_level=self.ACCEPTED_FACILITY_LEVEL,
@@ -213,7 +235,9 @@ class HSI_GenericNonEmergencyFirstAppt(_BaseHSIGenericFirstAppt):
         self.ACCEPTED_FACILITY_LEVEL = facility_level
 
     @staticmethod
-    def _do_at_generic_first_appt_for_module(module: GenericFirstApptModule) -> Callable:
+    def _do_at_generic_first_appt_for_module(
+        module: GenericFirstApptModule,
+    ) -> Callable:
         return module.do_at_generic_first_appt
 
 
@@ -242,7 +266,9 @@ class HSI_GenericEmergencyFirstAppt(_BaseHSIGenericFirstAppt):
         self.ACCEPTED_FACILITY_LEVEL = "1b"
 
     @staticmethod
-    def _do_at_generic_first_appt_for_module(module: GenericFirstApptModule) -> Callable:
+    def _do_at_generic_first_appt_for_module(
+        module: GenericFirstApptModule,
+    ) -> Callable:
         return module.do_at_generic_first_appt_emergency
 
 
