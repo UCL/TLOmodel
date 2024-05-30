@@ -166,6 +166,7 @@ class _BaseHSIGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
             report_dxtest_tried=report_tried,
         )
 
+    @staticmethod
     def _do_at_generic_first_appt_for_module(module: Module) -> Callable:
         """Retrieves relevant do_at_generic_first_appt method for a module.
 
@@ -195,7 +196,7 @@ class _BaseHSIGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
             schedule_hsi_event = self.sim.modules["HealthSystem"].schedule_hsi_event
             for module in self.sim.modules.values():
                 if isinstance(module, GenericFirstApptModule):
-                    self._do_at_generic_first_appt_for_module(module=module)(
+                    self._do_at_generic_first_appt_for_module(module)(
                         person_id=self.target,
                         individual_properties=individual_properties,
                         symptoms=symptoms,
