@@ -133,8 +133,6 @@ class HSI_BaseGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         patient_details = self.sim.population.row_in_readonly_form(self.target)
 
-        proposed_patient_details_updates = {}
-
         module_order = self._module_order(modules.keys())
         for name in module_order:
             module = modules[name]
@@ -147,19 +145,13 @@ class HSI_BaseGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
                 facility_level=self.ACCEPTED_FACILITY_LEVEL,
                 treatment_id=self.TREATMENT_ID,
             )
-            # Record any requested DataFrame updates, but do not implement yet
-            # NOTE: |= syntax is only available in Python >=3.9
+            # Record any requested DataFrame updates
             if module_patient_updates:
-                proposed_patient_details_updates = {
-                    **proposed_patient_details_updates,
-                    **module_patient_updates,
-                }
-
-        # Perform any DataFrame updates that were requested, all in one go
-        if proposed_patient_details_updates:
-            df.loc[
-                self.target, proposed_patient_details_updates.keys()
-            ] = proposed_patient_details_updates.values()
+                df.loc[
+                    self.target, module_patient_updates.keys()
+                ] = module_patient_updates.values()
+                # Also need to recreate  patient_details to reflect updated properties
+                patient_details = self.sim.population.row_in_readonly_form(self.target)
 
     def _module_order(self, module_list: Iterable[str]) -> List[str]:
         """"""
