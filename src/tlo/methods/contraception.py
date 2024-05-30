@@ -155,6 +155,7 @@ class Contraception(Module):
 
         self.processed_params = dict()  # (Will store the processed data for rates/probabilities of outcomes).
         self.cons_codes = dict()  # (Will store the consumables codes for use in the HSI)
+        self.cons_alternatives_probs = dict()  # (Will store the probabilities of use for consumable alternatives)
         self.rng2 = None  # (Will be a second random number generator, used for things to do with scheduling HSI)
 
         self._women_ids_sterilized_below30 = set()  # The ids of women who had female sterilization initiated when they
@@ -257,9 +258,10 @@ class Contraception(Module):
         # Schedule first occurrences of Contraception Poll to occur at the beginning of the simulation
         sim.schedule_event(ContraceptionPoll(self, run_update_contraceptive=self.run_update_contraceptive), sim.date)
 
-        # Retrieve the consumables codes for the consumables used
+        # Retrieve the consumables codes for the consumables used and probabilities for alternatives
         if self.use_healthsystem:
-            self.cons_codes = self.get_item_code_for_each_contraceptive()
+            self.cons_codes, self.cons_alternatives_probs =\
+                self.get_item_codes_for_each_contraceptive_and_probs_for_cons_alternatives()
 
         # Create second random number generator
         self.rng2 = np.random.RandomState(self.rng.randint(2 ** 31 - 1))
@@ -644,27 +646,104 @@ class Contraception(Module):
         # Do the change in contraceptive
         self.schedule_batch_of_contraceptive_changes(ids=[mother_id], old=['not_using'], new=[new_contraceptive])
 
-    def get_item_code_for_each_contraceptive(self):
-        """Get the item_code for each contraceptive and for contraceptive initiation."""
+    def get_item_codes_for_each_contraceptive_and_probs_for_cons_alternatives(self):
+        """Get the item_code and numbers of units per case for each contraceptive and for contraceptive initiation.
+        Save the probs for consumable alternatives."""
         # TODO: update with optional items (currently all considered essential)
 
-        get_items_from_pkg = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
+        # ### Get item codes and number of units per case from package name
+        # (note: this version does not deal with consumable alternatives)
+        # get_items_from_pkg = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
+
+        # _cons_codes = dict()
+        # # items for each method that requires an HSI to switch to
+        # _cons_codes['pill'] = get_items_from_pkg('Pill')
+        # _cons_codes['male_condom'] = get_items_from_pkg('Male condom')
+        # _cons_codes['other_modern'] = get_items_from_pkg('Female Condom')
+        # # NB. The consumable female condom is used for the contraceptive state of "other_modern method"
+        # _cons_codes['IUD'] = get_items_from_pkg('IUD')
+        # _cons_codes['injections'] = get_items_from_pkg('Injectable')
+        # _cons_codes['implant'] = get_items_from_pkg('Implant')
+        # _cons_codes['female_sterilization'] = get_items_from_pkg('Female sterilization')
+        # assert set(_cons_codes.keys()) == set(self.states_that_may_require_HSI_to_switch_to)
+        # # items used when initiating a modern reliable method after not using or switching from non-reliable method
+        # _cons_codes['co_initiation'] = get_items_from_pkg('Contraception initiation')
+
+        # ### Get item codes from item names and define number of units per case here
+        get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
 
         _cons_codes = dict()
-        # items for each method that requires an HSI to switch to
-        _cons_codes['pill'] = get_items_from_pkg('Pill')
-        _cons_codes['male_condom'] = get_items_from_pkg('Male condom')
-        _cons_codes['other_modern'] = get_items_from_pkg('Female Condom')
-        # NB. The consumable female condom is used for the contraceptive state of "other_modern method"
-        _cons_codes['IUD'] = get_items_from_pkg('IUD')
-        _cons_codes['injections'] = get_items_from_pkg('Injectable')
-        _cons_codes['implant'] = get_items_from_pkg('Implant')
-        _cons_codes['female_sterilization'] = get_items_from_pkg('Female sterilization')
+        _cons_alternatives_probs = dict()
+        # # items for each method that requires an HSI to switch to
+        _cons_codes['pill'] =\
+            {get_item_code("Levonorgestrel 0.0375 mg, cycle"): 21*3.75,
+             # (alternative) progesterone-only pills used in other 20% cases (see _cons_alternatives_probs)
+             get_item_code("Levonorgestrel 0.15 mg + Ethinyl estradiol 30 mcg (Microgynon), cycle"): 21*3.75
+             # combined pills used in 80% cases (see _cons_alternatives_probs)
+             }
+        # Pills are alternatives, type chosen according to probabilities when administrated.
+        _cons_alternatives_probs['pill'] =\
+            {get_item_code("Levonorgestrel 0.0375 mg, cycle"): 0.2,
+             get_item_code("Levonorgestrel 0.15 mg + Ethinyl estradiol 30 mcg (Microgynon), cycle"): 0.8}
+        _cons_codes['male_condom'] =\
+            {get_item_code("Condom, male"): 30}
+        _cons_codes['other_modern'] =\
+            {get_item_code("Female Condom_Each_CMST"): 30}
+        _cons_codes['IUD'] =\
+            {get_item_code("Glove disposable powdered latex medium_100_CMST"): 2,
+             get_item_code("IUD, Copper T-380A"): 1}
+        _cons_codes['injections'] = \
+            {get_item_code("Depot-Medroxyprogesterone Acetate 150 mg - 3 monthly"): 1,
+             get_item_code("Glove disposable powdered latex medium_100_CMST"): 1,
+             get_item_code("Water for injection, 10ml_Each_CMST"): 1,
+             get_item_code("Povidone iodine, solution, 10 %, 5 ml per injection"): 5,
+             get_item_code("Gauze, swabs 8-ply 10cm x 10cm_100_CMST"): 1}
+        _cons_codes['implant'] =\
+            {get_item_code("Glove disposable powdered latex medium_100_CMST"): 3,
+             get_item_code("Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml"): 2,
+             get_item_code("Povidone iodine, solution, 10 %, 5 ml per injection"): 1*5,  # unit: 1 ml
+             get_item_code("Syringe, needle + swab"): 2,
+             get_item_code("Trocar"): 1,
+             get_item_code("Needle suture intestinal round bodied ½ circle trocar_6_CMST"): 1,
+             get_item_code("Jadelle (implant), box of 2_CMST"): 1,  # implant used in 50% cases
+             get_item_code("Implanon (Etonogestrel 68 mg)"): 1,  # alternative implant used in other 50% cases
+             # (see _cons_alternatives_probs)
+             get_item_code("Gauze, swabs 8-ply 10cm x 10cm_100_CMST"): 1}
+        # Implants are alternatives, type chosen according to probabilities when administrated.
+        _cons_alternatives_probs['implant'] = \
+            {get_item_code("Jadelle (implant), box of 2_CMST"): 0.5,
+             get_item_code("Implanon (Etonogestrel 68 mg)"): 0.5}
+        _cons_codes['female_sterilization'] =\
+            {get_item_code("Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml"): 1,
+             get_item_code("Atropine sulphate  600 micrograms/ml, 1ml_each_CMST"): 1,  # used only in 50% cases
+             # (see _cons_alternatives_probs)
+             get_item_code("Diazepam, injection, 5 mg/ml, in 2 ml ampoule"): 1,
+             get_item_code("Syringe, autodestruct, 5ml, disposable, hypoluer with 21g needle_each_CMST"): 3,
+             get_item_code("Gauze, swabs 8-ply 10cm x 10cm_100_CMST"): 2,
+             get_item_code("Needle, suture, assorted sizes, round body"): 3,
+             get_item_code("Suture, catgut, chromic, 0, 150 cm"): 3,
+             get_item_code("Tape, adhesive, 2.5 cm wide, zinc oxide, 5 m roll"): 125,  # unit: 1 cm long (2.5 cm wide)
+             get_item_code("Glove surgeon's size 7 sterile_2_CMST"): 2,
+             get_item_code("Paracetamol, tablet, 500 mg"): 8*500,  # unit: 1 mg
+             get_item_code("Povidone iodine, solution, 10 %, 5 ml per injection"): 2*5,  # unit: 1 ml
+             get_item_code("Cotton wool, 500g_1_CMST"): 100}  # unit: 1 g
+        # Atropine is used only in some cases
+        _cons_alternatives_probs['female_sterilization'] = \
+            {-99: 0.5,  # no alternative used
+             get_item_code("Atropine sulphate  600 micrograms/ml, 1ml_each_CMST"): 0.5,
+             }
+
+        # Order the item codes for each method
+        for method in _cons_codes:
+            _cons_codes[method] = dict(sorted(_cons_codes[method].items()))
+            if method in _cons_alternatives_probs:
+                _cons_alternatives_probs[method] = dict(sorted(_cons_alternatives_probs[method].items()))
+
         assert set(_cons_codes.keys()) == set(self.states_that_may_require_HSI_to_switch_to)
         # items used when initiating a modern reliable method after not using or switching from non-reliable method
-        _cons_codes['co_initiation'] = get_items_from_pkg('Contraception initiation')
+        _cons_codes['co_initiation'] = {get_item_code('Pregnancy slide test kit_100_CMST'): 1}
 
-        return _cons_codes
+        return _cons_codes, _cons_alternatives_probs
 
     def schedule_batch_of_contraceptive_changes(self, ids, old, new):
         """Enact the change in contraception, either through editing properties instantaneously or by scheduling HSI.
@@ -1146,7 +1225,23 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
 
         # Determine essential and optional items
         # TODO: we don't distinguish essential X optional for contraception methods yet, will need to update once we do
-        items_essential = self.module.cons_codes[self.new_contraceptive]
+        if self.new_contraceptive in self.module.cons_alternatives_probs:
+            # administrate one of the alternative consumables (item code -99 means, no alternative used)
+            alternatives = list(self.module.cons_alternatives_probs[self.new_contraceptive].keys())
+            probs = list(self.module.cons_alternatives_probs[self.new_contraceptive].values())
+            alternative_administrated = self.module.rng.choice(alternatives, p=probs)
+            items_essential = {key: self.module.cons_codes[self.new_contraceptive][key]
+                               for key in [alternative_administrated] if key != -99}
+
+            if self.module.cons_codes[self.new_contraceptive].keys() - alternatives:
+                # administrate all other consumables
+                items_essential.update({key: value
+                                        for key, value in self.module.cons_codes[self.new_contraceptive].items()
+                                        if key not in alternatives})
+
+        else:
+            items_essential = self.module.cons_codes[self.new_contraceptive]
+
         items_optional = {}
         # Record use of consumables and default the person to "not_using" if the consumable is not available.
         # If initiating use of a modern contraceptive method except condoms (after not using any or using non-modern
