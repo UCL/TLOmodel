@@ -35,22 +35,12 @@ class IndividualProperties:
             self._property_cache[key] = value
             return value     
 
-    def __getattr__(self, name: str) -> Any:
-        try:
-            return self[name]
-        except KeyError as e:
-            msg = f"'{type(self).__name__}' object has no attribute '{name}'"
-            raise AttributeError(msg) from e
-
     def __setitem__(self, key: str, value: Any) -> None:
         if self._read_only:
             msg = f"Cannot set value for {key} as destination is read-only"
             raise ValueError(msg)
         self._properties_updated.add(key)
         self._property_cache[key] = value
-
-    def __setattr__(self, name: str, value: Any) -> None:
-        self[name] = value
 
     def __enter__(self) -> "IndividualProperties":
         return self
@@ -198,8 +188,7 @@ class Population:
         Extract a lazily evaluated memoized view of a row of the population dataframe.
         
         The object returned represents the properties of an individual with properties
-        accessible either using dot based attribute access or squared bracket based 
-        indexing using string column names.
+        accessible by indexing using string column names.
 
         :param person_id: Row index of the dataframe row to extract.
         :param read_only: Whether view is read-only or allows updating properties. If 
