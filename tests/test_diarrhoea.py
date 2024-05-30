@@ -4,6 +4,7 @@ Basic tests for the Diarrhoea Module
 import os
 from itertools import product
 from pathlib import Path
+from typing import Any, Dict, Literal, Optional
 
 import pandas as pd
 import pytest
@@ -34,8 +35,9 @@ from tlo.methods.diarrhoea import (
 )
 from tlo.methods.hsi_generic_first_appts import HSI_GenericNonEmergencyFirstAppt
 
-resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+from .conftest import _BaseSharedSim
 
+resourcefilepath = Path(os.path.dirname(__file__)) / "../resources"
 
 def check_dtypes(simulation):
     # check types of columns
@@ -348,282 +350,388 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
     # run with spurious symptoms
     run(spurious_symptoms=True)
 
+class TestDiarrhoea_SharedSim(_BaseSharedSim):
+    """
+    Tests for the Diarrhoea module that make use of the shared simulation.
 
-def test_do_when_presentation_with_diarrhoea_severe_dehydration(seed):
-    """Check that when someone presents with diarrhoea and severe dehydration, the correct HSI is created"""
+    Note: original tests used 200 initial pop size compared to the shared
+    simulation's 100, but the tests in this class appear agnostic to the
+    total population size (they directly edit a single patient).
+    """
 
-    start_date = Date(2010, 1, 1)
-    popsize = 200  # smallest population size that works
+    module: str = "Diarrhoea"
 
-    sim = Simulation(start_date=start_date, seed=seed)
-    # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(
-                     resourcefilepath=resourcefilepath,
-                     disable=False,
-                     cons_availability='all'
-                 ),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(
-                     resourcefilepath=resourcefilepath,
-                     force_any_symptom_to_lead_to_healthcareseeking=True  # every symptom leads to health-care seeking
-                 ),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
-                 diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
-                 )
+    @pytest.fixture(scope="class")
+    def patient_id(self) -> int:
+        return 0
 
-    # Make DxTest for danger signs perfect:
-    sim.modules['Diarrhoea'].parameters['sensitivity_severe_dehydration_visual_inspection'] = 1.0
-    sim.modules['Diarrhoea'].parameters['specificity_severe_dehydration_visual_inspection'] = 1.0
+    @pytest.fixture(scope="function")
+    def changes_module_properties(self):
+        """
+        The Diarrhoea.models property takes a copy of the
+        module's parameters on initialisation, so is not
+        affected by our temporary parameter change from the
+        base class.
 
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=start_date)
-    df = sim.population.props
+        Overwriting the base fixture to remedy this.
+        """
+        old_param_values = dict(self.this_module.parameters)
+        yield
+        self.this_module.parameters = dict(old_param_values)
+        self.this_module.models.p = self.this_module.parameters
 
-    # Set that person_id=0 is a child with bloody diarrhoea and severe dehydration
-    person_id = 0
-    props_new = {
-        'age_years': 2,
-        'age_exact_years': 2.0,
-        'gi_has_diarrhoea': True,
-        'gi_pathogen': 'shigella',
-        'gi_type': 'bloody',
-        'gi_dehydration': 'severe',
-        'gi_duration_longer_than_13days': True,
-        'gi_date_of_onset': sim.date,
-        'gi_date_end_of_last_episode': sim.date + DateOffset(days=20),
-        'gi_scheduled_date_recovery': pd.NaT,
-        'gi_scheduled_date_death': sim.date + DateOffset(days=2),
-        'gi_treatment_date': pd.NaT,
-    }
-    df.loc[person_id, props_new.keys()] = props_new.values()
-    generic_hsi = HSI_GenericNonEmergencyFirstAppt(
-        module=sim.modules["HealthSeekingBehaviour"], person_id=person_id
-    )
-    patient_details = sim.population.row_in_readonly_form(person_id)
+    def patient_with_symptoms(
+        self,
+        gi_type: Literal["bloody", "watery"] = "bloody",
+        dehydration: Literal["severe", "some"] = "severe",
+        scheduled_date_recovery: Date = pd.NaT,
+        scheduled_date_death: Optional[Date] = None,
+    ) -> Dict[str, Any]:
+        """
+        Returns a dictionary of patient properties that correspond
+        to a child with diarrhoea symptoms.
+        
+        The extent and severity of the symptoms can be adjusted by
+        providing the relevant input values. The default set of
+        values is a child with bloody diarrhoea and severe
+        dehydration.
+        """
+        if scheduled_date_death is None:
+            scheduled_date_death = self.sim.date + DateOffset(days=2)
+        return {
+            "age_years": 2,
+            "age_exact_years": 2.0,
+            "gi_has_diarrhoea": True,
+            "gi_pathogen": "shigella",
+            "gi_type": gi_type,
+            "gi_dehydration": dehydration,
+            "gi_duration_longer_than_13days": True,
+            "gi_date_of_onset": self.sim.date,
+            "gi_date_end_of_last_episode": self.sim.date + DateOffset(days=20),
+            "gi_scheduled_date_recovery": scheduled_date_recovery,
+            "gi_scheduled_date_death": scheduled_date_death,
+            "gi_treatment_date": pd.NaT,
+        }
 
-    def diagnosis_fn(tests, use_dict: bool = False, report_tried: bool = False):
-        return generic_hsi.healthcare_system.dx_manager.run_dx_test(
-            tests,
-            hsi_event=generic_hsi,
-            use_dict_for_single=use_dict,
-            report_dxtest_tried=report_tried,
+    def test_do_when_presentation_with_diarrhoea_severe_dehydration(
+        self,
+        patient_id,
+        changes_module_properties,
+        changes_patient_properties,
+        clears_hsi_queue,
+    ):
+        """
+        Check that when someone presents with diarrhoea and severe
+        dehydration, the correct HSI is created.
+        """
+        # Make DxTest for danger signs perfect:
+        self.this_module.parameters['sensitivity_severe_dehydration_visual_inspection'] = 1.0
+        self.this_module.parameters['specificity_severe_dehydration_visual_inspection'] = 1.0
+
+        # Set patient_id to be a child with bloody diarrhoea and severe dehydration
+        new_props = self.patient_with_symptoms()
+        self.shared_sim_df.loc[patient_id, new_props.keys()] = new_props.values()
+        generic_hsi = HSI_GenericNonEmergencyFirstAppt(
+            module=self.sim.modules["HealthSeekingBehaviour"], person_id=patient_id
+        )
+        patient_details = self.sim.population.row_in_readonly_form(patient_id)
+
+        def diagnosis_fn(tests, use_dict: bool = False, report_tried: bool = False):
+            return generic_hsi.healthcare_system.dx_manager.run_dx_test(
+                tests,
+                hsi_event=generic_hsi,
+                use_dict_for_single=use_dict,
+                report_dxtest_tried=report_tried,
+            )
+
+        self.this_module.parameters['prob_hospitalization_on_danger_signs'] = 1.0
+        self.this_module.do_at_generic_first_appt(
+            patient_id=patient_id,
+            patient_details=patient_details,
+            diagnosis_function=diagnosis_fn,
+        )
+        evs = self.shared_sim_healthsystem.find_events_for_person(patient_id)
+
+        assert 1 == len(evs)
+        assert isinstance(evs[0][1], HSI_Diarrhoea_Treatment_Inpatient)
+
+        # 2) If DxTest of danger signs perfect but 0% chance of referral --> Inpatient HSI should not be created
+        self.shared_sim_healthsystem.reset_queue()
+        self.this_module.parameters['prob_hospitalization_on_danger_signs'] = 0.0
+        self.this_module.do_at_generic_first_appt(
+            patient_id=patient_id,
+            patient_details=patient_details,
+            diagnosis_function=diagnosis_fn,
+        )
+        evs = self.shared_sim_healthsystem.find_events_for_person(patient_id)
+        assert 1 == len(evs)
+        assert isinstance(evs[0][1], HSI_Diarrhoea_Treatment_Outpatient)
+
+    def test_do_when_presentation_with_diarrhoea_severe_dehydration_dxtest_notfunctional(
+        self,
+        patient_id,
+        changes_module_properties,
+        changes_patient_properties,
+        clears_hsi_queue,
+    ):
+        """
+        Check that when someone presents with diarrhoea and severe dehydration but the DxTest for danger signs
+        is not functional (0% sensitivity, 0% specificity) that an Outpatient appointment is created
+        """
+        # Make DxTest for danger signs not functional:
+        self.this_module.parameters['sensitivity_severe_dehydration_visual_inspection'] = 0.0
+        self.this_module.parameters['specificity_severe_dehydration_visual_inspection'] = 0.0
+
+        # Set that patient_id is a child with bloody diarrhoea and severe dehydration
+        new_props = self.patient_with_symptoms()
+        self.shared_sim_df.loc[patient_id, new_props.keys()] = new_props.values()
+        generic_hsi = HSI_GenericNonEmergencyFirstAppt(
+            module=self.sim.modules['HealthSeekingBehaviour'], person_id=patient_id)
+        patient_details = self.sim.population.row_in_readonly_form(patient_id)
+
+        def diagnosis_fn(tests, use_dict: bool = False, report_tried: bool = False):
+            return generic_hsi.healthcare_system.dx_manager.run_dx_test(
+                tests,
+                hsi_event=generic_hsi,
+                use_dict_for_single=use_dict,
+                report_dxtest_tried=report_tried,
+            )
+
+        # Only an out-patient appointment should be created as the DxTest for danger signs is not functional.
+        self.this_module.parameters['prob_hospitalization_on_danger_signs'] = 0.0
+        self.this_module.do_at_generic_first_appt(
+            patient_id=patient_id,
+            patient_details=patient_details,
+            diagnosis_function=diagnosis_fn,
+        )
+        evs = self.shared_sim_healthsystem.find_events_for_person(patient_id)
+        assert 1 == len(evs)
+        assert isinstance(evs[0][1], HSI_Diarrhoea_Treatment_Outpatient)
+
+    def test_do_when_presentation_with_diarrhoea_non_severe_dehydration(
+        self,
+        patient_id,
+        changes_module_properties,
+        changes_patient_properties,
+        clears_hsi_queue,
+    ):
+        """
+        Check that when someone presents with diarrhoea and non-severe
+        dehydration, the out-patient HSI is created.
+        """
+        # Make DxTest for danger signs perfect:
+        self.this_module.parameters['sensitivity_severe_dehydration_visual_inspection'] = 1.0
+        self.this_module.parameters['specificity_severe_dehydration_visual_inspection'] = 1.0
+
+        new_props = self.patient_with_symptoms(dehydration="some")
+        self.shared_sim_df.loc[patient_id, new_props.keys()] = new_props.values()
+        generic_hsi = HSI_GenericNonEmergencyFirstAppt(
+            module=self.sim.modules['HealthSeekingBehaviour'], person_id=patient_id)
+        patient_details = self.sim.population.row_in_readonly_form(patient_id)
+
+        def diagnosis_fn(tests, use_dict: bool = False, report_tried: bool = False):
+            return generic_hsi.healthcare_system.dx_manager.run_dx_test(
+                tests,
+                hsi_event=generic_hsi,
+                use_dict_for_single=use_dict,
+                report_dxtest_tried=report_tried,
+            )
+        # 1) Outpatient HSI should be created
+        self.this_module.do_at_generic_first_appt(
+            patient_id=patient_id, patient_details=patient_details, diagnosis_function=diagnosis_fn
+        )
+        evs = self.shared_sim_healthsystem.find_events_for_person(patient_id)
+
+        assert 1 == len(evs)
+        assert isinstance(evs[0][1], HSI_Diarrhoea_Treatment_Outpatient)
+
+    def test_run_each_of_the_HSI(self, patient_id, changes_patient_properties):
+        """Check that HSI specified can be run correctly"""
+        # The Out-patient HSI
+        hsi_outpatient = HSI_Diarrhoea_Treatment_Outpatient(
+            person_id=patient_id, module=self.this_module
+        )
+        hsi_outpatient.run(squeeze_factor=0)
+
+        # The In-patient HSI
+        hsi_outpatient = HSI_Diarrhoea_Treatment_Inpatient(
+            person_id=patient_id, module=self.this_module
+        )
+        hsi_outpatient.run(squeeze_factor=0)
+
+    def test_effect_of_vaccine(self, changes_module_properties):
+        """
+        Check that if the vaccine is perfect, no one infected with
+        rotavirus and who has the vaccine gets severe dehydration.
+
+        NOTE: disable_and_reject_all was previously set to "True" before
+        this test was refactored to use the shared simulation, however
+        this test is actually agnostic to this setting.
+        """
+        # Get the method that determines dehydration
+        get_dehydration = self.this_module.models.get_dehydration
+
+        # increase probability to ensure at least one case of severe dehydration when vaccine is imperfect
+        self.this_module.parameters["prob_dehydration_by_rotavirus"] = 1.0
+        self.this_module.parameters["prob_dehydration_by_shigella"] = 1.0
+
+        # 1) Make effect of vaccine perfect
+        self.this_module.parameters[
+            "rr_severe_dehydration_due_to_rotavirus_with_R1_under1yo"
+        ] = 0.0
+        self.this_module.parameters[
+            "rr_severe_dehydration_due_to_rotavirus_with_R1_over1yo"
+        ] = 0.0
+
+        # Check that if person has vaccine and is infected with rotavirus, there is never severe dehydration...
+        assert "severe" not in [
+            get_dehydration(pathogen="rotavirus", va_rota_all_doses=True, age_years=1)
+            for _ in range(100)
+        ]
+        assert "severe" not in [
+            get_dehydration(pathogen="rotavirus", va_rota_all_doses=True, age_years=4)
+            for _ in range(100)
+        ]
+
+        # ... but if no vaccine or infected with another pathogen, then sometimes it is severe dehydration.
+        assert "severe" in [
+            get_dehydration(pathogen="rotavirus", va_rota_all_doses=False, age_years=1)
+            for _ in range(100)
+        ]
+        assert "severe" in [
+            get_dehydration(pathogen="shigella", va_rota_all_doses=True, age_years=1)
+            for _ in range(100)
+        ]
+
+        # 2) Make effect of vaccine imperfect
+        self.this_module.parameters[
+            "rr_severe_dehydration_due_to_rotavirus_with_R1_under1yo"
+        ] = 0.5
+        self.this_module.parameters[
+            "rr_severe_dehydration_due_to_rotavirus_with_R1_over1yo"
+        ] = 0.5
+
+        # Check that if the vaccine is imperfect and the person is infected with
+        # rotavirus, then there sometimes is severe dehydration.
+        assert "severe" in [
+            get_dehydration(pathogen="rotavirus", va_rota_all_doses=True, age_years=1)
+            for _ in range(100)
+        ]
+        assert "severe" in [
+            get_dehydration(pathogen="rotavirus", va_rota_all_doses=True, age_years=2)
+            for _ in range(100)
+        ]
+
+    def test_check_perfect_treatment_leads_to_zero_risk_of_death(
+        self,
+    ):
+        """
+        Check that for any permutation of condition,
+        if the treatment is successful, then it prevents death.
+
+        NOTE: disable_and_reject_all was previously set to "True" before
+        this test was refactored to use the shared simulation, however
+        this test is actually agnostic to this setting.
+        """
+        for (
+            _pathogen,
+            _type,
+            _duration_longer_than_13days,
+            _dehydration,
+            _age_exact_years,
+            _ri_current_infection_status,
+            _untreated_hiv,
+            _un_clinical_acute_malnutrition,
+        ) in product(
+            self.this_module.pathogens,
+            ["watery", "bloody"],
+            [False, True],
+            ["none", "some", "severe"],
+            range(0, 4, 1),
+            [False, True],
+            [False, True],
+            ["MAM", "SAM", "well"],
+        ):
+            # Define the argument to `_get_probability_that_treatment_blocks_death`
+            # to represent successful treatment
+            _args = {
+                "pathogen": _pathogen,
+                "type": (
+                    _type,
+                    "watery",
+                ),  # <-- successful treatment removes blood in diarrhoea
+                "duration_longer_than_13days": _duration_longer_than_13days,
+                "dehydration": (
+                    _dehydration,
+                    "none",
+                ),  # <-- successful treatment removes dehydration
+                "age_exact_years": _age_exact_years,
+                "ri_current_infection_status": _ri_current_infection_status,
+                "untreated_hiv": _untreated_hiv,
+                "un_clinical_acute_malnutrition": _un_clinical_acute_malnutrition,
+            }
+
+            assert (
+                1.0
+                == self.this_module.models._get_probability_that_treatment_blocks_death(
+                    **_args
+                )
+            ), (f"Perfect treatment does not prevent death: {_args=}")
+
+    def test_do_treatment_for_those_that_will_not_die(
+        self,
+        patient_id,
+        changes_patient_properties,
+        changes_sim_date,
+        changes_event_queue,
+    ):
+        """
+        Check that when someone who will not die and is provided with
+        treatment and gets zinc, that the date of cure is brought
+        forward.
+        """
+        scheduled_date_recovery = self.sim.date + DateOffset(days=10)
+        new_props = self.patient_with_symptoms(
+            gi_type="watery",
+            dehydration="some",
+            scheduled_date_recovery=scheduled_date_recovery,
+            scheduled_date_death=pd.NaT,
+        )
+        self.shared_sim_df.loc[patient_id, new_props.keys()] = new_props.values()
+        self.sim.modules["SymptomManager"].change_symptom(
+            person_id=patient_id,
+            symptom_string="diarrhoea",
+            add_or_remove="+",
+            disease_module=self.this_module,
+        )
+        # Run 'do_treatment' from an out-patient HSI.
+        in_patient_hsi = HSI_Diarrhoea_Treatment_Outpatient(
+            module=self.this_module, person_id=patient_id
+        )
+        self.this_module.do_treatment(person_id=patient_id, hsi_event=in_patient_hsi)
+
+        # check that a Cure Event is scheduled for earlier
+        evs = self.sim.find_events_for_person(patient_id)
+        assert 1 == len(evs)
+        assert isinstance(evs[0][1], DiarrhoeaCureEvent)
+        assert evs[0][0] == scheduled_date_recovery - pd.DateOffset(
+            days=self.this_module.parameters[
+                "number_of_days_reduced_duration_with_zinc"
+            ]
         )
 
-    sim.modules['HealthSystem'].reset_queue()
-    sim.modules['Diarrhoea'].parameters['prob_hospitalization_on_danger_signs'] = 1.0
-    sim.modules["Diarrhoea"].do_at_generic_first_appt(
-        patient_id=person_id,
-        patient_details=patient_details,
-        diagnosis_function=diagnosis_fn,
-    )
-    evs = sim.modules['HealthSystem'].find_events_for_person(person_id)
+        #  Run the Cure Event and check episode is ended.
+        self.sim.date = evs[0][0]
+        evs[0][1].apply(person_id=patient_id)
+        assert not self.shared_sim_df.at[patient_id, "gi_has_diarrhoea"]
 
-    assert 1 == len(evs)
-    assert isinstance(evs[0][1], HSI_Diarrhoea_Treatment_Inpatient)
-
-    # 2) If DxTest of danger signs perfect but 0% chance of referral --> Inpatient HSI should not be created
-    sim.modules['HealthSystem'].reset_queue()
-    sim.modules['Diarrhoea'].parameters['prob_hospitalization_on_danger_signs'] = 0.0
-    sim.modules["Diarrhoea"].do_at_generic_first_appt(
-        patient_id=person_id,
-        patient_details=patient_details,
-        diagnosis_function=diagnosis_fn,
-    )
-    evs = sim.modules['HealthSystem'].find_events_for_person(person_id)
-    assert 1 == len(evs)
-    assert isinstance(evs[0][1], HSI_Diarrhoea_Treatment_Outpatient)
-
-
-def test_do_when_presentation_with_diarrhoea_severe_dehydration_dxtest_notfunctional(seed):
-    """Check that when someone presents with diarrhoea and severe dehydration but the DxTest for danger signs
-    is not functional (0% sensitivity, 0% specificity) that an Outpatient appointment is created"""
-
-    start_date = Date(2010, 1, 1)
-    popsize = 200  # smallest population size that works
-
-    sim = Simulation(start_date=start_date, seed=seed)
-    # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(
-                     resourcefilepath=resourcefilepath,
-                     disable=False,
-                     cons_availability='all'
-                 ),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(
-                     resourcefilepath=resourcefilepath,
-                     force_any_symptom_to_lead_to_healthcareseeking=True  # every symptom leads to health-care seeking
-                 ),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
-                 diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
-                 )
-
-    # Make DxTest for danger signs not functional:
-    sim.modules['Diarrhoea'].parameters['sensitivity_severe_dehydration_visual_inspection'] = 0.0
-    sim.modules['Diarrhoea'].parameters['specificity_severe_dehydration_visual_inspection'] = 0.0
-
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=start_date)
-    df = sim.population.props
-
-    # Set that person_id=0 is a child with bloody diarrhoea and severe dehydration
-    person_id = 0
-    props_new = {
-        'age_years': 2,
-        'age_exact_years': 2.0,
-        'gi_has_diarrhoea': True,
-        'gi_pathogen': 'shigella',
-        'gi_type': 'bloody',
-        'gi_dehydration': 'severe',
-        'gi_duration_longer_than_13days': True,
-        'gi_date_of_onset': sim.date,
-        'gi_date_end_of_last_episode': sim.date + DateOffset(days=20),
-        'gi_scheduled_date_recovery': pd.NaT,
-        'gi_scheduled_date_death': sim.date + DateOffset(days=2),
-        'gi_treatment_date': pd.NaT,
-    }
-    df.loc[person_id, props_new.keys()] = props_new.values()
-    generic_hsi = HSI_GenericNonEmergencyFirstAppt(
-        module=sim.modules['HealthSeekingBehaviour'], person_id=person_id)
-    patient_details = sim.population.row_in_readonly_form(person_id)
-
-    def diagnosis_fn(tests, use_dict: bool = False, report_tried: bool = False):
-        return generic_hsi.healthcare_system.dx_manager.run_dx_test(
-            tests,
-            hsi_event=generic_hsi,
-            use_dict_for_single=use_dict,
-            report_dxtest_tried=report_tried,
+        # Check that a recovery event occurring later has no effect and does not error.
+        self.sim.date = scheduled_date_recovery
+        recovery_event = DiarrhoeaNaturalRecoveryEvent(
+            module=self.this_module, person_id=patient_id
         )
-
-    # Only an out-patient appointment should be created as the DxTest for danger signs is not functional.
-    sim.modules['Diarrhoea'].parameters['prob_hospitalization_on_danger_signs'] = 0.0
-    sim.modules['HealthSystem'].reset_queue()
-    sim.modules["Diarrhoea"].do_at_generic_first_appt(
-        patient_id=person_id,
-        patient_details=patient_details,
-        diagnosis_function=diagnosis_fn,
-    )
-    evs = sim.modules['HealthSystem'].find_events_for_person(person_id)
-    assert 1 == len(evs)
-    assert isinstance(evs[0][1], HSI_Diarrhoea_Treatment_Outpatient)
-
-
-def test_do_when_presentation_with_diarrhoea_non_severe_dehydration(seed):
-    """Check that when someone presents with diarrhoea and non-severe dehydration, the out-patient HSI is created"""
-
-    start_date = Date(2010, 1, 1)
-    popsize = 200  # smallest population size that works
-
-    sim = Simulation(start_date=start_date, seed=seed)
-    # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(
-                     resourcefilepath=resourcefilepath,
-                     disable=False,
-                     cons_availability='all'
-                 ),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(
-                     resourcefilepath=resourcefilepath,
-                     force_any_symptom_to_lead_to_healthcareseeking=True  # every symptom leads to health-care seeking
-                 ),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
-                 diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
-                 )
-
-    # Make DxTest for danger signs perfect:
-    sim.modules['Diarrhoea'].parameters['sensitivity_severe_dehydration_visual_inspection'] = 1.0
-    sim.modules['Diarrhoea'].parameters['specificity_severe_dehydration_visual_inspection'] = 1.0
-
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=start_date)
-    df = sim.population.props
-
-    # Set that person_id=0 is a child with bloody diarrhoea and 'some' dehydration
-    person_id = 0
-    props_new = {
-        'age_years': 2,
-        'age_exact_years': 2.0,
-        'gi_has_diarrhoea': True,
-        'gi_pathogen': 'shigella',
-        'gi_type': 'bloody',
-        'gi_dehydration': 'some',
-        'gi_duration_longer_than_13days': True,
-        'gi_date_of_onset': sim.date,
-        'gi_date_end_of_last_episode': sim.date + DateOffset(days=20),
-        'gi_scheduled_date_recovery': pd.NaT,
-        'gi_scheduled_date_death': sim.date + DateOffset(days=2),
-        'gi_treatment_date': pd.NaT,
-    }
-    df.loc[person_id, props_new.keys()] = props_new.values()
-    generic_hsi = HSI_GenericNonEmergencyFirstAppt(
-        module=sim.modules['HealthSeekingBehaviour'], person_id=person_id)
-    patient_details = sim.population.row_in_readonly_form(person_id)
-
-    def diagnosis_fn(tests, use_dict: bool = False, report_tried: bool = False):
-        return generic_hsi.healthcare_system.dx_manager.run_dx_test(
-            tests,
-            hsi_event=generic_hsi,
-            use_dict_for_single=use_dict,
-            report_dxtest_tried=report_tried,
-        )
-    # 1) Outpatient HSI should be created
-    sim.modules["HealthSystem"].reset_queue()
-    sim.modules["Diarrhoea"].do_at_generic_first_appt(
-        patient_id=person_id, patient_details=patient_details, diagnosis_function=diagnosis_fn
-    )
-    evs = sim.modules["HealthSystem"].find_events_for_person(person_id)
-
-    assert 1 == len(evs)
-    assert isinstance(evs[0][1], HSI_Diarrhoea_Treatment_Outpatient)
-
-
-def test_run_each_of_the_HSI(seed):
-    """Check that HSI specified can be run correctly"""
-    start_date = Date(2010, 1, 1)
-    popsize = 200  # smallest population size that works
-
-    sim = Simulation(start_date=start_date, seed=seed)
-
-    # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(
-                     resourcefilepath=resourcefilepath,
-                     disable=False,
-                     cons_availability='all'
-                 ),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(
-                     resourcefilepath=resourcefilepath,
-                     force_any_symptom_to_lead_to_healthcareseeking=True  # every symptom leads to health-care seeking
-                 ),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
-                 diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
-                 )
-
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=start_date)
-
-    # The Out-patient HSI
-    hsi_outpatient = HSI_Diarrhoea_Treatment_Outpatient(person_id=0, module=sim.modules['Diarrhoea'])
-    hsi_outpatient.run(squeeze_factor=0)
-
-    # The In-patient HSI
-    hsi_outpatient = HSI_Diarrhoea_Treatment_Inpatient(person_id=0, module=sim.modules['Diarrhoea'])
-    hsi_outpatient.run(squeeze_factor=0)
+        recovery_event.apply(person_id=patient_id)
+        assert not self.shared_sim_df.at[patient_id, "gi_has_diarrhoea"]
 
 
 def test_does_treatment_prevent_death(seed):
@@ -845,198 +953,6 @@ def test_do_treatment_for_those_that_will_die_if_consumables_not_available(seed)
 
     # Check that treatment is recorded to have occurred
     assert pd.notnull(df.at[person_id, 'gi_treatment_date'])
-
-
-def test_do_treatment_for_those_that_will_not_die(seed):
-    """Check that when someone who will not die and is provided with treatment and gets zinc, that the date of cure is
-    brought forward"""
-
-    # ** If consumables are available **:
-    start_date = Date(2010, 1, 1)
-    popsize = 200  # smallest population size that works
-    sim = Simulation(start_date=start_date, seed=seed)
-    # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(
-                     resourcefilepath=resourcefilepath,
-                     disable=False,
-                     cons_availability='all'
-                 ),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(
-                     resourcefilepath=resourcefilepath,
-                     force_any_symptom_to_lead_to_healthcareseeking=True  # every symptom leads to health-care seeking
-                 ),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
-                 diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
-                 )
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=start_date)
-    df = sim.population.props
-
-    # Set that person_id=0 is a child with watery diarrhoea and 'some' dehydration:
-    person_id = 0
-    scheduled_date_recovery = sim.date + DateOffset(days=10)
-    props_new = {
-        'age_years': 2,
-        'age_exact_years': 2.0,
-        'gi_has_diarrhoea': True,
-        'gi_pathogen': 'shigella',
-        'gi_type': 'watery',
-        'gi_dehydration': 'some',
-        'gi_duration_longer_than_13days': True,
-        'gi_date_of_onset': sim.date,
-        'gi_date_end_of_last_episode': sim.date + DateOffset(days=20),
-        'gi_scheduled_date_recovery': scheduled_date_recovery,
-        'gi_scheduled_date_death': pd.NaT,
-        'gi_treatment_date': pd.NaT,
-    }
-    df.loc[person_id, props_new.keys()] = props_new.values()
-    sim.modules['SymptomManager'].change_symptom(
-        person_id=0,
-        symptom_string='diarrhoea',
-        add_or_remove='+',
-        disease_module=sim.modules['Diarrhoea']
-    )
-    # Run 'do_treatment' from an out-patient HSI.
-    in_patient_hsi = HSI_Diarrhoea_Treatment_Outpatient(
-        module=sim.modules['Diarrhoea'], person_id=person_id)
-    sim.modules['Diarrhoea'].do_treatment(person_id=person_id, hsi_event=in_patient_hsi)
-
-    # check that a Cure Event is scheduled for earlier
-    evs = sim.find_events_for_person(person_id)
-    assert 1 == len(evs)
-    assert isinstance(evs[0][1], DiarrhoeaCureEvent)
-    assert evs[0][0] == scheduled_date_recovery - \
-           pd.DateOffset(days=sim.modules['Diarrhoea'].parameters['number_of_days_reduced_duration_with_zinc'])
-
-    #  Run the Cure Event and check episode is ended.
-    sim.date = evs[0][0]
-    evs[0][1].apply(person_id=person_id)
-    assert not df.at[person_id, 'gi_has_diarrhoea']
-
-    # Check that a recovery event occurring later has no effect and does not error.
-    sim.date = scheduled_date_recovery
-    recovery_event = DiarrhoeaNaturalRecoveryEvent(module=sim.modules['Diarrhoea'], person_id=person_id)
-    recovery_event.apply(person_id=person_id)
-    assert not df.at[person_id, 'gi_has_diarrhoea']
-
-
-def test_effect_of_vaccine(seed):
-    """Check that if the vaccine is perfect, no one infected with rotavirus and who has the vaccine gets severe
-     dehydration."""
-
-    # Create dummy simulation
-    start_date = Date(2010, 1, 1)
-    popsize = 200
-
-    sim = Simulation(start_date=start_date, seed=seed)
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable_and_reject_all=True),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
-                 diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
-                 )
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=start_date)
-
-    # Get the method that determines dehydration
-    get_dehydration = sim.modules['Diarrhoea'].models.get_dehydration
-
-    # increase probability to ensure at least one case of severe dehydration when vaccine is imperfect
-    sim.modules['Diarrhoea'].parameters['prob_dehydration_by_rotavirus'] = 1.0
-    sim.modules['Diarrhoea'].parameters['prob_dehydration_by_shigella'] = 1.0
-
-    # 1) Make effect of vaccine perfect
-    sim.modules['Diarrhoea'].parameters['rr_severe_dehydration_due_to_rotavirus_with_R1_under1yo'] = 0.0
-    sim.modules['Diarrhoea'].parameters['rr_severe_dehydration_due_to_rotavirus_with_R1_over1yo'] = 0.0
-
-    # Check that if person has vaccine and is infected with rotavirus, there is never severe dehydration...
-    assert 'severe' not in [get_dehydration(pathogen='rotavirus', va_rota_all_doses=True, age_years=1)
-                            for _ in range(100)]
-    assert 'severe' not in [get_dehydration(pathogen='rotavirus', va_rota_all_doses=True, age_years=4)
-                            for _ in range(100)]
-
-    # ... but if no vaccine or infected with another pathogen, then sometimes it is severe dehydration.
-    assert 'severe' in [get_dehydration(pathogen='rotavirus', va_rota_all_doses=False, age_years=1)
-                        for _ in range(100)]
-    assert 'severe' in [get_dehydration(pathogen='shigella', va_rota_all_doses=True, age_years=1)
-                        for _ in range(100)]
-
-    # 2) Make effect of vaccine imperfect
-    sim.modules['Diarrhoea'].parameters['rr_severe_dehydration_due_to_rotavirus_with_R1_under1yo'] = 0.5
-    sim.modules['Diarrhoea'].parameters['rr_severe_dehydration_due_to_rotavirus_with_R1_over1yo'] = 0.5
-
-    # Check that if the vaccine is imperfect and the person is infected with rotavirus, then there sometimes is severe
-    # dehydration.
-    assert 'severe' in [get_dehydration(pathogen='rotavirus', va_rota_all_doses=True, age_years=1)
-                        for _ in range(100)]
-    assert 'severe' in [get_dehydration(pathogen='rotavirus', va_rota_all_doses=True, age_years=2)
-                        for _ in range(100)]
-
-
-def test_check_perfect_treatment_leads_to_zero_risk_of_death(seed):
-    """Check that for any permutation of condition, if the treatment is successful, then it prevents death"""
-
-    start_date = Date(2010, 1, 1)
-    popsize = 200
-
-    sim = Simulation(start_date=start_date, seed=seed)
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable_and_reject_all=True),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
-                 diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
-                 )
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=sim.start_date)
-
-    diarrhoea_module = sim.modules['Diarrhoea']
-
-    for (
-        _pathogen,
-        _type,
-        _duration_longer_than_13days,
-        _dehydration,
-        _age_exact_years,
-        _ri_current_infection_status,
-        _untreated_hiv,
-        _un_clinical_acute_malnutrition
-    ) in product(
-        diarrhoea_module.pathogens,
-        ['watery', 'bloody'],
-        [False, True],
-        ['none', 'some', 'severe'],
-        range(0, 4, 1),
-        [False, True],
-        [False, True],
-        ['MAM', 'SAM', 'well']
-    ):
-        # Define the argument to `_get_probability_that_treatment_blocks_death` to represent successful treatment
-        _args = {
-            'pathogen': _pathogen,
-            'type': (_type, 'watery'),  # <-- successful treatment removes blood in diarrhoea
-            'duration_longer_than_13days': _duration_longer_than_13days,
-            'dehydration': (_dehydration, 'none'),  # <-- successful treatment removes dehydration
-            'age_exact_years': _age_exact_years,
-            'ri_current_infection_status': _ri_current_infection_status,
-            'untreated_hiv': _untreated_hiv,
-            'un_clinical_acute_malnutrition': _un_clinical_acute_malnutrition
-        }
-
-        assert 1.0 == diarrhoea_module.models._get_probability_that_treatment_blocks_death(**_args), \
-            f"Perfect treatment does not prevent death: {_args=}"
 
 
 @pytest.mark.slow
