@@ -31,7 +31,7 @@ from tlo.methods import (
 )
 from tlo.scenario import BaseScenario
 
-number_of_draws = 2  # todo reset
+number_of_draws = 4  # todo reset
 runs_per_draw = 1
 
 
@@ -42,8 +42,8 @@ class TestScenario(BaseScenario):
         super().__init__()
         self.seed = random.randint(0, 50000)
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2200, 12, 31)  # todo reset
-        self.pop_size = 200  # todo reset
+        self.end_date = Date(2099, 12, 31)  # todo reset
+        self.pop_size = 100_000  # todo reset
         self.number_of_draws = number_of_draws
         self.runs_per_draw = runs_per_draw
 
@@ -75,8 +75,7 @@ class TestScenario(BaseScenario):
 
         return {
             'Schisto': {
-                # 'scenario': [1.0, 2.0, 3.0, 4.0][draw_number],
-                'scenario': [1.0, 2.0][draw_number],
+                'scenario': [1.0, 2.0, 3.0, 4.0][draw_number],
             },
         }
 
