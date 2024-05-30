@@ -32,7 +32,7 @@ from tlo.methods.healthsystem import HealthSystemScheduler
 from tlo.methods.hiv import (
     HivAidsOnsetEvent,
     HSI_Hiv_StartOrContinueTreatment,
-    HSI_Hiv_TestAndRefer,
+    HSI_Hiv_TestAndRefer, HivAidsDeathEvent,
 )
 
 try:
@@ -137,15 +137,15 @@ def test_initialisation(seed):
     for idx in before_aids_idx:
         events_for_this_person = sim.find_events_for_person(idx)
         assert len(events_for_this_person) > 0
-        assert ('hiv.HivAidsOnsetEvent' in e for _, e in events_for_this_person)
-        assert all(date >= sim.date for date, _ in
+        assert len([event for _ , event in events_for_this_person if isinstance(event, HivAidsOnsetEvent)])
+        assert all(date_of_event >= sim.date for date_of_event, _ in
                    events_for_this_person), "Not all dates in the event list are after the current date"
 
     # check that everyone who is infected and has got AIDS event get a future AIDS death event
     for idx in aids:
         events_for_this_person = sim.find_events_for_person(idx)
         assert len(events_for_this_person) > 0
-        assert ('hiv.HivAidsDeathEvent' in e for _, e in events_for_this_person)
+        assert len([event for _ , event in events_for_this_person if isinstance(event, HivAidsDeathEvent)])
         assert all(date >= sim.date for date, _ in
                    events_for_this_person), "Not all dates in the event list are after the current date"
 
