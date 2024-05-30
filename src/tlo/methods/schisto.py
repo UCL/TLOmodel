@@ -656,6 +656,7 @@ class SchistoSpecies:
         rng = self.schisto_module.rng
 
         global_params = self.schisto_module.parameters
+        print('scenario', global_params['scenario'])
 
         for district in districts:
             in_the_district = df.index[df['district_of_residence'] == district]
@@ -675,7 +676,7 @@ class SchistoSpecies:
 
             if global_params['scenario'] == 2:
                 if self.name == 'haematobium':
-                    params['mean_worm_burden2010'][:] = 0.05
+                    params['mean_worm_burden2010'][:] = 0.5
                 # set mansoni to 0
                 else:
                     params['mean_worm_burden2010'][:] = 0
@@ -689,7 +690,7 @@ class SchistoSpecies:
 
             if global_params['scenario'] == 4:
                 if self.name == 'haematobium':
-                    params['mean_worm_burden2010'][:] = 0.01
+                    params['mean_worm_burden2010'][:] = 10
                 # set mansoni to 0
                 else:
                     params['mean_worm_burden2010'][:] = 0

@@ -53,7 +53,7 @@ popsize = 1_000
 
 def run_simulation(popsize=popsize, mda_execute=False):
     start_date = Date(2010, 1, 1)
-    end_date = Date(2015, 12, 31)
+    end_date = Date(2012, 12, 31)
 
     # For logging, set all modules to WARNING threshold, then alters `Schisto` to level "INFO"
     custom_levels = {
@@ -115,7 +115,7 @@ def run_simulation(popsize=popsize, mda_execute=False):
     #     tmp[:] = prev
     #     sim.modules["Schisto"].parameters["sm_prevalence_2010"][:] = tmp
 
-    sim.modules["Schisto"].parameters["scenario"] = 1
+    sim.modules["Schisto"].parameters["scenario"] = 2.0
 
     # initialise the population
     sim.make_initial_population(n=popsize)
