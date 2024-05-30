@@ -30,9 +30,10 @@ from tlo.methods import (
 from tlo.methods.healthseekingbehaviour import HealthSeekingBehaviourPoll
 from tlo.methods.healthsystem import HealthSystemScheduler
 from tlo.methods.hiv import (
+    HivAidsDeathEvent,
     HivAidsOnsetEvent,
     HSI_Hiv_StartOrContinueTreatment,
-    HSI_Hiv_TestAndRefer, HivAidsDeathEvent,
+    HSI_Hiv_TestAndRefer,
 )
 
 try:
