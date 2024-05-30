@@ -57,7 +57,6 @@ def get_consumable_item_codes_cancers(self, cancer_module: Module) -> Dict[str, 
     # Add items that are specific to a particular cancer module
     if 'ProstateCancer' == cancer_module.name:
 
-        # TODO: @Sakshi the script to create RF_Consumables_Items_and_Pkgs needs to be re-run
         cons_dict['screening_psa_test_core'] = \
             {get_item_code("Prostate specific antigen test"): 1}
 
@@ -69,7 +68,6 @@ def get_consumable_item_codes_cancers(self, cancer_module: Module) -> Dict[str, 
     elif 'BladderCancer' == cancer_module.name:
         # Note: bladder cancer is not in the malawi STG 2023 therefore no details on chemotherapy
 
-        # TODO: @Sakshi the script to create RF_Consumables_Items_and_Pkgs needs to be re-run
         cons_dict['screening_cystoscopy_core'] = \
             {get_item_code("Cystoscope"): 1}
 
@@ -82,7 +80,6 @@ def get_consumable_item_codes_cancers(self, cancer_module: Module) -> Dict[str, 
 
     elif 'OesophagealCancer' == cancer_module.name:
 
-        # TODO: @Sakshi the script to create RF_Consumables_Items_and_Pkgs needs to be re-run
         cons_dict['screening_endoscope_core'] = \
             {get_item_code("Endoscope"): 1}
 
