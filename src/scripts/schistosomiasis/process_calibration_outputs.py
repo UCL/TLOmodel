@@ -75,7 +75,7 @@ def get_model_prevalence_by_district_over_time(_df):
     df = df.filter(like='Blantyre')
 
     # todo limit to SAC
-    # df = df.filter(like='SAC')
+    df = df.filter(like='SAC')
 
     # Aggregate the sums of infection statuses by district_of_residence and year
     district_sum = df.sum(axis=1)
