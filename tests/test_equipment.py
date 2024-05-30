@@ -28,12 +28,12 @@ def test_core_functionality_of_equipment_class(seed):
             {"Item_Description": "ItemZero", "Item_Code": 0, "Pkg_Name": 'PkgWith0+1'},
             {"Item_Description": "ItemOne", "Item_Code": 1, "Pkg_Name": 'PkgWith0+1, PkgWith1'},
             {"Item_Description": "ItemTwo", "Item_Code": 2, "Pkg_Name": float('nan')},
-            {"Item_Description": "ItemThree", "Item_Code": 3, "Pkg_Name": float('PkgWith3')},
+            {"Item_Description": "ItemThree", "Item_Code": 3, "Pkg_Name": 'PkgWith3'},
         ]
     )
     data_availability = pd.DataFrame(
         # item 0 is not available anywhere; item 1 is available everywhere; item 2 is available only at facility_id=1;
-        # availability not defined for item 3
+        # item 3 is available only at facility_id=0
         [
             {"Item_Code": 0, "Facility_ID": 0, "Pr_Available": 0.0},
             {"Item_Code": 0, "Facility_ID": 1, "Pr_Available": 0.0},
@@ -41,6 +41,8 @@ def test_core_functionality_of_equipment_class(seed):
             {"Item_Code": 1, "Facility_ID": 1, "Pr_Available": 1.0},
             {"Item_Code": 2, "Facility_ID": 0, "Pr_Available": 0.0},
             {"Item_Code": 2, "Facility_ID": 1, "Pr_Available": 1.0},
+            {"Item_Code": 3, "Facility_ID": 0, "Pr_Available": 1.0},
+            {"Item_Code": 3, "Facility_ID": 1, "Pr_Available": 0.0},
         ]
     )
     mfl = pd.DataFrame(
@@ -139,11 +141,11 @@ def test_core_functionality_of_equipment_class(seed):
     # Lookup the item_codes that belong in a particular package.
     # - When package is recognised
     # if items are in the same package (once standing alone, once within multiple pkgs defined for item)
-    assert {0, 1} == eq_default.from_pkg_names(pkg_name='PkgWith0+1')
+    assert {0, 1} == eq_default.from_pkg_names(pkg_names='PkgWith0+1')
     # if the pkg within multiple pkgs defined for item
-    assert {1} == eq_default.from_pkg_names(pkg_name='PkgWith1')
+    assert {1} == eq_default.from_pkg_names(pkg_names='PkgWith1')
     # if the pkg only stands alone
-    assert {3} == eq_default.from_pkg_names(pkg_name='PkgWith3')
+    assert {3} == eq_default.from_pkg_names(pkg_names='PkgWith3')
 
     # - Error thrown when package is not recognised
     with pytest.raises(ValueError):
