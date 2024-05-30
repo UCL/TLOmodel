@@ -692,16 +692,12 @@ class Contraception(Module):
         _cons_codes['IUD'] =\
             {get_item_code("Glove disposable powdered latex medium_100_CMST"): 2,
              get_item_code("IUD, Copper T-380A"): 1}
-        # TODO: originally used "Medroxyprogesterone acetate injection 150mg/mL, 1mL vial with 2ml syringe with 22g 0.7
-        #  X 25mm needle_each_CMST", which is not within the RF_Costing anymore, does it mean we need to add a syringe
-        #  and a needle?
         _cons_codes['injections'] = \
             {get_item_code("Depot-Medroxyprogesterone Acetate 150 mg - 3 monthly"): 1,
              get_item_code("Glove disposable powdered latex medium_100_CMST"): 1,
              get_item_code("Water for injection, 10ml_Each_CMST"): 1,
              get_item_code("Povidone iodine, solution, 10 %, 5 ml per injection"): 5,
              get_item_code("Gauze, swabs 8-ply 10cm x 10cm_100_CMST"): 1}
-        # TODO: @Sakshi - update the unit to 1 use
         _cons_codes['implant'] =\
             {get_item_code("Glove disposable powdered latex medium_100_CMST"): 3,
              get_item_code("Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml"): 2,
