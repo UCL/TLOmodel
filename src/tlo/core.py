@@ -14,7 +14,6 @@ import numpy as np
 import pandas as pd
 
 if TYPE_CHECKING:
-    from numpy.random import RandomState
 
     from tlo.methods.healthsystem import HealthSystem
     from tlo.population import IndividualProperties
@@ -400,7 +399,6 @@ class Module:
         consumables_checker: Optional[ConsumablesChecker],
         facility_level: Optional[str],
         treatment_id: Optional[str],
-        random_state: Optional[RandomState],
     ) -> None:
         """
         Actions to be take during a non-emergency generic HSI.
@@ -435,8 +433,6 @@ class Module:
         :param facility_level: The level of the facility that the patient presented at.
         :param treatment_id: The treatment id of the HSI event triggering the generic
             appointment.
-        :param random_state: Random number generator to be used when making random
-            choices during event creation.
         """
 
     def do_at_generic_first_appt_emergency(
@@ -448,7 +444,6 @@ class Module:
         consumables_checker: Optional[ConsumablesChecker] = None,
         facility_level: Optional[str] = None,
         treatment_id: Optional[str] = None,
-        random_state: Optional[RandomState] = None,
     ) -> None:
         """
         Actions to be take during an emergency generic HSI.

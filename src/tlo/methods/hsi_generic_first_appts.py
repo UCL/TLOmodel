@@ -85,7 +85,6 @@ class HSI_BaseGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
                     consumables_checker=self.get_consumables,
                     facility_level=self.ACCEPTED_FACILITY_LEVEL,
                     treatment_id=self.TREATMENT_ID,
-                    random_state=self.module.rng,
                 )
 
     def apply(self, person_id, squeeze_factor=0.) -> None:
