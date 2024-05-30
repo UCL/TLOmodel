@@ -2010,7 +2010,7 @@ class HealthSystem(Module):
                         original_call = footprints_of_all_individual_level_hsi_event[ev_num]
                         footprints_of_all_individual_level_hsi_event[ev_num] = updated_call
                         self.running_total_footprint -= original_call
-                        self.running_total_footprint.update(updated_call)
+                        self.running_total_footprint += updated_call
 
                         # Don't recompute for mode=0
                         if self.mode_appt_constraints != 0:
