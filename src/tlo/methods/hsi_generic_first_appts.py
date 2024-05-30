@@ -1,32 +1,29 @@
-"""
-The file contains the event HSI_GenericFirstApptAtFacilityLevel1, which describes the first interaction with
-the health system following the onset of acute generic symptoms.
+"""Events which describes the first interaction with the health system.
 
-This file contains the HSI events that represent the first contact with the Health System, which are triggered by
-the onset of symptoms. Non-emergency symptoms lead to `HSI_GenericFirstApptAtFacilityLevel0` and emergency symptoms
-lead to `HSI_GenericEmergencyFirstApptAtFacilityLevel1`.
+This module contains the HSI events that represent the first contact with the health
+system, which are triggered by the onset of symptoms. Non-emergency symptoms lead to
+:py:class:`HSI_GenericNonEmergencyFirstAppt` and emergency symptoms lead to
+:py:class:`HSI_GenericEmergencyFirstAppt`.
 """
+
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, OrderedDict
+from typing import TYPE_CHECKING
 
 from tlo import logging
 from tlo.events import IndividualScopeEventMixin
 from tlo.methods.hsi_event import HSI_Event
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from tlo import Module
     from tlo.methods.dxmanager import DiagnosisTestReturnType
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-class HSI_BaseGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
-    """
-    """
-    MODULE_METHOD_ON_APPLY: Literal[
-        "do_at_generic_first_appt", "do_at_generic_first_appt_emergency"
-    ]
+
+class _BaseHSIGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id) -> None:
         super().__init__(module, person_id=person_id)
@@ -34,9 +31,7 @@ class HSI_BaseGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
         # further HSI will be needed for this person. In some cases,
         # small bits of care are provided (e.g. a diagnosis, or the
         # provision of inhaler).
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint(
-            {}
-        )
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
 
     def _diagnosis_function(
         self, tests, use_dict: bool = False, report_tried: bool = False
@@ -63,21 +58,34 @@ class HSI_BaseGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
             report_dxtest_tried=report_tried,
         )
 
-    def _do_on_generic_first_appt(self, squeeze_factor: float = 0.) -> None:
-        """
-        """
-        # Make top-level reads of information, to avoid repeat accesses.
-        modules: OrderedDict[str, "Module"] = self.sim.modules
-        symptoms = modules["SymptomManager"].has_what(self.target)
+    def _do_at_generic_first_appt_for_module(module: Module) -> Callable:
+        """Retrieves relevant do_at_generic_first_appt method for a module.
 
+        Must be implemented by concrete classes derived from this base class.
+        """
+        raise NotImplementedError
+
+    def apply(self, person_id: int, squeeze_factor: float = 0.0) -> None:
+        """
+        Run the actions required during the HSI.
+
+        TODO: person_id is not needed any more - but would have to go through the
+        whole codebase to manually identify instances of this class to change call
+        syntax, and leave other HSI_Event-derived classes alone.
+        """
         # Create a memoized view of target individuals' properties as a context manager
         # that will automatically synchronize any updates back to the population
         # dataframe on exit
         with self.sim.population.individual_properties(
             self.target, read_only=False
         ) as individual_properties:
-            for module in modules.values():
-                getattr(module, self.MODULE_METHOD_ON_APPLY)(
+            if not individual_properties["is_alive"]:
+                return
+            # Pre-evaluate symptoms for individual to avoid repeat accesses
+            # TODO: Use individual_properties to populate symptoms
+            symptoms = self.sim.modules["SymptomManager"].has_what(self.target)
+            for module in self.sim.modules.values():
+                self._do_at_generic_first_appt_for_module(module=module)(
                     person_id=self.target,
                     individual_properties=individual_properties,
                     symptoms=symptoms,
@@ -87,26 +95,15 @@ class HSI_BaseGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
                     treatment_id=self.TREATMENT_ID,
                 )
 
-    def apply(self, person_id, squeeze_factor=0.) -> None:
-        """
-        Run the actions required during the HSI.
 
-        TODO: person_id is not needed any more - but would have to go through the
-        whole codebase to manually identify instances of this class to change call
-        syntax, and leave other HSI_Event-derived classes alone.
-        """
-        if self.target_is_alive:
-            self._do_on_generic_first_appt(squeeze_factor=squeeze_factor)
-
-
-class HSI_GenericNonEmergencyFirstAppt(HSI_BaseGenericFirstAppt):
+class HSI_GenericNonEmergencyFirstAppt(_BaseHSIGenericFirstAppt):
     """
     This is a Health System Interaction Event that represents the
     first interaction with the health system following the onset
     of non-emergency symptom(s).
 
     It is generated by the HealthSeekingBehaviour module.
-    
+
     By default, it occurs at level '0' but it could occur also at
     other levels.
 
@@ -114,18 +111,24 @@ class HSI_GenericNonEmergencyFirstAppt(HSI_BaseGenericFirstAppt):
     the disease modules to determine any follow-up events that need
     to be scheduled.
     """
-    MODULE_METHOD_ON_APPLY = "do_at_generic_first_appt"
 
-    def __init__(self, module, person_id, facility_level='0'):
-        super().__init__(module, person_id=person_id, )
+    def __init__(self, module, person_id, facility_level="0"):
+        super().__init__(
+            module,
+            person_id=person_id,
+        )
 
-        assert module is self.sim.modules['HealthSeekingBehaviour']
+        assert module is self.sim.modules["HealthSeekingBehaviour"]
 
-        self.TREATMENT_ID = 'FirstAttendance_NonEmergency'
+        self.TREATMENT_ID = "FirstAttendance_NonEmergency"
         self.ACCEPTED_FACILITY_LEVEL = facility_level
 
+    @staticmethod
+    def _do_at_generic_first_appt_for_module(module: Module) -> Callable:
+        return module.do_at_generic_first_appt
 
-class HSI_GenericEmergencyFirstAppt(HSI_BaseGenericFirstAppt):
+
+class HSI_GenericEmergencyFirstAppt(_BaseHSIGenericFirstAppt):
     """
     This is a Health System Interaction Event that represents
     the generic appointment which is the first interaction with
@@ -135,7 +138,6 @@ class HSI_GenericEmergencyFirstAppt(HSI_BaseGenericFirstAppt):
     the disease modules to determine any follow-up events that need
     to be scheduled.
     """
-    MODULE_METHOD_ON_APPLY = "do_at_generic_first_appt_emergency"
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -150,8 +152,13 @@ class HSI_GenericEmergencyFirstAppt(HSI_BaseGenericFirstAppt):
         self.TREATMENT_ID = "FirstAttendance_Emergency"
         self.ACCEPTED_FACILITY_LEVEL = "1b"
 
+    @staticmethod
+    def _do_at_generic_first_appt_for_module(module: Module) -> Callable:
+        return module.do_at_generic_first_appt_emergency
+
+
 class HSI_EmergencyCare_SpuriousSymptom(HSI_Event, IndividualScopeEventMixin):
-    """This is an HSI event that provides Accident & Emergency Care for a person that has spurious emergency symptom."""
+    """HSI event providing accident & emergency care on spurious emergency symptoms."""
 
     def __init__(self, module, person_id, accepted_facility_level="1a"):
         super().__init__(module, person_id=person_id)
