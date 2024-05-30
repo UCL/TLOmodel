@@ -318,8 +318,8 @@ class Demography(Module):
             )
 
         # Check that the simulation does not run too long
-        # if self.sim.end_date.year >= 2100:
-        #     raise Exception('Year is after 2100: Demographic data do not extend that far.')
+        if self.sim.end_date.year >= 2100:
+            raise Exception('Year is after 2100: Demographic data do not extend that far.')
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
