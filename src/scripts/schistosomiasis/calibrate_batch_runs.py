@@ -67,7 +67,7 @@ class TestScenario(BaseScenario):
                 disable_and_reject_all=True,  # disable healthsystem and no HSI runs
             ),
             symptommanager.SymptomManager(resourcefilepath=self.resources),
-            schisto.Schisto(resourcefilepath=self.resources),
+            schisto.Schisto(resourcefilepath=self.resources, mda_execute=False),
 
         ]
 

@@ -76,7 +76,8 @@ def get_model_prevalence_by_district_over_time(_df):
     # Aggregate the sums of infection statuses by district_of_residence and year
     district_sum = df.sum(axis=1)
 
-    filtered_columns = df.columns.get_level_values('infection_status').isin(['High-infection', 'Low-infection'])
+    # filtered_columns = df.columns.get_level_values('infection_status').isin(['High-infection', 'Low-infection'])
+    filtered_columns = df.columns.get_level_values('infection_status').isin(['Low-infection'])
     infected = df.loc[:, filtered_columns].sum(axis=1)
 
     prop_infected = infected.div(district_sum)
