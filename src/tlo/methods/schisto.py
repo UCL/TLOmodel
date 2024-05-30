@@ -668,33 +668,33 @@ class SchistoSpecies:
             # select starting points
             if global_params['scenario'] == 1:
                 if self.name == 'haematobium':
-                    params['mean_worm_burden2010'][:] = 0.005
+                    params['mean_worm_burden2010'][:] = 0.001
                 # set mansoni to 0
                 else:
                     params['mean_worm_burden2010'][:] = 0
 
             if global_params['scenario'] == 2:
                 if self.name == 'haematobium':
-                    params['mean_worm_burden2010'][:] = 0.5
+                    params['mean_worm_burden2010'][:] = 0.01
                 # set mansoni to 0
                 else:
                     params['mean_worm_burden2010'][:] = 0
 
             if global_params['scenario'] == 3:
                 if self.name == 'haematobium':
-                    params['mean_worm_burden2010'][:] = 1
+                    params['mean_worm_burden2010'][:] = 0.1
                 # set mansoni to 0
                 else:
                     params['mean_worm_burden2010'][:] = 0
 
             if global_params['scenario'] == 4:
                 if self.name == 'haematobium':
-                    params['mean_worm_burden2010'][:] = 10
+                    params['mean_worm_burden2010'][:] = 0.5
                 # set mansoni to 0
                 else:
                     params['mean_worm_burden2010'][:] = 0
 
-            reservoir = len(in_the_district) * params['mean_worm_burden2010'][district]
+            reservoir = int(len(in_the_district) * params['mean_worm_burden2010'][district])
 
             # Determine a 'contact rate' for each person
             contact_rates = pd.Series(1, index=in_the_district, dtype=float)
@@ -712,11 +712,11 @@ class SchistoSpecies:
             if len(in_the_district):
                 harbouring_rates = df.loc[in_the_district, prop('harbouring_rate')].values
                 rates = np.multiply(harbouring_rates, contact_and_susceptibility)
-                reservoir_distr = int(reservoir * len(in_the_district))
+                # reservoir_distr = int(reservoir * len(in_the_district))
 
                 # Distribute a worm burden among persons, according to their 'contact rate'
-                if (reservoir_distr > 0) and (rates.sum() > 0):
-                    chosen = rng.choice(in_the_district, reservoir_distr, p=rates / rates.sum())
+                if (reservoir > 0) and (rates.sum() > 0):
+                    chosen = rng.choice(in_the_district, reservoir, p=rates / rates.sum())
                     unique, counts = np.unique(chosen, return_counts=True)
                     worms_per_idx = dict(zip(unique, counts))
                     df[prop('aggregate_worm_burden')].update(pd.Series(worms_per_idx))
