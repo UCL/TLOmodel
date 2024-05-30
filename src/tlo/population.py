@@ -1,7 +1,7 @@
 """The Person and Population classes."""
 
 import math
-from typing import Any, Dict
+from typing import Any, Dict, Set
 
 import pandas as pd
 
@@ -11,13 +11,20 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class PatientDetails:
-    """Read-only memoized view of population dataframe row."""
+class IndividualProperties:
+    """Memoized view of population dataframe row that is optionally read-only."""
     
-    def __init__(self, population_dataframe: pd.DataFrame, person_id: int):
+    def __init__(
+        self,
+        population_dataframe: pd.DataFrame,
+        person_id: int,
+        read_only: bool = True
+    ):
         self._population_dataframe = population_dataframe
         self._person_id = person_id
+        self._read_only = read_only
         self._property_cache: Dict[str, Any] = {}
+        self._properties_updated: Set[str] = set()
         
     def __getitem__(self, key: str) -> Any:
         try:
@@ -33,7 +40,28 @@ class PatientDetails:
         except KeyError as e:
             msg = f"'{type(self).__name__}' object has no attribute '{name}'"
             raise AttributeError(msg) from e
-    
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        if self._read_only:
+            msg = f"Cannot set value for {key} as destination is read-only"
+            raise ValueError(msg)
+        self._properties_updated.add(key)
+        self._property_cache[key] = value
+        
+    def __setattr__(self, name: str, value: Any) -> None:
+        self[name] = value
+
+    def synchronize_updates_to_dataframe(self):
+        row_index = self._population_dataframe.index.get_loc(self._person_id)
+        for key in self._properties_updated:
+            # This chained indexing approach to setting dataframe values is
+            # significantly (~3 to 4 times) quicker than using at / iat indexers, but 
+            # will fail when copy-on-write is enabled which will be default in Pandas 3
+            column = self._population_dataframe[key]
+            column.values[row_index] = self._property_cache[key]
+
+
+PatientDetails = IndividualProperties
 
 
 class Population:
@@ -49,7 +77,6 @@ class Population:
     """
 
     __slots__ = (
-        "_patient_details_readonly_type",
         "props",
         "sim",
         "initial_size",
@@ -154,15 +181,15 @@ class Population:
         size = self.initial_size if self.props.empty else len(self.props)
         self.props[name] = prop.create_series(name, size)
 
-    def row_in_readonly_form(self, patient_index: int) -> PatientDetails:
+    def row_in_readonly_form(self, person_id: int) -> IndividualProperties:
         """
-        Extract a lazily evaluated, read-only view of a row of the population dataframe.
+        Extract a lazily evaluated memoized view of a row of the population dataframe.
         
         The object returned represents the properties of an individual with properties
         accessible either using dot based attribute access or squared bracket based 
         indexing using string column names.
 
-        :param patient_index: Row index of the dataframe row to extract.
+        :param person_id: Row index of the dataframe row to extract.
         :returns: Object allowing read-only access to an individuals properties.
         """
-        return PatientDetails(self.props, patient_index)
+        return IndividualProperties(self.props, person_id)
