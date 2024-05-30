@@ -32,10 +32,11 @@ from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
+from tlo.methods.hsi_generic_first_appts import GenericFirstApptModule
 from tlo.util import random_date, sample_outcome
 
 if TYPE_CHECKING:
-    from tlo.core import DiagnosisFunction
+    from tlo.methods.hsi_generic_first_appts import DiagnosisFunction
     from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
@@ -46,7 +47,7 @@ logger.setLevel(logging.INFO)
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
 
-class Diarrhoea(Module):
+class Diarrhoea(GenericFirstApptModule):
     # Declare the pathogens that this module will simulate:
     pathogens = [
         'rotavirus',

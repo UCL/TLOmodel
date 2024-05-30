@@ -11,11 +11,12 @@ from typing import List
 import numpy as np
 import pandas as pd
 
-from tlo import Date, DateOffset, Module, Parameter, Types
+from tlo import Date, DateOffset, Parameter, Types
 from tlo.events import PopulationScopeEventMixin, Priority, RegularEvent
 from tlo.lm import LinearModel
 from tlo.methods import Metadata
 from tlo.methods.hsi_generic_first_appts import (
+    GenericFirstApptModule,
     HSI_EmergencyCare_SpuriousSymptom,
     HSI_GenericEmergencyFirstAppt,
     HSI_GenericNonEmergencyFirstAppt,
@@ -28,7 +29,7 @@ from tlo.methods.hsi_generic_first_appts import (
 HIGH_ODDS_RATIO = 1e5
 
 
-class HealthSeekingBehaviour(Module):
+class HealthSeekingBehaviour(GenericFirstApptModule):
     """
     This modules determines if the onset of symptoms will lead to that person presenting at the health
     facility for a HSI_GenericFirstAppointment.

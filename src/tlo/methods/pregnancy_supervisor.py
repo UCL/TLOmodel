@@ -11,7 +11,6 @@ from tlo import (
     DAYS_IN_YEAR,
     Date,
     DateOffset,
-    Module,
     Parameter,
     Property,
     Types,
@@ -26,6 +25,7 @@ from tlo.methods.care_of_women_during_pregnancy import (
     HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy,
 )
 from tlo.methods.causes import Cause
+from tlo.methods.hsi_generic_first_appts import GenericFirstApptModule
 from tlo.util import BitsetHandler
 
 if TYPE_CHECKING:
@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class PregnancySupervisor(Module):
+class PregnancySupervisor(GenericFirstApptModule):
     """This module is responsible for simulating the antenatal period of pregnancy (the period from conception until
      the termination of pregnancy). A number of outcomes are managed by this module including early pregnancy loss
      (induced/spontaneous abortion, ectopic pregnancy and antenatal stillbirth) and pregnancy complications of the

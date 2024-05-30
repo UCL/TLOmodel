@@ -8,25 +8,14 @@ from __future__ import annotations
 
 import json
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Set, TypeAlias, Union
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
 
 if TYPE_CHECKING:
-
-    from tlo.methods.healthsystem import HealthSystem
-    from tlo.population import IndividualProperties
+    from typing import Optional
     from tlo.simulation import Simulation
-
-DiagnosisFunction: TypeAlias = Callable[[str, bool, bool], Any]
-ConsumablesChecker: TypeAlias = Callable[
-    [
-        Union[None, np.integer, int, List, Set, Dict],
-        Union[None, np.integer, int, List, Set, Dict],
-    ],
-    Union[bool, Dict],
-]
 
 class Types(Enum):
     """Possible types for parameters and properties.
@@ -251,9 +240,6 @@ class Module:
     # parameters created from the PARAMETERS specification.
     __slots__ = ('name', 'parameters', 'rng', 'sim')
 
-    @property
-    def healthsystem(self) -> HealthSystem:
-        return self.sim.modules["HealthSystem"]
 
     def __init__(self, name=None):
         """Construct a new disease module ready to be included in a simulation.
@@ -389,70 +375,3 @@ class Module:
     def on_simulation_end(self):
         """This is called after the simulation has ended.
         Modules do not need to declare this."""
-
-    def do_at_generic_first_appt(
-        self,
-        person_id: int,
-        individual_properties: Optional[IndividualProperties],
-        symptoms: Optional[List[str]],
-        diagnosis_function: Optional[DiagnosisFunction],
-        consumables_checker: Optional[ConsumablesChecker],
-        facility_level: Optional[str],
-        treatment_id: Optional[str],
-    ) -> None:
-        """
-        Actions to be take during a non-emergency generic HSI.
-
-        Derived classes should overwrite this method so that they are compatible with
-        the :py:class:`HealthSystem module`, and can schedule HSI events when a
-        individual presents symptoms indicative of the corresponding illness or
-        condition.
-
-        When overwriting, arguments that are not required can be left out of the
-        definition. If done so, the method **must** take a ``**kwargs`` input to avoid
-        errors when looping over all disease modules and running their generic HSI
-        methods.
-
-        HSI events should be scheduled by the :py:class:`Module` subclass implementing
-        this method using the :py:meth:`HealthSystem.schedule_hsi` method.
-        
-        Implementations of this method should **not** make any update to the population
-        dataframe directly - if the target individuals properties need to be updated
-        this should be performed by updating the ``individual_properties`` argument.
-
-        :param person_id: Row index (ID) of the individual target of the HSI event in 
-            the population dataframe.
-        :param individual_properties: Properties of individual target as provided in the
-            population dataframe. Updates to individual properties may be written to
-            this object.
-        :param symptoms: List of symptoms the patient is experiencing.
-        :param diagnosis_function: A function that can run diagnosis tests based on the
-            patient's symptoms.
-        :param consumables_checker: A function that can query the HealthSystem to check
-            for available consumables.
-        :param facility_level: The level of the facility that the patient presented at.
-        :param treatment_id: The treatment id of the HSI event triggering the generic
-            appointment.
-        """
-
-    def do_at_generic_first_appt_emergency(
-        self,
-        person_id: int,
-        individual_properties: Optional[IndividualProperties] = None,
-        symptoms: Optional[List[str]] = None,
-        diagnosis_function: Optional[DiagnosisFunction] = None,
-        consumables_checker: Optional[ConsumablesChecker] = None,
-        facility_level: Optional[str] = None,
-        treatment_id: Optional[str] = None,
-    ) -> None:
-        """
-        Actions to be take during an emergency generic HSI.
-        
-        Call signature is identical to the :py:meth:`~Module.do_at_generic_first_appt`
-        method.
-
-        Derived classes should overwrite this method so that they are compatible with
-        the :py:class`HealthSystem` module, and can schedule HSI events when a
-        individual presents symptoms indicative of the corresponding illness or
-        condition.
-        """

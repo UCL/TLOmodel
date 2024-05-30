@@ -10,17 +10,105 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from tlo import logging
+import numpy as np
+
+from tlo import logging, Module
 from tlo.events import IndividualScopeEventMixin
 from tlo.methods.hsi_event import HSI_Event
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-    from tlo import Module
+    from typing import Any, Dict, List, Set, TypeAlias, Union
     from tlo.methods.dxmanager import DiagnosisTestReturnType
+    from tlo.methods.healthsystem import HealthSystem
+    from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+
+DiagnosisFunction: TypeAlias = Callable[[str, bool, bool], Any]
+ConsumablesChecker: TypeAlias = Callable[
+    [
+        Union[None, np.integer, int, List, Set, Dict],
+        Union[None, np.integer, int, List, Set, Dict],
+    ],
+    Union[bool, Dict],
+]
+
+class GenericFirstApptModule(Module):
+    """Base class for modules with actions to perform on generic first appointments."""
+    
+    @property
+    def healthsystem(self) -> HealthSystem:
+        return self.sim.modules["HealthSystem"]
+
+    def do_at_generic_first_appt(
+        self,
+        person_id: int,
+        individual_properties: IndividualProperties,
+        symptoms: List[str],
+        diagnosis_function: DiagnosisFunction,
+        consumables_checker: ConsumablesChecker,
+        facility_level: str,
+        treatment_id: str,
+    ) -> None:
+        """
+        Actions to be take during a non-emergency generic HSI.
+
+        Derived classes should overwrite this method so that they are compatible with
+        the :py:class:`HealthSystem` module, and can schedule HSI events when a
+        individual presents symptoms indicative of the corresponding illness or
+        condition.
+
+        When overwriting, arguments that are not required can be left out of the
+        definition. If done so, the method **must** take a ``**kwargs`` input to avoid
+        errors when looping over all disease modules and running their generic HSI
+        methods.
+
+        HSI events should be scheduled by the :py:class:`Module` subclass implementing
+        this method using the :py:meth:`HealthSystem.schedule_hsi` method.
+        
+        Implementations of this method should **not** make any update to the population
+        dataframe directly - if the target individuals properties need to be updated
+        this should be performed by updating the ``individual_properties`` argument.
+
+        :param person_id: Row index (ID) of the individual target of the HSI event in 
+            the population dataframe.
+        :param individual_properties: Properties of individual target as provided in the
+            population dataframe. Updates to individual properties may be written to
+            this object.
+        :param symptoms: List of symptoms the patient is experiencing.
+        :param diagnosis_function: A function that can run diagnosis tests based on the
+            patient's symptoms.
+        :param consumables_checker: A function that can query the HealthSystem to check
+            for available consumables.
+        :param facility_level: The level of the facility that the patient presented at.
+        :param treatment_id: The treatment id of the HSI event triggering the generic
+            appointment.
+        """
+
+    def do_at_generic_first_appt_emergency(
+        self,
+        person_id: int,
+        individual_properties: IndividualProperties,
+        symptoms: str,
+        diagnosis_function: DiagnosisFunction,
+        consumables_checker: ConsumablesChecker,
+        facility_level: str,
+        treatment_id: str,
+    ) -> None:
+        """
+        Actions to be take during an emergency generic HSI.
+        
+        Call signature is identical to the :py:meth:`~Module.do_at_generic_first_appt`
+        method.
+
+        Derived classes should overwrite this method so that they are compatible with
+        the :py:class`HealthSystem` module, and can schedule HSI events when a
+        individual presents symptoms indicative of the corresponding illness or
+        condition.
+        """
 
 
 class _BaseHSIGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
@@ -85,15 +173,16 @@ class _BaseHSIGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
             # TODO: Use individual_properties to populate symptoms
             symptoms = self.sim.modules["SymptomManager"].has_what(self.target)
             for module in self.sim.modules.values():
-                self._do_at_generic_first_appt_for_module(module=module)(
-                    person_id=self.target,
-                    individual_properties=individual_properties,
-                    symptoms=symptoms,
-                    diagnosis_function=self._diagnosis_function,
-                    consumables_checker=self.get_consumables,
-                    facility_level=self.ACCEPTED_FACILITY_LEVEL,
-                    treatment_id=self.TREATMENT_ID,
-                )
+                if isinstance(module, GenericFirstApptModule):
+                    self._do_at_generic_first_appt_for_module(module=module)(
+                        person_id=self.target,
+                        individual_properties=individual_properties,
+                        symptoms=symptoms,
+                        diagnosis_function=self._diagnosis_function,
+                        consumables_checker=self.get_consumables,
+                        facility_level=self.ACCEPTED_FACILITY_LEVEL,
+                        treatment_id=self.TREATMENT_ID,
+                    )
 
 
 class HSI_GenericNonEmergencyFirstAppt(_BaseHSIGenericFirstAppt):
@@ -124,7 +213,7 @@ class HSI_GenericNonEmergencyFirstAppt(_BaseHSIGenericFirstAppt):
         self.ACCEPTED_FACILITY_LEVEL = facility_level
 
     @staticmethod
-    def _do_at_generic_first_appt_for_module(module: Module) -> Callable:
+    def _do_at_generic_first_appt_for_module(module: GenericFirstApptModule) -> Callable:
         return module.do_at_generic_first_appt
 
 
@@ -153,7 +242,7 @@ class HSI_GenericEmergencyFirstAppt(_BaseHSIGenericFirstAppt):
         self.ACCEPTED_FACILITY_LEVEL = "1b"
 
     @staticmethod
-    def _do_at_generic_first_appt_for_module(module: Module) -> Callable:
+    def _do_at_generic_first_appt_for_module(module: GenericFirstApptModule) -> Callable:
         return module.do_at_generic_first_appt_emergency
 
 
