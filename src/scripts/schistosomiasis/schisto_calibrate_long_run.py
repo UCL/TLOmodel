@@ -116,7 +116,7 @@ def run_simulation(popsize=popsize, mda_execute=False):
     #     tmp[:] = prev
     #     sim.modules["Schisto"].parameters["sm_prevalence_2010"][:] = tmp
 
-    sim.modules["Schisto"].parameters["scenario"] = 2.0
+    sim.modules["Schisto"].parameters["scenario"] = 0
 
     # initialise the population
     sim.make_initial_population(n=popsize)

@@ -13,6 +13,7 @@ from tlo.methods.causes import Cause
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date
+from tlo.methods.dxmanager import DxTest
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -96,12 +97,13 @@ class Schisto(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
         self.mda_execute = mda_execute
+        self.scaleup_WASH = scaleup_WASH
 
         # Create pointer that will be to dict of disability weights
         self.disability_weights = None
 
         # Create pointer that will be to the item_code for praziquantel
-        self.item_code_for_praziquantel = None
+        self.item_codes_for_consumables_required = dict()
 
         # Create the instances of `SchistoSpecies` that will represent the two species being considered
         self.species = {_name: SchistoSpecies(self, name=_name) for _name in ('mansoni', 'haematobium')}
@@ -327,6 +329,56 @@ class Schisto(Module):
         """Look-up the item code for Praziquantel"""
         return self.sim.modules['HealthSystem'].get_item_code_from_item_name("Praziquantel 600mg_1000_CMST")
 
+    def get_consumables_for_dx_and_tx(self):
+        p = self.parameters
+        hs = self.sim.modules["HealthSystem"]
+
+        # Kato-Katz diagnostic test
+        # assume that if smear-positive, sputum smear test is 100% specific and sensitive
+        self.item_codes_for_consumables_required['KK_schisto_test'] = \
+            hs.get_item_codes_from_package_name("Microscopy Test")
+
+        # todo update quantities
+        self.item_codes_for_consumables_required['malachite_stain'] = {
+            hs.get_item_code_from_item_name("Malachite green oxalate"): 0.01}
+
+        self.item_codes_for_consumables_required['microscope_slide'] = {
+            hs.get_item_code_from_item_name("Microscope slides, lime-soda-glass, pack of 50"): 0.01}
+
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            KK_schisto_test_lowWB=DxTest(
+                property='ss_sm_infection_status',
+                target_categories=["Non-infected", "Low-infection"],
+                sensitivity=0,
+                specificity=0,
+                item_codes=[
+                    self.item_codes_for_consumables_required['Malachite green oxalate'],
+                    self.item_codes_for_consumables_required['Microscope slides, lime-soda-glass, pack of 50']]
+            )
+        )
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            KK_schisto_test_moderateWB=DxTest(
+                property='ss_sm_infection_status',
+                target_categories=["Moderate-infection"],
+                sensitivity=p["sens_sputum_smear_positive"],
+                specificity=p["spec_sputum_smear_positive"],
+                item_codes=[
+                    self.item_codes_for_consumables_required['Malachite green oxalate'],
+                    self.item_codes_for_consumables_required['Microscope slides, lime-soda-glass, pack of 50']]
+            )
+        )
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            KK_schisto_test_highWB=DxTest(
+                property='ss_sm_infection_status',
+                target_categories=["High-infection"],
+                sensitivity=p["sens_sputum_smear_positive"],
+                specificity=p["spec_sputum_smear_positive"],
+                item_codes=[
+                    self.item_codes_for_consumables_required['Malachite green oxalate'],
+                    self.item_codes_for_consumables_required['Microscope slides, lime-soda-glass, pack of 50']]
+            )
+        )
+
     def _schedule_mda_events(self) -> None:
         """Schedule MDA events, historical and prognosed."""
 
@@ -421,7 +473,7 @@ class SchistoSpecies:
         properties = {
             'infection_status': Property(
                 Types.CATEGORICAL, 'Current status of schistosomiasis infection for this species',
-                categories=['Non-infected', 'Low-infection', 'High-infection']),
+                categories=['Non-infected', 'Low-infection', 'Moderate-infection', 'High-infection']),
             'aggregate_worm_burden': Property(
                 Types.INT, 'Number of mature worms of this species in the individual'),
             'susceptibility': Property(
@@ -546,7 +598,7 @@ class SchistoSpecies:
 
     def update_infectious_status_and_symptoms(self, idx: pd.Index) -> None:
         """Updates the infection status and symptoms based on the current aggregate worm burden of this species.
-         * Assigns the 'infection status' (High-infection, Low-infection, Non-infected) to the persons with ids given
+         * Assigns the 'infection status' (High-infection, Moderate-infection, Low-infection, Non-infected) to the persons with ids given
          in the `idx` argument, according their age (in years) and their aggregate worm burden (of worms of this
          species).
          * Causes the onset symptoms to the persons newly with high intensity infection.
@@ -575,8 +627,10 @@ class SchistoSpecies:
             high_group = (
                              (age < 5) & (agg_wb >= params["high_intensity_threshold_PSAC"])
                          ) | (agg_wb >= params["high_intensity_threshold"])
-            low_group = ~high_group & (agg_wb >= params["low_intensity_threshold"])
+            moderate_group = ~high_group & (agg_wb >= params["low_intensity_threshold"])
+            low_group = (agg_wb < params["low_intensity_threshold"]) & (agg_wb > 0)
             status[high_group] = "High-infection"
+            status[moderate_group] = "Moderate-infection"
             status[low_group] = "Low-infection"
             return status
 
