@@ -54,7 +54,7 @@ def test_using_recognised_item_codes(seed):
     date = datetime.datetime(2010, 1, 1)
 
     # Initiate Consumables class
-    cons = Consumables(data=data, rng=rng)
+    cons = Consumables(availability_data=data, rng=rng)
 
     # Start a new day (this trigger is usually called by the event `HealthSystemScheduler`).
     cons.on_start_of_day(date=date)
@@ -81,7 +81,7 @@ def test_unrecognised_item_code_is_recorded(seed):
     date = datetime.datetime(2010, 1, 1)
 
     # Initiate Consumables class
-    cons = Consumables(data=data, rng=rng)
+    cons = Consumables(availability_data=data, rng=rng)
 
     # Start a new day (this trigger usually called by the event `HealthSystemScheduler`).
     cons.on_start_of_day(date=date)
@@ -124,7 +124,7 @@ def test_consumables_availability_options(seed):
 
     # Check that for each option for `availability` the result is as expected.
     for _cons_availability_option, _expected_result in options_and_expected_results.items():
-        cons = Consumables(data=data, rng=rng, availability=_cons_availability_option)
+        cons = Consumables(availability_data=data, rng=rng, availability=_cons_availability_option)
         cons.on_start_of_day(date=date)
 
         assert _expected_result == cons._request_consumables(
@@ -162,7 +162,7 @@ def test_override_cons_availability(seed):
     for _availability in ('default', 'all', 'none'):
 
         # Create consumables class
-        cons = Consumables(data=data, rng=rng, availability=_availability)
+        cons = Consumables(availability_data=data, rng=rng, availability=_availability)
 
         # Check before overriding availability
         for _ in range(1000):
@@ -241,7 +241,7 @@ def test_consumables_available_at_right_frequency(seed):
     date = datetime.datetime(2010, 1, 1)
 
     # Initiate Consumables class
-    cons = Consumables(data=data, rng=rng)
+    cons = Consumables(availability_data=data, rng=rng)
 
     # Make requests for consumables (which would normally come from an instance of `HSI_Event`).
     n_trials = 10_000
@@ -553,3 +553,73 @@ def test_get_item_codes_from_package_name():
             pd.Series(_item_codes).sort_index(),
             check_names=False
         )
+
+
+def test_consumables_availability_modes_that_depend_on_designations(seed):
+    """Test that consumables availability can be manipulated in a manner than depends on the designations of
+    consumables."""
+
+    sim = Simulation(
+        start_date=Date(2010, 1, 1),
+        seed=seed,
+    )
+
+    # Register the core modules
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+    )
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=sim.start_date)
+    hs = sim.modules['HealthSystem']
+    consumables = hs.consumables
+
+    # - Get the item_codes for each category
+    designations = hs.parameters['consumables_item_designations']
+    items_all = consumables.item_codes
+    items_medicines = set(designations.index[designations['is_medicine']]).intersection(consumables.item_codes)
+    items_diagnostics = set(designations.index[designations['is_diagnostic']]).intersection(consumables.item_codes)
+    items_other = set(designations.index[designations['is_other']]).intersection(consumables.item_codes)
+    items_vital = set(designations.index[designations['is_vital']]).intersection(consumables.item_codes)
+    items_drug_or_vaccine = set(
+        designations.index[designations['is_drug_or_vaccine']]
+    ).intersection(consumables.item_codes)
+
+    options_for_availability = consumables._options_for_availability
+
+    for availability in options_for_availability:
+        # Manipulate consumables availability initially to be all medicines being available
+        consumables.availability = availability
+
+        # Check that probabilities of availability are as expected:
+        if availability == 'all':
+            target_items = items_all
+        elif availability == 'all_medicines_available':
+            target_items = items_medicines
+        elif availability == 'all_diagnostics_available':
+            target_items = items_diagnostics
+        elif availability == 'all_medicines_and_other_available':
+            target_items = items_medicines.union(items_other)
+        elif availability == 'all_vital_available':
+            target_items = items_vital
+        elif availability == 'all_drug_or_vaccine_available':
+            target_items = items_drug_or_vaccine
+        elif availability == 'none':
+            target_items = set()
+        elif availability == 'default':
+            continue
+        else:
+            raise ValueError(f'Unexpected availability: {availability}')
+
+        # - Check probabilities for selected items are 1.0
+        if target_items:
+            assert (
+                consumables._prob_item_codes_available.loc[(slice(None), slice(None), list(target_items))] == 1.0
+            ).all()
+
+        # - Check that probabilities for other items are not all equal to 1.0
+        non_target_items = list(items_all - target_items)
+        if non_target_items:
+            assert not (
+                consumables._prob_item_codes_available.loc[(slice(None), slice(None), non_target_items)] == 1.0
+            ).all()

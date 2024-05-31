@@ -85,7 +85,7 @@ def bundle(seed):
     item_code_for_consumable_that_is_available = 1
 
     sim.modules['HealthSystem'].consumables = Consumables(
-        data=create_dummy_data_for_cons_availability(
+        availability_data=create_dummy_data_for_cons_availability(
             intrinsic_availability={
                 item_code_for_consumable_that_is_not_available: 0.0,
                 item_code_for_consumable_that_is_available: 1.0},
