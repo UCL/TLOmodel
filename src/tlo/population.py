@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional, Set, Type
 
 import pandas as pd
 
-from tlo import logging, Property
+from tlo import Property, logging
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
