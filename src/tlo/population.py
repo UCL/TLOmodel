@@ -78,7 +78,6 @@ class Population:
 
     __slots__ = (
         "props",
-        "sim",
         "initial_size",
         "new_row",
         "next_person_id",
