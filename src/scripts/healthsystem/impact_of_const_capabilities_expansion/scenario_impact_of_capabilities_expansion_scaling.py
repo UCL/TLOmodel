@@ -29,11 +29,11 @@ class ImpactOfHealthSystemMode(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = self.start_date + pd.DateOffset(years=31)
+        self.end_date = self.start_date + pd.DateOffset(years=23)
         self.pop_size = 100_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 10
+        self.runs_per_draw = 2
 
     def log_configuration(self):
         return {
@@ -74,69 +74,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
         self.YEAR_OF_CHANGE = 2019
 
         return {
-   
-            # =========== STATUS QUO ============
-            "No growth status quo":
-                mix_scenarios(
-                    self._baseline(),
-                    {
-                     "HealthSystem": {
-                        "yearly_HR_scaling_mode": "no_scaling",
-                      },
-                    }
-                ),
-                
-            "GDP growth status quo":
-                mix_scenarios(
-                    self._baseline(),
-                    {
-                     "HealthSystem": {
-                        "yearly_HR_scaling_mode": "GDP_growth",
-                      },
-                    }
-                ),
-                
-            "GDP growth fHE growth case 1 status quo":
-                mix_scenarios(
-                    self._baseline(),
-                    {
-                     "HealthSystem": {
-                        "yearly_HR_scaling_mode": "GDP_growth_fHE_case1",
-                      },
-                    }
-                ),
  
-            "GDP growth fHE growth case 3 status quo":
-                mix_scenarios(
-                    self._baseline(),
-                    {
-                     "HealthSystem": {
-                        "yearly_HR_scaling_mode": "GDP_growth_fHE_case3",
-                      },
-                    }
-                ),
-
- 
-            "GDP growth fHE growth case 4 status quo":
-                mix_scenarios(
-                    self._baseline(),
-                    {
-                     "HealthSystem": {
-                        "yearly_HR_scaling_mode": "GDP_growth_fHE_case4",
-                      },
-                    }
-                ),
-
-            "GDP growth fHE growth case 6 status quo":
-                mix_scenarios(
-                    self._baseline(),
-                    {
-                     "HealthSystem": {
-                        "yearly_HR_scaling_mode": "GDP_growth_fHE_case6",
-                      },
-                    }
-                ),
-   
             # =========== PERFECT CONSUMABLES AVAILABILITY ============
             "No growth perfect consumables":
                 mix_scenarios(
@@ -144,55 +82,6 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     {
                      "HealthSystem": {
                         "yearly_HR_scaling_mode": "no_scaling",
-                        "year_cons_availability_switch": self.YEAR_OF_CHANGE,
-                        "cons_availability_postSwitch": "all",
-                      },
-                    }
-                ),
-                
-            "GDP growth perfect consumables":
-                mix_scenarios(
-                    self._baseline(),
-                    {
-                     "HealthSystem": {
-                        "yearly_HR_scaling_mode": "GDP_growth",
-                        "year_cons_availability_switch": self.YEAR_OF_CHANGE,
-                        "cons_availability_postSwitch": "all",
-                      },
-                    }
-                ),
-                
-            "GDP growth fHE growth case 1 perfect consumables":
-                mix_scenarios(
-                    self._baseline(),
-                    {
-                     "HealthSystem": {
-                        "yearly_HR_scaling_mode": "GDP_growth_fHE_case1",
-                        "year_cons_availability_switch": self.YEAR_OF_CHANGE,
-                        "cons_availability_postSwitch": "all",
-                      },
-                    }
-                ),
- 
-            "GDP growth fHE growth case 3 perfect consumables":
-                mix_scenarios(
-                    self._baseline(),
-                    {
-                     "HealthSystem": {
-                        "yearly_HR_scaling_mode": "GDP_growth_fHE_case3",
-                        "year_cons_availability_switch": self.YEAR_OF_CHANGE,
-                        "cons_availability_postSwitch": "all",
-                      },
-                    }
-                ),
-
- 
-            "GDP growth fHE growth case 4 perfect consumables":
-                mix_scenarios(
-                    self._baseline(),
-                    {
-                     "HealthSystem": {
-                        "yearly_HR_scaling_mode": "GDP_growth_fHE_case4",
                         "year_cons_availability_switch": self.YEAR_OF_CHANGE,
                         "cons_availability_postSwitch": "all",
                       },
@@ -208,104 +97,6 @@ class ImpactOfHealthSystemMode(BaseScenario):
                         "year_cons_availability_switch": self.YEAR_OF_CHANGE,
                         "cons_availability_postSwitch": "all",
                       },
-                    }
-                ),
-
-            # =========== PERFECT HEALTHSYSTEM ============
-            "No growth perfect healthsystem":
-                mix_scenarios(
-                    self._baseline(),
-                    {
-                         'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
-                                'max_healthsystem_function': [False, True],  # <-- switch from False to True mid-way
-                                'year_of_switch': self.YEAR_OF_CHANGE,
-                         },
-                         "HealthSystem": {
-                            "yearly_HR_scaling_mode": "no_scaling",
-                            "year_cons_availability_switch": self.YEAR_OF_CHANGE,
-                            "cons_availability_postSwitch": "all",
-                          },
-                    }
-                ),
-                
-            "GDP growth perfect healthsystem":
-                mix_scenarios(
-                    self._baseline(),
-                    {
-                         'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
-                                'max_healthsystem_function': [False, True],  # <-- switch from False to True mid-way
-                                'year_of_switch': self.YEAR_OF_CHANGE,
-                         },
-                         "HealthSystem": {
-                            "yearly_HR_scaling_mode": "GDP_growth",
-                            "year_cons_availability_switch": self.YEAR_OF_CHANGE,
-                            "cons_availability_postSwitch": "all",
-                          },
-                    }
-                ),
-                
-            "GDP growth fHE growth case 1 perfect healthsystem":
-                mix_scenarios(
-                    self._baseline(),
-                    {
-                         'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
-                                'max_healthsystem_function': [False, True],  # <-- switch from False to True mid-way
-                                'year_of_switch': self.YEAR_OF_CHANGE,
-                         },
-                         "HealthSystem": {
-                            "yearly_HR_scaling_mode": "GDP_growth_fHE_case1",
-                            "year_cons_availability_switch": self.YEAR_OF_CHANGE,
-                            "cons_availability_postSwitch": "all",
-                          },
-                    }
-                ),
- 
-            "GDP growth fHE growth case 3 perfect healthsystem":
-                mix_scenarios(
-                    self._baseline(),
-                    {
-                        'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
-                                'max_healthsystem_function': [False, True],  # <-- switch from False to True mid-way
-                                'year_of_switch': self.YEAR_OF_CHANGE,
-                        },
-                        "HealthSystem": {
-                            "yearly_HR_scaling_mode": "GDP_growth_fHE_case3",
-                            "year_cons_availability_switch": self.YEAR_OF_CHANGE,
-                            "cons_availability_postSwitch": "all",
-                        },
-                    }
-                ),
-
- 
-            "GDP growth fHE growth case 4 perfect healthsystem":
-                mix_scenarios(
-                    self._baseline(),
-                    {
-                        'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
-                                'max_healthsystem_function': [False, True],  # <-- switch from False to True mid-way
-                                'year_of_switch': self.YEAR_OF_CHANGE,
-                        },
-                        "HealthSystem": {
-                            "yearly_HR_scaling_mode": "GDP_growth_fHE_case4",
-                            "year_cons_availability_switch": self.YEAR_OF_CHANGE,
-                            "cons_availability_postSwitch": "all",
-                        },
-                    }
-                ),
-
-            "GDP growth fHE growth case 6 perfect healthsystem":
-                mix_scenarios(
-                    self._baseline(),
-                    {
-                        'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
-                                'max_healthsystem_function': [False, True],  # <-- switch from False to True mid-way
-                                'year_of_switch': self.YEAR_OF_CHANGE,
-                        },
-                        "HealthSystem": {
-                            "yearly_HR_scaling_mode": "GDP_growth_fHE_case6",
-                            "year_cons_availability_switch": self.YEAR_OF_CHANGE,
-                            "cons_availability_postSwitch": "all",
-                        },
                     }
                 ),
 
