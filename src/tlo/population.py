@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional, Set, Type
 
 import pandas as pd
 
-from tlo import logging
+from tlo import logging, Property
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -85,22 +85,29 @@ class Population:
         "new_rows",
     )
 
-    def __init__(self, sim, initial_size: int, append_size: int = None):
+    def __init__(
+        self,
+        properties: Dict[str, Property],
+        initial_size: int,
+        append_size: Optional[int] = None,
+    ):
         """Create a new population.
 
-        This will create the required the population dataframe and initialise individual's
-        properties as dataframe columns with 'empty' values. The simulation will then call disease
-        modules to fill in suitable starting values.
+        This will create the required the population dataframe and initialise
+        individual's properties as dataframe columns with 'empty' values. The simulation
+        will then call disease modules to fill in suitable starting values.
 
-        :param sim: the Simulation containing this population
-        :param initial_size: the initial population size
-        :param append_size: how many rows to append when growing the population dataframe (optional)
+        :param properties: Dictionary defining properties (columns) to initialise
+            population dataframe with, keyed by property name and with values
+            :py:class:`Property` instances defining the property type.
+        :param initial_size: The initial population size.
+        :param append_size: How many rows to append when growing the population
+            dataframe (optional).
         """
-        self.sim = sim
         self.initial_size = initial_size
 
         # Create empty property arrays
-        self.props = self._create_props(initial_size)
+        self.props = self._create_props(initial_size, properties)
 
         if append_size is None:
             # approximation based on runs to increase capacity of dataframe ~twice a year
@@ -120,7 +127,7 @@ class Population:
         # use the person_id of the next person to be added to the dataframe to increase capacity
         self.next_person_id = initial_size
 
-    def _create_props(self, size):
+    def _create_props(self, size: int, properties: Dict[str, Property]) -> pd.DataFrame:
         """Internal helper function to create a properties dataframe.
 
         :param size: the number of rows to create
@@ -128,8 +135,7 @@ class Population:
         return pd.DataFrame(
             data={
                 property_name: property.create_series(property_name, size)
-                for module in self.sim.modules.values()
-                for property_name, property in module.PROPERTIES.items()
+                for property_name, property in properties.items()
             },
             index=pd.RangeIndex(stop=size, name="person"),
         )

@@ -634,11 +634,11 @@ class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         dates_of_birth = df.loc[df.is_alive, 'date_of_birth']
         df.loc[df.is_alive, 'age_exact_years'] = age_at_date(
-            population.sim.date, dates_of_birth
+            self.module.sim.date, dates_of_birth
         )
         df.loc[df.is_alive, 'age_years'] = df.loc[df.is_alive, 'age_exact_years'].astype('int64')
         df.loc[df.is_alive, 'age_range'] = df.loc[df.is_alive, 'age_years'].map(self.age_range_lookup)
-        df.loc[df.is_alive, 'age_days'] = (population.sim.date - dates_of_birth).dt.days
+        df.loc[df.is_alive, 'age_days'] = (self.module.sim.date - dates_of_birth).dt.days
 
 
 class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
