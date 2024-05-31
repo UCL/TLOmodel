@@ -73,7 +73,8 @@ def run_simulation(popsize=popsize, mda_execute=False):
                  # healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable_and_reject_all=True),
                  really_simplified_births.ReallySimplifiedBirths(resourcefilepath=resourcefilepath),
-                 schisto.Schisto(resourcefilepath=resourcefilepath, mda_execute=mda_execute),
+                 schisto.Schisto(resourcefilepath=resourcefilepath, mda_execute=mda_execute,
+                                 scaleup_WASH=False),
                  )
 
     # # set prevalence for species

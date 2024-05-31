@@ -84,11 +84,15 @@ class Schisto(Module):
         'MDA_coverage_prognosed': Parameter(Types.DATA_FRAME,
                                             'Probability of getting PZQ in the MDA for PSAC, SAC and Adults '
                                             'in future rounds, with the frequency given in months'),
-        'scenario': Parameter(Types.REAL,
+        'calibration_scenario': Parameter(Types.REAL,
                                                'Scenario used to reset parameters to run calibration sims'),
+        'scenario_start_date': Parameter(Types.DATE,
+                              'Start date for scenario projections'),
+        'projection_scenario': Parameter(Types.REAL,
+                                          'Scenario used to set parameters for projections'),
     }
 
-    def __init__(self, name=None, resourcefilepath=None, mda_execute=True):
+    def __init__(self, name=None, resourcefilepath=None, mda_execute=True, scaleup_WASH=False):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
         self.mda_execute = mda_execute
@@ -150,7 +154,7 @@ class Schisto(Module):
         df.loc[df.is_alive, f'{self.module_prefix}_last_PZQ_date'] = pd.NaT
 
         # reset all to one district if doing calibration runs
-        if p['scenario'] > 0:
+        if p['calibration_scenario'] > 0:
 
             df['district_num_of_residence'] = df['district_num_of_residence'][0]
 
@@ -184,6 +188,10 @@ class Schisto(Module):
         # Schedule MDA events
         if self.mda_execute:
             self._schedule_mda_events()
+
+        # schedule WASH scale-up
+        if self.scaleup_WASH:
+            sim.schedule_event(SchistoLoggingEvent(self), self.parameters['scenario_start_date'])
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -264,7 +272,7 @@ class Schisto(Module):
                             'prob_sent_to_lab_test_children',
                             'prob_sent_to_lab_test_adults',
                             'rr_WASH',
-                            'scenario',
+                            'calibration_scenario',
             # 'PZQ_efficacy',
                             ):
             parameters[_param_name] = float(param_list[_param_name])
@@ -666,28 +674,28 @@ class SchistoSpecies:
             # reservoir = num_infected * params['mean_worm_burden2010'][district]
 
             # select starting points
-            if global_params['scenario'] == 1:
+            if global_params['calibration_scenario'] == 1:
                 if self.name == 'haematobium':
                     params['mean_worm_burden2010'][:] = 0.001
                 # set mansoni to 0
                 else:
                     params['mean_worm_burden2010'][:] = 0
 
-            if global_params['scenario'] == 2:
+            if global_params['calibration_scenario'] == 2:
                 if self.name == 'haematobium':
                     params['mean_worm_burden2010'][:] = 0.01
                 # set mansoni to 0
                 else:
                     params['mean_worm_burden2010'][:] = 0
 
-            if global_params['scenario'] == 3:
+            if global_params['calibration_scenario'] == 3:
                 if self.name == 'haematobium':
                     params['mean_worm_burden2010'][:] = 0.1
                 # set mansoni to 0
                 else:
                     params['mean_worm_burden2010'][:] = 0
 
-            if global_params['scenario'] == 4:
+            if global_params['calibration_scenario'] == 4:
                 if self.name == 'haematobium':
                     params['mean_worm_burden2010'][:] = 0.5
                 # set mansoni to 0
