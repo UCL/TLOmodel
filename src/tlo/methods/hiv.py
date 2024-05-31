@@ -38,6 +38,7 @@ from tlo.methods import Metadata, demography, tb
 from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
+from tlo.methods.hsi_generic_first_appts import GenericFirstApptModule
 from tlo.methods.symptommanager import Symptom
 from tlo.util import create_age_range_lookup
 
@@ -48,7 +49,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class Hiv(Module):
+class Hiv(GenericFirstApptModule):
     """
     The HIV Disease Module
     """
