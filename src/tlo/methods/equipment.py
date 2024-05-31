@@ -1,6 +1,6 @@
 import warnings
 from collections import defaultdict
-from typing import Counter, Iterable, Literal, Set, Union
+from typing import Counter, Dict, Iterable, Literal, Set, Union
 
 import numpy as np
 import pandas as pd
@@ -77,6 +77,7 @@ class Equipment:
 
         # - Data structures for quick look-ups for items and descriptors
         self._item_code_lookup = self.catalogue.set_index('Item_Description')['Item_Code'].to_dict()
+        self._pkg_lookup = self._create_pkg_lookup()
         self._all_item_descriptors = set(self._item_code_lookup.keys())
         self._all_item_codes = set(self._item_code_lookup.values())
         self._all_fac_ids = self.master_facilities_list['Facility_ID'].unique()
@@ -134,11 +135,11 @@ class Equipment:
 
         def check_item_codes_recognised(item_codes: set[int]):
             if not item_codes.issubset(self._all_item_codes):
-                warnings.warn(f'Item code(s) "{item_codes}" not recognised.')
+                warnings.warn(f'At least one item code was unrecognised: "{item_codes}".')
 
         def check_item_descriptors_recognised(item_descriptors: set[str]):
             if not item_descriptors.issubset(self._all_item_descriptors):
-                warnings.warn(f'Item descriptor(s) "{item_descriptors}" not recognised.')
+                warnings.warn(f'At least one item descriptor was unrecognised "{item_descriptors}".')
 
         # Make into a set if it is not one already
         if isinstance(items, (str, int)):
@@ -248,13 +249,37 @@ class Equipment:
                 data=row.to_dict(),
             )
 
-    def lookup_item_codes_from_pkg_name(self, pkg_name: str) -> Set[int]:
-        """Convenience function to find the set of item_codes that are grouped under a package name in the catalogue.
-        It is expected that this is used by the disease module once and then the resulting equipment item_codes are
-        saved on the module."""
+    def from_pkg_names(self, pkg_names: Union[str, Iterable[str]]) -> Set[int]:
+        """Convenience function to find the set of item_codes that are grouped under requested package name(s) in the
+        catalogue."""
+        # Make into a set if it is not one already
+        if isinstance(pkg_names, (str, int)):
+            pkg_names = set([pkg_names])
+        else:
+            pkg_names = set(pkg_names)
+
+        item_codes = set()
+        for pkg_name in pkg_names:
+            if pkg_name in self._pkg_lookup.keys():
+                item_codes.update(self._pkg_lookup[pkg_name])
+            else:
+                raise ValueError(f'That Pkg_Name is not in the catalogue: {pkg_name=}')
+
+        return item_codes
+
+    def _create_pkg_lookup(self) -> Dict[str, Set[int]]:
         df = self.catalogue
+        pkg_lookup = dict()
 
-        if pkg_name not in df['Pkg_Name'].unique():
-            raise ValueError(f'That Pkg_Name is not in the catalogue: {pkg_name=}')
-
-        return set(df.loc[df['Pkg_Name'] == pkg_name, 'Item_Code'].values)
+        pkg_names_raw = set(df['Pkg_Name'].unique()[~pd.isnull(df['Pkg_Name'].unique())])
+        all_multiple_pkg_names = set(name for name in pkg_names_raw if ", " in name)
+        all_pkg_names = pkg_names_raw - all_multiple_pkg_names
+        for pkg_name in all_pkg_names:
+            pkg_lookup[pkg_name] = set(df.loc[df['Pkg_Name'] == pkg_name, 'Item_Code'].values)
+        for multiple_pkg_name in all_multiple_pkg_names:
+            for pkg_name in multiple_pkg_name.split(", "):
+                if pkg_name not in all_pkg_names:
+                    pkg_lookup[pkg_name] = set()
+                    all_pkg_names.update({pkg_name})
+                pkg_lookup[pkg_name].update(set(df.loc[df['Pkg_Name'] == multiple_pkg_name, 'Item_Code'].values))
+        return pkg_lookup

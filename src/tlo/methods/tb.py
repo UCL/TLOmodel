@@ -1958,9 +1958,7 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
                 dx_tests_to_run="tb_xray_smear_negative", hsi_event=self
             )
         if test_result is not None:
-            # Add used equipment
-            self.add_equipment({'X-ray machine', 'X-ray viewer'})
-            # TODO: DISCUSSED @Eva make an x-ray pkg with these items
+            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('X-ray'))
 
         # if consumables not available, refer to level 2
         # return blank footprint as xray did not occur
@@ -2035,9 +2033,7 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
                 dx_tests_to_run="tb_xray_smear_negative", hsi_event=self
             )
         if test_result is not None:
-            # Add used equipment
-            self.add_equipment({'X-ray machine', 'X-ray viewer'})
-            # TODO: DISCUSSED Eva make an x-ray pkg with these items
+            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('X-ray'))
 
         # if consumables not available, rely on clinical diagnosis
         # return blank footprint as xray was not available

@@ -796,9 +796,7 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         if cons_available:
             # If consumables are available and the treatment will go ahead - add the used equipment
-            # TODO: DISCUSSED - link to new surgical pacakge
-            self.add_equipment({'Infusion pump', 'Drip stand', 'Laparotomy Set',
-                                   'Blood pressure machine', 'Pulse oximeter'})
+            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
 
             # Log the use of adjuvant chemotherapy
             self.get_consumables(

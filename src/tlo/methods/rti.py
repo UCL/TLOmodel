@@ -3205,8 +3205,7 @@ class HSI_RTI_Imaging_Event(HSI_Event, IndividualScopeEventMixin):
         road_traffic_injuries.rti_injury_diagnosis(person_id, self.EXPECTED_APPT_FOOTPRINT)
 
         if 'DiagRadio' in list(self.EXPECTED_APPT_FOOTPRINT.keys()):
-            # TODO: @Eva - DISCUSSED use xray package when available
-            self.add_equipment({'X-ray machine', 'X-ray viewer'})
+            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('X-ray'))
 
         elif 'Tomography' in list(self.EXPECTED_APPT_FOOTPRINT.keys()):
             self.ACCEPTED_FACILITY_LEVEL = '3'
@@ -3513,13 +3512,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
 
         if df.loc[person_id, 'rt_ISS_score'] > self.hdu_cut_off_iss_score:
 
-            # to do @eva/joe - DISCUSSED, make ICU package and use here
-            self.add_equipment({'Analyser, Combined Chemistry and Electrolytes',
-                                   'Analyser, Haematology',
-                                   'Patient monitor', 'Drip stand',
-                                   'Infusion pump', 'Blood pressure machine',
-                                   'Pulse oximeter', 'Trolley, emergency', 'Stethoscope',
-                                   'Oxygen cylinder, with regulator'})
+            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('ICU'))
 
             mean_icu_days = p['mean_icu_days']
             sd_icu_days = p['sd_icu_days']
@@ -4099,9 +4092,7 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
                          data=f"Fracture casts available for person {person_id} {open_fracture_counts} open fractures"
                          )
 
-            # Todo: DISCUSSED @Eva link to surgical equipment package when that exsists
-            self.add_equipment(
-                {'Infusion pump', 'Drip stand', 'Laparotomy Set', 'Blood pressure machine', 'Pulse oximeter'})
+            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
 
             person = df.loc[person_id]
             # update the dataframe to show this person is recieving treatment
@@ -4823,8 +4814,9 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
             assert df.loc[person_id, 'rt_diagnosed'], 'This person has not been through a and e'
             assert df.loc[person_id, 'rt_med_int'], 'This person has not been through rti med int'
 
-            # TODO: @eva - DISCUSSED @eva add surgical package
-            self.add_equipment({'Laparotomy Set', 'Infusion pump', 'Drip stand'})
+            # TODO: @Joe to confirm major surgery pkg should be used here (as the original set of equipment here was not
+            #  the full pkg)
+            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
 
             # ------------------------ Track permanent disabilities with treatment -------------------------------------
             # --------------------------------- Perm disability from TBI -----------------------------------------------
@@ -5141,8 +5133,9 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
         # todo: think about consequences of certain consumables not being available for minor surgery and model health
         #  outcomes
         if request_outcome:
-            # TODO: DISCUSSED @Eva link to surgical equipment package when that exists
-            self.add_equipment({'Laparotomy Set', 'Infusion pump', 'Drip stand'})
+            # TODO: @Joe to confirm major surgery pkg should be used here (as the original set of equipment here was not
+            #  the full pkg)
+            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
 
             # create a dictionary to store the recovery times for each injury in days
             minor_surg_recov_time_days = {
