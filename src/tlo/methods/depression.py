@@ -39,7 +39,7 @@ class Depression(Module):
         'Demography', 'Contraception', 'HealthSystem', 'Lifestyle', 'SymptomManager'
     }
 
-    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'Hiv'}
 
     # Declare Metadata
     METADATA = {
@@ -318,10 +318,6 @@ class Depression(Module):
         ]
 
         conditional_predictors = [
-            Predictor('hv_inf').when(True, p['rr_depr_hiv']),
-        ] if "Hiv" in self.sim.modules else []
-
-        conditional_predictors = [
             Predictor().when(
                 'hv_inf & hv_diagnosed',
                 p["rr_depr_hiv"]),
@@ -562,7 +558,7 @@ class Depression(Module):
     ):
         """
         Returns True if any signs of depression are present, otherwise False.
-        
+
         Raises an error if the treatment type cannot be identified.
         """
         if treatment_id == "FirstAttendance_NonEmergency":
@@ -617,7 +613,7 @@ class Depression(Module):
         """
         This is called by any HSI event when depression is suspected or otherwise investigated.
 
-        At least one of the diagnosis_function or hsi_event arguments must be provided; if both 
+        At least one of the diagnosis_function or hsi_event arguments must be provided; if both
         are provided, the hsi_event argument is ignored.
         - If the hsi_event argument is provided, that event is used to access the diagnosis
         manager and run diagnosis tests.

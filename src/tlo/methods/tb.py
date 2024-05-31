@@ -372,6 +372,10 @@ class Tb(Module):
             Types.INT,
             "last year for which data are available",
         ),
+        "length_of_inpatient_stay_if_terminal": Parameter(
+            Types.LIST,
+            "length of inpatient stay for end-of-life TB patients",
+        ),
     }
 
     def read_parameters(self, data_folder):
@@ -634,6 +638,7 @@ class Tb(Module):
             )
 
     def select_tb_test(self, person_id):
+
         df = self.sim.population.props
         p = self.parameters
         person = df.loc[person_id]
@@ -733,7 +738,7 @@ class Tb(Module):
                 target_categories=["active"],
                 sensitivity=p["sens_clinical"],
                 specificity=p["spec_clinical"],
-                item_codes=[],
+                item_codes=[]
             )
         )
 
@@ -842,10 +847,10 @@ class Tb(Module):
         # 2) log at the end of the year
         sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(years=1))
 
-        # 2) Define the DxTests and get the consumables required
+        # 3) Define the DxTests and get the consumables required
         self.get_consumables_for_dx_and_tx()
 
-        # 3) (Optionally) Schedule the event to check the configuration of all properties
+        # 4) (Optionally) Schedule the event to check the configuration of all properties
         if self.run_with_checks:
             sim.schedule_event(
                 TbCheckPropertiesEvent(self), sim.date + pd.DateOffset(months=1)
@@ -949,32 +954,26 @@ class Tb(Module):
         """
         df = population.props
 
-        # if running scenarios, need to modify impact of treatment
-        p_hiv = self.sim.modules["Hiv"].parameters
-        if (p_hiv['scenario'] == 2) or (p_hiv['scenario'] == 5):
-            prop_untreated = 1
+        # sum active tb cases
+        num_active_tb_cases = len(df[(df.tb_inf == "active") &
+                                     (df.tb_strain == strain) &
+                                     df.is_alive])
 
+        # sum treated active tb cases
+        # if mdr-tb must be on mdr treatment, otherwise consider as untreated case
+        if strain == "mdr":
+            num_treated_tb_cases = len(df[(df.tb_inf == "active") &
+                                          (df.tb_strain == strain) &
+                                          df.tb_on_treatment &
+                                          (df.tb_treatment_regimen == "tb_mdrtx") &
+                                          df.is_alive])
         else:
-            # sum active tb cases
-            num_active_tb_cases = len(df[(df.tb_inf == "active") &
-                                         (df.tb_strain == strain) &
-                                         df.is_alive])
+            num_treated_tb_cases = len(df[(df.tb_inf == "active") &
+                                          (df.tb_strain == strain) &
+                                          df.tb_on_treatment &
+                                          df.is_alive])
 
-            # sum treated active tb cases
-            # if mdr-tb must be on mdr treatment, otherwise consider as untreated case
-            if strain == "mdr":
-                num_treated_tb_cases = len(df[(df.tb_inf == "active") &
-                                              (df.tb_strain == strain) &
-                                              df.tb_on_treatment &
-                                              (df.tb_treatment_regimen == "tb_mdrtx") &
-                                              df.is_alive])
-            else:
-                num_treated_tb_cases = len(df[(df.tb_inf == "active") &
-                                              (df.tb_strain == strain) &
-                                              df.tb_on_treatment &
-                                              df.is_alive])
-
-            prop_untreated = 1 - (num_treated_tb_cases / num_active_tb_cases) if num_active_tb_cases else 1
+        prop_untreated = 1 - (num_treated_tb_cases / num_active_tb_cases) if num_active_tb_cases else 1
 
         return prop_untreated
 
@@ -1596,7 +1595,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
 
         self.TREATMENT_ID = "Tb_Test_Screening"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
-        self.ACCEPTED_FACILITY_LEVEL = "1a" if (self.facility_level == "1a") else "2"
+        self.ACCEPTED_FACILITY_LEVEL = "1a" if self.facility_level == "1a" else "2"
 
     def apply(self, person_id, squeeze_factor):
         """Do the screening and referring to next tests"""
@@ -1717,9 +1716,9 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                     )
                     return self.make_appt_footprint({"Over5OPD": 1})
 
-                elif self.facility_level != "1a":
-                    # relevant test depends on smear status (changes parameters on sensitivity/specificity
+                else:
                     if smear_status:
+                        # relevant test depends on smear status (changes parameters on sensitivity/specificity
                         test_result = self.sim.modules[
                             "HealthSystem"
                         ].dx_manager.run_dx_test(
@@ -1953,6 +1952,7 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
         # if consumables not available, refer to level 2
         # return blank footprint as xray did not occur
         if test_result is None:
+
             ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({})
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -2418,7 +2418,7 @@ class HSI_Tb_EndOfLifeCare(HSI_Event, IndividualScopeEventMixin):
     already within 2 weeks
     """
 
-    def __init__(self, module, person_id, beddays):
+    def __init__(self, module, person_id, beddays=8):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Tb)
 
@@ -2427,20 +2427,13 @@ class HSI_Tb_EndOfLifeCare(HSI_Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = "2"
 
         self.beddays = beddays
-        self.BEDDAYS_FOOTPRINT = (
-            self.make_beddays_footprint({"general_bed": self.beddays})
-            if self.beddays
-            else self.make_beddays_footprint({"general_bed": 7.5})
-        )
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({"general_bed": self.beddays})
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
 
         if not df.at[person_id, "is_alive"]:
-            return hs.get_blank_appt_footprint()
-
-        if df.at[person_id, "hv_art"] == "virally_suppressed":
             return hs.get_blank_appt_footprint()
 
         logger.debug(
@@ -2506,6 +2499,7 @@ class TbDecideDeathEvent(Event, IndividualScopeEventMixin):
 
     def apply(self, person_id):
         df = self.sim.population.props
+        p = self.module.parameters
 
         if not df.at[person_id, "is_alive"]:
             return
@@ -2520,12 +2514,15 @@ class TbDecideDeathEvent(Event, IndividualScopeEventMixin):
 
         # use linear model to determine whether this person will die:
         rng = self.module.rng
-        result = self.module.lm["death_rate"].predict(df.loc[[person_id]], rng=rng)
+        will_die = self.module.lm["death_rate"].predict(df.loc[[person_id]], rng=rng)
 
-        if result:
+        if will_die:
             # schedule hospital stay for this person
             # schedule hospital stay
-            beddays = self.module.rng.randint(low=5, high=10)
+            beddays = self.module.rng.randint(
+                low=p['length_of_inpatient_stay_if_terminal'][0],
+                high=p['length_of_inpatient_stay_if_terminal'][1])
+
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 hsi_event=HSI_Tb_EndOfLifeCare(
                     person_id=person_id, module=self.sim.modules["Tb"], beddays=beddays
@@ -2537,7 +2534,7 @@ class TbDecideDeathEvent(Event, IndividualScopeEventMixin):
 
             # schedule death for this person after hospital stay
             self.sim.schedule_event(
-                event=TbDeathEvent(person_id=person_id, module=self.module, cause="TB"),
+                event=TbDeathEvent(person_id=person_id, module=self.module),
                 date=self.sim.date + pd.DateOffset(days=beddays),
             )
 
@@ -2549,9 +2546,8 @@ class TbDeathEvent(Event, IndividualScopeEventMixin):
     will depend on treatment status, smear status and age
     """
 
-    def __init__(self, module, person_id, cause):
+    def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-        self.cause = cause
 
     def apply(self, person_id):
         df = self.sim.population.props
@@ -2569,7 +2565,7 @@ class TbDeathEvent(Event, IndividualScopeEventMixin):
 
         self.sim.modules["Demography"].do_death(
             individual_id=person_id,
-            cause=self.cause,
+            cause="TB",
             originating_module=self.module,
         )
 
@@ -2672,22 +2668,22 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         num_latent_adult = len(
             df[(df.tb_inf == "latent") & (df.age_years >= 15) & df.is_alive]
         )
-        prev_latent_adult = (
-            num_latent_adult / len(df[(df.age_years >= 15) & df.is_alive])
-            if len(df[(df.age_years >= 15) & df.is_alive])
-            else 0
-        )
+        prev_latent_adult = num_latent_adult / len(
+            df[(df.age_years >= 15) & df.is_alive]
+        ) if len(
+            df[(df.age_years >= 15) & df.is_alive]
+        ) else 0
         assert prev_latent_adult <= 1
 
         # proportion of population with latent TB - children
         num_latent_child = len(
             df[(df.tb_inf == "latent") & (df.age_years < 15) & df.is_alive]
         )
-        prev_latent_child = (
-            num_latent_child / len(df[(df.age_years < 15) & df.is_alive])
-            if len(df[(df.age_years < 15) & df.is_alive])
-            else 0
-        )
+        prev_latent_child = num_latent_child / len(
+            df[(df.age_years < 15) & df.is_alive]
+        ) if len(
+            df[(df.age_years < 15) & df.is_alive]
+        ) else 0
         assert prev_latent_child <= 1
 
         logger.info(
@@ -2712,7 +2708,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[
                 (df.tb_strain == "mdr")
                 & (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
-            ]
+                ]
         )
 
         if new_mdr_cases:
@@ -2734,8 +2730,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         new_tb_diagnosis = len(
             df[
                 (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
-                & (df.tb_date_diagnosed >= (now - DateOffset(months=self.repeat)))
-            ]
+                & (df.tb_date_diagnosed >= (now - DateOffset(months=self.repeat)))]
         )
 
         if new_tb_diagnosis:
@@ -2749,7 +2744,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[
                 (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
                 & (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
-            ]
+                ]
         )
 
         # treatment coverage: if became active and was treated in last timeperiod
@@ -2760,7 +2755,11 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             tx_coverage = 0
 
         # ipt coverage
-        new_tb_ipt = len(df[(df.tb_date_ipt >= (now - DateOffset(months=self.repeat)))])
+        new_tb_ipt = len(
+            df[
+                (df.tb_date_ipt >= (now - DateOffset(months=self.repeat)))
+            ]
+        )
 
         # this will give ipt among whole population - not just eligible pop
         if new_tb_ipt:
@@ -2788,27 +2787,17 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # adults
         # get index of adults starting tx in last time-period
         # note tb onset may have been up to 3 years prior to treatment
-        adult_tx_idx = df.loc[
-            (df.age_years >= 16)
-            & (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
-        ].index
+        adult_tx_idx = df.loc[(df.age_years >= 16) &
+                              (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))].index
 
         # calculate treatment_date - onset_date for each person in index
-        adult_tx_delays = (
-            df.loc[adult_tx_idx, "tb_date_treated"]
-            - df.loc[adult_tx_idx, "tb_date_active"]
-        ).dt.days
+        adult_tx_delays = (df.loc[adult_tx_idx, "tb_date_treated"] - df.loc[adult_tx_idx, "tb_date_active"]).dt.days
         adult_tx_delays = adult_tx_delays.tolist()
 
         # children
-        child_tx_idx = df.loc[
-            (df.age_years < 16)
-            & (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
-        ].index
-        child_tx_delays = (
-            df.loc[child_tx_idx, "tb_date_treated"]
-            - df.loc[child_tx_idx, "tb_date_active"]
-        ).dt.days
+        child_tx_idx = df.loc[(df.age_years < 16) &
+                              (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))].index
+        child_tx_delays = (df.loc[child_tx_idx, "tb_date_treated"] - df.loc[child_tx_idx, "tb_date_active"]).dt.days
         child_tx_delays = child_tx_delays.tolist()
 
         logger.info(
@@ -2832,7 +2821,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 ~(df.tb_date_active >= (now - DateOffset(months=36)))
                 & (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
                 & (df.age_years >= 16)
-            ]
+                ]
         )
 
         # these are all new adults treated, regardless of tb status
@@ -2840,7 +2829,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[
                 (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
                 & (df.age_years >= 16)
-            ]
+                ]
         )
 
         # proportion of adults starting on treatment who are false positive
@@ -2855,7 +2844,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 ~(df.tb_date_active >= (now - DateOffset(months=36)))
                 & (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
                 & (df.age_years < 16)
-            ]
+                ]
         )
 
         # these are all new children treated, regardless of tb status
@@ -2863,7 +2852,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[
                 (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
                 & (df.age_years < 16)
-            ]
+                ]
         )
 
         # proportion of children starting on treatment who are false positive
@@ -2932,15 +2921,14 @@ class DummyTbModule(Module):
         df = population.props
 
         tb_idx = df.index[
-            df.is_alive
-            & (self.rng.random_sample(len(df.is_alive)) < self.active_tb_prev)
-        ]
+            df.is_alive & (self.rng.random_sample(len(df.is_alive)) < self.active_tb_prev)
+            ]
         df.loc[tb_idx, "tb_inf"] = "active"
 
     def initialise_simulation(self, sim):
         pass
 
     def on_birth(self, mother, child):
-        child_infected = self.rng.random_sample() < self.active_tb_prev
+        child_infected = (self.rng.random_sample() < self.active_tb_prev)
         if child_infected:
             self.sim.population.props.at[child, "tb_inf"] = "active"
