@@ -480,6 +480,68 @@ class Schisto(Module):
             )
             self.healthsystem.schedule_hsi_event(event, priority=0, topen=self.sim.date)
 
+    def select_and_perform_test(self, person_id):
+
+        df = self.sim.population.props
+        p = self.parameters
+
+        # choose test
+        persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
+        if any(symptom in p['sh_symptoms'].keys() for symptom in persons_symptoms):
+            test = 'urine_filtration_test'
+        else:
+            test = 'kato-katz'
+
+        # perform the test
+        if test == 'urine_filtration_test':
+
+            # sensitivity of test depends worm burden
+            if df.at[person_id, 'ss_sh_infection_status'].isin('Non-infected', 'Low-infection'):
+
+                test_result = self.sim.modules[
+                    "HealthSystem"
+                ].dx_manager.run_dx_test(
+                    dx_tests_to_run="UF_schisto_test_lowWB", hsi_event=self
+                )
+            elif df.at[person_id, 'ss_sh_infection_status'] == ('Moderate-infection'):
+                test_result = self.sim.modules[
+                    "HealthSystem"
+                ].dx_manager.run_dx_test(
+                    dx_tests_to_run="UF_schisto_test_moderateWB", hsi_event=self
+                )
+            else:
+                test_result = self.sim.modules[
+                    "HealthSystem"
+                ].dx_manager.run_dx_test(
+                    dx_tests_to_run="UF_schisto_test_highWB", hsi_event=self
+                )
+
+        # otherwise perform Kato-Katz
+        else:
+
+            # sensitivity of test depends worm burden
+            if df.at[person_id, 'ss_sm_infection_status'].isin('Non-infected', 'Low-infection'):
+
+                test_result = self.sim.modules[
+                    "HealthSystem"
+                ].dx_manager.run_dx_test(
+                    dx_tests_to_run="KK_schisto_test_lowWB", hsi_event=self
+                )
+            elif df.at[person_id, 'ss_sm_infection_status'] == ('Moderate-infection'):
+                test_result = self.sim.modules[
+                    "HealthSystem"
+                ].dx_manager.run_dx_test(
+                    dx_tests_to_run="KK_schisto_test_moderateWB", hsi_event=self
+                )
+            else:
+                test_result = self.sim.modules[
+                    "HealthSystem"
+                ].dx_manager.run_dx_test(
+                    dx_tests_to_run="KK_schisto_test_highWB", hsi_event=self
+                )
+
+        return test_result
+
 
 class SchistoSpecies:
     """Helper Class to hold the information specific to a particular species (either S. mansoni or S. haematobium)."""
@@ -895,6 +957,13 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
         # prop calls the property starting with the prefix species property, i.e. ss_sm or ss_sh
         prop = self.species.prefix_species_property
 
+        # todo remove
+        event = HSI_Schisto_TestingFollowingSymptoms(
+            module=self.module, person_id=10
+        )
+        self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=0, topen=self.sim.date)
+
+
         # betas (exposure rates) are fixed for each age-group
         # exposure rates determine contribution to transmission and acquisition risk
         betas = [params['beta_PSAC'], params['beta_SAC'], params['beta_Adults']]
@@ -1181,8 +1250,13 @@ class HSI_Schisto_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin)
         cols_of_infection_status = self.module.cols_of_infection_status
 
         # Determine if the person will be tested now
-        # person will test if they have at least 2 schisto-related symptoms
-        # symptoms_df
+        # choose the appropriate diagnostic test
+        persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
+        result = self.module.select_and_perform_test(person_id)
+
+
+
+
         persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
         if not any(x in self.module.symptom_list for x in persons_symptoms):
             return self.make_appt_footprint({})
@@ -1198,6 +1272,7 @@ class HSI_Schisto_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin)
 
             if is_infected & will_test:
                 # If they are infected and will test, schedule a treatment HSI:
+                # todo check call is correct
                 self.module.sim.modules['HealthSystem'].schedule_hsi_event(
                     HSI_Schisto_TreatmentFollowingDiagnosis(
                         module=self.module,
