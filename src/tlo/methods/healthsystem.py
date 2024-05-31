@@ -236,6 +236,9 @@ class HealthSystem(Module):
         'year_cons_availability_switch': Parameter(
             Types.INT, "Year in which consumable availability switch is enforced. The change happens"
                        "on 1st January of that year.)"),
+        'year_use_funded_or_actual_staffing_switch': Parameter(
+            Types.INT, "Year in which staffing switch is enforced. The change happens"
+                       "on 1st January of that year.)"),
         'priority_rank': Parameter(
             Types.DICT, "Data on the priority ranking of each of the Treatment_IDs to be adopted by "
                         " the queueing system under different policies, where the lower the number the higher"
@@ -323,7 +326,10 @@ class HealthSystem(Module):
             Types.INT, 'Mode considered after a mode switch in year_mode_switch.'),
         'cons_availability_postSwitch': Parameter(
             Types.STRING, 'Consumables availability after switch in `year_cons_availability_switch`. Acceptable values'
-                          'are the same as those for Parameter `cons_availability`.')
+                          'are the same as those for Parameter `cons_availability`.'),
+        'use_funded_or_actual_staffing_postSwitch': Parameter(
+            Types.STRING, 'Staffing availability after switch in `year_use_funded_or_actual_staffing_switch`. Acceptable values'
+                          'are the same as those for Parameter `use_funded_or_actual_staffing`.'),
     }
 
     PROPERTIES = {
@@ -738,7 +744,17 @@ class HealthSystem(Module):
             Date(self.parameters["year_equip_availability_switch"], 1, 1)
         )
 
-
+        # Schedule an equipment availability switch
+        sim.schedule_event(
+            HealthSystemChangeParameters(
+                self,
+                parameters={
+                    'use_funded_or_actual_staffing': self.parameters['use_funded_or_actual_staffing_postSwitch']
+                }
+            ),
+            Date(self.parameters["year_use_funded_or_actual_staffing_switch"], 1, 1)
+        )
+        
         # Schedule a one-off rescaling of _daily_capabilities broken down by officer type and level.
         # This occurs on 1st January of the year specified in the parameters.
         sim.schedule_event(ConstantRescalingHRCapabilities(self),
@@ -2763,6 +2779,7 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
         * `cons_availability`
         * `beds_availability`
         * `equip_availability`
+        * `use_funded_or_actual_staffing`
     Note that no checking is done here on the suitability of values of each parameter."""
 
     def __init__(self, module: HealthSystem, parameters: Dict):
@@ -2788,7 +2805,9 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
 
         if 'equip_availability' in self._parameters:
             self.module.equipment.availability = self._parameters['equip_availability']
-
+            
+        if 'use_funded_or_actual_staffing' in self._parameters:
+            self.module.use_funded_or_actual_staffing = self._parameters['use_funded_or_actual_staffing']
 
 class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
     """ This event exists to scale the daily capabilities assumed at fixed time intervals"""
