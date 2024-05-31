@@ -75,13 +75,15 @@ class MaternalNewbornHealthCohort(Module):
 
         """
         # cohort_prop_df = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_PregnancyCohort.xlsx')
-        # from tlo.analysis.utils import parse_log_file
-        # cohort_prop_df = parse_log_file(
-        #     '/Users/j_collins/PycharmProjects/TLOmodel/outputs/sejjj49@ucl.ac.uk/fullmodel_200k_cohort-2024-04-24T072206Z/0/0/fullmodel_200k_cohort__2024-04-24T072516.log',
-        #     level=logging.DEBUG)['tlo.methods.contraception']
-        #
-        # cohort_prop_df_for_pop = cohort_prop_df.loc[0:(len(self.sim.population.props))-1]
-        # self.sim.population.props = cohort_prop_df_for_pop
+        from tlo.analysis.utils import parse_log_file
+        t = parse_log_file(
+             '/Users/j_collins/PycharmProjects/TLOmodel/outputs/sejjj49@ucl.ac.uk/fullmodel_200k_cohort-2024-04-24T072206Z/0/0/fullmodel_200k_cohort__2024-04-24T072516.log',
+             level=logging.DEBUG)['tlo.methods.contraception']
+
+        cohort_prop_df2 = t['properties_of_pregnant_person']
+        cohort_prop_df_for_pop = cohort_prop_df2.loc[0:(len(self.sim.population.props))-1]
+        self.sim.population.props = cohort_prop_df_for_pop
+
         #
         # # todo: pd.NaT values are not carried over when excel file was created.
         # # df = self.sim.population.props
@@ -89,10 +91,10 @@ class MaternalNewbornHealthCohort(Module):
         # # for column in df.columns:
         # #     df.loc[population.index, column] = cohort_prop_df_for_pop[column]
         #
-        # df = self.sim.population.props
-        # population = df.loc[df.is_alive]
-        # df.loc[population.index, 'date_of_last_pregnancy'] = sim.start_date
-        # df.loc[population.index, 'co_contraception'] = "not_using"
+        df = self.sim.population.props
+        population = df.loc[df.is_alive]
+        df.loc[population.index, 'date_of_last_pregnancy'] = sim.start_date
+        df.loc[population.index, 'co_contraception'] = "not_using"
 
 
     def on_birth(self, mother_id, child_id):
