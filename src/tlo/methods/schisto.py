@@ -89,11 +89,11 @@ class Schisto(Module):
                                             'Probability of getting PZQ in the MDA for PSAC, SAC and Adults '
                                             'in future rounds, with the frequency given in months'),
         'calibration_scenario': Parameter(Types.REAL,
-                                               'Scenario used to reset parameters to run calibration sims'),
+                                          'Scenario used to reset parameters to run calibration sims'),
         'scenario_start_date': Parameter(Types.DATE,
-                              'Start date for scenario projections'),
+                                         'Start date for scenario projections'),
         'projection_scenario': Parameter(Types.REAL,
-                                          'Scenario used to set parameters for projections'),
+                                         'Scenario used to set parameters for projections'),
     }
 
     def __init__(self, name=None, resourcefilepath=None, mda_execute=True, scaleup_WASH=False):
@@ -160,7 +160,6 @@ class Schisto(Module):
 
         # reset all to one district if doing calibration runs
         if p['calibration_scenario'] > 0:
-
             df['district_num_of_residence'] = df['district_num_of_residence'][0]
 
             # replacement_value = df['district_of_residence'].cat.categories[0]
@@ -577,9 +576,9 @@ class SchistoSpecies:
             'PZQ_efficacy': Parameter(Types.REAL,
                                       ' Efficacy of praziquantel in reducing worm burden'),
             'mean_worm_burden2010': Parameter(Types.DATA_FRAME,
-                                        'Mean worm burden per infected person per district in 2010'),
+                                              'Mean worm burden per infected person per district in 2010'),
             'prevalence_2010': Parameter(Types.DATA_FRAME,
-                                        'Initial prevalence in each district in 2010'),
+                                         'Initial prevalence in each district in 2010'),
             'prop_susceptible': Parameter(Types.DATA_FRAME,
                                           'Proportion of population in each district susceptible to schisto infection'),
             'gamma_alpha': Parameter(Types.DATA_FRAME, 'Parameter alpha for Gamma distribution for harbouring rates'),
@@ -825,7 +824,8 @@ class SchistoSpecies:
             # susceptibility
             susceptibility = params['prop_susceptible'][district]
             # assign 0 and 1 to each person in the district based on the district proportion susceptible
-            df.loc[in_the_district, prop('susceptibility')] = rng.binomial(n=1, p=susceptibility, size=len(in_the_district))
+            df.loc[in_the_district, prop('susceptibility')] = rng.binomial(n=1, p=susceptibility,
+                                                                           size=len(in_the_district))
 
     def _assign_initial_worm_burden(self, population) -> None:
         """Assign initial distribution of worms to each person (based on district and age-group)."""
@@ -962,7 +962,6 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
             module=self.module, person_id=10
         )
         self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=0, topen=self.sim.date)
-
 
         # betas (exposure rates) are fixed for each age-group
         # exposure rates determine contribution to transmission and acquisition risk
@@ -1235,9 +1234,8 @@ class HSI_Schisto_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin)
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Schisto)
 
-        under_5 = self.sim.population.props.at[person_id, 'age_years'] <= 5
         self.TREATMENT_ID = 'Schisto_Testing'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Under5OPD' if under_5 else 'Over5OPD': 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'LabParasit': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
         self._num_occurrences = 0
 
@@ -1245,43 +1243,23 @@ class HSI_Schisto_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin)
         self._num_occurrences += 1
 
         df = self.sim.population.props
-        person = df.loc[person_id]
+        person_id = df.loc[person_id]
         params = self.module.parameters
-        cols_of_infection_status = self.module.cols_of_infection_status
 
-        # Determine if the person will be tested now
-        # choose the appropriate diagnostic test
-        persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
+        # select and perform the appropriate diagnostic test
         result = self.module.select_and_perform_test(person_id)
 
+        if result:
+            self.module.sim.modules['HealthSystem'].schedule_hsi_event(
+                HSI_Schisto_TreatmentFollowingDiagnosis(
+                    module=self.module,
+                    person_id=person_id),
+                topen=self.sim.date,
+                tclose=None,
+                priority=0
+            )
 
-
-
-        persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
-        if not any(x in self.module.symptom_list for x in persons_symptoms):
-            return self.make_appt_footprint({})
-
-        under_15 = person.age_years <= 15
-        will_test = self.module.rng.random_sample() < (
-            params['prob_sent_to_lab_test_children'] if under_15 else params['prob_sent_to_lab_test_adults']
-        )
-
-        if will_test:
-            # Determine if they truly are infected (with any of the species)
-            is_infected = (person.loc[cols_of_infection_status] != 'Non-infected').any()
-
-            if is_infected & will_test:
-                # If they are infected and will test, schedule a treatment HSI:
-                # todo check call is correct
-                self.module.sim.modules['HealthSystem'].schedule_hsi_event(
-                    HSI_Schisto_TreatmentFollowingDiagnosis(
-                        module=self.module,
-                        person_id=person_id),
-                    topen=self.sim.date,
-                    tclose=None,
-                    priority=0
-                )
-
+        # if test negative or test not available, second testing appt is scheduled
         else:
             # The person will not test now. If this is the "first attempt", re-schedule this HSI to occur after a delay,
             if self._num_occurrences <= 1:
