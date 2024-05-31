@@ -43,7 +43,7 @@ jobs:
 
           print("Hello, world!", flush=True)
 
-          for i in range(8):
+          for i in range(10):
               print(str(datetime.now()))
               size = i * 1024 ** 3
               print(f"I am about to allocate {size / 1024 ** 3} GiB of memory", flush=True)
