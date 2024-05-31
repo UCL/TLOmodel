@@ -765,7 +765,7 @@ class Tb(Module):
             hs.get_item_code_from_item_name("Treatment: second-line drugs")
 
         # ipt
-        self.item_codes_for_consumables_required['tb_isoniazid'] = \
+        self.item_codes_for_consumables_required['tb_ipt'] = \
             hs.get_item_code_from_item_name("Isoniazid/Pyridoxine, tablet 300 mg")
 
         # 3hp
