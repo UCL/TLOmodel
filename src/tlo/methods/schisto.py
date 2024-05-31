@@ -329,53 +329,99 @@ class Schisto(Module):
         """Look-up the item code for Praziquantel"""
         return self.sim.modules['HealthSystem'].get_item_code_from_item_name("Praziquantel 600mg_1000_CMST")
 
-    def get_consumables_for_dx_and_tx(self):
+    def _get_consumables_for_dx_and_tx(self):
         p = self.parameters
         hs = self.sim.modules["HealthSystem"]
 
-        # Kato-Katz diagnostic test
-        # assume that if smear-positive, sputum smear test is 100% specific and sensitive
-        self.item_codes_for_consumables_required['KK_schisto_test'] = \
-            hs.get_item_codes_from_package_name("Microscopy Test")
-
+        # diagnostic test consumables
         # todo update quantities
         self.item_codes_for_consumables_required['malachite_stain'] = {
             hs.get_item_code_from_item_name("Malachite green oxalate"): 0.01}
 
+        self.item_codes_for_consumables_required['iodine_stain'] = {
+            hs.get_item_code_from_item_name("Lugol's iodine for staining (1:2:100 aqueous), 1 L_1_IDA"): 0.001}
+
         self.item_codes_for_consumables_required['microscope_slide'] = {
             hs.get_item_code_from_item_name("Microscope slides, lime-soda-glass, pack of 50"): 0.01}
 
+        self.item_codes_for_consumables_required['filter_paper'] = {
+            hs.get_item_code_from_item_name("Filter paper round, diameter 150, packs of 100"): 0.01}
+
+        # KATO-KATZ TEST
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             KK_schisto_test_lowWB=DxTest(
                 property='ss_sm_infection_status',
                 target_categories=["Non-infected", "Low-infection"],
                 sensitivity=0,
                 specificity=0,
-                item_codes=[
-                    self.item_codes_for_consumables_required['Malachite green oxalate'],
-                    self.item_codes_for_consumables_required['Microscope slides, lime-soda-glass, pack of 50']]
+                item_codes=self.item_codes_for_consumables_required['microscope_slide'],
+                optional_item_codes=[
+                    self.item_codes_for_consumables_required['malachite_stain'],
+                    self.item_codes_for_consumables_required['iodine_stain']]
+
             )
         )
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             KK_schisto_test_moderateWB=DxTest(
                 property='ss_sm_infection_status',
                 target_categories=["Moderate-infection"],
-                sensitivity=p["sens_sputum_smear_positive"],
-                specificity=p["spec_sputum_smear_positive"],
-                item_codes=[
-                    self.item_codes_for_consumables_required['Malachite green oxalate'],
-                    self.item_codes_for_consumables_required['Microscope slides, lime-soda-glass, pack of 50']]
+                sensitivity=p["kato_katz_sensitivity_moderateWB"],
+                specificity=1.0,
+                item_codes=self.item_codes_for_consumables_required['microscope_slide'],
+                optional_item_codes=[
+                    self.item_codes_for_consumables_required['malachite_stain'],
+                    self.item_codes_for_consumables_required['iodine_stain']]
             )
         )
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             KK_schisto_test_highWB=DxTest(
                 property='ss_sm_infection_status',
                 target_categories=["High-infection"],
-                sensitivity=p["sens_sputum_smear_positive"],
-                specificity=p["spec_sputum_smear_positive"],
-                item_codes=[
-                    self.item_codes_for_consumables_required['Malachite green oxalate'],
-                    self.item_codes_for_consumables_required['Microscope slides, lime-soda-glass, pack of 50']]
+                sensitivity=p["kato_katz_sensitivity_highWB"],
+                specificity=1.0,
+                item_codes=self.item_codes_for_consumables_required['microscope_slide'],
+                optional_item_codes=[
+                    self.item_codes_for_consumables_required['malachite_stain'],
+                    self.item_codes_for_consumables_required['iodine_stain']]
+            )
+        )
+
+        # URINE FILTRATION
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            UF_schisto_test_lowWB=DxTest(
+                property='ss_sh_infection_status',
+                target_categories=["Non-infected", "Low-infection"],
+                sensitivity=0,
+                specificity=0,
+                item_codes=self.item_codes_for_consumables_required['microscope_slide'],
+                optional_item_codes=[
+                    self.item_codes_for_consumables_required['filter_paper'],
+                    self.item_codes_for_consumables_required['iodine_stain']]
+
+            )
+        )
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            UF_schisto_test_moderateWB=DxTest(
+                property='ss_sh_infection_status',
+                target_categories=["Moderate-infection"],
+                sensitivity=p["urine_filtration_sensitivity_moderateWB"],
+                specificity=1.0,
+                item_codes=self.item_codes_for_consumables_required['microscope_slide'],
+                optional_item_codes=[
+                    self.item_codes_for_consumables_required['filter_paper'],
+                    self.item_codes_for_consumables_required['iodine_stain']]
+            )
+        )
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            UF_schisto_test_highWB=DxTest(
+                property='ss_sh_infection_status',
+                target_categories=["High-infection"],
+                sensitivity=p["urine_filtration_sensitivity_highWB"],
+                specificity=1.0,
+                item_codes=self.item_codes_for_consumables_required['microscope_slide'],
+                optional_item_codes=[
+                    self.item_codes_for_consumables_required['filter_paper'],
+                    self.item_codes_for_consumables_required['iodine_stain']]
             )
         )
 
