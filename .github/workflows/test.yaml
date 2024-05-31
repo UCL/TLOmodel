@@ -50,3 +50,4 @@ jobs:
               a = bytearray(size)
               time.sleep(5)
               a
+              a = None
