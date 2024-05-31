@@ -824,8 +824,7 @@ def test_contraception_coverage_with_use_healthsystem(tmpdir, seed):
     def report_availability_of_consumables():
         """Helper function to find the availability of consumables used in the Contraception module."""
         sim = run_sim(tmpdir, seed, run=False, consumables_available='default')
-        item_codes, _ = sim.modules['Contraception'].get_item_codes_for_each_contraceptive_and_probs_for_cons_alternatives()
-        # todo does this test to be rewritten to respect logic of alternative items??????
+        item_codes, _ = sim.modules['Contraception'].get_item_code_for_each_contraceptive()
 
         # do not check the `co_initiation` items, only contraception methods items
         del item_codes['co_initiation']
