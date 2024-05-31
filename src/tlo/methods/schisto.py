@@ -1,12 +1,12 @@
 from pathlib import Path
-from typing import List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, List, Literal, Sequence, Optional, Union
 
 import numpy as np
 import pandas as pd
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
-from tlo.core import IndividualPropertyUpdates
+from tlo.core import DiagnosisFunction, IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
@@ -14,6 +14,9 @@ from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date
 from tlo.methods.dxmanager import DxTest
+
+if TYPE_CHECKING:
+    from tlo.population import PatientDetails
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -342,7 +345,7 @@ class Schisto(Module):
             hs.get_item_code_from_item_name("Lugol's iodine for staining (1:2:100 aqueous), 1 L_1_IDA"): 0.001}
 
         self.item_codes_for_consumables_required['microscope_slide'] = {
-            hs.get_item_code_from_item_name("Microscope slides, lime-soda-glass, pack of 50"): 0.01}
+            hs.get_item_code_from_item_name("Microscope slides, lime-soda-glass, pack of 50"): 0.02}
 
         self.item_codes_for_consumables_required['filter_paper'] = {
             hs.get_item_code_from_item_name("Filter paper round, diameter 150, packs of 100"): 0.01}
@@ -462,7 +465,14 @@ class Schisto(Module):
     ) -> IndividualPropertyUpdates:
         # Do when person presents to the GenericFirstAppt.
         # If the person has certain set of symptoms, refer ta HSI for testing.
-        set_of_symptoms_indicative_of_schisto = {'anemia', 'haematuria', 'bladder_pathology'}
+        set_of_symptoms_indicative_of_schisto = {'anemia',
+                                                 'haematuria',
+                                                 'bladder_pathology',
+                                                 'fever',
+                                                 'ascites',
+                                                 'diarrhoea',
+                                                 'vomiting,'
+                                                 'hepatomegaly'}
 
         if set_of_symptoms_indicative_of_schisto.issubset(symptoms):
             event = HSI_Schisto_TestingFollowingSymptoms(
@@ -1157,7 +1167,7 @@ class HSI_Schisto_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin)
         assert isinstance(module, Schisto)
 
         under_5 = self.sim.population.props.at[person_id, 'age_years'] <= 5
-        self.TREATMENT_ID = 'Schisto_Treatment'
+        self.TREATMENT_ID = 'Schisto_Testing'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Under5OPD' if under_5 else 'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
         self._num_occurrences = 0
@@ -1171,6 +1181,12 @@ class HSI_Schisto_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin)
         cols_of_infection_status = self.module.cols_of_infection_status
 
         # Determine if the person will be tested now
+        # person will test if they have at least 2 schisto-related symptoms
+        # symptoms_df
+        persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
+        if not any(x in self.module.symptom_list for x in persons_symptoms):
+            return self.make_appt_footprint({})
+
         under_15 = person.age_years <= 15
         will_test = self.module.rng.random_sample() < (
             params['prob_sent_to_lab_test_children'] if under_15 else params['prob_sent_to_lab_test_adults']

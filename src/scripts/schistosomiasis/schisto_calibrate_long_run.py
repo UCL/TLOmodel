@@ -44,7 +44,7 @@ fitted_districts = ['Blantyre', 'Chiradzulu', 'Mulanje', 'Nsanje', 'Nkhotakota',
 species = ('mansoni', 'haematobium')
 
 # %% Run the simulation
-popsize = 1_000
+popsize = 10_000
 
 # species_to_calibrate = 'haematobium'
 # mwb = 0.1
@@ -71,52 +71,13 @@ def run_simulation(popsize=popsize, mda_execute=False):
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  # healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  # healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable_and_reject_all=True),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable_and_reject_all=False),
                  really_simplified_births.ReallySimplifiedBirths(resourcefilepath=resourcefilepath),
                  schisto.Schisto(resourcefilepath=resourcefilepath, mda_execute=mda_execute,
                                  scaleup_WASH=False),
                  )
 
-    # # set prevalence for species
-    # if species_to_calibrate == 'haematobium':
-    #     # select haematobium starting points
-    #     tmp = sim.modules["Schisto"].parameters["sh_mean_worm_burden2010"]
-    #     tmp[:] = mwb
-    #     sim.modules["Schisto"].parameters["sh_mean_worm_burden2010"][:] = tmp
-    #
-    #     tmp = sim.modules["Schisto"].parameters["sh_prevalence_2010"]
-    #     tmp[:] = prev
-    #     sim.modules["Schisto"].parameters["sh_prevalence_2010"][:] = tmp
-    #
-    #     # set mansoni prevalence to 0
-    #     tmp = sim.modules["Schisto"].parameters["sm_mean_worm_burden2010"]
-    #     tmp[:] = 0
-    #     sim.modules["Schisto"].parameters["sm_mean_worm_burden2010"][:] = tmp
-    #
-    #     tmp = sim.modules["Schisto"].parameters["sm_prevalence_2010"]
-    #     tmp[:] = 0
-    #     sim.modules["Schisto"].parameters["sm_prevalence_2010"][:] = tmp
-    #
-    # else:
-    #     # set haematobium prevalence to 0
-    #     tmp = sim.modules["Schisto"].parameters["sh_mean_worm_burden2010"]
-    #     tmp[:] = 0
-    #     sim.modules["Schisto"].parameters["sh_mean_worm_burden2010"][:] = tmp
-    #
-    #     tmp = sim.modules["Schisto"].parameters["sh_prevalence_2010"]
-    #     tmp[:] = 0
-    #     sim.modules["Schisto"].parameters["sh_prevalence_2010"][:] = tmp
-    #
-    #     # select mansoni starting points
-    #     tmp = sim.modules["Schisto"].parameters["sm_mean_worm_burden2010"]
-    #     tmp[:] = mwb
-    #     sim.modules["Schisto"].parameters["sm_mean_worm_burden2010"][:] = tmp
-    #
-    #     tmp = sim.modules["Schisto"].parameters["sm_prevalence_2010"]
-    #     tmp[:] = prev
-    #     sim.modules["Schisto"].parameters["sm_prevalence_2010"][:] = tmp
-
-    sim.modules["Schisto"].parameters["scenario"] = 0
+    sim.modules["Schisto"].parameters["scenario"] = 1.0
 
     # initialise the population
     sim.make_initial_population(n=popsize)
