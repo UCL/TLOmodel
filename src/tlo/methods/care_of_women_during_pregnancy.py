@@ -1440,8 +1440,9 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
 
             #  =================================== INTERVENTIONS ====================================================
             # Add equipment used during first ANC visit not directly related to interventions
+            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('ANC'))
             self.add_equipment(
-                {'Weighing scale', 'Height Pole (Stadiometer)', 'MUAC tape', 'Measuring tapes',
+                {'Height Pole (Stadiometer)', 'MUAC tape',
                  'Ultrasound, combined 2/4 pole interferential with vacuum and dual frequency 1-3MHZ'})
 
             # First all women, regardless of ANC contact or gestation, undergo urine and blood pressure measurement
@@ -1529,9 +1530,9 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
 
             #  =================================== INTERVENTIONS ====================================================
             # Add equipment used during  ANC visit not directly related to interventions
+            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('ANC'))
             self.add_equipment(
-                {'Weighing scale', 'Measuring tapes', 'Stethoscope, foetal, monaural, Pinard, plastic'
-                 'Ultrasound, combined 2/4 pole interferential with vacuum and dual frequency 1-3MHZ'})
+                {'Ultrasound, combined 2/4 pole interferential with vacuum and dual frequency 1-3MHZ'})
 
             # First we administer the interventions all women will receive at this contact regardless of
             # gestational age
@@ -1617,8 +1618,7 @@ class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(HSI_Event, Indivi
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
 
             #  =================================== INTERVENTIONS ====================================================
-            self.add_equipment({'Weighing scale', 'Measuring tapes',
-                                   'Stethoscope, foetal, monaural, Pinard, plastic'})
+            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('ANC'))
 
             gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
             self.module.interventions_delivered_each_visit_from_anc2(hsi_event=self)
@@ -1692,8 +1692,7 @@ class HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(HSI_Event, Indiv
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
 
             #  =================================== INTERVENTIONS ====================================================
-            self.add_equipment({'Weighing scale', 'Measuring tapes',
-                                   'Stethoscope, foetal, monaural, Pinard, plastic'})
+            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('ANC'))
 
             gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
             self.module.interventions_delivered_each_visit_from_anc2(hsi_event=self)
@@ -1762,10 +1761,10 @@ class HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(HSI_Event, Indivi
             self.module.anc_counter[5] += 1
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
 
-            #  =================================== INTERVENTIONS ====================================================
+            #  =================================== INTERVENTIONS ===================================================
+            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('ANC'))
             self.add_equipment(
-                {'Weighing scale', 'Measuring tapes', 'Stethoscope, foetal, monaural, Pinard, plastic'
-                 'Ultrasound, combined 2/4 pole interferential with vacuum and dual frequency 1-3MHZ'})
+                {'Ultrasound, combined 2/4 pole interferential with vacuum and dual frequency 1-3MHZ'})
 
             gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
             self.module.interventions_delivered_each_visit_from_anc2(hsi_event=self)
@@ -1896,8 +1895,7 @@ class HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(HSI_Event, Indi
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
 
             #  =================================== INTERVENTIONS ====================================================
-            self.add_equipment({'Weighing scale', 'Measuring tapes',
-                                   'Stethoscope, foetal, monaural, Pinard, plastic'})
+            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('ANC'))
 
             gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
             self.module.interventions_delivered_each_visit_from_anc2(hsi_event=self)
@@ -1952,8 +1950,7 @@ class HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(HSI_Event, Indiv
             self.module.anc_counter[8] += 1
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
 
-            self.add_equipment({'Weighing scale', 'Measuring tapes',
-                                   'Stethoscope, foetal, monaural, Pinard, plastic'})
+            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('ANC'))
 
             self.module.interventions_delivered_each_visit_from_anc2(hsi_event=self)
 
