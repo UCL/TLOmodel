@@ -43,10 +43,10 @@ jobs:
 
           print("Hello, world!", flush=True)
 
-          for i in range(7):
+          for i in range(8):
               print(str(datetime.now()))
-              size = i * 1024 ** 2 * 1024
+              size = i * 1024 ** 3
               print(f"I am about to allocate {size / 1024 ** 3} GiB of memory", flush=True)
               a = bytearray(size)
-              time.sleep(20)
+              time.sleep(5)
               a
