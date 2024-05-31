@@ -49,9 +49,7 @@ class Malaria(Module):
         'Contraception', 'Demography', 'HealthSystem', 'SymptomManager'
     }
 
-    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
-
-    ADDITIONAL_DEPENDENCIES = {'Hiv', 'Tb'}
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'Hiv'}
 
     METADATA = {
         Metadata.DISEASE_MODULE,
@@ -194,7 +192,9 @@ class Malaria(Module):
     }
 
     PROPERTIES = {
-        'ma_is_infected': Property(Types.BOOL, 'Current status of malaria'),
+        'ma_is_infected': Property(
+            Types.BOOL, 'Current status of malaria, infected with malaria parasitaemia'
+        ),
         'ma_date_infected': Property(Types.DATE, 'Date of latest infection'),
         'ma_date_symptoms': Property(
             Types.DATE, 'Date of symptom start for clinical infection'
@@ -411,9 +411,11 @@ class Malaria(Module):
         def _draw_incidence_for(_col, _where):
             """a helper function to perform random draw for selected individuals on column of probabilities"""
             # create an index from the individuals to lookup entries in the current incidence table
-            district_age_subset = df.loc[_where, ['district_num_of_residence', 'ma_age_edited']]
-            district_age_subset.set_index(district_age_subset.columns.to_list(), inplace=True)
-            district_age_lookup = district_age_subset.index
+            district_age_lookup = (
+                df[_where]
+                .set_index(['district_num_of_residence', 'ma_age_edited'])
+                .index
+            )
             # get the monthly incidence probabilities for these individuals
             monthly_prob = curr_inc.loc[district_age_lookup, _col]
             # update the index so it's the same as the original population dataframe for these individuals
@@ -433,7 +435,7 @@ class Malaria(Module):
                     df.loc[_where]
                 )
 
-                random_draw = rng.random_sample(_where.sum()) < monthly_prob * individual_risk
+                random_draw = rng.random_sample(_where.sum()) < (monthly_prob * individual_risk)
 
             selected = _where & random_draw
 
@@ -448,7 +450,8 @@ class Malaria(Module):
         df.loc[alive_over_one, 'ma_age_edited'] = df.loc[alive_over_one, 'age_years'].astype(float)
 
         # select new infections
-        alive_uninfected = alive & ~df.ma_is_infected
+        # eligible: uninfected or asym
+        alive_uninfected = alive & df.ma_inf_type.isin(['none', 'asym'])
         now_infected = _draw_incidence_for('monthly_prob_inf', alive_uninfected)
         df.loc[now_infected, 'ma_inf_type'] = 'asym'
 
@@ -1305,7 +1308,7 @@ class MalariaUpdateEvent(RegularEvent, PopulationScopeEventMixin):
         * assigns symptoms
         * schedules rdt
         * cures people currently on treatment for malaria
-        * clears symptoms for those not on treatment
+        * clears symptoms for those not on treatment but self-cured
         * clears parasites if treated
         """
 
@@ -1388,14 +1391,22 @@ class MalariaUpdateEvent(RegularEvent, PopulationScopeEventMixin):
         # select people with clinical malaria and treatment for at least 5 days
         # if treated, will clear symptoms and parasitaemia
         # this will also clear parasitaemia for asymptomatic cases picked up by routine rdt
-        clinical_and_treated = df.index[df.is_alive &
-                                        (df.ma_date_tx < (self.sim.date - DateOffset(days=5))) &
-                                        (df.ma_inf_type == 'clinical')]
+        random_draw = self.module.rng.random_sample(size=len(df))
+
+        clinical_and_treated = df.index[
+            df.is_alive
+            & (df.ma_date_tx < (self.sim.date - DateOffset(days=5)))
+            & (df.ma_inf_type == 'clinical')
+            & (random_draw < p['prob_of_treatment_success'])
+        ]
 
         # select people with severe malaria and treatment for at least 7 days
-        severe_and_treated = df.index[df.is_alive &
-                                      (df.ma_date_tx < (self.sim.date - DateOffset(days=7))) &
-                                      (df.ma_inf_type == 'severe')]
+        severe_and_treated = df.index[
+            df.is_alive
+            & (df.ma_date_tx < (self.sim.date - DateOffset(days=7)))
+            & (df.ma_inf_type == 'severe')
+            & (random_draw < p['prob_of_treatment_success'])
+        ]
 
         # create list of all cases to be resolved through treatment
         infections_to_clear = sorted(set(clinical_and_treated).union(severe_and_treated))
@@ -1409,13 +1420,14 @@ class MalariaUpdateEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[infections_to_clear, 'ma_is_infected'] = False
         df.loc[infections_to_clear, 'ma_inf_type'] = 'none'
 
-        # UNTREATED
-        # if not treated, self-cure occurs after 6 days of symptoms
+        # UNTREATED or TREATMENT FAILURE
+        # if not treated or treatment failed, self-cure occurs after 6 days of symptoms
         # but parasites remain in blood
-        clinical_not_treated = df.index[df.is_alive &
-                                        (df.ma_inf_type == 'clinical') &
-                                        (df.ma_date_symptoms < (self.sim.date - DateOffset(days=6))) &
-                                        (df.ma_tx == 'none')]
+        clinical_not_treated = df.index[
+            df.is_alive
+            & (df.ma_inf_type == 'clinical')
+            & (df.ma_date_symptoms < (self.sim.date - DateOffset(days=6)))
+        ]
 
         self.sim.modules['SymptomManager'].clear_symptoms(
             person_id=clinical_not_treated, disease_module=self.module

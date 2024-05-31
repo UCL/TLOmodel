@@ -19,7 +19,7 @@ Analyses Using The Model
 
 * `Modeling Contraception and Pregnancy in Malawi: A Thanzi La Onse Mathematical Modeling Study <https://onlinelibrary.wiley.com/doi/10.1111/sifp.12255>`_
 
-* `Factors Associated with Consumable Stock-Outs in Malawi: Evidence from a Facility Census <https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4424341>`_
+* `Factors Associated with Consumable Stock-Outs in Malawi: Evidence from a Facility Census <https://www.sciencedirect.com/science/article/pii/S2214109X24000950>`_
 
 * `The Effects of Health System Frailties on the Projected Impact of the HIV and TB Programmes in Malawi <https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4508436>`_
 

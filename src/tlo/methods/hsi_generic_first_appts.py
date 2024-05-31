@@ -72,10 +72,7 @@ class HSI_BaseGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
 
         # Dynamically create immutable container with the target's details stored.
         # This will avoid repeat DataFrame reads when we call the module-level functions.
-        df = self.sim.population.props
         patient_details = self.sim.population.row_in_readonly_form(self.target)
-
-        proposed_patient_details_updates = {}
 
         for module in modules.values():
             module_patient_updates = getattr(module, self.MODULE_METHOD_ON_APPLY)(
@@ -88,19 +85,12 @@ class HSI_BaseGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
                 treatment_id=self.TREATMENT_ID,
                 random_state=self.module.rng,
             )
-            # Record any requested DataFrame updates, but do not implement yet
-            # NOTE: |= syntax is only available in Python >=3.9
+            # Record any requested DataFrame updates
             if module_patient_updates:
-                proposed_patient_details_updates = {
-                    **proposed_patient_details_updates,
-                    **module_patient_updates,
-                }
-
-        # Perform any DataFrame updates that were requested, all in one go.
-        if proposed_patient_details_updates:
-            df.loc[
-                self.target, proposed_patient_details_updates.keys()
-            ] = proposed_patient_details_updates.values()
+                for key, value in module_patient_updates.items():
+                    self.sim.population.props.at[self.target, key] = value
+                # Also need to recreate  patient_details to reflect updated properties
+                patient_details = self.sim.population.row_in_readonly_form(self.target)
 
     def apply(self, person_id, squeeze_factor=0.) -> None:
         """

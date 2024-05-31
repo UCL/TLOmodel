@@ -61,7 +61,7 @@ class CardioMetabolicDisorders(Module):
 
     INIT_DEPENDENCIES = {'Demography', 'Lifestyle', 'HealthSystem', 'SymptomManager'}
 
-    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'Hiv'}
 
     ADDITIONAL_DEPENDENCIES = {'Depression'}
 
@@ -598,9 +598,7 @@ class CardioMetabolicDisorders(Module):
         # LinearModel expects native python types - if it's numpy type, convert it
         baseline_annual_probability = float(baseline_annual_probability)
 
-        linearmodel = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            baseline_annual_probability,
+        predictors = [
             Predictor('sex').when('M', p['rr_male']),
             Predictor(
                 'age_years',
@@ -693,6 +691,17 @@ class CardioMetabolicDisorders(Module):
                 'rr_chronic_ischemic_heart_disease_on_medication']),
             Predictor('nc_ever_stroke_on_medication').when(True, p['rr_stroke_on_medication']),
             Predictor('nc_ever_heart_attack_on_medication').when(True, p['rr_heart_attack_on_medication'])
+        ]
+
+        conditional_predictors = [
+            Predictor().when('hv_inf & '
+                             '(hv_art != "on_VL_suppressed")', p['rr_hiv']),
+        ] if "Hiv" in self.sim.modules else []
+
+        linearmodel = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            baseline_annual_probability,
+            *(predictors + conditional_predictors)
         )
 
         return linearmodel

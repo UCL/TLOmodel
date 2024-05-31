@@ -211,7 +211,7 @@ def test_bed_days_basics(tmpdir, seed):
     assert not df.at[person_id, 'hs_is_inpatient']
 
     # impose the footprint:
-    hsi_bd.post_apply_hook()
+    hsi_bd._run_after_hsi_event()
 
     # check that person is an in-patient now
     assert df.at[person_id, 'hs_is_inpatient']

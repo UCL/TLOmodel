@@ -44,8 +44,12 @@ popsize = 20_000
 
 
 def run_sim(allow_hsi):
+    log_config = {
+        'filename': 'LogFile',
+        'directory': outputpath
+    }
     # Establish the simulation object and set the seed
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -60,14 +64,11 @@ def run_sim(allow_hsi):
                  other_adult_cancers.OtherAdultCancer(resourcefilepath=resourcefilepath),
                  )
 
-    # Establish the logger
-    logfile = sim.configure_logging(filename="LogFile")
-
     # Run the simulation
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    return logfile
+    return sim.log_filepath
 
 
 def get_summary_stats(logfile):

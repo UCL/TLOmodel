@@ -277,14 +277,20 @@ def rename_items_to_address_inconsistentencies(_df, item_dict):
     return _collapsed_df
 
 # Hold out the dataframe with no naming inconsistencies
-list_of_items_with_inconsistent_names_zipped = list(zip(inconsistent_item_names_mapping.keys(), inconsistent_item_names_mapping.values()))
-list_of_items_with_inconsistent_names = [item for sublist in list_of_items_with_inconsistent_names_zipped for item in sublist]
-df_with_consistent_item_names =  lmis_df_wide_flat[~lmis_df_wide_flat[('item',)].isin(list_of_items_with_inconsistent_names)]
-df_without_consistent_item_names = lmis_df_wide_flat[lmis_df_wide_flat[('item',)].isin(list_of_items_with_inconsistent_names)]
+list_of_items_with_inconsistent_names_zipped = list(
+    zip(inconsistent_item_names_mapping.keys(), inconsistent_item_names_mapping.values()))
+list_of_items_with_inconsistent_names = [
+    item for sublist in list_of_items_with_inconsistent_names_zipped for item in sublist]
+df_with_consistent_item_names =  lmis_df_wide_flat[~lmis_df_wide_flat[('item',)].isin(
+    list_of_items_with_inconsistent_names)]
+df_without_consistent_item_names = lmis_df_wide_flat[lmis_df_wide_flat[('item',)].isin(
+    list_of_items_with_inconsistent_names)]
 # Make inconsistently named drugs uniform across the dataframe
-df_without_consistent_item_names_corrected = rename_items_to_address_inconsistentencies(df_without_consistent_item_names, inconsistent_item_names_mapping)
+df_without_consistent_item_names_corrected = rename_items_to_address_inconsistentencies(
+    df_without_consistent_item_names, inconsistent_item_names_mapping)
 # Append holdout and corrected dataframes
-lmis_df_wide_flat = pd.concat([df_without_consistent_item_names_corrected, df_with_consistent_item_names], ignore_index=True)
+lmis_df_wide_flat = pd.concat([df_without_consistent_item_names_corrected, df_with_consistent_item_names],
+                              ignore_index=True)
 
 # --- 3.1 RULE: 1.If i) stockout is missing, ii) closing_bal, amc and received are not missing , and iii) amc !=0 and,
 #          then stkout_days[m] = (amc[m] - closing_bal[m-1] - received)/amc * number of days in the month ---
