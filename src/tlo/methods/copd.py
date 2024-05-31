@@ -33,7 +33,7 @@ class Copd(Module):
     """The module responsible for determining Chronic Obstructive Pulmonary Diseases (COPD) status and outcomes.
      and initialises parameters and properties associated with COPD plus functions and events related to COPD."""
 
-    INIT_DEPENDENCIES = {'SymptomManager', 'Lifestyle'}
+    INIT_DEPENDENCIES = {'SymptomManager', 'Lifestyle', 'HealthSystem'}
     ADDITIONAL_DEPENDENCIES = set()
 
     METADATA = {
