@@ -31,9 +31,9 @@ jobs:
           cat /sys/fs/cgroup/memory.high || true
       - name: Collect Workflow Telemetry
         uses: catchpoint/workflow-telemetry-action@v2
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        timeout-minutes: 30
+      # - name: Setup tmate session
+      #   uses: mxschmitt/action-tmate@v3
+      #   timeout-minutes: 30
       - name: Test
         timeout-minutes: 3
         shell: python3 {0}
