@@ -453,10 +453,9 @@ class HealthSystem(Module):
             assert isinstance(capabilities_coefficient, float)
         self.capabilities_coefficient = capabilities_coefficient
 
-        # Find which set of assumptions to use - those for the actual staff available or the funded staff available
-        if use_funded_or_actual_staffing is not None:
-            assert use_funded_or_actual_staffing in ['actual', 'funded', 'funded_plus']
+        # Save argument for assumptions to use for 'use_funded_or_actual_staffing`
         self.arg_use_funded_or_actual_staffing = use_funded_or_actual_staffing
+        self._use_funded_or_actual_staffing = None  # <-- this is the private internal store of the value that is used.
 
         # Define (empty) list of registered disease modules (filled in at `initialise_simulation`)
         self.recognised_modules_names = []
@@ -643,9 +642,15 @@ class HealthSystem(Module):
         # Determine service_availability
         self.service_availability = self.get_service_availability()
 
-        self.process_human_resources_files(
-            use_funded_or_actual_staffing=self.get_use_funded_or_actual_staffing()
-        )
+        # Process health system organisation files (Facilities, Appointment Types, Time Taken etc.)
+        self.process_healthsystem_organisation_files()
+
+        # Set value for `use_funded_or_actual_staffing` and process Human Resources Files
+        # (Initially set value should be equal to what is specified by the parameter, but overwritten with what was
+        # provided in argument if an argument was specified -- provided for backward compatibility/debugging.)
+        self.use_funded_or_actual_staffing = self.parameters['use_funded_or_actual_staffing'] \
+            if self.arg_use_funded_or_actual_staffing is None \
+            else self.arg_use_funded_or_actual_staffing
 
         # Initialise the BedDays class
         self.bed_days = BedDays(hs_module=self,
@@ -825,8 +830,15 @@ class HealthSystem(Module):
         if 'Tb' in self.sim.modules:
             self.list_fasttrack.append(('tb_diagnosed', 'FT_if_tbdiagnosed'))
 
-    def process_human_resources_files(self, use_funded_or_actual_staffing: str):
-        """Create the data-structures needed from the information read into the parameters."""
+    def process_healthsystem_organisation_files(self):
+        """Create the data-structures needed from the information read into the parameters:
+         * self._facility_levels
+         * self._appointment_types
+         * self._appt_times
+         * self._appt_type_by_facLevel
+         * self._facility_by_facility_id
+         * self._facilities_for_each_district
+        """
 
         # * Define Facility Levels
         self._facility_levels = set(self.parameters['Master_Facilities_List']['Facility_Level']) - {'5'}
@@ -919,6 +931,10 @@ class HealthSystem(Module):
         self._facility_by_facility_id = facilities_by_facility_id
         self._facilities_for_each_district = facilities_per_level_and_district
 
+    def setup_daily_capabilities(self, use_funded_or_actual_staffing):
+        """Set up `self._daily_capabilities` and `self._officers_with_availability`.
+        This is called when the value for `use_funded_or_actual_staffing` is set - at the beginning of the simulation
+         and when the assumption when the underlying assumption for `use_funded_or_actual_staffing` is updated"""
         # * Store 'DailyCapabilities' in correct format and using the specified underlying assumptions
         self._daily_capabilities = self.format_daily_capabilities(use_funded_or_actual_staffing)
 
@@ -1158,13 +1174,17 @@ class HealthSystem(Module):
             if self.arg_mode_appt_constraints is None \
             else self.arg_mode_appt_constraints
 
-    def get_use_funded_or_actual_staffing(self) -> str:
-        """Returns `use_funded_or_actual_staffing`. (Should be equal to what is specified by the parameter, but
-        overwrite with what was provided in argument if an argument was specified -- provided for backward
-        compatibility/debugging.)"""
-        return self.parameters['use_funded_or_actual_staffing'] \
-            if self.arg_use_funded_or_actual_staffing is None \
-            else self.arg_use_funded_or_actual_staffing
+    @property
+    def use_funded_or_actual_staffing(self) -> str:
+        """Returns value for `use_funded_or_actual_staffing`."""
+        return self._use_funded_or_actual_staffing
+
+    @use_funded_or_actual_staffing.setter
+    def use_funded_or_actual_staffing(self, use_funded_or_actual_staffing) -> str:
+        """Set value for `use_funded_or_actual_staffing` and update the daily_capabilities accordingly. """
+        assert use_funded_or_actual_staffing in ['actual', 'funded', 'funded_plus']
+        self._use_funded_or_actual_staffing = use_funded_or_actual_staffing
+        self.setup_daily_capabilities(self._use_funded_or_actual_staffing)
 
     def get_priority_policy_initial(self) -> str:
         """Returns `priority_policy`. (Should be equal to what is specified by the parameter, but
