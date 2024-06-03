@@ -53,7 +53,7 @@ class Simulation:
         :param log_config: sets up the logging configuration for this simulation
         :param show_progress_bar: whether to show a progress bar instead of the logger
             output during the simulation
-        :param resourcefilepath: Path to resource files folder. assign none if no path is provided
+        :param resourcefilepath: Path to resource files folder. Assign ``None` if no path is provided.
         """
         # simulation
         self.date = self.start_date = start_date
