@@ -126,7 +126,7 @@ def topologically_sort_modules(
             dependencies = get_dependencies(
                 module_instance_map[module], module_instance_map.keys()
             )
-            module_instance = get_module_class_map(set())
+            module_class_map = get_module_class_map(set())
             for dependency in sorted(dependencies):
                 if dependency not in module_instance_map:
                     if auto_register_dependencies:
