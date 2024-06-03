@@ -51,15 +51,6 @@ class HSIEventScheduler(Protocol):
 class GenericFirstApptModule(Module):
     """Base class for modules with actions to perform on generic first appointments."""
 
-    @property
-    def schedule_hsi_event(self) -> Callable:
-        """Alias of :py:meth:`HealthSystem.schedule_hsi_event` method.
-
-        Refers to method of instance of :py:class:`HealthSystem` registered in
-        simulation.
-        """
-        return self.sim.modules["HealthSystem"].schedule_hsi_event
-
     def do_at_generic_first_appt(
         self,
         person_id: int,
