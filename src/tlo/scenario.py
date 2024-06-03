@@ -60,12 +60,13 @@ In summary:
 """
 
 import abc
+import argparse
 import datetime
 import json
 import pickle
 from itertools import product
 from pathlib import Path, PurePosixPath
-from typing import Optional
+from typing import List, Optional
 
 import numpy as np
 
@@ -125,6 +126,42 @@ class BaseScenario(abc.ABC):
         self.resources = resources_path
         self.rng = None
         self.scenario_path = None
+        self.arguments = None
+
+    def parse_arguments(self, extra_arguments: List[str]) -> None:
+        """Base class command line arguments handling for scenarios. This should not be overridden by subclasses.
+        Subclasses can add argument handling to their classes by implementing the `add_arguments` method."""
+
+        self.arguments = extra_arguments
+
+        parser = argparse.ArgumentParser()
+
+        # add arguments from the subclass
+        self.add_arguments(parser)
+
+        arguments = parser.parse_args(self.arguments)
+
+        # set the arguments as attributes of the scenario
+        for key, value in vars(arguments).items():
+            if value is not None:
+                if hasattr(self, key):
+                    logger.info(key="message", data=f"Overriding attribute: {key}: {getattr(self, key)} -> {value}")
+                setattr(self, key, value)
+
+    def add_arguments(self, parser: argparse.ArgumentParser) -> None:
+        """Add scenario-specific arguments that can be passed to scenario from the command line.
+
+        This method is called to add scenario-specific arguments to the command line parser. The method should add
+        arguments to the parser using the `add_argument` method. Arguments that have a value of None are not set or
+        overridden.
+
+        :param parser: An instance of `argparse.ArgumentParser` to which arguments should be added.
+
+        Example::
+
+            parser.add_argument('--pop-size', type=int, default=20_000, help='Population size')
+        """
+        pass
 
     @abc.abstractmethod
     def log_configuration(self, **kwargs):
@@ -282,11 +319,13 @@ class DrawGenerator:
         return {
             "scenario_script_path": str(PurePosixPath(scenario_path)),
             "scenario_seed": self.scenario.seed,
+            "arguments": self.scenario.arguments,
             "runs_per_draw": self.runs_per_draw,
             "draws": self.draws,
         }
 
-    def save_config(self, config, output_path):
+    @staticmethod
+    def save_config(config, output_path):
         with open(output_path, "w") as f:
             f.write(json.dumps(config, indent=2))
 
@@ -297,6 +336,7 @@ class SampleRunner:
         with open(run_configuration_path, "r") as f:
             self.run_config = json.load(f)
         self.scenario = ScenarioLoader(self.run_config["scenario_script_path"]).get_scenario()
+        self.scenario.parse_arguments(self.run_config["arguments"])
         logger.info(key="message", data=f"Loaded scenario using {run_configuration_path}")
         logger.info(key="message", data=f"Found {self.number_of_draws} draws; {self.runs_per_draw} runs/draw")
 
