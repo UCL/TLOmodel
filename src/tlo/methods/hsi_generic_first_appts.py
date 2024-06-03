@@ -53,6 +53,7 @@ class GenericFirstApptModule(Module):
 
     def do_at_generic_first_appt(
         self,
+        *,
         person_id: int,
         individual_properties: IndividualProperties,
         symptoms: List[str],
@@ -100,6 +101,7 @@ class GenericFirstApptModule(Module):
 
     def do_at_generic_first_appt_emergency(
         self,
+        *,
         person_id: int,
         individual_properties: IndividualProperties,
         symptoms: str,
