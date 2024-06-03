@@ -587,14 +587,15 @@ class BedDays:
         dates_bed_occupancies_change = bed_on_each_day.diff()[
             bed_on_each_day.diff() != 0
         ].index.values
-        dates_bed_occupancies_change = np.append(
-            dates_bed_occupancies_change, bed_on_each_day.index[-1]
+        dates_bed_occupancies_end = np.append(
+            dates_bed_occupancies_change[1:] - np.timedelta64(1, "D"),
+            bed_on_each_day.index.values[-1],
         )
 
         reconciled_occupancies = []
         for occ_starts, occ_ends in zip(
-            dates_bed_occupancies_change[:-1],
-            dates_bed_occupancies_change[1:] - pd.DateOffset(days=1),
+            dates_bed_occupancies_change,
+            dates_bed_occupancies_end,
         ):
             bed_type = self.bed_types[bed_on_each_day[occ_starts]]
             assert self.bed_type_to_priority(bed_type) != lowest_priority, (

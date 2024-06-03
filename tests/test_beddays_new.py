@@ -184,7 +184,7 @@ def test_forecast_availability(bed_days: BedDays, small_bedday_dataset: List[Bed
     # No beds of type 2 should be occupied
     assert forecast.loc[0, "bedtype2"] == small_bedday_dataset.loc[0, "bedtype2"]
 
-    # 2) Cause someone to die and relieve their footprint from the bed-days tracker
+    # 2) Cause someone to die and remove their footprint from the bed-days tracker
     bed_days.remove_patient_footprint(patient_id=0)
     forecast = bed_days.forecast_availability(
         start_date=start_date, n_days=0, facility_id=0, int_indexing=True
