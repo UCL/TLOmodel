@@ -72,7 +72,6 @@ import numpy as np
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
-from tlo.util import str_to_pandas_date
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
