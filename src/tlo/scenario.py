@@ -153,7 +153,8 @@ class BaseScenario(abc.ABC):
         """Add scenario-specific arguments that can be passed to scenario from the command line.
 
         This method is called to add scenario-specific arguments to the command line parser. The method should add
-        arguments to the parser using the `add_argument` method.
+        arguments to the parser using the `add_argument` method. Arguments that have a value of None are not set or
+        overridden.
 
         :param parser: An instance of `argparse.ArgumentParser` to which arguments should be added.
 
