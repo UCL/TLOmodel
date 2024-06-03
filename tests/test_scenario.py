@@ -14,11 +14,6 @@ def scenario_path():
 
 
 @pytest.fixture
-def suspend_date():
-    return Date(2012, 3, 4)
-
-
-@pytest.fixture
 def pop_size():
     return 100
 
