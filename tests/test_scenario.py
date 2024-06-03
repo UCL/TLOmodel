@@ -30,12 +30,13 @@ def loaded_scenario(scenario_path):
 
 @pytest.fixture
 def arguments(pop_size, suspend_date):
-    return ['--pop-size', str(pop_size), '--suspend-date', suspend_date.strftime('%Y-%m-%d')]
+    return ['--pop-size', str(pop_size)]
 
 
 @pytest.fixture
 def loaded_scenario_with_parsed_arguments(loaded_scenario, arguments):
     loaded_scenario.parse_arguments(arguments)
+    return loaded_scenario
 
 
 def test_load(loaded_scenario, scenario_path):
@@ -45,15 +46,14 @@ def test_load(loaded_scenario, scenario_path):
     assert hasattr(loaded_scenario, "pop_size")  # Default value set in initialiser
 
 
-def test_parse_arguments(loaded_scenario_with_parsed_arguments, pop_size, suspend_date):
+def test_parse_arguments(loaded_scenario_with_parsed_arguments, pop_size):
     """Check we can parse arguments related to the scenario. pop-size is used by our scenario,
     suspend-date is used in base class"""
     assert loaded_scenario_with_parsed_arguments.pop_size == pop_size
-    assert loaded_scenario_with_parsed_arguments.suspend_date == suspend_date
     assert not hasattr(loaded_scenario_with_parsed_arguments, 'resume_simulation')
 
 
-def test_config(tmp_path, loaded_scenario_with_parsed_arguments):
+def test_config(tmp_path, loaded_scenario_with_parsed_arguments, arguments):
     """Create the run configuration and check we've got the right values in there."""
     config = loaded_scenario_with_parsed_arguments.save_draws(return_config=True)
     assert config['scenario_seed'] == loaded_scenario_with_parsed_arguments.seed
@@ -72,5 +72,4 @@ def test_runner(tmp_path, loaded_scenario_with_parsed_arguments, pop_size, suspe
     assert isinstance(scenario, BaseScenario)
     assert scenario.__class__.__name__ == 'TestScenario'
     assert scenario.pop_size == pop_size
-    assert scenario.suspend_date == suspend_date
     assert runner.number_of_draws == loaded_scenario_with_parsed_arguments.number_of_draws
