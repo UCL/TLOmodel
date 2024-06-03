@@ -94,7 +94,7 @@ def topologically_sort_modules(
     :param get_dependencies: Function which given a module gets the set of module
         dependencies. Defaults to returing the ``Module.INIT_DEPENDENCIES`` class
         attribute.
-    :param resourcefilepath: Path to resource files folder. assign none if no path is provided
+    :param resourcefilepath: Path to resource files folder. Assign ``None`` if no path is provided.
     :param auto_register_dependencies: Whether to register missing module dependencies or not. If this argument is set
     to True, all module dependencies will be automatically registered
 
