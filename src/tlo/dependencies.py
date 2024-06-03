@@ -131,7 +131,7 @@ def topologically_sort_modules(
                 if dependency not in module_instance_map:
                     if auto_register_dependencies:
                         # add missing dependencies and associated classes in module instance map dictionary
-                        module_instance_map[dependency] = module_instance[dependency](resourcefilepath=resourcefilepath)
+                        module_instance_map[dependency] = module_class_map[dependency](resourcefilepath=resourcefilepath)
                         yield from depth_first_search(dependency)
                     else:
                         alternatives_with_instances = [
