@@ -404,6 +404,7 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration(seed):
         module=sim.modules["HealthSeekingBehaviour"], person_id=person_id
     )
     individual_properties = sim.population.individual_properties(person_id)
+    symptoms = {"diarrhoea"}
 
     def diagnosis_fn(tests, use_dict: bool = False, report_tried: bool = False):
         return generic_hsi.healthcare_system.dx_manager.run_dx_test(
@@ -420,6 +421,7 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration(seed):
         individual_properties=individual_properties,
         schedule_hsi_event=sim.modules["HealthSystem"].schedule_hsi_event,
         diagnosis_function=diagnosis_fn,
+        symptoms=symptoms,
     )
     evs = sim.modules['HealthSystem'].find_events_for_person(person_id)
 
@@ -434,6 +436,7 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration(seed):
         individual_properties=individual_properties,
         schedule_hsi_event=sim.modules["HealthSystem"].schedule_hsi_event,
         diagnosis_function=diagnosis_fn,
+        symptoms=symptoms,
     )
     evs = sim.modules['HealthSystem'].find_events_for_person(person_id)
     assert 1 == len(evs)
@@ -495,6 +498,7 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration_dxtest_notfuncti
     generic_hsi = HSI_GenericNonEmergencyFirstAppt(
         module=sim.modules['HealthSeekingBehaviour'], person_id=person_id)
     individual_properties = sim.population.individual_properties(person_id)
+    symptoms = {"diarrhoea"}
 
     def diagnosis_fn(tests, use_dict: bool = False, report_tried: bool = False):
         return generic_hsi.healthcare_system.dx_manager.run_dx_test(
@@ -512,6 +516,7 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration_dxtest_notfuncti
         individual_properties=individual_properties,
         schedule_hsi_event=sim.modules["HealthSystem"].schedule_hsi_event,
         diagnosis_function=diagnosis_fn,
+        symptoms=symptoms,
     )
     evs = sim.modules['HealthSystem'].find_events_for_person(person_id)
     assert 1 == len(evs)
@@ -572,6 +577,7 @@ def test_do_when_presentation_with_diarrhoea_non_severe_dehydration(seed):
     generic_hsi = HSI_GenericNonEmergencyFirstAppt(
         module=sim.modules['HealthSeekingBehaviour'], person_id=person_id)
     individual_properties = sim.population.individual_properties(person_id)
+    symptoms = {"diarrhoea"}
 
     def diagnosis_fn(tests, use_dict: bool = False, report_tried: bool = False):
         return generic_hsi.healthcare_system.dx_manager.run_dx_test(
@@ -587,6 +593,7 @@ def test_do_when_presentation_with_diarrhoea_non_severe_dehydration(seed):
         individual_properties=individual_properties,
         schedule_hsi_event=sim.modules["HealthSystem"].schedule_hsi_event,
         diagnosis_function=diagnosis_fn
+        symptoms=symptoms,
     )
     evs = sim.modules["HealthSystem"].find_events_for_person(person_id)
 

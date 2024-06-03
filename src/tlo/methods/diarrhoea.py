@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 import numpy as np
 import pandas as pd
@@ -946,13 +946,14 @@ class Diarrhoea(GenericFirstApptModule):
         person_id: int,
         individual_properties: IndividualProperties,
         schedule_hsi_event: HSIEventScheduler,
+        symptoms: List[str],
         diagnosis_function: DiagnosisFunction,
         **kwargs,
     ) -> None:
         # This routine is called when Diarrhoea is a symptom for a child
         # attending a Generic HSI Appointment. It checks for danger signs
         # and schedules HSI Events appropriately.
-        if individual_properties["age_years"] > 5:
+        if patient_details.age_years > 5  or "diarrhoea" not in symptoms:
             return
 
         # 1) Assessment of danger signs
