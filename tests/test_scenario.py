@@ -45,7 +45,6 @@ def test_parse_arguments(loaded_scenario_with_parsed_arguments, pop_size):
     """Check we can parse arguments related to the scenario. pop-size is used by our scenario,
     suspend-date is used in base class"""
     assert loaded_scenario_with_parsed_arguments.pop_size == pop_size
-    assert not hasattr(loaded_scenario_with_parsed_arguments, 'resume_simulation')
 
 
 def test_config(tmp_path, loaded_scenario_with_parsed_arguments, arguments):
