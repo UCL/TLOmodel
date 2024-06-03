@@ -136,8 +136,6 @@ class BaseScenario(abc.ABC):
         self.arguments = extra_arguments
 
         parser = argparse.ArgumentParser()
-        parser.add_argument("--resume-simulation", type=str, help="Resume simulation from directory")
-        parser.add_argument("--suspend-date", type=str_to_pandas_date, help="Suspend the simulation")
 
         # add arguments from the subclass
         self.add_arguments(parser)
