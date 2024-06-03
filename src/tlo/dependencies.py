@@ -8,7 +8,6 @@ from typing import Any, Callable, Generator, Iterable, Mapping, Optional, Set, T
 
 import tlo.methods
 from tlo import Module
-from tlo.methods.hsi_generic_first_appts import GenericFirstApptModule
 
 
 class ModuleDependencyError(Exception):
@@ -169,7 +168,6 @@ def is_valid_tlo_module_subclass(obj: Any, excluded_modules: Set[str]) -> bool:
         inspect.isclass(obj)
         and issubclass(obj, Module)
         and obj is not Module
-        and obj is not GenericFirstApptModule
         and obj.__name__ not in excluded_modules
     )
 
