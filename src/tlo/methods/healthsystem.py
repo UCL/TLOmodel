@@ -2425,8 +2425,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                         )
 
                             # Update today's footprint based on actual call and squeeze factor
-                            self.module.running_total_footprint -= original_call
-                            self.module.running_total_footprint += updated_call
+                            self.module.running_total_footprint.update(updated_call)
 
                             # Write to the log
                             self.module.record_hsi_event(
