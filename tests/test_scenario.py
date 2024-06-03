@@ -55,7 +55,7 @@ def test_config(tmp_path, loaded_scenario_with_parsed_arguments, arguments):
     assert len(config['draws']) == loaded_scenario_with_parsed_arguments.number_of_draws
 
 
-def test_runner(tmp_path, loaded_scenario_with_parsed_arguments, pop_size, suspend_date):
+def test_runner(tmp_path, loaded_scenario_with_parsed_arguments, pop_size):
     """Check we can load the scenario from a configuration file."""
     config = loaded_scenario_with_parsed_arguments.save_draws(return_config=True)
     config_path = tmp_path / 'scenario.json'
