@@ -21,7 +21,6 @@ death is lowered and the person is "cured" (symptom resolved) some days later.
 """
 from __future__ import annotations
 
-import types
 from collections import defaultdict
 from itertools import chain
 from pathlib import Path
