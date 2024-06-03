@@ -2358,11 +2358,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
     def _get_cons_group(self, item_group_str: str) -> bool:
         """True if _all_ of a group of consumables (identified by a string) is available."""
         if item_group_str is not None:
-            return self.get_consumables(
-                item_codes={
-                    k: v(self._age_exact_years) if isinstance(v, types.LambdaType) else v
-                    for k, v in self.module.consumables_used_in_hsi[item_group_str].items()
-                })
+            return self.get_consumables(self.module.consumables_used_in_hsi[item_group_str])
         else:
             raise ValueError('String for the group of consumables not provided')
 
