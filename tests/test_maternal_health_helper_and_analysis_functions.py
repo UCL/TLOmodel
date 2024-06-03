@@ -252,7 +252,6 @@ def test_analysis_events_force_availability_of_consumables_when_scheduled_in_anc
     # Override the availability of the consumables within the health system- set to 0. If analysis was not running no
     # interventions requiring these consumable would run
     module = sim.modules['CareOfWomenDuringPregnancy']
-
     iron = module.item_codes_preg_consumables['iron_folic_acid']
     protein = module.item_codes_preg_consumables['balanced_energy_protein']
     calcium = module.item_codes_preg_consumables['calcium']

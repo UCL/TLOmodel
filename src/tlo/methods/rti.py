@@ -4056,7 +4056,6 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
         assert df.loc[person_id, 'rt_med_int'], 'person sent here has not been treated'
 
         # If they have an open fracture, ask for consumables to treat fracture
-        # todo: confirm single dose of prophylactic ceftriaxone
         if open_fracture_counts > 0:
             self.module.item_codes_for_consumables_required['open_fracture_treatment'] = {
                 get_item_code('Ceftriaxone 1g, PFR_each_CMST'): 2000,
@@ -4069,7 +4068,7 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
             p = self.module.parameters
             prob_open_fracture_contaminated = p['prob_open_fracture_contaminated']
             rand_for_contamination = self.module.rng.random_sample(size=1)
-            # todo: confirm correct dose (below from BNF for surgical prophylaxsis)
+            # NB: Dose used below from BNF is for surgical prophylaxsis
             if rand_for_contamination < prob_open_fracture_contaminated:
                 self.module.item_codes_for_consumables_required['open_fracture_treatment'].update(
                     {get_item_code('Metronidazole, injection, 500 mg in 100 ml vial'): 1500}

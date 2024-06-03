@@ -1183,7 +1183,6 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
 
         # Determine essential and optional items
         items_essential = self.module.cons_codes[self.new_contraceptive]
-
         items_optional = {}
         # Record use of consumables and default the person to "not_using" if the consumable is not available.
         # If initiating use of a modern contraceptive method except condoms (after not using any or using non-modern

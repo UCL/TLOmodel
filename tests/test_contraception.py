@@ -825,7 +825,6 @@ def test_contraception_coverage_with_use_healthsystem(tmpdir, seed):
         """Helper function to find the availability of consumables used in the Contraception module."""
         sim = run_sim(tmpdir, seed, run=False, consumables_available='default')
         item_codes = sim.modules['Contraception'].get_item_code_for_each_contraceptive()
-
         # do not check the `co_initiation` items, only contraception methods items
         del item_codes['co_initiation']
         cons = sim.modules['HealthSystem'].consumables._prob_item_codes_available
