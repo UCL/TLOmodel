@@ -24,7 +24,7 @@ def loaded_scenario(scenario_path):
 
 
 @pytest.fixture
-def arguments(pop_size, suspend_date):
+def arguments(pop_size):
     return ['--pop-size', str(pop_size)]
 
 
