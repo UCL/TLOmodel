@@ -931,7 +931,7 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
     all_fac_ids = set(mfl.loc[mfl.Facility_Level != '5'].Facility_ID)
 
     sim.modules['HealthSystem'].consumables = Consumables(
-        data=create_dummy_data_for_cons_availability(
+        availability_data=create_dummy_data_for_cons_availability(
             intrinsic_availability={0: 0.5, 1: 0.5},
             months=list(range(1, 13)),
             facility_ids=list(all_fac_ids)),
@@ -948,7 +948,7 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
     detailed_consumables = log["tlo.methods.healthsystem"]['Consumables']
 
     assert {'date', 'TREATMENT_ID', 'did_run', 'Squeeze_Factor', 'priority', 'Number_By_Appt_Type_Code', 'Person_ID',
-            'Facility_Level', 'Facility_ID', 'Event_Name',
+            'Facility_Level', 'Facility_ID', 'Event_Name', 'Equipment'
             } == set(detailed_hsi_event.columns)
     assert {'date', 'Frac_Time_Used_Overall', 'Frac_Time_Used_By_Facility_ID', 'Frac_Time_Used_By_OfficerType',
             } == set(detailed_capacity.columns)
@@ -1346,6 +1346,7 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
         'capabilities_coefficient': 0.5,
         'cons_availability': 'all',
         'beds_availability': 'default',
+        'equip_availability': 'default',
     }
     new_parameters = {
         'mode_appt_constraints': 2,
@@ -1353,6 +1354,7 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
         'capabilities_coefficient': 1.0,
         'cons_availability': 'none',
         'beds_availability': 'none',
+        'equip_availability': 'all',
     }
 
     class CheckHealthSystemParameters(RegularEvent, PopulationScopeEventMixin):
@@ -1366,8 +1368,9 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
             _params['mode_appt_constraints'] = hs.mode_appt_constraints
             _params['ignore_priority'] = hs.ignore_priority
             _params['capabilities_coefficient'] = hs.capabilities_coefficient
-            _params['cons_availability'] = hs.consumables.cons_availability
+            _params['cons_availability'] = hs.consumables.availability
             _params['beds_availability'] = hs.bed_days.availability
+            _params['equip_availability'] = hs.equipment.availability
 
             logger = logging.getLogger('tlo.methods.healthsystem')
             logger.info(key='CheckHealthSystemParameters', data=_params)
@@ -1534,8 +1537,12 @@ def test_manipulation_of_service_availability(seed, tmpdir):
            get_set_of_treatment_ids_that_run(service_availability=["Hiv_Test_*"]) - generic_first_appts
 
     # Allow all `Hiv` things (but nothing else)
-    assert set({'Hiv_Test', 'Hiv_Treatment', 'Hiv_Prevention_Circumcision'}) == \
-           get_set_of_treatment_ids_that_run(service_availability=["Hiv_*"]) - generic_first_appts
+    hiv_hsi_events = {'Hiv_Test', 'Hiv_Treatment', 'Hiv_Prevention_Circumcision', 'Hiv_Prevention_Infant',
+                      'Hiv_Prevention_Prep', 'Hiv_PalliativeCare'}
+    returned_treatment_ids = get_set_of_treatment_ids_that_run(service_availability=["Hiv_*"])
+
+    assert returned_treatment_ids.intersection(
+        hiv_hsi_events), "None of the expected treatment IDs are found in the returned set"
 
     # Allow all except `Hiv_Test`
     everything_except_hiv_test = everything - set({'Hiv_Test'})

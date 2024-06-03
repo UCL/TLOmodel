@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
-from typing import TYPE_CHECKING, Dict, Literal, NamedTuple, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Dict, Iterable, Literal, NamedTuple, Optional, Set, Tuple, Union
 
 import numpy as np
 
@@ -42,6 +42,7 @@ class HSIEventDetails(NamedTuple):
     facility_level: Optional[str]
     appt_footprint: Tuple[Tuple[str, int]]
     beddays_footprint: Tuple[Tuple[str, int]]
+    equipment: Tuple[str]
 
 
 class HSIEventQueueItem(NamedTuple):
@@ -73,7 +74,7 @@ class HSI_Event:
     """Base HSI event class, from which all others inherit.
 
     Concrete subclasses should also inherit from one of the EventMixin classes
-    defined in `src/tlo/events.py`, and implement at least an `apply` and 
+    defined in `src/tlo/events.py`, and implement at least an `apply` and
     `did_not_run` method.
     """
 
@@ -103,15 +104,21 @@ class HSI_Event:
         self.module = module
         super().__init__(*args, **kwargs)
 
-        # Information that will later be received about this HSI
+        # Information that will later be received/computed about this HSI
         self._received_info_about_bed_days = None
         self.expected_time_requests = {}
         self.facility_info = None
+        self._is_all_declared_equipment_available = None
 
         self.TREATMENT_ID = ""
         self.ACCEPTED_FACILITY_LEVEL = None
         # Set "dynamic" default value
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint()
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({})
+        self._EQUIPMENT: Set[int] = set()  # The set of equipment that is used in the HSI. If any items in this set are
+        #                                     not available at the point when the HSI will be run, then the HSI is not
+        #                                     run, and the `never_ran` method is called instead. This is a declaration
+        #                                     of resource needs, but is private because users are expected to use
+        #                                     `add_equipment` to declare equipment needs.
 
     @property
     def bed_days_allocated_to_this_event(self):
@@ -166,12 +173,13 @@ class HSI_Event:
         logger.debug(key="message", data=f"{self.__class__.__name__}: was never run.")
 
     def post_apply_hook(self) -> None:
-        """Impose the bed-days footprint (if target of the HSI is a person_id)"""
+        """Do any required processing after apply() completes."""
 
     def _run_after_hsi_event(self) -> None:
         """
         Do things following the event's `apply` and `post_apply_hook` functions running.
          * Impose the bed-days footprint (if target of the HSI is a person_id)
+         * Record the equipment that has been added before and during the course of the HSI Event.
         """
         if isinstance(self.target, int):
             self.healthcare_system.bed_days.impose_beddays_footprint(
@@ -179,6 +187,13 @@ class HSI_Event:
                 facility=self.healthcare_system.get_facility_id_for_beds(self.target),
                 first_day=self.sim.date,
                 patient_id=self.target,
+            )
+
+        if self.facility_info is not None:
+            # If there is a facility_info (e.g., healthsystem not running in disabled mode), then record equipment used
+            self.healthcare_system.equipment.record_use_of_equipment(
+                item_codes=self._EQUIPMENT,
+                facility_id=self.facility_info.id
             )
 
     def run(self, squeeze_factor):
@@ -265,6 +280,41 @@ class HSI_Event:
             "Argument to make_appt_footprint should be a dictionary keyed by "
             "appointment type code strings in Appt_Types_Table with non-negative "
             "values"
+        )
+
+    def add_equipment(self, item_codes: Union[int, str, Iterable[int], Iterable[str]]) -> None:
+        """Declare that piece(s) of equipment are used in this HSI_Event. Equipment items can be identified by their
+        item_codes (int) or descriptors (str); a singular item or an iterable of items (either codes or descriptors but
+        not a mix of both) can be defined at once. Checks are done on the validity of the item_codes/item
+        descriptions and a warning issued if any are not recognised."""
+        self._EQUIPMENT.update(self.healthcare_system.equipment.parse_items(item_codes))
+
+    @property
+    def is_all_declared_equipment_available(self) -> bool:
+        """Returns ``True`` if all the (currently) declared items of equipment are available. This is called by the
+        ``HealthSystem`` module before the HSI is run and so is looking only at those items that are declared when this
+        instance was created. The evaluation of whether equipment is available is only done *once* for this instance of
+        the event: i.e., if the equipment is not available for the instance of this ``HSI_Event``, then it will remain not
+        available if the same event is re-scheduled/re-entered into the HealthSystem queue. This is representing that
+        if the facility that a particular person attends for the ``HSI_Event`` does not have the equipment available, then
+        it will also not be available on another day."""
+
+        if self._is_all_declared_equipment_available is None:
+            # Availability has not already been evaluated: determine availability
+            self._is_all_declared_equipment_available = self.healthcare_system.equipment.is_all_items_available(
+                item_codes=self._EQUIPMENT,
+                facility_id=self.facility_info.id,
+            )
+        return self._is_all_declared_equipment_available
+
+    def probability_all_equipment_available(self, item_codes: Union[int, str, Iterable[int], Iterable[str]]) -> float:
+        """Returns the probability that all the equipment item_codes are available. This does not imply that the
+        equipment is being used and no logging happens. It is provided as a convenience to disease module authors in
+        case the logic during an ``HSI_Event`` depends on the availability of a piece of equipment. This function
+        accepts the item codes/descriptions in a variety of formats, so the argument needs to be parsed."""
+        return self.healthcare_system.equipment.probability_all_equipment_available(
+            item_codes=self.healthcare_system.equipment.parse_items(item_codes),
+            facility_id=self.facility_info.id,
         )
 
     def initialise(self) -> None:
@@ -375,6 +425,7 @@ class HSI_Event:
             beddays_footprint=tuple(
                 sorted((k, v) for k, v in self.BEDDAYS_FOOTPRINT.items() if v > 0)
             ),
+            equipment=tuple(sorted(self._EQUIPMENT)),
         )
 
 

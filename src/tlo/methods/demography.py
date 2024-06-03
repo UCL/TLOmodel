@@ -73,9 +73,10 @@ class Demography(Module):
     The core demography module.
     """
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None, resourcefilepath=None, equal_allocation_by_district: bool = False):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
+        self.equal_allocation_by_district = equal_allocation_by_district
         self.initial_model_to_data_popsize_ratio = None  # will store scaling factor
         self.popsize_by_year = dict()  # will store total population size each year
         self.causes_of_death = dict()  # will store all the causes of death that are possible in the simulation
@@ -245,6 +246,8 @@ class Demography(Module):
             init_pop,
             max_age=self.parameters['max_age_initial']
         )
+        if self.equal_allocation_by_district:
+            init_pop = self._edit_init_pop_so_that_equal_number_in_each_district(init_pop)
 
         # randomly pick from the init_pop sheet, to allocate characteristic to each person in the df
         demog_char_to_assign = init_pop.iloc[self.rng.choice(init_pop.index.values,
@@ -380,6 +383,56 @@ class Demography(Module):
         _df = df.drop(df.index[df.Age > max_age])  # Remove characteristics with age greater than max_age
         _df.prob = _df.prob / _df.prob.sum()  # Rescale `prob` so that it sums to 1.0
         return _df.reset_index(drop=True)
+
+    @staticmethod
+    def _edit_init_pop_so_that_equal_number_in_each_district(df) -> pd.DataFrame:
+        """Return an edited version of the `pd.DataFrame` describing the probability of persons in the population being
+        created with certain characteristics to reflect the constraint of there being an equal number of persons
+        in each district."""
+
+        # Get breakdown of Sex/Age within each district
+        district_nums = df['District_Num'].unique()
+
+        # Target size of each district
+        target_size_for_district = df['Count'].sum() / len(district_nums)
+
+        # Make new version (a copy) of the dataframe
+        df_new = df.copy()
+
+        for district_num in district_nums:
+            mask_for_district = df['District_Num'] == district_num
+            # For each district, compute the age/sex breakdown, and use this with target_size to create updated `Count`
+            # values
+            df_new.loc[mask_for_district, 'Count'] = target_size_for_district * (
+                df.loc[mask_for_district, 'Count'] / df.loc[mask_for_district, 'Count'].sum()
+            )
+
+        # Recompute "prob" column (i.e. the probability of being in that category)
+        df_new["prob"] = df_new['Count'] / df_new['Count'].sum()
+
+        # Check that the resulting dataframe is of the same size/shape as the original; that Count and prob make
+        # sense; and that we have preserved the age/sex breakdown within each district
+        def all_elements_identical(x):
+            return np.allclose(x, x[0])
+
+        assert df['Count'].sum() == df_new['Count'].sum()
+        assert 1.0 == df['prob'].sum() == df_new['prob'].sum()
+        assert all_elements_identical(df_new.groupby('District_Num')['prob'].sum().values)
+
+        def get_age_sex_breakdown_in_district(dat, district_num):
+            return (
+                dat.loc[df['District_Num'] == district_num].groupby(['Age', 'Sex'])['prob'].sum()
+                / dat.loc[df['District_Num'] == district_num, 'prob'].sum()
+            )
+
+        for _d in district_nums:
+            pd.testing.assert_series_equal(
+                get_age_sex_breakdown_in_district(df, _d),
+                get_age_sex_breakdown_in_district(df_new, _d)
+            )
+
+        # Return the new dataframe
+        return df_new
 
     def process_causes_of_death(self):
         """
