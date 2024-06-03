@@ -1760,7 +1760,6 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
             if self.module.parameters['prob_care_provided_given_seek_emergency_care'] > self.module.rng.random_sample():
 
                 # If care is provided....
-                # TODO: confirm dose for emergency treatment of MI/STROKE
                 dose = 20 if _ev == 'ever_stroke' else 40
 
                 if self.get_consumables(
