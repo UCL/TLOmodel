@@ -4,7 +4,6 @@ from pathlib import Path
 
 import pytest
 
-from tlo import Date
 from tlo.scenario import BaseScenario, SampleRunner, ScenarioLoader
 
 
