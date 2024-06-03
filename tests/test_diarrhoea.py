@@ -592,7 +592,7 @@ def test_do_when_presentation_with_diarrhoea_non_severe_dehydration(seed):
         person_id=person_id,
         individual_properties=individual_properties,
         schedule_hsi_event=sim.modules["HealthSystem"].schedule_hsi_event,
-        diagnosis_function=diagnosis_fn
+        diagnosis_function=diagnosis_fn,
         symptoms=symptoms,
     )
     evs = sim.modules["HealthSystem"].find_events_for_person(person_id)
