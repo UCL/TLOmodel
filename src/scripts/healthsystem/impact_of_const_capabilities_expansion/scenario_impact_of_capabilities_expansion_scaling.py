@@ -3,12 +3,12 @@ impact that is achieved under each.
 
 Run on the batch system using:
 ```
-tlo batch-submit src/scripts/healthsystem/impact_of_policy/scenario_impact_of_const_capabilities_expansion.py
+tlo batch-submit src/scripts/healthsystem/impact_of_policy/scenario_impact_of_capabilities_expansion_scaling.py
 ```
 
 or locally using:
 ```
-tlo scenario-run src/scripts/healthsystem/impact_of_policy/scenario_impact_of_const_capabilities_expansion.py
+tlo scenario-run src/scripts/healthsystem/impact_of_policy/scenario_impact_of_capabilities_expansion_scaling.py
 ```
 
 """
