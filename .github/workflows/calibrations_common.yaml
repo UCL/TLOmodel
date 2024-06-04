@@ -61,7 +61,7 @@ jobs:
       - name: Generate environment variables
         id: vars
         run: |
-          SHA=${{ inputs.commit }}
+          SHA="mg/calibration-mod2"
           ENV="/mnt/tlo/env-healthsystem-mode${{ inputs.hs_mode }}-${SHA}"
           if [[ -d "${ENV}" ]]; then
               echo "Virtual environment directory ${ENV} already exists, leaving..."
@@ -85,7 +85,7 @@ jobs:
         run: |
           # If the repository doesn't exist on disk, clone it.
           if [[ ! -d "${REPO_PATH}" ]]; then
-              git clone --depth=1 --branch="${{ github.ref_name }}" "https://github.com/${{ github.repository }}.git" "${REPO_PATH}"
+              git clone "https://github.com/giordano/TLOmodel.git" "${REPO_PATH}"
           fi
           # In any case, fetch the requested commit.
           git -C "${REPO_PATH}" fetch --depth=1 origin "${SHA}"
@@ -167,7 +167,7 @@ jobs:
           task_output_dir="${{ needs.setup.outputs.output_dir }}/${RUN_NAME}/${draw}/${{ matrix.index }}"
           mkdir -p "${task_output_dir}"
 
-          tlo scenario-run --output-dir "${task_output_dir}" --draw "${draw}" ${{ matrix.index }} "${{ needs.setup.outputs.worktree_path }}/src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py" --healthsystem-mode ${{ inputs.hs_mode }}
+          tlo scenario-run --output-dir "${task_output_dir}" --draw "${draw}" ${{ matrix.index }} "${{ needs.setup.outputs.worktree_path }}/src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py" --healthsystem-mode ${{ inputs.hs_mode }} --end-date '2011-01-01'
         working-directory: "${{ needs.setup.outputs.worktree_path }}"
 
   # Do the postprocessing
