@@ -21,6 +21,43 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+fixed_modules_order = [
+    'ImprovedHealthSystemAndCareSeekingScenarioSwitcher',
+    'Demography',
+    'Lifestyle',
+    'HealthBurden',
+    'HealthSystem',
+    'SymptomManager',
+    'HealthSeekingBehaviour',
+    'Epi',
+    'Contraception',
+    'CardioMetabolicDisorders',
+    'Hiv',
+    'Malaria',
+    'PregnancySupervisor',
+    'CareOfWomenDuringPregnancy',
+    'NewbornOutcomes',
+    'Wasting',
+    'Diarrhoea',
+    'Stunting',
+    'Labour',
+    'PostnatalSupervisor',
+    'Alri',
+    'Measles',
+    'Schisto',
+    'Tb',
+    'BladderCancer',
+    'BreastCancer',
+    'OesophagealCancer',
+    'OtherAdultCancer',
+    'ProstateCancer',
+    'RTI',
+    'Copd',
+    'Depression',
+    'Epilepsy',
+    'SimplifiedBirths',
+    'Mockitis']
+
 class HSI_BaseGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
     """
     """
@@ -67,33 +104,31 @@ class HSI_BaseGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
         """
         """
         # Make top-level reads of information, to avoid repeat accesses.
-        modules: OrderedDict[str, "Module"] = self.sim.modules
-        print(modules)
-        print(modules.values())
-        exit(-1)
-        symptoms = modules["SymptomManager"].has_what(self.target)
+        modules: OrderedDict[str, "Module"] = fixed_modules_order #self.sim.modules
+        symptoms = self.sim.modules["SymptomManager"].has_what(self.target)
 
         # Dynamically create immutable container with the target's details stored.
         # This will avoid repeat DataFrame reads when we call the module-level functions.
         patient_details = self.sim.population.row_in_readonly_form(self.target)
-
-        for module in modules.values():
-            module_patient_updates = getattr(module, self.MODULE_METHOD_ON_APPLY)(
-                patient_id=self.target,
-                patient_details=patient_details,
-                symptoms=symptoms,
-                diagnosis_function=self._diagnosis_function,
-                consumables_checker=self.get_consumables,
-                facility_level=self.ACCEPTED_FACILITY_LEVEL,
-                treatment_id=self.TREATMENT_ID,
-                random_state=self.module.rng,
-            )
-            # Record any requested DataFrame updates
-            if module_patient_updates:
-                for key, value in module_patient_updates.items():
-                    self.sim.population.props.at[self.target, key] = value
-                # Also need to recreate  patient_details to reflect updated properties
-                patient_details = self.sim.population.row_in_readonly_form(self.target)
+        for name in modules:
+            if name in self.sim.modules.keys():
+                module = self.sim.modules[name]
+                module_patient_updates = getattr(module, self.MODULE_METHOD_ON_APPLY)(
+                    patient_id=self.target,
+                    patient_details=patient_details,
+                    symptoms=symptoms,
+                    diagnosis_function=self._diagnosis_function,
+                    consumables_checker=self.get_consumables,
+                    facility_level=self.ACCEPTED_FACILITY_LEVEL,
+                    treatment_id=self.TREATMENT_ID,
+                    random_state=self.module.rng,
+                )
+                # Record any requested DataFrame updates
+                if module_patient_updates:
+                    for key, value in module_patient_updates.items():
+                        self.sim.population.props.at[self.target, key] = value
+                    # Also need to recreate  patient_details to reflect updated properties
+                    patient_details = self.sim.population.row_in_readonly_form(self.target)
 
     def apply(self, person_id, squeeze_factor=0.) -> None:
         """
