@@ -60,13 +60,6 @@ class ImpactOfHealthSystemMode(BaseScenario):
         else:
             return
 
-    # case 1: gfHE = -0.030, factor = 1.01074
-    # case 2: gfHE = -0.020, factor = 1.02116
-    # case 3: gfHE = -0.015, factor = 1.02637
-    # case 4: gfHE =  0.015, factor = 1.05763
-    # case 5: gfHE =  0.020, factor = 1.06284
-    # case 6: gfHE =  0.030, factor = 1.07326
-
     def _get_scenarios(self) -> Dict[str, Dict]:
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario.
         """
@@ -95,29 +88,6 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     }
                 ),
  
-             "Pop growth actual":
-                mix_scenarios(
-                    self._baseline(),
-                    {
-                     "HealthSystem": {
-                        "use_funded_or_actual_staffing_postSwitch": "actual",
-                        "yearly_HR_scaling_mode": "scale_by_pop_growth"
-
-                      },
-                    }
-                ),
-                
-            "Pop growth funded":
-                mix_scenarios(
-                    self._baseline(),
-                    {
-                     "HealthSystem": {
-                        "use_funded_or_actual_staffing_postSwitch": "funded",
-                        "yearly_HR_scaling_mode": "scale_by_pop_growth"
-                      },
-                    }
-                ),
- 
         )
         
     def _baseline(self) -> Dict:
@@ -130,7 +100,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     "mode_appt_constraints_postSwitch": 2,      # <-- Mode 2 post-change to show effects of HRH
                     "year_mode_switch": self.YEAR_OF_CHANGE,
                     "use_funded_or_actual_staffing": 'actual',
-                    "year_use_funded_or_actual_staffing_switch": 2019,
+                    "year_use_funded_or_actual_staffing_switch": self.YEAR_OF_CHANGE,
                     "scale_to_effective_capabilities": False,
                     "policy_name": "Naive",
                     "tclose_overwrite": 1,
