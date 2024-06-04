@@ -402,12 +402,6 @@ for fac in fac_ids:
             # temporary code
             assert full_set_interpolated.loc[(fac, slice(None), item), col].mean() >= 0
 
-# Check that there are not missing values
-assert not pd.isnull(full_set_interpolated).any().any()
-
-# --- Check that the exported file has the properties required of it by the model code. --- #
-#check_format_of_consumables_file(df=full_set_interpolated.reset_index(), fac_ids=fac_ids)
-
 # 3. Generate regression-based scenario data on consumable availablity
 #*************************************************************************
 # Create new consumable availability estimates for TLO model consumables using
@@ -507,6 +501,9 @@ list_of_scenario_suffixes = list_of_scenario_suffixes + ['scenario6', 'scenario7
 final_list_of_scenario_vars = ['available_prop_' + item for item in list_of_scenario_suffixes]
 old_vars = ['Facility_ID', 'month', 'item_code', 'available_prop']
 full_df_with_scenario = df_new[old_vars + final_list_of_scenario_vars].reset_index().drop('index', axis = 1)
+
+# --- Check that the exported file has the properties required of it by the model code. --- #
+check_format_of_consumables_file(df=full_df_with_scenario.reset_index(), fac_ids=fac_ids)
 
 # Save updated consumable availability resource file with scenario data
 full_df_with_scenario.to_csv(
