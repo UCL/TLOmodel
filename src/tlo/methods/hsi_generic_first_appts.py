@@ -68,6 +68,9 @@ class HSI_BaseGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
         """
         # Make top-level reads of information, to avoid repeat accesses.
         modules: OrderedDict[str, "Module"] = self.sim.modules
+        print(modules)
+        print(modules.values())
+        exit(-1)
         symptoms = modules["SymptomManager"].has_what(self.target)
 
         # Dynamically create immutable container with the target's details stored.
