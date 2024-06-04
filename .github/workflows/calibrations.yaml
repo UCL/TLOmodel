@@ -5,14 +5,14 @@ on:
     - cron: 31 2 * * *
 
 jobs:
-  name: "Calibration for model ${{ matrix.model }}"
   version-matrix:
+    name: "Calibration for mode ${{ matrix.hs_mode }}"
     strategy:
       fail-fast: false
       matrix:
-        model: [mode1, mode2]
+        hs_mode: [1, 2]
     uses: ./.github/workflows/calibrations_common.yaml
     with:
-      model: ${{ matrix.model }}
+      hs_mode: ${{ matrix.hs_mode }}
       commit: ${{ github.sha }}
     secrets: inherit
