@@ -64,6 +64,7 @@ import argparse
 import datetime
 import json
 import pickle
+from collections.abc import Iterable
 from itertools import product
 from pathlib import Path, PurePosixPath
 from typing import List, Optional
@@ -126,11 +127,16 @@ class BaseScenario(abc.ABC):
         self.resources = resources_path
         self.rng = None
         self.scenario_path = None
-        self.arguments = None
+        self.arguments = []
 
     def parse_arguments(self, extra_arguments: List[str]) -> None:
         """Base class command line arguments handling for scenarios. This should not be overridden by subclasses.
         Subclasses can add argument handling to their classes by implementing the `add_arguments` method."""
+
+        if extra_arguments is None:
+            return
+
+        assert isinstance(extra_arguments, Iterable), "Arguments must be a list of strings"
 
         self.arguments = extra_arguments
 
@@ -336,7 +342,8 @@ class SampleRunner:
         with open(run_configuration_path, "r") as f:
             self.run_config = json.load(f)
         self.scenario = ScenarioLoader(self.run_config["scenario_script_path"]).get_scenario()
-        self.scenario.parse_arguments(self.run_config["arguments"])
+        if self.run_config["arguments"] is not None:
+            self.scenario.parse_arguments(self.run_config["arguments"])
         logger.info(key="message", data=f"Loaded scenario using {run_configuration_path}")
         logger.info(key="message", data=f"Found {self.number_of_draws} draws; {self.runs_per_draw} runs/draw")
 
