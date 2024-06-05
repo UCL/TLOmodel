@@ -23,6 +23,7 @@ import calendar
 import datetime
 from collections import defaultdict
 from pathlib import Path
+import os
 
 import matplotlib.pyplot as plt
 from plotnine import * # ggplot, aes, geom_point for ggplots from R
@@ -418,12 +419,9 @@ for scenario in list_of_scenario_suffixes:
     assert(sum(full_set_interpolated['available_prop_' + scenario].isna()) ==
            sum(full_set_interpolated['change_proportion_' + scenario].isna()))
 
-# 3. Generate best performing facility-based scenario data on consumable availablity
+# 4. Generate best performing facility-based scenario data on consumable availablity
 #*********************************************************************************************
-df = full_df_with_scenario.copy() #.set_index(['Facility_ID', 'month', 'item_code'])
-
-#new_scenarios = ['available_prop_scenario6','available_prop_scenario7', 'available_prop_scenario8']
-#df[new_scenarios] = np.nan
+df = full_df_with_scenario.copy()
 
 # Create a dictionary to store facilities at the 75th, 90th and 99th percentile in terms of consumable availability
 # List of facility levels to process
@@ -511,6 +509,34 @@ full_df_with_scenario.to_csv(
     index=False
 )
 # TODO: Create a column providing the source of scenario data
+
+# 8. Plot new availability estimates by scenario
+#*********************************************************************************************
+# Creating the line plot with ggplot
+df_for_plots = full_df_with_scenario.merge(programs[['category', 'item_code']], on = 'item_code', how = "left", validate = "m:1")
+df_for_plots = df_for_plots.merge(mfl[['Facility_ID', 'Facility_Level']], on = 'Facility_ID', how = 'left', validate = "m:1")
+def generate_barplot_of_scenarios(_df, _x_axis_var, _filename):
+    df_for_line_plot = _df.groupby([_x_axis_var])[['available_prop'] + final_list_of_scenario_vars].mean()
+    df_for_line_plot = df_for_line_plot.reset_index().melt(id_vars=[_x_axis_var], value_vars=['available_prop'] + final_list_of_scenario_vars,
+                        var_name='Scenario', value_name='Value')
+    plot = (ggplot(df_for_line_plot.reset_index(), aes(x=_x_axis_var, y='Value', fill = 'Scenario'))
+            + geom_bar(stat='identity', position='dodge')
+            + ylim(0, 1)
+            + labs(title = "Probability of availability across scenarios",
+                   x=_x_axis_var,
+                   y='Probability of availability')
+           )
+    # Create the directory if it doesn't exist
+    directory = outputfilepath / 'consumable_scenario_analysis'
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    plot.save(filename= directory / _filename, dpi=300, width=10, height=8, units='in')
+generate_barplot_of_scenarios(_df = df_for_plots, _x_axis_var = 'category', _filename = 'availability_by_category.png')
+generate_barplot_of_scenarios(_df = df_for_plots, _x_axis_var = 'Facility_Level', _filename = 'availability_by_level.png')
+
+# Scenario on the X axis, level on the Y axis
+# Scenario on the X axis, program on the Y axis
+# TODO add heat maps
 
 '''
 # 2.3.2. Browse missingness in the availability_change_prop variable
