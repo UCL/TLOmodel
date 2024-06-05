@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-fixed_modules_order = ['ImprovedHealthSystemAndCareSeekingScenarioSwitcher', 'Demography', 'Lifestyle', 'HealthBurden', 'HealthSystem', 'SymptomManager', 'HealthSeekingBehaviour', 'RTI', 'Epi', 'Contraception', 'CardioMetabolicDisorders', 'PregnancySupervisor', 'CareOfWomenDuringPregnancy', 'NewbornOutcomes', 'Wasting', 'Diarrhoea', 'Stunting', 'Labour', 'PostnatalSupervisor', 'Measles', 'Schisto', 'BladderCancer', 'BreastCancer', 'OesophagealCancer', 'OtherAdultCancer', 'ProstateCancer', 'Copd', 'Depression', 'Epilepsy', 'SimplifiedBirths', 'Mockitis', 'Tb', 'Malaria', 'Hiv', 'Alri']
+fixed_modules_order = ['HealthBurden', 'Copd', 'Tb', 'PostnatalSupervisor', 'SymptomManager', 'BreastCancer', 'Alri', 'Schisto', 'SimplifiedBirths', 'BladderCancer', 'Epilepsy', 'Wasting', 'Demography', 'Diarrhoea', 'NewbornOutcomes', 'Lifestyle', 'Stunting', 'Malaria', 'Hiv', 'CareOfWomenDuringPregnancy', 'Depression', 'RTI', 'OtherAdultCancer', 'HealthSeekingBehaviour', 'CardioMetabolicDisorders', 'ProstateCancer', 'Contraception', 'Mockitis', 'Labour', 'HealthSystem', 'Epi', 'ImprovedHealthSystemAndCareSeekingScenarioSwitcher', 'OesophagealCancer', 'Measles', 'PregnancySupervisor']
 
 class HSI_BaseGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
     """
