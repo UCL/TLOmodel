@@ -90,7 +90,7 @@ class Schisto(Module):
                                             'in future rounds, with the frequency given in months'),
         'calibration_scenario': Parameter(Types.REAL,
                                           'Scenario used to reset parameters to run calibration sims'),
-        'scenario_start_date': Parameter(Types.DATE,
+        'projection_start_date': Parameter(Types.DATE,
                                          'Start date for scenario projections'),
         'projection_scenario': Parameter(Types.REAL,
                                          'Scenario used to set parameters for projections'),
@@ -195,7 +195,7 @@ class Schisto(Module):
 
         # schedule WASH scale-up
         if self.scaleup_WASH:
-            sim.schedule_event(SchistoLoggingEvent(self), self.parameters['scenario_start_date'])
+            sim.schedule_event(SchistoLoggingEvent(self), self.parameters['projection_start_date'])
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -277,7 +277,8 @@ class Schisto(Module):
                             'prob_sent_to_lab_test_adults',
                             'rr_WASH',
                             'calibration_scenario',
-            # 'PZQ_efficacy',
+                            'projection_start_date',
+                            'projection_scenario'
                             ):
             parameters[_param_name] = float(param_list[_param_name])
 
@@ -855,21 +856,21 @@ class SchistoSpecies:
 
             if global_params['calibration_scenario'] == 2:
                 if self.name == 'haematobium':
-                    params['mean_worm_burden2010'][:] = 0.01
+                    params['mean_worm_burden2010'][:] = 1.5
                 # set mansoni to 0
                 else:
                     params['mean_worm_burden2010'][:] = 0
 
             if global_params['calibration_scenario'] == 3:
                 if self.name == 'haematobium':
-                    params['mean_worm_burden2010'][:] = 0.1
+                    params['mean_worm_burden2010'][:] = 2.0
                 # set mansoni to 0
                 else:
                     params['mean_worm_burden2010'][:] = 0
 
             if global_params['calibration_scenario'] == 4:
                 if self.name == 'haematobium':
-                    params['mean_worm_burden2010'][:] = 0.5
+                    params['mean_worm_burden2010'][:] = 2.5
                 # set mansoni to 0
                 else:
                     params['mean_worm_burden2010'][:] = 0

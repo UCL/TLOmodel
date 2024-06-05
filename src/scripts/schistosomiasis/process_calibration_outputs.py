@@ -28,6 +28,7 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 resourcefilepath = Path("./resources")
 outputpath = Path("./outputs/t.mangal@imperial.ac.uk")
 
+results_folder = Path("outputs/schisto_calibration-2024-06-05T133315Z")
 
 # azure runs
 # results_folder = Path("outputs/t.mangal@imperial.ac.uk/calibration-2024-05-24T110817Z")
@@ -44,27 +45,11 @@ info = get_scenario_info(results_folder)
 # 1) Extract the parameters that have varied over the set of simulations
 params = extract_params(results_folder)
 
-
-# Districts that are high prevalence and for which this model has been calibrated:
-# fitted_districts = ['Blantyre', 'Chiradzulu', 'Mulanje', 'Nsanje', 'Nkhotakota', 'Phalombe']
-
 # Name of species that being considered:
 species = ('mansoni', 'haematobium')
 
 
 # get prevalence
-
-# def construct_dfs(schisto_log) -> dict:
-#     """Create dict of pd.DataFrames containing counts of infection_status by date, district and age-group."""
-#     return {
-#         k: unflatten_flattened_multi_index_in_logging(v.set_index('date'))
-#         for k, v in schisto_log.items() if k in [f'infection_status_{s}' for s in species]
-#     }
-#
-#
-# dfs = construct_dfs(log['tlo.methods.schisto'])
-
-
 def get_model_prevalence_by_district_over_time(_df):
     """Get the prevalence every year of the simulation """
 
@@ -75,12 +60,17 @@ def get_model_prevalence_by_district_over_time(_df):
     df = df.filter(like='Blantyre')
 
     # todo limit to SAC
-    # df = df.filter(like='SAC')
+    # df = df.filter(like='Adult')
+    df = df.filter(like='SAC')
 
     # Aggregate the sums of infection statuses by district_of_residence and year
     district_sum = df.sum(axis=1)
 
+    # todo limit to high or low-infection only
+    # df_filtered = df.filter(regex='(Low-infection)')
+    # df_filtered = df.filter(regex='(High-infection)')
     df_filtered = df.filter(regex='(High-infection|Low-infection)')
+    # df_filtered = df.filter(regex='(High-infection|Moderate-infection|Low-infection)')
 
     infected = df_filtered.sum(axis=1)
 
