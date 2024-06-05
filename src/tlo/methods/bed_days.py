@@ -740,7 +740,7 @@ class BedDays:
         # Schedule the new occupancies, which are now conflict-free
         # (if they weren't already)
         self.schedule_occupancies(*new_occupancies)
-        
+
         DEBUGGER.write(f"{first_day} scheduling for patient {patient_id} |")
         for o in new_occupancies:
             DEBUGGER.write(
@@ -825,6 +825,16 @@ class BedDays:
                 # allocated thus far
                 day_deficit = days_to_allocate - n_days_that_can_be_provided
                 days_allocated += n_days_that_can_be_provided
+
+        DEBUGGER.write(
+            f"{start_date} issuing for facility {facility_id} |"
+        )
+        for bed_type, n_days in available_footprint.items():
+            if bed_type in requested_footprint.keys():
+                wanted_days = requested_footprint[bed_type]
+            else:
+                wanted_days = 0
+            DEBUGGER.write(f"\t{bed_type} : {n_days} (wanted {wanted_days})")
 
         return available_footprint
 
