@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-fixed_modules_order = ['HealthBurden', 'Copd', 'Tb', 'PostnatalSupervisor', 'SymptomManager', 'BreastCancer', 'Alri', 'Schisto', 'SimplifiedBirths', 'BladderCancer', 'Epilepsy', 'Wasting', 'Demography', 'Diarrhoea', 'NewbornOutcomes', 'Lifestyle', 'Stunting', 'Malaria', 'Hiv', 'CareOfWomenDuringPregnancy', 'Depression', 'RTI', 'OtherAdultCancer', 'HealthSeekingBehaviour', 'CardioMetabolicDisorders', 'ProstateCancer', 'Contraception', 'Mockitis', 'Labour', 'HealthSystem', 'Epi', 'ImprovedHealthSystemAndCareSeekingScenarioSwitcher', 'OesophagealCancer', 'Measles', 'PregnancySupervisor']
+fixed_modules_order = ['CareOfWomenDuringPregnancy', 'PostnatalSupervisor', 'Labour', 'Epi', 'PregnancySupervisor', 'Mockitis', 'HealthSeekingBehaviour', 'ImprovedHealthSystemAndCareSeekingScenarioSwitcher', 'OesophagealCancer', 'OtherAdultCancer', 'Alri', 'SymptomManager', 'Epilepsy', 'Malaria', 'Schisto', 'RTI', 'Contraception', 'Lifestyle', 'SimplifiedBirths', 'Measles', 'Stunting', 'ProstateCancer', 'BladderCancer', 'Wasting', 'Depression', 'HealthBurden', 'Hiv', 'Tb', 'BreastCancer', 'CardioMetabolicDisorders', 'Diarrhoea', 'NewbornOutcomes', 'HealthSystem', 'Demography', 'Copd']
 
 class HSI_BaseGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
     """
