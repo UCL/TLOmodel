@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-fixed_modules_order = ['CareOfWomenDuringPregnancy', 'PostnatalSupervisor', 'Labour', 'Epi', 'PregnancySupervisor', 'Mockitis', 'HealthSeekingBehaviour', 'ImprovedHealthSystemAndCareSeekingScenarioSwitcher', 'OesophagealCancer', 'OtherAdultCancer', 'Alri', 'SymptomManager', 'Epilepsy', 'Malaria', 'Schisto', 'RTI', 'Contraception', 'Lifestyle', 'SimplifiedBirths', 'Measles', 'Stunting', 'ProstateCancer', 'BladderCancer', 'Wasting', 'Depression', 'HealthBurden', 'Hiv', 'Tb', 'BreastCancer', 'CardioMetabolicDisorders', 'Diarrhoea', 'NewbornOutcomes', 'HealthSystem', 'Demography', 'Copd']
+fixed_modules_order = ['Copd', 'ProstateCancer', 'SymptomManager', 'RTI', 'Labour', 'PregnancySupervisor', 'Demography', 'Epilepsy', 'BreastCancer', 'CardioMetabolicDisorders', 'Wasting', 'BladderCancer', 'Malaria', 'Hiv', 'CareOfWomenDuringPregnancy', 'OtherAdultCancer', 'Tb', 'HealthBurden', 'SimplifiedBirths', 'Mockitis', 'ImprovedHealthSystemAndCareSeekingScenarioSwitcher', 'HealthSystem', 'OesophagealCancer', 'Epi', 'Contraception', 'Stunting', 'PostnatalSupervisor', 'Measles', 'Lifestyle', 'Alri', 'Schisto', 'Depression', 'HealthSeekingBehaviour', 'Diarrhoea', 'NewbornOutcomes']
 
 class HSI_BaseGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
     """
