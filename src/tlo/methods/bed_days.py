@@ -12,33 +12,6 @@ from tlo import Date
 if TYPE_CHECKING:
     from tlo.logging.core import Logger
 
-import os
-class Debugger:
-
-    output_dir: str = ".wills-stuff/beddays/"
-
-    first_write: bool = True
-
-    @property
-    def output_file(self) -> str:
-        return self.output_dir + "exp-branch-log.log"
-
-    def __init__(self):
-        os.makedirs(self.output_dir, exist_ok=True)
-
-    def write(self, message: str) -> None:
-        if self.first_write:
-            self.first_write = False
-            if os.path.exists(self.output_file):
-                os.remove(self.output_file)
-        if not message.endswith("\n"):
-            message += "\n"
-        with open(self.output_file, "a") as f:
-            f.write(message)
-
-
-DEBUGGER = Debugger()
-
 @dataclass
 class BedOccupancy:
     """
@@ -339,7 +312,6 @@ class BedDays:
             )
         # Update new effective bed capacities
         self.max_capacities = (self._raw_max_capacities * capacity_scaling_factor).apply(np.ceil).astype(int)
-        DEBUGGER.write(f"Setting max capacities:\n{self.max_capacities}")
 
     def is_inpatient(self, patient_id: int) -> List[BedOccupancy]:
         """
@@ -423,28 +395,48 @@ class BedDays:
         if isinstance(facility, int):
             facility = [facility]
         # Correct logical operator to use
-        logic_operation = any if logical_or else all
-
-        matches = [
-            o
-            for o in self.occupancies
-            if logic_operation(
-                [
-                    patient_id is None or o.patient_id in patient_id,
-                    facility is None or o.facility in facility,
-                    start_on_or_after is None or o.start_date >= start_on_or_after,
-                    end_on_or_before is None or o.freed_date <= end_on_or_before,
-                    on_date is None or o.start_date <= on_date <= o.freed_date,
-                    occurs_between_dates is None
-                    or self.date_ranges_overlap(
-                        o.start_date,
-                        occurs_between_dates[0],
-                        o.freed_date,
-                        occurs_between_dates[1],
-                    ),
-                ]
-            )
-        ]
+        if logical_or:
+            matches = [
+                o
+                for o in self.occupancies
+                if any(
+                    [
+                        patient_id is not None and o.patient_id in patient_id,
+                        facility is not None and o.facility in facility,
+                        start_on_or_after is not None and o.start_date >= start_on_or_after,
+                        end_on_or_before is not None and o.freed_date <= end_on_or_before,
+                        on_date is not None and o.start_date <= on_date <= o.freed_date,
+                        occurs_between_dates is not None
+                        and self.date_ranges_overlap(
+                            o.start_date,
+                            occurs_between_dates[0],
+                            o.freed_date,
+                            occurs_between_dates[1],
+                        ),
+                    ]
+                )
+            ]
+        else:
+            matches = [
+                o
+                for o in self.occupancies
+                if all(
+                    [
+                        patient_id is None or o.patient_id in patient_id,
+                        facility is None or o.facility in facility,
+                        start_on_or_after is None or o.start_date >= start_on_or_after,
+                        end_on_or_before is None or o.freed_date <= end_on_or_before,
+                        on_date is None or o.start_date <= on_date <= o.freed_date,
+                        occurs_between_dates is None
+                        or self.date_ranges_overlap(
+                            o.start_date,
+                            occurs_between_dates[0],
+                            o.freed_date,
+                            occurs_between_dates[1],
+                        ),
+                    ]
+                )
+            ]
         return matches
 
     def forecast_availability(
@@ -486,7 +478,7 @@ class BedDays:
             data=[facility_max_capacities] * (n_days + 1),
             index=pd.date_range(start=start_date, end=final_forecast_day, freq="D"),
             columns=facility_max_capacities.index,
-            dtype=float,
+            dtype=int,
         )
         # Forecast has been initialised with max capacities for each bed
         # now go through the relevant occupancies to determine the actual capacities for these days!
@@ -550,7 +542,7 @@ class BedDays:
         patient_id = all_occupancies[0].patient_id
 
         earliest_start = min([o.start_date for o in all_occupancies])
-        latest_end = max([o.start_date for o in all_occupancies])
+        latest_end = max([o.freed_date for o in all_occupancies])
 
         # Create an array/DF spanning the time interval of the two sets of
         # occupancies. Initially, fill it with values corresponding to the
@@ -721,13 +713,6 @@ class BedDays:
         # Schedule the new occupancies, which are now conflict-free
         # (if they weren't already)
         self.schedule_occupancies(*new_occupancies)
-
-        DEBUGGER.write(f"{first_day} scheduling for patient {patient_id} |")
-        for o in new_occupancies:
-            DEBUGGER.write(f"\t{o.bed_type} freed on {o.freed_date}, at facility {o.facility}\n")
-        DEBUGGER.write("\tHaving received footprint:")
-        for bed_type, days in footprint.items():
-            DEBUGGER.write(f"\t\t{bed_type} : {days}")
 
     def issue_bed_days_according_to_availability(
         self, start_date: Date, facility_id: int, requested_footprint: BedDaysFootprint
