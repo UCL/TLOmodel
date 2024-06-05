@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-fixed_modules_order = ['ImprovedHealthSystemAndCareSeekingScenarioSwitcher', 'Demography', 'Lifestyle', 'HealthBurden', 'HealthSystem', 'SymptomManager', 'HealthSeekingBehaviour', 'Epi', 'Contraception', 'Hiv', 'CardioMetabolicDisorders', 'Malaria', 'PregnancySupervisor', 'CareOfWomenDuringPregnancy', 'NewbornOutcomes', 'Wasting', 'Diarrhoea', 'Stunting', 'Labour', 'PostnatalSupervisor', 'Alri', 'Measles', 'Schisto', 'Tb', 'BladderCancer', 'BreastCancer', 'OesophagealCancer', 'OtherAdultCancer', 'ProstateCancer', 'RTI', 'Copd', 'Depression', 'Epilepsy', 'SimplifiedBirths', 'Mockitis']
+fixed_modules_order = ['ImprovedHealthSystemAndCareSeekingScenarioSwitcher', 'Demography', 'Lifestyle', 'HealthBurden', 'HealthSystem', 'SymptomManager', 'HealthSeekingBehaviour', 'RTI', 'Epi', 'Contraception', 'CardioMetabolicDisorders', 'PregnancySupervisor', 'CareOfWomenDuringPregnancy', 'NewbornOutcomes', 'Wasting', 'Diarrhoea', 'Stunting', 'Labour', 'PostnatalSupervisor', 'Measles', 'Schisto', 'BladderCancer', 'BreastCancer', 'OesophagealCancer', 'OtherAdultCancer', 'ProstateCancer', 'Copd', 'Depression', 'Epilepsy', 'SimplifiedBirths', 'Mockitis', 'Tb', 'Malaria', 'Hiv', 'Alri']
 
 class HSI_BaseGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
     """
