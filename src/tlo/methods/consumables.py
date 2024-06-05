@@ -251,7 +251,11 @@ def check_format_of_consumables_file(df, fac_ids):
     months = set(range(1, 13))
     item_codes = set(df.item_code.unique())
 
-    assert {'Facility_ID', 'month', 'item_code', 'available_prop'}.issubset(set(df.columns))
+    availability_columns = ['available_prop', 'available_prop_scenario1', 'available_prop_scenario2',
+                                      'available_prop_scenario3', 'available_prop_scenario4', 'available_prop_scenario5',
+                                      'available_prop_scenario6', 'available_prop_scenario7', 'available_prop_scenario8']
+
+    assert set(df.columns) == {'Facility_ID', 'month', 'item_code'} | set(availability_columns)
 
     # Check that all permutations of Facility_ID, month and item_code are present
     pd.testing.assert_index_equal(

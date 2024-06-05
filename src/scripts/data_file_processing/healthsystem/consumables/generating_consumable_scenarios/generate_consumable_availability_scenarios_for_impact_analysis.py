@@ -503,7 +503,7 @@ old_vars = ['Facility_ID', 'month', 'item_code', 'available_prop']
 full_df_with_scenario = df_new[old_vars + final_list_of_scenario_vars].reset_index().drop('index', axis = 1)
 
 # --- Check that the exported file has the properties required of it by the model code. --- #
-check_format_of_consumables_file(df=full_df_with_scenario.reset_index(), fac_ids=fac_ids)
+check_format_of_consumables_file(df=full_df_with_scenario, fac_ids=fac_ids)
 
 # Save updated consumable availability resource file with scenario data
 full_df_with_scenario.to_csv(
