@@ -90,8 +90,6 @@ class Schisto(Module):
                                             'in future rounds, with the frequency given in months'),
         'calibration_scenario': Parameter(Types.REAL,
                                           'Scenario used to reset parameters to run calibration sims'),
-        'projection_start_date': Parameter(Types.DATE,
-                                         'Start date for scenario projections'),
         'projection_scenario': Parameter(Types.REAL,
                                          'Scenario used to set parameters for projections'),
     }
@@ -195,7 +193,7 @@ class Schisto(Module):
 
         # schedule WASH scale-up
         if self.scaleup_WASH:
-            sim.schedule_event(SchistoLoggingEvent(self), self.parameters['projection_start_date'])
+            sim.schedule_event(SchistoLoggingEvent(self), sim.date + DateOffset(years=15))
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -277,7 +275,6 @@ class Schisto(Module):
                             'prob_sent_to_lab_test_adults',
                             'rr_WASH',
                             'calibration_scenario',
-                            'projection_start_date',
                             'projection_scenario'
                             ):
             parameters[_param_name] = float(param_list[_param_name])
