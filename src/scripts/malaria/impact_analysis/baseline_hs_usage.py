@@ -150,7 +150,7 @@ column = 'Number_By_Appt_Type_Code'
 
 # get total counts of every appt type for each scenario
 appt_types = sum_appt_by_id(results_folder,
-                           module=module, key=key, column=column, draw=0)
+                           module=module, key=key, column=column, draw=4)
 
 appt_types.loc['Total'] = appt_types.sum()
 
@@ -190,12 +190,6 @@ output_table.to_csv(outputspath / "Apr2024_HTMresults/baseline_appt_numbers.csv"
 
 
 
-
-
-
-
-
-
 # extract squeeze factor
 # todo these are in the 1000s, so don't use without further checks
 module = "tlo.methods.healthsystem.summary"
@@ -207,3 +201,79 @@ squeeze = sum_appt_by_id(results_folder,
                            module=module, key=key, column=column, draw=0)
 
 
+# %% ------------------------------------------------------------------------------
+
+# percentage of services that are HTM
+
+def percentageHTM_by_year(results_folder, module, key, column, draw, year):
+    """
+    get percentages of services which are HTM divided by total services
+    for a given year
+
+    results are scaled to true population size
+    """
+
+    info = get_scenario_info(results_folder)
+    # create emtpy dataframe
+    results = []
+
+    for run in range(info['runs_per_draw']):
+        df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
+
+        # Convert the 'datetime' column to datetime type
+        df['date'] = pd.to_datetime(df['date'])
+
+        # Extract the year and update the column
+        df['date'] = df['date'].dt.year
+
+        # new = df[['date', column]].copy()
+        # select year of interest
+        if year is not None:
+            tmp = df.loc[df.date == year]
+        else:
+            tmp = df
+
+        tmp = pd.DataFrame(tmp[column].to_list())
+
+        # sum to get total tx_id numbers  over the simulation
+        total_sum = tmp.sum(axis=1).iloc[0]
+        subset_sum = tmp.filter(regex='^(Hiv|Tb|Malaria)').sum(axis=1).iloc[0]
+
+        proportion = subset_sum / total_sum
+        results.append(proportion)
+
+    results = pd.Series(results)
+
+    return results
+
+
+# extract numbers of appts
+module = "tlo.methods.healthsystem.summary"
+key = 'HSI_Event'
+column = 'TREATMENT_ID'
+
+# get total counts of every appt type for each scenario
+htm_percentage_2010 = percentageHTM_by_year(results_folder,
+                           module=module, key=key, column=column, draw=0, year=2010)
+
+htm_percentage_2019 = percentageHTM_by_year(results_folder,
+                           module=module, key=key, column=column, draw=0, year=2019)
+
+
+htm_percentage_All = percentageHTM_by_year(results_folder,
+                           module=module, key=key, column=column, draw=0, year=None)
+
+
+
+
+print(htm_percentage_2010.median())
+print(htm_percentage_2010.quantile(0.025))
+print(htm_percentage_2010.quantile(0.975))
+
+print(htm_percentage_2019.median())
+print(htm_percentage_2019.quantile(0.025))
+print(htm_percentage_2019.quantile(0.975))
+
+print(htm_percentage_All.median())
+print(htm_percentage_All.quantile(0.025))
+print(htm_percentage_All.quantile(0.975))

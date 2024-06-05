@@ -138,8 +138,8 @@ y_age_reversed = y_age[::-1]
 colour1 = '#343579'
 colour2 = '#F8485E'
 # Create dummy patches for legend
-patch1 = patches.Patch(color=colour1, label='Status quo')
-patch2 = patches.Patch(color=colour2, label='Excluding HTM')
+patch1 = patches.Patch(color=colour1, label='Actual')
+patch2 = patches.Patch(color=colour2, label='No HTM')
 
 
 # Create the bar plots with reversed order
@@ -219,7 +219,7 @@ plt.xlabel('Year')
 plt.ylabel('Population size, millions')
 plt.title('')
 
-legend_labels = ['Status quo', 'Excluding HTM']
+legend_labels = ['Actual', 'No HTM']
 legend_handles = [Line2D([0], [0], color=color, lw=1) for color in col]
 plt.legend(handles=legend_handles, labels=legend_labels)
 

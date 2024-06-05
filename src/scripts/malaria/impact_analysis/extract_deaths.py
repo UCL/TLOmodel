@@ -298,8 +298,8 @@ def barplot_summarized_deaths_by_age(deaths_summarized_by_age, proportion):
     tmp = tmp.drop(tmp.index[0])
     # Reset the index
     tmp = tmp.reset_index(drop=True)
-    tmp.index = ["Status quo", "Excl HIV", "Excl TB",
-                       "Excl malaria", "Excl HTM"]
+    tmp.index = ["Actual", "No HIV", "No TB",
+                       "No malaria", "No HTM"]
 
     tmp.plot(kind='bar', stacked=True)
 
@@ -737,11 +737,11 @@ for i in [4.5, 8.5, 12.5, 16.5]:
 
 # Custom tick labels for ax2
 custom_tick_labels = [
-    'Status quo',
-    'Exclude HIV\nservices',
-    'Exclude TB\nservices',
-    'Exclude malaria\nservices',
-    'Exclude HTM\nservices'
+    'Actual',
+    'No HIV\nservices',
+    'No TB\nservices',
+    'No malaria\nservices',
+    'No HTM\nservices'
 ]
 ax2.set_xticks([1.5, 6.0, 10.0, 14.5, 19.5])  # Set ticks at the midpoint of each group
 ax2.set_xticklabels(custom_tick_labels, fontsize=10)

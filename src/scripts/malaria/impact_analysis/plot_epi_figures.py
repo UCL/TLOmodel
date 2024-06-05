@@ -520,8 +520,8 @@ ax7.set_xticklabels(xlabels_for_ticks)
 ax7.set_ylim(0, 5)
 ax7.tick_params(axis='x', rotation=70)
 ax7.legend(loc='upper right',
-           labels=['Status Quo', 'Exclude HIV services', 'Exclude TB services',
-                   'Exclude Malaria services', 'Exclude HTM services'],
+           labels=['Actual', 'No HIV services', 'No TB services',
+                   'No Malaria services', 'No HTM services'],
            bbox_to_anchor=(1.8, 1.0))
 
 # empty plot
