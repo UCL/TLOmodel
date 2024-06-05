@@ -33,7 +33,7 @@ outputpath = Path("./outputs/t.mangal@imperial.ac.uk")
 # results_folder = Path("outputs/t.mangal@imperial.ac.uk/calibration-2024-05-24T110817Z")
 
 # local runs
-results_folder = Path("outputs/schisto_calibration-2024-05-30T103820Z")
+results_folder = Path("outputs/t.mangal@imperial.ac.uk/schisto_calibration-2024-05-30T125223Z")
 
 # look at one log (so can decide what to extract)
 log = load_pickled_dataframes(results_folder)
@@ -75,7 +75,7 @@ def get_model_prevalence_by_district_over_time(_df):
     df = df.filter(like='Blantyre')
 
     # todo limit to SAC
-    df = df.filter(like='SAC')
+    # df = df.filter(like='SAC')
 
     # Aggregate the sums of infection statuses by district_of_residence and year
     district_sum = df.sum(axis=1)

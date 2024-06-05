@@ -848,7 +848,7 @@ class SchistoSpecies:
             # select starting points
             if global_params['calibration_scenario'] == 1:
                 if self.name == 'haematobium':
-                    params['mean_worm_burden2010'][:] = 0.001
+                    params['mean_worm_burden2010'][:] = 1.0
                 # set mansoni to 0
                 else:
                     params['mean_worm_burden2010'][:] = 0
