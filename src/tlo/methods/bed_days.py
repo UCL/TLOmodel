@@ -252,6 +252,14 @@ class BedDays:
         )
         self._bed_types = tuple(x for x in bed_names)
 
+    @property
+    def all_inpatients(self) -> List[int]:
+        """
+        Return a list of the (unique) person_ids of those
+        people who are inpatients.
+        """
+        return list({o.patient_id for o in self.occupancies})
+
     @staticmethod
     def date_ranges_overlap(
         start_1: Date, start_2: Date, end_1: Date, end_2: Date

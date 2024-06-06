@@ -679,7 +679,7 @@ class HealthSystem(Module):
         self.setup_priority_policy()
 
     def initialise_population(self, population):
-        pass
+        population.props.loc[population.props.is_alive, "hs_is_inpatient"] = False
 
     def initialise_simulation(self, sim):
         # If capabilities coefficient was not explicitly specified, use initial population scaling factor
@@ -758,7 +758,7 @@ class HealthSystem(Module):
         sim.schedule_event(DynamicRescalingHRCapabilities(self), Date(sim.date))
 
     def on_birth(self, mother_id, child_id):
-        pass
+        self.sim.population.props.loc[child_id, "hs_is_inpatient"] = False
 
     def on_simulation_end(self):
         """Put out to the log the information from the tracker of the last day of the simulation"""
@@ -2556,6 +2556,12 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
 
         # Refresh information ready for new day:
+        # Update list of inpatients for other modules that need this info
+        # TODO: We can likely drop this column of the dataframe too,
+        # with sufficient workarounds
+        self.sim.population.props.loc["hs_is_inpatient"] = False
+        self.sim.population.props.loc[self.module.bed_days.all_inpatients, "hs_is_inpatient"] = True
+        # Perform start of day operations for consumables
         self.module.consumables.on_start_of_day(self.sim.date)
 
         # Compute footprint that arise from in-patient bed-days
