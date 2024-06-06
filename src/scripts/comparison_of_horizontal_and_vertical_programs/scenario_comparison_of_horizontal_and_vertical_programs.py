@@ -235,11 +235,12 @@ class HorizontalAndVerticalPrograms(BaseScenario):
                 "HealthSystem": {
                     "mode_appt_constraints": 1,                 # <-- Mode 1 prior to change to preserve calibration
                     "mode_appt_constraints_postSwitch": 2,      # <-- Mode 2 post-change to show effects of HRH
+                    "scale_to_effective_capabilities": True,    # <-- Transition into Mode2 with the effective capabilities in HRH 'revealed' in Mode 1
                     "year_mode_switch": self.YEAR_OF_CHANGE,
 
                     # Baseline scenario is with absence of HCW
                     'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE,
-                    'HR_scaling_by_level_and_officer_type_mode': 'with_absence',
+                    'HR_scaling_by_level_and_officer_type_mode': 'with_absence',  # <-- todo, we want the first part of the run be with_abscence too... (although that will mean that there is actually greater capacity when we dod the rescaling)
 
                     # Normalize the behaviour of Mode 2
                     "policy_name": "Naive",
