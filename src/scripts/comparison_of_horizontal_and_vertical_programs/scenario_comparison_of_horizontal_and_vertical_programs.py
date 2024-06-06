@@ -240,7 +240,9 @@ class HorizontalAndVerticalPrograms(BaseScenario):
 
                     # Baseline scenario is with absence of HCW
                     'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE,
-                    'HR_scaling_by_level_and_officer_type_mode': 'with_absence',  # <-- todo, we want the first part of the run be with_abscence too... (although that will mean that there is actually greater capacity when we dod the rescaling)
+                    'HR_scaling_by_level_and_officer_type_mode': 'with_absence',
+                    # todo <-- Do we want the first part of the run be with_abscence too...? (Although that will mean
+                    #          that there is actually greater capacity if we do the rescaling)
 
                     # Normalize the behaviour of Mode 2
                     "policy_name": "Naive",
