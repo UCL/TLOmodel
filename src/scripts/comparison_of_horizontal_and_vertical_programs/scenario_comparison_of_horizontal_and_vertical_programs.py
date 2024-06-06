@@ -96,7 +96,7 @@ class HorizontalAndVerticalPrograms(BaseScenario):
                     self._baseline(),
                     {
                         'HealthSystem': {
-                            'yearly_HR_scaling_mode': 'scaling_by_pop_growth_after2018',
+                            'yearly_HR_scaling_mode': 'scaling_by_population_growth',
                             # This is in-line with population growth after 2018 (baseline year for HRH)
                         }
                     }
