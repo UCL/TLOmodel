@@ -3829,21 +3829,21 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
         # TODO: find a more complete list of required consumables for adults
         if is_child:
             self.module.item_codes_for_consumables_required['shock_treatment_child'] = {
-                get_item_code("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 1,
-                get_item_code("Dextrose (glucose) 5%, 1000ml_each_CMST"): 1,
+                get_item_code("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 500,
+                get_item_code("Dextrose (glucose) 5%, 1000ml_each_CMST"): 500,
                 get_item_code('Cannula iv  (winged with injection pot) 18_each_CMST'): 1,
-                get_item_code('Blood, one unit'): 1,
-                get_item_code("Oxygen, 1000 liters, primarily with oxygen cylinders"): 1
+                get_item_code('Blood, one unit'): 2,
+                get_item_code("Oxygen, 1000 liters, primarily with oxygen cylinders"): 23_040
             }
             is_cons_available = self.get_consumables(
                 self.module.item_codes_for_consumables_required['shock_treatment_child']
             )
         else:
             self.module.item_codes_for_consumables_required['shock_treatment_adult'] = {
-                get_item_code("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 1,
+                get_item_code("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 2000,
                 get_item_code('Cannula iv  (winged with injection pot) 18_each_CMST'): 1,
-                get_item_code('Blood, one unit'): 1,
-                get_item_code("Oxygen, 1000 liters, primarily with oxygen cylinders"): 1
+                get_item_code('Blood, one unit'): 2,
+                get_item_code("Oxygen, 1000 liters, primarily with oxygen cylinders"): 23_040
             }
             is_cons_available = self.get_consumables(
                 self.module.item_codes_for_consumables_required['shock_treatment_adult']
@@ -3942,7 +3942,7 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
         # If they have a fracture that needs a cast, ask for plaster of paris
         self.module.item_codes_for_consumables_required['fracture_treatment'] = {
             get_item_code('Plaster of Paris (POP) 10cm x 7.5cm slab_12_CMST'): fracturecastcounts,
-            get_item_code('Bandage, crepe 7.5cm x 1.4m long , when stretched'): slingcounts,
+            get_item_code('Bandage, crepe 7.5cm x 1.4m long , when stretched'): 200,
         }
         is_cons_available = self.get_consumables(
             self.module.item_codes_for_consumables_required['fracture_treatment']
@@ -4068,9 +4068,9 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
         # If they have an open fracture, ask for consumables to treat fracture
         if open_fracture_counts > 0:
             self.module.item_codes_for_consumables_required['open_fracture_treatment'] = {
-                get_item_code('Ceftriaxone 1g, PFR_each_CMST'): 1,
-                get_item_code('Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST'): 1,
-                get_item_code("Gauze, absorbent 90cm x 40m_each_CMST"): 1,
+                get_item_code('Ceftriaxone 1g, PFR_each_CMST'): 2000,
+                get_item_code('Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST'): 500,
+                get_item_code("Gauze, absorbent 90cm x 40m_each_CMST"): 100,
                 get_item_code('Suture pack'): 1,
             }
             # If wound is "grossly contaminated" administer Metronidazole
@@ -4078,9 +4078,10 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
             p = self.module.parameters
             prob_open_fracture_contaminated = p['prob_open_fracture_contaminated']
             rand_for_contamination = self.module.rng.random_sample(size=1)
+            # NB: Dose used below from BNF is for surgical prophylaxsis
             if rand_for_contamination < prob_open_fracture_contaminated:
                 self.module.item_codes_for_consumables_required['open_fracture_treatment'].update(
-                    {get_item_code('Metronidazole, injection, 500 mg in 100 ml vial'): 1}
+                    {get_item_code('Metronidazole, injection, 500 mg in 100 ml vial'): 1500}
                 )
         # Check that there are enough consumables to treat this person's fractures
         is_cons_available = self.get_consumables(
@@ -4182,7 +4183,7 @@ class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
         if lacerationcounts > 0:
             self.module.item_codes_for_consumables_required['laceration_treatment'] = {
                 get_item_code('Suture pack'): lacerationcounts,
-                get_item_code('Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST'): lacerationcounts,
+                get_item_code('Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST'): 500,
 
             }
             # check the number of suture kits required and request them
@@ -4291,7 +4292,7 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
                 # check if they have multiple burns, which implies a higher burned total body surface area (TBSA) which
                 # will alter the treatment plan
                 self.module.item_codes_for_consumables_required['burn_treatment'].update(
-                    {get_item_code("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 1}
+                    {get_item_code("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 4000}
                 )
 
             is_cons_available = self.get_consumables(
@@ -4477,20 +4478,20 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
                         description='Summary of the pain medicine requested by each person')
             if df.loc[person_id, 'age_years'] < 16:
                 self.module.item_codes_for_consumables_required['pain_management'] = {
-                    get_item_code("Paracetamol 500mg_1000_CMST"): 1
+                    get_item_code("Paracetamol 500mg_1000_CMST"): 8000
                 }
                 cond = self.get_consumables(
                     self.module.item_codes_for_consumables_required['pain_management']
                 )
             else:
                 self.module.item_codes_for_consumables_required['pain_management'] = {
-                    get_item_code("diclofenac sodium 25 mg, enteric coated_1000_IDA"): 1
+                    get_item_code("diclofenac sodium 25 mg, enteric coated_1000_IDA"): 300
                 }
                 cond1 = self.get_consumables(
                     self.module.item_codes_for_consumables_required['pain_management']
                 )
                 self.module.item_codes_for_consumables_required['pain_management'] = {
-                    get_item_code("Paracetamol 500mg_1000_CMST"): 1
+                    get_item_code("Paracetamol 500mg_1000_CMST"): 8000
                 }
                 cond2 = self.get_consumables(
                     self.module.item_codes_for_consumables_required['pain_management']
@@ -4547,7 +4548,7 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
                         data=dict_to_output,
                         description='Summary of the pain medicine requested by each person')
             self.module.item_codes_for_consumables_required['pain_management'] = {
-                get_item_code("tramadol HCl 100 mg/2 ml, for injection_100_IDA"): 1
+                get_item_code("tramadol HCl 100 mg/2 ml, for injection_100_IDA"): 300
             }
             is_cons_available = self.get_consumables(
                 self.module.item_codes_for_consumables_required['pain_management']
@@ -4579,7 +4580,7 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
                         description='Summary of the pain medicine requested by each person')
             # give morphine
             self.module.item_codes_for_consumables_required['pain_management'] = {
-                get_item_code("morphine sulphate 10 mg/ml, 1 ml, injection (nt)_10_IDA"): 1
+                get_item_code("morphine sulphate 10 mg/ml, 1 ml, injection (nt)_10_IDA"): 120
             }
             is_cons_available = self.get_consumables(
                 self.module.item_codes_for_consumables_required['pain_management']
@@ -4739,22 +4740,22 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
         # Request first draft of consumables used in major surgery
         self.module.item_codes_for_consumables_required['major_surgery'] = {
             # request a general anaesthetic
-            get_item_code("Halothane (fluothane)_250ml_CMST"): 1,
+            get_item_code("Halothane (fluothane)_250ml_CMST"): 100,
             # clean the site of the surgery
-            get_item_code("Chlorhexidine 1.5% solution_5_CMST"): 1,
+            get_item_code("Chlorhexidine 1.5% solution_5_CMST"): 500,
             # tools to begin surgery
             get_item_code("Scalpel blade size 22 (individually wrapped)_100_CMST"): 1,
             # administer an IV
             get_item_code('Cannula iv  (winged with injection pot) 18_each_CMST'): 1,
             get_item_code("Giving set iv administration + needle 15 drops/ml_each_CMST"): 1,
-            get_item_code("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 1,
+            get_item_code("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 2000,
             # repair incision made
             get_item_code("Suture pack"): 1,
-            get_item_code("Gauze, absorbent 90cm x 40m_each_CMST"): 1,
+            get_item_code("Gauze, absorbent 90cm x 40m_each_CMST"): 100,
             # administer pain killer
-            get_item_code('Pethidine, 50 mg/ml, 2 ml ampoule'): 1,
+            get_item_code('Pethidine, 50 mg/ml, 2 ml ampoule'): 6,
             # administer antibiotic
-            get_item_code("Ampicillin injection 500mg, PFR_each_CMST"): 1,
+            get_item_code("Ampicillin injection 500mg, PFR_each_CMST"): 1000,
             # equipment used by surgeon, gloves and facemask
             get_item_code('Disposables gloves, powder free, 100 pieces per box'): 1,
             get_item_code('surgical face mask, disp., with metal nose piece_50_IDA'): 1,
@@ -5080,22 +5081,22 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
         # Request first draft of consumables used in major surgery
         self.module.item_codes_for_consumables_required['minor_surgery'] = {
             # request a local anaesthetic
-            get_item_code("Halothane (fluothane)_250ml_CMST"): 1,
+            get_item_code("Halothane (fluothane)_250ml_CMST"): 100,
             # clean the site of the surgery
-            get_item_code("Chlorhexidine 1.5% solution_5_CMST"): 1,
+            get_item_code("Chlorhexidine 1.5% solution_5_CMST"): 500,
             # tools to begin surgery
             get_item_code("Scalpel blade size 22 (individually wrapped)_100_CMST"): 1,
             # administer an IV
             get_item_code('Cannula iv  (winged with injection pot) 18_each_CMST'): 1,
             get_item_code("Giving set iv administration + needle 15 drops/ml_each_CMST"): 1,
-            get_item_code("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 1,
+            get_item_code("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 2000,
             # repair incision made
             get_item_code("Suture pack"): 1,
-            get_item_code("Gauze, absorbent 90cm x 40m_each_CMST"): 1,
+            get_item_code("Gauze, absorbent 90cm x 40m_each_CMST"): 100,
             # administer pain killer
-            get_item_code('Pethidine, 50 mg/ml, 2 ml ampoule'): 1,
+            get_item_code('Pethidine, 50 mg/ml, 2 ml ampoule'): 6,
             # administer antibiotic
-            get_item_code("Ampicillin injection 500mg, PFR_each_CMST"): 1,
+            get_item_code("Ampicillin injection 500mg, PFR_each_CMST"): 1000,
             # equipment used by surgeon, gloves and facemask
             get_item_code('Disposables gloves, powder free, 100 pieces per box'): 1,
             get_item_code('surgical face mask, disp., with metal nose piece_50_IDA'): 1,

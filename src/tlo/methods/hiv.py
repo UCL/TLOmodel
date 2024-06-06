@@ -1013,31 +1013,37 @@ class Hiv(Module):
         self.item_codes_for_consumables_required['circ'] = \
             hs.get_item_codes_from_package_name("Male circumcision ")
 
-        self.item_codes_for_consumables_required['prep'] = {
-            hs.get_item_code_from_item_name("Tenofovir (TDF)/Emtricitabine (FTC), tablet, 300/200 mg"): 1}
+        # adult prep: 1 tablet daily
+        self.item_codes_for_consumables_required['prep'] = \
+            hs.get_item_code_from_item_name("Tenofovir (TDF)/Emtricitabine (FTC), tablet, 300/200 mg")
 
-        # infant NVP given in 3-monthly dosages
-        self.item_codes_for_consumables_required['infant_prep'] = {
-            hs.get_item_code_from_item_name("Nevirapine, oral solution, 10 mg/ml"): 1}
+        # infant NVP 1.5mg daily for birth weight 2500g or above, for 6 weeks
+        self.item_codes_for_consumables_required['infant_prep'] = \
+            hs.get_item_code_from_item_name("Nevirapine, oral solution, 10 mg/ml")
 
         # First - line ART for adults(age > "ART_age_cutoff_older_child")
-        self.item_codes_for_consumables_required['First-line ART regimen: adult'] = {
-            hs.get_item_code_from_item_name("First-line ART regimen: adult"): 1}
-        self.item_codes_for_consumables_required['First-line ART regimen: adult: cotrimoxazole'] = {
-            hs.get_item_code_from_item_name("Cotrimoxizole, 960mg pppy"): 1}
+        # TDF/3TC/DTG 120/60/50mg, 1 tablet per day
+        # cotrim adult tablet, 1 tablet per day, units specified in mg * dispensation days
+        self.item_codes_for_consumables_required['First-line ART regimen: adult'] = \
+            hs.get_item_code_from_item_name("First-line ART regimen: adult")
+        self.item_codes_for_consumables_required['First-line ART regimen: adult: cotrimoxazole'] = \
+            hs.get_item_code_from_item_name("Cotrimoxizole, 960mg pppy")
 
         # ART for older children aged ("ART_age_cutoff_younger_child" < age <= "ART_age_cutoff_older_child"):
-        # cotrim is separate item - optional in get_cons call
-        self.item_codes_for_consumables_required['First line ART regimen: older child'] = {
-            hs.get_item_code_from_item_name("First line ART regimen: older child"): 1}
-        self.item_codes_for_consumables_required['First line ART regimen: older child: cotrimoxazole'] = {
-            hs.get_item_code_from_item_name("Sulfamethoxazole + trimethropin, tablet 400 mg + 80 mg"): 1}
+        # ABC/3TC/DTG 120/60/50mg, 3 tablets per day
+        # cotrim paediatric tablet, 4 tablets per day, units specified in mg * dispensation days
+        self.item_codes_for_consumables_required['First line ART regimen: older child'] = \
+            hs.get_item_code_from_item_name("First line ART regimen: older child")
+        self.item_codes_for_consumables_required['First line ART regimen: older child: cotrimoxazole'] = \
+            hs.get_item_code_from_item_name("Cotrimoxazole 120mg_1000_CMST")
 
         # ART for younger children aged (age < "ART_age_cutoff_younger_child"):
-        self.item_codes_for_consumables_required['First line ART regimen: young child'] = {
-            hs.get_item_code_from_item_name("First line ART regimen: young child"): 1}
-        self.item_codes_for_consumables_required['First line ART regimen: young child: cotrimoxazole'] = {
-            hs.get_item_code_from_item_name("Sulfamethoxazole + trimethropin, oral suspension, 240 mg, 100 ml"): 1}
+        # ABC/3TC/DTG 120/60/10mg, 2 tablets per day
+        # cotrim paediatric tablet, 2 tablets per day, units specified in mg * dispensation days
+        self.item_codes_for_consumables_required['First line ART regimen: young child'] = \
+            hs.get_item_code_from_item_name("First line ART regimen: young child")
+        self.item_codes_for_consumables_required['First line ART regimen: young child: cotrimoxazole'] = \
+            hs.get_item_code_from_item_name("Cotrimoxazole 120mg_1000_CMST")
 
         # 7) Define the DxTests
         # HIV Rapid Diagnostic Test:
@@ -2471,7 +2477,9 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         # Check that infant prophylaxis is available and if it is, initiate:
-        if self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['infant_prep']):
+        if self.get_consumables(
+            item_codes={self.module.item_codes_for_consumables_required['infant_prep']: 63}
+        ):
             df.at[person_id, "hv_is_on_prep"] = True
 
             # Schedule follow-up visit for 3 months time
@@ -2555,7 +2563,10 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
             return self.make_appt_footprint({"Over5OPD": 1, "VCTPositive": 1})
 
         # Check that PrEP is available and if it is, initiate or continue  PrEP:
-        if self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['prep']):
+        quantity_required = self.module.parameters['dispensation_period_months'] * 30
+        if self.get_consumables(
+            item_codes={self.module.item_codes_for_consumables_required['prep']: quantity_required}
+        ):
             df.at[person_id, "hv_is_on_prep"] = True
 
             # Schedule 'decision about whether to continue on PrEP' for 3 months time
@@ -2796,29 +2807,33 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         whether individual drugs were available"""
 
         p = self.module.parameters
+        dispensation_days = 30 * self.module.parameters['dispensation_period_months']
 
         if age_of_person < p["ART_age_cutoff_young_child"]:
             # Formulation for young children
             drugs_available = self.get_consumables(
-                item_codes=self.module.item_codes_for_consumables_required['First line ART regimen: young child'],
-                optional_item_codes=self.module.item_codes_for_consumables_required[
-                    'First line ART regimen: young child: cotrimoxazole'],
+                item_codes={self.module.item_codes_for_consumables_required[
+                                'First line ART regimen: young child']: dispensation_days * 2},
+                optional_item_codes={self.module.item_codes_for_consumables_required[
+                                         'First line ART regimen: young child: cotrimoxazole']: dispensation_days * 240},
                 return_individual_results=True)
 
         elif age_of_person <= p["ART_age_cutoff_older_child"]:
             # Formulation for older children
             drugs_available = self.get_consumables(
-                item_codes=self.module.item_codes_for_consumables_required['First line ART regimen: older child'],
-                optional_item_codes=self.module.item_codes_for_consumables_required[
-                    'First line ART regimen: older child: cotrimoxazole'],
+                item_codes={self.module.item_codes_for_consumables_required[
+                                'First line ART regimen: older child']: dispensation_days * 3},
+                optional_item_codes={self.module.item_codes_for_consumables_required[
+                    'First line ART regimen: older child: cotrimoxazole']: dispensation_days * 480},
                 return_individual_results=True)
 
         else:
             # Formulation for adults
             drugs_available = self.get_consumables(
-                item_codes=self.module.item_codes_for_consumables_required['First-line ART regimen: adult'],
-                optional_item_codes=self.module.item_codes_for_consumables_required[
-                    'First-line ART regimen: adult: cotrimoxazole'],
+                item_codes={self.module.item_codes_for_consumables_required[
+                                'First-line ART regimen: adult']: dispensation_days},
+                optional_item_codes={self.module.item_codes_for_consumables_required[
+                    'First-line ART regimen: adult: cotrimoxazole']: dispensation_days * 960},
                 return_individual_results=True)
 
         # add drug names to dict

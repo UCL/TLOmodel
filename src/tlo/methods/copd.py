@@ -33,7 +33,7 @@ class Copd(Module):
     """The module responsible for determining Chronic Obstructive Pulmonary Diseases (COPD) status and outcomes.
      and initialises parameters and properties associated with COPD plus functions and events related to COPD."""
 
-    INIT_DEPENDENCIES = {'SymptomManager', 'Lifestyle'}
+    INIT_DEPENDENCIES = {'SymptomManager', 'Lifestyle', 'HealthSystem'}
     ADDITIONAL_DEPENDENCIES = set()
 
     METADATA = {
@@ -190,14 +190,14 @@ class Copd(Module):
 
     def lookup_item_codes(self):
         """Look-up the item-codes for the consumables needed in the HSI Events for this module."""
-        # todo: Need to look-up these item-codes.
+        ic = self.sim.modules['HealthSystem'].get_item_code_from_item_name
+
         self.item_codes = {
-            'bronchodilater_inhaler': 293,
-            'steroid_inhaler': 294,
-            'oxygen': 127,
-            'aminophylline': 292,
-            'amoxycillin': 125,
-            'prednisolone': 291
+            'bronchodilater_inhaler': ic('Salbutamol Inhaler 100mcg/dose - 200 doses '),
+            'oxygen': ic('Oxygen, 1000 liters, primarily with oxygen cylinders'),
+            'aminophylline': ic('Aminophylline 100mg, tablets'),
+            'amoxycillin': ic('Amoxycillin 250mg_1000_CMST'),
+            'prednisolone': ic('Prednisolone 5mg_100_CMST'),
         }
 
     def do_logging(self):
@@ -225,10 +225,9 @@ class Copd(Module):
         if ('breathless_moderate' in symptoms) or ('breathless_severe' in symptoms):
             patient_details_updates = {}
             # Give inhaler if patient does not already have one
-            if not patient_details.ch_has_inhaler and consumables_checker(
-                self.item_codes["bronchodilater_inhaler"]
-            ):
-                patient_details_updates["ch_has_inhaler"] = True
+            if not patient_details.ch_has_inhaler:
+                if consumables_checker({self.item_codes["bronchodilater_inhaler"]: 1}):
+                    patient_details_updates["ch_has_inhaler"] = True
 
             if "breathless_severe" in symptoms:
                 event = HSI_Copd_TreatmentOnSevereExacerbation(
@@ -571,10 +570,8 @@ class HSI_Copd_TreatmentOnSevereExacerbation(HSI_Event, IndividualScopeEventMixi
          * Provide treatment: whatever is available at this facility at this time (no referral).
         """
         df = self.sim.population.props
-
-        self.add_equipment({'Oxygen cylinder, with regulator', 'Nasal Prongs', 'Drip stand', 'Infusion pump'})
-
-        if not self.get_consumables(self.module.item_codes['oxygen']):
+        # Assume average 8L O2 for 2 days inpatient care
+        if not self.get_consumables({self.module.item_codes['oxygen']: 23_040}):
             # refer to the next higher facility if the current facility has no oxygen
             self.facility_levels_index += 1
             if self.facility_levels_index >= len(self.all_facility_levels):
@@ -584,11 +581,13 @@ class HSI_Copd_TreatmentOnSevereExacerbation(HSI_Event, IndividualScopeEventMixi
 
         else:
             # Give oxygen and AminoPhylline, if possible, ... and cancel death if the treatment is successful.
+            # Aminophylline dose = 100mg 8hrly, assuming 600mg in 48 hours
             prob_treatment_success = self.module.models.prob_livesaved_given_treatment(
                 df=df.iloc[[person_id]],
-                oxygen=self.get_consumables(self.module.item_codes['oxygen']),
-                aminophylline=self.get_consumables(self.module.item_codes['aminophylline'])
+                oxygen=self.get_consumables({self.module.item_codes['oxygen']: 23_040}),
+                aminophylline=self.get_consumables({self.module.item_codes['aminophylline']: 600})
             )
+            self.add_equipment({'Oxygen cylinder, with regulator', 'Nasal Prongs', 'Drip stand', 'Infusion pump'})
 
             if prob_treatment_success:
                 df.at[person_id, 'ch_will_die_this_episode'] = False

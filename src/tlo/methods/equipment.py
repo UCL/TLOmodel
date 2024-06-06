@@ -116,7 +116,7 @@ class Equipment:
         calculation if the equipment availability change event occurs during the simulation.
         """
         dat = self.data_availability.set_index(
-            [self.data_availability["Facility_ID"].astype(int), self.data_availability["Item_Code"].astype(int)]
+            [self.data_availability["Facility_ID"].astype(np.int64), self.data_availability["Item_Code"].astype(np.int64)]
         )["Pr_Available"]
 
         # Confirm that there is an estimate for every item_code at every facility_id
