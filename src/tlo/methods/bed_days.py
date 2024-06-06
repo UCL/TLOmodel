@@ -600,13 +600,10 @@ class BedDays:
         # since these are always "non_bed_space", IE not beds.
         # In such cases, the occupancies should not have been scheduled in
         # anyway, so throw an error.
-        assert (bed_on_each_day < len(self.bed_types) - 1).all(), (
-            "Patient is scheduled to have at least one day in a non-bed-space "
-            "when resolving conflicting bed day occupancies. "
-            "This implies that at least one occupancy in the two sets of "
-            "occupancies does not conflict with the others. "
-            "Such non-conflicting occupancies should be removed before "
-            "calling this method."
+        if not (bed_on_each_day < len(self.bed_types) - 1).all():
+            self._logger.warning(
+                f"Patient {patient_id} is scheduled to have at least one day "
+                "in a non-bed-space when resolving conflicting bed day occupancies."
         )
 
         # We now know the bed allocation for this person.
