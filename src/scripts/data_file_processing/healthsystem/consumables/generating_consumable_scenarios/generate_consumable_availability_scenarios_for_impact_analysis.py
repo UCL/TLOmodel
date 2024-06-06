@@ -421,12 +421,10 @@ for scenario in list_of_scenario_suffixes:
 
 # 4. Generate best performing facility-based scenario data on consumable availablity
 #*********************************************************************************************
-df = full_df_with_scenario.copy()
+df = full_set_interpolated.reset_index().copy()
 
-# Create a dictionary to store facilities at the 75th, 90th and 99th percentile in terms of consumable availability
-# List of facility levels to process
+# Try updating the avaiability to represent the 75th percentile by consumable
 facility_levels = ['1a', '1b']
-best_performing_facilities = {} # Dictionary to store the best performing facilities for each level
 target_percentiles = [75, 90, 99]
 
 # Populate the dictionary
@@ -434,54 +432,68 @@ for level in facility_levels:
     # Create an empty dictionary for the current level
     best_performing_facilities[level] = {}
 
-    # Get the mean availability by Facility for the current level
-    mean_consumable_availability = pd.DataFrame(df[df.Facility_ID.isin(facilities_by_level[level])]
-                                                .groupby('Facility_ID')['available_prop'].mean()).reset_index()
+    for item in item_codes:
+        best_performing_facilities[level][item] = {}
+        # Get the mean availability by Facility for the current level
+        mean_consumable_availability = pd.DataFrame(df[(df.Facility_ID.isin(facilities_by_level[level])) & (df.item_code == item)]
+                                                    .groupby('Facility_ID')['available_prop'].mean()).reset_index()
 
-    # Calculate the percentile rank of each row for 'available_prop'
-    mean_consumable_availability['percentile_rank'] = mean_consumable_availability['available_prop'].rank(pct=True) * 100
+        # Calculate the percentile rank of each row for 'available_prop'
+        mean_consumable_availability['percentile_rank'] = mean_consumable_availability['available_prop'].rank(pct=True) * 100
 
-    # Find the row which is closest to the nth percentile rank for each target percentile
-    for target_perc in target_percentiles:
-        # Calculate the difference to target percentile
-        mean_consumable_availability['diff_to_target_' + str(target_perc)] = np.abs(
-            mean_consumable_availability['percentile_rank'] - target_perc)
+        # Find the row which is closest to the nth percentile rank for each target percentile
+        for target_perc in target_percentiles:
+            # Calculate the difference to target percentile
+            mean_consumable_availability['diff_to_target_' + str(target_perc)] = np.abs(
+                mean_consumable_availability['percentile_rank'] - target_perc)
 
-        # Find the row with the minimum difference to the target percentile
-        closest_row = mean_consumable_availability.loc[
-            mean_consumable_availability['diff_to_target_' + str(target_perc)].idxmin()]
+            # Find the row with the minimum difference to the target percentile
+            closest_row = mean_consumable_availability.loc[
+                mean_consumable_availability['diff_to_target_' + str(target_perc)].idxmin()]
 
-        # Store the Facility_ID of the closest row in the dictionary for the current level
-        best_performing_facilities[level][str(target_perc) + 'th percentile'] = closest_row['Facility_ID']
+            # Store the Facility_ID of the closest row in the dictionary for the current level
+            best_performing_facilities[level][item][str(target_perc) + 'th percentile'] = closest_row['Facility_ID']
 
-print("Reference facilities at each level: ", best_performing_facilities)
+print("Reference facilities at each level for each item: ", best_performing_facilities)
+# TODO Flip the nesting order above for percentile to go before item?
 
 # Obtain the updated availability estimates for level 1a for scenarios 6-8
-id_variables = ['item_code', 'month']
-updated_availability_1a_scenario6 = df[df['Facility_ID']== best_performing_facilities['1a']['75th percentile']][id_variables + ['available_prop']].rename(columns = {'available_prop': 'available_prop_scenario6'})
-updated_availability_1a_scenario7 = df[df['Facility_ID']== best_performing_facilities['1a']['90th percentile']][id_variables + ['available_prop']].rename(columns = {'available_prop': 'available_prop_scenario7'})
-updated_availability_1a_scenario8 = df[df['Facility_ID']== best_performing_facilities['1a']['99th percentile']][id_variables + ['available_prop']].rename(columns = {'available_prop': 'available_prop_scenario8'})
-updated_availability_1a = updated_availability_1a_scenario6.merge(updated_availability_1a_scenario7, on = ['item_code', 'month'],
-                                                                  how = 'inner', validate = "1:1")
-updated_availability_1a = updated_availability_1a.merge(updated_availability_1a_scenario8, on = ['item_code', 'month'],
-                                                                  how = 'inner', validate = "1:1")
+updated_availability_1a = df[['item_code', 'month']].drop_duplicates()
+updated_availability_1b = df[['item_code', 'month']].drop_duplicates()
+temporary_df = pd.DataFrame([])
+availability_dataframes = [updated_availability_1a, updated_availability_1b]
 
-# Obtain the updated availability estimates for level 1b for scenarios 6-8
-updated_availability_1b_scenario6 = df[df['Facility_ID']== best_performing_facilities['1b']['75th percentile']][id_variables + ['available_prop']].rename(columns = {'available_prop': 'available_prop_scenario6'})
-updated_availability_1b_scenario7 = df[df['Facility_ID']== best_performing_facilities['1b']['90th percentile']][id_variables + ['available_prop']].rename(columns = {'available_prop': 'available_prop_scenario7'})
-updated_availability_1b_scenario8 = df[df['Facility_ID']== best_performing_facilities['1b']['99th percentile']][id_variables + ['available_prop']].rename(columns = {'available_prop': 'available_prop_scenario8'})
-updated_availability_1b = updated_availability_1b_scenario6.merge(updated_availability_1b_scenario7, on = ['item_code', 'month'],
-                                                                  how = 'inner', validate = "1:1")
-updated_availability_1b = updated_availability_1b.merge(updated_availability_1b_scenario8, on = ['item_code', 'month'],
-                                                                  how = 'inner', validate = "1:1")
+i = 6 # start scenario counter
+j = 0 # start level counter
+for level in facility_levels:
+    for target_perc in target_percentiles:
+        for item in item_codes:
+
+            print("Running level ", level, "; Running scenario ", str(i), "; Running item ", item)
+            reference_facility = df['Facility_ID'] == best_performing_facilities[level][item][str(target_perc) + 'th percentile']
+            current_item = df['item_code'] == item
+            availability_at_reference_facility = df[reference_facility & current_item][['item_code', 'month', 'available_prop']]
+
+            if temporary_df.empty:
+                temporary_df = availability_at_reference_facility
+            else:
+                temporary_df = pd.concat([temporary_df,availability_at_reference_facility], ignore_index = True)
+
+        column_name = 'available_prop_scenario' + str(i)
+        temporary_df = temporary_df.rename(columns = {'available_prop': column_name })
+        availability_dataframes[j] = availability_dataframes[j].merge(temporary_df, on =  ['item_code', 'month'], how = 'left', validate = '1:1')
+        temporary_df = pd.DataFrame([])
+        i = i + 1
+    i = 6 # restart scenario counter
+    j = j + 1 # move to the next level
 
 # Merge the above scenario data to the full availability scenario dataframe
 # Scenario 6-8 availability data for level 1a
-df_new_1a = df[df['Facility_ID'].isin(facilities_by_level['1a'])].merge(updated_availability_1a,on = ['item_code', 'month'],
+df_new_1a = df[df['Facility_ID'].isin(facilities_by_level['1a'])].merge(availability_dataframes[0],on = ['item_code', 'month'],
                                       how = 'left',
                                       validate = "m:1")
 # Scenario 6-8 availability data for level 1b
-df_new_1b = df[df['Facility_ID'].isin(facilities_by_level['1b'])].merge(updated_availability_1b,on = ['item_code', 'month'],
+df_new_1b = df[df['Facility_ID'].isin(facilities_by_level['1b'])].merge(availability_dataframes[1],on = ['item_code', 'month'],
                                       how = 'left',
                                       validate = "m:1")
 # Scenario 6-8 availability data for other levels
@@ -548,5 +560,15 @@ pivot_table = pd.pivot_table(scenario_availability_df,
                              aggfunc=lambda x: sum(pd.isna(x))/len(x)*100)
 pivot_table.to_csv(outputfilepath / "temp.csv")
 print(pivot_table[('change_proportion_scenario5', '0')])
+
+a = availability_dataframes[1].reset_index()
+print(best_performing_facilities['1b'][5][str(75) + 'th percentile'])
+print(best_performing_facilities['1b'][222][str(90) + 'th percentile'])
+print(best_performing_facilities['1b'][222][str(99) + 'th percentile'])
+a[a.item_code == 222][['month', 'available_prop_scenario8']]
+item_chosen = 222
+fac_chosen = 110
+print(df[(df.item_code == item_chosen) & (df.Facility_ID == fac_chosen)][['month', 'available_prop']])
+
 '''
 
