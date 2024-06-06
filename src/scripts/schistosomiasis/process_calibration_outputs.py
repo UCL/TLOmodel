@@ -34,7 +34,7 @@ results_folder = Path("outputs/schisto_calibration-2024-06-05T133315Z")
 # results_folder = Path("outputs/t.mangal@imperial.ac.uk/calibration-2024-05-24T110817Z")
 
 # local runs
-results_folder = Path("outputs/t.mangal@imperial.ac.uk/schisto_calibration-2024-05-30T125223Z")
+results_folder = Path("outputs/t.mangal@imperial.ac.uk/schisto_calibration-2024-06-05T145214Z")
 
 # look at one log (so can decide what to extract)
 log = load_pickled_dataframes(results_folder)
@@ -61,16 +61,17 @@ def get_model_prevalence_by_district_over_time(_df):
 
     # todo limit to SAC
     # df = df.filter(like='Adult')
-    df = df.filter(like='SAC')
+    # df = df.filter(like='SAC')
 
     # Aggregate the sums of infection statuses by district_of_residence and year
     district_sum = df.sum(axis=1)
 
     # todo limit to high or low-infection only
+    # df_filtered = df.filter(regex='(Moderate-infection)')
     # df_filtered = df.filter(regex='(Low-infection)')
     # df_filtered = df.filter(regex='(High-infection)')
-    df_filtered = df.filter(regex='(High-infection|Low-infection)')
-    # df_filtered = df.filter(regex='(High-infection|Moderate-infection|Low-infection)')
+    # df_filtered = df.filter(regex='(Moderate-infection|Low-infection)')
+    df_filtered = df.filter(regex='(High-infection|Moderate-infection|Low-infection)')
 
     infected = df_filtered.sum(axis=1)
 

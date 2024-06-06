@@ -79,19 +79,27 @@ class Schisto(Module):
                                                'schisto test: end'),
         'rr_WASH': Parameter(Types.REAL, 'proportional reduction in population susceptible to schistosoma '
                                          'infection with improved WASH'),
-        'PZQ_efficacy': Parameter(Types.REAL,
-                                  'The efficacy of Praziquantel in clearing burden of any Schistosomiasis '
-                                  'worm species'),
+        'calibration_scenario': Parameter(Types.REAL,
+                                          'Scenario used to reset parameters to run calibration sims'),
+        'projection_scenario': Parameter(Types.REAL,
+                                         'Scenario used to set parameters for projections'),
+        'urine_filtration_sensitivity_moderateWB': Parameter(Types.REAL,
+                                          'Sensitivity of UF in detecting moderate worm burdens'),
+        'urine_filtration_sensitivity_highWB': Parameter(Types.REAL,
+                                         'Sensitivity of UF in detecting high worm burdens'),
+        'kato_katz_sensitivity_moderateWB': Parameter(Types.REAL,
+                                        'Sensitivity of KK in detecting moderate worm burdens'),
+        'kato_katz_sensitivity_highWB': Parameter(Types.REAL,
+                                        'Sensitivity of KK in detecting high worm burdens'),
+        # 'PZQ_efficacy': Parameter(Types.REAL,
+        #                           'The efficacy of Praziquantel in clearing burden of any Schistosomiasis '
+        #                           'worm species'),
         'MDA_coverage_historical': Parameter(Types.DATA_FRAME,
                                              'Probability of getting PZQ in the MDA for PSAC, SAC and Adults '
                                              'in historic rounds'),
         'MDA_coverage_prognosed': Parameter(Types.DATA_FRAME,
                                             'Probability of getting PZQ in the MDA for PSAC, SAC and Adults '
                                             'in future rounds, with the frequency given in months'),
-        'calibration_scenario': Parameter(Types.REAL,
-                                          'Scenario used to reset parameters to run calibration sims'),
-        'projection_scenario': Parameter(Types.REAL,
-                                         'Scenario used to set parameters for projections'),
     }
 
     def __init__(self, name=None, resourcefilepath=None, mda_execute=True, scaleup_WASH=False):
@@ -184,6 +192,9 @@ class Schisto(Module):
         if 'HealthSystem' in self.sim.modules:
             self.item_code_for_praziquantel = self._get_item_code_for_praziquantel()
 
+        # define the Dx tests and consumables required
+        self._get_consumables_for_dx()
+
         # Schedule the logging event
         sim.schedule_event(SchistoLoggingEvent(self), sim.date)  # monthly, by district, age-group
 
@@ -251,7 +262,6 @@ class Schisto(Module):
 
         # Set properties to be not-infected (any species), and zero-out all worm burden information.
         for spec_prefix in [_spec.prefix for _spec in self.species.values()]:
-            # todo PZQ_efficacy
             pzq_efficacy = self.parameters[f'PZQ_efficacy_{spec_prefix}']
             # df.loc[person_id, f'{self.module_prefix}_{spec_prefix}_aggregate_worm_burden'] = 0
             df.loc[person_id, f'{self.module_prefix}_{spec_prefix}_aggregate_worm_burden'] = df.loc[
@@ -275,7 +285,11 @@ class Schisto(Module):
                             'prob_sent_to_lab_test_adults',
                             'rr_WASH',
                             'calibration_scenario',
-                            'projection_scenario'
+                            'projection_scenario',
+                            'urine_filtration_sensitivity_moderateWB',
+                            'urine_filtration_sensitivity_highWB',
+                            'kato_katz_sensitivity_moderateWB',
+                            'kato_katz_sensitivity_highWB'
                             ):
             parameters[_param_name] = float(param_list[_param_name])
 
@@ -329,31 +343,43 @@ class Schisto(Module):
         """Look-up the item code for Praziquantel"""
         return self.sim.modules['HealthSystem'].get_item_code_from_item_name("Praziquantel 600mg_1000_CMST")
 
-    def _get_consumables_for_dx_and_tx(self):
+    def _get_consumables_for_dx(self):
         p = self.parameters
         hs = self.sim.modules["HealthSystem"]
 
         # diagnostic test consumables
         # todo update quantities
-        self.item_codes_for_consumables_required['malachite_stain'] = {
-            hs.get_item_code_from_item_name("Malachite green oxalate"): 0.01}
+        self.item_codes_for_consumables_required['malachite_stain'] = hs.get_item_code_from_item_name(
+            "Malachite green oxalate")
 
-        self.item_codes_for_consumables_required['iodine_stain'] = {
-            hs.get_item_code_from_item_name("Lugol's iodine for staining (1:2:100 aqueous), 1 L_1_IDA"): 0.001}
+        self.item_codes_for_consumables_required['iodine_stain'] = hs.get_item_code_from_item_name(
+            "Lugol's iodine for staining (1:2:100 aqueous), 1 L_1_IDA")
 
-        self.item_codes_for_consumables_required['microscope_slide'] = {
-            hs.get_item_code_from_item_name("Microscope slides, lime-soda-glass, pack of 50"): 0.02}
+        self.item_codes_for_consumables_required['microscope_slide'] = hs.get_item_code_from_item_name(
+            "Microscope slides, lime-soda-glass, pack of 50")
 
-        self.item_codes_for_consumables_required['filter_paper'] = {
-            hs.get_item_code_from_item_name("Filter paper round, diameter 150, packs of 100"): 0.01}
+        self.item_codes_for_consumables_required['filter_paper'] = hs.get_item_code_from_item_name(
+            "Filter paper round, diameter 150, packs of 100")
+
+        # self.item_codes_for_consumables_required['malachite_stain'] = {
+        #     hs.get_item_code_from_item_name("Malachite green oxalate"): 0.01}
+        #
+        # self.item_codes_for_consumables_required['iodine_stain'] = {
+        #     hs.get_item_code_from_item_name("Lugol's iodine for staining (1:2:100 aqueous), 1 L_1_IDA"): 0.001}
+        #
+        # self.item_codes_for_consumables_required['microscope_slide'] = {
+        #     hs.get_item_code_from_item_name("Microscope slides, lime-soda-glass, pack of 50"): 0.02}
+        #
+        # self.item_codes_for_consumables_required['filter_paper'] = {
+        #     hs.get_item_code_from_item_name("Filter paper round, diameter 150, packs of 100"): 0.01}
 
         # KATO-KATZ TEST
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             KK_schisto_test_lowWB=DxTest(
                 property='ss_sm_infection_status',
                 target_categories=["Non-infected", "Low-infection"],
-                sensitivity=0,
-                specificity=0,
+                sensitivity=0.0,
+                specificity=0.0,
                 item_codes=self.item_codes_for_consumables_required['microscope_slide'],
                 optional_item_codes=[
                     self.item_codes_for_consumables_required['malachite_stain'],
@@ -361,6 +387,7 @@ class Schisto(Module):
 
             )
         )
+
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             KK_schisto_test_moderateWB=DxTest(
                 property='ss_sm_infection_status',
@@ -373,6 +400,7 @@ class Schisto(Module):
                     self.item_codes_for_consumables_required['iodine_stain']]
             )
         )
+
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             KK_schisto_test_highWB=DxTest(
                 property='ss_sm_infection_status',
@@ -391,8 +419,8 @@ class Schisto(Module):
             UF_schisto_test_lowWB=DxTest(
                 property='ss_sh_infection_status',
                 target_categories=["Non-infected", "Low-infection"],
-                sensitivity=0,
-                specificity=0,
+                sensitivity=0.0,
+                specificity=0.0,
                 item_codes=self.item_codes_for_consumables_required['microscope_slide'],
                 optional_item_codes=[
                     self.item_codes_for_consumables_required['filter_paper'],
@@ -400,6 +428,7 @@ class Schisto(Module):
 
             )
         )
+
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             UF_schisto_test_moderateWB=DxTest(
                 property='ss_sh_infection_status',
@@ -412,6 +441,7 @@ class Schisto(Module):
                     self.item_codes_for_consumables_required['iodine_stain']]
             )
         )
+
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             UF_schisto_test_highWB=DxTest(
                 property='ss_sh_infection_status',
@@ -477,9 +507,8 @@ class Schisto(Module):
             )
             self.healthsystem.schedule_hsi_event(event, priority=0, topen=self.sim.date)
 
-    def select_and_perform_test(self, person_id):
+    def select_test(self, person_id):
 
-        df = self.sim.population.props
         p = self.parameters
 
         # choose test
@@ -489,55 +518,7 @@ class Schisto(Module):
         else:
             test = 'kato-katz'
 
-        # perform the test
-        if test == 'urine_filtration_test':
-
-            # sensitivity of test depends worm burden
-            if df.at[person_id, 'ss_sh_infection_status'].isin('Non-infected', 'Low-infection'):
-
-                test_result = self.sim.modules[
-                    "HealthSystem"
-                ].dx_manager.run_dx_test(
-                    dx_tests_to_run="UF_schisto_test_lowWB", hsi_event=self
-                )
-            elif df.at[person_id, 'ss_sh_infection_status'] == ('Moderate-infection'):
-                test_result = self.sim.modules[
-                    "HealthSystem"
-                ].dx_manager.run_dx_test(
-                    dx_tests_to_run="UF_schisto_test_moderateWB", hsi_event=self
-                )
-            else:
-                test_result = self.sim.modules[
-                    "HealthSystem"
-                ].dx_manager.run_dx_test(
-                    dx_tests_to_run="UF_schisto_test_highWB", hsi_event=self
-                )
-
-        # otherwise perform Kato-Katz
-        else:
-
-            # sensitivity of test depends worm burden
-            if df.at[person_id, 'ss_sm_infection_status'].isin('Non-infected', 'Low-infection'):
-
-                test_result = self.sim.modules[
-                    "HealthSystem"
-                ].dx_manager.run_dx_test(
-                    dx_tests_to_run="KK_schisto_test_lowWB", hsi_event=self
-                )
-            elif df.at[person_id, 'ss_sm_infection_status'] == ('Moderate-infection'):
-                test_result = self.sim.modules[
-                    "HealthSystem"
-                ].dx_manager.run_dx_test(
-                    dx_tests_to_run="KK_schisto_test_moderateWB", hsi_event=self
-                )
-            else:
-                test_result = self.sim.modules[
-                    "HealthSystem"
-                ].dx_manager.run_dx_test(
-                    dx_tests_to_run="KK_schisto_test_highWB", hsi_event=self
-                )
-
-        return test_result
+        return test
 
 
 class SchistoSpecies:
@@ -938,6 +919,26 @@ class SchistoSpecies:
             description='Counts of infection status with this species by age-group and district.'
         )
 
+    def log_mean_worm_burden(self) -> None:
+        """Log the mean worm burden across the population for this species, by age-group and district."""
+
+        df = self.schisto_module.sim.population.props
+
+        prop = self.prefix_species_property
+
+        age_grp = df.loc[df.is_alive].age_years.map(self.schisto_module.age_group_mapper)
+
+        data = df.loc[df.is_alive].groupby(by=[
+            df.loc[df.is_alive, 'district_of_residence'],
+            age_grp
+        ], observed=False)[prop('aggregate_worm_burden')].mean()
+
+        logger.info(
+            key=f'mean_worm_burden_{self.name}',
+            data=flatten_multi_index_series_into_dict_for_logging(data),
+            description='Mean worm burden of this species by age-group and district.'
+        )
+
 
 class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
     """A recurring event that causes infection of people with this species.
@@ -1241,13 +1242,62 @@ class HSI_Schisto_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin)
         self._num_occurrences += 1
 
         df = self.sim.population.props
-        person_id = df.loc[person_id]
         params = self.module.parameters
 
         # select and perform the appropriate diagnostic test
-        result = self.module.select_and_perform_test(person_id)
+        test = self.module.select_test(person_id)
+        test_result = False
 
-        if result:
+        # perform the test
+        if test == 'urine_filtration_test':
+
+            # sensitivity of test depends worm burden
+            if df.at[person_id, 'ss_sh_infection_status'] in ['Non-infected', 'Low-infection']:
+
+                test_result = self.sim.modules[
+                    "HealthSystem"
+                ].dx_manager.run_dx_test(
+                    dx_tests_to_run="UF_schisto_test_lowWB",
+                    hsi_event=self
+                )
+            elif df.at[person_id, 'ss_sh_infection_status'] == 'Moderate-infection':
+                test_result = self.sim.modules[
+                    "HealthSystem"
+                ].dx_manager.run_dx_test(
+                    dx_tests_to_run="UF_schisto_test_moderateWB", hsi_event=self
+                )
+            else:
+                test_result = self.sim.modules[
+                    "HealthSystem"
+                ].dx_manager.run_dx_test(
+                    dx_tests_to_run="UF_schisto_test_highWB", hsi_event=self
+                )
+
+        # otherwise perform Kato-Katz
+        else:
+
+            # sensitivity of test depends worm burden
+            if df.at[person_id, 'ss_sm_infection_status'] in ['Non-infected', 'Low-infection']:
+
+                test_result = self.sim.modules[
+                    "HealthSystem"
+                ].dx_manager.run_dx_test(
+                    dx_tests_to_run="KK_schisto_test_lowWB", hsi_event=self
+                )
+            elif df.at[person_id, 'ss_sm_infection_status'] == 'Moderate-infection':
+                test_result = self.sim.modules[
+                    "HealthSystem"
+                ].dx_manager.run_dx_test(
+                    dx_tests_to_run="KK_schisto_test_moderateWB", hsi_event=self
+                )
+            else:
+                test_result = self.sim.modules[
+                    "HealthSystem"
+                ].dx_manager.run_dx_test(
+                    dx_tests_to_run="KK_schisto_test_highWB", hsi_event=self
+                )
+
+        if test_result:
             self.module.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Schisto_TreatmentFollowingDiagnosis(
                     module=self.module,
@@ -1343,6 +1393,9 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         assert isinstance(module, Schisto)
 
     def apply(self, population):
-        """Call `log_infection_status` for each species."""
+        """
+        Call `log_infection_status` and 'log_mean_worm_burden' for each species
+        """
         for _spec in self.module.species.values():
             _spec.log_infection_status()
+            _spec.log_mean_worm_burden()

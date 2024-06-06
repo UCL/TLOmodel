@@ -44,7 +44,7 @@ fitted_districts = ['Blantyre', 'Chiradzulu', 'Mulanje', 'Nsanje', 'Nkhotakota',
 species = ('mansoni', 'haematobium')
 
 # %% Run the simulation
-popsize = 10_000
+popsize = 5_000
 
 # species_to_calibrate = 'haematobium'
 # mwb = 0.1
@@ -77,7 +77,7 @@ def run_simulation(popsize=popsize, mda_execute=False):
                                  scaleup_WASH=False),
                  )
 
-    sim.modules["Schisto"].parameters["scenario"] = 1.0
+    sim.modules["Schisto"].parameters["calibration_scenario"] = 1.0
 
     # initialise the population
     sim.make_initial_population(n=popsize)
