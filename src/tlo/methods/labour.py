@@ -2146,7 +2146,7 @@ class Labour(Module):
 
         if avail and sf_check:
             # Add used equipment
-            hsi_event.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
+            hsi_event.add_equipment(hsi_event.healthcare_system.equipment.from_pkg_names('Major Surgery'))
 
             # determine if uterine preserving surgery will be successful
             treatment_success_pph = params['success_rate_pph_surgery'] > self.rng.random_sample()
