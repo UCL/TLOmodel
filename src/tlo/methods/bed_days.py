@@ -50,6 +50,14 @@ class BedOccupancy:
     patient_id: int
     start_date: Date
 
+    @property
+    def length(self) -> int:
+        """
+        Number of days this occupancy runs for,
+        = (freed_date - start_date).days + 1
+        """
+        return (self.freed_date - self.start_date).days + 1
+
     def __post_init__(self) -> None:
         """
         Post-init checks for BedOccupancies:
@@ -403,8 +411,8 @@ class BedDays:
         patient_id: Optional[List[int] | int] = None,
         logical_or: bool = False,
         end_on_or_before: Optional[Date] = None,
-        on_date: Optional[Date] = None,
         start_on_or_after: Optional[Date] = None,
+        on_date: Optional[Date] = None,
         occurs_between_dates: Optional[Tuple[Date]] = None,
     ) -> List[BedOccupancy]:
         """
@@ -418,11 +426,12 @@ class BedDays:
         :param patient_id: ID in the population DataFrame for the inpatient.
         :param logical_or: Combine criteria via logical OR rather than AND.
         :param end_on_or_before: Occupancy must end before or on this date.
+        :param start_on_or_after: Occupancy must start on or after this date.
+        :param on_date: Occupancy must start on or after this date, and end on or before it.
         :param occurs_between_dates: At least part of the occupancy must occur
         between these two dates. Provided as a Tuple of Dates, the first element
         being the earlier date (inclusive) and the second element the later
         date (inclusive).
-        :param start_on_or_after: Occupancy must start on or after this date.
         """
         # Cast single-values to lists to make parsing easier
         if isinstance(patient_id, int):
@@ -625,14 +634,6 @@ class BedDays:
             dates_bed_occupancies_end,
         ):
             bed_type = self.bed_types[bed_on_each_day[occ_starts]]
-            assert self.bed_type_to_priority(bed_type) != lowest_priority, (
-                "Patient is scheduled to have at least one day in a non-bed-space "
-                "when resolving conflicting bed day occupancies. "
-                "This implies that at least one occupancy in the two sets of "
-                "occupancies does not conflict with the others. "
-                "Such non-conflicting occupancies should be removed before "
-                "calling this method."
-            )
             reconciled_occupancies.append(
                 BedOccupancy(
                     bed_type=bed_type,
@@ -643,6 +644,27 @@ class BedDays:
                 )
             )
         return reconciled_occupancies
+
+    def combine_overlapping_occupancies(
+        self,
+        incoming_occupancies: List[BedOccupancy],
+        current_occupancies: List[BedOccupancy],
+    ) -> List[BedOccupancy]:
+        """ """
+        # Plan: convert to a footprint that can then be imposed from
+        # the start_date
+        all_occupancies = incoming_occupancies + current_occupancies
+        earliest_start = min([o.start_date for o in all_occupancies])
+
+        combined_footprint = self.get_blank_beddays_footprint()
+        for o in all_occupancies:
+            combined_footprint[o.bed_type] += o.length
+
+        # Having created the "combined footprint", turn it into a list
+        # of occupancies
+        facility = all_occupancies[0].facility
+        patient_id = all_occupancies[0].patient_id
+        return combined_footprint.as_occupancies(earliest_start, facility, patient_id)
 
     def remove_patient_footprint(self, patient_id: int) -> None:
         """
@@ -704,46 +726,63 @@ class BedDays:
         facility: int,
         first_day: Date,
         patient_id: int,
+        overlay_instead_of_combine: bool = False,
     ) -> None:
         """
         Impose the footprint provided on the availability of beds.
+
+        In the event that the person is already an inpatient, it is necessary to
+        reconcile their existing occupancies with the new ones they will receive
+        from being admitted.
+        - The default resolution option is add the time (in each bed type) that their
+        incoming occupancy imposes to their current allocation. However, this means
+        we encounter https://github.com/UCL/TLOmodel/issues/1399.
+        - Alternatively, footprints can be overlaid by determining the highest priority
+        bed on each day that the person is due to occupy. This is the method suggested
+        at the end of https://github.com/UCL/TLOmodel/issues/1399, and provides the
+        guarantee that beds will never be over-allocated by mistake. However, it also
+        reduces the amount of bed-time allocated overall and is distinct from the
+        default behaviour, so can (and will) lead to different population evolution.
 
         :param footprint: Footprint to impose.
         :param facility: Which facility will host this footprint.
         :param first_day: Day on which this footprint will start.
         :param patient_id: The index in the population DataFrame of the person
         occupying this bed.
+        :param overlay_instead_of_combine: If True, footprints are overlaid rather than combined.
         """
         # Exit if the footprint is empty
         if not footprint:
             return
+        conflict_resolver = (
+            self.resolve_overlapping_occupancies
+            if overlay_instead_of_combine
+            else self.combine_overlapping_occupancies
+        )
 
         new_footprint_end_date = first_day + pd.DateOffset(
             days=footprint.total_days() - 1
         )
         new_occupancies = footprint.as_occupancies(first_day, facility, patient_id)
 
-        scheduled_occupancies = self.is_inpatient(patient_id=patient_id)
-        conflicting_occupancies = [
-            o
-            for o in scheduled_occupancies
-            if self.date_ranges_overlap(
-                o.start_date, first_day, o.freed_date, new_footprint_end_date
-            )
-        ]
+        # Identify any occupancies this person currently has during the period
+        # this footprint is expected to run over, to resolve potential conflicts.
+        conflicting_occupancies = self.find_occupancies(
+            patient_id=patient_id,
+            occurs_between_dates=(first_day, new_footprint_end_date),
+        )
 
         if conflicting_occupancies:
             # This person is already an inpatient.
             # For those occupancies that conflict, we will need to overwrite the lower
             # priority bed occupancies with the higher priority bed occupancies.
-            new_occupancies = self.resolve_overlapping_occupancies(
+            new_occupancies = conflict_resolver(
                 new_occupancies, conflicting_occupancies
             )
 
             # Remove all conflicting dependencies that are currently scheduled,
             # before we add the resolved conflicts
-            for o in conflicting_occupancies:
-                self.end_occupancies(o)
+            self.end_occupancies(*conflicting_occupancies)
 
         # Schedule the new occupancies, which are now conflict-free
         # (if they weren't already)

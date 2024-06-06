@@ -1550,6 +1550,16 @@ class HealthSystem(Module):
             the_district
         ][0]
 
+    def set_hs_is_inpatient_series(self) -> None:
+        """
+        Updates the 'hs_is_inpatient' column of population DataFrame
+        to reflect the current (alive) persons who are inpatients.
+        """
+        is_alive = self.sim.population.props.is_alive
+        self.sim.population.props["hs_is_inpatient"] = is_alive & is_alive.index.isin(
+            self.bed_days.all_inpatients
+        )
+
     def get_appt_footprint_as_time_request(self, facility_info: FacilityInfo, appt_footprint: dict):
         """
         This will take an APPT_FOOTPRINT and return the required appointments in terms of the
@@ -2588,34 +2598,11 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         # Run the list of population-level HSI events
         self.module.run_population_level_events(list_of_population_hsi_event_tuples_due_today)
 
-    def refresh_beddays_inpatients(self) -> None:
-        """
-        At the start of a new day, refresh the hs_is_inpatient column
-        of the population DataFrame to reflect the current inpatients.
-
-        The BedDays instance removes expired bed occupancies at the end
-        of the previous day, so bed_days.all_inpatients reflects those
-        persons who are still occupying a bed space until the end of
-        the current date (at least).
-
-        TODO: We can likely drop the hs_is_inpatient column of the dataframe
-        too, and save on a costly update write each day. We would need
-        to workaround the fact that multiple modules rely on accessing this
-        DataFrame column, but something like a temporary method to create a
-        corresponding series to mimic it might be sufficient.
-        """
-        alive_persons = self.sim.population.props.is_alive
-        new_inpatients = alive_persons.index.intersection(
-            self.module.bed_days.all_inpatients
-        )
-        self.sim.population.props.loc[alive_persons, "hs_is_inpatient"] = False
-        self.sim.population.props.loc[new_inpatients, "hs_is_inpatient"] = True
-
     def apply(self, population):
 
         # Refresh information ready for new day:
         # Update list of inpatients for other modules that need this info
-        self.refresh_beddays_inpatients()
+        self.module.set_hs_is_inpatient_series()
         # Perform start of day operations for consumables
         self.module.consumables.on_start_of_day(self.sim.date)
 
