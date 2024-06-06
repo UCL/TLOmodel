@@ -1347,6 +1347,7 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
         'cons_availability': 'all',
         'beds_availability': 'default',
         'equip_availability': 'default',
+        'use_funded_or_actual_staffing': 'funded_plus',
     }
     new_parameters = {
         'mode_appt_constraints': 2,
@@ -1355,6 +1356,7 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
         'cons_availability': 'none',
         'beds_availability': 'none',
         'equip_availability': 'all',
+        'use_funded_or_actual_staffing': 'actual',
     }
 
     class CheckHealthSystemParameters(RegularEvent, PopulationScopeEventMixin):
@@ -1371,6 +1373,7 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
             _params['cons_availability'] = hs.consumables.availability
             _params['beds_availability'] = hs.bed_days.availability
             _params['equip_availability'] = hs.equipment.availability
+            _params['use_funded_or_actual_staffing'] = hs.use_funded_or_actual_staffing
 
             logger = logging.getLogger('tlo.methods.healthsystem')
             logger.info(key='CheckHealthSystemParameters', data=_params)
