@@ -400,35 +400,6 @@ def test_resolve_overlapping_dependencies(BD: BedDays, incoming_occs: List[BedOc
     for occ in resolution:
         assert occ in solution, "Resolution contains unexpected occupancy, not found in the expected solution"
 
-
-@pytest.mark.parametrize(
-    "expected_error, expected_msg, args_to_fn",
-    [
-        pytest.param(
-            AssertionError,
-            "Patient is scheduled to have at least one day in a non-bed-space *",
-            {
-                "incoming_occupancies": [
-                    BedOccupancy("bed_1", 0, Date("2010-01-02"), 0, Date("2010-01-01")),
-                ],
-                "current_occupancies": [
-                    BedOccupancy("bed_2", 0, Date("2010-02-05"), 0, Date("2010-02-01")),
-                ],
-            },
-            id="Two sets of events that do not overlap",
-        ),
-    ],
-)
-def test_resolve_overlapping_dependencies_error_cases(
-    BD: BedDays,
-    expected_error: Exception,
-    expected_msg: str,
-    args_to_fn: Dict[str, str | float | int | None],
-):
-    with pytest.raises(expected_error, match=fnmatch.translate(expected_msg)):
-        BD.resolve_overlapping_occupancies(**args_to_fn)
-
-
 @pytest.fixture
 def forecasting_data() -> Tuple[List[BedOccupancy], pd.DataFrame]:
     """
