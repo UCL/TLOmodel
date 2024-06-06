@@ -733,7 +733,6 @@ class HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms(HSI_Event, Ind
             )
 
         # Check consumable availability
-        # TODO: DISCUSSED - but to remain as todo -replace with PSA test when added to cons list
         cons_avail = self.get_consumables(item_codes=self.module.item_codes_prostate_can['screening_psa_test_optional'])
 
         if dx_result and cons_avail:
@@ -781,7 +780,6 @@ class HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(HSI_Event, Individu
             hsi_event=self
         )
 
-        # TODO: DISCUSSED - but to remain as todo -replace with PSA test when added to cons list
         cons_avail = self.get_consumables(item_codes=self.module.item_codes_prostate_can['screening_psa_test_optional'])
 
         if dx_result and cons_avail:
@@ -804,7 +802,6 @@ class HSI_ProstateCancer_Investigation_Following_psa_positive(HSI_Event, Individ
         self.TREATMENT_ID = "ProstateCancer_Investigation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        # todo @Eva - biopsy equipment needed (perhaps ultrasound to guide).  histology lab equipment.
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
