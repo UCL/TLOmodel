@@ -97,7 +97,7 @@ class HorizontalAndVerticalPrograms(BaseScenario):
                     {
                         'HealthSystem': {
                             'yearly_HR_scaling_mode': 'scaling_by_population_growth',
-                            # This is in-line with population growth after 2018 (baseline year for HRH)
+                            # This is in-line with population growth _after 2018_ (baseline year for HRH)
                         }
                     }
                 ),
@@ -148,13 +148,13 @@ class HorizontalAndVerticalPrograms(BaseScenario):
                    },
                ),
 
-            "Perfect Availability of Diagnostics":
+            "Perfect Availability of Vital Items":
                 mix_scenarios(
                     self._baseline(),
                     {
                         'HealthSystem': {
                             'year_cons_availability_switch': self.YEAR_OF_CHANGE,
-                            'cons_availability_postSwitch': 'all_diagnostics_available',
+                            'cons_availability_postSwitch': 'all_vital_available',
                         }
                     }
                 ),
@@ -170,13 +170,13 @@ class HorizontalAndVerticalPrograms(BaseScenario):
                 }
             ),
 
-            "Perfect Availability of Medicines & other Consumables":
+            "Perfect Availability of All Consumables":
                 mix_scenarios(
                     self._baseline(),
                     {
                         'HealthSystem': {
                             'year_cons_availability_switch': self.YEAR_OF_CHANGE,
-                            'cons_availability_postSwitch': 'all_medicines_and_other_available',
+                            'cons_availability_postSwitch': 'all',
                         }
                     }
                 ),
