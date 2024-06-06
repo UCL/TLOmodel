@@ -148,6 +148,7 @@ class HorizontalAndVerticalPrograms(BaseScenario):
                    },
                ),
 
+            # - - - Supply Chains - - -
             "Perfect Availability of Vital Items":
                 mix_scenarios(
                     self._baseline(),
