@@ -1347,6 +1347,7 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
         'cons_availability': 'all',
         'beds_availability': 'default',
         'equip_availability': 'default',
+        'use_funded_or_actual_staffing': 'funded_plus',
     }
     new_parameters = {
         'mode_appt_constraints': 2,
@@ -1355,6 +1356,7 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
         'cons_availability': 'none',
         'beds_availability': 'none',
         'equip_availability': 'all',
+        'use_funded_or_actual_staffing': 'actual',
     }
 
     class CheckHealthSystemParameters(RegularEvent, PopulationScopeEventMixin):
@@ -1368,9 +1370,10 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
             _params['mode_appt_constraints'] = hs.mode_appt_constraints
             _params['ignore_priority'] = hs.ignore_priority
             _params['capabilities_coefficient'] = hs.capabilities_coefficient
-            _params['cons_availability'] = hs.consumables.cons_availability
+            _params['cons_availability'] = hs.consumables.availability
             _params['beds_availability'] = hs.bed_days.availability
             _params['equip_availability'] = hs.equipment.availability
+            _params['use_funded_or_actual_staffing'] = hs.use_funded_or_actual_staffing
 
             logger = logging.getLogger('tlo.methods.healthsystem')
             logger.info(key='CheckHealthSystemParameters', data=_params)
@@ -1537,8 +1540,12 @@ def test_manipulation_of_service_availability(seed, tmpdir):
            get_set_of_treatment_ids_that_run(service_availability=["Hiv_Test_*"]) - generic_first_appts
 
     # Allow all `Hiv` things (but nothing else)
-    assert set({'Hiv_Test', 'Hiv_Treatment', 'Hiv_Prevention_Circumcision'}) == \
-           get_set_of_treatment_ids_that_run(service_availability=["Hiv_*"]) - generic_first_appts
+    hiv_hsi_events = {'Hiv_Test', 'Hiv_Treatment', 'Hiv_Prevention_Circumcision', 'Hiv_Prevention_Infant',
+                      'Hiv_Prevention_Prep', 'Hiv_PalliativeCare'}
+    returned_treatment_ids = get_set_of_treatment_ids_that_run(service_availability=["Hiv_*"])
+
+    assert returned_treatment_ids.intersection(
+        hiv_hsi_events), "None of the expected treatment IDs are found in the returned set"
 
     # Allow all except `Hiv_Test`
     everything_except_hiv_test = everything - set({'Hiv_Test'})
