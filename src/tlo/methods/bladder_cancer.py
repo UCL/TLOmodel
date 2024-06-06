@@ -723,11 +723,9 @@ class HSI_BladderCancer_Investigation_Following_Blood_Urine(HSI_Event, Individua
             return hs.get_blank_appt_footprint()
 
         # Check consumables are available
-        # TODO: DISCUSSED - @Eva replace with cystoscope
-
-        cons_avail = self.get_consumables(item_codes=self.module.item_codes_bladder_can['screening_biopsy_core'],
-                                          optional_item_codes=
-                                          self.module.item_codes_bladder_can['screening_biopsy_optional'])
+        cons_avail = self.get_consumables(item_codes=self.module.item_codes_bladder_can['screening_cystoscopy_core'],
+                                          optional_item_codes=self.module.item_codes_bladder_can[
+                                              'screening_biopsy_endoscopy_cystoscopy_optional'])
 
         if cons_avail:
             # Use a biopsy to diagnose whether the person has bladder Cancer
@@ -798,11 +796,9 @@ class HSI_BladderCancer_Investigation_Following_pelvic_pain(HSI_Event, Individua
             return hs.get_blank_appt_footprint()
 
         # Check consumables are available
-        # TODO: DISCUSSED - @Eva replace with cystoscope
-
-        cons_avail = self.get_consumables(item_codes=self.module.item_codes_bladder_can['screening_biopsy_core'],
+        cons_avail = self.get_consumables(item_codes=self.module.item_codes_bladder_can['screening_cystoscopy_core'],
                                           optional_item_codes=self.module.item_codes_bladder_can[
-                                              'screening_biopsy_optional'])
+                                              'screening_biopsy_endoscopy_cystoscopy_optional'])
 
         if cons_avail:
             # Use a biopsy to diagnose whether the person has bladder Cancer

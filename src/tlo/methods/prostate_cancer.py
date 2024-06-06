@@ -824,7 +824,7 @@ class HSI_ProstateCancer_Investigation_Following_psa_positive(HSI_Event, Individ
 
         cons_available = self.get_consumables(item_codes=self.module.item_codes_prostate_can['screening_biopsy_core'],
                                               optional_item_codes=self.module.item_codes_prostate_can[
-                                              'screening_biopsy_optional'])
+                                              'screening_biopsy_endoscopy_cystoscopy_optional'])
 
         if cons_available:
             # If consumables are available update the use of equipment and run the dx_test representing the biopsy

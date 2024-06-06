@@ -694,7 +694,8 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
         # Check consumables to undertake biopsy are available
         cons_avail = self.get_consumables(item_codes=self.module.item_codes_breast_can['screening_biopsy_core'],
                                           optional_item_codes=
-                                          self.module.item_codes_breast_can['screening_biopsy_optional'])
+                                          self.module.item_codes_breast_can[
+                                              'screening_biopsy_endoscopy_cystoscopy_optional'])
 
         if cons_avail:
             # Use a biopsy to diagnose whether the person has breast Cancer

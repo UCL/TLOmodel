@@ -692,7 +692,8 @@ class HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom(
         # Check consumables are available
         cons_avail = self.get_consumables(item_codes=self.module.item_codes_other_can['screening_biopsy_core'],
                                           optional_item_codes=
-                                          self.module.item_codes_other_can['screening_biopsy_optional'])
+                                          self.module.item_codes_other_can[
+                                              'screening_biopsy_endoscopy_cystoscopy_optional'])
 
         if cons_avail:
             # If consumables are available add used equipment and run the dx_test representing the biopsy

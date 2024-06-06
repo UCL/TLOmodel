@@ -686,10 +686,10 @@ class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, Individ
             return hs.get_blank_appt_footprint()
 
         # Check the consumables are available
-        # todo: DISCUSS - add endoscope consumable to screening biopsy
-        cons_avail = self.get_consumables(item_codes=self.module.item_codes_oesophageal_can['screening_biopsy_core'],
+        cons_avail = self.get_consumables(item_codes=self.module.item_codes_oesophageal_can['screening_endoscopy_core'],
                                           optional_item_codes=
-                                          self.module.item_codes_oesophageal_can['screening_biopsy_optional'])
+                                          self.module.item_codes_oesophageal_can[
+                                              'screening_biopsy_endoscopy_cystoscopy_optional'])
 
         if cons_avail:
             # If consumables are available add used equipment and run the dx_test representing the biopsy
