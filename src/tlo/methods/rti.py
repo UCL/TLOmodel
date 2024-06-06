@@ -4815,8 +4815,6 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
             assert df.loc[person_id, 'rt_diagnosed'], 'This person has not been through a and e'
             assert df.loc[person_id, 'rt_med_int'], 'This person has not been through rti med int'
 
-            # TODO: @Joe to confirm major surgery pkg should be used here (as the original set of equipment here was not
-            #  the full pkg)
             self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
 
             # ------------------------ Track permanent disabilities with treatment -------------------------------------
@@ -5134,8 +5132,6 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
         # todo: think about consequences of certain consumables not being available for minor surgery and model health
         #  outcomes
         if request_outcome:
-            # TODO: @Joe to confirm major surgery pkg should be used here (as the original set of equipment here was not
-            #  the full pkg)
             self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
 
             # create a dictionary to store the recovery times for each injury in days
