@@ -2553,14 +2553,34 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         # Run the list of population-level HSI events
         self.module.run_population_level_events(list_of_population_hsi_event_tuples_due_today)
 
+    def refresh_beddays_inpatients(self) -> None:
+        """
+        At the start of a new day, refresh the hs_is_inpatient column
+        of the population DataFrame to reflect the current inpatients.
+
+        The BedDays instance removes expired bed occupancies at the end
+        of the previous day, so bed_days.all_inpatients reflects those
+        persons who are still occupying a bed space until the end of
+        the current date (at least).
+
+        TODO: We can likely drop the hs_is_inpatient column of the dataframe
+        too, and save on a costly update write each day. We would need
+        to workaround the fact that multiple modules rely on accessing this
+        DataFrame column, but something like a temporary method to create a
+        corresponding series to mimic it might be sufficient.
+        """
+        alive_persons = self.sim.population.props.is_alive
+        new_inpatients = alive_persons.index.intersection(
+            self.module.bed_days.all_inpatients
+        )
+        self.sim.population.props.loc[alive_persons, "hs_is_inpatient"] = False
+        self.sim.population.props.loc[new_inpatients, "hs_is_inpatient"] = True
+
     def apply(self, population):
 
         # Refresh information ready for new day:
         # Update list of inpatients for other modules that need this info
-        # TODO: We can likely drop this column of the dataframe too,
-        # with sufficient workarounds
-        self.sim.population.props.loc["hs_is_inpatient"] = False
-        self.sim.population.props.loc[self.module.bed_days.all_inpatients, "hs_is_inpatient"] = True
+        self.refresh_beddays_inpatients()
         # Perform start of day operations for consumables
         self.module.consumables.on_start_of_day(self.sim.date)
 
