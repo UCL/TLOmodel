@@ -1,6 +1,6 @@
 {
   "scenario_script_path": "src/scripts/schistosomiasis/calibrate_batch_runs.py",
-  "scenario_seed": 11412,
+  "scenario_seed": 15153,
   "runs_per_draw": 1,
   "draws": [
     {
@@ -34,8 +34,40 @@
           "calibration_scenario": 4.0
         }
       }
+    },
+    {
+      "draw_number": 4,
+      "parameters": {
+        "Schisto": {
+          "calibration_scenario": 5.0
+        }
+      }
+    },
+    {
+      "draw_number": 5,
+      "parameters": {
+        "Schisto": {
+          "calibration_scenario": 6.0
+        }
+      }
+    },
+    {
+      "draw_number": 6,
+      "parameters": {
+        "Schisto": {
+          "calibration_scenario": 7.0
+        }
+      }
+    },
+    {
+      "draw_number": 7,
+      "parameters": {
+        "Schisto": {
+          "calibration_scenario": 8.0
+        }
+      }
     }
   ],
-  "commit": "559403a63ab5101122d56fca1039572555b15c55",
-  "github": "https://github.com/UCL/TLOmodel/tree/559403a63ab5101122d56fca1039572555b15c55"
+  "commit": "892f5b4f8a7501d1583eadc969236cdd24850caf",
+  "github": "https://github.com/UCL/TLOmodel/tree/892f5b4f8a7501d1583eadc969236cdd24850caf"
 }
