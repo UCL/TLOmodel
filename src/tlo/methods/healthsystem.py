@@ -1556,9 +1556,10 @@ class HealthSystem(Module):
         to reflect the current (alive) persons who are inpatients.
         """
         is_alive = self.sim.population.props.is_alive
-        self.sim.population.props["hs_is_inpatient"] = is_alive & is_alive.index.isin(
+        hs_is_inpatient = is_alive[is_alive].index.isin(
             self.bed_days.all_inpatients
         )
+        self.sim.population.props.loc[is_alive, "hs_is_inpatient"] = hs_is_inpatient
 
     def get_appt_footprint_as_time_request(self, facility_info: FacilityInfo, appt_footprint: dict):
         """
