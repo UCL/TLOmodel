@@ -126,35 +126,36 @@ def topologically_sort_modules(
             dependencies = get_dependencies(
                 module_instance_map[module], module_instance_map.keys()
             )
-            module_instance = get_module_class_map(set())
+            module_class_map = get_module_class_map(set())
             for dependency in sorted(dependencies):
                 if dependency not in module_instance_map:
-                    if auto_register_dependencies:
-                        # add missing dependencies and associated classes in module instance map dictionary
-                        module_instance_map[dependency] = module_instance[dependency](resourcefilepath=resourcefilepath)
+                    alternatives_with_instances = [
+                        name for name, instance in module_instance_map.items()
+                        if dependency in instance.ALTERNATIVE_TO
+                    ]
+                    if len(alternatives_with_instances) == 0 and auto_register_dependencies:
+                        module_instance_map[dependency] = module_class_map[dependency](
+                            resourcefilepath=resourcefilepath
+                        )
                         yield from depth_first_search(dependency)
-                    else:
-                        alternatives_with_instances = [
-                            name for name, instance in module_instance_map.items()
-                            if dependency in instance.ALTERNATIVE_TO
-                        ]
-                        if len(alternatives_with_instances) != 1:
-                            message = (
-                                f'Module {module} depends on {dependency} which is '
-                                'missing from modules to register'
-                            )
-                            if len(alternatives_with_instances) == 0:
-                                message += f' as are any alternatives to {dependency}.'
-                            else:
-                                message += (
-                                    ' and there are multiple alternatives '
-                                    f'({alternatives_with_instances}) so which '
-                                    'to use to resolve dependency is ambiguous.'
-                                )
-                            raise ModuleDependencyError(message)
 
+                    elif len(alternatives_with_instances) != 1:
+                        message = (
+                            f'Module {module} depends on {dependency} which is '
+                            'missing from modules to register'
+                        )
+                        if len(alternatives_with_instances) == 0:
+                            message += f' as are any alternatives to {dependency}.'
                         else:
-                            yield from depth_first_search(alternatives_with_instances[0])
+                            message += (
+                                ' and there are multiple alternatives '
+                                f'({alternatives_with_instances}) so which '
+                                'to use to resolve dependency is ambiguous.'
+                            )
+                        raise ModuleDependencyError(message)
+
+                    else:
+                        yield from depth_first_search(alternatives_with_instances[0])
 
                 else:
                     yield from depth_first_search(dependency)

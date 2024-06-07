@@ -16,7 +16,7 @@ from tlo.dependencies import (
     get_module_class_map,
     topologically_sort_modules,
 )
-from tlo.methods import copd, demography
+from tlo.methods import copd, demography, hiv, simplified_births
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / "../resources"
@@ -309,6 +309,8 @@ def test_auto_register_module_dependencies(tmpdir):
 
     # re-register modules with auto-register-module argument set to True
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 hiv.Hiv(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  copd.Copd(resourcefilepath=resourcefilepath),
                  auto_register_dependencies=True)
     # get module dependencies
