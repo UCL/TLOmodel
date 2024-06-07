@@ -963,9 +963,19 @@ class SchistoSpecies:
             age_grp
         ], observed=False)[prop('aggregate_worm_burden')].mean()
 
+        overall_mean = df.loc[df.is_alive].groupby(
+            'district_of_residence'
+        )[prop('aggregate_worm_burden')].mean()
+
         logger.info(
-            key=f'mean_worm_burden_{self.name}',
+            key=f'mean_worm_burden_by_age_{self.name}',
             data=flatten_multi_index_series_into_dict_for_logging(data),
+            description='Mean worm burden of this species by age-group and district.'
+        )
+
+        logger.info(
+            key=f'mean_worm_burden_by_district_{self.name}',
+            data=overall_mean.to_dict(),
             description='Mean worm burden of this species by age-group and district.'
         )
 
