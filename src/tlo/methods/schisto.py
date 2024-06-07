@@ -169,7 +169,7 @@ class Schisto(Module):
             df['district_num_of_residence'] = df['district_num_of_residence'][0]
 
             # replacement_value = df['district_of_residence'].cat.categories[0]
-            replacement_value = 'Blantyre'
+            replacement_value = 'Likoma'  # chosen as both species have high harbouring rate
             # Assign the replacement value to the entire column while preserving categorical dtype
             df['district_of_residence'] = pd.Categorical([replacement_value] * len(df),
                                                          categories=df['district_of_residence'].cat.categories)

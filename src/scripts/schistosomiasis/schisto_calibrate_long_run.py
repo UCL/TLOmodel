@@ -53,7 +53,7 @@ popsize = 5_000
 
 def run_simulation(popsize=popsize, mda_execute=False):
     start_date = Date(2010, 1, 1)
-    end_date = Date(2030, 12, 31)
+    end_date = Date(2020, 12, 31)
 
     # For logging, set all modules to WARNING threshold, then alters `Schisto` to level "INFO"
     custom_levels = {

@@ -20,7 +20,8 @@ df = pd.read_excel(outputpath / 'ESPEN_district_data.xlsx', sheet_name='Sheet1')
 df_filtered = df[df['SurveyYear'] < 2015]
 
 # Step 2: Group by ADMIN2_NAME and SCH_spp, and calculate the mean Prevalence
-grouped = df_filtered.groupby(['ADMIN2_NAME', 'SCH_spp'])['Prevalence'].mean().reset_index()
+# grouped = df_filtered.groupby(['ADMIN2_NAME', 'SCH_spp'])['Prevalence'].mean().reset_index()
+grouped = df_filtered.groupby(['ADMIN2_NAME', 'SCH_spp'])['Prevalence'].agg(['mean', 'min', 'max']).reset_index()
 
 # Step 3: Define a function to classify the mean prevalence
 def classify_prevalence(prevalence):
@@ -34,6 +35,12 @@ def classify_prevalence(prevalence):
         return 'high'
 
 # Apply the classification to the mean prevalence
-grouped['classification'] = grouped['Prevalence'].apply(classify_prevalence)
+grouped['classification'] = grouped['mean'].apply(classify_prevalence)
 
-grouped.to_csv(outputpath / 'summary_schisto_prevalence_data.csv')
+summary_df = grouped.rename(columns={
+    'mean': 'mean_prevalence',
+    'min': 'min_prevalence',
+    'max': 'max_prevalence'
+})
+
+summary_df.to_csv(outputpath / 'summary_schisto_prevalence_data.csv')
