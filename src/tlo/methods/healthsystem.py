@@ -1556,9 +1556,13 @@ class HealthSystem(Module):
         to reflect the current (alive) persons who are inpatients.
         """
         is_alive = self.sim.population.props.is_alive
-        self.sim.population.props["hs_is_inpatient"] = is_alive & is_alive.index.isin(
+        hs_is_inpatient = is_alive[is_alive].index.isin(
             self.bed_days.all_inpatients
-        )
+        ) #TODO: STILL an issue here - 9672 didn't get footprint removed with these changes,
+        # but on master they do. Continue the research. 2010-08-04 is the relevant date to check things on.
+        if self.sim.date == Date("2010-08-04"):
+            print("Debug halt")
+        self.sim.population.props.loc[is_alive, "hs_is_inpatient"] = hs_is_inpatient
 
     def get_appt_footprint_as_time_request(self, facility_info: FacilityInfo, appt_footprint: dict):
         """
@@ -2398,10 +2402,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         # than medical staff leaving earlier than
                         # planned if seeing another patient would take them into overtime.
 
-                        from tlo.methods.alri import Alri
-                        if self.sim.date == Date("2010-01-23") and isinstance(event.module, Alri):
-                            print("Debug halt")
-
                         if out_of_resources:
 
                             # Do not run,
@@ -2444,9 +2444,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             # Check that a facility has been assigned to this HSI
                             assert event.facility_info is not None, \
                                 f"Cannot run HSI {event.TREATMENT_ID} without facility_info being defined."
-
-                            if self.sim.date == Date("2010-01-23") and isinstance(event.module, Alri):
-                                print("Debug halt")
 
                             # Check if equipment declared is available. If not, call `never_ran` and do not run the
                             # event. (`continue` returns flow to beginning of the `while` loop)

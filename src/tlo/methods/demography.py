@@ -533,13 +533,21 @@ class Demography(Module):
 
         # Release any beds-days that would be used by this person:
         if 'HealthSystem' in self.sim.modules:
+            from tlo.methods.bed_days import DEBUGGER
+
+            DEBUGGER.write(f"{self.sim.date} Death of patient {individual_id} |")
             if person.hs_is_inpatient:
                 # NOTE: This does means that if the person was an inpatient,
                 # they will continue to be flagged as an inpatient for all time,
                 # since dead persons do not have their hs_is_inpatient column
                 # updated at any point. This is consistent with the original
                 # behaviour.
-                self.healthsystem.bed_days.remove_patient_footprint(patient_id=individual_id)
+                self.healthsystem.bed_days.remove_patient_footprint(
+                    patient_id=individual_id
+                )
+                DEBUGGER.write(
+                    f"\tFootprint removal was called (person.hs_is_inpatient = {person.hs_is_inpatient})"
+                )
 
     def create_mappers_from_causes_of_death_to_label(self):
         """Use a helper function to create mappers for causes of death to label."""
