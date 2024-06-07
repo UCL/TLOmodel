@@ -53,7 +53,7 @@ popsize = 5_000
 
 def run_simulation(popsize=popsize, mda_execute=False):
     start_date = Date(2010, 1, 1)
-    end_date = Date(2012, 12, 31)
+    end_date = Date(2030, 12, 31)
 
     # For logging, set all modules to WARNING threshold, then alters `Schisto` to level "INFO"
     custom_levels = {
@@ -77,7 +77,7 @@ def run_simulation(popsize=popsize, mda_execute=False):
                                  scaleup_WASH=False),
                  )
 
-    sim.modules["Schisto"].parameters["calibration_scenario"] = 1.0
+    sim.modules["Schisto"].parameters["calibration_scenario"] = 8.0
 
     # initialise the population
     sim.make_initial_population(n=popsize)
@@ -134,7 +134,7 @@ def get_model_prevalence_by_district(spec: str, year: int):
     _df = dfs[f'infection_status_{spec}']
     t = _df.loc[_df.index.year == year].iloc[-1]  # gets the last entry for 2010 (Dec)
     counts = t.unstack(level=1).groupby(level=0).sum().T
-    return ((counts['High-infection'] + counts['Low-infection']) / counts.sum(axis=1)).to_dict()
+    return ((counts['High-infection'] + counts['Moderate-infection'] + counts['Low-infection']) / counts.sum(axis=1)).to_dict()
 
 
 def get_expected_prevalence_by_district(species: str):
@@ -155,7 +155,7 @@ def get_model_prevalence_by_district_over_time(spec: str):
     # Aggregate the sums of infection statuses by district_of_residence and year
     district_sums = df.groupby(level='district_of_residence', axis=1).sum()
 
-    filtered_columns = df.columns.get_level_values('infection_status').isin(['High-infection', 'Low-infection'])
+    filtered_columns = df.columns.get_level_values('infection_status').isin(['High-infection', 'Moderate-infection', 'Low-infection'])
     infected = df.loc[:, filtered_columns].groupby(level='district_of_residence', axis=1).sum()
 
     prop_infected = infected.div(district_sums)

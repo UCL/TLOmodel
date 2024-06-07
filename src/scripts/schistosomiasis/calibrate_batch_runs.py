@@ -31,7 +31,7 @@ from tlo.methods import (
 )
 from tlo.scenario import BaseScenario
 
-number_of_draws = 4  # todo reset
+number_of_draws = 8  # todo reset
 runs_per_draw = 1
 
 
@@ -75,7 +75,7 @@ class TestScenario(BaseScenario):
 
         return {
             'Schisto': {
-                'calibration_scenario': [1.0, 2.0, 3.0, 4.0][draw_number],
+                'calibration_scenario': [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0][draw_number],
             },
         }
 

@@ -28,7 +28,7 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 resourcefilepath = Path("./resources")
 outputpath = Path("./outputs/t.mangal@imperial.ac.uk")
 
-results_folder = Path("outputs/schisto_calibration-2024-06-05T133315Z")
+# results_folder = Path("outputs/schisto_calibration-2024-06-05T133315Z")
 
 # azure runs
 # results_folder = Path("outputs/t.mangal@imperial.ac.uk/calibration-2024-05-24T110817Z")
@@ -61,7 +61,7 @@ def get_model_prevalence_by_district_over_time(_df):
 
     # todo limit to SAC
     # df = df.filter(like='Adult')
-    # df = df.filter(like='SAC')
+    df = df.filter(like='SAC')
 
     # Aggregate the sums of infection statuses by district_of_residence and year
     district_sum = df.sum(axis=1)
@@ -71,7 +71,8 @@ def get_model_prevalence_by_district_over_time(_df):
     # df_filtered = df.filter(regex='(Low-infection)')
     # df_filtered = df.filter(regex='(High-infection)')
     # df_filtered = df.filter(regex='(Moderate-infection|Low-infection)')
-    df_filtered = df.filter(regex='(High-infection|Moderate-infection|Low-infection)')
+    df_filtered = df.filter(regex='(Moderate-infection|High-infection)')
+    # df_filtered = df.filter(regex='(High-infection|Moderate-infection|Low-infection)')
 
     infected = df_filtered.sum(axis=1)
 

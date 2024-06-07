@@ -825,31 +825,61 @@ class SchistoSpecies:
             # reservoir = num_infected * params['mean_worm_burden2010'][district]
 
             # select starting points
+            # HAEMATOBIUM CALIBRATION
             if global_params['calibration_scenario'] == 1:
-                if self.name == 'haematobium':
-                    params['mean_worm_burden2010'][:] = 1.0
-                # set mansoni to 0
-                else:
-                    params['mean_worm_burden2010'][:] = 0
-
-            if global_params['calibration_scenario'] == 2:
-                if self.name == 'haematobium':
-                    params['mean_worm_burden2010'][:] = 1.5
-                # set mansoni to 0
-                else:
-                    params['mean_worm_burden2010'][:] = 0
-
-            if global_params['calibration_scenario'] == 3:
                 if self.name == 'haematobium':
                     params['mean_worm_burden2010'][:] = 2.0
                 # set mansoni to 0
                 else:
                     params['mean_worm_burden2010'][:] = 0
 
+            if global_params['calibration_scenario'] == 2:
+                if self.name == 'haematobium':
+                    params['mean_worm_burden2010'][:] = 5.0
+                # set mansoni to 0
+                else:
+                    params['mean_worm_burden2010'][:] = 0
+
+            if global_params['calibration_scenario'] == 3:
+                if self.name == 'haematobium':
+                    params['mean_worm_burden2010'][:] = 10.0
+                # set mansoni to 0
+                else:
+                    params['mean_worm_burden2010'][:] = 0
+
             if global_params['calibration_scenario'] == 4:
                 if self.name == 'haematobium':
-                    params['mean_worm_burden2010'][:] = 2.5
+                    params['mean_worm_burden2010'][:] = 25.0
                 # set mansoni to 0
+                else:
+                    params['mean_worm_burden2010'][:] = 0
+
+            # MANSONI CALIBRATION
+            if global_params['calibration_scenario'] == 5:
+                if self.name == 'mansoni':
+                    params['mean_worm_burden2010'][:] = 2.0
+                # set haematobium to 0
+                else:
+                    params['mean_worm_burden2010'][:] = 0
+
+            if global_params['calibration_scenario'] == 6:
+                if self.name == 'mansoni':
+                    params['mean_worm_burden2010'][:] = 5.0
+                # set haematobium to 0
+                else:
+                    params['mean_worm_burden2010'][:] = 0
+
+            if global_params['calibration_scenario'] == 7:
+                if self.name == 'mansoni':
+                    params['mean_worm_burden2010'][:] = 10.0
+                # set haematobium to 0
+                else:
+                    params['mean_worm_burden2010'][:] = 0
+
+            if global_params['calibration_scenario'] == 8:
+                if self.name == 'mansoni':
+                    params['mean_worm_burden2010'][:] = 25.0
+                # set haematobium to 0
                 else:
                     params['mean_worm_burden2010'][:] = 0
 
