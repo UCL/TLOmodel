@@ -83,9 +83,10 @@ class MaternalNewbornHealthCohort(Module):
         cohort_prop_df2 = t['properties_of_pregnant_person']
         cohort_prop_df_for_pop = cohort_prop_df2.loc[0:(len(self.sim.population.props))-1]
         self.sim.population.props = cohort_prop_df_for_pop
-
+        self.sim.population.props.index.name = 'person'
         #
         # # todo: pd.NaT values are not carried over when excel file was created.
+        # todo replace with pickles
         # # df = self.sim.population.props
         # # population = df.loc[df.is_alive]
         # # for column in df.columns:
