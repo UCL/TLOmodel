@@ -29,7 +29,7 @@ class ImpactOfConsumablesScenarios(BaseScenario):
         super().__init__()
         self.seed = 99
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2019, 12, 31)
+        self.end_date = Date(2011, 12, 31)
         self.pop_size = 50 # large population size for final simulation
         self.number_of_draws = 2  # <- 10 scenarios (10)
         self.runs_per_draw = 2  # <- repeated this many times
