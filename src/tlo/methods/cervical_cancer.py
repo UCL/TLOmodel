@@ -8,9 +8,8 @@ but we agree not now
 """
 
 
-#todo: add probability of seeking care given vaginal bleeding (victor guesses ~ 30% seek care promptly)
+#todo: add rate of seeking care given vaginal bleeding (victor guesses ~ 30% seek care promptly)
 #todo: vary odds_ratio_health_seeking_in_adults=4.00
-
 #todo: add probability of referral for biopsy given presentation with vaginal bleeding
 
 
@@ -282,11 +281,10 @@ class CervicalCancer(Module):
                           sheet_name="parameter_values")
         )
 
-        # todo: specify this odds ratio in parameter file if possible'
-        # Register Symptom that this module will use
+        # note that health seeking probability quite high even though or =1
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(name='vaginal_bleeding',
-                    odds_ratio_health_seeking_in_adults=2.00)
+                    odds_ratio_health_seeking_in_adults=1.00)
         )
 
 # todo: in order to implement screening for cervical cancer creating a dummy symptom - likely there is a better way
@@ -787,14 +785,16 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
 class HSI_CervicalCancer_AceticAcidScreening(HSI_Event, IndividualScopeEventMixin):
 
-    # todo: make this event scheduled by contraception module
     # todo: revisit Warning from healthsystem.py "Couldn't find priority ranking for TREATMENT_ID"
-    # todo: may want to modify slightly to reflect this: biopsy is taken if via looks abnormal and the facility
-    # todo: has the capacity to take a biopsy - otherwise cryotherapy is performed
 
     """
     This event will be scheduled by family planning HSI - for now we determine at random a screening event
     and we determine at random whether this is AceticAcidScreening or HPVXpertScreening
+
+    In future this might be scheduled by the contraception module
+
+    may in future want to modify slightly to reflect this: biopsy is taken if via looks abnormal and the facility
+    has the capacity to take a biopsy - otherwise cryotherapy is performed
     """
 
     def __init__(self, module, person_id):
@@ -865,10 +865,11 @@ class HSI_CervicalCancer_AceticAcidScreening(HSI_Event, IndividualScopeEventMixi
 
 class HSI_CervicalCancer_XpertHPVScreening(HSI_Event, IndividualScopeEventMixin):
 
-    # todo: make this event scheduled by contraception module
     """
-    This event will be scheduled by family planning HSI - for now we determine at random a screening event
-    and we determine at random whether this is AceticAcidScreening or HPVXpertScreening
+     This event will be scheduled by family planning HSI - for now we determine at random a screening event, and
+     we determine at random whether this is AceticAcidScreening or HPVXpertScreening
+
+     In future this might be scheduled by the contraception module
     """
 
     def __init__(self, module, person_id):
@@ -1468,13 +1469,6 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Set the display width to a large value to fit all columns in one row
         pd.set_option('display.width', 1000)
 
-#       selected_columns = ['ce_hpv_cc_status',
-#                           'ce_selected_for_xpert_this_month', 'sy_chosen_xpert_screening_for_hpv_cervical_cancer',
-#                           'ce_xpert_hpv_ever_pos', 'ce_biopsy', 'ce_date_cryo',
-#                           'sy_vaginal_bleeding', 'ce_current_cc_diagnosed', 'ce_date_diagnosis', 'ce_date_treatment',
-#                           'ce_date_palliative_care', 'ce_selected_for_via_this_month', 'sy_chosen_via_screening_for_cin_cervical_cancer',
-#                           'ce_via_cin_ever_detected']
-
         selected_columns = ["ce_hpv_cc_status",
         "ce_date_treatment",
         "ce_stage_at_which_treatment_given",
@@ -1495,12 +1489,20 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         "ce_selected_for_xpert_this_month",
         "ce_biopsy"]
 
-        selected_columns = ["hv_inf", "ce_hpv_cc_status"]
 
-        selected_rows = df[(df['sex'] == 'F') & (df['age_years'] > 15) & df['is_alive'] & df['hv_inf']]
+        selected_columns = ['ce_hpv_cc_status', 'sy_vaginal_bleeding', 'ce_biopsy','ce_current_cc_diagnosed',
+        'ce_selected_for_xpert_this_month', 'sy_chosen_xpert_screening_for_hpv_cervical_cancer',
+        'ce_xpert_hpv_ever_pos', 'ce_date_cryo',
+        'ce_date_diagnosis', 'ce_date_treatment',
+        'ce_date_palliative_care', 'ce_selected_for_via_this_month', 'sy_chosen_via_screening_for_cin_cervical_cancer',
+        'ce_via_cin_ever_detected']
+
+#       selected_columns = ["hv_inf", "ce_hpv_cc_status", "ce_hiv_unsuppressed"]
+
+        selected_rows = df[(df['sex'] == 'F') & (df['age_years'] > 15) & df['is_alive']]
 
         pd.set_option('display.max_rows', None)
-#       print(selected_rows[selected_columns])
+        print(selected_rows[selected_columns])
 
 #       selected_columns = ['sex', 'age_years', 'is_alive']
 #       pd.set_option('display.max_rows', None)
