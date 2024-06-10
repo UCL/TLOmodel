@@ -61,7 +61,7 @@ class CardioMetabolicDisorders(Module):
 
     INIT_DEPENDENCIES = {'Demography', 'Lifestyle', 'HealthSystem', 'SymptomManager'}
 
-    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'Hiv'}
 
     ADDITIONAL_DEPENDENCIES = {'Depression'}
 
@@ -598,9 +598,7 @@ class CardioMetabolicDisorders(Module):
         # LinearModel expects native python types - if it's numpy type, convert it
         baseline_annual_probability = float(baseline_annual_probability)
 
-        linearmodel = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            baseline_annual_probability,
+        predictors = [
             Predictor('sex').when('M', p['rr_male']),
             Predictor(
                 'age_years',
@@ -693,6 +691,17 @@ class CardioMetabolicDisorders(Module):
                 'rr_chronic_ischemic_heart_disease_on_medication']),
             Predictor('nc_ever_stroke_on_medication').when(True, p['rr_stroke_on_medication']),
             Predictor('nc_ever_heart_attack_on_medication').when(True, p['rr_heart_attack_on_medication'])
+        ]
+
+        conditional_predictors = [
+            Predictor().when('hv_inf & '
+                             '(hv_art != "on_VL_suppressed")', p['rr_hiv']),
+        ] if "Hiv" in self.sim.modules else []
+
+        linearmodel = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            baseline_annual_probability,
+            *(predictors + conditional_predictors)
         )
 
         return linearmodel
@@ -1591,10 +1600,23 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
             return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         assert person[f'nc_{self.condition}_ever_diagnosed'], "The person is not diagnosed and so should not be " \
                                                               "receiving an HSI."
+
+        # Monthly doses of medications as follows. Diabetes - 1000mg metformin daily (1000*30.5),
+        # hypertension - 25mg hydrochlorothiazide daily (25*30.5), CKD 1 dialysis bag (estimate),
+        # lower back pain - 2400mg aspirin daily  (2400*30.5), CIHD - 75mg aspirin daily (75*30.5)
+        dose = {'diabetes': 30_500,
+                'hypertension': 610,
+                'chronic_kidney_disease': 1,
+                'chronic_lower_back_pain': 73_200,
+                'chronic_ischemic_hd': 2288,
+                'ever_stroke': 2288,
+                'ever_heart_attack': 2288}
+
         # Check availability of medication for condition
-        if self.get_consumables(
-            item_codes=self.module.parameters[f'{self.condition}_hsi'].get('medication_item_code').astype(int)
-        ):
+        if self.get_consumables(item_codes=
+                                {self.module.parameters[f'{self.condition}_hsi'].get(
+                                    'medication_item_code').astype(int): dose[self.condition]}):
+
             # If medication is available, flag as being on medication
             df.at[person_id, f'nc_{self.condition}_on_medication'] = True
             # Determine if the medication will work to prevent death
@@ -1660,10 +1682,21 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
             # Return the blank_appt_footprint() so that this HSI does not occupy any time resources
             return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
 
+        # Monthly doses of medications as follows. Diabetes - 1000mg metformin daily (1000*30.5),
+        # hypertension - 25mg hydrochlorothiazide daily (25*30.5), CKD 1 dialysis bag (estimate),
+        # lower back pain - 2400mg aspirin daily  (2400*30.5), CIHD - 75mg aspirin daily (75*30.5)
+        dose = {'diabetes': 30_500,
+                'hypertension': 610,
+                'chronic_kidney_disease': 1,
+                'chronic_lower_back_pain': 73_200,
+                'chronic_ischemic_hd': 2288,
+                'ever_stroke': 2288,
+                'ever_heart_attack': 2288}
+
         # Check availability of medication for condition
         if self.get_consumables(
-            item_codes=self.module.parameters[f'{self.condition}_hsi'].get('medication_item_code').astype(int)
-        ):
+            item_codes={self.module.parameters[f'{self.condition}_hsi'].get('medication_item_code').astype(int)
+                        : dose[self.condition]}):
             # Schedule their next HSI for a refill of medication, one month from now
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=self,
@@ -1725,10 +1758,13 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
             df.at[person_id, f'nc_{_ev}_date_diagnosis'] = self.sim.date
             df.at[person_id, f'nc_{_ev}_ever_diagnosed'] = True
             if self.module.parameters['prob_care_provided_given_seek_emergency_care'] > self.module.rng.random_sample():
+
                 # If care is provided....
+                dose = 20 if _ev == 'ever_stroke' else 40
+
                 if self.get_consumables(
-                    item_codes=self.module.parameters[f'{_ev}_hsi'].get(
-                        'emergency_medication_item_code').astype(int)
+                    item_codes={self.module.parameters[f'{_ev}_hsi'].get(
+                        'emergency_medication_item_code').astype(int): dose}
                 ):
                     logger.debug(key='debug', data='Treatment will be provided.')
                     df.at[person_id, f'nc_{_ev}_on_medication'] = True
