@@ -138,7 +138,7 @@ class Consumables:
         else:
             raise ValueError
 
-    def _process_consumables_data(self, availability_data: pd.DataFrame, availability: str) -> Tuple[set, pd.Series]:
+    def _process_consumables_data(self, availability_data: pd.DataFrame) -> Tuple[set, pd.Series]:
         """Helper function for processing the consumables data, passed in here as pd.DataFrame that has been read-in by
         the HealthSystem.
         Returns: (i) the set of all recognised item_codes; (ii) pd.Series of the availability of
