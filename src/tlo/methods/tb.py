@@ -538,7 +538,7 @@ class Tb(Module):
             ),
         ]
         conditional_predictors = [
-            Predictor("nc_diabetes").when(True, p['rr_tb_diabetes1']),
+            Predictor("nc_diabetes").when(True, p['rr_tb_diabetes']),
         ] if "CardioMetabolicDisorders" in self.sim.modules else []
 
         self.lm["active_tb"] = LinearModel.multiplicative(
