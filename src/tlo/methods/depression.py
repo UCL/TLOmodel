@@ -39,7 +39,7 @@ class Depression(Module):
         'Demography', 'Contraception', 'HealthSystem', 'Lifestyle', 'SymptomManager'
     }
 
-    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'Hiv'}
 
     # Declare Metadata
     METADATA = {
@@ -318,10 +318,6 @@ class Depression(Module):
         ]
 
         conditional_predictors = [
-            Predictor('hv_inf').when(True, p['rr_depr_hiv']),
-        ] if "Hiv" in self.sim.modules else []
-
-        conditional_predictors = [
             Predictor().when(
                 'hv_inf & hv_diagnosed',
                 p["rr_depr_hiv"]),
@@ -562,7 +558,7 @@ class Depression(Module):
     ):
         """
         Returns True if any signs of depression are present, otherwise False.
-        
+
         Raises an error if the treatment type cannot be identified.
         """
         if treatment_id == "FirstAttendance_NonEmergency":
@@ -617,7 +613,7 @@ class Depression(Module):
         """
         This is called by any HSI event when depression is suspected or otherwise investigated.
 
-        At least one of the diagnosis_function or hsi_event arguments must be provided; if both 
+        At least one of the diagnosis_function or hsi_event arguments must be provided; if both
         are provided, the hsi_event argument is ignored.
         - If the hsi_event argument is provided, that event is used to access the diagnosis
         manager and run diagnosis tests.
@@ -957,9 +953,10 @@ class HSI_Depression_Start_Antidepressant(HSI_Event, IndividualScopeEventMixin):
                                                                  "receiving an HSI. "
 
         # Check availability of antidepressant medication
-        item_code = self.module.parameters['anti_depressant_medication_item_code']
+        # Dose is 25mg daily, patient provided with month supply - 25mg x 30.437 (days) = 761mg per month
+        item_code_with_dose = {self.module.parameters['anti_depressant_medication_item_code']: 761}
 
-        if self.get_consumables(item_codes=item_code):
+        if self.get_consumables(item_codes=item_code_with_dose):
             # If medication is available, flag as being on antidepressants
             df.at[person_id, 'de_on_antidepr'] = True
 
@@ -1000,7 +997,10 @@ class HSI_Depression_Refill_Antidepressant(HSI_Event, IndividualScopeEventMixin)
             return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
 
         # Check availability of antidepressant medication
-        if self.get_consumables(self.module.parameters['anti_depressant_medication_item_code']):
+        # Dose is 25mg daily, patient provided with month supply - 25mg x 30.437 (days) = 761mg per month
+        item_code_with_dose = {self.module.parameters['anti_depressant_medication_item_code']: 761}
+
+        if self.get_consumables(item_codes=item_code_with_dose):
             # Schedule their next HSI for a refill of medication, one month from now
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_Depression_Refill_Antidepressant(person_id=person_id, module=self.module),

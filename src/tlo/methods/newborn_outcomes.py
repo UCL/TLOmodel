@@ -265,7 +265,7 @@ class NewbornOutcomes(Module):
         'nb_preterm_birth_disab': Property(Types.CATEGORICAL, 'Disability associated with preterm delivery',
                                            categories=['none', 'mild_motor_and_cog', 'mild_motor', 'moderate_motor',
                                                        'severe_motor']),
-        'nb_congenital_anomaly': Property(Types.INT, 'Types of congenital anomaly of the newborn stored as bitset'),
+        'nb_congenital_anomaly': Property(Types.BITSET, 'Types of congenital anomaly of the newborn stored as bitset'),
         'nb_early_onset_neonatal_sepsis': Property(Types.BOOL, 'whether this neonate has developed neonatal sepsis'
                                                                ' following birth'),
         'nb_inj_abx_neonatal_sepsis': Property(Types.BOOL, 'If this neonate has injectable antibiotics as treatment '
@@ -377,43 +377,53 @@ class NewbornOutcomes(Module):
         This function defines the required consumables for each intervention delivered during this module and stores
         them in a module level dictionary called within HSIs
         """
-        get_list_of_items = pregnancy_helper_functions.get_list_of_items
+        ic = self.sim.modules['HealthSystem'].get_item_code_from_item_name
 
-        # ---------------------------------- IV DRUG ADMIN EQUIPMENT  -------------------------------------------------
-        self.item_codes_nb_consumables['iv_drug_equipment'] = \
-            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 18_each_CMST',
-                                     'Giving set iv administration + needle 15 drops/ml_each_CMST',
-                                     'Disposables gloves, powder free, 100 pieces per box'])
-
+        # First we store the item codes for the consumables for which their quantity varies for individuals based on
+        # length of pregnancy
         # ---------------------------------- BLOOD TEST EQUIPMENT ---------------------------------------------------
         self.item_codes_nb_consumables['blood_test_equipment'] = \
-            get_list_of_items(self, ['Disposables gloves, powder free, 100 pieces per box'])
+            {ic('Blood collecting tube, 5 ml'): 1,
+             ic('Cannula iv  (winged with injection pot) 18_each_CMST'): 1,
+             ic('Disposables gloves, powder free, 100 pieces per box'): 1
+             }
+        # ---------------------------------- IV DRUG ADMIN EQUIPMENT  -------------------------------------------------
+        self.item_codes_nb_consumables['iv_drug_equipment'] = \
+            {ic('Giving set iv administration + needle 15 drops/ml_each_CMST'): 1,
+             ic('Cannula iv  (winged with injection pot) 18_each_CMST'): 1,
+             ic('Disposables gloves, powder free, 100 pieces per box'): 1
+             }
 
         # -------------------------------------------- VITAMIN K ------------------------------------------
         self.item_codes_nb_consumables['vitamin_k'] = \
-            get_list_of_items(self, ['vitamin K1  (phytomenadione) 1 mg/ml, 1 ml, inj._100_IDA'])
+            {ic('vitamin K1  (phytomenadione) 1 mg/ml, 1 ml, inj._100_IDA'): 1}
 
         # -------------------------------------------- EYE CARE  ------------------------------------------
-        self.item_codes_nb_consumables['eye_care'] = get_list_of_items(
-            self, ['Tetracycline eye ointment, 1 %, tube 5 mg'])
+        self.item_codes_nb_consumables['eye_care'] = \
+            {ic('Tetracycline eye ointment, 1 %, tube 5 mg'): 5}
 
         # ------------------------------------- SEPSIS - FULL SUPPORTIVE CARE ---------------------------------------
+        # Whilst abx for newborns are weight based the maximum dose does not exceed the minimum unit for the costing
+        # model
         self.item_codes_nb_consumables['sepsis_supportive_care_core'] = \
-            get_list_of_items(self, ['Benzylpenicillin 1g (1MU), PFR_Each_CMST',
-                                     'Gentamicin 40mg/ml, 2ml_each_CMST',
-                                     'Oxygen, 1000 liters, primarily with oxygen cylinders'])
+            {ic('Benzylpenicillin 1g (1MU), PFR_Each_CMST'): 1,
+             ic('Gentamicin 40mg/ml, 2ml_each_CMST'): 1,
+             ic('Oxygen, 1000 liters, primarily with oxygen cylinders'): 5760  #
+             }
 
         self.item_codes_nb_consumables['sepsis_supportive_care_optional'] = \
-            get_list_of_items(self, ['Dextrose (glucose) 5%, 1000ml_each_CMST',
-                                     'Tube, feeding CH 8_each_CMST',
-                                     'Cannula iv  (winged with injection pot) 18_each_CMST',
-                                     'Giving set iv administration + needle 15 drops/ml_each_CMST',
-                                     'Disposables gloves, powder free, 100 pieces per box'])
+            {ic('Dextrose (glucose) 5%, 1000ml_each_CMST'): 500,
+             ic('Tube, feeding CH 8_each_CMST'): 1,
+             ic('Cannula iv  (winged with injection pot) 18_each_CMST'): 1,
+             ic('Giving set iv administration + needle 15 drops/ml_each_CMST'): 1,
+             ic('Disposables gloves, powder free, 100 pieces per box'): 1
+             }
 
         # ---------------------------------------- SEPSIS - ANTIBIOTICS ---------------------------------------------
-        self.item_codes_nb_consumables['sepsis_abx'] =\
-            get_list_of_items(self, ['Benzylpenicillin 1g (1MU), PFR_Each_CMST',
-                                     'Gentamicin 40mg/ml, 2ml_each_CMST'])
+        self.item_codes_nb_consumables['sepsis_abx'] = \
+            {ic('Benzylpenicillin 1g (1MU), PFR_Each_CMST'): 1,
+             ic('Gentamicin 40mg/ml, 2ml_each_CMST'): 1,
+             }
 
     def initialise_simulation(self, sim):
         # For the first period (2010-2015) we use the first value in each list as a parameter
@@ -969,8 +979,9 @@ class NewbornOutcomes(Module):
 
                 # check consumables
                 avail = pregnancy_helper_functions.return_cons_avail(
-                    self, hsi_event, self.item_codes_nb_consumables, core='sepsis_supportive_care_core',
-                    optional='sepsis_supportive_care_optional')
+                    self, hsi_event,
+                    cons=self.item_codes_nb_consumables['sepsis_supportive_care_core'],
+                    opt_cons=self.item_codes_nb_consumables['sepsis_supportive_care_optional'])
 
                 # Then, if the consumables are available, treatment for sepsis is delivered
                 if avail and sf_check:
@@ -980,8 +991,9 @@ class NewbornOutcomes(Module):
             # The same pattern is then followed for health centre care
             else:
                 avail = pregnancy_helper_functions.return_cons_avail(
-                    self, hsi_event, self.item_codes_nb_consumables, core='sepsis_abx',
-                    optional='iv_drug_equipment')
+                    self, hsi_event,
+                    cons=self.item_codes_nb_consumables['sepsis_abx'],
+                    opt_cons=self.item_codes_nb_consumables['iv_drug_equipment'])
 
                 if avail and sf_check:
                     df.at[person_id, 'nb_inj_abx_neonatal_sepsis'] = True
