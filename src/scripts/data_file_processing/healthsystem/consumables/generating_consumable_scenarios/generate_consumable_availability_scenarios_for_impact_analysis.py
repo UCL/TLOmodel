@@ -537,6 +537,7 @@ def generate_barplot_of_scenarios(_df, _x_axis_var, _filename):
             + labs(title = "Probability of availability across scenarios",
                    x=_x_axis_var,
                    y='Probability of availability')
+            + theme(axis_text_x=element_text(angle=45, hjust=1))
            )
     # Create the directory if it doesn't exist
     directory = outputfilepath / 'consumable_scenario_analysis'
