@@ -700,9 +700,10 @@ class BedDays:
         first_day: Date,
         patient_id: int,
         overlay_instead_of_combine: bool = False,
-    ) -> None:
+    ) -> bool:
         """
         Impose the footprint provided on the availability of beds.
+        Return True/False indicating whether or not the person is a new inpatient.
 
         In the event that the person is already an inpatient, it is necessary to
         reconcile their existing occupancies with the new ones they will receive
@@ -726,7 +727,7 @@ class BedDays:
         """
         # Exit if the footprint is empty
         if not footprint:
-            return
+            return False
         conflict_resolver = (
             self.resolve_overlapping_occupancies
             if overlay_instead_of_combine
@@ -745,6 +746,7 @@ class BedDays:
             occurs_between_dates=(first_day, new_footprint_end_date),
         )
 
+        is_new_inpatient = True
         if conflicting_occupancies:
             # This person is already an inpatient.
             # For those occupancies that conflict, we will need to overwrite the lower
@@ -757,9 +759,14 @@ class BedDays:
             # before we add the resolved conflicts
             self.end_occupancies(*conflicting_occupancies)
 
+            # This person is not a new inpatient
+            is_new_inpatient = False
+
         # Schedule the new occupancies, which are now conflict-free
         # (if they weren't already)
         self.schedule_occupancies(*new_occupancies)
+
+        return is_new_inpatient
 
     def issue_bed_days_according_to_availability(
         self, start_date: Date, facility_id: int, requested_footprint: BedDaysFootprint
