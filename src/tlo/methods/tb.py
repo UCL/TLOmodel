@@ -9,7 +9,7 @@ from functools import reduce
 
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import DateOffset, Date, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, hiv
@@ -372,6 +372,16 @@ class Tb(Module):
             Types.INT,
             "last year for which data are available",
         ),
+        # ------------------ scale-up parameters for scenario analysis ------------------ #
+        "do_scaleup": Parameter(
+            Types.BOOL,
+            "argument to determine whether scale-up of program will be implemented"),
+        "scaleup_start_date": Parameter(
+            Types.DATE,
+            "date at which program scale-up will occur"),
+        "scaleup_parameters": Parameter(
+            Types.DATA_FRAME,
+            "list of parameters and values changed in scenario analysis")
     }
 
     def read_parameters(self, data_folder):
@@ -408,6 +418,9 @@ class Tb(Module):
             .unique()
             .tolist()
         )
+
+        # load parameters for scale-up projections
+        p["scaleup_parameters"] = workbook["scaleup_parameters"]
 
         # 2) Get the DALY weights
         if "HealthBurden" in self.sim.modules.keys():
@@ -839,6 +852,17 @@ class Tb(Module):
         sim.schedule_event(TbSelfCureEvent(self), sim.date)
         sim.schedule_event(TbActiveCasePoll(self), sim.date + DateOffset(years=1))
 
+        # Optional: Schedule the scale-up of programs
+        if self.parameters["do_scaleup"]:
+            scaleup_start_date = self.parameters["scaleup_start_date"]
+
+            assert isinstance(scaleup_start_date, Date), "Value is not a Date object"
+            # Check if scale-up start date is on or after sim start date
+            assert scaleup_start_date >= Date(2010, 1, 1), \
+                f"Date {scaleup_start_date} is before January 1, 2010"
+
+            sim.schedule_event(ScaleUpSetupEvent(self), self.parameters["scaleup_start_date"])
+
         # 2) log at the end of the year
         sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(years=1))
 
@@ -850,6 +874,40 @@ class Tb(Module):
             sim.schedule_event(
                 TbCheckPropertiesEvent(self), sim.date + pd.DateOffset(months=1)
             )
+
+    def update_parameters(self):
+
+        p = self.parameters
+        scaled_params = p["scaleup_parameters"]
+
+        if p["do_scaleup"]:
+
+            # scale-up TB program
+            # use NTP treatment rates
+            p["rate_testing_active_tb"]["treatment_coverage"] = scaled_params.loc[
+                scaled_params.parameter == "tb_treatment_coverage", "scaleup_value"].values[0]
+
+            # increase tb treatment success rates
+            p["prob_tx_success_ds"] = scaled_params.loc[
+                scaled_params.parameter == "tb_prob_tx_success_ds", "scaleup_value"].values[0]
+            p["prob_tx_success_mdr"] = scaled_params.loc[
+                scaled_params.parameter == "tb_prob_tx_success_mdr", "scaleup_value"].values[0]
+            p["prob_tx_success_0_4"] = scaled_params.loc[
+                scaled_params.parameter == "tb_prob_tx_success_0_4", "scaleup_value"].values[0]
+            p["prob_tx_success_5_14"] = scaled_params.loc[
+                scaled_params.parameter == "tb_prob_tx_success_5_14", "scaleup_value"].values[0]
+
+            # change first-line testing for TB to xpert
+            p["first_line_test"] = scaled_params.loc[
+                scaled_params.parameter == "first_line_test", "scaleup_value"].values[0]
+            p["second_line_test"] = scaled_params.loc[
+                scaled_params.parameter == "second_line_test", "scaleup_value"].values[0]
+
+            # increase coverage of IPT
+            p["ipt_coverage"]["coverage_plhiv"] = scaled_params.loc[
+                scaled_params.parameter == "ipt_coverage_plhiv", "scaleup_value"].values[0]
+            p["ipt_coverage"]["coverage_paediatric"] = scaled_params.loc[
+                scaled_params.parameter == "ipt_coverage_paediatric", "scaleup_value"].values[0]
 
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual
@@ -1355,6 +1413,21 @@ class TbRegularEvents(RegularEvent, PopulationScopeEventMixin):
 
         self.module.end_treatment(population)
         self.module.relapse_event(population)
+
+
+class ScaleUpSetupEvent(RegularEvent, PopulationScopeEventMixin):
+    """ This event exists to change parameters or functions
+    depending on the scenario for projections which has been set
+    It only occurs once on date: scaleup_start_date,
+    called by initialise_simulation
+    """
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(years=100))
+
+    def apply(self, population):
+
+        self.module.update_parameters()
 
 
 class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):

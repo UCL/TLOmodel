@@ -78,13 +78,20 @@ sim.register(
     ),
     hiv.Hiv(
         resourcefilepath=resourcefilepath,
-        scaleup_hiv=True, scaleup_tb=True, scaleup_malaria=True,
-        scaleup_start_date=Date(2010, 2, 1)
     ),
     epi.Epi(
         resourcefilepath=resourcefilepath,
     )
 )
+
+# update parameters
+sim.modules["Hiv"].parameters["do_scaleup"] = True
+sim.modules["Tb"].parameters["do_scaleup"] = True
+sim.modules["Malaria"].parameters["do_scaleup"] = True
+sim.modules["Hiv"].parameters["scaleup_start_date"] = Date(2011, 1, 1)
+sim.modules["Tb"].parameters["scaleup_start_date"] = Date(2011, 1, 1)
+sim.modules["Malaria"].parameters["scaleup_start_date"] = Date(2011, 1, 1)
+
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
@@ -99,5 +106,5 @@ with open(outputpath / "malaria_run.pickle", "wb") as f:
     pickle.dump(dict(output), f, pickle.HIGHEST_PROTOCOL)
 
 # load the results
-with open(outputpath / "default_run.pickle", "rb") as f:
+with open(outputpath / "malaria_run.pickle", "rb") as f:
     output = pickle.load(f)

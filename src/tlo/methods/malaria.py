@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, List, Literal, Optional, Union
 
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import DateOffset, Date, Module, Parameter, Property, Types, logging
 from tlo.core import DiagnosisFunction, IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, Predictor
@@ -182,6 +182,16 @@ class Malaria(Module):
         ),
         'highrisk_districts': Parameter(Types.LIST, 'list of four malaria high-risk districts'
         ),
+        # ------------------ scale-up parameters for scenario analysis ------------------ #
+        "do_scaleup": Parameter(
+            Types.BOOL,
+            "argument to determine whether scale-up of program will be implemented"),
+        "scaleup_start_date": Parameter(
+            Types.DATE,
+            "date at which program scale-up will occur"),
+        "scaleup_parameters": Parameter(
+            Types.DATA_FRAME,
+            "list of parameters and values changed in scenario analysis")
     }
 
     PROPERTIES = {
@@ -241,6 +251,9 @@ class Malaria(Module):
         p['inf_inc'] = pd.read_csv(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria_InfInc_expanded.csv')
         p['clin_inc'] = pd.read_csv(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria_ClinInc_expanded.csv')
         p['sev_inc'] = pd.read_csv(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria_SevInc_expanded.csv')
+
+        # load parameters for scale-up projections
+        p["scaleup_parameters"] = workbook["scaleup_parameters"]
 
         # check itn projected values are <=0.7 and rounded to 1dp for matching to incidence tables
         p['itn'] = round(p['itn'], 1)
@@ -654,6 +667,17 @@ class Malaria(Module):
             MalariaPrevDistrictLoggingEvent(self), sim.date + DateOffset(months=1)
         )
 
+        # Optional: Schedule the scale-up of programs
+        if self.parameters["do_scaleup"]:
+            scaleup_start_date = self.parameters["scaleup_start_date"]
+
+            assert isinstance(scaleup_start_date, Date), "Value is not a Date object"
+            # Check if scale-up start date is on or after sim start date
+            assert scaleup_start_date >= Date(2010, 1, 1), \
+                f"Date {scaleup_start_date} is before January 1, 2010"
+
+            sim.schedule_event(ScaleUpSetupEvent(self), self.parameters["scaleup_start_date"])
+
         # 2) ----------------------------------- DIAGNOSTIC TESTS -----------------------------------
         # Create the diagnostic test representing the use of RDT for malaria diagnosis
         # and registers it with the Diagnostic Test Manager
@@ -718,6 +742,61 @@ class Malaria(Module):
         self.item_codes_for_consumables_required['malaria_iptp'] = get_item_code(
             'Sulfamethoxazole + trimethropin, tablet 400 mg + 80 mg'
         )
+
+    def update_parameters(self):
+
+        p = self.parameters
+        scaled_params = p["scaleup_parameters"]
+
+        if p["do_scaleup"]:
+
+            # scale-up malaria program
+            # increase testing
+            # prob_malaria_case_tests=0.4 default
+            p["prob_malaria_case_tests"] = scaled_params.loc[
+                scaled_params.parameter == "prob_malaria_case_tests", "scaleup_value"].values[0]
+
+            # gen pop testing rates
+            # annual Rate_rdt_testing=0.64 at 2023
+            p["rdt_testing_rates"]["Rate_rdt_testing"] = \
+                scaled_params.loc[
+                    scaled_params.parameter == "rdt_testing_rates", "scaleup_value"].values[0]
+
+            # treatment reaches XX
+            # no default between testing and treatment, governed by tx availability
+
+            # coverage IPTp reaches XX
+            # given during ANC visits and MalariaIPTp Event which selects ALL eligible women
+
+            # treatment success reaches 1 - default is currently 1 also
+            p["prob_of_treatment_success"] = scaled_params.loc[
+                scaled_params.parameter == "prob_of_treatment_success", "scaleup_value"].values[0]
+
+            # bednet and ITN coverage
+            # set IRS for 4 high-risk districts
+            # lookup table created in malaria read_parameters
+            # produces self.itn_irs called by malaria poll to draw incidence
+            # need to overwrite this
+            highrisk_distr_num = p["highrisk_districts"]["district_num"]
+
+            # Find indices where District_Num is in highrisk_distr_num
+            mask = self.itn_irs['irs_rate'].index.get_level_values('District_Num').isin(
+                highrisk_distr_num)
+
+            # IRS values can be 0 or 0.8 - no other value in lookup table
+            self.itn_irs['irs_rate'].loc[mask] = scaled_params.loc[
+                scaled_params.parameter == "irs_district", "scaleup_value"].values[0]
+
+            # set ITN for all districts
+            # Set these values to 0.7 - this is the max value possible in lookup table
+            # equivalent to 0.7 of all pop sleeping under bednet
+            # household coverage could be 100%, but not everyone in household sleeping under bednet
+            self.itn_irs['itn_rate'] = scaled_params.loc[
+                scaled_params.parameter == "itn_district", "scaleup_value"].values[0]
+
+            # itn rates for 2019 onwards
+            p["itn"] = scaled_params.loc[
+                scaled_params.parameter == "itn", "scaleup_value"].values[0]
 
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
@@ -915,6 +994,21 @@ class MalariaPollingEventDistrict(RegularEvent, PopulationScopeEventMixin):
 
         # schedule rdt for general population, rate increases over time
         self.module.general_population_rdt_scheduler(population)
+
+
+class ScaleUpSetupEvent(RegularEvent, PopulationScopeEventMixin):
+    """ This event exists to change parameters or functions
+    depending on the scenario for projections which has been set
+    It only occurs once on date: scaleup_start_date,
+    called by initialise_simulation
+    """
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(years=100))
+
+    def apply(self, population):
+
+        self.module.update_parameters()
 
 
 class MalariaIPTp(RegularEvent, PopulationScopeEventMixin):
