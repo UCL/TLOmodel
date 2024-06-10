@@ -144,16 +144,16 @@ class Consumables:
         Returns: (i) the set of all recognised item_codes; (ii) pd.Series of the availability of
         each consumable at each facility_id during each month.
         """
-        if availability == 'default':
+        if cons_availability == 'default':
             return (
                 set(availability_data.item_code),
                 availability_data.set_index(['month', 'Facility_ID', 'item_code'])['available_prop']
             )
-        elif availability in ('scenario1', 'scenario2', 'scenario3', 'scenario4',
+        elif cons_availability in ('scenario1', 'scenario2', 'scenario3', 'scenario4',
                               'scenario5', 'scenario6', 'scenario7', 'scenario8'):
             return (
                 set(availability_data.item_code),
-                availability_data.set_index(['month', 'Facility_ID', 'item_code'])['available_prop_' + availability]
+                availability_data.set_index(['month', 'Facility_ID', 'item_code'])['available_prop_' + cons_availability]
             )
         else:
             pass
