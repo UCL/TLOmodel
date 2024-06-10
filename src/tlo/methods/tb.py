@@ -9,7 +9,7 @@ from functools import reduce
 
 import pandas as pd
 
-from tlo import DateOffset, Date, Module, Parameter, Property, Types, logging
+from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, hiv

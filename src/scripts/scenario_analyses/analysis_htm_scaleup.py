@@ -27,6 +27,7 @@ tlo scenario-run src/scripts/scenario_analyses/analysis_htm_scaleup.py --draw 1 
 """
 
 from pathlib import Path
+
 from tlo import Date, logging
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
