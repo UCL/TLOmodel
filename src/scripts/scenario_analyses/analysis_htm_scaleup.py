@@ -8,6 +8,8 @@ The scenarios are:
 *2 scale-up TB program
 *3 scale-up malaria program
 
+scale-up occurs on the default scale-up start date (01/01/2025: in parameters list of resourcefiles)
+
 For all scenarios, keep all default health system settings
 
 check the batch configuration gets generated without error:

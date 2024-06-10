@@ -594,6 +594,17 @@ class Malaria(Module):
         sim.schedule_event(MalariaTxLoggingEvent(self), sim.date + DateOffset(years=1))
         sim.schedule_event(MalariaPrevDistrictLoggingEvent(self), sim.date + DateOffset(months=1))
 
+        # Optional: Schedule the scale-up of programs
+        if self.parameters["do_scaleup"]:
+            scaleup_start_date = self.parameters["scaleup_start_date"]
+
+            assert isinstance(scaleup_start_date, Date), "Value is not a Date object"
+            # Check if scale-up start date is on or after sim start date
+            assert scaleup_start_date >= Date(2010, 1, 1), \
+                f"Date {scaleup_start_date} is before January 1, 2010"
+
+            sim.schedule_event(ScaleUpSetupEvent(self), self.parameters["scaleup_start_date"])
+
         # 2) ----------------------------------- DIAGNOSTIC TESTS -----------------------------------
         # Create the diagnostic test representing the use of RDT for malaria diagnosis
         # and registers it with the Diagnostic Test Manager
