@@ -1082,7 +1082,7 @@ class HealthSystem(Module):
         # check values the same for everything apart from the facility level '2' facilities
         facilities_with_any_differences = set(
             df_updated.loc[
-                ~(df_original == df_updated).all(axis=1),
+                ~(df_original.sort_values(['Facility_ID', 'month', 'item_code']).reset_index(drop=True) == df_updated).all(axis=1),
                 'Facility_ID']
         )
         level2_facilities = set(
