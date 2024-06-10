@@ -753,7 +753,7 @@ class BedDays:
         """
         # Exit if the footprint is empty
         if not footprint:
-            return
+            return False
         conflict_resolver = (
             self.resolve_overlapping_occupancies
             if overlay_instead_of_combine
@@ -772,6 +772,7 @@ class BedDays:
             occurs_between_dates=(first_day, new_footprint_end_date),
         )
 
+        new_inpatient = True
         if conflicting_occupancies:
             # This person is already an inpatient.
             # For those occupancies that conflict, we will need to overwrite the lower
@@ -783,6 +784,7 @@ class BedDays:
             # Remove all conflicting dependencies that are currently scheduled,
             # before we add the resolved conflicts
             self.end_occupancies(*conflicting_occupancies)
+            new_inpatient = False
 
         # Schedule the new occupancies, which are now conflict-free
         # (if they weren't already)
@@ -796,6 +798,8 @@ class BedDays:
         DEBUGGER.write("\tHaving received footprint:")
         for bed_type, days in footprint.items():
             DEBUGGER.write(f"\t\t{bed_type} : {days}")
+
+        return new_inpatient
 
     def issue_bed_days_according_to_availability(
         self, start_date: Date, facility_id: int, requested_footprint: BedDaysFootprint
