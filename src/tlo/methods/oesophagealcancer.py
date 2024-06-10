@@ -84,7 +84,7 @@ class OesophagealCancer(Module):
         ),
         "r_low_grade_dysplasia_none": Parameter(
             Types.REAL,
-            "probability per 3 months of incident low grade oesophageal dysplasia, amongst people with no "
+            "probabilty per 3 months of incident low grade oesophageal dysplasia, amongst people with no "
             "oesophageal dysplasia (men, age20, no excess alcohol, no tobacco)",
         ),
         "rr_low_grade_dysplasia_none_female": Parameter(
