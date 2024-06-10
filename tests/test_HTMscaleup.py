@@ -27,7 +27,11 @@ except NameError:
     resourcefilepath = "resources"
 
 
-def get_sim(seed, scaleup_hiv=False, scaleup_tb=False, scaleup_malaria=False, scaleup_start_date=pd.NaT):
+scaleup_start_date = Date(2012, 1, 1)
+end_date = scaleup_start_date + pd.DateOffset(years=1)
+
+
+def get_sim(seed):
     """
     register all necessary modules for the tests to run
     """
@@ -54,11 +58,7 @@ def get_sim(seed, scaleup_hiv=False, scaleup_tb=False, scaleup_malaria=False, sc
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         epi.Epi(resourcefilepath=resourcefilepath),
-        hiv.Hiv(resourcefilepath=resourcefilepath,
-                scaleup_hiv=scaleup_hiv,
-                scaleup_tb=scaleup_tb,
-                scaleup_malaria=scaleup_malaria,
-                scaleup_start_date=scaleup_start_date),
+        hiv.Hiv(resourcefilepath=resourcefilepath),
         tb.Tb(resourcefilepath=resourcefilepath),
         malaria.Malaria(resourcefilepath=resourcefilepath),
     )
@@ -89,24 +89,25 @@ def test_hiv_scale_up(seed):
     """ test hiv program scale-up changes parameters correctly
     and on correct date """
 
-    # workbook = pd.read_excel(Path(resourcefilepath) / "ResourceFile_HIV.xlsx", sheet_name=None)
-    workbook = pd.read_excel(Path(__file__).parent.parent / 'resources' / 'ResourceFile_HIV.xlsx', sheet_name=None)
+    hiv_workbook = pd.read_excel(Path(__file__).parent.parent / 'resources' / 'ResourceFile_HIV.xlsx', sheet_name=None)
 
-    # Load data on HIV prevalence
-    original_params = workbook["parameters"]
-    new_params = workbook["scaleup_parameters"]
-    scaleup_start_date = Date(2011, 1, 1)
+    original_params = hiv_workbook["parameters"]
+    new_params = hiv_workbook["scaleup_parameters"]
 
     popsize = 100
 
-    sim = get_sim(seed=seed, scaleup_hiv=True, scaleup_start_date=scaleup_start_date)
+    sim = get_sim(seed=seed)
 
     # check initial parameters
     check_initial_params(sim)
 
+    # update parameters
+    sim.modules["Hiv"].parameters["do_scaleup"] = True
+    sim.modules["Hiv"].parameters["scaleup_start_date"] = scaleup_start_date
+
     # Make the population
     sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=scaleup_start_date + pd.DateOffset(days=1))
+    sim.simulate(end_date=end_date)
 
     # check HIV parameters changed
     assert sim.modules["Hiv"].parameters["beta"] < original_params.loc[
@@ -121,7 +122,7 @@ def test_hiv_scale_up(seed):
         new_params.parameter == "prob_circ_after_hiv_test", "scaleup_value"].values[0]
 
     # check malaria parameters unchanged
-    mal_workbook = pd.read_excel(Path(__file__).parent.parent / 'resources' / 'ResourceFile_Malaria.xlsx',
+    mal_workbook = pd.read_excel(Path(__file__).parent.parent / 'resources' / 'malaria' / 'ResourceFile_Malaria.xlsx',
                                  sheet_name=None)
 
     mal_original_params = mal_workbook["parameters"]
@@ -163,60 +164,72 @@ def test_htm_scale_up(seed):
     """ test hiv/tb/malaria program scale-up changes parameters correctly
     and on correct date """
 
-    workbook = pd.read_excel(Path(__file__).parent.parent / 'resources' / 'ResourceFile_HIV.xlsx', sheet_name=None)
+    hiv_workbook = pd.read_excel(Path(__file__).parent.parent / 'resources' / 'ResourceFile_HIV.xlsx', sheet_name=None)
 
     # Load data on HIV prevalence
-    original_params = workbook["parameters"]
-    new_params = workbook["scaleup_parameters"]
-    scaleup_start_date = Date(2011, 1, 1)
+    original_hiv_params = hiv_workbook["parameters"]
+    new_hiv_params = hiv_workbook["scaleup_parameters"]
 
     popsize = 100
 
-    sim = get_sim(seed=seed, scaleup_hiv=True, scaleup_tb=True, scaleup_malaria=True,
-                  scaleup_start_date=scaleup_start_date)
+    sim = get_sim(seed=seed)
 
     # check initial parameters
     check_initial_params(sim)
 
+    # update parameters
+    sim.modules["Hiv"].parameters["do_scaleup"] = True
+    sim.modules["Hiv"].parameters["scaleup_start_date"] = scaleup_start_date
+    sim.modules["Tb"].parameters["do_scaleup"] = True
+    sim.modules["Tb"].parameters["scaleup_start_date"] = scaleup_start_date
+    sim.modules["Malaria"].parameters["do_scaleup"] = True
+    sim.modules["Malaria"].parameters["scaleup_start_date"] = scaleup_start_date
+
     # Make the population
     sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=scaleup_start_date + pd.DateOffset(days=1))
+    sim.simulate(end_date=end_date)
 
     # check HIV parameters changed
-    assert sim.modules["Hiv"].parameters["beta"] < original_params.loc[
-        original_params.parameter_name == "beta", "value"].values[0]
-    assert sim.modules["Hiv"].parameters["prob_prep_for_fsw_after_hiv_test"] == new_params.loc[
-        new_params.parameter == "prob_prep_for_fsw_after_hiv_test", "scaleup_value"].values[0]
-    assert sim.modules["Hiv"].parameters["prob_prep_for_agyw"] == new_params.loc[
-        new_params.parameter == "prob_prep_for_agyw", "scaleup_value"].values[0]
-    assert sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_3_months"] == new_params.loc[
-        new_params.parameter == "probability_of_being_retained_on_prep_every_3_months", "scaleup_value"].values[0]
-    assert sim.modules["Hiv"].parameters["prob_circ_after_hiv_test"] == new_params.loc[
-        new_params.parameter == "prob_circ_after_hiv_test", "scaleup_value"].values[0]
+    assert sim.modules["Hiv"].parameters["beta"] < original_hiv_params.loc[
+        original_hiv_params.parameter_name == "beta", "value"].values[0]
+    assert sim.modules["Hiv"].parameters["prob_prep_for_fsw_after_hiv_test"] == new_hiv_params.loc[
+        new_hiv_params.parameter == "prob_prep_for_fsw_after_hiv_test", "scaleup_value"].values[0]
+    assert sim.modules["Hiv"].parameters["prob_prep_for_agyw"] == new_hiv_params.loc[
+        new_hiv_params.parameter == "prob_prep_for_agyw", "scaleup_value"].values[0]
+    assert sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_3_months"] == new_hiv_params.loc[
+        new_hiv_params.parameter == "probability_of_being_retained_on_prep_every_3_months", "scaleup_value"].values[0]
+    assert sim.modules["Hiv"].parameters["prob_circ_after_hiv_test"] == new_hiv_params.loc[
+        new_hiv_params.parameter == "prob_circ_after_hiv_test", "scaleup_value"].values[0]
 
     # check malaria parameters changed
-    assert sim.modules["Malaria"].parameters["prob_malaria_case_tests"] == new_params.loc[
-        new_params.parameter == "prob_malaria_case_tests", "scaleup_value"].values[0]
-    assert sim.modules["Malaria"].parameters["rdt_testing_rates"]["Rate_rdt_testing"].eq(new_params.loc[
-        new_params.parameter == "rdt_testing_rates", "scaleup_value"].values[0]).all()
+    mal_workbook = pd.read_excel(Path(__file__).parent.parent / 'resources' / 'malaria' / 'ResourceFile_malaria.xlsx', sheet_name=None)
+    new_mal_params = mal_workbook["scaleup_parameters"]
+
+    assert sim.modules["Malaria"].parameters["prob_malaria_case_tests"] == new_mal_params.loc[
+        new_mal_params.parameter == "prob_malaria_case_tests", "scaleup_value"].values[0]
+    assert sim.modules["Malaria"].parameters["rdt_testing_rates"]["Rate_rdt_testing"].eq(new_mal_params.loc[
+        new_mal_params.parameter == "rdt_testing_rates", "scaleup_value"].values[0]).all()
 
     # some irs coverage levels should now = 1.0
     assert sim.modules["Malaria"].itn_irs['irs_rate'].any() == 1.0
     # itn rates for 2019 onwards
-    assert sim.modules["Malaria"].parameters["itn"] == new_params.loc[
-        new_params.parameter == "itn", "scaleup_value"].values[0]
+    assert sim.modules["Malaria"].parameters["itn"] == new_mal_params.loc[
+        new_mal_params.parameter == "itn", "scaleup_value"].values[0]
 
     # check tb parameters changed
-    assert sim.modules["Tb"].parameters["rate_testing_active_tb"]["treatment_coverage"].eq(new_params.loc[
-        new_params.parameter == "tb_treatment_coverage", "scaleup_value"].values[0]).all()
-    assert sim.modules["Tb"].parameters["prob_tx_success_ds"] == new_params.loc[
-        new_params.parameter == "tb_prob_tx_success_ds", "scaleup_value"].values[0]
-    assert sim.modules["Tb"].parameters["prob_tx_success_mdr"] == new_params.loc[
-        new_params.parameter == "tb_prob_tx_success_mdr", "scaleup_value"].values[0]
-    assert sim.modules["Tb"].parameters["prob_tx_success_0_4"] == new_params.loc[
-        new_params.parameter == "tb_prob_tx_success_0_4", "scaleup_value"].values[0]
-    assert sim.modules["Tb"].parameters["prob_tx_success_5_14"] == new_params.loc[
-        new_params.parameter == "tb_prob_tx_success_5_14", "scaleup_value"].values[0]
-    assert sim.modules["Tb"].parameters["first_line_test"] == new_params.loc[
-        new_params.parameter == "first_line_test", "scaleup_value"].values[0]
+    tb_workbook = pd.read_excel(Path(__file__).parent.parent / 'resources' / 'ResourceFile_TB.xlsx', sheet_name=None)
+    new_tb_params = tb_workbook["scaleup_parameters"]
+
+    assert sim.modules["Tb"].parameters["rate_testing_active_tb"]["treatment_coverage"].eq(new_tb_params.loc[
+        new_tb_params.parameter == "tb_treatment_coverage", "scaleup_value"].values[0]).all()
+    assert sim.modules["Tb"].parameters["prob_tx_success_ds"] == new_tb_params.loc[
+        new_tb_params.parameter == "tb_prob_tx_success_ds", "scaleup_value"].values[0]
+    assert sim.modules["Tb"].parameters["prob_tx_success_mdr"] == new_tb_params.loc[
+        new_tb_params.parameter == "tb_prob_tx_success_mdr", "scaleup_value"].values[0]
+    assert sim.modules["Tb"].parameters["prob_tx_success_0_4"] == new_tb_params.loc[
+        new_tb_params.parameter == "tb_prob_tx_success_0_4", "scaleup_value"].values[0]
+    assert sim.modules["Tb"].parameters["prob_tx_success_5_14"] == new_tb_params.loc[
+        new_tb_params.parameter == "tb_prob_tx_success_5_14", "scaleup_value"].values[0]
+    assert sim.modules["Tb"].parameters["first_line_test"] == new_tb_params.loc[
+        new_tb_params.parameter == "first_line_test", "scaleup_value"].values[0]
 
