@@ -427,6 +427,7 @@ df = full_set_interpolated.reset_index().copy()
 facility_levels = ['1a', '1b']
 target_percentiles = [75, 90, 99]
 
+best_performing_facilities = {}
 # Populate the dictionary
 for level in facility_levels:
     # Create an empty dictionary for the current level
