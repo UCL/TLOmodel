@@ -63,7 +63,7 @@ class Consumables:
 
         # Save all item_codes that are defined and pd.Series with probs of availability from ResourceFile
         self.item_codes,  self._processed_consumables_data = \
-            self._process_consumables_data(availability_data=availability_data)
+            self._process_consumables_data(availability_data=availability_data, availability=availability)
 
         # Set the availability based on the argument provided (this can be updated later after the class is initialised)
         self.availability = availability
@@ -138,7 +138,7 @@ class Consumables:
         else:
             raise ValueError
 
-    def _process_consumables_data(self, availability_data: pd.DataFrame) -> Tuple[set, pd.Series]:
+    def _process_consumables_data(self, availability_data: pd.DataFrame, availability: str) -> Tuple[set, pd.Series]:
         """Helper function for processing the consumables data, passed in here as pd.DataFrame that has been read-in by
         the HealthSystem.
         Returns: (i) the set of all recognised item_codes; (ii) pd.Series of the availability of
@@ -146,7 +146,7 @@ class Consumables:
         """
         if availability == 'default':
             return (
-                set(availability_data.item_code),
+                set(availability_data['item_code']),
                 availability_data.set_index(['month', 'Facility_ID', 'item_code'])['available_prop']
             )
         elif availability in ('scenario1', 'scenario2', 'scenario3', 'scenario4',
@@ -156,7 +156,7 @@ class Consumables:
                 availability_data.set_index(['month', 'Facility_ID', 'item_code'])['available_prop_' + availability]
             )
         else:
-            pass
+            raise ValueError(f"Unknown availability parameter")
 
     def _refresh_availability_of_consumables(self, date: datetime.datetime):
         """Update the availability of all items based on the data for the probability of availability, given the current
