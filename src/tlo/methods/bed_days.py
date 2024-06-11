@@ -799,12 +799,12 @@ class BedDays:
         given the current bed allocations.
 
         The rules for determining the 'best possible' footprint, given a requested
-        footprint current state of bed occupancy is:
+        footprint and the current state of bed occupancies is:
 
         - For each type of bed specified in the footprint, in order from highest tier
         to lowest tier, check if there are sufficient bed-days available of that type:
-          - Provide as many consecutive days in that bed-type as possible to this HSI.
-          - Re-allocate any remaining days to the next bed-type.
+        - Provide as many consecutive days in that bed-type as possible to this HSI.
+        - Re-allocate any remaining days to the next bed-type.
 
         The lowest-priority bed ranking is 'non_bed_space'. If the number of days to be
         allocated to this bed type is non-zero, then the footprint cannot be supported.
