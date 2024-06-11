@@ -43,7 +43,7 @@ class EffectOfProgrammes(BaseScenario):
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2020, 1, 1)  # todo update these for full runs
         self.pop_size = 147_000  # todo update these for full runs, scale to 1:100
-        self.number_of_draws = 2  # todo reset to 9
+        self.number_of_draws = 3  # todo reset to
         self.runs_per_draw = 5  # todo update these for full runs
 
         self.treatment_effects = pd.read_excel(
@@ -108,7 +108,6 @@ class EffectOfProgrammes(BaseScenario):
         service_availability['No_Malaria_*'].append('Malaria_Treatment_Complicated')
 
         # add in HIV/TB EOL care plus malaria_complicated treatment
-        # todo run in scenario 5 so malaria treatment has no effect on mortality
         service_availability['No_HTM'].append('Hiv_PalliativeCare')
         service_availability['No_HTM'].append('Tb_PalliativeCare')
         service_availability['No_HTM'].append('Malaria_Treatment_Complicated')
@@ -116,25 +115,42 @@ class EffectOfProgrammes(BaseScenario):
         service_availability['No_Hiv_No_Tb'].append('Hiv_PalliativeCare')
         service_availability['No_Hiv_No_Tb'].append('Tb_PalliativeCare')
 
+        service_availability['No_Hiv_No_Malaria'].append('Hiv_PalliativeCare')
+        service_availability['No_Hiv_No_Malaria'].append('Malaria_Treatment_Complicated')
+
+        service_availability['No_Tb_No_Malaria'].append('Tb_PalliativeCare')
+        service_availability['No_Tb_No_Malaria'].append('Malaria_Treatment_Complicated')
+
         # when removing malaria services, also need to remove tx effects through scenario 3
         # because IRS/ITN needs to be set to 0 coverage
         # and malaria tx_complicated set to have no effect
 
         return {
+            # 'HealthSystem': {
+            #     'Service_Availability': [service_availability['Everything'],
+            #                              service_availability['No_Hiv_*'], service_availability['No_Tb_*'],
+            #                              service_availability['No_Malaria_*'], service_availability['No_HTM'],
+            #                              service_availability['No_Hiv_No_Tb'],service_availability['No_Hiv_No_Malaria'],
+            #                              service_availability['No_Tb_No_Malaria']][draw_number],
+            #     'use_funded_or_actual_staffing': 'funded',
+            #     'mode_appt_constraints': 1,
+            #     'policy_name': 'Naive',
+            # },
+            # # todo if malaria excluded, run in scenario 3 so malaria tx has no effect on mortality
+            # 'Hiv': {
+            #     'scenario': [0, 0, 0, 3, 3, 0, 3, 3][draw_number],
+            # },
             'HealthSystem': {
-                'Service_Availability': [service_availability['Everything'], service_availability['Everything'],
-                                         service_availability['Everything'], service_availability['Everything'],
-                                         service_availability['Everything'],
-                                         service_availability['No_Hiv_*'], service_availability['No_Tb_*'],
-                                         service_availability['No_Malaria_*'], service_availability['No_HTM']][
-                    draw_number],
+                'Service_Availability': [service_availability['No_Hiv_No_Tb'],
+                                         service_availability['No_Hiv_No_Malaria'],
+                                         service_availability['No_Tb_No_Malaria']][draw_number],
                 'use_funded_or_actual_staffing': 'funded',
                 'mode_appt_constraints': 1,
                 'policy_name': 'Naive',
             },
-        # todo if malaria excluded, run in scenario 5 so malaria tx has no effect on mortality
+            # todo if malaria excluded, run in scenario 3 so malaria tx has no effect on mortality
             'Hiv': {
-                'scenario': [0, 1, 2, 3, 5, 0, 0, 3, 3][draw_number],
+                'scenario': [0, 3, 3][draw_number],
             },
 
         }
