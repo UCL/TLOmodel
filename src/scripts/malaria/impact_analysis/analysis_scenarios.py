@@ -88,16 +88,33 @@ class EffectOfProgrammes(BaseScenario):
             {f'No_HTM': [v for v in treatments if v not in services_to_remove]}
         )
 
+        # create additional service packages with specific combinations removed
+        combinations_to_remove = [
+            ('Hiv_*', 'Tb_*'),
+            ('Hiv_*', 'Malaria_*'),
+            ('Tb_*', 'Malaria_*')
+        ]
+
+        for combo in combinations_to_remove:
+            label = f"No_{combo[0].split('_')[0]}_No_{combo[1].split('_')[0]}"
+            service_availability.update(
+                {label: [v for v in treatments if
+                         not (v.startswith(combo[0].split('_')[0]) or v.startswith(combo[1].split('_')[0]))]}
+            )
+
         # add EOL / palliative care back in
         service_availability['No_Hiv_*'].append('Hiv_PalliativeCare')
         service_availability['No_Tb_*'].append('Tb_PalliativeCare')
         service_availability['No_Malaria_*'].append('Malaria_Treatment_Complicated')
 
         # add in HIV/TB EOL care plus malaria_complicated treatment
-        # run in scenario 5 so malaria treatment has no effect on mortality
+        # todo run in scenario 5 so malaria treatment has no effect on mortality
         service_availability['No_HTM'].append('Hiv_PalliativeCare')
         service_availability['No_HTM'].append('Tb_PalliativeCare')
         service_availability['No_HTM'].append('Malaria_Treatment_Complicated')
+
+        service_availability['No_Hiv_No_Tb'].append('Hiv_PalliativeCare')
+        service_availability['No_Hiv_No_Tb'].append('Tb_PalliativeCare')
 
         # when removing malaria services, also need to remove tx effects through scenario 3
         # because IRS/ITN needs to be set to 0 coverage
@@ -106,32 +123,20 @@ class EffectOfProgrammes(BaseScenario):
         return {
             'HealthSystem': {
                 'Service_Availability': [service_availability['Everything'], service_availability['Everything'],
+                                         service_availability['Everything'], service_availability['Everything'],
                                          service_availability['Everything'],
-                                         service_availability['Everything']][draw_number],
+                                         service_availability['No_Hiv_*'], service_availability['No_Tb_*'],
+                                         service_availability['No_Malaria_*'], service_availability['No_HTM']][
+                    draw_number],
                 'use_funded_or_actual_staffing': 'funded',
                 'mode_appt_constraints': 1,
                 'policy_name': 'Naive',
             },
+        # todo if malaria excluded, run in scenario 5 so malaria tx has no effect on mortality
             'Hiv': {
-                'scenario': [1, 5][draw_number],
-                # 'scenario': [0, 1, 2, 3, 5, 0, 0, 3, 3][draw_number],
+                'scenario': [0, 1, 2, 3, 5, 0, 0, 3, 3][draw_number],
             },
 
-        #     'HealthSystem': {
-        #         'Service_Availability': [service_availability['Everything'], service_availability['Everything'],
-        #                                  service_availability['Everything'], service_availability['Everything'],
-        #                                  service_availability['Everything'],
-        #                                  service_availability['No_Hiv_*'], service_availability['No_Tb_*'],
-        #                                  service_availability['No_Malaria_*'], service_availability['No_HTM']][
-        #             draw_number],
-        #         'use_funded_or_actual_staffing': 'funded',
-        #         'mode_appt_constraints': 1,
-        #         'policy_name': 'Naive',
-        #     },
-        #     'Hiv': {
-        #         'scenario': [0, 1, 2, 3, 5, 0, 0, 3, 3][draw_number],
-        #     },
-        #
         }
 
 
