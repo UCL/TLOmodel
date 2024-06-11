@@ -122,7 +122,7 @@ def test_hiv_scale_up(seed):
         new_params.parameter == "prob_circ_after_hiv_test", "scaleup_value"].values[0]
 
     # check malaria parameters unchanged
-    mal_workbook = pd.read_excel(Path(__file__).parent.parent / 'resources' / 'malaria' / 'ResourceFile_Malaria.xlsx',
+    mal_workbook = pd.read_excel(Path(__file__).parent.parent / 'resources' / 'malaria' / 'ResourceFile_malaria.xlsx',
                                  sheet_name=None)
 
     mal_original_params = mal_workbook["parameters"]
