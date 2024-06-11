@@ -656,9 +656,17 @@ class BedDays:
         all_occupancies = incoming_occupancies + current_occupancies
         earliest_start = min([o.start_date for o in all_occupancies])
 
+        current_time_in_beds = self.get_blank_beddays_footprint()
+        for o in current_occupancies:
+            current_time_in_beds[o.bed_type] += o.length
+        incoming_time_in_beds = self.get_blank_beddays_footprint()
+        for o in incoming_occupancies:
+            incoming_time_in_beds[o.bed_type] += o.length
+
         combined_footprint = self.get_blank_beddays_footprint()
-        for o in all_occupancies:
-            combined_footprint[o.bed_type] += o.length
+        for bed_type, current_n_days in current_time_in_beds.items():
+            incoming_n_days = incoming_time_in_beds[bed_type]
+            combined_footprint[bed_type] = max(current_n_days, incoming_n_days)
 
         # Having created the "combined footprint", turn it into a list
         # of occupancies
