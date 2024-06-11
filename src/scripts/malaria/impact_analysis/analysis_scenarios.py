@@ -43,7 +43,7 @@ class EffectOfProgrammes(BaseScenario):
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2020, 1, 1)  # todo update these for full runs
         self.pop_size = 147_000  # todo update these for full runs, scale to 1:100
-        self.number_of_draws = 3  # todo reset to
+        self.number_of_draws = 3  # todo reset
         self.runs_per_draw = 5  # todo update these for full runs
 
         self.treatment_effects = pd.read_excel(
