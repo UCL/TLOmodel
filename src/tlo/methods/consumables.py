@@ -144,19 +144,17 @@ class Consumables:
         Returns: (i) the set of all recognised item_codes; (ii) pd.Series of the availability of
         each consumable at each facility_id during each month.
         """
-        if availability == 'default':
-            return (
-                set(availability_data['item_code']),
-                availability_data.set_index(['month', 'Facility_ID', 'item_code'])['available_prop']
-            )
-        elif availability in ('scenario1', 'scenario2', 'scenario3', 'scenario4',
+        if availability in ('scenario1', 'scenario2', 'scenario3', 'scenario4',
                               'scenario5', 'scenario6', 'scenario7', 'scenario8'):
             return (
                 set(availability_data.item_code),
                 availability_data.set_index(['month', 'Facility_ID', 'item_code'])['available_prop_' + availability]
             )
         else:
-            raise ValueError(f"Unknown availability parameter")
+            return (
+                set(availability_data['item_code']),
+                availability_data.set_index(['month', 'Facility_ID', 'item_code'])['available_prop']
+            )
 
     def _refresh_availability_of_consumables(self, date: datetime.datetime):
         """Update the availability of all items based on the data for the probability of availability, given the current
