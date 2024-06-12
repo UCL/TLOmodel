@@ -234,6 +234,25 @@ def batch_submit(ctx, scenario_file, asserts_on, more_memory, keep_pool_alive, i
     task_dir = "${{AZ_BATCH_TASK_DIR}}"
     gzip_pattern_match = "{{txt,log}}"
     command = f"""
+    # Logfile for `earlyoom`
+    EARLYOOM_LOG=/tmp/earlyoom.log
+
+    function terminate_and_log() {{{{
+        # Terminate the `earlyoom` process
+        kill "${{{{EARLYOOM_PID}}}}"
+        # Print line(s) in the log file referencing terminated processes, if any.
+        grep "^sending SIGTERM to process" "${{{{EARLYOOM_LOG}}}}"
+    }}}}
+
+    # Add a trap at exit to terminate `earlyoom` and print relevant log lines.
+    trap terminate_and_log EXIT
+
+    # Delete existing log files, if any.
+    rm -f "${{{{EARLYOOM_LOG}}}}"
+    # Start the `earlyoom` daemon.
+    nohup earlyoom -m 95 -s 100 &> "${{{{EARLYOOM_LOG}}}}" &
+    EARLYOOM_PID="${{{{!}}}}"
+
     git fetch origin {commit.hexsha}
     git checkout {commit.hexsha}
     pip install -r requirements/base.txt
