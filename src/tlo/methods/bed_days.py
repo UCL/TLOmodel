@@ -414,6 +414,7 @@ class BedDays:
         start_on_or_after: Optional[Date] = None,
         on_date: Optional[Date] = None,
         occurs_between_dates: Optional[Tuple[Date]] = None,
+        occupancies: Optional[List[BedOccupancy]] = None,
     ) -> List[BedOccupancy]:
         """
         Find all occupancies in the current list of occupancies that match the
@@ -432,17 +433,22 @@ class BedDays:
         between these two dates. Provided as a Tuple of Dates, the first element
         being the earlier date (inclusive) and the second element the later
         date (inclusive).
+        :param occupancies: Provide an explicit list of BedOccupancies to apply the search
+        criteria to. Defaults to self.occupancies (searching all occupancies).
         """
         # Cast single-values to lists to make parsing easier
         if isinstance(patient_id, int):
             patient_id = [patient_id]
         if isinstance(facility, int):
             facility = [facility]
+        # Search all stored occupancies by default
+        if occupancies is None:
+            occupancies = self.occupancies
         # Correct logical operator to use
         if logical_or:
             matches = [
                 o
-                for o in self.occupancies
+                for o in occupancies
                 if any(
                     [
                         patient_id is not None and o.patient_id in patient_id,
@@ -463,7 +469,7 @@ class BedDays:
         else:
             matches = [
                 o
-                for o in self.occupancies
+                for o in occupancies
                 if all(
                     [
                         patient_id is None or o.patient_id in patient_id,
@@ -482,6 +488,48 @@ class BedDays:
                 )
             ]
         return matches
+
+    def occupancies_to_footprint(
+        self, occupancies: List[BedOccupancy], current_date: Optional[Date] = None
+    ) -> BedDaysFootprint:
+        """
+        Convert a list of BedOccupancies to a BedDaysFootprint.
+
+        This is, in general, not a safe cast and should only be used to complement
+        cases where the user is confident none of the "information loss" scenarios
+        below may cause errors.
+        
+        Note that casting from occupancies to a single footprint results in
+        irrecoverable loss of information, including:
+        - Loss of patient ID and facility. There is no check that all the
+        occupancies provided belong to the same person or facility either,
+        which may result in an unintentional mixing of records.
+        - Any "gaps" in the occupancies, where a person might have left the
+        facility then been re-admitted a number of days later, is lost. This is
+        because a footprint is interpreted as a contiguous block of bed time.
+        - Order of bed occupancies. Footprints assume bed occupancies occur in
+        priority order, a list of BedOccupancies does not.
+        - Start date (and end date) of the (combined and individual)
+        occupancies.
+
+        Providing the `current_date` allows one to extract the "remaining footprint" from
+        a list of BedOccupancies. If this argument is passed, each occupancy will be checked
+        to see if it has already started. In this case, only the allocation of beds after
+        the `current_date` will contribute to the footprint.
+
+        :param occupancies: List of BedOccupancies to convert to a BedDaysFootprint.
+        :param current_date: The current date, for extracting the remaining footprint rather
+        than just casting to a footprint.
+        """
+        footprint = self.get_blank_beddays_footprint()
+        for o in occupancies:
+            bed_type_stay_length = (
+                o.length
+                if current_date is None
+                else (o.freed_date - max(o.start_date, current_date)).days + 1
+            )
+            footprint[o.bed_type] += bed_type_stay_length
+        return footprint
 
     def forecast_availability(
         self,
@@ -641,6 +689,7 @@ class BedDays:
         self,
         incoming_occupancies: List[BedOccupancy],
         current_occupancies: List[BedOccupancy],
+        current_date: Optional[Date] = None,
     ) -> List[BedOccupancy]:
         """
         Resolve conflicting lists of bed days occupancies, returning a consistent
@@ -665,23 +714,27 @@ class BedDays:
         conflict with existing occupancies.
         :param current_occupancies: The occupancies currently scheduled that will conflict
         with the incoming occupancies.
+        :param current_date: Passed to `BedDays.occupancies_to_footprint`. Use when one or
+        both of the lists of occupancies have been partially fulfilled before conflict
+        resolution was needed.
         """
         # Plan: convert to a footprint that can then be imposed from
         # the start_date
         all_occupancies = incoming_occupancies + current_occupancies
         earliest_start = min([o.start_date for o in all_occupancies])
 
-        current_time_in_beds = self.get_blank_beddays_footprint()
-        for o in current_occupancies:
-            current_time_in_beds[o.bed_type] += o.length
-        incoming_time_in_beds = self.get_blank_beddays_footprint()
-        for o in incoming_occupancies:
-            incoming_time_in_beds[o.bed_type] += o.length
+        remaining_time_in_beds = self.occupancies_to_footprint(
+            current_occupancies, current_date=current_date
+        )
+        incoming_time_in_beds = self.occupancies_to_footprint(
+            incoming_occupancies, current_date=current_date
+        )
 
         combined_footprint = self.get_blank_beddays_footprint()
-        for bed_type, current_n_days in current_time_in_beds.items():
-            incoming_n_days = incoming_time_in_beds[bed_type]
-            combined_footprint[bed_type] = max(current_n_days, incoming_n_days)
+        for bed_type in self.bed_types:
+            combined_footprint[bed_type] = max(
+                remaining_time_in_beds[bed_type], incoming_time_in_beds[bed_type]
+            )
 
         # Having created the "combined footprint", turn it into a list
         # of occupancies
@@ -778,29 +831,27 @@ class BedDays:
         # Exit if the footprint is empty
         if not footprint:
             return False
-        conflict_resolver = (
-            self.resolve_overlapping_occupancies
-            if overlay_instead_of_combine
-            else self.combine_overlapping_occupancies
-        )
-
-        new_footprint_end_date = first_day + pd.DateOffset(
-            days=footprint.total_days() - 1
-        )
         new_occupancies = footprint.as_occupancies(first_day, facility, patient_id)
 
         # Identify any occupancies this person currently has during the period
         # this footprint is expected to run over, to resolve potential conflicts.
-        conflicting_occupancies = self.find_occupancies(
-            patient_id=patient_id,
-            occurs_between_dates=(first_day, new_footprint_end_date),
-        )
+        is_inpatient = self.is_inpatient(patient_id=patient_id)
 
-        is_new_inpatient = True
-        if conflicting_occupancies:
-            # This person is already an inpatient.
-            # For those occupancies that conflict, we will need to overwrite the lower
-            # priority bed occupancies with the higher priority bed occupancies.
+        if is_inpatient:
+            conflict_resolver = (
+                self.resolve_overlapping_occupancies
+                if overlay_instead_of_combine
+                else lambda x, y: self.combine_overlapping_occupancies(
+                    x, y, current_date=first_day
+                )
+            )
+            conflicting_occupancies = self.find_occupancies(
+                logical_or=True,
+                start_on_or_after=first_day, # Occupancies yet to happen
+                end_on_or_before=first_day, # Occupancies we are partway through
+                occupancies=is_inpatient,
+            )
+            # This person is already an inpatient, resolve occupancy conflicts.
             new_occupancies = conflict_resolver(
                 new_occupancies, conflicting_occupancies
             )
@@ -808,9 +859,6 @@ class BedDays:
             # Remove all conflicting dependencies that are currently scheduled,
             # before we add the resolved conflicts
             self.end_occupancies(*conflicting_occupancies)
-
-            # This person is not a new inpatient
-            is_new_inpatient = False
 
         # Schedule the new occupancies, which are now conflict-free
         # (if they weren't already)
@@ -825,7 +873,7 @@ class BedDays:
         for bed_type, days in footprint.items():
             DEBUGGER.write(f"\t\t{bed_type} : {days}")
 
-        return is_new_inpatient
+        return not is_inpatient
 
     def issue_bed_days_according_to_availability(
         self, start_date: Date, facility_id: int, requested_footprint: BedDaysFootprint
