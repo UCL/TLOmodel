@@ -508,6 +508,7 @@ def test_impose_beddays_footprint(
         facility=facility,
         first_day=Date("2010-01-04"),
         patient_id=person_id,
+        overlay_instead_of_combine=True,
     )
     assert len(BD.occupancies) == 5, "Not all expected occupancies were scheduled."
 
@@ -651,10 +652,12 @@ def test_issue_bed_days_according_to_availability(
             )
 
 
-# TODO
+# TODO: Methods not covered by tests
 # [static] date_ranges_overlap
 # [static] add_first_day_inpatient_appts_to_footprint
 # [static] multiply_footprint
+# occupancies_to_footprint
+# combine_overlapping_occupancies
 # assert valid footprint - delegate to subclass?
 # get_blank_beddays_footprint - delegate to subclass?
 # get_inpatient_appts
