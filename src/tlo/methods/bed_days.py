@@ -546,10 +546,9 @@ class BedDays:
         current_occupancies: List[BedOccupancy],
     ) -> List[BedOccupancy]:
         """
-        Resolve conflicting lists of bed days occupancies, returning the simplest
-        consistent allocation.
+        Resolve conflicting lists of bed days occupancies, a consistent allocation.
 
-        The simplest consistent allocation minimises the total number of occupancies
+        The consistent allocation minimises the total number of occupancies
         that are required, and on any given day allocates the patient to the highest
         priority bed that the two sets of occupancies wish to provide.
 
@@ -567,13 +566,6 @@ class BedDays:
         are identical (as otherwise, this process does not make sense). Furthermore,
         patients are only ever able to attend one facility in their district / region
         for bed care anyway, so this should never arise as an issue.
-
-        It is assumed that the patient is scheduled to occupy at least one bed type for
-        each day between the start of the earliest occupancy and end of the last occupancy.
-        If there are any days in this range where the patient is not going to occupy a bed,
-        an AssertionError is raised. In these circumstances, the event which is not in
-        conflict with the others should be removed from one of the lists prior to calling
-        this method.
 
         :param incoming_occupancies: A list of occupancies that are to be scheduled, but
         conflict with existing occupancies.
@@ -650,7 +642,30 @@ class BedDays:
         incoming_occupancies: List[BedOccupancy],
         current_occupancies: List[BedOccupancy],
     ) -> List[BedOccupancy]:
-        """ """
+        """
+        Resolve conflicting lists of bed days occupancies, returning a consistent
+        allocation.
+
+        The allocation returned requests (for each bed type) a number of bed days
+        equal to the maximum number of days the current and incoming occupancies
+        request.
+
+        Occupancy conflicts are resolved in the following manner:
+        - Convert both the current occupancies and incoming occupancies to footprints.
+        - Take the key-wise maximum of the resulting footprints to form the resolved
+        footprint.
+        - Cast the resolved footprint back to a list of occupancies.
+
+        It is assumed that the patient_id and facility of all occupancies provided
+        are identical (as otherwise, this process does not make sense). Furthermore,
+        patients are only ever able to attend one facility in their district / region
+        for bed care anyway, so this should never arise as an issue.
+
+        :param incoming_occupancies: A list of occupancies that are to be scheduled, but
+        conflict with existing occupancies.
+        :param current_occupancies: The occupancies currently scheduled that will conflict
+        with the incoming occupancies.
+        """
         # Plan: convert to a footprint that can then be imposed from
         # the start_date
         all_occupancies = incoming_occupancies + current_occupancies
@@ -735,9 +750,10 @@ class BedDays:
         first_day: Date,
         patient_id: int,
         overlay_instead_of_combine: bool = False,
-    ) -> None:
+    ) -> bool:
         """
         Impose the footprint provided on the availability of beds.
+        Return True/False indicating whether or not the person is a new inpatient.
 
         In the event that the person is already an inpatient, it is necessary to
         reconcile their existing occupancies with the new ones they will receive
@@ -780,7 +796,7 @@ class BedDays:
             occurs_between_dates=(first_day, new_footprint_end_date),
         )
 
-        new_inpatient = True
+        is_new_inpatient = True
         if conflicting_occupancies:
             # This person is already an inpatient.
             # For those occupancies that conflict, we will need to overwrite the lower
@@ -792,7 +808,9 @@ class BedDays:
             # Remove all conflicting dependencies that are currently scheduled,
             # before we add the resolved conflicts
             self.end_occupancies(*conflicting_occupancies)
-            new_inpatient = False
+
+            # This person is not a new inpatient
+            is_new_inpatient = False
 
         # Schedule the new occupancies, which are now conflict-free
         # (if they weren't already)
@@ -807,7 +825,7 @@ class BedDays:
         for bed_type, days in footprint.items():
             DEBUGGER.write(f"\t\t{bed_type} : {days}")
 
-        return new_inpatient
+        return is_new_inpatient
 
     def issue_bed_days_according_to_availability(
         self, start_date: Date, facility_id: int, requested_footprint: BedDaysFootprint
@@ -817,12 +835,12 @@ class BedDays:
         given the current bed allocations.
 
         The rules for determining the 'best possible' footprint, given a requested
-        footprint current state of bed occupancy is:
+        footprint and the current state of bed occupancies is:
 
         - For each type of bed specified in the footprint, in order from highest tier
         to lowest tier, check if there are sufficient bed-days available of that type:
-          - Provide as many consecutive days in that bed-type as possible to this HSI.
-          - Re-allocate any remaining days to the next bed-type.
+        - Provide as many consecutive days in that bed-type as possible to this HSI.
+        - Re-allocate any remaining days to the next bed-type.
 
         The lowest-priority bed ranking is 'non_bed_space'. If the number of days to be
         allocated to this bed type is non-zero, then the footprint cannot be supported.

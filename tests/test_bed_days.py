@@ -479,6 +479,7 @@ def test_impose_beddays_footprint(
         facility=facility,
         first_day=Date("2010-01-01"),
         patient_id=person_id,
+        overlay_instead_of_combine=True,
     )
 
     # Should now be precisely 3 bed occupancies scheduled

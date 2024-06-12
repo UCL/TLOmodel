@@ -1,0 +1,24 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python Debugger: Checksum Scale Run",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "src/scripts/profiling/scale_run.py",
+            "console": "integratedTerminal",
+            "args": "--years 0 --months 1 --log-final-population-checksum --initial-population 1000",
+        },
+        {
+            "name": "Python Debugger: 1 year scale run",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "src/scripts/profiling/scale_run.py",
+            "console": "integratedTerminal",
+            "args": "--years 1 --months 0 --initial-population 10000 --show-progress-bar",
+        }
+    ]
+}

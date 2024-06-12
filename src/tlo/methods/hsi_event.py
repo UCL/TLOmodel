@@ -182,13 +182,17 @@ class HSI_Event:
          * Record the equipment that has been added before and during the course of the HSI Event.
         """
         if isinstance(self.target, int):
-            new_inpatient = self.healthcare_system.bed_days.impose_beddays_footprint(
-                footprint=self.bed_days_allocated_to_this_event,
-                facility=self.healthcare_system.get_facility_id_for_beds(self.target),
-                first_day=self.sim.date,
-                patient_id=self.target,
+            are_new_inpatient = (
+                self.healthcare_system.bed_days.impose_beddays_footprint(
+                    footprint=self.bed_days_allocated_to_this_event,
+                    facility=self.healthcare_system.get_facility_id_for_beds(
+                        self.target
+                    ),
+                    first_day=self.sim.date,
+                    patient_id=self.target,
+                )
             )
-            if new_inpatient:
+            if are_new_inpatient:
                 self.sim.population.props.at[self.target, "hs_is_inpatient"] = True
 
         if self.facility_info is not None:

@@ -1558,10 +1558,7 @@ class HealthSystem(Module):
         is_alive = self.sim.population.props.is_alive
         hs_is_inpatient = is_alive[is_alive].index.isin(
             self.bed_days.all_inpatients
-        ) #TODO: STILL an issue here - 9672 didn't get footprint removed with these changes,
-        # but on master they do. Continue the research. 2010-08-04 is the relevant date to check things on.
-        if self.sim.date == Date("2010-08-04"):
-            print("Debug halt")
+        )
         self.sim.population.props.loc[is_alive, "hs_is_inpatient"] = hs_is_inpatient
 
     def get_appt_footprint_as_time_request(self, facility_info: FacilityInfo, appt_footprint: dict):
