@@ -410,9 +410,9 @@ class BedDays:
         criteria to. Defaults to self.occupancies (searching all occupancies).
         """
         # Cast single-values to lists to make parsing easier
-        if not isinstance(patient_id, list):
+        if patient_id is not None and not isinstance(patient_id, list):
             patient_id = [patient_id]
-        if not isinstance(facility, list):
+        if facility is not None and not isinstance(facility, list):
             facility = [facility]
         # Search all stored occupancies by default
         if occupancies is None:
