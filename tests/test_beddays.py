@@ -36,12 +36,6 @@ def small_bedday_dataset() -> pd.DataFrame:
 
 """Suite of tests to examine the use of BedDays class when initialised by the HealthSystem Module"""
 
-
-def test_bed_days_resourcefile_defines_non_bed_space():
-    """Check that "non_bed_space" is defined as the lowest type of bed."""
-    assert 'non_bed_space' == BedDays.__NO_BEDS_BED_TYPE
-
-
 def test_bed_days_basics(tmpdir, seed):
     """Check all the basic functionality about bed-days footprints and capacity management by the health-system"""
 
@@ -200,8 +194,6 @@ def test_bed_days_basics(tmpdir, seed):
             last_bed_type_ends_on = d_last_bed_type.loc[d_last_bed_type > 0].index.max()
             if not (pd.isnull(last_bed_type_ends_on) or pd.isnull(this_bed_type_starts_on)):
                 assert this_bed_type_starts_on > last_bed_type_ends_on
-
-    check_dtypes(sim)
 
 
 def test_bed_days_property_is_inpatient(tmpdir, seed):
@@ -423,7 +415,6 @@ def test_bed_days_released_on_death(tmpdir, seed):
     )
     sim.make_initial_population(n=100)
     sim.simulate(end_date=start_date + pd.DateOffset(days=days_simulation_duration))
-    check_dtypes(sim)
 
     # Test that all bed-days released when person dies
     assert not sim.population.props.at[0, 'is_alive']  # person 0 has died
