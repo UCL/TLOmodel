@@ -8,12 +8,6 @@ but we agree not now
 """
 
 
-#todo: add rate of seeking care given vaginal bleeding (victor guesses ~ 30% seek care promptly)
-#todo: vary odds_ratio_health_seeking_in_adults=4.00
-#todo: add probability of referral for biopsy given presentation with vaginal bleeding
-
-
-
 from pathlib import Path
 from datetime import datetime
 
@@ -85,39 +79,39 @@ class CervicalCancer(Module):
         ),
         "r_hpv": Parameter(
             Types.REAL,
-            "probabilty per month of oncogenic hpv infection",
+            "probability per month of oncogenic hpv infection",
         ),
         "r_cin1_hpv": Parameter(
             Types.REAL,
-            "probabilty per month of incident cin1 amongst people with hpv",
+            "probability per month of incident cin1 amongst people with hpv",
         ),
         "r_cin2_cin1": Parameter(
             Types.REAL,
-            "probabilty per month of incident cin2 amongst people with cin1",
+            "probability per month of incident cin2 amongst people with cin1",
         ),
         "r_cin3_cin2": Parameter(
             Types.REAL,
-            "probabilty per month of incident cin3 amongst people with cin2",
+            "probability per month of incident cin3 amongst people with cin2",
         ),
         "r_stage1_cin3": Parameter(
             Types.REAL,
-            "probabilty per month of incident stage1 cervical cancer amongst people with cin3",
+            "probability per month of incident stage1 cervical cancer amongst people with cin3",
         ),
         "r_stage2a_stage1": Parameter(
             Types.REAL,
-            "probabilty per month of incident stage2a cervical cancer amongst people with stage1",
+            "probability per month of incident stage2a cervical cancer amongst people with stage1",
         ),
         "r_stage2b_stage2a": Parameter(
             Types.REAL,
-            "probabilty per month of incident stage2b cervical cancer amongst people with stage2a",
+            "probability per month of incident stage2b cervical cancer amongst people with stage2a",
         ),
         "r_stage3_stage2b": Parameter(
             Types.REAL,
-            "probabilty per month of incident stage3 cervical cancer amongst people with stage2b",
+            "probability per month of incident stage3 cervical cancer amongst people with stage2b",
         ),
         "r_stage4_stage3": Parameter(
             Types.REAL,
-            "probabilty per month of incident stage4 cervical cancer amongst people with stage3",
+            "probability per month of incident stage4 cervical cancer amongst people with stage3",
         ),
         "rr_progress_cc_hiv": Parameter(
             Types.REAL, "rate ratio for progressing through cin and cervical cancer stages if have unsuppressed hiv"
@@ -149,7 +143,7 @@ class CervicalCancer(Module):
         ),
         "r_death_cervical_cancer": Parameter(
             Types.REAL,
-            "probabilty per month of death from cervical cancer amongst people with stage 4 cervical cancer",
+            "probability per month of death from cervical cancer amongst people with stage 4 cervical cancer",
         ),
         "r_vaginal_bleeding_cc_stage1": Parameter(
             Types.REAL, "rate of vaginal bleeding if have stage 1 cervical cancer"
@@ -273,7 +267,6 @@ class CervicalCancer(Module):
 
     def read_parameters(self, data_folder):
         """Setup parameters used by the module, now including disability weights"""
-        # todo: add disability weights to resource file
 
         # Update parameters from the resourcefile
         self.load_parameters_from_dataframe(
@@ -287,7 +280,7 @@ class CervicalCancer(Module):
                     odds_ratio_health_seeking_in_adults=1.00)
         )
 
-# todo: in order to implement screening for cervical cancer creating a dummy symptom - likely there is a better way
+        # in order to implement screening for cervical cancer creating a dummy symptom - likely there is a better way
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(name='chosen_via_screening_for_cin_cervical_cancer',
                     odds_ratio_health_seeking_in_adults=100.00)
@@ -360,8 +353,6 @@ class CervicalCancer(Module):
         df = sim.population.props
         p = self.parameters
         lm = self.linear_models_for_progression_of_hpv_cc_status
-
-        # todo: mend hiv unsuppressed effect
 
         lm['hpv'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
@@ -500,7 +491,7 @@ class CervicalCancer(Module):
         # Create the diagnostic test representing the use of a biopsy
         # This properties of conditional on the test being done only to persons with the Symptom, 'vaginal_bleeding!
 
-# todo: different sensitivity according to target category
+        # in future could add different sensitivity according to target category
 
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             biopsy_for_cervical_cancer=DxTest(
@@ -530,15 +521,14 @@ class CervicalCancer(Module):
         if "HealthBurden" in self.sim.modules:
             # For those with cancer (any stage prior to stage 4) and never treated
             self.daly_wts["stage_1_3"] = self.sim.modules["HealthBurden"].get_daly_weight(
-                # todo: review the sequlae numbers
-                sequlae_code=550
+                sequlae_code=607
                 # "Diagnosis and primary therapy phase of cervical cancer":
                 #  "Cancer, diagnosis and primary therapy ","has pain, nausea, fatigue, weight loss and high anxiety."
             )
 
             # For those with cancer (any stage prior to stage 4) and has been treated
             self.daly_wts["stage_1_3_treated"] = self.sim.modules["HealthBurden"].get_daly_weight(
-                sequlae_code=547
+                sequlae_code=608
                 # "Controlled phase of cervical cancer,Generic uncomplicated disease":
                 # "worry and daily medication,has a chronic disease that requires medication every day and causes some
                 #   worry but minimal interference with daily activities".
@@ -546,7 +536,7 @@ class CervicalCancer(Module):
 
             # For those in stage 4: no palliative care
             self.daly_wts["stage4"] = self.sim.modules["HealthBurden"].get_daly_weight(
-                sequlae_code=549
+                sequlae_code=609
                 # "Metastatic phase of cervical cancer:
                 # "Cancer, metastatic","has severe pain, extreme fatigue, weight loss and high anxiety."
             )
@@ -590,9 +580,6 @@ class CervicalCancer(Module):
         df.at[child_id, "ce_selected_for_via_this_month"] = False
         df.at[child_id, "ce_selected_for_xpert_this_month"] = False
         df.at[child_id, "ce_biopsy"] = False
-
-    def on_hsi_alert(self, person_id, treatment_id):
-        pass
 
     def report_daly_values(self):
 
@@ -711,11 +698,11 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # -------------------------------- SCREENING FOR CERVICAL CANCER USING XPERT HPV TESTING AND VIA---------------
         # A subset of women aged 30-50 will receive a screening test
 
-        # todo: in future this may be triggered by family planning visit
+        # in future this may be triggered by family planning visit
 
         df.ce_selected_for_via_this_month = False
 
-        eligible_population = df.is_alive & (df.sex == 'F') & (df.age_years > 30) & (df.age_years < 50) & \
+        eligible_population = df.is_alive & (df.sex == 'F') & (df.age_years >= 30) & (df.age_years < 50) & \
                               ~df.ce_current_cc_diagnosed
 
         df.loc[eligible_population, 'ce_selected_for_via_this_month'] = (
@@ -785,10 +772,8 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
 class HSI_CervicalCancer_AceticAcidScreening(HSI_Event, IndividualScopeEventMixin):
 
-    # todo: revisit Warning from healthsystem.py "Couldn't find priority ranking for TREATMENT_ID"
-
     """
-    This event will be scheduled by family planning HSI - for now we determine at random a screening event
+    This event will be scheduled by family planning HSI - for now we determine at random a screening event,
     and we determine at random whether this is AceticAcidScreening or HPVXpertScreening
 
     In future this might be scheduled by the contraception module
@@ -888,7 +873,6 @@ class HSI_CervicalCancer_XpertHPVScreening(HSI_Event, IndividualScopeEventMixin)
         if not person.is_alive:
             return hs.get_blank_appt_footprint()
 
-# todo add to diagnostic tests
         # Run a test to diagnose whether the person has condition:
         dx_result = hs.dx_manager.run_dx_test(
             dx_tests_to_run='screening_with_xpert_for_hpv',
@@ -994,7 +978,7 @@ class HSI_CervicalCancer_Biopsy(HSI_Event, IndividualScopeEventMixin):
             return hs.get_blank_appt_footprint()
 
         # Use a biopsy to diagnose whether the person has cervical cancer
-        # todo: request consumables needed for this
+        # todo: request consumables needed for this and elsewhere
 
         dx_result = hs.dx_manager.run_dx_test(
             dx_tests_to_run='biopsy_for_cervical_cancer',
@@ -1056,8 +1040,6 @@ class HSI_CervicalCancer_Cryotherapy_CIN(HSI_Event, IndividualScopeEventMixin):
         hs = self.sim.modules["HealthSystem"]
         p = self.sim.modules['CervicalCancer'].parameters
 
-        # todo: request consumables needed for this
-
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
 
@@ -1086,8 +1068,6 @@ class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
         p = self.sim.modules['CervicalCancer'].parameters
-
-        # todo: request consumables needed for this
 
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
@@ -1259,8 +1239,6 @@ class HSI_CervicalCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
 
-        # todo: request consumables needed for this
-
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
 
@@ -1289,6 +1267,9 @@ class HSI_CervicalCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
 
 class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """The only logging event for this module"""
+
+    # the use of groupby might be more efficient in computing the statistics below;
+
 
     def __init__(self, module):
         """schedule logging to repeat every 1 month
@@ -1502,7 +1483,7 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         selected_rows = df[(df['sex'] == 'F') & (df['age_years'] > 15) & df['is_alive']]
 
         pd.set_option('display.max_rows', None)
-        print(selected_rows[selected_columns])
+#       print(selected_rows[selected_columns])
 
 #       selected_columns = ['sex', 'age_years', 'is_alive']
 #       pd.set_option('display.max_rows', None)
