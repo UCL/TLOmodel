@@ -367,6 +367,11 @@ def test_check_progression_through_stages_is_blocked_by_treatment(seed):
         disease_module=sim.modules['CervicalCancer']
     )
 
+    # note: This will make all >15 yrs females be on stage 1 and have cancer symptoms yes
+    # BUT it will not automatically make everyone deemed as ever had cervical cancer in the code Hence check
+    # assert set(sim.modules['SymptomManager'].who_has('vaginal_bleeding')).issubset( df.index[df.ce_cc_ever])
+    # is likely to fail
+
     check_configuration_of_population(sim)
 
     # Simulate
