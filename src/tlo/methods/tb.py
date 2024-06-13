@@ -20,7 +20,7 @@ from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.CRITICAL)
+logger.setLevel(logging.INFO)
 
 
 class Tb(Module):
