@@ -499,7 +499,7 @@ class BedDays:
             bed_type_stay_length = (
                 o.length
                 if current_date is None
-                else (o.freed_date - max(o.start_date, current_date)).days + 1
+                else max((o.freed_date - max(o.start_date, current_date)).days + 1, 0)
             )
             footprint[o.bed_type] += bed_type_stay_length
         return footprint
