@@ -556,8 +556,8 @@ class SchistoSpecies:
                                       ' Efficacy of praziquantel in reducing worm burden'),
             'mean_worm_burden2010': Parameter(Types.DATA_FRAME,
                                               'Mean worm burden per infected person per district in 2010'),
-            'prevalence_2010': Parameter(Types.DATA_FRAME,
-                                         'Initial prevalence in each district in 2010'),
+            # 'prevalence_2010': Parameter(Types.DATA_FRAME,
+            #                              'Initial prevalence in each district in 2010'),
             'prop_susceptible': Parameter(Types.DATA_FRAME,
                                           'Proportion of population in each district susceptible to schisto infection'),
             'gamma_alpha': Parameter(Types.DATA_FRAME, 'Parameter alpha for Gamma distribution for harbouring rates'),
@@ -614,9 +614,11 @@ class SchistoSpecies:
             parameters[_param_name] = param_list[f'{_param_name}_{self.name}']
 
         # Baseline reservoir size and other district-related params (R0, proportion susceptible)
-        schisto_initial_reservoir = workbook[f'District_Params_{self.name}'].set_index("District")
+        # schisto_initial_reservoir = workbook[f'District_Params_{self.name}'].set_index("District")
+        # todo this is the updated (calibrated) data
+        schisto_initial_reservoir = workbook[f'Data_{self.name}'].set_index("District")
         parameters['mean_worm_burden2010'] = schisto_initial_reservoir['Mean_worm_burden']
-        parameters['prevalence_2010'] = schisto_initial_reservoir['Prevalence']
+        # parameters['prevalence_2010'] = schisto_initial_reservoir['Prevalence']
         parameters['R0'] = schisto_initial_reservoir['R0']
         parameters['gamma_alpha'] = schisto_initial_reservoir['gamma_alpha']
         parameters['prop_susceptible'] = schisto_initial_reservoir['prop_susceptible']
@@ -820,68 +822,65 @@ class SchistoSpecies:
             in_the_district = df.index[df['district_of_residence'] == district]
 
             # get reservoir in district
-            # num_infected = (len(in_the_district) * params['prevalence_2010'][district]) if len(in_the_district) else 0
-            # mean worm burden is estimated across whole district (not just infected people)
-            # reservoir = num_infected * params['mean_worm_burden2010'][district]
 
             # select starting points
             # HAEMATOBIUM CALIBRATION
-            if global_params['calibration_scenario'] == 1:
-                if self.name == 'haematobium':
-                    params['mean_worm_burden2010'][:] = 2.0
-                # set mansoni to 0
-                else:
-                    params['mean_worm_burden2010'][:] = 0
-
-            if global_params['calibration_scenario'] == 2:
-                if self.name == 'haematobium':
-                    params['mean_worm_burden2010'][:] = 5.0
-                # set mansoni to 0
-                else:
-                    params['mean_worm_burden2010'][:] = 0
-
-            if global_params['calibration_scenario'] == 3:
-                if self.name == 'haematobium':
-                    params['mean_worm_burden2010'][:] = 10.0
-                # set mansoni to 0
-                else:
-                    params['mean_worm_burden2010'][:] = 0
-
-            if global_params['calibration_scenario'] == 4:
-                if self.name == 'haematobium':
-                    params['mean_worm_burden2010'][:] = 25.0
-                # set mansoni to 0
-                else:
-                    params['mean_worm_burden2010'][:] = 0
-
-            # MANSONI CALIBRATION
-            if global_params['calibration_scenario'] == 5:
-                if self.name == 'mansoni':
-                    params['mean_worm_burden2010'][:] = 2.0
-                # set haematobium to 0
-                else:
-                    params['mean_worm_burden2010'][:] = 0
-
-            if global_params['calibration_scenario'] == 6:
-                if self.name == 'mansoni':
-                    params['mean_worm_burden2010'][:] = 5.0
-                # set haematobium to 0
-                else:
-                    params['mean_worm_burden2010'][:] = 0
-
-            if global_params['calibration_scenario'] == 7:
-                if self.name == 'mansoni':
-                    params['mean_worm_burden2010'][:] = 10.0
-                # set haematobium to 0
-                else:
-                    params['mean_worm_burden2010'][:] = 0
-
-            if global_params['calibration_scenario'] == 8:
-                if self.name == 'mansoni':
-                    params['mean_worm_burden2010'][:] = 25.0
-                # set haematobium to 0
-                else:
-                    params['mean_worm_burden2010'][:] = 0
+            # if global_params['calibration_scenario'] == 1:
+            #     if self.name == 'haematobium':
+            #         params['mean_worm_burden2010'][:] = 2.0
+            #     # set mansoni to 0
+            #     else:
+            #         params['mean_worm_burden2010'][:] = 0
+            #
+            # if global_params['calibration_scenario'] == 2:
+            #     if self.name == 'haematobium':
+            #         params['mean_worm_burden2010'][:] = 5.0
+            #     # set mansoni to 0
+            #     else:
+            #         params['mean_worm_burden2010'][:] = 0
+            #
+            # if global_params['calibration_scenario'] == 3:
+            #     if self.name == 'haematobium':
+            #         params['mean_worm_burden2010'][:] = 10.0
+            #     # set mansoni to 0
+            #     else:
+            #         params['mean_worm_burden2010'][:] = 0
+            #
+            # if global_params['calibration_scenario'] == 4:
+            #     if self.name == 'haematobium':
+            #         params['mean_worm_burden2010'][:] = 25.0
+            #     # set mansoni to 0
+            #     else:
+            #         params['mean_worm_burden2010'][:] = 0
+            #
+            # # MANSONI CALIBRATION
+            # if global_params['calibration_scenario'] == 5:
+            #     if self.name == 'mansoni':
+            #         params['mean_worm_burden2010'][:] = 2.0
+            #     # set haematobium to 0
+            #     else:
+            #         params['mean_worm_burden2010'][:] = 0
+            #
+            # if global_params['calibration_scenario'] == 6:
+            #     if self.name == 'mansoni':
+            #         params['mean_worm_burden2010'][:] = 5.0
+            #     # set haematobium to 0
+            #     else:
+            #         params['mean_worm_burden2010'][:] = 0
+            #
+            # if global_params['calibration_scenario'] == 7:
+            #     if self.name == 'mansoni':
+            #         params['mean_worm_burden2010'][:] = 10.0
+            #     # set haematobium to 0
+            #     else:
+            #         params['mean_worm_burden2010'][:] = 0
+            #
+            # if global_params['calibration_scenario'] == 8:
+            #     if self.name == 'mansoni':
+            #         params['mean_worm_burden2010'][:] = 25.0
+            #     # set haematobium to 0
+            #     else:
+            #         params['mean_worm_burden2010'][:] = 0
 
             reservoir = int(len(in_the_district) * params['mean_worm_burden2010'][district])
 

@@ -21,11 +21,12 @@ from tlo.methods import (
     healthsystem,
     schisto,
     really_simplified_births,
-    # simplified_births,
+    simplified_births,
     symptommanager,
 )
 
 import warnings
+
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 resourcefilepath = Path("./resources")
@@ -43,19 +44,19 @@ fitted_districts = ['Blantyre', 'Chiradzulu', 'Mulanje', 'Nsanje', 'Nkhotakota',
 # Name of species that being considered:
 species = ('mansoni', 'haematobium')
 
+
 # %% Run the simulation
-popsize = 5_000
+def run_simulation(popsize,
+                   use_really_simplified_births,
+                   equal_allocation_by_district,
+                   hs_disable_and_reject_all,
+                   mda_execute,
+                   scaleup_WASH):
 
-# species_to_calibrate = 'haematobium'
-# mwb = 0.1
-# prev = 0.2
-
-
-def run_simulation(popsize=popsize, mda_execute=False):
     start_date = Date(2010, 1, 1)
-    end_date = Date(2013, 12, 31)
+    end_date = Date(2015, 12, 31)
 
-    # For logging, set all modules to WARNING threshold, then alters `Schisto` to level "INFO"
+    # For logging
     custom_levels = {
         "*": logging.WARNING,
         "tlo.methods.schisto": logging.INFO,
@@ -66,32 +67,29 @@ def run_simulation(popsize=popsize, mda_execute=False):
     sim = Simulation(start_date=start_date, seed=0, log_config={"filename": "schisto_test_runs",
                                                                 "custom_levels": custom_levels, })
     sim.register(demography.Demography(resourcefilepath=resourcefilepath,
-                                       equal_allocation_by_district=False),
+                                       equal_allocation_by_district=equal_allocation_by_district),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  # healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  # healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable_and_reject_all=False),
-                 really_simplified_births.ReallySimplifiedBirths(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           disable_and_reject_all=hs_disable_and_reject_all),
+                 *(
+                     [really_simplified_births.ReallySimplifiedBirths(
+                         resourcefilepath=resourcefilepath)] if use_really_simplified_births else
+                     [
+                         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath)
+                     ]
+                 ),
+
                  schisto.Schisto(resourcefilepath=resourcefilepath, mda_execute=mda_execute,
-                                 scaleup_WASH=False),
+                                 scaleup_WASH=scaleup_WASH),
                  )
 
-    sim.modules["Schisto"].parameters["calibration_scenario"] = 8.0
+    sim.modules["Schisto"].parameters["calibration_scenario"] = 0
 
     # initialise the population
     sim.make_initial_population(n=popsize)
-
-    # # allocate all population to one district
-    # df = sim.population.props
-    #
-    # df['district_num_of_residence'] = df['district_num_of_residence'][0]
-    #
-    # # replacement_value = df['district_of_residence'].cat.categories[0]
-    # replacement_value = 'Blantyre'
-    # # Assign the replacement value to the entire column while preserving categorical dtype
-    # df['district_of_residence'] = pd.Categorical([replacement_value] * len(df),
-    #                                              categories=df['district_of_residence'].cat.categories)
 
     # start the simulation
     sim.simulate(end_date=end_date)
@@ -100,7 +98,13 @@ def run_simulation(popsize=popsize, mda_execute=False):
     return sim, output
 
 
-sim, output = run_simulation(popsize=popsize, mda_execute=False)
+# todo update these parameters
+sim, output = run_simulation(popsize=15_000,
+                             use_really_simplified_births=False,
+                             equal_allocation_by_district=True,
+                             hs_disable_and_reject_all=False,  # if True, no HSIs run
+                             mda_execute=False,
+                             scaleup_WASH=False)
 
 
 # %% Extract and process the `pd.DataFrame`s needed
@@ -116,16 +120,6 @@ def construct_dfs(schisto_log) -> dict:
 
 dfs = construct_dfs(output['tlo.methods.schisto'])
 
-# if species_to_calibrate == 'haematobium':
-#     df = dfs['infection_status_haematobium']
-# else:
-#     df = ['infection_status_mansoni']
-#
-# # select only those columns in district allocated
-# filtered_df = df.loc[:, df.columns.get_level_values(1) == 'Blantyre']
-#
-# filtered_df.to_csv(outputpath / f"Schisto_{species_to_calibrate}_{mwb}_{prev}.csv")
-
 
 # %% Plot the district-level prevalence at the end of the simulation and compare with data
 
@@ -134,7 +128,8 @@ def get_model_prevalence_by_district(spec: str, year: int):
     _df = dfs[f'infection_status_{spec}']
     t = _df.loc[_df.index.year == year].iloc[-1]  # gets the last entry for 2010 (Dec)
     counts = t.unstack(level=1).groupby(level=0).sum().T
-    return ((counts['High-infection'] + counts['Moderate-infection'] + counts['Low-infection']) / counts.sum(axis=1)).to_dict()
+    return ((counts['High-infection'] + counts['Moderate-infection'] + counts['Low-infection']) / counts.sum(
+        axis=1)).to_dict()
 
 
 def get_expected_prevalence_by_district(species: str):
@@ -155,12 +150,14 @@ def get_model_prevalence_by_district_over_time(spec: str):
     # Aggregate the sums of infection statuses by district_of_residence and year
     district_sums = df.groupby(level='district_of_residence', axis=1).sum()
 
-    filtered_columns = df.columns.get_level_values('infection_status').isin(['High-infection', 'Moderate-infection', 'Low-infection'])
+    filtered_columns = df.columns.get_level_values('infection_status').isin(
+        ['High-infection', 'Moderate-infection', 'Low-infection'])
     infected = df.loc[:, filtered_columns].groupby(level='district_of_residence', axis=1).sum()
 
     prop_infected = infected.div(district_sums)
 
     return prop_infected
+
 
 
 # ----------- PLOTS -----------------

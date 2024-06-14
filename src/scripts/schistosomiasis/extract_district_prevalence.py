@@ -16,11 +16,11 @@ outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
 df = pd.read_excel(outputpath / 'ESPEN_district_data.xlsx', sheet_name='Sheet1')
 
-# Step 1: Filter by SurveyYear < 2015, pre-MDA
+# Step 1: Filter by SurveyYear < 2015, pre-MDA and age-group
 df_filtered = df[df['SurveyYear'] < 2015]
+df_filtered = df_filtered[df_filtered['Age_end'] < 16]
 
 # Step 2: Group by ADMIN2_NAME and SCH_spp, and calculate the mean Prevalence
-# grouped = df_filtered.groupby(['ADMIN2_NAME', 'SCH_spp'])['Prevalence'].mean().reset_index()
 grouped = df_filtered.groupby(['ADMIN2_NAME', 'SCH_spp'])['Prevalence'].agg(['mean', 'min', 'max']).reset_index()
 
 # Step 3: Define a function to classify the mean prevalence
