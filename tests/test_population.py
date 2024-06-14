@@ -111,12 +111,12 @@ def test_population_do_birth(population):
 def test_population_individual_properties_read_only_write_raises(
     population, properties
 ):
-    individual_properties = population.individual_properties(
+    with population.individual_properties(
         person_id=0, read_only=True
-    )
-    for property_name in properties:
-        with pytest.raises(ValueError, match="read-only"):
-            individual_properties[property_name] = 0
+    ) as individual_properties:
+        for property_name in properties:
+            with pytest.raises(ValueError, match="read-only"):
+                individual_properties[property_name] = 0
 
 
 @pytest.mark.parametrize("read_only", [True, False])
@@ -126,25 +126,40 @@ def test_population_individual_properties_read(
 ):
     person_id = person_id % population_with_random_property_values.initial_size
     population_dataframe = population_with_random_property_values.props
-    individual_properties = (
-        population_with_random_property_values.individual_properties(
-            person_id=person_id, read_only=read_only
-        )
-    )
+    with population_with_random_property_values.individual_properties(
+        person_id=person_id, read_only=read_only
+    ) as individual_properties:
+        for property_name in properties:
+            assert (
+                individual_properties[property_name]
+                == population_dataframe.at[person_id, property_name]
+            )
+        # Try reading all properties (in a new random order) a second time to check any
+        # caching mechanism is working as expected
+        shuffled_property_names = list(properties.keys())
+        rng.shuffle(shuffled_property_names)
+        for property_name in shuffled_property_names:
+            assert (
+                individual_properties[property_name]
+                == population_dataframe.at[person_id, property_name]
+            )
+
+
+@pytest.mark.parametrize("read_only", [True, False])
+@pytest.mark.parametrize("person_id", [0, 1, -1])
+def test_population_individual_properties_access_raises_when_finalized(
+    population_with_random_property_values, properties, rng, read_only, person_id
+):
+    person_id = person_id % population_with_random_property_values.initial_size
+    with population_with_random_property_values.individual_properties(
+        person_id=person_id, read_only=read_only
+    ) as individual_properties:
+        pass
     for property_name in properties:
-        assert (
+        with pytest.raises(ValueError, match="finalized"):
             individual_properties[property_name]
-            == population_dataframe.at[person_id, property_name]
-        )
-    # Try reading all properties (in a new random order) a second time to check any
-    # caching mechanism is working as expected
-    shuffled_property_names = list(list(properties.keys()))
-    rng.shuffle(shuffled_property_names)
-    for property_name in shuffled_property_names:
-        assert (
-            individual_properties[property_name]
-            == population_dataframe.at[person_id, property_name]
-        )
+        with pytest.raises(ValueError, match="finalized"):
+            individual_properties[property_name] = None
 
 
 @pytest.mark.parametrize("person_id", [0, 1, -1])
@@ -180,22 +195,22 @@ def test_population_individual_properties_write_with_sync(
     initial_population_dataframe = population_with_random_property_values.props.copy()
     person_id = person_id % population_with_random_property_values.initial_size
     updated_values = {}
-    individual_properties = (
-        population_with_random_property_values.individual_properties(
-            person_id=person_id, read_only=False
+    with population_with_random_property_values.individual_properties(
+        person_id=person_id, read_only=False
+    ) as individual_properties:
+        for property_name, property in properties.items():
+            updated_values[property_name] = _generate_random_values(property, rng)
+            individual_properties[property_name] = updated_values[property_name]
+        # Before synchronization all values in population dataframe should be unchanged
+        assert initial_population_dataframe.equals(
+            population_with_random_property_values.props
         )
-    )
-    for property_name, property in properties.items():
-        updated_values[property_name] = _generate_random_values(property, rng)
-        individual_properties[property_name] = updated_values[property_name]
-    # Before syncrhonization all values in population dataframe should be unchanged
-    assert initial_population_dataframe.equals(
-        population_with_random_property_values.props
-    )
-    individual_properties.synchronize_updates_to_dataframe()
-    # After synchronization all values in population dataframe should be updated values
-    for property_name, property in properties.items():
-        assert (
-            population_with_random_property_values.props.at[person_id, property_name]
-            == updated_values[property_name]
-        )
+        individual_properties.synchronize_updates_to_dataframe()
+        # After synchronization all values in population dataframe should be updated
+        for property_name, property in properties.items():
+            assert (
+                population_with_random_property_values.props.at[
+                    person_id, property_name
+                ]
+                == updated_values[property_name]
+            )

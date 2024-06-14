@@ -1,8 +1,9 @@
-"""The Person and Population classes."""
+"""Types for representing a properties of a population of individuals."""
 
 import math
-from types import TracebackType
-from typing import Any, Dict, Optional, Set, Type
+from collections.abc import Generator
+from contextlib import contextmanager
+from typing import Any, Dict, Optional, Set
 
 import pandas as pd
 
@@ -13,64 +14,74 @@ logger.setLevel(logging.INFO)
 
 
 class IndividualProperties:
-    """Memoized view of population dataframe row that is optionally read-only."""
+    """Memoized view of population dataframe row that is optionally read-only.
+
+    This class should not be instantiated directly but instead the
+    :py:meth:`Population.individual_properties` context manager method used to create
+    instances for a given population.
+    """
 
     def __init__(
-        self,
-        population_dataframe: pd.DataFrame,
-        person_id: int,
-        read_only: bool = True
+        self, population_dataframe: pd.DataFrame, person_id: int, read_only: bool = True
     ):
-        self._population_dataframe = population_dataframe
-        self._person_id = person_id
+        self._finalized = False
         self._read_only = read_only
         self._property_cache: Dict[str, Any] = {}
-        self._properties_updated: Set[str] = set()
+        # Avoid storing a reference to population_dataframe internally by mediating
+        # access via closures to guard against direct access
+        self._get_value_at = lambda key: population_dataframe.at[person_id, key]
+        if not read_only:
+            self._properties_updated: Set[str] = set()
+
+            def synchronize_updates_to_dataframe():
+                row_index = population_dataframe.index.get_loc(person_id)
+                for key in self._properties_updated:
+                    # This chained indexing approach to setting dataframe values is
+                    # significantly (~3 to 4 times) quicker than using at / iat
+                    # indexers, but will fail when copy-on-write is enabled which will
+                    # be default in Pandas 3
+                    column = population_dataframe[key]
+                    column.values[row_index] = self._property_cache[key]
+
+            self._synchronize_updates_to_dataframe = synchronize_updates_to_dataframe
 
     def __getitem__(self, key: str) -> Any:
+        if self._finalized:
+            msg = f"Cannot read value for {key} as instance has been finalized"
+            raise ValueError(msg)
         try:
             return self._property_cache[key]
         except KeyError:
-            value = self._population_dataframe.at[self._person_id, key]
+            value = self._get_value_at(key)
             self._property_cache[key] = value
-            return value     
+            return value
 
     def __setitem__(self, key: str, value: Any) -> None:
+        if self._finalized:
+            msg = f"Cannot set value for {key} as instance has been finalized"
+            raise ValueError(msg)
         if self._read_only:
             msg = f"Cannot set value for {key} as destination is read-only"
             raise ValueError(msg)
         self._properties_updated.add(key)
         self._property_cache[key] = value
 
-    def __enter__(self) -> "IndividualProperties":
-        return self
+    def synchronize_updates_to_dataframe(self) -> None:
+        """Synchronize values for any updated properties to population dataframe."""
+        if not self._read_only:
+            self._synchronize_updates_to_dataframe()
+            self._properties_updated.clear()
 
-    def __exit__(
-        self,
-        exception_type: Optional[Type[BaseException]],
-        exception_value: Optional[BaseException],
-        exception_traceback: Optional[TracebackType],
-    ) -> bool:
+    def finalize(self) -> None:
+        """Synchronize updates to population dataframe and prevent further access."""
         self.synchronize_updates_to_dataframe()
-        return False
-
-    def synchronize_updates_to_dataframe(self):
-        row_index = self._population_dataframe.index.get_loc(self._person_id)
-        for key in self._properties_updated:
-            # This chained indexing approach to setting dataframe values is
-            # significantly (~3 to 4 times) quicker than using at / iat indexers, but
-            # will fail when copy-on-write is enabled which will be default in Pandas 3
-            column = self._population_dataframe[key]
-            column.values[row_index] = self._property_cache[key]
+        self._finalized = True
 
 
 class Population:
     """A complete population of individuals.
 
     Useful properties of a population:
-
-    `sim`
-        The Simulation instance controlling this population.
 
     `props`
         A Pandas DataFrame with the properties of all individuals as columns.
@@ -186,20 +197,33 @@ class Population:
         size = self.initial_size if self.props.empty else len(self.props)
         self.props[name] = prop.create_series(name, size)
 
+    @contextmanager
     def individual_properties(
         self, person_id: int, read_only: bool = True
-    ) -> IndividualProperties:
+    ) -> Generator[IndividualProperties, None, None]:
         """
-        Extract a lazily evaluated memoized view of a row of the population dataframe.
+        Context manager for a memoized view of a row of the population dataframe.
+
+        The view returned represents the properties of an individual with properties
+        accessible by indexing using string column names, and lazily read-on demand
+        from the population dataframe.
+
+        Optionally the view returned may allow updating properties as well as reading.
+        In this case on exit from the ``with`` block in which the context is entered,
+        any updates to the individual properties will be written back to the population
+        dataframe.
         
-        The object returned represents the properties of an individual with properties
-        accessible by indexing using string column names.
+        Once the ``with`` block in which the context is entered has been exited the view
+        returned will raise an error on any subsequent attempts at reading or writing
+        properties.
 
         :param person_id: Row index of the dataframe row to extract.
-        :param read_only: Whether view is read-only or allows updating properties. If 
-            ``True`` :py:meth:`IndividualProperties.synchronize_updates_to_dataframe` 
+        :param read_only: Whether view is read-only or allows updating properties. If
+            ``True`` :py:meth:`IndividualProperties.synchronize_updates_to_dataframe`
             method needs to be called for any updates to be written back to population
             dataframe.
         :returns: Object allowing memoized access to an individual's properties.
         """
-        return IndividualProperties(self.props, person_id, read_only=read_only)
+        properties = IndividualProperties(self.props, person_id, read_only=read_only)
+        yield properties
+        properties.finalize()
