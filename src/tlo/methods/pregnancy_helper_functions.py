@@ -21,7 +21,7 @@ def get_list_of_items(self, item_list):
     return codes
 
 
-def return_cons_avail(self, hsi_event, cons_dict, **info):
+def return_cons_avail(self, hsi_event, cons, opt_cons):
     """
     This function is called by majority of interventions across maternal and neonatal modules to return whether a
     consumable or package of consumables are available. If analysis is not being conducted (as indicated by a series of
@@ -38,21 +38,12 @@ def return_cons_avail(self, hsi_event, cons_dict, **info):
     ps_params = self.sim.modules['PregnancySupervisor'].current_parameters
     la_params = self.sim.modules['Labour'].current_parameters
 
-    # If 'number' is passed as an optional argument then a predetermined number of consumables will be requested
-    if 'number' in info.keys():
-        core_cons = {cons_dict[info['core']][0]: info['number']}
-    else:
-        core_cons = cons_dict[info['core']]
-
-    # If 'optional' is passed then the optional set of consumables is selected from the consumables dict
-    if 'optional' in info.keys():
-        opt_cons = cons_dict[info['optional']]
-    else:
+    if opt_cons is None:
         opt_cons = []
 
     # Check if analysis is currently running, if not then availability is determined normally
     if not ps_params['ps_analysis_in_progress'] and not la_params['la_analysis_in_progress']:
-        available = hsi_event.get_consumables(item_codes=core_cons,
+        available = hsi_event.get_consumables(item_codes=cons,
                                               optional_item_codes=opt_cons)
 
         if not available and (hsi_event.target in mni) and (hsi_event != 'AntenatalCare_Outpatient'):
@@ -61,7 +52,7 @@ def return_cons_avail(self, hsi_event, cons_dict, **info):
         return available
 
     else:
-        available = hsi_event.get_consumables(item_codes=core_cons, optional_item_codes=opt_cons)
+        available = hsi_event.get_consumables(item_codes=cons, optional_item_codes=opt_cons)
 
         # Depending on HSI calling this function a different parameter set is used to determine if analysis is being
         # conducted

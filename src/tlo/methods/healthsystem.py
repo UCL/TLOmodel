@@ -236,6 +236,9 @@ class HealthSystem(Module):
         'year_cons_availability_switch': Parameter(
             Types.INT, "Year in which consumable availability switch is enforced. The change happens"
                        "on 1st January of that year.)"),
+        'year_use_funded_or_actual_staffing_switch': Parameter(
+            Types.INT, "Year in which switch for `use_funded_or_actual_staffing` is enforced. (The change happens"
+                       "on 1st January of that year.)"),
         'priority_rank': Parameter(
             Types.DICT, "Data on the priority ranking of each of the Treatment_IDs to be adopted by "
                         " the queueing system under different policies, where the lower the number the higher"
@@ -323,7 +326,10 @@ class HealthSystem(Module):
             Types.INT, 'Mode considered after a mode switch in year_mode_switch.'),
         'cons_availability_postSwitch': Parameter(
             Types.STRING, 'Consumables availability after switch in `year_cons_availability_switch`. Acceptable values'
-                          'are the same as those for Parameter `cons_availability`.')
+                          'are the same as those for Parameter `cons_availability`.'),
+        'use_funded_or_actual_staffing_postSwitch': Parameter(
+            Types.STRING, 'Staffing availability after switch in `year_use_funded_or_actual_staffing_switch`. '
+                          'Acceptable values are the same as those for Parameter `use_funded_or_actual_staffing`.'),
     }
 
     PROPERTIES = {
@@ -447,10 +453,9 @@ class HealthSystem(Module):
             assert isinstance(capabilities_coefficient, float)
         self.capabilities_coefficient = capabilities_coefficient
 
-        # Find which set of assumptions to use - those for the actual staff available or the funded staff available
-        if use_funded_or_actual_staffing is not None:
-            assert use_funded_or_actual_staffing in ['actual', 'funded', 'funded_plus']
+        # Save argument for assumptions to use for 'use_funded_or_actual_staffing`
         self.arg_use_funded_or_actual_staffing = use_funded_or_actual_staffing
+        self._use_funded_or_actual_staffing = None  # <-- this is the private internal store of the value that is used.
 
         # Define (empty) list of registered disease modules (filled in at `initialise_simulation`)
         self.recognised_modules_names = []
@@ -637,9 +642,15 @@ class HealthSystem(Module):
         # Determine service_availability
         self.service_availability = self.get_service_availability()
 
-        self.process_human_resources_files(
-            use_funded_or_actual_staffing=self.get_use_funded_or_actual_staffing()
-        )
+        # Process health system organisation files (Facilities, Appointment Types, Time Taken etc.)
+        self.process_healthsystem_organisation_files()
+
+        # Set value for `use_funded_or_actual_staffing` and process Human Resources Files
+        # (Initially set value should be equal to what is specified by the parameter, but overwritten with what was
+        # provided in argument if an argument was specified -- provided for backward compatibility/debugging.)
+        self.use_funded_or_actual_staffing = self.parameters['use_funded_or_actual_staffing'] \
+            if self.arg_use_funded_or_actual_staffing is None \
+            else self.arg_use_funded_or_actual_staffing
 
         # Initialise the BedDays class
         self.bed_days = BedDays(hs_module=self,
@@ -738,6 +749,16 @@ class HealthSystem(Module):
             Date(self.parameters["year_equip_availability_switch"], 1, 1)
         )
 
+        # Schedule an equipment availability switch
+        sim.schedule_event(
+            HealthSystemChangeParameters(
+                self,
+                parameters={
+                    'use_funded_or_actual_staffing': self.parameters['use_funded_or_actual_staffing_postSwitch']
+                }
+            ),
+            Date(self.parameters["year_use_funded_or_actual_staffing_switch"], 1, 1)
+        )
 
         # Schedule a one-off rescaling of _daily_capabilities broken down by officer type and level.
         # This occurs on 1st January of the year specified in the parameters.
@@ -809,8 +830,15 @@ class HealthSystem(Module):
         if 'Tb' in self.sim.modules:
             self.list_fasttrack.append(('tb_diagnosed', 'FT_if_tbdiagnosed'))
 
-    def process_human_resources_files(self, use_funded_or_actual_staffing: str):
-        """Create the data-structures needed from the information read into the parameters."""
+    def process_healthsystem_organisation_files(self):
+        """Create the data-structures needed from the information read into the parameters:
+         * self._facility_levels
+         * self._appointment_types
+         * self._appt_times
+         * self._appt_type_by_facLevel
+         * self._facility_by_facility_id
+         * self._facilities_for_each_district
+        """
 
         # * Define Facility Levels
         self._facility_levels = set(self.parameters['Master_Facilities_List']['Facility_Level']) - {'5'}
@@ -903,6 +931,10 @@ class HealthSystem(Module):
         self._facility_by_facility_id = facilities_by_facility_id
         self._facilities_for_each_district = facilities_per_level_and_district
 
+    def setup_daily_capabilities(self, use_funded_or_actual_staffing):
+        """Set up `self._daily_capabilities` and `self._officers_with_availability`.
+        This is called when the value for `use_funded_or_actual_staffing` is set - at the beginning of the simulation
+         and when the assumption when the underlying assumption for `use_funded_or_actual_staffing` is updated"""
         # * Store 'DailyCapabilities' in correct format and using the specified underlying assumptions
         self._daily_capabilities = self.format_daily_capabilities(use_funded_or_actual_staffing)
 
@@ -1142,13 +1174,17 @@ class HealthSystem(Module):
             if self.arg_mode_appt_constraints is None \
             else self.arg_mode_appt_constraints
 
-    def get_use_funded_or_actual_staffing(self) -> str:
-        """Returns `use_funded_or_actual_staffing`. (Should be equal to what is specified by the parameter, but
-        overwrite with what was provided in argument if an argument was specified -- provided for backward
-        compatibility/debugging.)"""
-        return self.parameters['use_funded_or_actual_staffing'] \
-            if self.arg_use_funded_or_actual_staffing is None \
-            else self.arg_use_funded_or_actual_staffing
+    @property
+    def use_funded_or_actual_staffing(self) -> str:
+        """Returns value for `use_funded_or_actual_staffing`."""
+        return self._use_funded_or_actual_staffing
+
+    @use_funded_or_actual_staffing.setter
+    def use_funded_or_actual_staffing(self, use_funded_or_actual_staffing) -> str:
+        """Set value for `use_funded_or_actual_staffing` and update the daily_capabilities accordingly. """
+        assert use_funded_or_actual_staffing in ['actual', 'funded', 'funded_plus']
+        self._use_funded_or_actual_staffing = use_funded_or_actual_staffing
+        self.setup_daily_capabilities(self._use_funded_or_actual_staffing)
 
     def get_priority_policy_initial(self) -> str:
         """Returns `priority_policy`. (Should be equal to what is specified by the parameter, but
@@ -2425,8 +2461,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                         )
 
                             # Update today's footprint based on actual call and squeeze factor
-                            self.module.running_total_footprint -= original_call
-                            self.module.running_total_footprint += updated_call
+                            self.module.running_total_footprint.update(updated_call)
 
                             # Write to the log
                             self.module.record_hsi_event(
@@ -2763,6 +2798,7 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
         * `cons_availability`
         * `beds_availability`
         * `equip_availability`
+        * `use_funded_or_actual_staffing`
     Note that no checking is done here on the suitability of values of each parameter."""
 
     def __init__(self, module: HealthSystem, parameters: Dict):
@@ -2789,6 +2825,8 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
         if 'equip_availability' in self._parameters:
             self.module.equipment.availability = self._parameters['equip_availability']
 
+        if 'use_funded_or_actual_staffing' in self._parameters:
+            self.module.use_funded_or_actual_staffing = self._parameters['use_funded_or_actual_staffing']
 
 class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
     """ This event exists to scale the daily capabilities assumed at fixed time intervals"""

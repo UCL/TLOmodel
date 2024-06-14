@@ -1274,21 +1274,23 @@ class HSI_PostnatalSupervisor_TreatmentForObstetricFistula(HSI_Event, Individual
             return
 
         # Define the consumables
-        of_repair_cons = pregnancy_helper_functions.get_list_of_items(
-            self, ['Scalpel blade size 22 (individually wrapped)_100_CMST',
-                   'Halothane (fluothane)_250ml_CMST',
-                   'Ceftriaxone 1g, PFR_each_CMST',
-                   'Metronidazole 200mg_1000_CMST',
-                   'Cannula iv  (winged with injection pot) 18_each_CMST',
-                   'Paracetamol, tablet, 500 mg',
-                   'Declofenac injection_each_CMST',
-                   'Pethidine, 50 mg/ml, 2 ml ampoule',
-                   'Foley catheter',
-                   'Bag, urine, collecting, 2000 ml',
-                   "ringer's lactate (Hartmann's solution), 1000 ml_12_IDA",
-                   'Sodium chloride, injectable solution, 0,9 %, 500 ml',
-                   "Giving set iv administration + needle 15 drops/ml_each_CMST",
-                   "Chlorhexidine 1.5% solution_5_CMST"])
+        ic = self.sim.modules['HealthSystem'].get_item_code_from_item_name
+
+        of_repair_cons = \
+            {ic('Scalpel blade size 22 (individually wrapped)_100_CMST'): 1,
+             ic('Halothane (fluothane)_250ml_CMST'): 100,
+             ic('Ceftriaxone 1g, PFR_each_CMST'): 2,
+             ic('Metronidazole 200mg_1000_CMST'): 6000,
+             ic('Cannula iv  (winged with injection pot) 18_each_CMST'): 1,
+             ic('Paracetamol, tablet, 500 mg'): 8000,
+             ic('Declofenac injection_each_CMST'): 1,
+             ic('Foley catheter'): 1,
+             ic('Bag, urine, collecting, 2000 ml'): 1,
+             ic("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 2000,
+             ic('Sodium chloride, injectable solution, 0,9 %, 500 ml'): 2000,
+             ic('Giving set iv administration + needle 15 drops/ml_each_CMST'): 1,
+             ic('Chlorhexidine 1.5% solution_5_CMST'): 50,
+             }
 
         self.get_consumables(item_codes=of_repair_cons)
 

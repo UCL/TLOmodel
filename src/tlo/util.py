@@ -407,6 +407,11 @@ def random_date(start, end, rng):
     return start + DateOffset(days=rng.randint(0, (end - start).days))
 
 
+def str_to_pandas_date(date_string):
+    """Convert a string with the format YYYY-MM-DD to a pandas Timestamp (aka TLO Date) object."""
+    return pd.to_datetime(date_string, format="%Y-%m-%d")
+
+
 def hash_dataframe(dataframe: pd.DataFrame):
     def coerce_lists_to_tuples(df: pd.DataFrame) -> pd.DataFrame:
         """Coerce columns in a pd.DataFrame that are lists to tuples. This step is needed before hashing a pd.DataFrame
