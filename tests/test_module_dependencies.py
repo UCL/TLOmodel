@@ -32,7 +32,6 @@ simulation_initial_population = 1000
 module_class_map = get_module_class_map(
     excluded_modules={
         "Module",
-        "GenericFirstApptModule",
         "Skeleton",
         "SimplifiedPregnancyAndLabour",
     }

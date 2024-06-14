@@ -5,14 +5,14 @@ from typing import TYPE_CHECKING, Dict, List
 
 import pandas as pd
 
-from tlo import Parameter, Property, Types, logging
+from tlo import Module, Parameter, Property, Types, logging
 from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.hsi_event import HSI_Event
-from tlo.methods.hsi_generic_first_appts import GenericFirstApptModule
+from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date
 
@@ -30,7 +30,7 @@ gbd_causes_of_copd_represented_in_this_module = {
 }
 
 
-class Copd(GenericFirstApptModule):
+class Copd(Module, GenericFirstAppointmentsMixin):
     """The module responsible for determining Chronic Obstructive Pulmonary Diseases (COPD) status and outcomes.
      and initialises parameters and properties associated with COPD plus functions and events related to COPD."""
 

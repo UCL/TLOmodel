@@ -6,13 +6,13 @@ from typing import TYPE_CHECKING, List, Union
 import numpy as np
 import pandas as pd
 
-from tlo import DateOffset, Parameter, Property, Types, logging
+from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.hsi_event import HSI_Event
-from tlo.methods.hsi_generic_first_appts import GenericFirstApptModule
+from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
 
 if TYPE_CHECKING:
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class Epilepsy(GenericFirstApptModule):
+class Epilepsy(Module, GenericFirstAppointmentsMixin):
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath

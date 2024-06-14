@@ -12,7 +12,7 @@ from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMix
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.hsi_event import HSI_Event
-from tlo.methods.hsi_generic_first_appts import GenericFirstApptModule
+from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date
 
@@ -31,7 +31,7 @@ logger.setLevel(logging.INFO)
 _AGE_GROUPS = {'PSAC': (0, 4), 'SAC': (5, 14), 'Adults': (15, 120), 'All': (0, 120)}
 
 
-class Schisto(GenericFirstApptModule):
+class Schisto(Module, GenericFirstAppointmentsMixin):
     """Schistosomiasis module.
     Two species of worm that cause Schistosomiasis are modelled independently. Worms are acquired by persons via the
      environment. There is a delay between the acquisition of worms and the maturation to 'adults' worms; and a long

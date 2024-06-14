@@ -48,8 +48,8 @@ class HSIEventScheduler(Protocol):
     ) -> None: ...
 
 
-class GenericFirstApptModule(Module):
-    """Base class for modules with actions to perform on generic first appointments."""
+class GenericFirstAppointmentsMixin:
+    """Mix-in for modules with actions to perform on generic first appointments."""
 
     def do_at_generic_first_appt(
         self,
@@ -115,7 +115,7 @@ class GenericFirstApptModule(Module):
         Actions to take during an emergency generic health system interaction (HSI).
 
         Call signature is identical to the
-        :py:meth:`~GenericFirstApptModule.do_at_generic_first_appt` method.
+        :py:meth:`~GenericFirstAppointmentsMixin.do_at_generic_first_appt` method.
 
         Derived classes should overwrite this method so that they are compatible with
         the :py:class`~.HealthSystem` module, and can schedule HSI events when a
@@ -139,8 +139,8 @@ class _BaseHSIGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
         """
         Passed to modules when determining HSI events to be scheduled based on
         this generic appointment. Intended as the ``diagnosis_function`` argument to
-        :py:meth:`GenericFirstApptModule.do_at_generic_first_appt` or
-        :py:meth:`GenericFirstApptModule.do_at_generic_first_appt_emergency`.
+        :py:meth:`GenericFirstAppointmentsMixin.do_at_generic_first_appt` or
+        :py:meth:`GenericFirstAppointmentsMixin.do_at_generic_first_appt_emergency`.
 
         Class-level definition avoids the need to redefine this method each time
         the :py:meth:`apply` method is called.
@@ -188,7 +188,7 @@ class _BaseHSIGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
             symptoms = self.sim.modules["SymptomManager"].has_what(self.target)
             schedule_hsi_event = self.sim.modules["HealthSystem"].schedule_hsi_event
             for module in self.sim.modules.values():
-                if isinstance(module, GenericFirstApptModule):
+                if isinstance(module, GenericFirstAppointmentsMixin):
                     self._do_at_generic_first_appt_for_module(module)(
                         person_id=self.target,
                         individual_properties=individual_properties,
@@ -227,7 +227,7 @@ class HSI_GenericNonEmergencyFirstAppt(_BaseHSIGenericFirstAppt):
 
     @staticmethod
     def _do_at_generic_first_appt_for_module(
-        module: GenericFirstApptModule,
+        module: GenericFirstAppointmentsMixin,
     ) -> Callable:
         return module.do_at_generic_first_appt
 
@@ -257,7 +257,7 @@ class HSI_GenericEmergencyFirstAppt(_BaseHSIGenericFirstAppt):
 
     @staticmethod
     def _do_at_generic_first_appt_for_module(
-        module: GenericFirstApptModule,
+        module: GenericFirstAppointmentsMixin,
     ) -> Callable:
         return module.do_at_generic_first_appt_emergency
 

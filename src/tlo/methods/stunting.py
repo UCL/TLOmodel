@@ -23,7 +23,7 @@ from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, Reg
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods.hsi_event import HSI_Event
-from tlo.methods.hsi_generic_first_appts import GenericFirstApptModule
+from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -37,7 +37,7 @@ logger.setLevel(logging.INFO)
 #   MODULE DEFINITION
 # ---------------------------------------------------------------------------------------------------------
 
-class Stunting(GenericFirstApptModule):
+class Stunting(Module, GenericFirstAppointmentsMixin):
     """This is the disease module for Stunting"""
 
     INIT_DEPENDENCIES = {'Demography', 'Wasting', 'NewbornOutcomes', 'Diarrhoea', 'Hiv'}
