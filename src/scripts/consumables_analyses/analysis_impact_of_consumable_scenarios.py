@@ -16,7 +16,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib.ticker import FuncFormatter
 from collections import Counter, defaultdict
-
+import seaborn as sns
 
 from tlo.analysis.utils import (
     CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP,
@@ -252,7 +252,9 @@ ax.yaxis.set_major_formatter(formatter)
 #ax.set_ylim((0, 50))
 #ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 fig.tight_layout()
-plt.show()
+fig.savefig(figurespath / 'main_result_DALYs.png')
+fig.show()
+plt.close(fig)
 
 # 1.2 DALYs by disease area/intervention - for comparison of the magnitude of impact created by consumables interventions
 def _extract_dalys_by_disease(_df: pd.DataFrame) -> pd.Series:
@@ -483,6 +485,53 @@ create_line_plot_percentage_of_baseline(_df=treatments_delivered,
                  _plt_name='treatments_delivered_percentage.png')
 
 # Cost of consumables?
+
+# %% Summarizing input resourcefile data
+
+# 1. Consumable availability by category and level
+#--------------------------------------------------
+tlo_availability_df = pd.read_csv(resourcefilepath  / 'healthsystem'/ 'consumables' / "ResourceFile_Consumables_availability_small.csv")
+
+# Attach district, facility level, program to this dataset
+mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "ResourceFile_Master_Facilities_List.csv")
+districts = set(pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_Population_2010.csv')['District'])
+fac_levels = {'0', '1a', '1b', '2', '3', '4'}
+tlo_availability_df = tlo_availability_df.merge(mfl[['District', 'Facility_Level', 'Facility_ID']],
+                    on = ['Facility_ID'], how='left')
+# Attach programs
+programs = pd.read_csv(resourcefilepath / 'healthsystem'/ 'consumables' / "ResourceFile_Consumables_availability_and_usage.csv")[['category', 'item_code', 'module_name']]
+programs = programs.drop_duplicates('item_code')
+tlo_availability_df = tlo_availability_df.merge(programs, on = ['item_code'], how = 'left')
+
+# Generate a heatmap
+# Pivot the DataFrame
+aggregated_df = tlo_availability_df.groupby(['category', 'Facility_Level'])['available_prop'].mean().reset_index()
+heatmap_data = aggregated_df.pivot("category", "Facility_Level", "available_prop")
+
+# Calculate the aggregate row and column
+aggregate_col= tlo_availability_df.groupby('Facility_Level')['available_prop'].mean()
+aggregate_row = tlo_availability_df.groupby('category')['available_prop'].mean()
+overall_aggregate = tlo_availability_df['available_prop'].mean()
+
+# Add aggregate row and column
+heatmap_data['Average'] = aggregate_row
+aggregate_col['Average'] = overall_aggregate
+heatmap_data.loc['Average'] = aggregate_col
+
+# Generate the heatmap
+plt.figure(figsize=(10, 8))
+sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn', cbar_kws={'label': 'Proportion of days on which consumable is available'})
+
+# Customize the plot
+#plt.title('Consumable availability by Facility Level and Category')
+plt.xlabel('Facility Level')
+plt.ylabel('Category')
+plt.xticks(rotation=45)
+plt.yticks(rotation=0)
+
+plt.savefig(figurespath /'consumable_availability_heatmap.png', dpi=300, bbox_inches='tight')
+plt.show()
+plt.close()
 
 # TODO Justify the focus on levels 1a and 1b - where do HSIs occur?; at what level is there most misallocation within districts
 # TODO get graphs of percentage of successful HSIs under different scenarios for levels 1a and 1b
