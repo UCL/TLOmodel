@@ -197,9 +197,9 @@ params = params.merge(params_dict_df, on = 'value', how = 'left', validate = '1:
 
 # %% Extracting results from run
 
-# 1. DALYs averted
+# 1. DALYs accrued
 #-----------------------------------------
-# 1.1 Difference in total DALYs accrued
+# 1.1 Total DALYs accrued
 def extract_total_dalys(results_folder):
 
     def extract_dalys_total(df: pd.DataFrame) -> pd.Series:
@@ -254,7 +254,7 @@ ax.yaxis.set_major_formatter(formatter)
 fig.tight_layout()
 plt.show()
 
-# DALYs by disease area/intervention - for comparison of the magnitude of impact created by consumables interventions
+# 1.2 DALYs by disease area/intervention - for comparison of the magnitude of impact created by consumables interventions
 def _extract_dalys_by_disease(_df: pd.DataFrame) -> pd.Series:
     """Construct a series with index disease and value of the total of DALYS (stacked) from the
     `dalys_stacked` key logged in `tlo.methods.healthburden`.
@@ -296,7 +296,7 @@ create_line_plot_percentage_of_baseline(_df = dalys_by_disease_summarized_df,
                   metric = 'DALYs accrued',
                  _plt_name = 'DALYs_by_cause_percentage.png')
 
-# 2. Mechanisms of impact
+# 2. Consumable demand not met
 #-----------------------------------------
 # Number of units of item which were needed but not made available for the top 25 items
 # TODO ideally this should count the number of treatment IDs but this needs the detailed health system logger
@@ -368,6 +368,8 @@ consumables_availability_figure(results_folder, outputspath, resourcefilepath)
 # HSI affected by missing consumables
 # We need healthsystem logger for this
 
+# 3. Number of Health System Interactions
+#-----------------------------------------
 # HSIs taking place by level in the default scenario
 def get_counts_of_hsis(_df):
     _df = drop_outside_period(_df)
@@ -436,7 +438,9 @@ create_line_plot_percentage_of_baseline(_df=hsi_stacked,
                  metric = 'HSIs',
                  _plt_name='hsis_requested.png')
 
-# Appointments by treatment ID
+
+# 4. Number of Services delivered
+#-----------------------------------------
 def get_counts_of_treatments(_df):
     _df = drop_outside_period(_df)
 
@@ -484,3 +488,4 @@ create_line_plot_percentage_of_baseline(_df=treatments_delivered,
 # TODO get graphs of percentage of successful HSIs under different scenarios for levels 1a and 1b
 # TODO is there a way to link consumables directly to DALYs (how many DALYs are lost due to stockouts of specific consumables)
 # TODO why are there no appointments at level 1b
+
