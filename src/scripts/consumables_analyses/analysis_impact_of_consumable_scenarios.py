@@ -87,7 +87,7 @@ def create_line_plot_absolute_figure(_df, _plt_var, _index_var, keep_rows, metri
     pivot_df = pivot_df[0:keep_rows]  # Keep only top X conditions
 
     # Define Scnearios and colours
-    scenarios = params['value']  # range(len(params))  # X-axis values representing time periods
+    scenarios = params['name_of_scenario']  # range(len(params))  # X-axis values representing time periods
     colors = plt.get_cmap('tab10')(np.linspace(0, 1, len(params['value'])))  # Generate different colors for each bar
     #colors = plt.cm.viridis(np.linspace(0, 1, len(params['value'])))  # Generate different colors for each bar
 
@@ -110,8 +110,8 @@ def create_line_plot_absolute_figure(_df, _plt_var, _index_var, keep_rows, metri
     ax.set_ylabel(f'{metric}')
 
     # Format y-axis ticks to display in millions
-    formatter = FuncFormatter(lambda x, _: '{:,.0f}'.format(x / 1000000))
-    ax.yaxis.set_major_formatter(formatter)
+    #formatter = FuncFormatter(lambda x, _: '{:,.0f}'.format(x / 1000000))
+    #ax.yaxis.set_major_formatter(formatter)
 
     #ax.set_title('DALYs by Cause')
     ax.legend(loc='upper right', bbox_to_anchor=(1.2, 1))
@@ -134,7 +134,7 @@ def create_line_plot_percentage_of_baseline(_df, _plt_var, _index_var, keep_rows
     pivot_df = pivot_df[0:keep_rows]  # Keep only top X conditions
 
     # Define Scnearios and colours
-    scenarios = params['value']  # range(len(params))  # X-axis values representing time periods
+    scenarios = params['name_of_scenario']  # range(len(params))  # X-axis values representing time periods
     colors = plt.get_cmap('tab10')(np.linspace(0, 1, len(params['value'])))  # Generate different colors for each bar
 
     # Plotting
@@ -145,18 +145,18 @@ def create_line_plot_percentage_of_baseline(_df, _plt_var, _index_var, keep_rows
 
     # Plot each draw with its confidence interval
     for draw in pivot_df.columns.levels[0]:
-        if scenarios[draw] == 'default': # Because this is a comparative graph and 'default' is the baseline for comparison
+        if scenarios[draw] == 'Actual': # Because this is a comparative graph and 'default' is the baseline for comparison
             pass
         else:
-            central_vals = (1 - pivot_df[(draw, 'mean')]/pivot_df[(0, 'mean')]) * 100# this shows the % reduction in DALYs compared to baseline
-            lower_vals = (1 - pivot_df[(draw, 'lower')]/pivot_df[(0, 'lower')]) * 100
-            upper_vals = (1 - pivot_df[(draw, 'upper')]/pivot_df[(0, 'upper')]) * 100
+            central_vals = pivot_df[(draw, 'mean')]/pivot_df[(0, 'mean')] * 100# this shows the % reduction in DALYs compared to baseline
+            lower_vals = pivot_df[(draw, 'lower')]/pivot_df[(0, 'lower')] * 100
+            upper_vals = pivot_df[(draw, 'upper')]/pivot_df[(0, 'upper')] * 100
 
             ax.plot(x_axis_label_names, central_vals, label= scenarios[draw], color = colors[draw])  # TODO update label to name of scenario
             ax.fill_between(x_axis_label_names, lower_vals, upper_vals, alpha=0.3, color = colors[draw])
 
     # Customize plot
-    ax.set_ylabel(f'Percentage reduction in {metric} compared to baseline')
+    ax.set_ylabel(f"{metric} (percentage of 'Actual')")
 
     # Formatting y-axis as percentages
     ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: '{:.0f}%'.format(y)))
@@ -187,6 +187,12 @@ info = get_scenario_info(results_folder)
 
 # 1) Extract the parameters that have varied over the set of simulations
 params = extract_params(results_folder)
+params_dict  = {'default': 'Actual', 'scenario1': 'Scenario 1', 'scenario2': 'Scenario 2',
+                'scenario3': 'Scenario 3', 'scenario4': 'Scenario 4', 'scenario5': 'Scenario 5',
+                'scenario6': 'Scenario 6', 'scenario7': 'Scenario 7', 'scenario8': 'Scenario 8',
+                'all': 'Perfect'}
+params_dict_df = pd.DataFrame.from_dict(params_dict, orient='index', columns=['name_of_scenario']).reset_index().rename(columns = {'index': 'value'})
+params = params.merge(params_dict_df, on = 'value', how = 'left', validate = '1:1')
 
 
 # %% Extracting results from run
@@ -228,14 +234,14 @@ for i, _p in enumerate(params['value']):
     upper_vals.append(upper_val)
 
 # Generate the plot
-scenarios = params['value'] #range(len(params))  # X-axis values representing time periods
-colors = plt.cm.viridis(np.linspace(0, 1, len(params['value'])))  # Generate different colors for each bar
+scenarios = params['name_of_scenario'] #range(len(params))  # X-axis values representing time periods
+colors = plt.get_cmap('tab10')(np.linspace(0, 1, len(params['value'])))  # Generate different colors for each bar
 
 for i in range(len(scenarios)):
     ax.bar(scenarios[i], central_vals[i], color=colors[i], label=scenarios[i])
     ax.errorbar(scenarios[i], central_vals[i], yerr=[[central_vals[i] - lower_vals[i]], [upper_vals[i] - central_vals[i]]], fmt='o', color='black')
 
-plt.xticks(scenarios, params['value'], rotation=45)
+plt.xticks(scenarios, params['name_of_scenario'], rotation=45)
 ax.set_xlabel('Scenarios')
 ax.set_ylabel('Total DALYs accrued (in millions)')
 
@@ -244,7 +250,7 @@ formatter = FuncFormatter(lambda x, _: '{:,.0f}'.format(x / 1000000))
 ax.yaxis.set_major_formatter(formatter)
 
 #ax.set_ylim((0, 50))
-ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+#ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 fig.tight_layout()
 plt.show()
 
