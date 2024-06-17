@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
@@ -15,11 +18,19 @@ from tlo import (
     logging,
     util,
 )
+from tlo.core import IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel
 from tlo.methods import Metadata, labour, pregnancy_helper_functions, pregnancy_supervisor_lm
+from tlo.methods.care_of_women_during_pregnancy import (
+    HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement,
+    HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy,
+)
 from tlo.methods.causes import Cause
 from tlo.util import BitsetHandler
+
+if TYPE_CHECKING:
+    from tlo.population import PatientDetails
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -392,7 +403,7 @@ class PregnancySupervisor(Module):
 
         'ps_anc4': Property(Types.BOOL, 'Whether this woman is predicted to attend 4 or more antenatal care visits '
                                         'during her pregnancy'),
-        'ps_abortion_complications': Property(Types.INT, 'Bitset column holding types of abortion complication'),
+        'ps_abortion_complications': Property(Types.BITSET, 'Bitset column holding types of abortion complication'),
         'ps_prev_spont_abortion': Property(Types.BOOL, 'Whether this woman has had any previous pregnancies end in '
                                                        'spontaneous abortion'),
         'ps_prev_stillbirth': Property(Types.BOOL, 'Whether this woman has had any previous pregnancies end in '
@@ -1660,6 +1671,38 @@ class PregnancySupervisor(Module):
                       early_initiation_anc_below_4.loc[~early_initiation_anc_below_4]]:
                 schedule_late_visit(s)
 
+    def do_at_generic_first_appt_emergency(
+        self,
+        patient_id: int,
+        patient_details: PatientDetails,
+        **kwargs,
+    ) -> IndividualPropertyUpdates:
+        scheduling_options = {
+                "priority": 0,
+                "topen": self.sim.date,
+                "tclose": self.sim.date + pd.DateOffset(days=1),
+            }
+
+        # -----  ECTOPIC PREGNANCY  -----
+        if patient_details.ps_ectopic_pregnancy != 'none':
+            event = HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(
+                module=self.sim.modules["CareOfWomenDuringPregnancy"],
+                person_id=patient_id,
+            )
+            self.healthsystem.schedule_hsi_event(event, **scheduling_options)
+
+        # -----  COMPLICATIONS OF ABORTION  -----
+        abortion_complications = self.sim.modules[
+            "PregnancySupervisor"
+        ].abortion_complications
+        if abortion_complications.has_any(
+            [patient_id], "sepsis", "injury", "haemorrhage", first=True
+        ):
+            event = HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(
+                module=self.sim.modules["CareOfWomenDuringPregnancy"],
+                person_id=patient_id,
+            )
+            self.healthsystem.schedule_hsi_event(event, **scheduling_options)
 
 class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
     """ This is the PregnancySupervisorEvent, it is a weekly event which has four primary functions.

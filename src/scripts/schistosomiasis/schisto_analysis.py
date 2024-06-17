@@ -16,14 +16,24 @@ from tlo.methods import contraception, demography, healthburden, healthsystem, s
 
 
 def run_simulation(popsize=10000, haem=True, mansoni=True, mda_execute=True):
+    outputpath = Path("./outputs")  # folder for convenience of storing outputs
     # The resource files
     resourcefilepath = Path("./resources")
     start_date = Date(2010, 1, 1)
     end_date = Date(2011, 2, 1)
     popsize = popsize
 
+    # Sets all modules to WARNING threshold, then alters schisto to INFO
+    log_config = {
+        'filename': 'LogFile',
+        'directory': outputpath,
+        'custom_levels ': {"*": logging.WARNING,
+                           "tlo.methods.schisto": logging.INFO,
+                           }
+    }
+
     # Establish the simulation object
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, log_config=log_config)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
@@ -36,13 +46,6 @@ def run_simulation(popsize=10000, haem=True, mansoni=True, mda_execute=True):
     if mansoni:
         sim.register(schisto.Schisto_Mansoni(resourcefilepath=resourcefilepath, symptoms_and_HSI=False))
 
-    # Sets all modules to WARNING threshold, then alters schisto to INFO
-    custom_levels = {"*": logging.WARNING,
-                     "tlo.methods.schisto": logging.INFO,
-                     }
-    # configure logging after registering modules with custom levels
-    logfile = sim.configure_logging(filename="LogFile", custom_levels=custom_levels)
-
     # Run the simulation
     sim.seed_rngs(int(np.random.uniform(0, 1) * 0 + 1000))
     # initialise the population
@@ -51,11 +54,12 @@ def run_simulation(popsize=10000, haem=True, mansoni=True, mda_execute=True):
     # # start the simulation
     sim.simulate(end_date=end_date)
     # fh.flush()
-    output = parse_log_file(logfile)
+    output = parse_log_file(sim.log_filepath)
     return sim, output
 
 
 sim, output = run_simulation(popsize=10000, haem=True, mansoni=False, mda_execute=False)
+
 
 # ---------------------------------------------------------------------------------------------------------
 #   Saving the results - prevalence, mwb, dalys and parameters used
@@ -286,6 +290,8 @@ def plot_prev_high_infection_per_district(infection, high_inf_distr):
 districts_prevalence, districts_mwb, districts_high_inf_prev = get_values_per_district('Haematobium')
 expected_district_prevalence = get_expected_prevalence('Haematobium')
 plot_prevalence_per_district('Haematobium', districts_prevalence, expected_district_prevalence)
+
+
 # plot_mwb_per_district('Haematobium', districts_mwb)
 # plot_prev_high_infection_per_district('Haematobium', districts_high_inf_prev)
 
@@ -426,7 +432,6 @@ def plot_high_inf_years():
 
 plot_prevalent_years()
 plot_high_inf_years()
-
 
 # DALYS
 loger_daly = output['tlo.methods.healthburden']["DALYS"]

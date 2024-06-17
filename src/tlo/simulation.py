@@ -90,7 +90,7 @@ class Simulation:
             log_config = {}
         self._custom_log_levels = None
         self._log_filepath = None
-        self.configure_logging(**log_config)
+        self._configure_logging(**log_config)
 
         # random number generator
         seed_from = "auto" if seed is None else "user"
@@ -105,13 +105,8 @@ class Simulation:
         # Whether simulation has been initialised
         self._initialised = False
 
-    def configure_logging(
-        self,
-        filename: str = None,
-        directory: Union[Path, str] = "./outputs",
-        custom_levels: Dict[str, int] = None,
-        suppress_stdout: bool = False,
-    ):
+    def _configure_logging(self, filename: str = None, directory: Union[Path, str] = "./outputs",
+                           custom_levels: Dict[str, int] = None, suppress_stdout: bool = False):
         """Configure logging, can write logging to a logfile in addition the default of stdout.
 
         Minimum custom levels for each logger can be specified for filtering out messages

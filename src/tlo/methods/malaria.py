@@ -4,12 +4,15 @@ it also holds the hsi events pertaining to malaria testing and treatment
 including the malaria RDT using DxTest
 
 """
+from __future__ import annotations
 
 from pathlib import Path
+from typing import TYPE_CHECKING, List, Literal, Optional, Union
 
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import DiagnosisFunction, IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, Predictor
 from tlo.methods import Metadata
@@ -18,6 +21,9 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date
+
+if TYPE_CHECKING:
+    from tlo.population import PatientDetails
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -43,9 +49,7 @@ class Malaria(Module):
         'Contraception', 'Demography', 'HealthSystem', 'SymptomManager'
     }
 
-    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
-
-    ADDITIONAL_DEPENDENCIES = {'Hiv', 'Tb'}
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'Hiv'}
 
     METADATA = {
         Metadata.DISEASE_MODULE,
@@ -188,7 +192,9 @@ class Malaria(Module):
     }
 
     PROPERTIES = {
-        'ma_is_infected': Property(Types.BOOL, 'Current status of malaria'),
+        'ma_is_infected': Property(
+            Types.BOOL, 'Current status of malaria, infected with malaria parasitaemia'
+        ),
         'ma_date_infected': Property(Types.DATE, 'Date of latest infection'),
         'ma_date_symptoms': Property(
             Types.DATE, 'Date of symptom start for clinical infection'
@@ -405,9 +411,11 @@ class Malaria(Module):
         def _draw_incidence_for(_col, _where):
             """a helper function to perform random draw for selected individuals on column of probabilities"""
             # create an index from the individuals to lookup entries in the current incidence table
-            district_age_subset = df.loc[_where, ['district_num_of_residence', 'ma_age_edited']]
-            district_age_subset.set_index(district_age_subset.columns.to_list(), inplace=True)
-            district_age_lookup = district_age_subset.index
+            district_age_lookup = (
+                df[_where]
+                .set_index(['district_num_of_residence', 'ma_age_edited'])
+                .index
+            )
             # get the monthly incidence probabilities for these individuals
             monthly_prob = curr_inc.loc[district_age_lookup, _col]
             # update the index so it's the same as the original population dataframe for these individuals
@@ -427,7 +435,7 @@ class Malaria(Module):
                     df.loc[_where]
                 )
 
-                random_draw = rng.random_sample(_where.sum()) < monthly_prob * individual_risk
+                random_draw = rng.random_sample(_where.sum()) < (monthly_prob * individual_risk)
 
             selected = _where & random_draw
 
@@ -442,7 +450,8 @@ class Malaria(Module):
         df.loc[alive_over_one, 'ma_age_edited'] = df.loc[alive_over_one, 'age_years'].astype(float)
 
         # select new infections
-        alive_uninfected = alive & ~df.ma_is_infected
+        # eligible: uninfected or asym
+        alive_uninfected = alive & df.ma_inf_type.isin(['none', 'asym'])
         now_infected = _draw_incidence_for('monthly_prob_inf', alive_uninfected)
         df.loc[now_infected, 'ma_inf_type'] = 'asym'
 
@@ -662,100 +671,137 @@ class Malaria(Module):
 
         return health_values.loc[df.is_alive]  # returns the series
 
-    def check_if_fever_is_caused_by_malaria(self, person_id, hsi_event):
-        """Run by an HSI when an adult presents with fever"""
+    def check_if_fever_is_caused_by_malaria(
+        self,
+        true_malaria_infection_type: str,
+        diagnosis_function: DiagnosisFunction,
+        patient_id: Optional[int] = None,
+        fever_is_a_symptom: Optional[bool] = True,
+        patient_age: Optional[Union[int, float]] = None,
+        facility_level: Optional[str] = None,
+        treatment_id: Optional[str] = None,
+    ) -> Literal["severe_malaria", "clinical_malaria", "negative_malaria_test"]:
+        """
+        Run by an HSI when an adult presents with fever.
+        Determine if the cause is malaria.
 
+        Optional arguments are used by the logger,
+        and are not needed in the diagnosis.
+        """
         # Call the DxTest RDT to diagnose malaria
-        dx_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-            dx_tests_to_run='malaria_rdt',
-            hsi_event=hsi_event
-        )
+        dx_result = diagnosis_function('malaria_rdt')
 
         # Log the test: line-list of summary information about each test
-        fever_present = 'fever' in self.sim.modules["SymptomManager"].has_what(person_id)
-        person_details_for_test = {
-            'person_id': person_id,
-            'age': self.sim.population.props.at[person_id, 'age_years'],
-            'fever_present': fever_present,
-            'rdt_result': dx_result,
-            'facility_level': hsi_event.ACCEPTED_FACILITY_LEVEL,
-            'called_by': hsi_event.TREATMENT_ID
-        }
-        logger.info(key='rdt_log', data=person_details_for_test)
+        logger.info(
+            key="rdt_log",
+            data={
+                "person_id": patient_id,
+                "age": patient_age,
+                "fever_present": fever_is_a_symptom,
+                "rdt_result": dx_result,
+                "facility_level": facility_level,
+                "called_by": treatment_id,
+            },
+        )
 
-        # get facility level from hsi_event
-
-        true_malaria_infection_type = self.sim.population.props.at[person_id, 'ma_inf_type']
-
-        # severe malaria infection always returns positive RDT
+        # Severe malaria infection always returns positive RDT
         if true_malaria_infection_type == 'severe':
             return 'severe_malaria'
-
         elif dx_result and true_malaria_infection_type in ('clinical', 'asym'):
             return 'clinical_malaria'
-
         else:
             return 'negative_malaria_test'
 
-    def do_for_suspected_malaria_case(self, person_id, hsi_event):
-        """
-        :param person_id:
-        :param hsi_event:
-        :return:
+    def do_at_generic_first_appt(
+        self,
+        patient_id: int,
+        patient_details: PatientDetails,
+        symptoms: List[str],
+        diagnosis_function: DiagnosisFunction,
+        facility_level: str,
+        treatment_id: str,
+        **kwargs,
+    ) -> IndividualPropertyUpdates:
+        patient_details_updates = {}
 
-        This is called for a person (of any age) that attends non-emergency generic HSI and has
-        any symptoms suggestive of malaria """
-
-        df = self.sim.population.props
-
-        if df.at[person_id, 'ma_tx'] == 'none':
-            malaria_test_result = self.check_if_fever_is_caused_by_malaria(person_id=person_id, hsi_event=hsi_event)
-
+        malaria_associated_symptoms = {
+            "fever",
+            "headache",
+            "stomachache",
+            "diarrhoea",
+            "vomiting",
+        }
+        if (
+            bool(set(symptoms) & malaria_associated_symptoms)
+            and patient_details.ma_tx == "none"
+        ):
+            malaria_test_result = self.check_if_fever_is_caused_by_malaria(
+                true_malaria_infection_type=patient_details.ma_inf_type,
+                diagnosis_function=diagnosis_function,
+                patient_id=patient_id,
+                fever_is_a_symptom="fever" in symptoms,
+                patient_age=patient_details.age_years,
+                facility_level=facility_level,
+                treatment_id=treatment_id,
+            )
             # Treat / refer based on diagnosis
-            if malaria_test_result == 'severe_malaria':
-                df.at[person_id, 'ma_dx_counter'] += 1
-                self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    HSI_Malaria_Treatment_Complicated(
-                        person_id=person_id,
-                        module=self),
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None)
-
-            # return type 'clinical_malaria' includes asymptomatic infection
-            elif malaria_test_result == 'clinical_malaria':
-                df.at[person_id, 'ma_dx_counter'] += 1
-                self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    HSI_Malaria_Treatment(
-                        person_id=person_id,
-                        module=self),
-                    priority=1,
-                    topen=self.sim.date,
-                    tclose=None)
-
-    def do_on_emergency_presentation_with_severe_malaria(self, person_id, hsi_event):
-        """This is called for a person (of any age) that attends an emergency generic HSI and has a fever.
-        (Quick diagnosis algorithm - just perfectly recognises the symptoms of severe malaria.)
-        """
-        df = self.sim.population.props
-
-        if df.at[person_id, 'ma_tx'] == 'none':
-            # Check if malaria parasitaemia:
-            malaria_test_result = self.check_if_fever_is_caused_by_malaria(person_id=person_id, hsi_event=hsi_event)
-
-            # if any symptoms indicative of malaria and they have parasitaemia (would return a positive rdt)
-            if malaria_test_result in ('severe_malaria', 'clinical_malaria'):
-                df.at[person_id, 'ma_dx_counter'] += 1
-
-                # Launch the HSI for treatment for Malaria, HSI_Malaria_Treatment will determine correct treatment
-                self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    hsi_event=HSI_Malaria_Treatment_Complicated(
-                        person_id=person_id,
-                        module=self),
-                    priority=0,
-                    topen=self.sim.date,
+            if malaria_test_result == "severe_malaria":
+                patient_details_updates["ma_dx_counter"] = patient_details.ma_dx_counter + 1
+                event = HSI_Malaria_Treatment_Complicated(person_id=patient_id, module=self)
+                self.healthsystem.schedule_hsi_event(
+                    event, priority=0, topen=self.sim.date
                 )
 
+            # return type 'clinical_malaria' includes asymptomatic infection
+            elif malaria_test_result == "clinical_malaria":
+                patient_details_updates["ma_dx_counter"] = patient_details.ma_dx_counter + 1
+                event = HSI_Malaria_Treatment(person_id=patient_id, module=self)
+                self.healthsystem.schedule_hsi_event(
+                    event, priority=1, topen=self.sim.date
+                )
+        return patient_details_updates
+
+    def do_at_generic_first_appt_emergency(
+        self,
+        patient_id: int,
+        patient_details: PatientDetails,
+        symptoms: List[str],
+        diagnosis_function: DiagnosisFunction,
+        facility_level: str,
+        treatment_id: str,
+        **kwargs,
+    ) -> IndividualPropertyUpdates:
+        # This is called for a person (of any age) that attends an
+        # emergency generic HSI and has a fever.
+        # (Quick diagnosis algorithm - just perfectly recognises the
+        # symptoms of severe malaria.)
+        patient_details_updates = {}
+
+        if 'severe_malaria' in symptoms:
+            if patient_details.ma_tx == 'none':
+                # Check if malaria parasitaemia:
+                malaria_test_result = self.check_if_fever_is_caused_by_malaria(
+                    true_malaria_infection_type=patient_details.ma_inf_type,
+                    diagnosis_function=diagnosis_function,
+                    patient_id=patient_id,
+                    fever_is_a_symptom="fever" in symptoms,
+                    patient_age=patient_details.age_years,
+                    facility_level=facility_level,
+                    treatment_id=treatment_id,
+                )
+
+                # if any symptoms indicative of malaria and they have parasitaemia (would return a positive rdt)
+                if malaria_test_result in ('severe_malaria', 'clinical_malaria'):
+                    patient_details_updates['ma_dx_counter'] = patient_details.ma_dx_counter + 1
+
+                    # Launch the HSI for treatment for Malaria, HSI_Malaria_Treatment will determine correct treatment
+                    event = HSI_Malaria_Treatment_Complicated(
+                        person_id=patient_id, module=self,
+                    )
+                    self.healthsystem.schedule_hsi_event(
+                        event, priority=0, topen=self.sim.date
+                    )
+        return patient_details_updates
 
 class MalariaPollingEventDistrict(RegularEvent, PopulationScopeEventMixin):
     """
@@ -1262,7 +1308,7 @@ class MalariaUpdateEvent(RegularEvent, PopulationScopeEventMixin):
         * assigns symptoms
         * schedules rdt
         * cures people currently on treatment for malaria
-        * clears symptoms for those not on treatment
+        * clears symptoms for those not on treatment but self-cured
         * clears parasites if treated
         """
 
@@ -1345,14 +1391,22 @@ class MalariaUpdateEvent(RegularEvent, PopulationScopeEventMixin):
         # select people with clinical malaria and treatment for at least 5 days
         # if treated, will clear symptoms and parasitaemia
         # this will also clear parasitaemia for asymptomatic cases picked up by routine rdt
-        clinical_and_treated = df.index[df.is_alive &
-                                        (df.ma_date_tx < (self.sim.date - DateOffset(days=5))) &
-                                        (df.ma_inf_type == 'clinical')]
+        random_draw = self.module.rng.random_sample(size=len(df))
+
+        clinical_and_treated = df.index[
+            df.is_alive
+            & (df.ma_date_tx < (self.sim.date - DateOffset(days=5)))
+            & (df.ma_inf_type == 'clinical')
+            & (random_draw < p['prob_of_treatment_success'])
+        ]
 
         # select people with severe malaria and treatment for at least 7 days
-        severe_and_treated = df.index[df.is_alive &
-                                      (df.ma_date_tx < (self.sim.date - DateOffset(days=7))) &
-                                      (df.ma_inf_type == 'severe')]
+        severe_and_treated = df.index[
+            df.is_alive
+            & (df.ma_date_tx < (self.sim.date - DateOffset(days=7)))
+            & (df.ma_inf_type == 'severe')
+            & (random_draw < p['prob_of_treatment_success'])
+        ]
 
         # create list of all cases to be resolved through treatment
         infections_to_clear = sorted(set(clinical_and_treated).union(severe_and_treated))
@@ -1366,13 +1420,14 @@ class MalariaUpdateEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[infections_to_clear, 'ma_is_infected'] = False
         df.loc[infections_to_clear, 'ma_inf_type'] = 'none'
 
-        # UNTREATED
-        # if not treated, self-cure occurs after 6 days of symptoms
+        # UNTREATED or TREATMENT FAILURE
+        # if not treated or treatment failed, self-cure occurs after 6 days of symptoms
         # but parasites remain in blood
-        clinical_not_treated = df.index[df.is_alive &
-                                        (df.ma_inf_type == 'clinical') &
-                                        (df.ma_date_symptoms < (self.sim.date - DateOffset(days=6))) &
-                                        (df.ma_tx == 'none')]
+        clinical_not_treated = df.index[
+            df.is_alive
+            & (df.ma_inf_type == 'clinical')
+            & (df.ma_date_symptoms < (self.sim.date - DateOffset(days=6)))
+        ]
 
         self.sim.modules['SymptomManager'].clear_symptoms(
             person_id=clinical_not_treated, disease_module=self.module

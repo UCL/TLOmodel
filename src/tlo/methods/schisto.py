@@ -1,11 +1,12 @@
 from pathlib import Path
-from typing import Optional, Sequence, Union
+from typing import List, Optional, Sequence, Union
 
 import numpy as np
 import pandas as pd
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
+from tlo.core import IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
@@ -208,22 +209,6 @@ class Schisto(Module):
         return pd.Series(index=df.index[df.is_alive], data=0.0).add(disability_weights_for_each_person_with_symptoms,
                                                                     fill_value=0.0)
 
-    def do_on_presentation_with_symptoms(self, person_id: int, symptoms: Union[list, set, tuple]) -> None:
-        """Do when person presents to the GenericFirstAppt. If the person has certain set of symptoms, refer ta HSI for
-         testing."""
-
-        set_of_symptoms_indicative_of_schisto = {'anemia', 'haematuria', 'bladder_pathology'}
-
-        if set_of_symptoms_indicative_of_schisto.issubset(symptoms):
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                HSI_Schisto_TestingFollowingSymptoms(
-                    module=self,
-                    person_id=person_id),
-                topen=self.sim.date,
-                tclose=None,
-                priority=0
-            )
-
     def do_effect_of_treatment(self, person_id: Union[int, Sequence[int]]) -> None:
         """Do the effects of a treatment administered to a person or persons. This can be called for a person who is
         infected and receiving treatment following a diagnosis, or for a person who is receiving treatment as part of a
@@ -308,7 +293,7 @@ class Schisto(Module):
 
     def _get_item_code_for_praziquantel(self) -> int:
         """Look-up the item code for Praziquantel"""
-        return self.sim.modules['HealthSystem'].get_item_code_from_item_name("Praziquantel, 600 mg (donated)")
+        return self.sim.modules['HealthSystem'].get_item_code_from_item_name("Praziquantel 600mg_1000_CMST")
 
     def _schedule_mda_events(self) -> None:
         """Schedule MDA events, historical and prognosed."""
@@ -338,6 +323,22 @@ class Schisto(Module):
                                 months_between_repeats=frequency_in_months if frequency_in_months > 0 else None),
                 Date(year=year_first_simulated_mda, month=7, day=1)
             )
+
+    def do_at_generic_first_appt(
+        self,
+        patient_id: int,
+        symptoms: List[str],
+        **kwargs
+    ) -> IndividualPropertyUpdates:
+        # Do when person presents to the GenericFirstAppt.
+        # If the person has certain set of symptoms, refer ta HSI for testing.
+        set_of_symptoms_indicative_of_schisto = {'anemia', 'haematuria', 'bladder_pathology'}
+
+        if set_of_symptoms_indicative_of_schisto.issubset(symptoms):
+            event = HSI_Schisto_TestingFollowingSymptoms(
+                module=self, person_id=patient_id
+            )
+            self.healthsystem.schedule_hsi_event(event, priority=0, topen=self.sim.date)
 
 
 class SchistoSpecies:
