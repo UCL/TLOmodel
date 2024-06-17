@@ -28,6 +28,10 @@ class _MockSim:
     date = MockDate()
 
 
+class InconsistentLoggedColumnsError(Exception):
+    """Error raised when structured log entry has different columns from header."""
+
+
 class Logger:
     """A Logger for TLO log messages, with simplified usage. Outputs structured log messages in JSON
     format and is connected to the Simulation instance."""
@@ -48,6 +52,9 @@ class Logger:
 
         # the key of the structured logging calls for this logger
         self.keys = dict()
+        
+        # the columns for the structured logging calls for this logger
+        self.columns = dict()
 
         # populated by init_logging(simulation) for the top-level "tlo" logger
         self.simulation = _MockSim()
@@ -87,6 +94,7 @@ class Logger:
         # clear all logger settings
         self.handlers.clear()
         self.keys.clear()
+        self.columns.clear()
         self.simulation = _MockSim()
         # boolean attributes used for now, can be removed after transition to structured logging
         self.logged_stdlib = False
@@ -98,16 +106,24 @@ class Logger:
 
     def _get_data_as_dict(self, data):
         """Convert log data to a dictionary if it isn't already"""
+        
+        def sort_by_numeric_or_str_key(dict_: dict) -> dict:
+            return dict(
+                sorted(dict_.items(), key=lambda i: (isinstance(i[0], str), i[0]))
+            )
+        
         if isinstance(data, dict):
-            return data
+            return sort_by_numeric_or_str_key(data)
         if isinstance(data, pd.DataFrame):
             if len(data.index) == 1:
                 return data.to_dict('records')[0]
             elif self._disable_dataframe_logging:
                 raise ValueError("Logging multirow dataframes is disabled - if you need this feature let us know")
             else:
-                return {'dataframe': data.to_dict('index')}
+                return {'dataframe': sort_by_numeric_or_str_key(data.to_dict('index'))}
         if isinstance(data, (list, set, tuple, pd.Series)):
+            if isinstance(data, set):
+                data = sorted(data)
             return {f'item_{index + 1}': value for index, value in enumerate(data)}
         if isinstance(data, str):
             return {'message': data}
@@ -131,11 +147,17 @@ class Logger:
 
         data = self._get_data_as_dict(data)
         header_json = ""
+        
+        def get_columns_from_data_dict(data):
+            # using type().__name__ so both pandas and stdlib types can be used
+            return {k: type(v).__name__ for k, v, in data.items()}
 
         if key not in self.keys:
             # new log key, so create header json row
             uuid = hashlib.md5(f"{self.name}+{key}".encode()).hexdigest()[:Logger.HASH_LEN]
             self.keys[key] = uuid
+            columns = get_columns_from_data_dict(data)
+            self.columns[key] = columns
 
             header = {
                 "uuid": uuid,
@@ -143,11 +165,25 @@ class Logger:
                 "module": self.name,
                 "key": key,
                 "level": _logging.getLevelName(level),
-                # using type().__name__ so both pandas and stdlib types can be used
-                "columns": {key: type(value).__name__ for key, value in data.items()},
+                "columns": columns,
                 "description": description
             }
             header_json = json.dumps(header) + "\n"
+        else:
+            columns = get_columns_from_data_dict(data)
+            if columns != self.columns[key]:
+                header_columns = set(self.columns[key].items())
+                logged_columns = set(columns.items())
+                msg = (
+                    f"Inconsistent columns in logged values for {self.name} logger "
+                    f"with key {key} compared to header generated from initial log "
+                    f"entry:\n"
+                    f"  Columns in header not in logged values are\n"
+                    f"  {dict(header_columns - logged_columns)}\n"
+                    f"  Columns in logged values not in header are\n"
+                    f"  {dict(logged_columns - header_columns)}"
+                )
+                raise InconsistentLoggedColumnsError(msg)
 
         uuid = self.keys[key]
 
