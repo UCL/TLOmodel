@@ -26,17 +26,18 @@ import numpy as np
 import pandas as pd
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
-from tlo.core import DiagnosisFunction, IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
+from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.util import random_date, sample_outcome
 
 if TYPE_CHECKING:
-    from tlo.population import PatientDetails
+    from tlo.methods.hsi_generic_first_appts import DiagnosisFunction, HSIEventScheduler
+    from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -46,7 +47,7 @@ logger.setLevel(logging.INFO)
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
 
-class Diarrhoea(Module):
+class Diarrhoea(Module, GenericFirstAppointmentsMixin):
     # Declare the pathogens that this module will simulate:
     pathogens = [
         'rotavirus',
@@ -948,17 +949,18 @@ class Diarrhoea(Module):
 
     def do_at_generic_first_appt(
         self,
-        patient_id: int,
-        patient_details: PatientDetails,
+        person_id: int,
+        individual_properties: IndividualProperties,
+        schedule_hsi_event: HSIEventScheduler,
         symptoms: List[str],
         diagnosis_function: DiagnosisFunction,
         **kwargs,
-    ) -> IndividualPropertyUpdates:
+    ) -> None:
         # This routine is called when Diarrhoea is a symptom for a child
         # attending a Generic HSI Appointment. It checks for danger signs
         # and schedules HSI Events appropriately.
-        if patient_details.age_years > 5  or "diarrhoea" not in symptoms:
-            return {}
+        if individual_properties["age_years"] > 5  or "diarrhoea" not in symptoms:
+            return
 
         # 1) Assessment of danger signs
         danger_signs = diagnosis_function(
@@ -974,8 +976,8 @@ class Diarrhoea(Module):
             HSI_Diarrhoea_Treatment_Inpatient if is_inpatient else
             HSI_Diarrhoea_Treatment_Outpatient
         )
-        event = hsi_event_class(person_id=patient_id, module=self)
-        self.healthsystem.schedule_hsi_event(event, priority=0, topen=self.sim.date)
+        event = hsi_event_class(person_id=person_id, module=self)
+        schedule_hsi_event(event, priority=0, topen=self.sim.date)
 
 
 class Models:

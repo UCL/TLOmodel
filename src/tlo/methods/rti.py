@@ -11,16 +11,17 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.core import IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.hsi_event import HSI_Event
+from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
 
 if TYPE_CHECKING:
-    from tlo.population import PatientDetails
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
+    from tlo.population import IndividualProperties
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
@@ -30,7 +31,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-class RTI(Module):
+class RTI(Module, GenericFirstAppointmentsMixin):
     """
     The road traffic injuries module for the TLO model, handling all injuries related to road traffic accidents.
     """
@@ -2494,33 +2495,33 @@ class RTI(Module):
 
     def _common_first_appt_steps(
         self,
-        patient_id: int,
-        patient_details: PatientDetails,
-    ) -> IndividualPropertyUpdates:
+        person_id: int,
+        individual_properties: IndividualProperties,
+        schedule_hsi_event: HSIEventScheduler,
+    ) -> None:
         """
         Shared logic steps that are used by the RTI module when a generic HSI
         event is to be scheduled.
         """
-        patient_details_updates = {}
         # Things to do upon a person presenting at a Non-Emergency Generic
         # HSI if they have an injury.
         persons_injuries = [
-            getattr(patient_details, injury) for injury in RTI.INJURY_COLUMNS
+            individual_properties[injury] for injury in RTI.INJURY_COLUMNS
         ]
         if (
-            pd.isnull(patient_details.cause_of_death)
-            and not patient_details.rt_diagnosed
+            pd.isnull(individual_properties["cause_of_death"])
+            and not individual_properties["rt_diagnosed"]
         ):
             if set(RTI.INJURIES_REQ_IMAGING).intersection(set(persons_injuries)):
-                if patient_details.is_alive:
-                    event = HSI_RTI_Imaging_Event(module=self, person_id=patient_id)
-                    self.healthsystem.schedule_hsi_event(
+                if individual_properties["is_alive"]:
+                    event = HSI_RTI_Imaging_Event(module=self, person_id=person_id)
+                    schedule_hsi_event(
                         event,
                         priority=0,
                         topen=self.sim.date + DateOffset(days=1),
                         tclose=self.sim.date + DateOffset(days=15),
                     )
-            patient_details_updates["rt_diagnosed"] = True
+            individual_properties["rt_diagnosed"] = True
 
             # The injured person has been diagnosed in A&E and needs to progress further
             # through the health system.
@@ -2546,47 +2547,56 @@ class RTI(Module):
             # If they meet the requirements, send them to HSI_RTI_MedicalIntervention for further treatment
             # Using counts condition to stop spurious symptoms progressing people through the model
             if counts > 0:
-                event = HSI_RTI_Medical_Intervention(module=self, person_id=patient_id)
-                self.healthsystem.schedule_hsi_event(
-                    event, priority=0, topen=self.sim.date,
+                event = HSI_RTI_Medical_Intervention(module=self, person_id=person_id)
+                schedule_hsi_event(
+                    event,
+                    priority=0,
+                    topen=self.sim.date,
                 )
 
             # We now check if they need shock treatment
-            if patient_details.rt_in_shock and patient_details.is_alive:
-                event = HSI_RTI_Shock_Treatment(module=self, person_id=patient_id)
-                self.healthsystem.schedule_hsi_event(
+            if (
+                individual_properties["rt_in_shock"]
+                and individual_properties["is_alive"]
+            ):
+                event = HSI_RTI_Shock_Treatment(module=self, person_id=person_id)
+                schedule_hsi_event(
                     event,
                     priority=0,
                     topen=self.sim.date + DateOffset(days=1),
                     tclose=self.sim.date + DateOffset(days=15),
                 )
-        return patient_details_updates
 
     def do_at_generic_first_appt(
         self,
-        patient_id: int,
-        patient_details: PatientDetails,
+        person_id: int,
+        individual_properties: IndividualProperties,
         symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
         **kwargs
-    ) -> IndividualPropertyUpdates:
+    ) -> None:
         if "injury" in symptoms:
             return self._common_first_appt_steps(
-                patient_id=patient_id, patient_details=patient_details
+                person_id=person_id,
+                individual_properties=individual_properties,
+                schedule_hsi_event=schedule_hsi_event,
             )
 
     def do_at_generic_first_appt_emergency(
         self,
-        patient_id: int,
-        patient_details: PatientDetails,
+        person_id: int,
+        individual_properties: IndividualProperties,
         symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
         **kwargs
-    ) -> IndividualPropertyUpdates:
+    ) -> None:
         # Same process is followed for emergency and non emergency appointments, except the
         # initial symptom check
         if "severe_trauma" in symptoms:
             return self._common_first_appt_steps(
-                patient_id=patient_id,
-                patient_details=patient_details
+                person_id=person_id,
+                individual_properties=individual_properties,
+                schedule_hsi_event=schedule_hsi_event,
             )
 
 
