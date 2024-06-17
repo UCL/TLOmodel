@@ -131,13 +131,13 @@ fig, axes = plt.subplots(2, 1, sharex=True)
 for i, _spec in enumerate(species):
     ax = axes[i]
     pd.DataFrame(data={
-        'Data': get_expected_prevalence_by_district_2010(_spec),
-        'Model': get_model_prevalence_one_year(_spec, year=2010, include='HML')}
+        'Data 2010': get_expected_prevalence_by_district_2010(_spec),
+        'Model 2010': get_model_prevalence_one_year(_spec, year=2010, include='HML')}
     ).plot.bar(ax=ax)
     ax.set_title(f"{_spec}")
     ax.set_xlabel('District (Fitted)')
     ax.set_ylabel('Prevalence, 2010-2011')
-    ax.set_ylim(0, 0.50)
+    ax.set_ylim(0, 1.0)
     ax.legend(loc=1)
 fig.tight_layout()
 # fig.savefig(make_graph_file_name('prev_in_districts_all'))
@@ -151,8 +151,8 @@ fig, axes = plt.subplots(2, 1, sharex=True)
 for i, _spec in enumerate(species):
     ax = axes[i]
     pd.DataFrame(data={
-        'Data': get_expected_prevalence_by_district_2010_2015(_spec),
-        'Model': get_model_average_prevalence(_spec, include='HM')}
+        'Data 2010-2015': get_expected_prevalence_by_district_2010_2015(_spec),
+        'Model 2010-2015': get_model_average_prevalence(_spec, include='HM')}
     ).plot.bar(ax=ax)
     ax.set_title(f"{_spec}")
     ax.set_xlabel('District (Fitted)')
