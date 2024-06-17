@@ -104,7 +104,7 @@ class GenericFirstAppointmentsMixin:
         *,
         person_id: int,
         individual_properties: IndividualProperties,
-        symptoms: str,
+        symptoms: List[str],
         schedule_hsi_event: HSIEventScheduler,
         diagnosis_function: DiagnosisFunction,
         consumables_checker: ConsumablesChecker,
