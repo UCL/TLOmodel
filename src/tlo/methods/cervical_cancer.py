@@ -207,6 +207,10 @@ class CervicalCancer(Module):
             Types.DATE,
             "date of first receiving attempted curative treatment (pd.NaT if never started treatment)"
         ),
+        "ce_ever_screened": Property(
+            Types.DATE,
+            "whether ever been screened"
+        ),
         "ce_ever_treated": Property(
             Types.BOOL,
             "ever been treated for cc"
@@ -226,6 +230,10 @@ class CervicalCancer(Module):
         "ce_date_palliative_care": Property(
             Types.DATE,
             "date of first receiving palliative care (pd.NaT is never had palliative care)"
+        ),
+        "ce_ever_diagnosed": Property(
+            Types.DATE,
+            "ever diagnosed with cervical cancer (even if now cured)"
         ),
         "ce_date_death": Property(
             Types.DATE,
@@ -316,7 +324,8 @@ class CervicalCancer(Module):
         df.loc[df.is_alive, "ce_selected_for_via_this_month"] = False
         df.loc[df.is_alive, "ce_selected_for_xpert_this_month"] = False
         df.loc[df.is_alive, "ce_biopsy"] = False
-
+        df.loc[df.is_alive, "ce_ever_screened"] = False
+        df.loc[df.is_alive, "ce_ever_diagnosed"] = False
 
         # -------------------- ce_hpv_cc_status -----------
         # this was not assigned here at outset because baseline value of hv_inf was not accessible - it is assigned
@@ -580,6 +589,8 @@ class CervicalCancer(Module):
         df.at[child_id, "ce_selected_for_via_this_month"] = False
         df.at[child_id, "ce_selected_for_xpert_this_month"] = False
         df.at[child_id, "ce_biopsy"] = False
+        df.at[child_id, "ce_ever_screened"] = False
+        df.at[child_id, "ce_ever_diagnosed"] = False
 
     def report_daly_values(self):
 
@@ -727,7 +738,8 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             disease_module=self.module
         )
 
-
+        df.loc[(df['ce_selected_for_xpert_this_month'] == True) | (
+                df['ce_selected_for_via_this_month'] == True), 'ce_ever_screened'] = True
 
 
     # -------------------- UPDATING OF SYMPTOM OF vaginal bleeding OVER TIME --------------------------------
@@ -747,6 +759,8 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             add_or_remove='+',
             disease_module=self.module
         )
+
+# todo: add some incidence of vaginal bleeding in women without cc
 
 
 # vaccinating 9 year old girls - this only uncommented for testing - vaccination is controlled by epi
@@ -996,6 +1010,7 @@ class HSI_CervicalCancer_Biopsy(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, 'ce_date_diagnosis'] = self.sim.date
             df.at[person_id, 'ce_stage_at_diagnosis'] = df.at[person_id, 'ce_hpv_cc_status']
             df.at[person_id, 'ce_current_cc_diagnosed'] = True
+            df.at[person_id, 'ever_diagnosed'] = True
 
             # Check if is in stage4:
             in_stage4 = df.at[person_id, 'ce_hpv_cc_status'] == 'stage4'
@@ -1320,6 +1335,7 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         n_screened_via_this_month = (df.is_alive & df.ce_selected_for_via_this_month).sum()
         n_screened_xpert_this_month = (df.is_alive & df.ce_selected_for_xpert_this_month).sum()
+        n_ever_screened = (df.is_alive & df.ce_ever_screened).sum()
 
         n_vaginal_bleeding_stage1 = (df.is_alive & (df.sy_vaginal_bleeding == 2) &
                                      (df.ce_hpv_cc_status == 'stage1')).sum()
@@ -1354,7 +1370,12 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         n_diagnosed_past_year = (df['ce_date_diagnosis'].between(date_1_year_ago, self.sim.date)).sum()
 
+        n_ever_diagnosed = ((df['is_alive']) & (df['ce_ever_diagnosed'])).sum()
+
         n_women_alive = ((df['is_alive']) & (df['sex'] == 'F') & (df['age_years'] > 15)).sum()
+
+        n_women_vaccinated = ((df['is_alive']) & (df['sex'] == 'F') & (df['age_years'] > 15)
+                              & df['va_hpv']).sum()
 
         rate_diagnosed_cc = n_diagnosed_past_year / n_women_alive
 
@@ -1377,8 +1398,12 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         out.update({"n_diagnosed_past_year_stage2b": n_diagnosed_past_year_stage2b})
         out.update({"n_diagnosed_past_year_stage3": n_diagnosed_past_year_stage3})
         out.update({"n_diagnosed_past_year_stage4": n_diagnosed_past_year_stage4})
+        out.update({"n_ever_diagnosed": n_ever_diagnosed})
         out.update({"n_screened_xpert_this_month": n_screened_xpert_this_month})
         out.update({"n_screened_via_this_month": n_screened_via_this_month})
+        out.update({"n_women_alive": n_women_alive})
+        out.update({"n_ever_screened": n_ever_screened})
+        out.update({"n_women_vaccinated": n_women_vaccinated})
         out.update({"n_vaginal_bleeding_stage1": n_vaginal_bleeding_stage1})
         out.update({"n_vaginal_bleeding_stage2a": n_vaginal_bleeding_stage2a})
         out.update({"n_vaginal_bleeding_stage2b": n_vaginal_bleeding_stage2b})
@@ -1411,8 +1436,12 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
               'diagnosed_past_year_stage2b:', out['n_diagnosed_past_year_stage2b'],
               'diagnosed_past_year_stage3:', out['n_diagnosed_past_year_stage3'],
               'diagnosed_past_year_stage4:', out['n_diagnosed_past_year_stage4'],
+              'n_ever_diagnosed', out['n_ever_diagnosed'],
               'n_screened_xpert_this_month:', out['n_screened_xpert_this_month'],
               'n_screened_via_this_month:', out['n_screened_via_this_month'],
+              'n_women_alive', out['n_women_alive'],
+              'n_women_vaccinated', out['n_women_vaccinated'],
+              'n_ever_screened', out['n_ever_screened'],
               'n_diagnosed_past_year:', out['n_diagnosed_past_year'],
               'n_women_alive:', out['n_women_alive'],
               'rate_diagnosed_cc:', out['rate_diagnosed_cc'],
@@ -1427,7 +1456,7 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # comment out this below when running tests
 
         # Specify the file path for the CSV file
-        out_csv = Path("./outputs/output_data.csv")
+        out_csv = Path("./outputs/output1_data.csv")
 
 # comment out this code below only when running tests
 
@@ -1478,11 +1507,11 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         'ce_date_palliative_care', 'ce_selected_for_via_this_month', 'sy_chosen_via_screening_for_cin_cervical_cancer',
         'ce_via_cin_ever_detected']
 
-#       selected_columns = ["hv_inf", "ce_hpv_cc_status", "ce_hiv_unsuppressed"]
+        selected_columns = ["hv_inf", "ce_hpv_cc_status", "ce_ever_screened"]
 
         selected_rows = df[(df['sex'] == 'F') & (df['age_years'] > 15) & df['is_alive']]
 
-        pd.set_option('display.max_rows', None)
+#       pd.set_option('display.max_rows', None)
 #       print(selected_rows[selected_columns])
 
 #       selected_columns = ['sex', 'age_years', 'is_alive']

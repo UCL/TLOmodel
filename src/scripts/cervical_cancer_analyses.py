@@ -45,8 +45,8 @@ resourcefilepath = Path("./resources")
 
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2024, 1, 1)
-popsize = 500000
+end_date = Date(2020, 1, 1)
+popsize = 170000
 
 
 def run_sim(service_availability):
@@ -81,13 +81,13 @@ def run_sim(service_availability):
     return logfile
 
 
-output_csv_file = Path("./outputs/output_data.csv")
+output_csv_file = Path("./outputs/output1_data.csv")
 if output_csv_file.exists():
     output_csv_file.unlink()
 
 run_sim(service_availability=['*'])
 
-# output_csv_file = Path("./outputs/output_data.csv")
+# output_csv_file = Path("./outputs/output1_data.csv")
 
 scale_factor = 17000000 / popsize
 print(scale_factor)
