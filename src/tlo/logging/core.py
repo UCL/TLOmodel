@@ -179,9 +179,9 @@ class Logger:
                     f"with key {key} compared to header generated from initial log "
                     f"entry:\n"
                     f"  Columns in header not in logged values are\n"
-                    f"  {dict(header_columns - logged_columns)}\n"
+                    f"  {dict(sorted(header_columns - logged_columns))}\n"
                     f"  Columns in logged values not in header are\n"
-                    f"  {dict(logged_columns - header_columns)}"
+                    f"  {dict(sorted(logged_columns - header_columns))}"
                 )
                 raise InconsistentLoggedColumnsError(msg)
 
