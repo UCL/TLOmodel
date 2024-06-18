@@ -1,7 +1,10 @@
 import logging as _logging
 import sys
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional, Union
+
+import pandas as pd
 
 from .core import _FORMATTER, _LOGGERS, DEBUG, getLogger
 
@@ -85,3 +88,37 @@ def set_simulation(simulation):
     """
     logger = getLogger('tlo')
     logger.simulation = simulation
+
+
+def get_dataframe_row_as_dict_for_logging(
+    dataframe: pd.DataFrame,
+    row_label: Union[int, str],
+    columns: Optional[Iterable[str]] = None,
+):
+    """Get row of a pandas dataframe in a format suitable for logging.
+    
+    Retrieves entries for all or a subset of columns for a particular row in a dataframe
+    and returns a dict keyed by column name, with values NumPy or pandas extension types
+    which should be the same for all rows in dataframe.
+    
+    :param dataframe: Population properties dataframe to get properties from.
+    :param row_label: Unique index label identifying row in dataframe.
+    :param columns: Set of column names to extract - if ``None``, the default, all
+        column values will be returned.
+    :returns: Dictionary with column names as keys and corresponding entries in row as
+        values.
+    """
+    columns = dataframe.columns if columns is None else columns
+    row_index = dataframe.index.get_loc(row_label)
+    return {
+        column_name:
+        dataframe[column_name].values[row_index]
+        # Nullable booleans and categorical entries will be type unstable if a scalar is
+        # returned as NA / NaN entries will have a different type from non-missing
+        # entries, therefore use a length 1 array of relevant NumPy or pandas extension
+        # type in these cases to ensure type stability across different rows. Note that
+        # "boolean" dtype (nullable boolean) is different from standard "bool" dtype.
+        if dataframe[column_name].dtype not in ("boolean", "category") else
+        dataframe[column_name].values[row_index:row_index+1]
+        for column_name in columns
+    }
