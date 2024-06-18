@@ -10,16 +10,16 @@ class PandasEncoder(json.JSONEncoder):
         # using base classes for numpy numeric types
         if isinstance(obj, np.floating):
             return float(obj)
-        elif isinstance(obj, np.signedinteger):
+        elif isinstance(obj, np.integer):
             return int(obj)
         elif isinstance(obj, pd.Timestamp):
             return obj.isoformat()
-        elif isinstance(obj, pd.Categorical):
-            # assume only only one categorical value per cell
+        elif isinstance(obj, (pd.Categorical, pd.arrays.BooleanArray)):
+            # assume only only one categorical / nullable boolean value per cell
             return obj.tolist()[0]
         elif isinstance(obj, set):
             return list(obj)
-        elif isinstance(obj, type(pd.NaT)):
+        elif isinstance(obj, (type(pd.NaT), type(pd.NA))):
             return None
         # when logging a series directly, numpy datatypes are used
         elif isinstance(obj, np.datetime64):
