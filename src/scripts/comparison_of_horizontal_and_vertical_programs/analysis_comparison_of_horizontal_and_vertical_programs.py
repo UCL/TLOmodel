@@ -263,7 +263,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # todo: Neaten graphs
     # todo: Graph showing difference broken down by disease (this can be cribbed from the calcs about wealth from the
     #  third set of analyses in the overview paper).
-
+    # todo: other metrics of health
+    # todo: other graphs, broken down by age/sex (this can also be cribbed from overview paper stuff)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
