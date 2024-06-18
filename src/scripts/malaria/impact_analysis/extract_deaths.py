@@ -31,6 +31,10 @@ outputspath = Path("./outputs")
 # results_folder = get_scenario_outputs("exclude_services_Mar2024.py", outputspath)[-1]
 results_folder = Path("./outputs/exclude_HTM_services_Apr2024")
 
+# todo for supplementary analysis
+results_folder = Path("./outputs/SI_exclude_double_prog_Jun2024")
+
+
 # Declare path for output graphs from this script
 make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
 
@@ -434,7 +438,7 @@ def combine_values(row):
 # Apply the function row-wise to create a new DataFrame
 new_df = tmp2_sorted.apply(combine_values, axis=1)
 
-new_df.to_csv(outputspath / "Apr2024_HTMresults/deaths_by_py_formatted.csv")
+new_df.to_csv(outputspath / "Apr2024_HTMresults/SI_deaths_by_py_formatted.csv")
 
 
 
