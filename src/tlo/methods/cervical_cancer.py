@@ -760,7 +760,7 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             disease_module=self.module
         )
 
-# todo: add some incidence of vaginal bleeding in women without cc
+# ensure there is some incidence of vaginal bleeding in women without cc
 
 
 # vaccinating 9 year old girls - this only uncommented for testing - vaccination is controlled by epi
