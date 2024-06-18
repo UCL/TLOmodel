@@ -26,6 +26,7 @@ from tlo import (
     logging,
 )
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.logging.helpers import get_dataframe_row_as_dict_for_logging
 from tlo.methods.causes import (
     Cause,
     collect_causes_from_disease_modules,
@@ -513,7 +514,7 @@ class Demography(Module):
 
         # - log all the properties for the deceased person
         logger_detail.info(key='properties_of_deceased_persons',
-                           data=person.to_dict(),
+                           data=get_dataframe_row_as_dict_for_logging(df, individual_id),
                            description='values of all properties at the time of death for deceased persons')
 
         # - log the death in the Deviance module (if it is registered)

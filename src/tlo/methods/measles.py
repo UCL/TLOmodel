@@ -545,7 +545,7 @@ class MeaslesLoggingFortnightEvent(RegularEvent, PopulationScopeEventMixin):
             if tmp:
                 proportion_with_symptom = number_with_symptom / tmp
             else:
-                proportion_with_symptom = 0
+                proportion_with_symptom = 0.0
             symptom_output[symptom] = proportion_with_symptom
 
         logger.info(key="measles_symptoms",
