@@ -480,15 +480,16 @@ class CervicalCancer(Module):
         stage4 = p['rr_vaginal_bleeding_cc_stage4'] * p['r_vaginal_bleeding_cc_stage1']
 
         self.lm_onset_vaginal_bleeding = LinearModel.multiplicative(
+            Predictor('sex').when('M', 0.0),
             Predictor(
                 'ce_hpv_cc_status',
                 conditions_are_mutually_exclusive=True,
                 conditions_are_exhaustive=True,
             )
-            .when('none', 0.0)
-            .when('cin1', 0.0)
-            .when('cin2', 0.0)
-            .when('cin3', 0.0)
+            .when('none', 0.00001)
+            .when('cin1', 0.00001)
+            .when('cin2', 0.00001)
+            .when('cin3', 0.00001)
             .when('stage1', stage1)
             .when('stage2a', stage2a)
             .when('stage2b', stage2b)
@@ -760,9 +761,6 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             disease_module=self.module
         )
 
-# ensure there is some incidence of vaginal bleeding in women without cc
-
-
 # vaccinating 9 year old girls - this only uncommented for testing - vaccination is controlled by epi
 #       age9_f_idx = df.index[(df.is_alive) & (df.age_exact_years > 9) & (df.age_exact_years < 90) & (df.sex == 'F')]
 #       df.loc[age9_f_idx, 'va_hpv'] = 1
@@ -1010,7 +1008,7 @@ class HSI_CervicalCancer_Biopsy(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, 'ce_date_diagnosis'] = self.sim.date
             df.at[person_id, 'ce_stage_at_diagnosis'] = df.at[person_id, 'ce_hpv_cc_status']
             df.at[person_id, 'ce_current_cc_diagnosed'] = True
-            df.at[person_id, 'ever_diagnosed'] = True
+            df.at[person_id, 'ce_ever_diagnosed'] = True
 
             # Check if is in stage4:
             in_stage4 = df.at[person_id, 'ce_hpv_cc_status'] == 'stage4'
