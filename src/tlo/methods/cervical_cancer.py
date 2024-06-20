@@ -806,10 +806,6 @@ class HSI_CervicalCancer_AceticAcidScreening(HSI_Event, IndividualScopeEventMixi
         person = df.loc[person_id]
         hs = self.sim.modules["HealthSystem"]
 
-        # Ignore this event if the person is no longer alive:
-        if not person.is_alive:
-            return hs.get_blank_appt_footprint()
-
         # Run a test to diagnose whether the person has condition:
         dx_result = hs.dx_manager.run_dx_test(
             dx_tests_to_run='screening_with_via_for_cin_and_cervical_cancer',
@@ -881,10 +877,6 @@ class HSI_CervicalCancer_XpertHPVScreening(HSI_Event, IndividualScopeEventMixin)
         person = df.loc[person_id]
         hs = self.sim.modules["HealthSystem"]
 
-        # Ignore this event if the person is no longer alive:
-        if not person.is_alive:
-            return hs.get_blank_appt_footprint()
-
         # Run a test to diagnose whether the person has condition:
         dx_result = hs.dx_manager.run_dx_test(
             dx_tests_to_run='screening_with_xpert_for_hpv',
@@ -952,10 +944,6 @@ class HSI_CervicalCancerPresentationVaginalBleeding(HSI_Event, IndividualScopeEv
         hs = self.sim.modules["HealthSystem"]
         p = self.sim.modules['CervicalCancer'].parameters
 
-        # Ignore this event if the person is no longer alive:
-        if not person.is_alive:
-            return hs.get_blank_appt_footprint()
-
         random_value = random.random()
 
         if random_value <= p['prob_referral_biopsy_given_vaginal_bleeding']:
@@ -984,10 +972,6 @@ class HSI_CervicalCancer_Biopsy(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
-
-        # Ignore this event if the person is no longer alive:
-        if not df.at[person_id, 'is_alive']:
-            return hs.get_blank_appt_footprint()
 
         # Use a biopsy to diagnose whether the person has cervical cancer
         # todo: request consumables needed for this and elsewhere
@@ -1053,9 +1037,6 @@ class HSI_CervicalCancer_Cryotherapy_CIN(HSI_Event, IndividualScopeEventMixin):
         hs = self.sim.modules["HealthSystem"]
         p = self.sim.modules['CervicalCancer'].parameters
 
-        if not df.at[person_id, 'is_alive']:
-            return hs.get_blank_appt_footprint()
-
         # Record date and stage of starting treatment
         df.at[person_id, "ce_date_cryo"] = self.sim.date
 
@@ -1081,9 +1062,6 @@ class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
         p = self.sim.modules['CervicalCancer'].parameters
-
-        if not df.at[person_id, 'is_alive']:
-            return hs.get_blank_appt_footprint()
 
         # If the status is already in `stage4`, start palliative care (instead of treatment)
         if df.at[person_id, "ce_hpv_cc_status"] == 'stage4':
@@ -1119,25 +1097,29 @@ class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         random_value = random.random()
 
-        if random_value <= p['prob_cure_stage1'] and df.at[person_id, "ce_date_treatment"] == self.sim.date:
+        if (random_value <= p['prob_cure_stage1'] and df.at[person_id, "ce_hpv_cc_status" == "stage1"]
+            and df.at[person_id, "ce_date_treatment"] == self.sim.date):
             df.at[person_id, "ce_hpv_cc_status"] = 'none'
             df.at[person_id, 'ce_current_cc_diagnosed'] = False
         else:
             df.at[person_id, "ce_hpv_cc_status"] = 'stage1'
 
-        if random_value <= p['prob_cure_stage2a'] and df.at[person_id, "ce_date_treatment"] == self.sim.date:
+        if (random_value <= p['prob_cure_stage2a'] and df.at[person_id, "ce_hpv_cc_status" == "stage2a"]
+            and df.at[person_id, "ce_date_treatment"] == self.sim.date):
             df.at[person_id, "ce_hpv_cc_status"] = 'none'
             df.at[person_id, 'ce_current_cc_diagnosed'] = False
         else:
             df.at[person_id, "ce_hpv_cc_status"] = 'stage2a'
 
-        if random_value <= p['prob_cure_stage2b'] and df.at[person_id, "ce_date_treatment"] == self.sim.date:
+        if (random_value <= p['prob_cure_stage2b'] and df.at[person_id, "ce_hpv_cc_status" == "stage2b"]
+            and df.at[person_id, "ce_date_treatment"] == self.sim.date):
             df.at[person_id, "ce_hpv_cc_status"] = 'none'
             df.at[person_id, 'ce_current_cc_diagnosed'] = False
         else:
             df.at[person_id, "ce_hpv_cc_status"] = 'stage2b'
 
-        if random_value <= p['prob_cure_stage3'] and df.at[person_id, "ce_date_treatment"] == self.sim.date:
+        if (random_value <= p['prob_cure_stage3'] and df.at[person_id, "ce_hpv_cc_status" == "stage3"]
+            and df.at[person_id, "ce_date_treatment"] == self.sim.date):
             df.at[person_id, "ce_hpv_cc_status"] = 'none'
             df.at[person_id, 'ce_current_cc_diagnosed'] = False
         else:
@@ -1172,9 +1154,6 @@ class HSI_CervicalCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
-
-        if not df.at[person_id, 'is_alive']:
-            return hs.get_blank_appt_footprint()
 
         assert not pd.isnull(df.at[person_id, "ce_date_diagnosis"])
         assert not pd.isnull(df.at[person_id, "ce_date_treatment"])
@@ -1251,9 +1230,6 @@ class HSI_CervicalCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
-
-        if not df.at[person_id, 'is_alive']:
-            return hs.get_blank_appt_footprint()
 
         # Check that the person is in stage4
         assert df.at[person_id, "ce_hpv_cc_status"] == 'stage4'
