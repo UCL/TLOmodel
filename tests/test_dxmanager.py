@@ -20,7 +20,7 @@ from tlo.methods import (
 )
 from tlo.methods.consumables import Consumables, create_dummy_data_for_cons_availability
 from tlo.methods.dxmanager import DxManager, DxTest
-from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.hsi_event import HSI_Event
 
 # --------------------------------------------------------------------------
 # Create a very short-run simulation for use in the tests
@@ -85,7 +85,7 @@ def bundle(seed):
     item_code_for_consumable_that_is_available = 1
 
     sim.modules['HealthSystem'].consumables = Consumables(
-        data=create_dummy_data_for_cons_availability(
+        availability_data=create_dummy_data_for_cons_availability(
             intrinsic_availability={
                 item_code_for_consumable_that_is_not_available: 0.0,
                 item_code_for_consumable_that_is_available: 1.0},

@@ -5,14 +5,14 @@ Overview
 --------
 The Stunting module determines the prevalence of stunting for children under 5 years old. A polling event runs
 every month and determines the risk of onset of non-severe stunting, progression to severe stunting or natural
-recovery. The Generic HSI calls `do_routine_assessment_for_chronic_undernutrition` for any HSI with a child under
-5 years old: if they have any stunting they are provided with an intervention - `HSI_Stunting_ComplementaryFeeding`.
-
+recovery. The Generic HSI calls do_at_generic_first_appt for any HSI with a child under 5 years old:
+if they have any stunting they are provided with an intervention - `HSI_Stunting_ComplementaryFeeding`.
 """
+from __future__ import annotations
 
 from collections import namedtuple
 from pathlib import Path
-from typing import Union
+from typing import TYPE_CHECKING, Union
 
 import numpy as np
 import pandas as pd
@@ -22,7 +22,12 @@ from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, lo
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
-from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.hsi_event import HSI_Event
+from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
+
+if TYPE_CHECKING:
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
+    from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -32,7 +37,7 @@ logger.setLevel(logging.INFO)
 #   MODULE DEFINITION
 # ---------------------------------------------------------------------------------------------------------
 
-class Stunting(Module):
+class Stunting(Module, GenericFirstAppointmentsMixin):
     """This is the disease module for Stunting"""
 
     INIT_DEPENDENCIES = {'Demography', 'Wasting', 'NewbornOutcomes', 'Diarrhoea', 'Hiv'}
@@ -275,31 +280,43 @@ class Stunting(Module):
             '-3<=HAZ<-2': 'HAZ>=-2'
         })
 
-    def do_routine_assessment_for_chronic_undernutrition(self, person_id):
-        """This is called by the a generic HSI event for every child aged less than 5 years. It assesses stunting
-        and schedules an HSI as needed."""
-
-        df = self.sim.population.props
-        person = df.loc[person_id]
-        is_stunted = person.un_HAZ_category in ('HAZ<-3', '-3<=HAZ<-2')
-        p_stunting_diagnosed = self.parameters['prob_stunting_diagnosed_at_generic_appt']
-
-        if not is_stunted:
-            return
-
-        # Schedule the HSI for provision of treatment based on the probability of stunting diagnosis
-        if p_stunting_diagnosed > self.rng.random_sample():
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_Stunting_ComplementaryFeeding(module=self, person_id=person_id),
-                priority=2,  # <-- lower priority that for wasting and most other HSI
-                topen=self.sim.date)
-
     def do_treatment(self, person_id, prob_success):
         """Represent the treatment with supplementary feeding. If treatment is successful, effect the recovery
         of the person immediately."""
         if prob_success > self.rng.random_sample():
             self.do_recovery([person_id])
 
+    def do_at_generic_first_appt(
+        self,
+        person_id: int,
+        individual_properties: IndividualProperties,
+        schedule_hsi_event: HSIEventScheduler,
+        **kwargs,
+    ) -> None:
+        # This is called by the a generic HSI event for every child aged less than 5
+        # years. It assesses stunting and schedules an HSI as needed.
+        is_stunted = individual_properties["un_HAZ_category"] in (
+            "HAZ<-3",
+            "-3<=HAZ<-2",
+        )
+        p_stunting_diagnosed = self.parameters[
+            "prob_stunting_diagnosed_at_generic_appt"
+        ]
+
+        # Schedule the HSI for provision of treatment based on the probability of
+        # stunting diagnosis, provided the necessary symptoms are there.
+        if individual_properties["age_years"] <= 5 and is_stunted:
+            # Schedule the HSI for provision of treatment based on the probability of
+            # stunting diagnosis
+            if p_stunting_diagnosed > self.rng.random_sample():
+                event = HSI_Stunting_ComplementaryFeeding(
+                    module=self, person_id=person_id
+                )
+                schedule_hsi_event(
+                    event,
+                    priority=2,  # <-- lower priority that for wasting and most other HSI
+                    topen=self.sim.date,
+                )
 
 class Models:
     def __init__(self, module):
