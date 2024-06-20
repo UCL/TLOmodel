@@ -82,6 +82,22 @@ def test_core_functionality_of_equipment_class(seed):
     with pytest.warns():
         eq_default.parse_items('ItemThatIsNotDefined')
 
+    # Lookup the item_codes that belong in a particular package.
+    # - When package is recognised
+    # if items are in the same package (once standing alone, once within multiple pkgs defined for item)
+    assert {0, 1} == eq_default.from_pkg_names(pkg_names='PkgWith0+1')
+    # if the pkg within multiple pkgs defined for item
+    assert {1} == eq_default.from_pkg_names(pkg_names='PkgWith1')
+    # if the pkg only stands alone
+    assert {3} == eq_default.from_pkg_names(pkg_names='PkgWith3')
+    # Lookup the item_codes that belong to multiple specified packages.
+    assert {0, 1, 3} == eq_default.from_pkg_names(pkg_names={'PkgWith0+1', 'PkgWith3'})
+    assert {1, 3} == eq_default.from_pkg_names(pkg_names={'PkgWith1', 'PkgWith3'})
+
+    # - When package is not recognised (should raise an error)
+    with pytest.raises(ValueError):
+        eq_default.from_pkg_names(pkg_names='')
+
     # Testing checking on available of items
     # - calling when all items available (should be true)
     assert eq_default.is_all_items_available(item_codes={1, 2}, facility_id=1)
@@ -137,22 +153,6 @@ def test_core_functionality_of_equipment_class(seed):
     eq_default.record_use_of_equipment(item_codes={0, 1}, facility_id=1)
     # - Check that internal record is as expected
     assert {0: {0: 1, 1: 2}, 1: {0: 1, 1: 1}} == dict(eq_default._record_of_equipment_used_by_facility_id)
-
-    # Lookup the item_codes that belong in a particular package.
-    # - When package is recognised
-    # if items are in the same package (once standing alone, once within multiple pkgs defined for item)
-    assert {0, 1} == eq_default.from_pkg_names(pkg_names='PkgWith0+1')
-    # if the pkg within multiple pkgs defined for item
-    assert {1} == eq_default.from_pkg_names(pkg_names='PkgWith1')
-    # if the pkg only stands alone
-    assert {3} == eq_default.from_pkg_names(pkg_names='PkgWith3')
-    # Lookup the item_codes that belong to multiple specified packages.
-    assert {0, 1, 3} == eq_default.from_pkg_names(pkg_names={'PkgWith0+1', 'PkgWith3'})
-    assert {1, 3} == eq_default.from_pkg_names(pkg_names={'PkgWith1', 'PkgWith3'})
-
-    # - Error thrown when package is not recognised
-    with pytest.raises(ValueError):
-        eq_default.from_pkg_names(pkg_names='')
 
 
 equipment_item_code_that_is_available = [0, 1, ]
