@@ -276,14 +276,13 @@ class Equipment:
 
         # Make dataframe with columns for each package, and bools showing whether each item_code is included
         pkgs = df['Pkg_Name'].replace({float('nan'): None}) \
-                             .str.replace(' ', '') \
                              .str.get_dummies(sep=',') \
                              .set_index(df.Item_Code) \
                              .astype(bool)
 
         # Make dict of the form: {'Pkg_Code': <Set of item_codes>}
         pkg_lookup_dict = {
-            pkg_name: set(pkgs[pkg_name].loc[pkgs[pkg_name]].index.to_list())
+            pkg_name.strip(): set(pkgs[pkg_name].loc[pkgs[pkg_name]].index.to_list())
             for pkg_name in pkgs.columns
         }
 
