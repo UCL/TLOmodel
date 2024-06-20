@@ -205,7 +205,6 @@ class SymptomManager(Module):
             'injury',
             'eye_complaint',
             'diarrhoea',
-            'vaginal_bleeding',
             'spurious_emergency_symptom'
         }
 
