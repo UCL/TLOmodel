@@ -12,6 +12,8 @@ from pathlib import Path
 from datetime import datetime
 
 import math
+from typing import List
+
 import pandas as pd
 import random
 import json
@@ -25,8 +27,10 @@ from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
 from tlo.methods.symptommanager import Symptom
 from tlo.methods import Metadata
+from tlo.population import IndividualProperties
 from tlo.util import random_date
 
 logger = logging.getLogger(__name__)
@@ -639,6 +643,43 @@ class CervicalCancer(Module):
 
         return disability_series_for_alive_persons
 
+    def do_at_generic_first_appt(
+        self,
+        person_id: int,
+        individual_properties: IndividualProperties,
+        symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
+        **kwargs,
+    ) -> None:
+        if 'vaginal_bleeding' in symptoms:
+            schedule_hsi_event(
+                HSI_CervicalCancerPresentationVaginalBleeding(
+                    person_id=person_id,
+                    module=self
+                ),
+                priority=0,
+                topen=self.sim.date,
+                tclose=None)
+
+        if 'chosen_via_screening_for_cin_cervical_cancer' in symptoms:
+            schedule_hsi_event(
+                HSI_CervicalCancer_AceticAcidScreening(
+                    person_id=person_id,
+                    module=self
+                ),
+                priority=0,
+                topen=self.sim.date,
+                tclose=None)
+
+        if 'chosen_xpert_screening_for_hpv_cervical_cancer' in symptoms:
+            schedule_hsi_event(
+                HSI_CervicalCancer_XpertHPVScreening(
+                    person_id=person_id,
+                    module=self
+                ),
+                priority=0,
+                topen=self.sim.date,
+                tclose=None)
 
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
