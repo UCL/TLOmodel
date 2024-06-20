@@ -1,18 +1,23 @@
+from __future__ import annotations
+
 from pathlib import Path
-from typing import List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, List, Optional, Sequence, Union
 
 import numpy as np
 import pandas as pd
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
-from tlo.core import IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.hsi_event import HSI_Event
+from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date
+
+if TYPE_CHECKING:
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -26,7 +31,7 @@ logger.setLevel(logging.INFO)
 _AGE_GROUPS = {'PSAC': (0, 4), 'SAC': (5, 14), 'Adults': (15, 120), 'All': (0, 120)}
 
 
-class Schisto(Module):
+class Schisto(Module, GenericFirstAppointmentsMixin):
     """Schistosomiasis module.
     Two species of worm that cause Schistosomiasis are modelled independently. Worms are acquired by persons via the
      environment. There is a delay between the acquisition of worms and the maturation to 'adults' worms; and a long
@@ -326,19 +331,20 @@ class Schisto(Module):
 
     def do_at_generic_first_appt(
         self,
-        patient_id: int,
+        person_id: int,
         symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
         **kwargs
-    ) -> IndividualPropertyUpdates:
+    ) -> None:
         # Do when person presents to the GenericFirstAppt.
         # If the person has certain set of symptoms, refer ta HSI for testing.
         set_of_symptoms_indicative_of_schisto = {'anemia', 'haematuria', 'bladder_pathology'}
 
         if set_of_symptoms_indicative_of_schisto.issubset(symptoms):
             event = HSI_Schisto_TestingFollowingSymptoms(
-                module=self, person_id=patient_id
+                module=self, person_id=person_id
             )
-            self.healthsystem.schedule_hsi_event(event, priority=0, topen=self.sim.date)
+            schedule_hsi_event(event, priority=0, topen=self.sim.date)
 
 
 class SchistoSpecies:

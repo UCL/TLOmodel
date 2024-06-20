@@ -128,13 +128,6 @@ class HSI_Event:
         return self._received_info_about_bed_days
 
     @property
-    def target_is_alive(self) -> bool:
-        """Return True if the target of this HSI event is alive,
-        otherwise False.
-        """
-        return self.sim.population.props.at[self.target, "is_alive"]
-
-    @property
     def sim(self) -> Simulation:
         return self.module.sim
 

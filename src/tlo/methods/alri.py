@@ -30,17 +30,18 @@ import numpy as np
 import pandas as pd
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
-from tlo.core import IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.hsi_event import HSI_Event
+from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date, sample_outcome
 
 if TYPE_CHECKING:
-    from tlo.population import PatientDetails
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
+    from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -54,7 +55,7 @@ to_prob = lambda odds: odds / (1.0 + odds)  # noqa: E731
 # ---------------------------------------------------------------------------------------------------------
 
 
-class Alri(Module):
+class Alri(Module, GenericFirstAppointmentsMixin):
     """This is the disease module for Acute Lower Respiratory Infections."""
 
     INIT_DEPENDENCIES = {
@@ -1362,39 +1363,35 @@ class Alri(Module):
 
     def do_at_generic_first_appt(
         self,
-        patient_id: int,
-        patient_details: PatientDetails,
+        person_id: int,
+        individual_properties: IndividualProperties,
         symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
         facility_level: str,
         **kwargs,
-    ) -> IndividualPropertyUpdates:
+    ) -> None:
         # Action taken when a child (under 5 years old) presents at a
         # generic appointment (emergency or non-emergency) with symptoms
         # of `cough` or `difficult_breathing`.
-        if patient_details.age_years <= 5 and (
+        if individual_properties["age_years"] <= 5 and (
             ("cough" in symptoms) or ("difficult_breathing" in symptoms)
         ):
             self.record_sought_care_for_alri()
 
             # All persons have an initial out-patient appointment at the current facility level.
             event = HSI_Alri_Treatment(
-                person_id=patient_id, module=self, facility_level=facility_level
+                person_id=person_id, module=self, facility_level=facility_level
             )
-            self.healthsystem.schedule_hsi_event(
+            schedule_hsi_event(
                 event,
                 topen=self.sim.date,
                 tclose=self.sim.date + pd.DateOffset(days=1),
                 priority=1,
             )
 
-    def do_at_generic_first_appt_emergency(
-        self,
-        **kwargs,
-    ) -> IndividualPropertyUpdates:
+    def do_at_generic_first_appt_emergency(self, **kwargs) -> None:
         # Emergency and non-emergency treatment is identical for alri
-        return self.do_at_generic_first_appt(
-            **kwargs,
-        )
+        self.do_at_generic_first_appt(**kwargs)
 
 
 class Models:
