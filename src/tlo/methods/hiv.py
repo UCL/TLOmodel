@@ -46,7 +46,7 @@ if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO )
+logger.setLevel(logging.INFO)
 
 
 class Hiv(Module, GenericFirstAppointmentsMixin):
