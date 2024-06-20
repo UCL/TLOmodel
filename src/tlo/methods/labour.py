@@ -8,20 +8,19 @@ import pandas as pd
 import scipy.stats
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
-from tlo.core import IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType
 from tlo.methods import Metadata, labour_lm, pregnancy_helper_functions
 from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
+from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.postnatal_supervisor import PostnatalWeekOneMaternalEvent
 from tlo.util import BitsetHandler
 
 if TYPE_CHECKING:
-    from numpy.random import RandomState
-
-    from tlo.population import PatientDetails
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
+    from tlo.population import IndividualProperties
 
 
 # Standard logger
@@ -37,7 +36,7 @@ logger_pn = logging.getLogger("tlo.methods.postnatal_supervisor")
 logger_pn.setLevel(logging.INFO)
 
 
-class Labour(Module):
+class Labour(Module, GenericFirstAppointmentsMixin):
     """This is module is responsible for the process of labour, birth and the immediate postnatal period (up until
     48hrs post birth). This model has a number of core functions including; initiating the onset of labour for women on
     their pre-determined due date (or prior to this for preterm labour/admission for delivery), applying the incidence
@@ -2335,28 +2334,27 @@ class Labour(Module):
 
     def do_at_generic_first_appt_emergency(
         self,
-        patient_id: int,
-        patient_details: PatientDetails,
-        random_state: RandomState,
+        person_id: int,
+        individual_properties: IndividualProperties,
+        schedule_hsi_event: HSIEventScheduler,
         **kwargs,
-    ) -> IndividualPropertyUpdates:
+    ) -> None:
         mni = self.sim.modules["PregnancySupervisor"].mother_and_newborn_info
         labour_list = self.sim.modules["Labour"].women_in_labour
 
-        if patient_id in labour_list:
-            la_currently_in_labour = patient_details.la_currently_in_labour
+        if person_id in labour_list:
+            la_currently_in_labour = individual_properties["la_currently_in_labour"]
             if (
                 la_currently_in_labour
-                & mni[patient_id]["sought_care_for_complication"]
-                & (mni[patient_id]["sought_care_labour_phase"] == "intrapartum")
+                & mni[person_id]["sought_care_for_complication"]
+                & (mni[person_id]["sought_care_labour_phase"] == "intrapartum")
             ):
                 event = HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(
                     module=self,
-                    person_id=patient_id,
-                    # facility_level_of_this_hsi=random_state.choice(["1a", "1b"]),
+                    person_id=person_id,
                     facility_level_of_this_hsi=self.rng.choice(["1a", "1b"]),
                 )
-                self.healthsystem.schedule_hsi_event(
+                schedule_hsi_event(
                     event,
                     priority=0,
                     topen=self.sim.date,
