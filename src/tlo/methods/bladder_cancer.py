@@ -2,11 +2,13 @@
 Bladder Cancer Disease Module
 
 Limitations to note:
-* Needs to represent the the DxTest 'cytoscopy_blood_urine_bladder_cancer' requires use of a cytoscope
+* Needs to represent the DxTest 'cystoscopy_blood_urine_bladder_cancer' requires use of a cystoscope
 * Footprints of HSI -- pending input from expert on resources required.
 """
+from __future__ import annotations
 
 from pathlib import Path
+from typing import TYPE_CHECKING, List
 
 import pandas as pd
 
@@ -14,17 +16,23 @@ from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
+from tlo.methods.cancer_consumables import get_consumable_item_codes_cancers
 from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
-from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.hsi_event import HSI_Event
+from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
+
+if TYPE_CHECKING:
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
+    from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class BladderCancer(Module):
+class BladderCancer(Module, GenericFirstAppointmentsMixin):
     """Bladder Cancer Disease Module"""
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -34,10 +42,11 @@ class BladderCancer(Module):
         self.lm_onset_blood_urine = None
         self.lm_onset_pelvic_pain = None
         self.daly_wts = dict()
+        self.item_codes_bladder_can = dict()
 
     INIT_DEPENDENCIES = {'Demography', 'Lifestyle', 'HealthSystem', 'SymptomManager'}
 
-    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'Schisto'}
 
     METADATA = {
         Metadata.DISEASE_MODULE,
@@ -156,11 +165,11 @@ class BladderCancer(Module):
         "rp_bladder_cancer_schisto_h": Parameter(
             Types.REAL, "relative prevalence at baseline of bladder cancer if schisto_h"
         ),
-        "sensitivity_of_cytoscopy_for_bladder_cancer_blood_urine": Parameter(
-            Types.REAL, "sensitivity of cytoscopy_for diagnosis of bladder cancer given blood urine"
+        "sensitivity_of_cystoscopy_for_bladder_cancer_blood_urine": Parameter(
+            Types.REAL, "sensitivity of cystoscopy_for diagnosis of bladder cancer given blood urine"
         ),
-        "sensitivity_of_cytoscopy_for_bladder_cancer_pelvic_pain": Parameter(
-            Types.REAL, "sensitivity of cytoscopy_for diagnosis of bladder cancer given pelvic pain"
+        "sensitivity_of_cystoscopy_for_bladder_cancer_pelvic_pain": Parameter(
+            Types.REAL, "sensitivity of cystoscopy_for diagnosis of bladder cancer given pelvic pain"
         )
     }
 
@@ -234,17 +243,23 @@ class BladderCancer(Module):
         # check parameters are sensible: probability of having any cancer stage cannot exceed 1.0
         assert sum(p['init_prop_bladder_cancer_stage']) <= 1.0
 
-        lm_init_bc_status_any_stage = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            sum(p['init_prop_bladder_cancer_stage']),
+        predictors = [
             Predictor('li_tob').when(True, p['rp_bladder_cancer_tobacco']),
-            # todo: add line when schisto is merged
-            # Predictor('sh_infection_status').when('High-infection', p['rp_bladder_cancer_schisto_h']),
             Predictor('age_years', conditions_are_mutually_exclusive=True)
             .when('.between(30,49)', p['rp_bladder_cancer_age3049'])
             .when('.between(50,69)', p['rp_bladder_cancer_age5069'])
             .when('.between(70,120)', p['rp_bladder_cancer_agege70'])
             .when('.between(0,14)', 0.0)
+        ]
+
+        conditional_predictors = [
+            Predictor('ss_sh_infection_status').when('High-infection', p['rp_bladder_cancer_schisto_h']),
+        ] if "Schisto" in self.sim.modules else []
+
+        lm_init_bc_status_any_stage = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            sum(p['init_prop_bladder_cancer_stage']),
+            *(predictors + conditional_predictors)
         )
 
         bc_status_any_stage = lm_init_bc_status_any_stage.predict(df.loc[df.is_alive], self.rng)
@@ -368,6 +383,9 @@ class BladderCancer(Module):
         * Define the Disability-weights
         * Schedule the palliative care appointments for those that are on palliative care at initiation
         """
+        # We call the following function to store the required consumables for the simulation run within the appropriate
+        # dictionary
+        self.item_codes_bladder_can = get_consumable_item_codes_cancers(self)
 
         # ----- SCHEDULE LOGGING EVENTS -----
         # Schedule logging event to happen immediately
@@ -386,20 +404,26 @@ class BladderCancer(Module):
         p = self.parameters
         lm = self.linear_models_for_progession_of_bc_status
 
-        lm['tis_t1'] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            p['r_tis_t1_bladder_cancer_none'],
-            # todo: add in when schisto is in
-            # Predictor('sh_infection_status').when('High-infection', p['rp_bladder_cancer_schisto_h']),
+        predictors = [
             Predictor('age_years', conditions_are_mutually_exclusive=True)
             .when('.between(30,49)', p['rp_bladder_cancer_age3049'])
             .when('.between(50,69)', p['rp_bladder_cancer_age5069'])
             .when('.between(70,120)', p['rp_bladder_cancer_agege70'])
             .when('.between(0,14)', 0.0),
             Predictor('li_tob').when(True, p['rr_tis_t1_bladder_cancer_none_tobacco']),
-            # todo: add in when schisto module in master
-            # Predictor('sh_').when(True, p['rr_tis_t1_bladder_cancer_none_ex_alc']),
-            Predictor('bc_status').when('none', 1.0).otherwise(0.0)
+            # todo:
+            # Predictor('tmp_').when(True, p['rr_tis_t1_bladder_cancer_none_ex_alc']),
+            Predictor('bc_status').when('none', 1.0).otherwise(0.0),
+        ]
+
+        conditional_predictors = [
+            Predictor('ss_sh_infection_status').when('High-infection', p['rp_bladder_cancer_schisto_h']),
+        ] if "Schisto" in self.sim.modules else []
+
+        lm["tis_t1"] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            p['r_tis_t1_bladder_cancer_none'],
+            *(predictors + conditional_predictors)
         )
 
         lm['t2p'] = LinearModel(
@@ -458,17 +482,17 @@ class BladderCancer(Module):
         # This properties of conditional on the test being done only to persons with the Symptom, 'blood_urine'.
 
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            cytoscopy_for_bladder_cancer_given_blood_urine=DxTest(
+            cystoscopy_for_bladder_cancer_given_blood_urine=DxTest(
                 property='bc_status',
-                sensitivity=self.parameters['sensitivity_of_cytoscopy_for_bladder_cancer_blood_urine'],
+                sensitivity=self.parameters['sensitivity_of_cystoscopy_for_bladder_cancer_blood_urine'],
                 target_categories=["tis_t1", "t2p", "metastatic"]
             )
         )
 
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            cytoscopy_for_bladder_cancer_given_pelvic_pain=DxTest(
+            cystoscopy_for_bladder_cancer_given_pelvic_pain=DxTest(
                 property='bc_status',
-                sensitivity=self.parameters['sensitivity_of_cytoscopy_for_bladder_cancer_pelvic_pain'],
+                sensitivity=self.parameters['sensitivity_of_cystoscopy_for_bladder_cancer_pelvic_pain'],
                 target_categories=["tis_t1", "t2p", "metastatic"]
             )
          )
@@ -569,6 +593,33 @@ class BladderCancer(Module):
         ] = self.daly_wts['metastatic_palliative_care']
 
         return disability_series_for_alive_persons
+
+    def do_at_generic_first_appt(
+        self,
+        person_id: int,
+        individual_properties: IndividualProperties,
+        symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
+        **kwargs,
+    ) -> None:
+        # Only investigate if the patient is not a child
+        if individual_properties["age_years"] > 5:
+            # Begin investigation if symptoms are present.
+            if "blood_urine" in symptoms:
+                event = HSI_BladderCancer_Investigation_Following_Blood_Urine(
+                    person_id=person_id, module=self
+                )
+                schedule_hsi_event(
+                    event, topen=self.sim.date, priority=0
+                )
+
+            if "pelvic_pain" in symptoms:
+                event = HSI_BladderCancer_Investigation_Following_pelvic_pain(
+                    person_id=person_id, module=self
+                )
+                schedule_hsi_event(
+                    event, topen=self.sim.date, priority=0
+                )
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -673,43 +724,53 @@ class HSI_BladderCancer_Investigation_Following_Blood_Urine(HSI_Event, Individua
         if not pd.isnull(df.at[person_id, "bc_date_diagnosis"]):
             return hs.get_blank_appt_footprint()
 
-        # Use a cytoscope to diagnose whether the person has bladder Cancer:
-        dx_result = hs.dx_manager.run_dx_test(
-            dx_tests_to_run='cytoscopy_for_bladder_cancer_given_blood_urine',
-            hsi_event=self
-        )
+        # Check consumables are available
+        # TODO: replace with cystoscope
+        cons_avail = self.get_consumables(item_codes=self.module.item_codes_bladder_can['screening_biopsy_core'],
+                                          optional_item_codes=
+                                          self.module.item_codes_bladder_can['screening_biopsy_optional'])
 
-        if dx_result:
-            # record date of diagnosis:
-            df.at[person_id, 'bc_date_diagnosis'] = self.sim.date
+        if cons_avail:
+            # Use a biopsy to diagnose whether the person has bladder Cancer
+            # If consumables are available, run the dx_test representing the biopsy
 
-            # Check if is in metastatic:
-            in_metastatic = df.at[person_id, 'bc_status'] == 'metastatic'
+            # Use a cystoscope to diagnose whether the person has bladder Cancer:
+            dx_result = hs.dx_manager.run_dx_test(
+                dx_tests_to_run='cystoscopy_for_bladder_cancer_given_blood_urine',
+                hsi_event=self
+            )
 
-            # If diagnosis detects cancer, we assume classification as metastatic is accurate
-            if not in_metastatic:
-                # start treatment:
-                hs.schedule_hsi_event(
-                    hsi_event=HSI_BladderCancer_StartTreatment(
-                        module=self.module,
-                        person_id=person_id
-                    ),
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None
-                )
+            if dx_result:
+                # record date of diagnosis:
+                df.at[person_id, 'bc_date_diagnosis'] = self.sim.date
 
-            else:
-                # start palliative care:
-                hs.schedule_hsi_event(
-                    hsi_event=HSI_BladderCancer_PalliativeCare(
-                        module=self.module,
-                        person_id=person_id
-                    ),
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None
-                )
+                # Check if is in metastatic:
+                in_metastatic = df.at[person_id, 'bc_status'] == 'metastatic'
+
+                # If diagnosis detects cancer, we assume classification as metastatic is accurate
+                if not in_metastatic:
+                    # start treatment:
+                    hs.schedule_hsi_event(
+                        hsi_event=HSI_BladderCancer_StartTreatment(
+                            module=self.module,
+                            person_id=person_id
+                        ),
+                        priority=0,
+                        topen=self.sim.date,
+                        tclose=None
+                    )
+
+                else:
+                    # start palliative care:
+                    hs.schedule_hsi_event(
+                        hsi_event=HSI_BladderCancer_PalliativeCare(
+                            module=self.module,
+                            person_id=person_id
+                        ),
+                        priority=0,
+                        topen=self.sim.date,
+                        tclose=None
+                    )
 
 
 class HSI_BladderCancer_Investigation_Following_pelvic_pain(HSI_Event, IndividualScopeEventMixin):
@@ -736,49 +797,59 @@ class HSI_BladderCancer_Investigation_Following_pelvic_pain(HSI_Event, Individua
         if not pd.isnull(df.at[person_id, "bc_date_diagnosis"]):
             return hs.get_blank_appt_footprint()
 
-        # Use a cytoscope to diagnose whether the person has bladder Cancer:
-        dx_result = hs.dx_manager.run_dx_test(
-            dx_tests_to_run='cytoscopy_for_bladder_cancer_given_pelvic_pain',
-            hsi_event=self
-        )
+        # Check consumables are available
+        # TODO: replace with cystoscope
+        cons_avail = self.get_consumables(item_codes=self.module.item_codes_bladder_can['screening_biopsy_core'],
+                                          optional_item_codes=self.module.item_codes_bladder_can[
+                                              'screening_biopsy_optional'])
 
-        if dx_result:
-            # record date of diagnosis:
-            df.at[person_id, 'bc_date_diagnosis'] = self.sim.date
+        if cons_avail:
+            # Use a biopsy to diagnose whether the person has bladder Cancer
+            # If consumables are available, run the dx_test representing the biopsy
 
-            # Check if is in metastatic:
-            in_metastatic = df.at[person_id, 'bc_status'] == 'metastatic'
+            # Use a cystoscope to diagnose whether the person has bladder Cancer:
+            dx_result = hs.dx_manager.run_dx_test(
+                dx_tests_to_run='cystoscopy_for_bladder_cancer_given_pelvic_pain',
+                hsi_event=self
+            )
 
-            # If diagnosis detects cancer, we assume classification as metastatic is accurate
-            if not in_metastatic:
-                # start treatment:
-                hs.schedule_hsi_event(
-                    hsi_event=HSI_BladderCancer_StartTreatment(
-                        module=self.module,
-                        person_id=person_id
-                    ),
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None
-                )
+            if dx_result:
+                # record date of diagnosis:
+                df.at[person_id, 'bc_date_diagnosis'] = self.sim.date
 
-            else:
-                # start palliative care:
-                hs.schedule_hsi_event(
-                    hsi_event=HSI_BladderCancer_PalliativeCare(
-                        module=self.module,
-                        person_id=person_id
-                    ),
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None
-                )
+                # Check if is in metastatic:
+                in_metastatic = df.at[person_id, 'bc_status'] == 'metastatic'
+
+                # If diagnosis detects cancer, we assume classification as metastatic is accurate
+                if not in_metastatic:
+                    # start treatment:
+                    hs.schedule_hsi_event(
+                        hsi_event=HSI_BladderCancer_StartTreatment(
+                            module=self.module,
+                            person_id=person_id
+                        ),
+                        priority=0,
+                        topen=self.sim.date,
+                        tclose=None
+                    )
+
+                else:
+                    # start palliative care:
+                    hs.schedule_hsi_event(
+                        hsi_event=HSI_BladderCancer_PalliativeCare(
+                            module=self.module,
+                            person_id=person_id
+                        ),
+                        priority=0,
+                        topen=self.sim.date,
+                        tclose=None
+                    )
 
 
 class HSI_BladderCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     """
     Scheduled by HSI_bladderCancer_Investigation_Following_blood_urine or pelvic pain following a
-    diagnosis of bladder Cancer using cytoscopy. It initiates the treatment of bladder Cancer.
+    diagnosis of bladder Cancer using cystoscopy. It initiates the treatment of bladder Cancer.
     It is only for persons with a cancer that is not in metastatic and who have been diagnosed.
     """
     def __init__(self, module, person_id):
@@ -817,20 +888,28 @@ class HSI_BladderCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         assert not pd.isnull(df.at[person_id, "bc_date_diagnosis"])
         assert pd.isnull(df.at[person_id, "bc_date_treatment"])
 
-        # Record date and stage of starting treatment
-        df.at[person_id, "bc_date_treatment"] = self.sim.date
-        df.at[person_id, "bc_stage_at_which_treatment_given"] = df.at[person_id, "bc_status"]
+        # Check consumables are available
+        cons_avail = self.get_consumables(item_codes=self.module.item_codes_bladder_can['treatment_surgery_core'],
+                                          optional_item_codes=
+                                          self.module.item_codes_bladder_can['treatment_surgery_optional'])
 
-        # Schedule a post-treatment check for 12 months:
-        hs.schedule_hsi_event(
-            hsi_event=HSI_BladderCancer_PostTreatmentCheck(
-                module=self.module,
-                person_id=person_id,
-            ),
-            topen=self.sim.date + DateOffset(years=12),
-            tclose=None,
-            priority=0
-        )
+        if cons_avail:
+            # If consumables are available and the treatment will go ahead
+
+            # Record date and stage of starting treatment
+            df.at[person_id, "bc_date_treatment"] = self.sim.date
+            df.at[person_id, "bc_stage_at_which_treatment_given"] = df.at[person_id, "bc_status"]
+
+            # Schedule a post-treatment check for 12 months:
+            hs.schedule_hsi_event(
+                hsi_event=HSI_BladderCancer_PostTreatmentCheck(
+                    module=self.module,
+                    person_id=person_id,
+                ),
+                topen=self.sim.date + DateOffset(years=12),
+                tclose=None,
+                priority=0
+            )
 
 
 class HSI_BladderCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
@@ -914,20 +993,27 @@ class HSI_BladderCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         # Check that the person is in metastatic
         assert df.at[person_id, "bc_status"] == 'metastatic'
 
-        # Record the start of palliative care if this is first appointment
-        if pd.isnull(df.at[person_id, "bc_date_palliative_care"]):
-            df.at[person_id, "bc_date_palliative_care"] = self.sim.date
+        # Check consumables are available
+        cons_available = self.get_consumables(
+            item_codes=self.module.item_codes_bladder_can['palliation'])
 
-        # Schedule another instance of the event for one month
-        hs.schedule_hsi_event(
-            hsi_event=HSI_BladderCancer_PalliativeCare(
-                module=self.module,
-                person_id=person_id
-            ),
-            topen=self.sim.date + DateOffset(months=1),
-            tclose=None,
-            priority=0
-        )
+        if cons_available:
+            # If consumables are available and the treatment will go ahead
+
+            # Record the start of palliative care if this is first appointment
+            if pd.isnull(df.at[person_id, "bc_date_palliative_care"]):
+                df.at[person_id, "bc_date_palliative_care"] = self.sim.date
+
+            # Schedule another instance of the event for one month
+            hs.schedule_hsi_event(
+                hsi_event=HSI_BladderCancer_PalliativeCare(
+                    module=self.module,
+                    person_id=person_id
+                ),
+                topen=self.sim.date + DateOffset(months=1),
+                tclose=None,
+                priority=0
+            )
 
 
 # ---------------------------------------------------------------------------------------------------------
