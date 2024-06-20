@@ -1611,7 +1611,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         person = df.loc[person_id]
 
         if not person["is_alive"]:
-            return
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         # If the person is already diagnosed, do nothing do not occupy any resources
         if person["tb_diagnosed"]:
