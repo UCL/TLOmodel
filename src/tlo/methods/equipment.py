@@ -268,18 +268,23 @@ class Equipment:
         return item_codes
 
     def _create_pkg_lookup(self) -> Dict[str, Set[int]]:
+        """Create a lookup from a Package Name to a set of Item_Codes that are contained with that package.
+        N.B. In the Catalogue, there is one row for each Item, and the Packages to which each Item belongs (if any)
+        is given in a column 'Pkg_Name': if an item belongs to multiple packages, these names are separated by commas,
+        and if it doesn't belong to any package, then there is a NULL value."""
         df = self.catalogue
-        pkg_lookup = dict()
 
-        pkg_names_raw = set(df['Pkg_Name'].unique()[~pd.isnull(df['Pkg_Name'].unique())])
-        all_multiple_pkg_names = set(name for name in pkg_names_raw if ", " in name)
-        all_pkg_names = pkg_names_raw - all_multiple_pkg_names
-        for pkg_name in all_pkg_names:
-            pkg_lookup[pkg_name] = set(df.loc[df['Pkg_Name'] == pkg_name, 'Item_Code'].values)
-        for multiple_pkg_name in all_multiple_pkg_names:
-            for pkg_name in multiple_pkg_name.split(", "):
-                if pkg_name not in all_pkg_names:
-                    pkg_lookup[pkg_name] = set()
-                    all_pkg_names.update({pkg_name})
-                pkg_lookup[pkg_name].update(set(df.loc[df['Pkg_Name'] == multiple_pkg_name, 'Item_Code'].values))
-        return pkg_lookup
+        # Make dataframe with columns for each package, and bools showing whether each item_code is included
+        pkgs = df['Pkg_Name'].replace({float('nan'): None}) \
+                             .str.replace(' ', '') \
+                             .str.get_dummies(sep=',') \
+                             .set_index(df.Item_Code) \
+                             .astype(bool)
+
+        # Make dict of the form: {'Pkg_Code': <Set of item_codes>}
+        pkg_lookup_dict = {
+            pkg_name: set(pkgs[pkg_name].loc[pkgs[pkg_name]].index.to_list())
+            for pkg_name in pkgs.columns
+        }
+
+        return pkg_lookup_dict
