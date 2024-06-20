@@ -1358,8 +1358,8 @@ class HealthSystem(Module):
             return _priority_ranking
 
         else:  # If treatment is not ranked in the policy, issue a warning and assign priority=3 by default
-#           warnings.warn(UserWarning(f"Couldn't find priority ranking for TREATMENT_ID \n"
-#                                     f"{hsi_event.TREATMENT_ID}"))
+            warnings.warn(UserWarning(f"Couldn't find priority ranking for TREATMENT_ID \n"
+                                      f"{hsi_event.TREATMENT_ID}"))
             return self.lowest_priority_considered
 
     def check_hsi_event_is_valid(self, hsi_event):
@@ -1528,9 +1528,7 @@ class HealthSystem(Module):
         residence and the level of the facility of the HSI."""
         the_district = self.sim.population.props.at[hsi_event.target, 'district_of_residence']
         the_level = hsi_event.ACCEPTED_FACILITY_LEVEL
-
         return self._facilities_for_each_district[the_level][the_district]
-
 
     def get_appt_footprint_as_time_request(self, facility_info: FacilityInfo, appt_footprint: dict):
         """
