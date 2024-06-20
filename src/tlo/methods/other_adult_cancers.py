@@ -694,10 +694,12 @@ class HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom(
         # Check consumables are available
         cons_avail = self.get_consumables(item_codes=self.module.item_codes_other_can['screening_biopsy_core'],
                                           optional_item_codes=
-                                          self.module.item_codes_other_can['screening_biopsy_optional'])
+                                          self.module.item_codes_other_can[
+                                              'screening_biopsy_endoscopy_cystoscopy_optional'])
 
         if cons_avail:
-            # If consumables are available, run the dx_test representing the biopsy
+            # If consumables are available add used equipment and run the dx_test representing the biopsy
+            self.add_equipment({'Ultrasound scanning machine', 'Ordinary Microscope'})
 
             # Use a diagnostic_device to diagnose whether the person has other adult cancer:
             dx_result = hs.dx_manager.run_dx_test(
@@ -786,7 +788,8 @@ class HSI_OtherAdultCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         )
 
         if cons_available:
-            # If consumables are available and the treatment will go ahead
+            # If consumables are available and the treatment will go ahead - update the equipment
+            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
 
             # Record date and stage of starting treatment
             df.at[person_id, "oac_date_treatment"] = self.sim.date
@@ -897,7 +900,8 @@ class HSI_OtherAdultCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
             item_codes=self.module.item_codes_other_can['palliation'])
 
         if cons_available:
-            # If consumables are available and the treatment will go ahead
+            # If consumables are available and the treatment will go ahead - update the equipment
+            self.add_equipment({'Infusion pump', 'Drip stand'})
 
             # Record the start of palliative care if this is first appointment
             if pd.isnull(df.at[person_id, "oac_date_palliative_care"]):

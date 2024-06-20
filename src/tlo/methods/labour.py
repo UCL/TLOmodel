@@ -1889,6 +1889,9 @@ class Labour(Module, GenericFirstAppointmentsMixin):
                                                                                            hsi_event=hsi_event)
 
                 if avail and sf_check:
+                    # Add used equipment
+                    hsi_event.add_equipment({'Delivery Forceps', 'Vacuum extractor'})
+
                     pregnancy_helper_functions.log_met_need(self, f'avd_{indication}', hsi_event)
 
                     # If AVD was successful then we record the mode of delivery. We use this variable to reduce
@@ -2140,16 +2143,20 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self, sf='surg',
                                                                                    hsi_event=hsi_event)
 
-        # determine if uterine preserving surgery will be successful
-        treatment_success_pph = params['success_rate_pph_surgery'] > self.rng.random_sample()
+        if avail and sf_check:
+            # Add used equipment
+            hsi_event.add_equipment(hsi_event.healthcare_system.equipment.from_pkg_names('Major Surgery'))
 
-        # If resources are available and the surgery is a success then a hysterectomy does not occur
-        if treatment_success_pph and avail and sf_check:
-            self.pph_treatment.set(person_id, 'surgery')
+            # determine if uterine preserving surgery will be successful
+            treatment_success_pph = params['success_rate_pph_surgery'] > self.rng.random_sample()
 
-        elif not treatment_success_pph and avail and sf_check:
-            self.pph_treatment.set(person_id, 'hysterectomy')
-            df.at[person_id, 'la_has_had_hysterectomy'] = True
+            if treatment_success_pph:
+                self.pph_treatment.set(person_id, 'surgery')
+            else:
+                # If the treatment is unsuccessful then women will require a hysterectomy to stop the bleeding
+                hsi_event.add_equipment({'Hysterectomy set'})
+                self.pph_treatment.set(person_id, 'hysterectomy')
+                df.at[person_id, 'la_has_had_hysterectomy'] = True
 
         # log intervention delivery
         if self.pph_treatment.has_all(person_id, 'surgery') or df.at[person_id, 'la_has_had_hysterectomy']:
@@ -2178,6 +2185,8 @@ class Labour(Module, GenericFirstAppointmentsMixin):
                                                                                    hsi_event=hsi_event)
 
         if avail and sf_check:
+            hsi_event.add_equipment({'Drip stand', 'Infusion pump'})
+
             mni[person_id]['received_blood_transfusion'] = True
             pregnancy_helper_functions.log_met_need(self, 'blood_tran', hsi_event)
 
@@ -2200,6 +2209,9 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         params = self.current_parameters
         mother = df.loc[person_id]
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+
+        # Add used equipment
+        hsi_event.add_equipment({'Analyser, Haematology'})
 
         # Use dx_test function to assess anaemia status
         test_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
@@ -2927,6 +2939,11 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
             cons=self.module.item_codes_lab_consumables['delivery_core'],
             opt_cons=self.module.item_codes_lab_consumables['delivery_optional'])
 
+        # Add used equipment
+        self.add_equipment({'Delivery set', 'Weighing scale', 'Stethoscope, foetal, monaural, Pinard, plastic',
+                               'Resuscitaire', 'Sphygmomanometer', 'Tray, emergency', 'Suction machine',
+                               'Thermometer', 'Drip stand', 'Infusion pump'})
+
         # If the clean delivery kit consumable is available, we assume women benefit from clean delivery
         if avail:
             mni[person_id]['clean_birth_practices'] = True
@@ -3233,6 +3250,9 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
                 logger.debug(key='message', data="cs delivery blocked for this analysis")
 
             elif (avail and sf_check) or (mni[person_id]['cs_indication'] == 'other'):
+                # If intervention is delivered - add used equipment
+                self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
+
                 person = df.loc[person_id]
                 logger.info(key='caesarean_delivery', data=person.to_dict())
                 logger.info(key='cs_indications', data={'id': person_id,
@@ -3266,6 +3286,7 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
                 # Unsuccessful repair will lead to this woman requiring a hysterectomy. Hysterectomy will also reduce
                 # risk of death from uterine rupture but leads to permanent infertility in the simulation
                 else:
+                    self.add_equipment({'Hysterectomy set'})
                     df.at[person_id, 'la_has_had_hysterectomy'] = True
 
         # ============================= SURGICAL MANAGEMENT OF POSTPARTUM HAEMORRHAGE==================================
