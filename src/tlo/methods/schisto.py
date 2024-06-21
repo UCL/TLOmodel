@@ -923,6 +923,8 @@ class HSI_Schisto_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin)
         )
 
         if will_test:
+            self.add_equipment({'Ordinary Microscope'})
+
             # Determine if they truly are infected (with any of the species)
             is_infected = (person.loc[cols_of_infection_status] != 'Non-infected').any()
 

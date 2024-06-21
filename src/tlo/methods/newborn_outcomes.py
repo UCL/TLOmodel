@@ -987,6 +987,7 @@ class NewbornOutcomes(Module):
                 if avail and sf_check:
                     df.at[person_id, 'nb_supp_care_neonatal_sepsis'] = True
                     pregnancy_helper_functions.log_met_need(self, 'neo_sep_supportive_care', hsi_event)
+                    hsi_event.add_equipment({'Drip stand', 'Infusion pump'})
 
             # The same pattern is then followed for health centre care
             else:
@@ -998,6 +999,7 @@ class NewbornOutcomes(Module):
                 if avail and sf_check:
                     df.at[person_id, 'nb_inj_abx_neonatal_sepsis'] = True
                     pregnancy_helper_functions.log_met_need(self, 'neo_sep_abx', hsi_event)
+                    hsi_event.add_equipment({'Drip stand', 'Infusion pump', 'Oxygen cylinder, with regulator'})
 
     def link_twins(self, child_one, child_two, mother_id):
         """

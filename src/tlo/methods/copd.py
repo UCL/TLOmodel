@@ -591,6 +591,7 @@ class HSI_Copd_TreatmentOnSevereExacerbation(HSI_Event, IndividualScopeEventMixi
                 oxygen=self.get_consumables({self.module.item_codes['oxygen']: 23_040}),
                 aminophylline=self.get_consumables({self.module.item_codes['aminophylline']: 600})
             )
+            self.add_equipment({'Oxygen cylinder, with regulator', 'Nasal Prongs', 'Drip stand', 'Infusion pump'})
 
             if prob_treatment_success:
                 df.at[person_id, 'ch_will_die_this_episode'] = False
