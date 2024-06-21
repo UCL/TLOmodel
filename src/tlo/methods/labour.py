@@ -2959,7 +2959,7 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
             self.module.progression_of_hypertensive_disorders(person_id, property_prefix='ps')
 
             if df.at[person_id, 'la_obstructed_labour']:
-                logger.info(key='maternal_complication', data={'mother': person_id,
+                logger.info(key='maternal_complication', data={'person': person_id,
                                                                'type': 'obstructed_labour',
                                                                'timing': 'intrapartum'})
 
