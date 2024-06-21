@@ -25,12 +25,16 @@ except NameError:
     resourcefilepath = "resources"
 
 simulation_start_date = Date(2010, 1, 1)
-simulation_end_date = Date(2010, 4, 1)
+simulation_end_date = Date(2010, 9, 1)
 simulation_initial_population = 1000
 
 
 module_class_map = get_module_class_map(
-    excluded_modules={'Module', 'Skeleton', 'SimplifiedPregnancyAndLabour'}
+    excluded_modules={
+        "Module",
+        "Skeleton",
+        "SimplifiedPregnancyAndLabour",
+    }
 )
 
 

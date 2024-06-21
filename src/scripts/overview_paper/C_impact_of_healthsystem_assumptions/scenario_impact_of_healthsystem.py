@@ -19,7 +19,7 @@ from typing import Dict
 from tlo import Date, logging
 from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios
 from tlo.methods.fullmodel import fullmodel
-from tlo.methods.scenario_switcher import ScenarioSwitcher
+from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScenarioSwitcher
 from tlo.scenario import BaseScenario
 
 
@@ -48,7 +48,8 @@ class ImpactOfHealthSystemAssumptions(BaseScenario):
         }
 
     def modules(self):
-        return fullmodel(resourcefilepath=self.resources) + [ScenarioSwitcher(resourcefilepath=self.resources)]
+        return fullmodel(resourcefilepath=self.resources) + [
+            ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=self.resources)]
 
     def draw_parameters(self, draw_number, rng):
         if draw_number < len(self._scenarios):
@@ -89,19 +90,28 @@ class ImpactOfHealthSystemAssumptions(BaseScenario):
             "Perfect Healthcare Seeking":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
-                    {'ScenarioSwitcher': {'max_healthsystem_function': False, 'max_healthcare_seeking': True}},
+                    {'ScenarioSwitcher': {
+                        'max_healthsystem_function': [False] * 2,
+                        'max_healthcare_seeking': [True] * 2
+                    }},
+                    # (These changes start immediately and last for the full length of the simulation.)
                 ),
 
             "+ Perfect Clinical Practice":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
-                    {'ScenarioSwitcher': {'max_healthsystem_function': True, 'max_healthcare_seeking': True}},
+                    {'ScenarioSwitcher': {
+                        'max_healthsystem_function': [True] * 2,
+                        'max_healthcare_seeking': [True] * 2
+                    }},
                 ),
 
             "+ Perfect Consumables Availability":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
-                    {'ScenarioSwitcher': {'max_healthsystem_function': False, 'max_healthcare_seeking': True}},
+                    {'ScenarioSwitcher': {
+                        'max_healthsystem_function': [False] * 2,
+                        'max_healthcare_seeking': [True] * 2}},
                     {'HealthSystem': {'cons_availability': 'all'}}
                 ),
         }

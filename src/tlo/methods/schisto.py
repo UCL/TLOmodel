@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from pathlib import Path
-from typing import Optional, Sequence, Union
+from typing import TYPE_CHECKING, List, Optional, Sequence, Union
 
 import numpy as np
 import pandas as pd
@@ -9,9 +11,13 @@ from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
-from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.hsi_event import HSI_Event
+from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date
+
+if TYPE_CHECKING:
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -25,7 +31,7 @@ logger.setLevel(logging.INFO)
 _AGE_GROUPS = {'PSAC': (0, 4), 'SAC': (5, 14), 'Adults': (15, 120), 'All': (0, 120)}
 
 
-class Schisto(Module):
+class Schisto(Module, GenericFirstAppointmentsMixin):
     """Schistosomiasis module.
     Two species of worm that cause Schistosomiasis are modelled independently. Worms are acquired by persons via the
      environment. There is a delay between the acquisition of worms and the maturation to 'adults' worms; and a long
@@ -208,22 +214,6 @@ class Schisto(Module):
         return pd.Series(index=df.index[df.is_alive], data=0.0).add(disability_weights_for_each_person_with_symptoms,
                                                                     fill_value=0.0)
 
-    def do_on_presentation_with_symptoms(self, person_id: int, symptoms: Union[list, set, tuple]) -> None:
-        """Do when person presents to the GenericFirstAppt. If the person has certain set of symptoms, refer ta HSI for
-         testing."""
-
-        set_of_symptoms_indicative_of_schisto = {'anemia', 'haematuria', 'bladder_pathology'}
-
-        if set_of_symptoms_indicative_of_schisto.issubset(symptoms):
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                HSI_Schisto_TestingFollowingSymptoms(
-                    module=self,
-                    person_id=person_id),
-                topen=self.sim.date,
-                tclose=None,
-                priority=0
-            )
-
     def do_effect_of_treatment(self, person_id: Union[int, Sequence[int]]) -> None:
         """Do the effects of a treatment administered to a person or persons. This can be called for a person who is
         infected and receiving treatment following a diagnosis, or for a person who is receiving treatment as part of a
@@ -308,7 +298,7 @@ class Schisto(Module):
 
     def _get_item_code_for_praziquantel(self) -> int:
         """Look-up the item code for Praziquantel"""
-        return self.sim.modules['HealthSystem'].get_item_code_from_item_name("Praziquantel, 600 mg (donated)")
+        return self.sim.modules['HealthSystem'].get_item_code_from_item_name("Praziquantel 600mg_1000_CMST")
 
     def _schedule_mda_events(self) -> None:
         """Schedule MDA events, historical and prognosed."""
@@ -338,6 +328,23 @@ class Schisto(Module):
                                 months_between_repeats=frequency_in_months if frequency_in_months > 0 else None),
                 Date(year=year_first_simulated_mda, month=7, day=1)
             )
+
+    def do_at_generic_first_appt(
+        self,
+        person_id: int,
+        symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
+        **kwargs
+    ) -> None:
+        # Do when person presents to the GenericFirstAppt.
+        # If the person has certain set of symptoms, refer ta HSI for testing.
+        set_of_symptoms_indicative_of_schisto = {'anemia', 'haematuria', 'bladder_pathology'}
+
+        if set_of_symptoms_indicative_of_schisto.issubset(symptoms):
+            event = HSI_Schisto_TestingFollowingSymptoms(
+                module=self, person_id=person_id
+            )
+            schedule_hsi_event(event, priority=0, topen=self.sim.date)
 
 
 class SchistoSpecies:

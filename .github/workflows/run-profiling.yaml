@@ -31,17 +31,39 @@ jobs:
   set-variables:
     name: Create unique output file identifier and artifact name
     runs-on: ubuntu-latest
+    if: (github.event_name != 'issue_comment') || ((github.event_name == 'issue_comment') && (github.event.comment.body == '/run profiling'))
     outputs:
       profiling-output-dir: profiling_results/
       profiling-filename: ${{ steps.set-profiling-filename.outputs.name }}
       artifact-name: ${{ steps.set-artifact-name.outputs.name }}
-      profiling-on-sha: ${{ steps.set-github-info.outputs.sha }}
+      profiling-on-sha: ${{ steps.determine-correct-sha.outputs.result }}
       profiling-event-trigger: ${{ steps.set-github-info.outputs.event }}
     steps:
+      - id: determine-if-pr-comment
+        name: Determine if this is a PR comment
+        run: |
+          if ! [ -z "${{ github.event.issue.pull_request }}" ]; then echo "is-pr=true" >> "${GITHUB_OUTPUT}"; else echo "is-pr=false" >> "${GITHUB_OUTPUT}"; fi
+
+      - id: determine-correct-sha
+        name: Determine the SHA to run profiling on
+        uses: actions/github-script@v7
+        with:
+          result-encoding: string
+          script: |
+            if ("${{ steps.determine-if-pr-comment.outputs.is-pr }}" === "true") {
+              const { data: pr } = await github.rest.pulls.get({
+                owner: context.issue.owner,
+                repo: context.issue.repo,
+                pull_number: context.issue.number,
+              });
+              return pr.head.sha;
+            };
+            return context.sha;
+
       - id: set-profiling-filename
         name: Set profiling output file name
         run: |
-          echo "name=${GITHUB_EVENT_NAME}_${GITHUB_RUN_NUMBER}_${GITHUB_SHA}" >> "${GITHUB_OUTPUT}"
+          echo "name=${GITHUB_EVENT_NAME}_${GITHUB_RUN_NUMBER}_${{ steps.determine-correct-sha.outputs.result }}" >> "${GITHUB_OUTPUT}"
 
       - id: set-artifact-name
         name: Set artifact name
@@ -51,7 +73,7 @@ jobs:
       - id: set-github-info
         name: Fix Git and GitHub information when passing between workflows
         run: |
-          echo "sha=${GITHUB_SHA}" >> "${GITHUB_OUTPUT}"
+          echo "sha=${{ steps.determine-correct-sha.outputs.result }}" >> "${GITHUB_OUTPUT}"
           echo "event=${GITHUB_EVENT_NAME}" >> "${GITHUB_OUTPUT}"
 
   profile-on-comment:
@@ -60,16 +82,18 @@ jobs:
     needs: set-variables
     uses: ./.github/workflows/run-on-comment.yml
     with:
-      runs-on: '["self-hosted", "test"]'
+      runs-on: '["self-hosted", "profiling"]'
       keyword: profiling
       commands: |
         tox -vv -e profile -- \
           --html \
+          --flat-html \
           --root-output-dir ${{ needs.set-variables.outputs.profiling-output-dir }} \
           --output-name ${{ needs.set-variables.outputs.profiling-filename }} \
           --additional-stats \
           sha=${{ needs.set-variables.outputs.profiling-on-sha }} \
-          trigger=${{ needs.set-variables.outputs.profiling-event-trigger }}
+          trigger=${{ needs.set-variables.outputs.profiling-event-trigger }} \
+          --disable-log-output-to-stdout
       description: Profiled run of the model
       timeout-minutes: 8640
       application-organization: UCL
@@ -84,7 +108,7 @@ jobs:
     name: Scheduled / dispatch triggered profiling
     if: ${{ github.event_name != 'issue_comment' }}
     needs: set-variables
-    runs-on: [self-hosted, test]
+    runs-on: [self-hosted, profiling]
     timeout-minutes: 8640
     steps:
       - name: Checkout repository
@@ -98,11 +122,13 @@ jobs:
         run: |
           tox -vv -e profile -- \
             --html \
+            --flat-html \
             --root-output-dir ${{ needs.set-variables.outputs.profiling-output-dir }} \
             --output-name ${{ needs.set-variables.outputs.profiling-filename }} \
             --additional-stats \
             sha=${{ needs.set-variables.outputs.profiling-on-sha }} \
-            trigger=${{ needs.set-variables.outputs.profiling-event-trigger }}
+            trigger=${{ needs.set-variables.outputs.profiling-event-trigger }} \
+            --disable-log-output-to-stdout
 
       ## Upload the output as an artifact so we can push it to the profiling repository
       - name: Save results as artifact

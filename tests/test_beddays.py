@@ -11,7 +11,7 @@ from tlo.analysis.utils import parse_log_file
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata, demography, healthsystem
 from tlo.methods.bed_days import BedDays
-from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.hsi_event import HSI_Event
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
@@ -211,7 +211,7 @@ def test_bed_days_basics(tmpdir, seed):
     assert not df.at[person_id, 'hs_is_inpatient']
 
     # impose the footprint:
-    hsi_bd.post_apply_hook()
+    hsi_bd._run_after_hsi_event()
 
     # check that person is an in-patient now
     assert df.at[person_id, 'hs_is_inpatient']

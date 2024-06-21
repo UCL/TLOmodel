@@ -4,13 +4,19 @@ This contains things that didn't obviously go in their own file, such as
 specification for parameters and properties, and the base Module class for
 disease modules.
 """
+from __future__ import annotations
+
 import json
-import typing
 from enum import Enum, auto
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
 
+if TYPE_CHECKING:
+    from typing import Optional
+
+    from tlo.simulation import Simulation
 
 class Types(Enum):
     """Possible types for parameters and properties.
@@ -32,6 +38,7 @@ class Types(Enum):
     DATA_FRAME = auto()
     STRING = auto()
     DICT = auto()
+    BITSET = auto()
 
 
 class Specifiable:
@@ -49,7 +56,8 @@ class Specifiable:
         Types.SERIES: object,
         Types.DATA_FRAME: object,
         Types.STRING: object,
-        Types.DICT: object
+        Types.DICT: object,
+        Types.BITSET: np.uint32,
     }
 
     # Map our Types to Python types
@@ -64,7 +72,8 @@ class Specifiable:
         Types.SERIES: pd.Series,
         Types.DATA_FRAME: pd.DataFrame,
         Types.STRING: object,
-        Types.DICT: dict
+        Types.DICT: dict,
+        Types.BITSET: int,
     }
 
     def __init__(self, type_, description, categories=None):
@@ -120,6 +129,7 @@ class Property(Specifiable):
         float: float("nan"),
         "category": float("nan"),
         object: float("nan"),
+        np.uint32: 0,
     }
 
     def __init__(self, type_, description, categories=None, *, ordered=False):
@@ -231,6 +241,7 @@ class Module:
     # parameters created from the PARAMETERS specification.
     __slots__ = ('name', 'parameters', 'rng', 'sim')
 
+
     def __init__(self, name=None):
         """Construct a new disease module ready to be included in a simulation.
 
@@ -240,9 +251,9 @@ class Module:
         :param name: the name to use for this module. Defaults to the concrete subclass' name.
         """
         self.parameters = {}
-        self.rng: typing.Optional[np.random.RandomState] = None
+        self.rng: Optional[np.random.RandomState] = None
         self.name = name or self.__class__.__name__
-        self.sim = None
+        self.sim: Optional[Simulation] = None
 
     def load_parameters_from_dataframe(self, resource: pd.DataFrame):
         """Automatically load parameters from resource dataframe, updating the class parameter dictionary

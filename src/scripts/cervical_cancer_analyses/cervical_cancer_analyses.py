@@ -45,7 +45,7 @@ resourcefilepath = Path("./resources")
 
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2024, 1, 1)
+end_date = Date(2026, 1, 1)
 popsize = 17000
 
 
@@ -81,13 +81,13 @@ def run_sim(service_availability):
     return logfile
 
 
-output_csv_file = Path("./outputs/output_data.csv")
+output_csv_file = Path("./outputs/output1_data.csv")
 if output_csv_file.exists():
     output_csv_file.unlink()
 
 run_sim(service_availability=['*'])
 
-# output_csv_file = Path("./outputs/output_data.csv")
+# output_csv_file = Path("./outputs/output1_data.csv")
 
 scale_factor = 17000000 / popsize
 print(scale_factor)
@@ -107,6 +107,24 @@ plt.ylabel('Total deaths past year')
 plt.grid(True)
 plt.ylim(0, 10000)
 plt.show()
+
+
+# plot number of cc diagnoses in past year
+out_df_4 = pd.read_csv(output_csv_file)
+out_df_4 = out_df_4[['n_diagnosed_past_year', 'rounded_decimal_year']].dropna()
+out_df_4 = out_df_4[out_df_4['rounded_decimal_year'] >= 2011]
+out_df_4['n_diagnosed_past_year'] = out_df_4['n_diagnosed_past_year'] * scale_factor
+print(out_df_4)
+plt.figure(figsize=(10, 6))
+plt.plot(out_df_4['rounded_decimal_year'], out_df_4['n_diagnosed_past_year'], marker='o')
+plt.title('Total diagnosed per Year')
+plt.xlabel('Year')
+plt.ylabel('Total diagnosed per year')
+plt.grid(True)
+plt.ylim(0,10000)
+plt.show()
+
+
 
 
 # plot prevalence of each ce stage
