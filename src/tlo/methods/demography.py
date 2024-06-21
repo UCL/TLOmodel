@@ -498,7 +498,7 @@ class Demography(Module):
         data_to_log_for_each_death = {
             'age': person['age_years'],
             'sex': person['sex'],
-            'cause': cause,
+            'cause': str(cause),
             'label': self.causes_of_death[cause].label,
             'person_id': individual_id,
             'li_wealth': person['li_wealth'] if 'li_wealth' in person else -99,
