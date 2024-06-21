@@ -18,7 +18,8 @@ from tlo.methods.breast_cancer import (
     HSI_BreastCancer_Investigation_Following_breast_lump_discernible,
 )
 from tlo.methods.cervical_cancer import (
-    HSI_CervicalCancerPresentationVaginalBleeding, HSI_CervicalCancer_AceticAcidScreening, HSI_CervicalCancer_XpertHPVScreening
+    HSI_CervicalCancerPresentationVaginalBleeding, HSI_CervicalCancer_Screening,
+    HSI_CervicalCancer_AceticAcidScreening, HSI_CervicalCancer_XpertHPVScreening
 )
 from tlo.methods.care_of_women_during_pregnancy import (
     HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement,
@@ -277,26 +278,35 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                     topen=sim.date,
                     tclose=None)
 
-            if 'chosen_via_screening_for_cin_cervical_cancer' in symptoms:
-                schedule_hsi(
-                    HSI_CervicalCancer_AceticAcidScreening(
-                        person_id=person_id,
-                        module=sim.modules['CervicalCancer']
-                    ),
-                    priority=0,
-                    topen=sim.date,
-                    tclose=None)
-
-
-            if 'chosen_xpert_screening_for_hpv_cervical_cancer' in symptoms:
-                schedule_hsi(
-                    HSI_CervicalCancer_XpertHPVScreening(
-                        person_id=person_id,
-                        module=sim.modules['CervicalCancer']
-                    ),
-                    priority=0,
-                    topen=sim.date,
-                    tclose=None)
+            # else:
+            schedule_hsi(
+                HSI_CervicalCancer_Screening(
+                    person_id=person_id,
+                    module=sim.modules['CervicalCancer']
+                ),
+                priority=0,
+                topen=sim.date,
+                tclose=None)
+            # if 'chosen_via_screening_for_cin_cervical_cancer' in symptoms:
+            #     schedule_hsi(
+            #         HSI_CervicalCancer_AceticAcidScreening(
+            #             person_id=person_id,
+            #             module=sim.modules['CervicalCancer']
+            #         ),
+            #         priority=0,
+            #         topen=sim.date,
+            #         tclose=None)
+            #
+            #
+            # if 'chosen_xpert_screening_for_hpv_cervical_cancer' in symptoms:
+            #     schedule_hsi(
+            #         HSI_CervicalCancer_XpertHPVScreening(
+            #             person_id=person_id,
+            #             module=sim.modules['CervicalCancer']
+            #         ),
+            #         priority=0,
+            #         topen=sim.date,
+            #         tclose=None)
 
         if 'Depression' in sim.modules:
             sim.modules['Depression'].do_on_presentation_to_care(person_id=person_id,
