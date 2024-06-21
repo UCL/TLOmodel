@@ -46,6 +46,7 @@ class CervicalCancer(Module):
         self.linear_models_for_progression_of_hpv_cc_status = dict()
         self.lm_onset_vaginal_bleeding = None
         self.daly_wts = dict()
+        self.cervical_cancer_cons = dict()
 
     INIT_DEPENDENCIES = {
         'Demography', 'SimplifiedBirths', 'HealthSystem', 'Lifestyle', 'SymptomManager'
@@ -339,6 +340,15 @@ class CervicalCancer(Module):
         # For simplicity we assume all these are null at baseline - we don't think this will influence population
         # status in the present to any significant degree
 
+    # consumables
+
+    def get_cervical_cancer_item_codes(self):
+        get_items = self.sim.modules['HealthSystem'].get_item_code_from_item_name
+
+        self.cervical_cancer_cons['cervical_cancer_screening_via'] = {get_items('Clean delivery kit'): 1}
+        self.cervical_cancer_cons['cervical_cancer_screening_via_optional'] = {get_items('gloves'): 1}
+
+    # todo:  add others as above
 
     def initialise_simulation(self, sim):
         """
@@ -349,6 +359,8 @@ class CervicalCancer(Module):
         * Define the Disability-weights
         * Schedule the palliative care appointments for those that are on palliative care at initiation
         """
+
+        self.get_cervical_cancer_item_codes()
 
         # ----- SCHEDULE LOGGING EVENTS -----
         # Schedule logging event to happen immediately
@@ -629,6 +641,11 @@ class CervicalCancer(Module):
             )
         ] = self.daly_wts['stage_1_3_treated']
 
+        # todo: check
+        # I'm a bit surprised this works, because the masks being used are wrt to df, but the indexing
+        # into a series with a difference index. Maybe it only works as long as everyone is alive!?
+
+
         # Assign daly_wt to those in stage4 cancer (who have not had palliative care)
         disability_series_for_alive_persons.loc[
             (df.ce_hpv_cc_status == "stage4") &
@@ -726,6 +743,14 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # -------------------- ACQUISITION AND PROGRESSION OF CANCER (ce_hpv_cc_status) -----------------------------------
 
+        # todo:
+        # this is being broadcast. it should be lmited to those with is_alive: ie. df.loc[df.is_alive,
+        # 'cc_new_stage_this_month'] = False
+        # As I expect this is going to be over-written (further down) it would be more efiicent to not
+        # write it into the main sim.population.props df yet (reading/writing there is time-consuming),
+        # and instead do one write to it at the end of the event, when everything is settled.
+
+
         df.ce_new_stage_this_month = False
 
         df['ce_hiv_unsuppressed'] = ((df['hv_art'] == 'on_not_vl_suppressed') | (df['hv_art'] == 'not')) & (df['hv_inf'])
@@ -743,6 +768,18 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[idx_gets_new_stage, 'ce_hpv_cc_status'] = stage
             df.loc[idx_gets_new_stage, 'ce_new_stage_this_month'] = True
 
+
+        # todo:
+        # this is also broadcasting to all dataframe (including dead peple and never alive people,
+        # potentially).
+        #
+        # Also, it will over-write to False those people not in any of those categories. I can see
+        # that this will not violate the logic, but the safest thing would be to also include in the
+        # chanied union statement the current value, in order to absolute prevent reversions... i.e.
+        # add in ce_cc_ever on the end of this line.
+
+
+
         df['ce_cc_ever'] = ((df.ce_hpv_cc_status == 'stage1') | (df.ce_hpv_cc_status == 'stage2a')
                             | (df.ce_hpv_cc_status == 'stage2b') | (df.ce_hpv_cc_status == 'stage3') | (
                                     df.ce_hpv_cc_status == 'stage4')
@@ -752,6 +789,17 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # A subset of women aged 30-50 will receive a screening test
 
         # in future this may be triggered by family planning visit
+
+        # todo:
+        # Instead, for the individuals that are chosen to be screened, create and schedule the HSI
+        # event directly.
+        #
+        # e.g. for each individual to be screened... make an HSI_Event_CervicalCancer_Screening.....
+        # and in that event, do whatever is required for the screening. (might be the same as happens
+        # in the generic appointment, in which case point them both to the same function)
+
+
+
 
         df.ce_selected_for_via_this_month = False
 
@@ -802,10 +850,6 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             disease_module=self.module
         )
 
-# vaccinating 9 year old girls - this only uncommented for testing - vaccination is controlled by epi
-#       age9_f_idx = df.index[(df.is_alive) & (df.age_exact_years > 9) & (df.age_exact_years < 90) & (df.sex == 'F')]
-#       df.loc[age9_f_idx, 'va_hpv'] = 1
-
         # -------------------- DEATH FROM cervical CANCER ---------------------------------------
         # There is a risk of death for those in stage4 only. Death is assumed to go instantly.
         stage4_idx = df.index[df.is_alive & (df.ce_hpv_cc_status == "stage4")]
@@ -817,6 +861,8 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 InstantaneousDeath(self.module, person_id, "CervicalCancer"), self.sim.date
             )
             df.loc[selected_to_die, 'ce_date_death'] = self.sim.date
+
+    # todo: distribute death dates across next 30 days
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -853,14 +899,20 @@ class HSI_CervicalCancer_AceticAcidScreening(HSI_Event, IndividualScopeEventMixi
             hsi_event=self
         )
 
-        if dx_result:
+        cons_availability = self.get_consumables(item_code=self.cervical_cancer_cons['cervical_cancer_screening_via'],
+                                optional_item_codes=self.cervical_cancer_cons['cervical_cancer_screening_via_optional'])
+
+        self.add_equipment({'Drip stand', 'Infusion pump'})
+        self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
+
+        if dx_result and cons_availability:
             df.at[person_id, 'ce_via_cin_ever_detected'] = True
 
-        if dx_result and (df.at[person_id, 'ce_hpv_cc_status'] == 'cin1'
+            if (df.at[person_id, 'ce_hpv_cc_status'] == 'cin1'
                         or df.at[person_id, 'ce_hpv_cc_status'] == 'cin2'
                         or df.at[person_id, 'ce_hpv_cc_status'] == 'cin3'
                         ):
-            hs.schedule_hsi_event(
+                hs.schedule_hsi_event(
                     hsi_event=HSI_CervicalCancer_Cryotherapy_CIN(
                         module=self.module,
                         person_id=person_id
@@ -870,19 +922,19 @@ class HSI_CervicalCancer_AceticAcidScreening(HSI_Event, IndividualScopeEventMixi
                     tclose=None
                            )
 
-        if dx_result and (df.at[person_id, 'ce_hpv_cc_status'] == 'stage1'
+            elif (df.at[person_id, 'ce_hpv_cc_status'] == 'stage1'
                         or df.at[person_id, 'ce_hpv_cc_status'] == 'stage2a'
                         or df.at[person_id, 'ce_hpv_cc_status'] == 'stage2b'
                         or df.at[person_id, 'ce_hpv_cc_status'] == 'stage3'
                         or df.at[person_id, 'ce_hpv_cc_status'] == 'stage4'):
-            hs.schedule_hsi_event(
-                hsi_event=HSI_CervicalCancer_Biopsy(
-                    module=self.module,
-                    person_id=person_id
-                ),
-                priority=0,
-                topen=self.sim.date,
-                tclose=None
+                hs.schedule_hsi_event(
+                    hsi_event=HSI_CervicalCancer_Biopsy(
+                        module=self.module,
+                        person_id=person_id
+                    ),
+                    priority=0,
+                    topen=self.sim.date,
+                    tclose=None
             )
 
         # sy_chosen_via_screening_for_cin_cervical_cancer reset to 0
@@ -1199,6 +1251,10 @@ class HSI_CervicalCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin
         assert not pd.isnull(df.at[person_id, "ce_date_diagnosis"])
         assert not pd.isnull(df.at[person_id, "ce_date_treatment"])
 
+        # todo:
+        # could use pd.Dateoffset(years =...) instead of the number of days for ease for
+        # reading/comprehension
+
         days_threshold_365 = 365
         days_threshold_1095 = 1095
         days_threshold_1825 = 1825
@@ -1279,6 +1335,15 @@ class HSI_CervicalCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         if pd.isnull(df.at[person_id, "ce_date_palliative_care"]):
             df.at[person_id, "ce_date_palliative_care"] = self.sim.date
 
+
+
+        # todo:
+        # for scheduling the same class of HSI_Event to multiple people, more
+        # efficient to use schedule_batch_of_individual_hsi_events
+
+
+
+
         # Schedule another instance of the event for one month
         hs.schedule_hsi_event(
             hsi_event=HSI_CervicalCancer_PalliativeCare(
@@ -1299,7 +1364,6 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """The only logging event for this module"""
 
     # the use of groupby might be more efficient in computing the statistics below;
-
 
     def __init__(self, module):
         """schedule logging to repeat every 1 month
@@ -1435,6 +1499,10 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         out.update({"n_diagnosed_1_year_ago": n_diagnosed_1_year_ago})
         out.update({"n_diagnosed_1_year_ago_died": n_diagnosed_1_year_ago_died})
 
+        # todo:
+        # ? move to using the logger:
+        # i.e. logger.info(key='cervical_cancer_stats_every_month', description='XX', data=out)
+
         print(self.sim.date, 'total_none:', out['total_none'], 'total_hpv:', out['total_hpv'], 'total_cin1:',out['total_cin1'],
               'total_cin2:', out['total_cin2'], 'total_cin3:', out['total_cin3'], 'total_stage1:', out['total_stage1'],
               'total_stage2a:', out['total_stage2a'], 'total_stage2b:', out['total_stage2b'],
@@ -1527,7 +1595,7 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         selected_rows = df[(df['sex'] == 'F') & (df['age_years'] > 15) & df['is_alive']]
 
 #       pd.set_option('display.max_rows', None)
-#       print(selected_rows[selected_columns])
+        print(selected_rows[selected_columns])
 
 #       selected_columns = ['sex', 'age_years', 'is_alive']
 #       pd.set_option('display.max_rows', None)

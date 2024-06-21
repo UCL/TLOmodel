@@ -16,8 +16,8 @@ import numpy as np
 import pandas as pd
 import json
 import math
+from tlo import Simulation, Date
 
-from tlo import Date, Simulation
 from tlo.analysis.utils import make_age_grp_types, parse_log_file
 from tlo.methods import (
     cervical_cancer,
@@ -46,13 +46,13 @@ resourcefilepath = Path("./resources")
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2026, 1, 1)
-popsize = 17000
+popsize = 1700
 
 
 def run_sim(service_availability):
     # Establish the simulation object and set the seed
 #   sim = Simulation(start_date=start_date, seed=0)
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, log_config={"filename": "logfile"})
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -71,14 +71,12 @@ def run_sim(service_availability):
                  hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False)
                  )
 
-    # Establish the logger
-    logfile = sim.configure_logging(filename="LogFile")
 
     # Run the simulation
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    return logfile
+    return sim.log_filepath
 
 
 output_csv_file = Path("./outputs/output1_data.csv")
