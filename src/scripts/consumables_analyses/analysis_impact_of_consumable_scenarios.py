@@ -17,6 +17,7 @@ from matplotlib import pyplot as plt
 from matplotlib.ticker import FuncFormatter
 from collections import Counter, defaultdict
 import seaborn as sns
+import squarify
 
 from tlo.analysis.utils import (
     CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP,
@@ -76,103 +77,6 @@ def drop_outside_period(_df):
     """Return a dataframe which only includes for which the date is within the limits defined by TARGET_PERIOD"""
     return _df.drop(index=_df.index[~_df['date'].between(*TARGET_PERIOD)])
 
-
-def create_line_plot_absolute_figure(_df, _plt_var, _index_var, keep_rows, metric, _plt_name):
-    pivot_df = _df.pivot_table(
-        index=_index_var,
-        columns=['draw', 'stat'],
-        values=_plt_var
-    )
-    pivot_df = pivot_df.sort_values(by=(0, 'mean'), ascending=False)
-    pivot_df = pivot_df[0:keep_rows]  # Keep only top X conditions
-
-    # Define Scnearios and colours
-    scenarios = params['name_of_scenario']  # range(len(params))  # X-axis values representing time periods
-    colors = plt.get_cmap('tab10')(np.linspace(0, 1, len(params['value'])))  # Generate different colors for each bar
-    #colors = plt.cm.viridis(np.linspace(0, 1, len(params['value'])))  # Generate different colors for each bar
-
-    # Plotting
-    fig, ax = plt.subplots(figsize=(12, 8))
-
-    # Get the list of labels for the x-axis
-    x_axis_label_names = pivot_df.index
-
-    # Plot each draw with its confidence interval
-    for draw in pivot_df.columns.levels[0]:
-        central_vals = pivot_df[(draw, 'mean')]
-        lower_vals = pivot_df[(draw, 'lower')]
-        upper_vals = pivot_df[(draw, 'upper')]
-
-        ax.plot(x_axis_label_names, central_vals, label= scenarios[draw], color = colors[draw])  # TODO update label to name of scenario
-        ax.fill_between(x_axis_label_names, lower_vals, upper_vals, alpha=0.3, color = colors[draw])
-
-    # Customize plot
-    ax.set_ylabel(f'{metric}')
-
-    # Format y-axis ticks to display in millions
-    #formatter = FuncFormatter(lambda x, _: '{:,.0f}'.format(x / 1000000))
-    #ax.yaxis.set_major_formatter(formatter)
-
-    #ax.set_title('DALYs by Cause')
-    ax.legend(loc='upper right', bbox_to_anchor=(1.2, 1))
-
-    # Rotate x-axis labels for better readability
-    plt.xticks(rotation=45, ha='right')
-
-    fig.tight_layout()
-    fig.savefig(figurespath / _plt_name)
-    fig.show()
-    plt.close(fig)
-
-def create_line_plot_percentage_of_baseline(_df, _plt_var, _index_var, keep_rows, metric, _plt_name):
-    pivot_df = _df.pivot_table(
-        index=_index_var,
-        columns=['draw', 'stat'],
-        values=_plt_var
-    )
-    pivot_df = pivot_df.sort_values(by=(0, 'mean'), ascending=False)
-    pivot_df = pivot_df[0:keep_rows]  # Keep only top X conditions
-
-    # Define Scnearios and colours
-    scenarios = params['name_of_scenario']  # range(len(params))  # X-axis values representing time periods
-    colors = plt.get_cmap('tab10')(np.linspace(0, 1, len(params['value'])))  # Generate different colors for each bar
-
-    # Plotting
-    fig, ax = plt.subplots(figsize=(12, 8))
-
-    # Get the list of labels for the x-axis
-    x_axis_label_names = pivot_df.index
-
-    # Plot each draw with its confidence interval
-    for draw in pivot_df.columns.levels[0]:
-        if scenarios[draw] == 'Actual': # Because this is a comparative graph and 'default' is the baseline for comparison
-            pass
-        else:
-            central_vals = pivot_df[(draw, 'mean')]/pivot_df[(0, 'mean')] * 100# this shows the % reduction in DALYs compared to baseline
-            lower_vals = pivot_df[(draw, 'lower')]/pivot_df[(0, 'lower')] * 100
-            upper_vals = pivot_df[(draw, 'upper')]/pivot_df[(0, 'upper')] * 100
-
-            ax.plot(x_axis_label_names, central_vals, label= scenarios[draw], color = colors[draw])  # TODO update label to name of scenario
-            ax.fill_between(x_axis_label_names, lower_vals, upper_vals, alpha=0.3, color = colors[draw])
-
-    # Customize plot
-    ax.set_ylabel(f"{metric} (percentage of 'Actual')")
-
-    # Formatting y-axis as percentages
-    ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: '{:.0f}%'.format(y)))
-
-    #ax.set_title('DALYs by Cause')
-    ax.legend(loc='upper right', bbox_to_anchor=(1.2, 1))
-
-    # Rotate x-axis labels for better readability
-    plt.xticks(rotation=45, ha='right')
-
-    fig.tight_layout()
-    fig.savefig(figurespath / _plt_name)
-    fig.show()
-    plt.close(fig)
-
-
 # %% Gathering basic information
 
 # Find results_folder associated with a given batch_file and get most recent
@@ -215,6 +119,18 @@ def extract_total_dalys(results_folder):
 
 total_dalys_accrued = summarize(extract_total_dalys(results_folder))
 total_dalys_accrued = total_dalys_accrued.unstack()
+print(total_dalys_accrued)
+
+'''
+total_dalys_accrued = total_dalys_accrued.reset_index()
+total_dalys_accrued = total_dalys_accrued.rename(columns = {'level_2': 'var', 0: 'DALYs'})
+
+create_bar_plot_dalys_averted(_df = total_dalys_accrued,
+                 _plt_var = "DALYs",
+                 _index_var = "cause",
+                  metric='DALYs accrued',
+                 _plt_name = 'DALYs_averted.png')
+'''
 
 fig, ax = plt.subplots()
 
@@ -278,25 +194,55 @@ dalys_extracted_by_disease = extract_results(
 dalys_by_disease_summarized = summarize(dalys_extracted_by_disease)
 dalys_by_disease_summarized = dalys_by_disease_summarized.unstack()
 
+for disease in ['AIDS', 'Lower respiratory infections', 'Neonatal Disorders', 'Malaria', 'TB (non-AIDS)']:
+    dalys_accrued = dalys_by_disease_summarized.xs(disease, level=2)
+    fig, ax = plt.subplots()
+
+    # Arrays to store the values for plotting
+    central_vals = []
+    lower_vals = []
+    upper_vals = []
+
+    # Extract values for each parameter
+    for i, _p in enumerate(params['value']):
+        central_val = dalys_accrued[(i, 'mean')]
+        lower_val = dalys_accrued[(i, 'lower')]
+        upper_val = dalys_accrued[(i, 'upper')]
+
+        central_vals.append(central_val)
+        lower_vals.append(lower_val)
+        upper_vals.append(upper_val)
+
+    # Generate the plot
+    scenarios = params['name_of_scenario'] #range(len(params))  # X-axis values representing time periods
+    colors = plt.get_cmap('tab10')(np.linspace(0, 1, len(params['value'])))  # Generate different colors for each bar
+
+    for i in range(len(scenarios)):
+        ax.bar(scenarios[i], central_vals[i], color=colors[i], label=scenarios[i])
+        ax.errorbar(scenarios[i], central_vals[i], yerr=[[central_vals[i] - lower_vals[i]], [upper_vals[i] - central_vals[i]]], fmt='o', color='black')
+
+    plt.xticks(scenarios, params['name_of_scenario'], rotation=45)
+    ax.set_xlabel('Scenarios')
+    ax.set_ylabel('Total DALYs accrued (in millions)')
+    ax.set_title(disease)
+
+    # Format y-axis ticks to display in millions
+    formatter = FuncFormatter(lambda x, _: '{:,.0f}'.format(x / 1000000))
+    ax.yaxis.set_major_formatter(formatter)
+
+    #ax.set_ylim((0, 50))
+    #ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    fig.tight_layout()
+    fig.savefig(figurespath / f'main_result_DALYs_{disease}.png')
+    fig.show()
+    plt.close(fig)
+
+
 # Figure - Focus on top 5 diseases across the 10 scenarios? 0r do a dot plot
 # Assuming dalys_by_disease_summarized is your MultiIndex Series
 # Convert it to a DataFrame for easier manipulation
 dalys_by_disease_summarized_df = dalys_by_disease_summarized.reset_index()
 dalys_by_disease_summarized_df = dalys_by_disease_summarized_df.rename(columns = {'level_2': 'cause', 0: 'DALYs'})
-
-create_line_plot_absolute_figure(_df = dalys_by_disease_summarized_df,
-                 _plt_var = "DALYs",
-                 _index_var = "cause",
-                 keep_rows = 10, # keep top 10 causes
-                  metric='DALYs accrued',
-                 _plt_name = 'DALYs_by_cause.png')
-
-create_line_plot_percentage_of_baseline(_df = dalys_by_disease_summarized_df,
-                 _plt_var = "DALYs",
-                 _index_var = "cause",
-                 keep_rows = 10, # keep top 10 causes
-                  metric = 'DALYs accrued',
-                 _plt_name = 'DALYs_by_cause_percentage.png')
 
 # 2. Consumable demand not met
 #-----------------------------------------
@@ -351,21 +297,9 @@ def consumables_availability_figure(results_folder: Path, output_folder: Path, r
     cons_not_available = cons_not_available.unstack().reset_index()
     cons_not_available = cons_not_available.rename(columns={0: 'qty_not_available'})
 
-    create_line_plot_absolute_figure(_df=cons_not_available,
-                     _plt_var="qty_not_available",
-                     _index_var="Items",
-                     keep_rows=25,  # keep top 25 demanded consumables
-                     metric="consumable demand not met",
-                     _plt_name='consumables_demand_not_met.png')
-
-    create_line_plot_percentage_of_baseline(_df=cons_not_available,
-                     _plt_var="qty_not_available",
-                     _index_var="Items",
-                     keep_rows=25,   # keep top 25 demanded consumables
-                     metric = "consumable demand not met",
-                     _plt_name='consumables_demand_not_met_percentage.png')
-
 consumables_availability_figure(results_folder, outputspath, resourcefilepath)
+
+# TODO use squarify_plot to represent which consumables are most used in the system (by short Treatment_ID?) (not quantity but frequency)
 
 # HSI affected by missing consumables
 # We need healthsystem logger for this
@@ -426,63 +360,60 @@ hsi.columns = pd.MultiIndex.from_tuples(hsi.columns, names=['draw', 'stat'])
 hsi_stacked = hsi.stack().stack().reset_index()
 hsi_stacked = hsi_stacked.rename(columns={0: 'hsis_requested'})
 
-create_line_plot_absolute_figure(_df=hsi_stacked,
-                 _plt_var="hsis_requested",
-                 _index_var="Level",
-                 keep_rows=6,  # show all levels
-                 metric = 'HSIs',
-                 _plt_name='hsis_requested.png')
 
-create_line_plot_percentage_of_baseline(_df=hsi_stacked,
-                 _plt_var="hsis_requested",
-                 _index_var="Level",
-                 keep_rows=6,  # show all levels
-                 metric = 'HSIs',
-                 _plt_name='hsis_requested.png')
+# 4.1 Number of Services delivered by long Treatment_ID
+#------------------------------------------------------
+def get_counts_of_hsi_by_treatment_id(_df):
+    """Get the counts of the short TREATMENT_IDs occurring"""
+    _counts_by_treatment_id = _df \
+        .loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), 'TREATMENT_ID'] \
+        .apply(pd.Series) \
+        .sum() \
+        .astype(int)
+    return _counts_by_treatment_id.groupby(level=0).sum()
 
-
-# 4. Number of Services delivered
-#-----------------------------------------
-def get_counts_of_treatments(_df):
-    _df = drop_outside_period(_df)
-
-    counts_of_treatments = defaultdict(int)
-
-    for _, row in _df.iterrows():
-        for item, num in row['TREATMENT_ID'].items():
-            counts_of_treatments[item] += num
-
-    return pd.Series(counts_of_treatments).fillna(0).astype(int)
-
-
-count_of_treatments_delivered = summarize(
+counts_of_hsi_by_treatment_id = summarize(
     extract_results(
         results_folder,
         module='tlo.methods.healthsystem.summary',
         key='HSI_Event',
-        custom_generate_series=get_counts_of_treatments,
+        custom_generate_series=get_counts_of_hsi_by_treatment_id,
         do_scaling=True
     ),
     only_mean=True,
-    collapse_columns=True
+    collapse_columns=True,
 )
-count_of_treatments_delivered = count_of_treatments_delivered.assign(baseline_values=count_of_treatments_delivered[(0, 'mean')]).sort_values('baseline_values').drop(columns='baseline_values')
-treatments_delivered = count_of_treatments_delivered.unstack().reset_index()
-treatments_delivered = treatments_delivered.rename(columns={'level_2': 'Treatment_ID', 0: 'qty_delivered'})
 
-create_line_plot_absolute_figure(_df=treatments_delivered,
-                 _plt_var="qty_delivered",
-                 _index_var="Treatment_ID",
-                 keep_rows=20,  # show all levels
-                 metric = 'Number of HSIs requested by Treatment ID',
-                 _plt_name='treatments_delivered.png')
+counts_of_hsi_by_treatment_id = counts_of_hsi_by_treatment_id.assign(baseline_values=counts_of_hsi_by_treatment_id[(0, 'mean')]).sort_values('baseline_values').drop(columns='baseline_values')
+hsi_by_treatment_id = counts_of_hsi_by_treatment_id.unstack().reset_index()
+hsi_by_treatment_id = hsi_by_treatment_id.rename(columns={'level_2': 'Treatment_ID', 0: 'qty_of_HSIs'})
 
-create_line_plot_percentage_of_baseline(_df=treatments_delivered,
-                 _plt_var="qty_delivered",
-                 _index_var="Treatment_ID",
-                 keep_rows=20,  # show all levels
-                 metric = 'number of HSIs requested by Treatment ID',
-                 _plt_name='treatments_delivered_percentage.png')
+# hsi[(0,'mean')].sum()/counts_of_hsi_by_treatment_id[(0,'mean')].sum()
+
+# 4.2 Number of Services delivered by short Treatment ID
+#--------------------------------------------------------
+def get_counts_of_hsi_by_short_treatment_id(_df):
+    """Get the counts of the short TREATMENT_IDs occurring (shortened, up to first underscore)"""
+    _counts_by_treatment_id = get_counts_of_hsi_by_treatment_id(_df)
+    _short_treatment_id = _counts_by_treatment_id.index.map(lambda x: x.split('_')[0] + "*")
+    return _counts_by_treatment_id.groupby(by=_short_treatment_id).sum()
+
+
+counts_of_hsi_by_treatment_id_short = summarize(
+    extract_results(
+        results_folder,
+        module='tlo.methods.healthsystem.summary',
+        key='HSI_Event',
+        custom_generate_series=get_counts_of_hsi_by_short_treatment_id,
+        do_scaling=True
+    ),
+    only_mean=True,
+    collapse_columns=True,
+)
+
+hsi_by_short_treatment_id = counts_of_hsi_by_treatment_id_short.unstack().reset_index()
+hsi_by_short_treatment_id = hsi_by_short_treatment_id.rename(columns = {'level_2': 'Short_Treatment_ID', 0: 'qty_of_HSIs'})
+
 
 # Cost of consumables?
 
