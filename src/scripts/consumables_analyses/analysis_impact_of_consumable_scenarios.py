@@ -77,6 +77,73 @@ def drop_outside_period(_df):
     """Return a dataframe which only includes for which the date is within the limits defined by TARGET_PERIOD"""
     return _df.drop(index=_df.index[~_df['date'].between(*TARGET_PERIOD)])
 
+def do_bar_plot_with_ci(_df, annotations=None, xticklabels_horizontal_and_wrapped=False):
+    """Make a vertical bar plot for each row of _df, using the columns to identify the height of the bar and the
+     extent of the error bar."""
+    yerr = np.array([
+        (_df['mean'] - _df['lower']).values,
+        (_df['upper'] - _df['mean']).values,
+    ])
+
+    xticks = {(i + 0.5): k for i, k in enumerate(_df.index)}
+    colors = plt.get_cmap('tab10')(np.linspace(0, 1, len(params['value'])))  # Generate different colors for each bar
+
+    fig, ax = plt.subplots()
+    ax.bar(
+        xticks.keys(),
+        _df['mean'].values,
+        yerr=yerr,
+        alpha=1,
+        color = colors,
+        ecolor='black',
+        capsize=10,
+        label=xticks.values()
+    )
+    if annotations:
+        for xpos, ypos, text in zip(xticks.keys(), _df['upper'].values, annotations):
+            ax.text(xpos, ypos * 1.05, text, horizontalalignment='center', fontsize = 9)
+    ax.set_xticks(list(xticks.keys()))
+    if not xticklabels_horizontal_and_wrapped:
+        # xticklabels will be vertical and not wrapped
+        ax.set_xticklabels(list(xticks.values()), rotation=90)
+    else:
+        wrapped_labs = ["\n".join(textwrap.wrap(_lab, 20)) for _lab in xticks.values()]
+        ax.set_xticklabels(wrapped_labs)
+    ax.grid(axis="y")
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    fig.tight_layout()
+
+    return fig, ax
+
+def get_num_dalys(_df):
+    """Return total number of DALYS (Stacked) by label (total within the TARGET_PERIOD).
+    Throw error if not a record for every year in the TARGET PERIOD (to guard against inadvertently using
+    results from runs that crashed mid-way through the simulation.
+    """
+    years_needed = [i.year for i in TARGET_PERIOD]
+    assert set(_df.year.unique()).issuperset(years_needed), "Some years are not recorded."
+    return pd.Series(
+        data=_df
+        .loc[_df.year.between(*years_needed)]
+        .drop(columns=['date', 'sex', 'age_range', 'year'])
+        .sum().sum()
+    )
+
+def find_difference_relative_to_comparison(_ser: pd.Series,
+                                           comparison: str,
+                                           scaled: bool = False,
+                                           drop_comparison: bool = True,
+                                           ):
+    """Find the difference in the values in a pd.Series with a multi-index, between the draws (level 0)
+    within the runs (level 1), relative to where draw = `comparison`.
+    The comparison is `X - COMPARISON`."""
+    return _ser \
+        .unstack(level=0) \
+        .apply(lambda x: (x - x[comparison]) / (x[comparison] if scaled else 1.0), axis=1) \
+        .drop(columns=([comparison] if drop_comparison else [])) \
+        .stack()
+
 # %% Gathering basic information
 
 # Find results_folder associated with a given batch_file and get most recent
@@ -97,78 +164,94 @@ params_dict  = {'default': 'Actual', 'scenario1': 'Scenario 1', 'scenario2': 'Sc
                 'all': 'Perfect'}
 params_dict_df = pd.DataFrame.from_dict(params_dict, orient='index', columns=['name_of_scenario']).reset_index().rename(columns = {'index': 'value'})
 params = params.merge(params_dict_df, on = 'value', how = 'left', validate = '1:1')
-
+scenarios = params['name_of_scenario'] #range(len(params))  # X-axis values representing time periods
+drop_scenarios = ['Scenario 4', 'Scenario 5'] # Drops scenarios which are no longer considered important for comparison
 
 # %% Extracting results from run
 
-# 1. DALYs accrued
+# 1. DALYs accrued and averted
 #-----------------------------------------
 # 1.1 Total DALYs accrued
-def extract_total_dalys(results_folder):
-
-    def extract_dalys_total(df: pd.DataFrame) -> pd.Series:
-        return pd.Series({"Total": df.drop(['date', 'sex', 'age_range', 'year'], axis = 1).sum().sum()})
-
-    return extract_results(
+# Get total DALYs accrued
+num_dalys = extract_results(
         results_folder,
-        module="tlo.methods.healthburden",
-        key="dalys_stacked",
-        custom_generate_series=extract_dalys_total,
+        module='tlo.methods.healthburden',
+        key='dalys_stacked',
+        custom_generate_series=get_num_dalys,
         do_scaling=True
     )
 
-total_dalys_accrued = summarize(extract_total_dalys(results_folder))
-total_dalys_accrued = total_dalys_accrued.unstack()
-print(total_dalys_accrued)
+# %% Charts of total numbers of deaths / DALYS
+num_dalys_summarized = summarize(num_dalys).loc[0].unstack()
+num_dalys_summarized['scenario'] = scenarios.to_list()
+num_dalys_summarized = num_dalys_summarized.set_index('scenario')
 
-'''
-total_dalys_accrued = total_dalys_accrued.reset_index()
-total_dalys_accrued = total_dalys_accrued.rename(columns = {'level_2': 'var', 0: 'DALYs'})
-
-create_bar_plot_dalys_averted(_df = total_dalys_accrued,
-                 _plt_var = "DALYs",
-                 _index_var = "cause",
-                  metric='DALYs accrued',
-                 _plt_name = 'DALYs_averted.png')
-'''
+# Plot DALYS averted (with xtickabels horizontal and wrapped)
+name_of_plot = f'Total DALYs accrued, {target_period()}'
+chosen_num_dalys_summarized = num_dalys_summarized[~num_dalys_summarized.index.isin(drop_scenarios)]
+fig, ax = do_bar_plot_with_ci(
+    (chosen_num_dalys_summarized / 1e6).clip(lower=0.0),
+    annotations=[
+        f"{round(row['mean']/1e6, 1)} \n ({round(row['lower']/1e6, 1)}-{round(row['upper']/1e6, 1)})"
+        for _, row in chosen_num_dalys_summarized.clip(lower=0.0).iterrows()
+    ],
+    xticklabels_horizontal_and_wrapped=False,
+)
+ax.set_title(name_of_plot)
+ax.set_ylim(0, 120)
+ax.set_yticks(np.arange(0, 120, 10))
+ax.set_ylabel('Total DALYs accrued \n(Millions)')
+fig.tight_layout()
+fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', ''))
+fig.show()
+plt.close(fig)
 
 fig, ax = plt.subplots()
 
-# Arrays to store the values for plotting
-central_vals = []
-lower_vals = []
-upper_vals = []
+# 1.2 Total DALYs averted
+# Get absolute DALYs averted
+num_dalys_averted = summarize(
+        -1.0 *
+        pd.DataFrame(
+            find_difference_relative_to_comparison(
+                num_dalys.loc[0],
+                comparison= 0) # sets the comparator to 0 which is the Status Quo scenario
+        ).T
+    ).iloc[0].unstack()
+num_dalys_averted['scenario'] = scenarios.to_list()[1:10]
+num_dalys_averted = num_dalys_averted.set_index('scenario')
 
-# Extract values for each parameter
-for i, _p in enumerate(params['value']):
-    central_val = total_dalys_accrued[(i, 'mean')].values[0]
-    lower_val = total_dalys_accrued[(i, 'lower')].values[0]
-    upper_val = total_dalys_accrued[(i, 'upper')].values[0]
+# Get percentage DALYs averted
+pc_dalys_averted = 100.0 * summarize(
+    -1.0 *
+    pd.DataFrame(
+        find_difference_relative_to_comparison(
+            num_dalys.loc[0],
+            comparison= 0, # sets the comparator to 0 which is the Status Quo scenario
+            scaled=True)
+    ).T
+).iloc[0].unstack()
+pc_dalys_averted['scenario'] = scenarios.to_list()[1:10]
+pc_dalys_averted = pc_dalys_averted.set_index('scenario')
 
-    central_vals.append(central_val)
-    lower_vals.append(lower_val)
-    upper_vals.append(upper_val)
-
-# Generate the plot
-scenarios = params['name_of_scenario'] #range(len(params))  # X-axis values representing time periods
-colors = plt.get_cmap('tab10')(np.linspace(0, 1, len(params['value'])))  # Generate different colors for each bar
-
-for i in range(len(scenarios)):
-    ax.bar(scenarios[i], central_vals[i], color=colors[i], label=scenarios[i])
-    ax.errorbar(scenarios[i], central_vals[i], yerr=[[central_vals[i] - lower_vals[i]], [upper_vals[i] - central_vals[i]]], fmt='o', color='black')
-
-plt.xticks(scenarios, params['name_of_scenario'], rotation=45)
-ax.set_xlabel('Scenarios')
-ax.set_ylabel('Total DALYs accrued (in millions)')
-
-# Format y-axis ticks to display in millions
-formatter = FuncFormatter(lambda x, _: '{:,.0f}'.format(x / 1000000))
-ax.yaxis.set_major_formatter(formatter)
-
-#ax.set_ylim((0, 50))
-#ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+# Plot DALYS averted (with xtickabels horizontal and wrapped)
+name_of_plot = f'Additional DALYs Averted vs Actual, {target_period()}'
+chosen_num_dalys_averted = num_dalys_averted[~num_dalys_averted.index.isin(drop_scenarios)]
+chosen_pc_dalys_averted = pc_dalys_averted[~pc_dalys_averted.index.isin(drop_scenarios)]
+fig, ax = do_bar_plot_with_ci(
+    (chosen_num_dalys_averted / 1e6).clip(lower=0.0),
+    annotations=[
+        f"{round(row['mean'], 1)} % \n ({round(row['lower'], 1)}-{round(row['upper'], 1)}) %"
+        for _, row in chosen_pc_dalys_averted.clip(lower=0.0).iterrows()
+    ],
+    xticklabels_horizontal_and_wrapped=False,
+)
+ax.set_title(name_of_plot)
+ax.set_ylim(0, 16)
+ax.set_yticks(np.arange(0, 18, 2))
+ax.set_ylabel('Additional DALYS Averted \n(Millions)')
 fig.tight_layout()
-fig.savefig(figurespath / 'main_result_DALYs.png')
+fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', ''))
 fig.show()
 plt.close(fig)
 
