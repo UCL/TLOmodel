@@ -130,6 +130,20 @@ def get_num_dalys(_df):
         .sum().sum()
     )
 
+def get_num_dalys_by_cause(_df):
+    """Return total number of DALYS (Stacked) by label (total within the TARGET_PERIOD).
+    Throw error if not a record for every year in the TARGET PERIOD (to guard against inadvertently using
+    results from runs that crashed mid-way through the simulation.
+    """
+    years_needed = [i.year for i in TARGET_PERIOD]
+    assert set(_df.year.unique()).issuperset(years_needed), "Some years are not recorded."
+    return pd.Series(
+        data=_df
+        .loc[_df.year.between(*years_needed)]
+        .drop(columns=['date', 'sex', 'age_range', 'year'])
+        .sum()
+    )
+
 def find_difference_relative_to_comparison(_ser: pd.Series,
                                            comparison: str,
                                            scaled: bool = False,
@@ -181,12 +195,12 @@ num_dalys = extract_results(
         do_scaling=True
     )
 
-# %% Charts of total numbers of deaths / DALYS
+# %% Chart of total number of DALYS
 num_dalys_summarized = summarize(num_dalys).loc[0].unstack()
 num_dalys_summarized['scenario'] = scenarios.to_list()
 num_dalys_summarized = num_dalys_summarized.set_index('scenario')
 
-# Plot DALYS averted (with xtickabels horizontal and wrapped)
+# Plot DALYS accrued (with xtickabels horizontal and wrapped)
 name_of_plot = f'Total DALYs accrued, {target_period()}'
 chosen_num_dalys_summarized = num_dalys_summarized[~num_dalys_summarized.index.isin(drop_scenarios)]
 fig, ax = do_bar_plot_with_ci(
@@ -205,8 +219,6 @@ fig.tight_layout()
 fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', ''))
 fig.show()
 plt.close(fig)
-
-fig, ax = plt.subplots()
 
 # 1.2 Total DALYs averted
 # Get absolute DALYs averted
@@ -234,6 +246,7 @@ pc_dalys_averted = 100.0 * summarize(
 pc_dalys_averted['scenario'] = scenarios.to_list()[1:10]
 pc_dalys_averted = pc_dalys_averted.set_index('scenario')
 
+# %% Chart of number of DALYs averted
 # Plot DALYS averted (with xtickabels horizontal and wrapped)
 name_of_plot = f'Additional DALYs Averted vs Actual, {target_period()}'
 chosen_num_dalys_averted = num_dalys_averted[~num_dalys_averted.index.isin(drop_scenarios)]
@@ -256,6 +269,44 @@ fig.show()
 plt.close(fig)
 
 # 1.2 DALYs by disease area/intervention - for comparison of the magnitude of impact created by consumables interventions
+num_dalys_by_cause = extract_results(
+        results_folder,
+        module='tlo.methods.healthburden',
+        key='dalys_stacked',
+        custom_generate_series=get_num_dalys_by_cause,
+        do_scaling=True
+    )
+num_dalys_by_cause_summarized = summarize(num_dalys_by_cause).unstack(level = 0)
+num_dalys_by_cause_summarized = num_dalys_by_cause_summarized.reset_index()
+num_dalys_by_cause_summarized = num_dalys_by_cause_summarized.rename(columns = {'level_2':'cause', 0: 'DALYs_accrued'})
+num_dalys_by_cause_summarized = num_dalys_by_cause_summarized.pivot(index=['draw','cause'], columns='stat', values='DALYs_accrued')
+
+# Get top 10 causes until status quo
+num_dalys_by_cause_status_quo = num_dalys_by_cause_summarized[num_dalys_by_cause_summarized.index.get_level_values(0) == 0]
+num_dalys_by_cause_status_quo = num_dalys_by_cause_status_quo.sort_values('mean', ascending = False)
+num_dalys_by_cause_status_quo =num_dalys_by_cause_status_quo[0:10]
+
+for cause in num_dalys_by_cause_status_quo.index.get_level_values(1).unique():
+    name_of_plot = f'Total DALYs accrued by {cause}, {target_period()}'
+    chosen_num_dalys_by_cause_summarized = num_dalys_by_cause_summarized[~num_dalys_by_cause_summarized.index.get_level_values(0).isin([4,5])]
+    chosen_num_dalys_by_cause_summarized = chosen_num_dalys_by_cause_summarized[chosen_num_dalys_by_cause_summarized.index.get_level_values(1) == cause]
+    fig, ax = do_bar_plot_with_ci(
+        (chosen_num_dalys_by_cause_summarized / 1e6).clip(lower=0.0),
+        annotations=[
+            f"{round(row['mean'] / 1e6, 1)} \n ({round(row['lower'] / 1e6, 1)}-{round(row['upper'] / 1e6, 1)})"
+            for _, row in chosen_num_dalys_by_cause_summarized.clip(lower=0.0).iterrows()
+        ],
+        xticklabels_horizontal_and_wrapped=False,
+    )
+    ax.set_title(name_of_plot)
+    ax.set_ylim(0, 30)
+    ax.set_yticks(np.arange(0, 30, 5))
+    ax.set_ylabel(f'Total DALYs accrued by {cause} \n(Millions)')
+    fig.tight_layout()
+    fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', '').replace('/', '_'))
+    fig.show()
+    plt.close(fig)
+
 def _extract_dalys_by_disease(_df: pd.DataFrame) -> pd.Series:
     """Construct a series with index disease and value of the total of DALYS (stacked) from the
     `dalys_stacked` key logged in `tlo.methods.healthburden`.
