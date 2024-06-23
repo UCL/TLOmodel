@@ -547,7 +547,7 @@ for cause in top_10_causes_of_dalys:
 # TODO add plot showing health workers capacity utilised
 # log['tlo.methods.healthsystem.summary']['Capacity_By_OfficerType_And_FacilityLevel']['OfficerType=Pharmacy|FacilityLevel=2']
 
-# 1.3 Total DALYs averted per person-year
+# 1.3 Total DALYs averted per person
 #----------------------------------------
 num_dalys_per_person_year = extract_results_by_person_year(
         results_folder,
@@ -582,7 +582,7 @@ pct_dalys_averted_per_person_year = pct_dalys_averted_per_person_year.set_index(
 
 # %% Chart of number of DALYs averted
 # Plot DALYS averted (with xtickabels horizontal and wrapped)
-name_of_plot = f'Additional DALYs Averted Per Person-Year vs Status Quo, \n {target_period()}'
+name_of_plot = f'Additional DALYs Averted Per Person vs Status Quo, \n {target_period()}'
 chosen_num_dalys_averted_per_person_year = num_dalys_averted_per_person_year[~num_dalys_averted_per_person_year.index.isin(drop_scenarios)]
 chosen_pct_dalys_averted_per_person_year = pct_dalys_averted_per_person_year[~pct_dalys_averted_per_person_year.index.isin(drop_scenarios)]
 fig, ax = do_bar_plot_with_ci(
@@ -596,13 +596,13 @@ fig, ax = do_bar_plot_with_ci(
 ax.set_title(name_of_plot)
 ax.set_ylim(0, 1.5)
 ax.set_yticks(np.arange(0, 1.5, 0.2))
-ax.set_ylabel('Additional DALYs averted per person-year')
+ax.set_ylabel('Additional DALYs averted per person')
 fig.tight_layout()
 fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', ''))
 fig.show()
 plt.close(fig)
 
-# 1.4 Total DALYs averted per person-year by cause
+# 1.4 Total DALYs averted per person by cause
 #-------------------------------------------------
 for cause in top_10_causes_of_dalys:
     num_dalys_per_person_year_by_cause = extract_results_by_person_year_by_cause(
@@ -643,7 +643,7 @@ for cause in top_10_causes_of_dalys:
     chosen_num_dalys_averted_per_person_year_by_cause = num_dalys_averted_per_person_year_by_cause[
         ~num_dalys_averted_per_person_year_by_cause.index.isin(drop_scenarios)]
     chosen_pct_dalys_averted_per_person_year_by_cause = pct_dalys_averted_per_person_year_by_cause[~pct_dalys_averted_per_person_year_by_cause.index.isin(drop_scenarios)]
-    name_of_plot = f'Additional DALYs averted per person year by cause - \n ({cause}), {target_period()}'
+    name_of_plot = f'Additional DALYs averted per person by cause - \n ({cause}), {target_period()}'
     fig, ax = do_bar_plot_with_ci(
         (chosen_num_dalys_averted_per_person_year_by_cause).clip(lower=0.0),
         annotations=[
@@ -664,7 +664,7 @@ for cause in top_10_causes_of_dalys:
     ax.set_title(name_of_plot)
     ax.set_ylim(0, y_limit)
     ax.set_yticks(np.arange(0, y_limit, y_tick_gap))
-    ax.set_ylabel(f'Additional DALYs averted per person year')
+    ax.set_ylabel(f'Additional DALYs averted per person')
     fig.tight_layout()
     fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', '').replace('/', '_'))
     fig.show()
