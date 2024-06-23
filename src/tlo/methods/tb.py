@@ -1467,7 +1467,7 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
             )
 
         # -------- 5) schedule screening for asymptomatic and symptomatic people --------
-        # sample from all new active cases (active_idx) and determine whether they will seek a test
+        # sample from all NEW active cases (active_idx) and determine whether they will seek a test
         year = min(2019, max(2011, now.year))
 
         active_testing_rates = p["rate_testing_active_tb"]
@@ -1610,8 +1610,19 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         p = self.module.parameters
         person = df.loc[person_id]
 
-        # If the person is dead or already diagnosed, do nothing do not occupy any resources
-        if not person["is_alive"] or person["tb_diagnosed"]:
+        if not person["is_alive"]:
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+
+        # If the person is already diagnosed, do nothing do not occupy any resources
+        if person["tb_diagnosed"]:
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+
+        # If the person is already on treatment and not failing, do nothing do not occupy any resources
+        if person["tb_on_treatment"] and not person["tb_treatment_failure"]:
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+
+        # if person has tested within last 14 days, do nothing
+        if person["tb_date_tested"] >= (self.sim.date - DateOffset(days=7)):
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         logger.debug(
@@ -1619,10 +1630,6 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         )
 
         smear_status = person["tb_smear"]
-
-        # If the person is already on treatment and not failing, do nothing do not occupy any resources
-        if person["tb_on_treatment"] and not person["tb_treatment_failure"]:
-            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         # ------------------------- screening ------------------------- #
 
