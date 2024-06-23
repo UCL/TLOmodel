@@ -232,7 +232,7 @@ def extract_results_by_person_year(results_folder: Path,
                 df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
                 output_from_eval: pd.Series = generate_series(df)
                 assert pd.Series == type(output_from_eval), 'Custom command does not generate a pd.Series'
-                res[draw_run] = output_from_eval.reset_index().drop(columns = ['year']).T # / get_population_size(draw, run)
+                res[draw_run] = output_from_eval.reset_index().drop(columns = ['year']).T  / get_population_size(draw, run)
                 res[draw_run] = res[draw_run].sum(axis =1)
             except KeyError:
                 # Some logs could not be found - probably because this run failed.
@@ -491,7 +491,7 @@ for cause in top_10_causes_of_dalys:
     # Create a plot of DALYs averted by cause
     chosen_num_dalys_averted_by_cause = num_dalys_averted_by_cause[~num_dalys_averted_by_cause.index.isin(drop_scenarios)]
     chosen_pc_dalys_averted_by_cause = pc_dalys_averted_by_cause[~pc_dalys_averted_by_cause.index.isin(drop_scenarios)]
-    name_of_plot = f'DALYs averted vs Status Quo by cause - \n ({cause}), {target_period()}'
+    name_of_plot = f'Additional DALYs averted vs Status Quo by cause - \n ({cause}), {target_period()}'
     fig, ax = do_bar_plot_with_ci(
         (chosen_num_dalys_averted_by_cause / 1e6).clip(lower=0.0),
         annotations=[
@@ -507,7 +507,7 @@ for cause in top_10_causes_of_dalys:
     ax.set_title(name_of_plot)
     ax.set_ylim(0, y_limit)
     ax.set_yticks(np.arange(0, y_limit, 0.5))
-    ax.set_ylabel(f'DALYs averted \n(Millions)')
+    ax.set_ylabel(f'Additional DALYs averted \n(Millions)')
     fig.tight_layout()
     fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', '').replace('/', '_'))
     fig.show()
@@ -643,7 +643,7 @@ for cause in top_10_causes_of_dalys:
     chosen_num_dalys_averted_per_person_year_by_cause = num_dalys_averted_per_person_year_by_cause[
         ~num_dalys_averted_per_person_year_by_cause.index.isin(drop_scenarios)]
     chosen_pct_dalys_averted_per_person_year_by_cause = pct_dalys_averted_per_person_year_by_cause[~pct_dalys_averted_per_person_year_by_cause.index.isin(drop_scenarios)]
-    name_of_plot = f'Total DALYs averted per person year by cause - \n ({cause}), {target_period()}'
+    name_of_plot = f'Additional DALYs averted per person year by cause - \n ({cause}), {target_period()}'
     fig, ax = do_bar_plot_with_ci(
         (chosen_num_dalys_averted_per_person_year_by_cause).clip(lower=0.0),
         annotations=[
@@ -664,7 +664,7 @@ for cause in top_10_causes_of_dalys:
     ax.set_title(name_of_plot)
     ax.set_ylim(0, y_limit)
     ax.set_yticks(np.arange(0, y_limit, y_tick_gap))
-    ax.set_ylabel(f'Total DALYs averted per person year')
+    ax.set_ylabel(f'Additional DALYs averted per person year')
     fig.tight_layout()
     fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', '').replace('/', '_'))
     fig.show()
