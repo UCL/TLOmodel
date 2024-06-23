@@ -105,7 +105,8 @@ def do_bar_plot_with_ci(_df, annotations=None, xticklabels_horizontal_and_wrappe
     ax.set_xticks(list(xticks.keys()))
     if not xticklabels_horizontal_and_wrapped:
         # xticklabels will be vertical and not wrapped
-        ax.set_xticklabels(list(xticks.values()), rotation=90)
+        wrapped_labs = ["\n".join(textwrap.wrap(_lab, 20)) for _lab in xticks.values()]
+        ax.set_xticklabels(wrapped_labs, rotation=45, ha = 'right')
     else:
         wrapped_labs = ["\n".join(textwrap.wrap(_lab, 20)) for _lab in xticks.values()]
         ax.set_xticklabels(wrapped_labs)
@@ -343,14 +344,14 @@ info = get_scenario_info(results_folder)
 
 # 1) Extract the parameters that have varied over the set of simulations
 params = extract_params(results_folder)
-params_dict  = {'default': 'Actual', 'scenario1': 'Scenario 1', 'scenario2': 'Scenario 2',
-                'scenario3': 'Scenario 3', 'scenario4': 'Scenario 4', 'scenario5': 'Scenario 5',
-                'scenario6': 'Scenario 6', 'scenario7': 'Scenario 7', 'scenario8': 'Scenario 8',
+params_dict  = {'default': 'Status Quo', 'scenario1': 'Non-drug/diagnostic consumables', 'scenario2': 'Vital drugs',
+                'scenario3': 'Pharmacist managed', 'scenario4': 'Level 1b', 'scenario5': 'CHAM',
+                'scenario6': '75th percentile facility', 'scenario7': '90th percentile facility', 'scenario8': 'Best facility',
                 'all': 'Perfect'}
 params_dict_df = pd.DataFrame.from_dict(params_dict, orient='index', columns=['name_of_scenario']).reset_index().rename(columns = {'index': 'value'})
 params = params.merge(params_dict_df, on = 'value', how = 'left', validate = '1:1')
 scenarios = params['name_of_scenario'] #range(len(params))  # X-axis values representing time periods
-drop_scenarios = ['Scenario 4', 'Scenario 5'] # Drops scenarios which are no longer considered important for comparison
+drop_scenarios = ['Level 1b', 'CHAM'] # Drops scenarios which are no longer considered important for comparison
 
 # %% Extracting results from run
 
@@ -421,7 +422,7 @@ pc_dalys_averted = pc_dalys_averted.set_index('scenario')
 
 # %% Chart of number of DALYs averted
 # Plot DALYS averted (with xtickabels horizontal and wrapped)
-name_of_plot = f'Additional DALYs Averted vs Actual, {target_period()}'
+name_of_plot = f'Additional DALYs Averted vs Status Quo, {target_period()}'
 chosen_num_dalys_averted = num_dalys_averted[~num_dalys_averted.index.isin(drop_scenarios)]
 chosen_pc_dalys_averted = pc_dalys_averted[~pc_dalys_averted.index.isin(drop_scenarios)]
 fig, ax = do_bar_plot_with_ci(
@@ -433,7 +434,7 @@ fig, ax = do_bar_plot_with_ci(
     xticklabels_horizontal_and_wrapped=False,
 )
 ax.set_title(name_of_plot)
-ax.set_ylim(0, 16)
+ax.set_ylim(0, 20)
 ax.set_yticks(np.arange(0, 18, 2))
 ax.set_ylabel('Additional DALYS Averted \n(Millions)')
 fig.tight_layout()
@@ -490,7 +491,7 @@ for cause in top_10_causes_of_dalys:
     # Create a plot of DALYs averted by cause
     chosen_num_dalys_averted_by_cause = num_dalys_averted_by_cause[~num_dalys_averted_by_cause.index.isin(drop_scenarios)]
     chosen_pc_dalys_averted_by_cause = pc_dalys_averted_by_cause[~pc_dalys_averted_by_cause.index.isin(drop_scenarios)]
-    name_of_plot = f'Total DALYs averted by cause ({cause}), {target_period()}'
+    name_of_plot = f'DALYs averted vs Status Quo by cause - \n ({cause}), {target_period()}'
     fig, ax = do_bar_plot_with_ci(
         (chosen_num_dalys_averted_by_cause / 1e6).clip(lower=0.0),
         annotations=[
@@ -506,7 +507,7 @@ for cause in top_10_causes_of_dalys:
     ax.set_title(name_of_plot)
     ax.set_ylim(0, y_limit)
     ax.set_yticks(np.arange(0, y_limit, 0.5))
-    ax.set_ylabel(f'Total DALYs averted \n(Millions)')
+    ax.set_ylabel(f'DALYs averted \n(Millions)')
     fig.tight_layout()
     fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', '').replace('/', '_'))
     fig.show()
@@ -514,7 +515,7 @@ for cause in top_10_causes_of_dalys:
 
 # PLot DALYs accrued by cause
 for cause in top_10_causes_of_dalys:
-    name_of_plot = f'Total DALYs accrued by {cause}, {target_period()}'
+    name_of_plot = f'Total DALYs accrued by cause - \n {cause}, {target_period()}'
     chosen_num_dalys_by_cause_summarized = num_dalys_by_cause_summarized[~num_dalys_by_cause_summarized.index.get_level_values(0).isin([4,5])]
     chosen_num_dalys_by_cause_summarized = chosen_num_dalys_by_cause_summarized[chosen_num_dalys_by_cause_summarized.index.get_level_values(1) == cause]
     fig, ax = do_bar_plot_with_ci(
@@ -581,7 +582,7 @@ pct_dalys_averted_per_person_year = pct_dalys_averted_per_person_year.set_index(
 
 # %% Chart of number of DALYs averted
 # Plot DALYS averted (with xtickabels horizontal and wrapped)
-name_of_plot = f'Additional DALYs Averted Per Person-Year vs Status Quo, {target_period()}'
+name_of_plot = f'Additional DALYs Averted Per Person-Year vs Status Quo, \n {target_period()}'
 chosen_num_dalys_averted_per_person_year = num_dalys_averted_per_person_year[~num_dalys_averted_per_person_year.index.isin(drop_scenarios)]
 chosen_pct_dalys_averted_per_person_year = pct_dalys_averted_per_person_year[~pct_dalys_averted_per_person_year.index.isin(drop_scenarios)]
 fig, ax = do_bar_plot_with_ci(
@@ -668,6 +669,9 @@ for cause in top_10_causes_of_dalys:
     fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', '').replace('/', '_'))
     fig.show()
     plt.close(fig)
+
+# 2. Health work time spent v DALYs accrued
+#############################################
 
 # 2. Consumable demand not met
 #-----------------------------------------
