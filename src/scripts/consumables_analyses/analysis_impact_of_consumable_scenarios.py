@@ -157,6 +157,20 @@ def get_num_dalys_per_person_year(_df):
         .drop(columns=['date', 'sex', 'age_range'])
         .groupby('year').sum().sum(axis = 1)
     )
+
+def get_num_dalys_per_person_year_by_cause(_df):
+    """Return total number of DALYS (Stacked) by label (total within the TARGET_PERIOD).
+    Throw error if not a record for every year in the TARGET PERIOD (to guard against inadvertently using
+    results from runs that crashed mid-way through the simulation.
+    """
+    years_needed = [i.year for i in TARGET_PERIOD]
+    assert set(_df.year.unique()).issuperset(years_needed), "Some years are not recorded."
+    return pd.Series(
+        data=_df
+        .loc[_df.year.between(*years_needed)]
+        .drop(columns=['date', 'sex', 'age_range'])
+        .groupby('year').sum().unstack()
+    )
 def extract_results_by_person_year(results_folder: Path,
                     module: str,
                     key: str,
@@ -217,6 +231,79 @@ def extract_results_by_person_year(results_folder: Path,
                 df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
                 output_from_eval: pd.Series = generate_series(df)
                 assert pd.Series == type(output_from_eval), 'Custom command does not generate a pd.Series'
+                res[draw_run] = output_from_eval.reset_index().drop(columns = ['year']).T # / get_population_size(draw, run)
+                res[draw_run] = res[draw_run].sum(axis =1)
+            except KeyError:
+                # Some logs could not be found - probably because this run failed.
+                res[draw_run] = None
+
+    # Use pd.concat to compile results (skips dict items where the values is None)
+    _concat = pd.concat(res, axis=1)
+    _concat.columns.names = ['draw', 'run']  # name the levels of the columns multi-index
+    return _concat
+
+def extract_results_by_person_year_by_cause(results_folder: Path,
+                    module: str,
+                    key: str,
+                    column: str = None,
+                    index: str = None,
+                    custom_generate_series=None,
+                    cause: str = None,
+                    ) -> pd.DataFrame:
+    """Utility function to unpack results.
+
+    Produces a dataframe from extracting information from a log with the column multi-index for the draw/run.
+
+    If the column to be extracted exists in the log, the name of the `column` is provided as `column`. If the resulting
+     dataframe should be based on another column that exists in the log, this can be provided as 'index'.
+
+    If instead, some work must be done to generate a new column from log, then a function can be provided to do this as
+     `custom_generate_series`.
+
+    Optionally, with `do_scaling=True`, each element is multiplied by the scaling_factor recorded in the simulation.
+
+    Note that if runs in the batch have failed (such that logs have not been generated), these are dropped silently.
+    """
+
+    def get_population_size(_draw, _run):
+        """Helper function to get the multiplier from the simulation.
+        Note that if the scaling factor cannot be found a `KeyError` is thrown."""
+        return load_pickled_dataframes(
+            results_folder, _draw, _run, 'tlo.methods.demography'
+        )['tlo.methods.demography']['population']['total']
+
+    if custom_generate_series is None:
+        # If there is no `custom_generate_series` provided, it implies that function required selects the specified
+        # column from the dataframe.
+        assert column is not None, "Must specify which column to extract"
+    else:
+        assert index is None, "Cannot specify an index if using custom_generate_series"
+        assert column is None, "Cannot specify a column if using custom_generate_series"
+
+    def generate_series(dataframe: pd.DataFrame) -> pd.Series:
+        if custom_generate_series is None:
+            if index is not None:
+                return dataframe.set_index(index)[column]
+            else:
+                return dataframe.reset_index(drop=True)[column]
+        else:
+            return custom_generate_series(dataframe)
+
+    # get number of draws and numbers of runs
+    info = get_scenario_info(results_folder)
+
+    # Collect results from each draw/run
+    res = dict()
+    for draw in range(info['number_of_draws']):
+        for run in range(info['runs_per_draw']):
+
+            draw_run = (draw, run)
+
+            try:
+                df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
+                output_from_eval: pd.Series = generate_series(df)
+                assert pd.Series == type(output_from_eval), 'Custom command does not generate a pd.Series'
+                output_from_eval = output_from_eval[output_from_eval.index.get_level_values(0) == cause].droplevel(0)
                 res[draw_run] = output_from_eval.reset_index().drop(columns = ['year']).T / get_population_size(draw, run)
                 res[draw_run] = res[draw_run].sum(axis =1)
             except KeyError:
@@ -459,7 +546,7 @@ for cause in top_10_causes_of_dalys:
 # TODO add plot showing health workers capacity utilised
 # log['tlo.methods.healthsystem.summary']['Capacity_By_OfficerType_And_FacilityLevel']['OfficerType=Pharmacy|FacilityLevel=2']
 
-# 1.3 Total DALYs averted per person
+# 1.3 Total DALYs averted per person-year
 #----------------------------------------
 num_dalys_per_person_year = extract_results_by_person_year(
         results_folder,
@@ -513,6 +600,74 @@ fig.tight_layout()
 fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', ''))
 fig.show()
 plt.close(fig)
+
+# 1.4 Total DALYs averted per person-year by cause
+#-------------------------------------------------
+for cause in top_10_causes_of_dalys:
+    num_dalys_per_person_year_by_cause = extract_results_by_person_year_by_cause(
+            results_folder,
+            module='tlo.methods.healthburden',
+            key='dalys_stacked',
+            custom_generate_series=get_num_dalys_per_person_year_by_cause,
+            cause = cause,
+        )
+
+    num_dalys_per_person_year_by_cause_pivoted = num_dalys_per_person_year_by_cause.unstack().reset_index().drop(
+        columns=['level_2']).set_index(['draw', 'run'])
+    num_dalys_averted_per_person_year_by_cause = summarize(
+        -1.0 *
+        pd.DataFrame(
+            find_difference_relative_to_comparison(
+                num_dalys_per_person_year_by_cause.squeeze(),
+                comparison=0)  # sets the comparator to 0 which is the Status Quo scenario
+        ).T
+    ).iloc[0].unstack()
+    num_dalys_averted_per_person_year_by_cause['scenario'] = scenarios.to_list()[1:10]
+    num_dalys_averted_per_person_year_by_cause = num_dalys_averted_per_person_year_by_cause.set_index('scenario')
+
+    # Get percentage DALYs averted
+    pct_dalys_averted_per_person_year_by_cause = 100.0 * summarize(
+        -1.0 *
+        pd.DataFrame(
+            find_difference_relative_to_comparison(
+                num_dalys_per_person_year_by_cause.squeeze(),
+                comparison=0,  # sets the comparator to 0 which is the Status Quo scenario
+                scaled=True)
+        ).T
+    ).iloc[0].unstack()
+    pct_dalys_averted_per_person_year_by_cause['scenario'] = scenarios.to_list()[1:10]
+    pct_dalys_averted_per_person_year_by_cause = pct_dalys_averted_per_person_year_by_cause.set_index('scenario')
+
+    # Create a plot of DALYs averted by cause
+    chosen_num_dalys_averted_per_person_year_by_cause = num_dalys_averted_per_person_year_by_cause[
+        ~num_dalys_averted_per_person_year_by_cause.index.isin(drop_scenarios)]
+    chosen_pct_dalys_averted_per_person_year_by_cause = pct_dalys_averted_per_person_year_by_cause[~pct_dalys_averted_per_person_year_by_cause.index.isin(drop_scenarios)]
+    name_of_plot = f'Total DALYs averted per person year by cause - \n ({cause}), {target_period()}'
+    fig, ax = do_bar_plot_with_ci(
+        (chosen_num_dalys_averted_per_person_year_by_cause).clip(lower=0.0),
+        annotations=[
+            f"{round(row['mean'], 1)} % \n ({round(row['lower'], 1)}-{round(row['upper'], 1)}) %"
+            for _, row in pct_dalys_averted_per_person_year_by_cause.clip(lower=0.0).iterrows()
+        ],
+        xticklabels_horizontal_and_wrapped=False,
+    )
+    if chosen_num_dalys_averted_per_person_year_by_cause.upper.max() > 0.4:
+        y_limit = 0.55
+        y_tick_gap = 0.1
+    elif chosen_num_dalys_averted_per_person_year_by_cause.upper.max() > 0.18:
+        y_limit = 0.2
+        y_tick_gap = 0.025
+    else:
+        y_limit = 0.15
+        y_tick_gap = 0.025
+    ax.set_title(name_of_plot)
+    ax.set_ylim(0, y_limit)
+    ax.set_yticks(np.arange(0, y_limit, y_tick_gap))
+    ax.set_ylabel(f'Total DALYs averted per person year')
+    fig.tight_layout()
+    fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', '').replace('/', '_'))
+    fig.show()
+    plt.close(fig)
 
 # 2. Consumable demand not met
 #-----------------------------------------
