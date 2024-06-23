@@ -285,8 +285,62 @@ num_dalys_by_cause_summarized = num_dalys_by_cause_summarized.pivot(index=['draw
 num_dalys_by_cause_status_quo = num_dalys_by_cause_summarized[num_dalys_by_cause_summarized.index.get_level_values(0) == 0]
 num_dalys_by_cause_status_quo = num_dalys_by_cause_status_quo.sort_values('mean', ascending = False)
 num_dalys_by_cause_status_quo =num_dalys_by_cause_status_quo[0:10]
+top_10_causes_of_dalys = num_dalys_by_cause_status_quo.index.get_level_values(1).unique()
 
-for cause in num_dalys_by_cause_status_quo.index.get_level_values(1).unique():
+# Get DALYs aveterted by cause and plot bar chats
+for cause in top_10_causes_of_dalys:
+    num_dalys_by_cause_pivoted = num_dalys_by_cause[num_dalys_by_cause.index == cause].unstack().reset_index().drop(columns = ['level_2']).set_index(['draw', 'run'])
+    num_dalys_averted_by_cause = summarize(
+            -1.0 *
+            pd.DataFrame(
+                find_difference_relative_to_comparison(
+                    num_dalys_by_cause_pivoted.squeeze(),
+                    comparison= 0) # sets the comparator to 0 which is the Status Quo scenario
+            ).T
+        ).iloc[0].unstack()
+    num_dalys_averted_by_cause['scenario'] = scenarios.to_list()[1:10]
+    num_dalys_averted_by_cause = num_dalys_averted_by_cause.set_index('scenario')
+
+    # Get percentage DALYs averted
+    pc_dalys_averted_by_cause = 100.0 * summarize(
+        -1.0 *
+        pd.DataFrame(
+            find_difference_relative_to_comparison(
+                num_dalys_by_cause_pivoted.squeeze(),
+                comparison= 0, # sets the comparator to 0 which is the Status Quo scenario
+                scaled=True)
+        ).T
+    ).iloc[0].unstack()
+    pc_dalys_averted_by_cause['scenario'] = scenarios.to_list()[1:10]
+    pc_dalys_averted_by_cause = pc_dalys_averted_by_cause.set_index('scenario')
+
+    # Create a plot of DALYs averted by cause
+    chosen_num_dalys_averted_by_cause = num_dalys_averted_by_cause[~num_dalys_averted_by_cause.index.isin(drop_scenarios)]
+    chosen_pc_dalys_averted_by_cause = pc_dalys_averted_by_cause[~pc_dalys_averted_by_cause.index.isin(drop_scenarios)]
+    name_of_plot = f'Total DALYs averted by cause ({cause}), {target_period()}'
+    fig, ax = do_bar_plot_with_ci(
+        (chosen_num_dalys_averted_by_cause / 1e6).clip(lower=0.0),
+        annotations=[
+            f"{round(row['mean'], 1)} % \n ({round(row['lower'], 1)}-{round(row['upper'], 1)}) %"
+            for _, row in chosen_pc_dalys_averted_by_cause.clip(lower=0.0).iterrows()
+        ],
+        xticklabels_horizontal_and_wrapped=False,
+    )
+    if chosen_num_dalys_averted_by_cause.upper.max()/1e6 > 2:
+        y_limit = 8.5
+    else:
+        y_limit = 2.5
+    ax.set_title(name_of_plot)
+    ax.set_ylim(0, y_limit)
+    ax.set_yticks(np.arange(0, y_limit, 0.5))
+    ax.set_ylabel(f'Total DALYs averted \n(Millions)')
+    fig.tight_layout()
+    fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', '').replace('/', '_'))
+    fig.show()
+    plt.close(fig)
+
+# PLot DALYs accrued by cause
+for cause in top_10_causes_of_dalys:
     name_of_plot = f'Total DALYs accrued by {cause}, {target_period()}'
     chosen_num_dalys_by_cause_summarized = num_dalys_by_cause_summarized[~num_dalys_by_cause_summarized.index.get_level_values(0).isin([4,5])]
     chosen_num_dalys_by_cause_summarized = chosen_num_dalys_by_cause_summarized[chosen_num_dalys_by_cause_summarized.index.get_level_values(1) == cause]
@@ -299,84 +353,21 @@ for cause in num_dalys_by_cause_status_quo.index.get_level_values(1).unique():
         xticklabels_horizontal_and_wrapped=False,
     )
     ax.set_title(name_of_plot)
-    ax.set_ylim(0, 30)
-    ax.set_yticks(np.arange(0, 30, 5))
-    ax.set_ylabel(f'Total DALYs accrued by {cause} \n(Millions)')
+    if chosen_num_dalys_by_cause_summarized.upper.max()/1e6 > 5:
+        y_limit = 30
+        y_tick_gap = 5
+    else:
+        y_limit = 5
+        y_tick_gap = 1
+    ax.set_ylim(0, y_limit)
+    ax.set_yticks(np.arange(0, y_limit, y_tick_gap))
+    ax.set_ylabel(f'Total DALYs accrued \n(Millions)')
     fig.tight_layout()
     fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', '').replace('/', '_'))
     fig.show()
     plt.close(fig)
 
-def _extract_dalys_by_disease(_df: pd.DataFrame) -> pd.Series:
-    """Construct a series with index disease and value of the total of DALYS (stacked) from the
-    `dalys_stacked` key logged in `tlo.methods.healthburden`.
-    N.B. This limits the time period of interest to 2010-2019"""
-    _, calperiodlookup = make_calendar_period_lookup()
-
-    return _df.loc[(_df['year'] >=2009) & (_df['year'] < 2012)]\
-             .drop(columns=['date', 'sex', 'age_range', 'year'])\
-             .sum(axis=0)
-
-dalys_extracted_by_disease = extract_results(
-    results_folder,
-    module="tlo.methods.healthburden",
-    key="dalys_stacked",
-    custom_generate_series=_extract_dalys_by_disease,
-    do_scaling=True
-)
-
-dalys_by_disease_summarized = summarize(dalys_extracted_by_disease)
-dalys_by_disease_summarized = dalys_by_disease_summarized.unstack()
-
-for disease in ['AIDS', 'Lower respiratory infections', 'Neonatal Disorders', 'Malaria', 'TB (non-AIDS)']:
-    dalys_accrued = dalys_by_disease_summarized.xs(disease, level=2)
-    fig, ax = plt.subplots()
-
-    # Arrays to store the values for plotting
-    central_vals = []
-    lower_vals = []
-    upper_vals = []
-
-    # Extract values for each parameter
-    for i, _p in enumerate(params['value']):
-        central_val = dalys_accrued[(i, 'mean')]
-        lower_val = dalys_accrued[(i, 'lower')]
-        upper_val = dalys_accrued[(i, 'upper')]
-
-        central_vals.append(central_val)
-        lower_vals.append(lower_val)
-        upper_vals.append(upper_val)
-
-    # Generate the plot
-    scenarios = params['name_of_scenario'] #range(len(params))  # X-axis values representing time periods
-    colors = plt.get_cmap('tab10')(np.linspace(0, 1, len(params['value'])))  # Generate different colors for each bar
-
-    for i in range(len(scenarios)):
-        ax.bar(scenarios[i], central_vals[i], color=colors[i], label=scenarios[i])
-        ax.errorbar(scenarios[i], central_vals[i], yerr=[[central_vals[i] - lower_vals[i]], [upper_vals[i] - central_vals[i]]], fmt='o', color='black')
-
-    plt.xticks(scenarios, params['name_of_scenario'], rotation=45)
-    ax.set_xlabel('Scenarios')
-    ax.set_ylabel('Total DALYs accrued (in millions)')
-    ax.set_title(disease)
-
-    # Format y-axis ticks to display in millions
-    formatter = FuncFormatter(lambda x, _: '{:,.0f}'.format(x / 1000000))
-    ax.yaxis.set_major_formatter(formatter)
-
-    #ax.set_ylim((0, 50))
-    #ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-    fig.tight_layout()
-    fig.savefig(figurespath / f'main_result_DALYs_{disease}.png')
-    fig.show()
-    plt.close(fig)
-
-
-# Figure - Focus on top 5 diseases across the 10 scenarios? 0r do a dot plot
-# Assuming dalys_by_disease_summarized is your MultiIndex Series
-# Convert it to a DataFrame for easier manipulation
-dalys_by_disease_summarized_df = dalys_by_disease_summarized.reset_index()
-dalys_by_disease_summarized_df = dalys_by_disease_summarized_df.rename(columns = {'level_2': 'cause', 0: 'DALYs'})
+# TODO Fix xticklabels in the plots above
 
 # 2. Consumable demand not met
 #-----------------------------------------
