@@ -543,10 +543,6 @@ for cause in top_10_causes_of_dalys:
 
 # TODO Fix xticklabels in the plots above
 
-# Plot health worker capacity utilised against DALYs accrued
-# TODO add plot showing health workers capacity utilised
-# log['tlo.methods.healthsystem.summary']['Capacity_By_OfficerType_And_FacilityLevel']['OfficerType=Pharmacy|FacilityLevel=2']
-
 # 1.3 Total DALYs averted per person
 #----------------------------------------
 num_dalys_per_person_year = extract_results_by_person_year(
@@ -672,6 +668,70 @@ for cause in top_10_causes_of_dalys:
 
 # 2. Health work time spent v DALYs accrued
 #############################################
+# DALYs averted per person on the Y-axis; Capacity of cadre used at levels 1a, 1b, and 2 on the Y-axis
+# log['tlo.methods.healthsystem.summary']['Capacity_By_OfficerType_And_FacilityLevel']['OfficerType=Pharmacy|FacilityLevel=2']
+def get_capacity_used_by_cadre_and_level(_df):
+    """Return total number of DALYS (Stacked) by label (total within the TARGET_PERIOD).
+    Throw error if not a record for every year in the TARGET PERIOD (to guard against inadvertently using
+    results from runs that crashed mid-way through the simulation.
+    """
+    years_needed = [i.year for i in TARGET_PERIOD]
+    _df['year'] = _df.date.dt.year
+    #assert set(_df.year.unique()).issuperset(years_needed), "Some years are not recorded."
+    string_for_cols_to_drop1 = 'FacilityLevel=0|FacilityLevel=3|FacilityLevel=4|FacilityLevel=5'
+    string_for_cols_to_drop2 = 'OfficerType=DCSA|OfficerType=Dental|OfficerType=Laboratory|OfficerType=Mental|OfficerType=Nutrition|OfficerType=Radiography'
+    cols_to_drop1 = _df.columns[_df.columns.str.contains(string_for_cols_to_drop1)]
+    cols_to_drop2 = _df.columns[_df.columns.str.contains(string_for_cols_to_drop2)]
+    cols_to_drop = [*cols_to_drop1, *cols_to_drop2, 'year']
+    return pd.Series(
+        data=_df
+        .loc[_df.year.between(*years_needed)]
+        .drop(columns= cols_to_drop)
+        .mean()
+    )
+
+capacity_used = summarize(extract_results(
+                results_folder,
+                module='tlo.methods.healthsystem.summary',
+                key='Capacity_By_OfficerType_And_FacilityLevel',
+                custom_generate_series=get_capacity_used_by_cadre_and_level,
+                do_scaling = False,
+            ))
+
+#chosen_capacity_used.unstack().reset_index().drop(columns = ['level_2']).pivot(columns ='stat', index = 'draw')
+for cadre_level in capacity_used.index:
+    print(cadre_level)
+    name_of_plot = f'Capacity used - \n {cadre_level}, {target_period()}'
+    scenarios_to_drop = capacity_used.columns[capacity_used.columns.get_level_values(0).isin([4,5])]
+    chosen_capacity_used = capacity_used.drop(columns = scenarios_to_drop)
+    chosen_capacity_used = chosen_capacity_used[chosen_capacity_used.index == cadre_level]
+    chosen_capacity_used = chosen_capacity_used.unstack().reset_index().drop(columns = ['level_2']).pivot(columns ='stat', index = 'draw').droplevel(0,axis = 1)
+    chosen_capacity_used['scenario'] = [*scenarios.to_list()[0:4],*scenarios.to_list()[6:10]]
+    #TODO fix above code to be automated
+    chosen_capacity_used = chosen_capacity_used.set_index('scenario')
+    fig, ax = do_bar_plot_with_ci(
+        (chosen_capacity_used),
+        annotations=[
+            f"{round(row['mean'], 2)} \n ({round(row['lower'], 2)}-{round(row['upper'], 2)})"
+            for _, row in chosen_capacity_used.iterrows()
+        ],
+        xticklabels_horizontal_and_wrapped=False,
+    )
+    ax.set_title(name_of_plot)
+    if chosen_capacity_used.upper.max() > 3:
+        y_limit = 3.5
+        y_tick_gap = 0.5
+    else:
+        y_limit = 2
+        y_tick_gap = 0.25
+    ax.set_ylim(0, y_limit)
+    ax.set_yticks(np.arange(0, y_limit, y_tick_gap))
+    ax.set_ylabel(f'Capacity used \n (Proportion of capacity available)')
+    fig.tight_layout()
+    fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', '').replace('/', '_'))
+    fig.show()
+    plt.close(fig)
+
 
 # 2. Consumable demand not met
 #-----------------------------------------
