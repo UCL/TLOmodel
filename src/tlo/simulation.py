@@ -11,7 +11,7 @@ from typing import Dict, Optional, Union
 import numpy as np
 
 from tlo import Date, Population, logging
-from tlo.dependencies import check_dependencies_present, topologically_sort_modules
+from tlo.dependencies import check_dependencies_present, topologically_sort_modules, initialise_missing_dependencies
 from tlo.events import Event, IndividualScopeEventMixin
 from tlo.progressbar import ProgressBar
 
@@ -148,10 +148,15 @@ class Simulation:
         :param auto_register_dependencies: Whether to register missing module dependencies or not. If this argument is
          set to True, all module dependencies will be automatically registered.
         """
+        print(f'the real modules are {modules}')
+        if auto_register_dependencies:
+            modules = [
+                *modules,
+                *initialise_missing_dependencies(modules, resourcefilepath=self.resourcefilepath)
+            ]
+        print(f'the modules are {modules}')
         if sort_modules:
-            modules = list(topologically_sort_modules(module_instances=modules,
-                                                      resourcefilepath=self.resourcefilepath,
-                                                      auto_register_dependencies=auto_register_dependencies))
+            modules = list(topologically_sort_modules(modules))
         if check_all_dependencies:
             check_dependencies_present(modules)
         # Iterate over modules and per-module seed sequences spawned from simulation
