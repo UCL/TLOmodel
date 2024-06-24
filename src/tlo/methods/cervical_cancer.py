@@ -1136,6 +1136,9 @@ class HSI_CervicalCancer_Cryotherapy_CIN(HSI_Event, IndividualScopeEventMixin):
         hs = self.sim.modules["HealthSystem"]
         p = self.sim.modules['CervicalCancer'].parameters
 
+    #todo: note that cryotherapy often not done due to cryotherapy equipment non available
+       # (msyamboza et al 2016)
+
         # Record date and stage of starting treatment
         df.at[person_id, "ce_date_cryo"] = self.sim.date
 

@@ -21,7 +21,6 @@ from tlo import Simulation, Date
 from tlo.analysis.utils import make_age_grp_types, parse_log_file
 from tlo.methods import (
     cervical_cancer,
-#   cc_test,
     demography,
     enhanced_lifestyle,
     healthburden,
