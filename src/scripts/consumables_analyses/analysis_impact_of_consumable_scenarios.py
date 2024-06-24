@@ -735,6 +735,62 @@ for cadre_level in capacity_used.index:
     plt.close(fig)
 
 
+# %% Summarizing input resourcefile data
+
+# 1. Consumable availability by category and level
+#--------------------------------------------------
+tlo_availability_df = pd.read_csv(resourcefilepath  / 'healthsystem'/ 'consumables' / "ResourceFile_Consumables_availability_small.csv")
+
+# Attach district, facility level, program to this dataset
+mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "ResourceFile_Master_Facilities_List.csv")
+districts = set(pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_Population_2010.csv')['District'])
+fac_levels = {'0', '1a', '1b', '2', '3', '4'}
+tlo_availability_df = tlo_availability_df.merge(mfl[['District', 'Facility_Level', 'Facility_ID']],
+                    on = ['Facility_ID'], how='left')
+# Attach programs
+programs = pd.read_csv(resourcefilepath / 'healthsystem'/ 'consumables' / "ResourceFile_Consumables_availability_and_usage.csv")[['category', 'item_code', 'module_name']]
+programs = programs.drop_duplicates('item_code')
+tlo_availability_df = tlo_availability_df.merge(programs, on = ['item_code'], how = 'left')
+
+# Generate a heatmap
+# Pivot the DataFrame
+aggregated_df = tlo_availability_df.groupby(['category', 'Facility_Level'])['available_prop'].mean().reset_index()
+aggregated_df = aggregated_df[aggregated_df.Facility_Level.isin(['1a', '2'])]
+aggregated_df.loc[aggregated_df.Facility_Level == '1a','Facility_Level'] = 'Health centres'
+aggregated_df.loc[aggregated_df.Facility_Level == '2','Facility_Level'] = 'Hospitals'
+heatmap_data = aggregated_df.pivot("category", "Facility_Level", "available_prop")
+
+# Calculate the aggregate row and column
+aggregate_col= aggregated_df.groupby('Facility_Level')['available_prop'].mean()
+aggregate_row = aggregated_df.groupby('category')['available_prop'].mean()
+overall_aggregate = tlo_availability_df['available_prop'].mean()
+
+# Add aggregate row and column
+heatmap_data['Average'] = aggregate_row
+aggregate_col['Average'] = overall_aggregate
+heatmap_data.loc['Average'] = aggregate_col
+
+# Generate the heatmap
+sns.set(font_scale=1.5)
+plt.figure(figsize=(10, 8))
+sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn', cbar_kws={'label': 'Proportion of days on which consumable is available'})
+
+# Customize the plot
+#plt.title('Consumable availability by Facility Level and Category')
+plt.xlabel('Facility Level')
+plt.ylabel(f'Disease/Public health \n program')
+plt.xticks(rotation=45)
+plt.yticks(rotation=0)
+
+plt.savefig(figurespath /'consumable_availability_heatmap_1a_2.png', dpi=300, bbox_inches='tight')
+plt.show()
+plt.close()
+
+# TODO Justify the focus on levels 1a and 1b - where do HSIs occur?; at what level is there most misallocation within districts
+# TODO get graphs of percentage of successful HSIs under different scenarios for levels 1a and 1b
+# TODO is there a way to link consumables directly to DALYs (how many DALYs are lost due to stockouts of specific consumables)
+# TODO why are there no appointments at level 1b
+
 # 2. Consumable demand not met
 #-----------------------------------------
 # Number of units of item which were needed but not made available for the top 25 items
@@ -906,56 +962,4 @@ hsi_by_short_treatment_id = counts_of_hsi_by_treatment_id_short.unstack().reset_
 hsi_by_short_treatment_id = hsi_by_short_treatment_id.rename(columns = {'level_2': 'Short_Treatment_ID', 0: 'qty_of_HSIs'})
 
 # Cost of consumables?
-
-# %% Summarizing input resourcefile data
-
-# 1. Consumable availability by category and level
-#--------------------------------------------------
-tlo_availability_df = pd.read_csv(resourcefilepath  / 'healthsystem'/ 'consumables' / "ResourceFile_Consumables_availability_small.csv")
-
-# Attach district, facility level, program to this dataset
-mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "ResourceFile_Master_Facilities_List.csv")
-districts = set(pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_Population_2010.csv')['District'])
-fac_levels = {'0', '1a', '1b', '2', '3', '4'}
-tlo_availability_df = tlo_availability_df.merge(mfl[['District', 'Facility_Level', 'Facility_ID']],
-                    on = ['Facility_ID'], how='left')
-# Attach programs
-programs = pd.read_csv(resourcefilepath / 'healthsystem'/ 'consumables' / "ResourceFile_Consumables_availability_and_usage.csv")[['category', 'item_code', 'module_name']]
-programs = programs.drop_duplicates('item_code')
-tlo_availability_df = tlo_availability_df.merge(programs, on = ['item_code'], how = 'left')
-
-# Generate a heatmap
-# Pivot the DataFrame
-aggregated_df = tlo_availability_df.groupby(['category', 'Facility_Level'])['available_prop'].mean().reset_index()
-heatmap_data = aggregated_df.pivot("category", "Facility_Level", "available_prop")
-
-# Calculate the aggregate row and column
-aggregate_col= tlo_availability_df.groupby('Facility_Level')['available_prop'].mean()
-aggregate_row = tlo_availability_df.groupby('category')['available_prop'].mean()
-overall_aggregate = tlo_availability_df['available_prop'].mean()
-
-# Add aggregate row and column
-heatmap_data['Average'] = aggregate_row
-aggregate_col['Average'] = overall_aggregate
-heatmap_data.loc['Average'] = aggregate_col
-
-# Generate the heatmap
-plt.figure(figsize=(10, 8))
-sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn', cbar_kws={'label': 'Proportion of days on which consumable is available'})
-
-# Customize the plot
-#plt.title('Consumable availability by Facility Level and Category')
-plt.xlabel('Facility Level')
-plt.ylabel('Category')
-plt.xticks(rotation=45)
-plt.yticks(rotation=0)
-
-plt.savefig(figurespath /'consumable_availability_heatmap.png', dpi=300, bbox_inches='tight')
-plt.show()
-plt.close()
-
-# TODO Justify the focus on levels 1a and 1b - where do HSIs occur?; at what level is there most misallocation within districts
-# TODO get graphs of percentage of successful HSIs under different scenarios for levels 1a and 1b
-# TODO is there a way to link consumables directly to DALYs (how many DALYs are lost due to stockouts of specific consumables)
-# TODO why are there no appointments at level 1b
 
