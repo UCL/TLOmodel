@@ -13,7 +13,6 @@ from typing import TYPE_CHECKING, List
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.core import IndividualPropertyUpdates
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -22,16 +21,18 @@ from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
+from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
 
 if TYPE_CHECKING:
-    from tlo.population import PatientDetails
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
+    from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class BladderCancer(Module):
+class BladderCancer(Module, GenericFirstAppointmentsMixin):
     """Bladder Cancer Disease Module"""
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -595,27 +596,28 @@ class BladderCancer(Module):
 
     def do_at_generic_first_appt(
         self,
-        patient_id: int,
-        patient_details: PatientDetails,
+        person_id: int,
+        individual_properties: IndividualProperties,
         symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
         **kwargs,
-    ) -> IndividualPropertyUpdates:
+    ) -> None:
         # Only investigate if the patient is not a child
-        if patient_details.age_years > 5:
+        if individual_properties["age_years"] > 5:
             # Begin investigation if symptoms are present.
             if "blood_urine" in symptoms:
                 event = HSI_BladderCancer_Investigation_Following_Blood_Urine(
-                    person_id=patient_id, module=self
+                    person_id=person_id, module=self
                 )
-                self.healthsystem.schedule_hsi_event(
+                schedule_hsi_event(
                     event, topen=self.sim.date, priority=0
                 )
 
             if "pelvic_pain" in symptoms:
                 event = HSI_BladderCancer_Investigation_Following_pelvic_pain(
-                    person_id=patient_id, module=self
+                    person_id=person_id, module=self
                 )
-                self.healthsystem.schedule_hsi_event(
+                schedule_hsi_event(
                     event, topen=self.sim.date, priority=0
                 )
 
@@ -723,14 +725,14 @@ class HSI_BladderCancer_Investigation_Following_Blood_Urine(HSI_Event, Individua
             return hs.get_blank_appt_footprint()
 
         # Check consumables are available
-        # TODO: replace with cystoscope
-        cons_avail = self.get_consumables(item_codes=self.module.item_codes_bladder_can['screening_biopsy_core'],
-                                          optional_item_codes=
-                                          self.module.item_codes_bladder_can['screening_biopsy_optional'])
+        cons_avail = self.get_consumables(item_codes=self.module.item_codes_bladder_can['screening_cystoscopy_core'],
+                                          optional_item_codes=self.module.item_codes_bladder_can[
+                                              'screening_biopsy_endoscopy_cystoscopy_optional'])
 
         if cons_avail:
             # Use a biopsy to diagnose whether the person has bladder Cancer
-            # If consumables are available, run the dx_test representing the biopsy
+            # If consumables are available update the use of equipment and run the dx_test representing the biopsy
+            self.add_equipment({'Cystoscope', 'Ordinary Microscope', 'Ultrasound scanning machine'})
 
             # Use a cystoscope to diagnose whether the person has bladder Cancer:
             dx_result = hs.dx_manager.run_dx_test(
@@ -796,14 +798,14 @@ class HSI_BladderCancer_Investigation_Following_pelvic_pain(HSI_Event, Individua
             return hs.get_blank_appt_footprint()
 
         # Check consumables are available
-        # TODO: replace with cystoscope
-        cons_avail = self.get_consumables(item_codes=self.module.item_codes_bladder_can['screening_biopsy_core'],
+        cons_avail = self.get_consumables(item_codes=self.module.item_codes_bladder_can['screening_cystoscopy_core'],
                                           optional_item_codes=self.module.item_codes_bladder_can[
-                                              'screening_biopsy_optional'])
+                                              'screening_biopsy_endoscopy_cystoscopy_optional'])
 
         if cons_avail:
             # Use a biopsy to diagnose whether the person has bladder Cancer
-            # If consumables are available, run the dx_test representing the biopsy
+            # If consumables are available log the use of equipment and run the dx_test representing the biopsy
+            self.add_equipment({'Cystoscope', 'Ordinary Microscope', 'Ultrasound scanning machine'})
 
             # Use a cystoscope to diagnose whether the person has bladder Cancer:
             dx_result = hs.dx_manager.run_dx_test(
@@ -892,7 +894,8 @@ class HSI_BladderCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                                           self.module.item_codes_bladder_can['treatment_surgery_optional'])
 
         if cons_avail:
-            # If consumables are available and the treatment will go ahead
+            # If consumables are available and the treatment will go ahead - update the equipment
+            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
 
             # Record date and stage of starting treatment
             df.at[person_id, "bc_date_treatment"] = self.sim.date
@@ -996,7 +999,8 @@ class HSI_BladderCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
             item_codes=self.module.item_codes_bladder_can['palliation'])
 
         if cons_available:
-            # If consumables are available and the treatment will go ahead
+            # If consumables are available and the treatment will go ahead - update the equipment
+            self.add_equipment({'Infusion pump', 'Drip stand'})
 
             # Record the start of palliative care if this is first appointment
             if pd.isnull(df.at[person_id, "bc_date_palliative_care"]):

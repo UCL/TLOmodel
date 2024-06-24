@@ -12,7 +12,6 @@ from typing import TYPE_CHECKING, List
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.core import IndividualPropertyUpdates
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -21,16 +20,18 @@ from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
+from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
 
 if TYPE_CHECKING:
-    from tlo.population import PatientDetails
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
+    from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class BreastCancer(Module):
+class BreastCancer(Module, GenericFirstAppointmentsMixin):
     """Breast Cancer Disease Module"""
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -572,19 +573,20 @@ class BreastCancer(Module):
 
     def do_at_generic_first_appt(
         self,
-        patient_id: int,
-        patient_details: PatientDetails,
+        person_id: int,
+        individual_properties: IndividualProperties,
         symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
         **kwargs,
-    ) -> IndividualPropertyUpdates:
+    ) -> None:
         # If the patient is not a child and symptoms include breast
         # lump discernible
-        if patient_details.age_years > 5 and "breast_lump_discernible" in symptoms:
+        if individual_properties["age_years"] > 5 and "breast_lump_discernible" in symptoms:
             event = HSI_BreastCancer_Investigation_Following_breast_lump_discernible(
-                person_id=patient_id,
+                person_id=person_id,
                 module=self,
             )
-            self.healthsystem.schedule_hsi_event(event, topen=self.sim.date, priority=0)
+            schedule_hsi_event(event, topen=self.sim.date, priority=0)
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -694,11 +696,13 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
         # Check consumables to undertake biopsy are available
         cons_avail = self.get_consumables(item_codes=self.module.item_codes_breast_can['screening_biopsy_core'],
                                           optional_item_codes=
-                                          self.module.item_codes_breast_can['screening_biopsy_optional'])
+                                          self.module.item_codes_breast_can[
+                                              'screening_biopsy_endoscopy_cystoscopy_optional'])
 
         if cons_avail:
             # Use a biopsy to diagnose whether the person has breast Cancer
-            # If consumables are available, run the dx_test representing the biopsy
+            # If consumables are available, add the used equipment and run the dx_test representing the biopsy
+            self.add_equipment({'Ultrasound scanning machine', 'Ordinary Microscope'})
 
             dx_result = hs.dx_manager.run_dx_test(
                 dx_tests_to_run='biopsy_for_breast_cancer_given_breast_lump_discernible',
@@ -762,8 +766,6 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
 
-        # todo: request consumables needed for this
-
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
 
@@ -796,7 +798,9 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         )
 
         if cons_available:
-            # If consumables, treatment will go ahead
+            # If consumables are available and the treatment will go ahead - add the used equipment
+            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
+
             # Log the use of adjuvant chemotherapy
             self.get_consumables(
                 item_codes=self.module.item_codes_breast_can['treatment_chemotherapy'],
@@ -904,7 +908,8 @@ class HSI_BreastCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
             item_codes=self.module.item_codes_breast_can['palliation'])
 
         if cons_available:
-            # If consumables are available and the treatment will go ahead
+            # If consumables are available and the treatment will go ahead - add the used equipment
+            self.add_equipment({'Infusion pump', 'Drip stand'})
 
             # Record the start of palliative care if this is first appointment
             if pd.isnull(df.at[person_id, "brc_date_palliative_care"]):
