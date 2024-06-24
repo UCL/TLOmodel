@@ -1946,12 +1946,26 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                         'sex', _property, 'age_range']).size()
 
             elif _property == 'li_in_ed':
-                data = df.loc[df.is_alive & df.age_years.between(5, 19)].groupby(by=[
-                    'sex', 'li_wealth', _property, 'age_years']).size()
+                subset = df.loc[df.is_alive & df.age_years.between(5, 19)].copy()
+                # Make age_years categorical so that non-observed combinations in
+                # groupby are included with zero counts to keep log entries aligned
+                subset["age_years"] = pd.Categorical(
+                    subset["age_years"], categories=range(5, 20)
+                )
+                data = subset.groupby(
+                    by=['sex', 'li_wealth', _property, 'age_years']
+                ).size()
 
             elif _property == 'li_ed_lev':
-                data = df.loc[df.is_alive & df.age_years.between(15, 49)].groupby(by=[
-                    'sex', 'li_wealth', _property, 'age_years']).size()
+                subset = df.loc[df.is_alive & df.age_years.between(15, 49)].copy()
+                # Make age_years categorical so that non-observed combinations in
+                # groupby are included with zero counts to keep log entries aligned
+                subset["age_years"] = pd.Categorical(
+                    subset["age_years"], categories=range(15, 50)
+                )
+                data = subset.groupby(
+                    by=['sex', 'li_wealth', _property, 'age_years']
+                ).size()
 
             elif _property == 'li_is_sexworker':
                 data = df.loc[df.is_alive & (df.age_years.between(15, 49))].groupby(by=[
