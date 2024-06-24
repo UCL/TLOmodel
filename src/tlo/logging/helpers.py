@@ -6,6 +6,8 @@ from typing import Dict, Optional, Union
 
 import pandas as pd
 
+from pandas.api.types import is_extension_array_dtype
+
 from .core import _FORMATTER, _LOGGERS, DEBUG, getLogger
 
 
@@ -94,7 +96,7 @@ def get_dataframe_row_as_dict_for_logging(
     dataframe: pd.DataFrame,
     row_label: Union[int, str],
     columns: Optional[Iterable[str]] = None,
-):
+) -> dict:
     """Get row of a pandas dataframe in a format suitable for logging.
     
     Retrieves entries for all or a subset of columns for a particular row in a dataframe
@@ -108,17 +110,18 @@ def get_dataframe_row_as_dict_for_logging(
     :returns: Dictionary with column names as keys and corresponding entries in row as
         values.
     """
+    dataframe = dataframe.convert_dtypes(convert_integer=False, convert_floating=False)
     columns = dataframe.columns if columns is None else columns
     row_index = dataframe.index.get_loc(row_label)
     return {
         column_name:
         dataframe[column_name].values[row_index]
-        # Nullable booleans and categorical entries will be type unstable if a scalar is
-        # returned as NA / NaN entries will have a different type from non-missing
-        # entries, therefore use a length 1 array of relevant NumPy or pandas extension
-        # type in these cases to ensure type stability across different rows. Note that
-        # "boolean" dtype (nullable boolean) is different from standard "bool" dtype.
-        if dataframe[column_name].dtype not in ("boolean", "category") else
+        # pandas extension array datatypes such as nullable types and categoricals, will
+        # be type unstable if a scalar is returned as NA / NaT / NaN entries will have a
+        # different type from non-missing entries, therefore use a length 1 array of
+        # relevant NumPy or pandas extension type in these cases to ensure type
+        # stability across different rows.
+        if not is_extension_array_dtype(dataframe[column_name].dtype) else
         dataframe[column_name].values[row_index:row_index+1]
         for column_name in columns
     }
