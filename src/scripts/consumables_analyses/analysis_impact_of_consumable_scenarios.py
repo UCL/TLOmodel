@@ -344,8 +344,8 @@ info = get_scenario_info(results_folder)
 
 # 1) Extract the parameters that have varied over the set of simulations
 params = extract_params(results_folder)
-params_dict  = {'default': 'Status Quo', 'scenario1': 'Non-drug/diagnostic consumables', 'scenario2': 'Vital drugs',
-                'scenario3': 'Pharmacist managed', 'scenario4': 'Level 1b', 'scenario5': 'CHAM',
+params_dict  = {'default': 'Status Quo', 'scenario1': 'General consumables', 'scenario2': 'Vital medicines',
+                'scenario3': 'Pharmacist-managed', 'scenario4': 'Level 1b', 'scenario5': 'CHAM',
                 'scenario6': '75th percentile facility', 'scenario7': '90th percentile facility', 'scenario8': 'Best facility',
                 'all': 'Perfect'}
 params_dict_df = pd.DataFrame.from_dict(params_dict, orient='index', columns=['name_of_scenario']).reset_index().rename(columns = {'index': 'value'})
@@ -502,14 +502,16 @@ for cause in top_10_causes_of_dalys:
     )
     if chosen_num_dalys_averted_by_cause.upper.max()/1e6 > 2:
         y_limit = 8.5
+        y_tick_gaps = 1
     else:
         y_limit = 2.5
+        y_tick_gaps = 0.5
     ax.set_title(name_of_plot)
     ax.set_ylim(0, y_limit)
-    ax.set_yticks(np.arange(0, y_limit, 0.5))
+    ax.set_yticks(np.arange(0, y_limit, y_tick_gaps))
     ax.set_ylabel(f'Additional DALYs averted \n(Millions)')
     fig.tight_layout()
-    fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', '').replace('/', '_'))
+    fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', '').replace('/', '_').replace('\n', ''))
     fig.show()
     plt.close(fig)
 
@@ -537,7 +539,7 @@ for cause in top_10_causes_of_dalys:
     ax.set_yticks(np.arange(0, y_limit, y_tick_gap))
     ax.set_ylabel(f'Total DALYs accrued \n(Millions)')
     fig.tight_layout()
-    fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', '').replace('/', '_'))
+    fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', '').replace('/', '_').replace('\n', ''))
     fig.show()
     plt.close(fig)
 
@@ -594,7 +596,7 @@ ax.set_ylim(0, 1.5)
 ax.set_yticks(np.arange(0, 1.5, 0.2))
 ax.set_ylabel('Additional DALYs averted per person')
 fig.tight_layout()
-fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', ''))
+fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', '').replace('\n', ''))
 fig.show()
 plt.close(fig)
 
@@ -662,7 +664,7 @@ for cause in top_10_causes_of_dalys:
     ax.set_yticks(np.arange(0, y_limit, y_tick_gap))
     ax.set_ylabel(f'Additional DALYs averted per person')
     fig.tight_layout()
-    fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', '').replace('/', '_'))
+    fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', '').replace('/', '_').replace('\n', ''))
     fig.show()
     plt.close(fig)
 
@@ -728,7 +730,7 @@ for cadre_level in capacity_used.index:
     ax.set_yticks(np.arange(0, y_limit, y_tick_gap))
     ax.set_ylabel(f'Capacity used \n (Proportion of capacity available)')
     fig.tight_layout()
-    fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', '').replace('/', '_'))
+    fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', '').replace('/', '_').replace('\n', '_'))
     fig.show()
     plt.close(fig)
 
