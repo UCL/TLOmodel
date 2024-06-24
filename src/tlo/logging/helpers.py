@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Dict, Optional, Union
 
 import pandas as pd
-
 from pandas.api.types import is_extension_array_dtype
 
 from .core import _FORMATTER, _LOGGERS, DEBUG, getLogger
