@@ -583,7 +583,7 @@ class MeaslesLoggingAnnualEvent(RegularEvent, PopulationScopeEventMixin):
         if total_infected:
             prop_infected_by_age = infected_age_counts / total_infected
         else:
-            prop_infected_by_age = infected_age_counts  # just output the series of zeros by age group
+            prop_infected_by_age = infected_age_counts.astype("float")  # just output the series of zeros by age group
 
         logger.info(key='measles_incidence_age_range', data=prop_infected_by_age.to_dict(),
                     description="measles incidence by age group")
