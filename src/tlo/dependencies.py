@@ -82,18 +82,6 @@ def get_missing_dependencies(
     print(f'the list modules are{modules_required, modules_present}')
     missing_dependencies = modules_required - modules_present
     m_dependencies = missing_dependencies - modules_present_are_alternatives_to
-    all_dep = set(list(m_dependencies) + list(modules_present))
-    print(f'all dep are {all_dep}')
-    print(f'the missing dependencies are {m_dependencies}')
-    sec_missing_modules = set.union(
-        *(set(get_dependencies(module, modules_present)) for module in module_instances)
-    )
-    print(f'the mis dep {dependencies}')
-    set_modules_required = set.union(
-        *(set(get_dependencies(module, missing_dependencies)) for module in dependencies)
-    )
-    reg_missing_module = set_modules_required -  m_dependencies
-    print(f'these are missing {modules_present, m_dependencies, set_modules_required}')
 
     return m_dependencies
 
@@ -108,17 +96,27 @@ def initialise_missing_dependencies(modules, **module_kwargs):
     :return: List of ``Module`` subclass instances corresponding to missing dependencies.
     """
     module_instances = modules
-    print(f'init modules {module_instances}')
+    print(f'init modules {type(module_instances)}')
     module_class_map = get_module_class_map(set())
-    missing_dependencies = get_missing_dependencies(
-        module_instances, get_all_dependencies
-    )
 
-    dependencies =  [
-        module_class_map[dependency](**module_kwargs)
-        for dependency in missing_dependencies
-    ]
-    print(f'all missing dependencies {dependencies}')
+    def get_all_missing_dependencies(module_instance: Iterable[Module]):
+        missing_dependencies = get_missing_dependencies(
+            module_instance, get_all_dependencies
+        )
+
+        dependencies = [
+            module_class_map[dependency](**module_kwargs)
+            for dependency in missing_dependencies
+        ]
+        return dependencies
+
+    dependencies = get_all_missing_dependencies(module_instances)
+    if len(dependencies) != 0:
+        all_instances = list(module_instances) + dependencies
+        print(f'all missing dependencies {all_instances}')
+        dependencies = dependencies + get_all_missing_dependencies(all_instances)
+        print(f'again dependency {dependencies}')
+
     return dependencies
 
 
@@ -166,6 +164,7 @@ def topologically_sort_modules(
     """
     module_instances = list(module_instances)
     module_instance_map = {type(module).__name__: module for module in module_instances}
+    print(f'the module insitance {module_instance_map}')
     if len(module_instance_map) != len(module_instances):
         raise MultipleModuleInstanceError(
             'Multiple instances of one or more `Module` subclasses were passed to the '
@@ -224,7 +223,7 @@ def is_valid_tlo_module_subclass(obj: Any, excluded_modules: Set[str]) -> bool:
     """Determine whether object is a ``Module`` subclass and not in an excluded set.
 
     :param obj: Object to check if ``Module`` subclass.
-    :param excluded_modules: Set of names of ``Module`` subclasses to force check to
+    :param excluded_modules: Set of names of ``Modu12le`` subclasses to force check to
         return ``False`` for.
 
     :return: ``True`` is ``obj`` is a _strict_ subclass of ``Module`` and not in the

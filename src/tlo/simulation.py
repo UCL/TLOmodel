@@ -148,13 +148,12 @@ class Simulation:
         :param auto_register_dependencies: Whether to register missing module dependencies or not. If this argument is
          set to True, all module dependencies will be automatically registered.
         """
-        print(f'the real modules are {modules}')
         if auto_register_dependencies:
             modules = [
                 *modules,
                 *initialise_missing_dependencies(modules, resourcefilepath=self.resourcefilepath)
             ]
-        print(f'the modules are {modules}')
+
         if sort_modules:
             modules = list(topologically_sort_modules(modules))
         if check_all_dependencies:
