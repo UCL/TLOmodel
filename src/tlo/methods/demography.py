@@ -800,7 +800,7 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         num_children = pd.Series(index=range(5), data=0).add(
             df[df.is_alive & (df.age_years < 5)].groupby('age_years').size(),
             fill_value=0
-        )
+        ).astype(int)
 
         logger.info(key='num_children', data=num_children.to_dict())
 
