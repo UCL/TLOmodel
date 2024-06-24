@@ -1208,8 +1208,13 @@ class HealthSystem(Module):
             ].iloc[0]
 
             # Convert policy dataframe into dictionary to speed-up look-up process.
-            self.priority_rank_dict = \
-                Policy_df.set_index("Treatment", drop=True).to_dict(orient="index")
+            self.priority_rank_dict = (
+                Policy_df.set_index("Treatment", drop=True)
+                # Standardize dtypes to ensure any integers represented as floats are
+                # converted to integer dtypes
+                .convert_dtypes()
+                .to_dict(orient="index")
+            )
             del self.priority_rank_dict["lowest_priority_considered"]
 
     def schedule_hsi_event(
