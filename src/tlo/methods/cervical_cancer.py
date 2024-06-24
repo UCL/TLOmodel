@@ -7,12 +7,12 @@ at some point we may need to specify the treatment eg total hysterectomy plus or
 but we agree not now
 """
 
-
+from __future__ import annotations
 from pathlib import Path
 from datetime import datetime
 
 import math
-from typing import List
+from typing import TYPE_CHECKING, List
 
 import pandas as pd
 import random
@@ -27,17 +27,21 @@ from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
-from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
 from tlo.methods.symptommanager import Symptom
 from tlo.methods import Metadata
-from tlo.population import IndividualProperties
+
+if TYPE_CHECKING:
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
+    from tlo.population import IndividualProperties
+
 from tlo.util import random_date
+from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class CervicalCancer(Module):
+class CervicalCancer(Module, GenericFirstAppointmentsMixin):
     """Cervical Cancer Disease Module"""
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -352,7 +356,7 @@ class CervicalCancer(Module):
         get_items = self.sim.modules['HealthSystem'].get_item_code_from_item_name
 
         self.cervical_cancer_cons['cervical_cancer_screening_via'] = {get_items('Clean delivery kit'): 1}
-        self.cervical_cancer_cons['cervical_cancer_screening_via_optional'] = {get_items('gloves'): 1}
+        # self.cervical_cancer_cons['cervical_cancer_screening_via_optional'] = {get_items('gloves'): 1}
 
     # todo:  add others as above
 
@@ -368,13 +372,13 @@ class CervicalCancer(Module):
 
         self.get_cervical_cancer_item_codes()
 
-        # ----- SCHEDULE LOGGING EVENTS -----
-        # Schedule logging event to happen immediately
-        sim.schedule_event(CervicalCancerLoggingEvent(self), sim.date + DateOffset(months=0))
-
         # ----- SCHEDULE MAIN POLLING EVENTS -----
         # Schedule main polling event to happen immediately
         sim.schedule_event(CervicalCancerMainPollingEvent(self), sim.date + DateOffset(months=1))
+
+        # ----- SCHEDULE LOGGING EVENTS -----
+        # Schedule logging event to happen immediately
+        sim.schedule_event(CervicalCancerLoggingEvent(self), sim.date + DateOffset(months=1))
 
         # ----- LINEAR MODELS -----
         # Define LinearModels for the progression of cancer, in each 1 month period
@@ -684,25 +688,15 @@ class CervicalCancer(Module):
                 topen=self.sim.date,
                 tclose=None)
 
-        if 'chosen_via_screening_for_cin_cervical_cancer' in symptoms:
-            schedule_hsi_event(
-                HSI_CervicalCancer_AceticAcidScreening(
-                    person_id=person_id,
-                    module=self
-                ),
-                priority=0,
-                topen=self.sim.date,
-                tclose=None)
-
-        if 'chosen_xpert_screening_for_hpv_cervical_cancer' in symptoms:
-            schedule_hsi_event(
-                HSI_CervicalCancer_XpertHPVScreening(
-                    person_id=person_id,
-                    module=self
-                ),
-                priority=0,
-                topen=self.sim.date,
-                tclose=None)
+        # else:
+        schedule_hsi_event(
+            HSI_CervicalCancer_Screening(
+                person_id=person_id,
+                module=self
+            ),
+            priority=0,
+            topen=self.sim.date,
+            tclose=None)
 
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
