@@ -755,15 +755,15 @@ tlo_availability_df = tlo_availability_df.merge(programs, on = ['item_code'], ho
 # Generate a heatmap
 # Pivot the DataFrame
 aggregated_df = tlo_availability_df.groupby(['category', 'Facility_Level'])['available_prop'].mean().reset_index()
-aggregated_df = aggregated_df[aggregated_df.Facility_Level.isin(['1a', '2'])]
+aggregated_df = aggregated_df[aggregated_df.Facility_Level.isin(['1a', '1b'])]
 aggregated_df.loc[aggregated_df.Facility_Level == '1a','Facility_Level'] = 'Health centres'
-aggregated_df.loc[aggregated_df.Facility_Level == '2','Facility_Level'] = 'Hospitals'
+aggregated_df.loc[aggregated_df.Facility_Level == '1b','Facility_Level'] = 'Hospitals'
 heatmap_data = aggregated_df.pivot("category", "Facility_Level", "available_prop")
 
 # Calculate the aggregate row and column
 aggregate_col= aggregated_df.groupby('Facility_Level')['available_prop'].mean()
 aggregate_row = aggregated_df.groupby('category')['available_prop'].mean()
-overall_aggregate = tlo_availability_df['available_prop'].mean()
+overall_aggregate = aggregated_df['available_prop'].mean()
 
 # Add aggregate row and column
 heatmap_data['Average'] = aggregate_row
