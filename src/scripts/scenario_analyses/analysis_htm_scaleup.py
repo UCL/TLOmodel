@@ -38,8 +38,8 @@ class EffectOfProgrammes(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2035, 1, 1)
-        self.pop_size = 1_000
+        self.end_date = Date(2020, 1, 1)
+        self.pop_size = 10_000
         self.number_of_draws = 4
         self.runs_per_draw = 1
 
@@ -66,12 +66,15 @@ class EffectOfProgrammes(BaseScenario):
         return {
             'Hiv': {
                 'do_scaleup': [False, True, False, False][draw_number],
+                'scaleup_start_date': Date(2015, 1, 1)
             },
             'Tb': {
                 'do_scaleup': [False, False, True, False][draw_number],
+                'scaleup_start_date': Date(2015, 1, 1)
             },
             'Malaria': {
                 'do_scaleup': [False, False, False, True][draw_number],
+                'scaleup_start_date': Date(2015, 1, 1)
             },
         }
 
