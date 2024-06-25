@@ -1,30 +1,14 @@
 import logging as _logging
-import sys
 from collections.abc import Iterable
-from pathlib import Path
 from typing import Dict, Optional, Union
 
 import pandas as pd
 from pandas.api.types import is_extension_array_dtype
 
-from .core import _FORMATTER, _LOGGERS, DEBUG, getLogger
+from .core import getLogger
 
 
-def set_output_file(log_path: Path) -> _logging.FileHandler:
-    """Add filehandler to logger
-
-    :param log_path: path for file
-    :return: filehandler object
-    """
-    file_handler = _logging.FileHandler(log_path)
-    file_handler.setFormatter(_FORMATTER)
-    getLogger('tlo').handlers = [h for h in getLogger('tlo').handlers
-                                 if not isinstance(h, _logging.FileHandler)]
-    getLogger('tlo').addHandler(file_handler)
-    return file_handler
-
-
-def set_logging_levels(custom_levels: Dict[str, int]):
+def set_logging_levels(custom_levels: Dict[str, int]) -> None:
     """Set custom logging levels for disease modules
 
     :param custom_levels: Dictionary of modules and their level, '*' can be used as a key for all modules
@@ -67,28 +51,6 @@ def set_logging_levels(custom_levels: Dict[str, int]):
     for logger_name, logger_level in custom_levels.items():
         if logger_name != "*" and logger_name not in loggers:
             getLogger(logger_name).setLevel(logger_level)
-
-
-def init_logging(add_stdout_handler=True):
-    """Initialise default logging with stdout stream"""
-    for logger_name, logger in _LOGGERS.items():
-        logger.reset_attributes()
-    if add_stdout_handler:
-        handler = _logging.StreamHandler(sys.stdout)
-        handler.setLevel(DEBUG)
-        handler.setFormatter(_FORMATTER)
-        getLogger('tlo').addHandler(handler)
-    _logging.basicConfig(level=_logging.WARNING)
-
-
-def set_simulation(simulation):
-    """
-    Inject simulation into logger for structured logging, called by the simulation
-    :param simulation:
-    :return:
-    """
-    logger = getLogger('tlo')
-    logger.simulation = simulation
 
 
 def get_dataframe_row_as_dict_for_logging(
