@@ -28,6 +28,8 @@ tlo scenario-run src/scripts/scenario_analyses/analysis_htm_scaleup.py --draw 1 
 
 from pathlib import Path
 
+import pandas as pd
+
 from tlo import Date, logging
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
@@ -62,20 +64,20 @@ class EffectOfProgrammes(BaseScenario):
         return fullmodel(resourcefilepath=self.resources)
 
     def draw_parameters(self, draw_number, rng):
-        scaleup_date = Date(2015, 1, 1)
+        scaleup_start = 5
 
         return {
             'Hiv': {
                 'do_scaleup': [False, True, False, False][draw_number],
-                'scaleup_start_date': scaleup_date
+                'scaleup_start': scaleup_start
             },
             'Tb': {
                 'do_scaleup': [False, False, True, False][draw_number],
-                'scaleup_start_date': scaleup_date
+                'scaleup_start':  scaleup_start
             },
             'Malaria': {
                 'do_scaleup': [False, False, False, True][draw_number],
-                'scaleup_start_date': scaleup_date
+                'scaleup_start':  scaleup_start
             },
         }
 
