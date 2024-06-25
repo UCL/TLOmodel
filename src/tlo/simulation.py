@@ -183,7 +183,12 @@ class Simulation:
             module.pre_initialise_population()
 
         # Make the initial population
-        self.population = Population(self, n)
+        properties = {
+            name: prop
+            for module in self.modules.values()
+            for name, prop in module.PROPERTIES.items()
+        }
+        self.population = Population(properties, n)
         for module in self.modules.values():
             start1 = time.time()
             module.initialise_population(self.population)
