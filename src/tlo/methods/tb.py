@@ -859,14 +859,14 @@ class Tb(Module):
         # 2) log at the end of the year
         # Optional: Schedule the scale-up of programs
         if self.parameters["do_scaleup"]:
-            scaleup_start_date = self.parameters["scaleup_start_date"]
+            scaleup_start_date = sim.date + DateOffset(years=self.parameters["scaleup_start_date"])
 
             assert isinstance(scaleup_start_date, Date), "Value is not a Date object"
             # Check if scale-up start date is on or after sim start date
             assert scaleup_start_date >= Date(2010, 1, 1), \
                 f"Date {scaleup_start_date} is before January 1, 2010"
 
-            sim.schedule_event(ScaleUpSetupEvent(self), self.parameters["scaleup_start_date"])
+            sim.schedule_event(ScaleUpSetupEvent(self), scaleup_start_date)
 
         # 2) log at the end of the year
         sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(years=1))
