@@ -62,19 +62,20 @@ class EffectOfProgrammes(BaseScenario):
         return fullmodel(resourcefilepath=self.resources)
 
     def draw_parameters(self, draw_number, rng):
+        scaleup_date = Date(2015, 1, 1)
 
         return {
             'Hiv': {
                 'do_scaleup': [False, True, False, False][draw_number],
-                'scaleup_start_date': Date(2015, 1, 1)
+                'scaleup_start_date': scaleup_date
             },
             'Tb': {
                 'do_scaleup': [False, False, True, False][draw_number],
-                'scaleup_start_date': Date(2015, 1, 1)
+                'scaleup_start_date': scaleup_date
             },
             'Malaria': {
                 'do_scaleup': [False, False, False, True][draw_number],
-                'scaleup_start_date': Date(2015, 1, 1)
+                'scaleup_start_date': scaleup_date
             },
         }
 
