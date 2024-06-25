@@ -91,9 +91,6 @@ class Schisto(Module):
                                         'Sensitivity of KK in detecting moderate worm burdens'),
         'kato_katz_sensitivity_highWB': Parameter(Types.REAL,
                                         'Sensitivity of KK in detecting high worm burdens'),
-        # 'PZQ_efficacy': Parameter(Types.REAL,
-        #                           'The efficacy of Praziquantel in clearing burden of any Schistosomiasis '
-        #                           'worm species'),
         'MDA_coverage_historical': Parameter(Types.DATA_FRAME,
                                              'Probability of getting PZQ in the MDA for PSAC, SAC and Adults '
                                              'in historic rounds'),
@@ -761,10 +758,6 @@ class SchistoSpecies:
         df.loc[idx_changing, prop('infection_status')] = correct_status.loc[idx_changing]
 
         # Remove symptoms if there is no cause High-infection status caused by either species
-        #  NB. This is a limitation because there is no possibility of species-specific removal of symptoms. So, if a
-        #  person has two infections causing 'High-infection' and one is reduced below 'High-infection', symptoms will
-        #  persist as if the person still had two causes of 'High-infection'. The symptoms would not be removed until
-        #  both the aggregate worm burden of both species is reduced.
         cols_of_infection_status_for_other_species = [
             col for col in cols_of_infection_status if col != prop('infection_status')
         ]
@@ -1040,6 +1033,9 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
         # using a gamma distribution to reflect clustering of worms in high-risk people
         # this is not age-specific
         contact_rates = age_group.map(beta_by_age_group).astype(float)
+        # # multiply by susceptibility
+        contact_rates = contact_rates * df.loc[where, prop('susceptibility')]
+
         harbouring_rates = df.loc[where, prop('harbouring_rate')]
         rates = harbouring_rates * contact_rates
         worms_total = reservoir * R0
@@ -1049,7 +1045,6 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
             ),
             index=df.index[where]
         )
-
         # density dependent establishment of new worms
         # establishment of new worms dependent on number of worms currently in host * worm fecundity
         # limits numbers of worms harboured by each individual

@@ -99,7 +99,7 @@ def run_simulation(popsize,
 
 
 # todo update these parameters
-sim, output = run_simulation(popsize=15_000,
+sim, output = run_simulation(popsize=5_000,
                              use_really_simplified_births=False,
                              equal_allocation_by_district=True,
                              hs_disable_and_reject_all=False,  # if True, no HSIs run
