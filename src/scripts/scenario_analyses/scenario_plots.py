@@ -5,22 +5,17 @@ and produces plots for HIV, TB and malaria incidence
 
 import datetime
 from pathlib import Path
-
-import matplotlib.lines as mlines
-import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 
 from tlo import Date
 from tlo.analysis.utils import (
-    compare_number_of_deaths,
     extract_params,
     extract_results,
     get_scenario_info,
     get_scenario_outputs,
     load_pickled_dataframes,
-    summarize,
 )
 
 resourcefilepath = Path("./resources")
@@ -109,8 +104,6 @@ malaria_deaths = summarise_deaths_for_one_cause(results_folder, 'Malaria')
 
 draw_labels = ['No scale-up', 'HIV, scale-up', 'TB scale-up', 'Malaria scale-up']
 
-
-# Define colors for the lines
 colors = sns.color_palette("Set1", 4) # Blue, Orange, Green, Red
 
 
@@ -136,14 +129,10 @@ for i, col in enumerate(malaria_deaths.columns):
 axs[2].set_title('Malaria')
 axs[2].axvline(x=2015, color='gray', linestyle='--')
 
-# Set common labels
 for ax in axs:
     ax.set_xlabel('Years')
     ax.set_ylabel('Number deaths')
 
-# Adjust layout
 plt.tight_layout()
-
-# Show plot
 plt.show()
 

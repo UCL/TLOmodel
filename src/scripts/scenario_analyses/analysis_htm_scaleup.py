@@ -52,7 +52,7 @@ class EffectOfProgrammes(BaseScenario):
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2020, 1, 1)
         self.pop_size = 75_000
-        self.number_of_draws = 4
+        self.number_of_draws = 5
         self.runs_per_draw = 1
 
     def log_configuration(self):
@@ -90,15 +90,15 @@ class EffectOfProgrammes(BaseScenario):
 
         return {
             'Hiv': {
-                'do_scaleup': [False, True, False, False][draw_number],
+                'do_scaleup': [False, True, False, False, True][draw_number],
                 'scaleup_start': scaleup_start
             },
             'Tb': {
-                'do_scaleup': [False, False, True, False][draw_number],
+                'do_scaleup': [False, False, True, False, True][draw_number],
                 'scaleup_start':  scaleup_start
             },
             'Malaria': {
-                'do_scaleup': [False, False, False, True][draw_number],
+                'do_scaleup': [False, False, False, True, True][draw_number],
                 'scaleup_start':  scaleup_start
             },
         }
