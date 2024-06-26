@@ -20,7 +20,7 @@ from tlo.methods import (
     tb,
 )
 
-try:
+resourcefilepath = Path(os.path.dirname(__file__)) / "../resources"
     resourcefilepath = Path(os.path.dirname(__file__)) / "../resources"
 except NameError:
     # running interactively
