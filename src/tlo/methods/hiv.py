@@ -2293,7 +2293,7 @@ class Hiv_DecisionToContinueTreatment(Event, IndividualScopeEventMixin):
             )
 
 
-class ScaleUpSetupEvent(RegularEvent, PopulationScopeEventMixin):
+class ScaleUpSetupEvent(Event, PopulationScopeEventMixin):
     """ This event exists to change parameters or functions
     depending on the scenario for projections which has been set
     It only occurs once on date: scaleup_start_date,
@@ -2301,7 +2301,7 @@ class ScaleUpSetupEvent(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(years=100))
+        super().__init__(module)
 
     def apply(self, population):
 
@@ -2476,10 +2476,6 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                     tclose=None,
                     priority=0,
                 )
-            # set cap for number of repeat tests
-            self.counter_for_test_not_available += (
-                1  # The current appointment is included in the count.
-            )
 
             if (
                 self.counter_for_test_not_available

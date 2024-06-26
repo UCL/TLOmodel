@@ -21,10 +21,6 @@ from tlo.methods import (
 )
 
 resourcefilepath = Path(os.path.dirname(__file__)) / "../resources"
-    resourcefilepath = Path(os.path.dirname(__file__)) / "../resources"
-except NameError:
-    # running interactively
-    resourcefilepath = "resources"
 
 start_date = Date(2010, 1, 1)
 years_until_scale_up = 2
