@@ -33,8 +33,9 @@ def register_modules(sim):
     """Defines sim variable and registers all modules that can be called when running the full suite of pregnancy
     modules"""
 
-    sim.register(*fullmodel(resourcefilepath=resourcefilepath),
-                 mnh_cohort_module.MaternalNewbornHealthCohort(resourcefilepath=resourcefilepath),
+    sim.register(mnh_cohort_module.MaternalNewbornHealthCohort(resourcefilepath=resourcefilepath),
+                 *fullmodel(resourcefilepath=resourcefilepath),
+
                  )
 
 def test_run_sim_with_mnh_cohort(tmpdir, seed):

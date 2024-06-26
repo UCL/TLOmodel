@@ -3,10 +3,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
-from tlo.methods.causes import Cause
-from tlo.methods.hsi_event import HSI_Event
+from tlo.analysis.utils import parse_log_file
 
 
 logger = logging.getLogger(__name__)
@@ -64,7 +62,31 @@ class MaternalNewbornHealthCohort(Module):
 
         :param population: the population of individuals
         """
-        pass
+
+        # TODO: CURRENT ISSUE - INDIVIDUALS IN THE POPULATION ARE SCHEDULED HSIs IN INITIALISE_POP/SIM BY OTHER MODULES,
+        #  THEIR PROPERTIES ARE THEN OVER WRITTEN BY THIS MODULE AND ITS CRASHING HSIs
+
+        log_file = parse_log_file(
+             '/Users/j_collins/PycharmProjects/TLOmodel/outputs/sejjj49@ucl.ac.uk/'
+             'fullmodel_200k_cohort-2024-04-24T072206Z/0/0/fullmodel_200k_cohort__2024-04-24T072516.log',
+             level=logging.DEBUG)['tlo.methods.contraception']
+
+        all_pregnancies = log_file['properties_of_pregnant_person'].loc[
+            log_file['properties_of_pregnant_person'].date.dt.year == 2024].drop(columns=['date'])
+        all_pregnancies.index = [x for x in range(len(all_pregnancies))]
+
+        preg_pop = all_pregnancies.loc[0:(len(self.sim.population.props))-1]
+
+        props_dtypes = self.sim.population.props.dtypes
+        preg_pop_final = preg_pop.astype(props_dtypes.to_dict())
+        preg_pop_final.index.name = 'person'
+
+        self.sim.population.props = preg_pop_final
+
+        df = self.sim.population.props
+        population = df.loc[df.is_alive]
+        df.loc[population.index, 'date_of_last_pregnancy'] = self.sim.start_date
+        df.loc[population.index, 'co_contraception'] = "not_using"
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -74,29 +96,31 @@ class MaternalNewbornHealthCohort(Module):
         It is a good place to add initial events to the event queue.
 
         """
-        # cohort_prop_df = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_PregnancyCohort.xlsx')
-        from tlo.analysis.utils import parse_log_file
-        t = parse_log_file(
-             '/Users/j_collins/PycharmProjects/TLOmodel/outputs/sejjj49@ucl.ac.uk/fullmodel_200k_cohort-2024-04-24T072206Z/0/0/fullmodel_200k_cohort__2024-04-24T072516.log',
-             level=logging.DEBUG)['tlo.methods.contraception']
-
-        cohort_prop_df2 = t['properties_of_pregnant_person']
-        cohort_prop_df_for_pop = cohort_prop_df2.loc[0:(len(self.sim.population.props))-1]
-        self.sim.population.props = cohort_prop_df_for_pop
-        self.sim.population.props.index.name = 'person'
+        pass
+        # # cohort_prop_df = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_PregnancyCohort.xlsx')
+        # from tlo.analysis.utils import parse_log_file, load_pickled_dataframes, get_scenario_outputs
         #
-        # # todo: pd.NaT values are not carried over when excel file was created.
-        # todo replace with pickles
-        # # df = self.sim.population.props
-        # # population = df.loc[df.is_alive]
-        # # for column in df.columns:
-        # #     df.loc[population.index, column] = cohort_prop_df_for_pop[column]
+        # log_file = parse_log_file(
+        #      '/Users/j_collins/PycharmProjects/TLOmodel/outputs/sejjj49@ucl.ac.uk/'
+        #      'fullmodel_200k_cohort-2024-04-24T072206Z/0/0/fullmodel_200k_cohort__2024-04-24T072516.log',
+        #      level=logging.DEBUG)['tlo.methods.contraception']
         #
-        df = self.sim.population.props
-        population = df.loc[df.is_alive]
-        df.loc[population.index, 'date_of_last_pregnancy'] = sim.start_date
-        df.loc[population.index, 'co_contraception'] = "not_using"
-
+        # all_pregnancies = log_file['properties_of_pregnant_person'].loc[
+        #     log_file['properties_of_pregnant_person'].date.dt.year == 2024].drop(columns=['date'])
+        # all_pregnancies.index = [x for x in range(len(all_pregnancies))]
+        #
+        # preg_pop = all_pregnancies.loc[0:(len(self.sim.population.props))-1]
+        #
+        # props_dtypes = self.sim.population.props.dtypes
+        # preg_pop_final = preg_pop.astype(props_dtypes.to_dict())
+        # preg_pop_final.index.name = 'person'
+        #
+        # self.sim.population.props = preg_pop_final
+        #
+        # df = self.sim.population.props
+        # population = df.loc[df.is_alive]
+        # df.loc[population.index, 'date_of_last_pregnancy'] = sim.start_date
+        # df.loc[population.index, 'co_contraception'] = "not_using"
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -106,7 +130,7 @@ class MaternalNewbornHealthCohort(Module):
         :param mother_id: the mother for this child
         :param child_id: the new child
         """
-        raise NotImplementedError
+        pass
 
     def report_daly_values(self):
         """
@@ -120,141 +144,11 @@ class MaternalNewbornHealthCohort(Module):
         df = self.sim.population.props
         return pd.Series(index=df.index[df.is_alive],data=0.0)
         """
-        raise NotImplementedError
+        pass
 
     def on_hsi_alert(self, person_id, treatment_id):
         """
         This is called whenever there is an HSI event commissioned by one of the other disease modules.
         """
 
-        raise NotImplementedError
-
-
-# ---------------------------------------------------------------------------------------------------------
-#   DISEASE MODULE EVENTS
-#
-#   These are the events which drive the simulation of the disease. It may be a regular event that updates
-#   the status of all the population of subsections of it at one time. There may also be a set of events
-#   that represent disease events for particular persons.
-# ---------------------------------------------------------------------------------------------------------
-
-class Skeleton_Event(RegularEvent, PopulationScopeEventMixin):
-    """A skeleton class for an event
-
-    Regular events automatically reschedule themselves at a fixed frequency,
-    and thus implement discrete timestep type behaviour. The frequency is
-    specified when calling the base class constructor in our __init__ method.
-    """
-
-    def __init__(self, module):
-        """One line summary here
-
-        We need to pass the frequency at which we want to occur to the base class
-        constructor using super(). We also pass the module that created this event,
-        so that random number generators can be scoped per-module.
-
-        :param module: the module that created this event
-        """
-        super().__init__(module, frequency=DateOffset(months=1))
-        assert isinstance(module, MaternalNewbornHealthCohort)
-
-    def apply(self, population):
-        """Apply this event to the population.
-
-        :param population: the current population
-        """
-        raise NotImplementedError
-
-
-# ---------------------------------------------------------------------------------------------------------
-#   LOGGING EVENTS
-#
-#   Put the logging events here. There should be a regular logger outputting current states of the
-#   population. There may also be a logging event that is driven by particular events.
-# ---------------------------------------------------------------------------------------------------------
-
-class Skeleton_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
-    def __init__(self, module):
-        """Produce a summary of the numbers of people with respect to the action of this module.
-        This is a regular event that can output current states of people or cumulative events since last logging event.
-        """
-
-        # run this event every year
-        self.repeat = 12
-        super().__init__(module, frequency=DateOffset(months=self.repeat))
-        assert isinstance(module, MaternalNewbornHealthCohort)
-
-    def apply(self, population):
-        # Make some summary statistics
-
-        dict_to_output = {
-            'Metric_One': 1.0,
-            'Metric_Two': 2.0
-        }
-
-        logger.info(key='summary_12m', data=dict_to_output)
-
-
-# ---------------------------------------------------------------------------------------------------------
-#   HEALTH SYSTEM INTERACTION EVENTS
-#
-#   Here are all the different Health System Interactions Events that this module will use.
-# ---------------------------------------------------------------------------------------------------------
-
-class HSI_Skeleton_Example_Interaction(HSI_Event, IndividualScopeEventMixin):
-    """This is a Health System Interaction Event. An interaction with the healthsystem are encapsulated in events
-    like this.
-    It must begin HSI_<Module_Name>_Description
-    """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, MaternalNewbornHealthCohort)
-
-        # Define the appointments types needed
-        the_appt_footprint = self.make_appt_footprint({'Over5OPD': 1})  # This requires one adult out-patient appt.
-
-        # Define the facilities at which this event can occur (only one is allowed)
-        # Choose from: list(pd.unique(self.sim.modules['HealthSystem'].parameters['Facilities_For_Each_District']
-        #                            ['Facility_Level']))
-        the_accepted_facility_level = 0
-
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Skeleton_Example_Interaction'  # This must begin with the module name
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = the_accepted_facility_level
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id, squeeze_factor):
-        """
-        Do the action that take place in this health system interaction, in light of prevailing conditions in the
-        healthcare system:
-
-            * squeeze_factor (an argument provided to the event) indicates the extent to which this HSI_Event is being
-              run in the context of an over-burdened healthcare facility.
-            * bed_days_allocated_to_this_event (a property of the event) indicates the number and types of bed-days
-              that have been allocated to this event.
-
-        Can return an updated APPT_FOOTPRINT if this differs from the declaration in self.EXPECTED_APPT_FOOTPRINT
-
-        To request consumables use - self.get_all_consumables(item_codes=my_item_codes)
-        """
-        pass
-
-    def did_not_run(self):
-        """
-        Do any action that is necessary each time when the health system interaction is not run.
-        This is called each day that the HSI is 'due' but not run due to insufficient health system capabilities.
-        Return False to cause this HSI event not to be rescheduled and to therefore never be run.
-        (Returning nothing or True will cause this event to be rescheduled for the next day.)
-        """
-        pass
-
-    def never_ran(self):
-        """
-        Do any action that is necessary when it is clear that the HSI event will never be run. This will occur if it
-        has not run and the simulation date has passed the date 'tclose' by which the event was scheduled to have
-        occurred.
-        Do not return anything.
-        """
         pass
