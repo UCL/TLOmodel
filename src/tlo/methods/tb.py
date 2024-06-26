@@ -375,7 +375,7 @@ class Tb(Module):
             Types.BOOL,
             "argument to determine whether scale-up of program will be implemented"),
         "scaleup_start": Parameter(
-            Types.DATE,
+            Types.INT,
             "number of years after state date at which program scale-up will occur"),
         "scaleup_parameters": Parameter(
             Types.DATA_FRAME,
@@ -859,7 +859,7 @@ class Tb(Module):
         # 2) log at the end of the year
         # Optional: Schedule the scale-up of programs
         if self.parameters["do_scaleup"]:
-            scaleup_start_date = sim.date + DateOffset(years=self.parameters["scaleup_start_date"])
+            scaleup_start_date = sim.date + DateOffset(years=self.parameters["scaleup_start"])
 
             assert isinstance(scaleup_start_date, Date), "Value is not a Date object"
             # Check if scale-up start date is on or after sim start date

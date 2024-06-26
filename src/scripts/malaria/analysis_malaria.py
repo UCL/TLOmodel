@@ -88,9 +88,9 @@ sim.register(
 sim.modules["Hiv"].parameters["do_scaleup"] = True
 sim.modules["Tb"].parameters["do_scaleup"] = True
 sim.modules["Malaria"].parameters["do_scaleup"] = True
-sim.modules["Hiv"].parameters["scaleup_start_date"] = Date(2011, 1, 1)
-sim.modules["Tb"].parameters["scaleup_start_date"] = Date(2011, 1, 1)
-sim.modules["Malaria"].parameters["scaleup_start_date"] = Date(2011, 1, 1)
+sim.modules["Hiv"].parameters["scaleup_start"] = 2
+sim.modules["Tb"].parameters["scaleup_start"] = 2
+sim.modules["Malaria"].parameters["scaleup_start"] = 2
 
 
 # Run the simulation and flush the logger
