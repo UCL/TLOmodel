@@ -5,6 +5,7 @@ and produces plots for HIV, TB and malaria incidence
 
 import datetime
 from pathlib import Path
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
