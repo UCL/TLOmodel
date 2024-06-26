@@ -684,7 +684,7 @@ ax1.errorbar([2,6,10,14,18], median_le.loc['F'],
              ecolor=sex_col[1])
 
 # Hide gridlines
-ax1.grid(visible=False)
+ax1.grid(axis='y', linestyle='--', color='lightgrey')
 
 ax1.set_ylim(40, 75)
 ax1.set_ylabel('Life expectancy, years')
@@ -719,8 +719,10 @@ ax1.legend(
 bars = ax2.bar(
     xvals,
     deaths_for_plot,
-    color=colours
+    color=colours,
+    zorder=2
 )
+ax2.grid(axis='y', linestyle='--', color='lightgrey', which='both', zorder=0)
 
 for bar, neg_err, pos_err, color in zip(bars,
                                         array2,
@@ -737,7 +739,6 @@ ax2.set_ylabel('Mortality rate per 1000py \n (log-scale)')
 
 for i in [4.5, 8.5, 12.5, 16.5]:
     ax2.axvline(x=i, color='grey', linestyle='--', linewidth=1)
-
 
 # Custom tick labels for ax2
 custom_tick_labels = [
