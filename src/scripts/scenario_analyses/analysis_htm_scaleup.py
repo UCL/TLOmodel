@@ -29,7 +29,20 @@ tlo scenario-run src/scripts/scenario_analyses/analysis_htm_scaleup.py --draw 1 
 from pathlib import Path
 
 from tlo import Date, logging
-from tlo.methods.fullmodel import fullmodel
+# from tlo.methods.fullmodel import fullmodel
+from tlo.methods import (
+    demography,
+    enhanced_lifestyle,
+    epi,
+    healthburden,
+    healthseekingbehaviour,
+    healthsystem,
+    hiv,
+    malaria,
+    simplified_births,
+    symptommanager,
+    tb,
+)
 from tlo.scenario import BaseScenario
 
 
@@ -39,7 +52,7 @@ class EffectOfProgrammes(BaseScenario):
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2020, 1, 1)
-        self.pop_size = 10_000
+        self.pop_size = 75_000
         self.number_of_draws = 4
         self.runs_per_draw = 1
 
@@ -53,16 +66,28 @@ class EffectOfProgrammes(BaseScenario):
                 'tlo.methods.tb': logging.INFO,
                 'tlo.methods.malaria': logging.INFO,
                 'tlo.methods.demography': logging.INFO,
-                'tlo.methods.healthsystem.summary': logging.INFO,
-                'tlo.methods.healthburden': logging.INFO
             }
         }
 
     def modules(self):
-        return fullmodel(resourcefilepath=self.resources)
+        # return fullmodel(resourcefilepath=self.resources)
+
+        return [
+            demography.Demography(resourcefilepath=self.resources),
+            simplified_births.SimplifiedBirths(resourcefilepath=self.resources),
+            enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
+            healthsystem.HealthSystem(resourcefilepath=self.resources),
+            symptommanager.SymptomManager(resourcefilepath=self.resources),
+            healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
+            healthburden.HealthBurden(resourcefilepath=self.resources),
+            epi.Epi(resourcefilepath=self.resources),
+            hiv.Hiv(resourcefilepath=self.resources),
+            tb.Tb(resourcefilepath=self.resources),
+            malaria.Malaria(resourcefilepath=self.resources),
+        ]
 
     def draw_parameters(self, draw_number, rng):
-        scaleup_start = 5
+        scaleup_start = 2
 
         return {
             'Hiv': {
@@ -84,3 +109,5 @@ if __name__ == '__main__':
     from tlo.cli import scenario_run
 
     scenario_run([__file__])
+
+
