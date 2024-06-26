@@ -26,9 +26,9 @@ except NameError:
     # running interactively
     resourcefilepath = "resources"
 
-
-scaleup_start_date = Date(2012, 1, 1)
-end_date = scaleup_start_date + pd.DateOffset(years=1)
+start_date = Date(2010, 1, 1)
+years_until_scale_up = 2
+end_date = start_date + pd.DateOffset(years=years_until_scale_up+1)
 
 
 def get_sim(seed):
@@ -36,7 +36,6 @@ def get_sim(seed):
     register all necessary modules for the tests to run
     """
 
-    start_date = Date(2010, 1, 1)
     sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the appropriate modules
@@ -68,8 +67,7 @@ def get_sim(seed):
 
 def check_initial_params(sim):
 
-    original_params = pd.read_excel(Path(__file__).parent.parent / 'resources' / 'ResourceFile_HIV.xlsx',
-                                    sheet_name='parameters')
+    original_params = pd.read_excel(resourcefilepath / 'ResourceFile_HIV.xlsx', sheet_name='parameters')
 
     # todo do we need to be exhaustive and check every parameter here?
     # check initial parameters
@@ -89,10 +87,8 @@ def test_hiv_scale_up(seed):
     """ test hiv program scale-up changes parameters correctly
     and on correct date """
 
-    hiv_workbook = pd.read_excel(Path(__file__).parent.parent / 'resources' / 'ResourceFile_HIV.xlsx', sheet_name=None)
-
-    original_params = hiv_workbook["parameters"]
-    new_params = hiv_workbook["scaleup_parameters"]
+    original_params = pd.read_excel(resourcefilepath / 'ResourceFile_HIV.xlsx', sheet_name="parameters")
+    new_params = pd.read_excel(resourcefilepath / 'ResourceFile_HIV.xlsx', sheet_name="scaleup_parameters")
 
     popsize = 100
 
@@ -103,7 +99,7 @@ def test_hiv_scale_up(seed):
 
     # update parameters
     sim.modules["Hiv"].parameters["do_scaleup"] = True
-    sim.modules["Hiv"].parameters["scaleup_start_date"] = scaleup_start_date
+    sim.modules["Hiv"].parameters["scaleup_start"] = years_until_scale_up
 
     # Make the population
     sim.make_initial_population(n=popsize)
@@ -122,11 +118,10 @@ def test_hiv_scale_up(seed):
         new_params.parameter == "prob_circ_after_hiv_test", "scaleup_value"].values[0]
 
     # check malaria parameters unchanged
-    mal_workbook = pd.read_excel(Path(__file__).parent.parent / 'resources' / 'malaria' / 'ResourceFile_malaria.xlsx',
-                                 sheet_name=None)
-
-    mal_original_params = mal_workbook["parameters"]
-    mal_rdt_testing = mal_workbook["WHO_TestData2023"]
+    mal_original_params = pd.read_excel(resourcefilepath / 'malaria' / 'ResourceFile_malaria.xlsx',
+                                        sheet_name="parameters")
+    mal_rdt_testing = pd.read_excel(resourcefilepath / 'malaria' / 'ResourceFile_malaria.xlsx',
+                                    sheet_name="WHO_TestData2023")
 
     assert sim.modules["Malaria"].parameters["prob_malaria_case_tests"] == mal_original_params.loc[
         mal_original_params.parameter_name == "prob_malaria_case_tests", "value"].values[0]
@@ -140,11 +135,8 @@ def test_hiv_scale_up(seed):
         mal_original_params.parameter_name == "itn", "value"].values[0]
 
     # check tb parameters unchanged
-    tb_workbook = pd.read_excel(Path(__file__).parent.parent / 'resources' / 'ResourceFile_TB.xlsx',
-                                sheet_name=None)
-
-    tb_original_params = tb_workbook["parameters"]
-    tb_testing = tb_workbook["NTP2019"]
+    tb_original_params = pd.read_excel(resourcefilepath / 'ResourceFile_TB.xlsx', sheet_name="parameters")
+    tb_testing = pd.read_excel(resourcefilepath / 'ResourceFile_TB.xlsx', sheet_name="NTP2019")
 
     pd.testing.assert_series_equal(sim.modules["Tb"].parameters["rate_testing_active_tb"]["treatment_coverage"],
                                    tb_testing["treatment_coverage"])
@@ -164,11 +156,9 @@ def test_htm_scale_up(seed):
     """ test hiv/tb/malaria program scale-up changes parameters correctly
     and on correct date """
 
-    hiv_workbook = pd.read_excel(Path(__file__).parent.parent / 'resources' / 'ResourceFile_HIV.xlsx', sheet_name=None)
-
     # Load data on HIV prevalence
-    original_hiv_params = hiv_workbook["parameters"]
-    new_hiv_params = hiv_workbook["scaleup_parameters"]
+    original_hiv_params = pd.read_excel(resourcefilepath / 'ResourceFile_HIV.xlsx', sheet_name="parameters")
+    new_hiv_params = pd.read_excel(resourcefilepath / 'ResourceFile_HIV.xlsx', sheet_name="scaleup_parameters")
 
     popsize = 100
 
@@ -179,11 +169,11 @@ def test_htm_scale_up(seed):
 
     # update parameters
     sim.modules["Hiv"].parameters["do_scaleup"] = True
-    sim.modules["Hiv"].parameters["scaleup_start_date"] = scaleup_start_date
+    sim.modules["Hiv"].parameters["scaleup_start"] = years_until_scale_up
     sim.modules["Tb"].parameters["do_scaleup"] = True
-    sim.modules["Tb"].parameters["scaleup_start_date"] = scaleup_start_date
+    sim.modules["Tb"].parameters["scaleup_start"] = years_until_scale_up
     sim.modules["Malaria"].parameters["do_scaleup"] = True
-    sim.modules["Malaria"].parameters["scaleup_start_date"] = scaleup_start_date
+    sim.modules["Malaria"].parameters["scaleup_start"] = years_until_scale_up
 
     # Make the population
     sim.make_initial_population(n=popsize)
@@ -202,8 +192,8 @@ def test_htm_scale_up(seed):
         new_hiv_params.parameter == "prob_circ_after_hiv_test", "scaleup_value"].values[0]
 
     # check malaria parameters changed
-    mal_workbook = pd.read_excel(Path(__file__).parent.parent / 'resources' / 'malaria' / 'ResourceFile_malaria.xlsx', sheet_name=None)
-    new_mal_params = mal_workbook["scaleup_parameters"]
+    new_mal_params = pd.read_excel(resourcefilepath / 'malaria' / 'ResourceFile_malaria.xlsx',
+                                   sheet_name="scaleup_parameters")
 
     assert sim.modules["Malaria"].parameters["prob_malaria_case_tests"] == new_mal_params.loc[
         new_mal_params.parameter == "prob_malaria_case_tests", "scaleup_value"].values[0]
@@ -217,8 +207,7 @@ def test_htm_scale_up(seed):
         new_mal_params.parameter == "itn", "scaleup_value"].values[0]
 
     # check tb parameters changed
-    tb_workbook = pd.read_excel(Path(__file__).parent.parent / 'resources' / 'ResourceFile_TB.xlsx', sheet_name=None)
-    new_tb_params = tb_workbook["scaleup_parameters"]
+    new_tb_params = pd.read_excel(resourcefilepath / 'ResourceFile_TB.xlsx', sheet_name="scaleup_parameters")
 
     assert sim.modules["Tb"].parameters["rate_testing_active_tb"]["treatment_coverage"].eq(new_tb_params.loc[
         new_tb_params.parameter == "tb_treatment_coverage", "scaleup_value"].values[0]).all()
