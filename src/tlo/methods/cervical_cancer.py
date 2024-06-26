@@ -1648,7 +1648,7 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         selected_rows = df[(df['sex'] == 'F') & (df['age_years'] > 15) & df['is_alive']]
 
 #       pd.set_option('display.max_rows', None)
-        print(selected_rows[selected_columns])
+#       print(selected_rows[selected_columns])
 
 #       selected_columns = ['sex', 'age_years', 'is_alive']
 #       pd.set_option('display.max_rows', None)
