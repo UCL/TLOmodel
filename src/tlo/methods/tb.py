@@ -386,7 +386,7 @@ class Tb(Module):
             "number of years after state date at which program scale-up will occur"
         ),
         "scaleup_parameters": Parameter(
-            Types.DATA_FRAME,
+            Types.DICT,
             "the parameters and values changed in scenario analysis"
         )
     }
@@ -427,7 +427,7 @@ class Tb(Module):
         )
 
         # load parameters for scale-up projections
-        p["scaleup_parameters"] = workbook["scaleup_parameters"]
+        p["scaleup_parameters"] = workbook["scaleup_parameters"].set_index('parameter')['scaleup_value'].to_dict()
 
         # 2) Get the DALY weights
         if "HealthBurden" in self.sim.modules.keys():
@@ -898,30 +898,21 @@ class Tb(Module):
 
             # scale-up TB program
             # use NTP treatment rates
-            p["rate_testing_active_tb"]["treatment_coverage"] = scaled_params.loc[
-                scaled_params.parameter == "tb_treatment_coverage", "scaleup_value"].values[0]
+            p["rate_testing_active_tb"]["treatment_coverage"] = scaled_params["tb_treatment_coverage"]
 
             # increase tb treatment success rates
-            p["prob_tx_success_ds"] = scaled_params.loc[
-                scaled_params.parameter == "tb_prob_tx_success_ds", "scaleup_value"].values[0]
-            p["prob_tx_success_mdr"] = scaled_params.loc[
-                scaled_params.parameter == "tb_prob_tx_success_mdr", "scaleup_value"].values[0]
-            p["prob_tx_success_0_4"] = scaled_params.loc[
-                scaled_params.parameter == "tb_prob_tx_success_0_4", "scaleup_value"].values[0]
-            p["prob_tx_success_5_14"] = scaled_params.loc[
-                scaled_params.parameter == "tb_prob_tx_success_5_14", "scaleup_value"].values[0]
+            p["prob_tx_success_ds"] = scaled_params["tb_prob_tx_success_ds"]
+            p["prob_tx_success_mdr"] = scaled_params["tb_prob_tx_success_mdr"]
+            p["prob_tx_success_0_4"] = scaled_params["tb_prob_tx_success_0_4"]
+            p["prob_tx_success_5_14"] = scaled_params["tb_prob_tx_success_5_14"]
 
             # change first-line testing for TB to xpert
-            p["first_line_test"] = scaled_params.loc[
-                scaled_params.parameter == "first_line_test", "scaleup_value"].values[0]
-            p["second_line_test"] = scaled_params.loc[
-                scaled_params.parameter == "second_line_test", "scaleup_value"].values[0]
+            p["first_line_test"] = scaled_params["first_line_test"]
+            p["second_line_test"] = scaled_params["second_line_test"]
 
             # increase coverage of IPT
-            p["ipt_coverage"]["coverage_plhiv"] = scaled_params.loc[
-                scaled_params.parameter == "ipt_coverage_plhiv", "scaleup_value"].values[0]
-            p["ipt_coverage"]["coverage_paediatric"] = scaled_params.loc[
-                scaled_params.parameter == "ipt_coverage_paediatric", "scaleup_value"].values[0]
+            p["ipt_coverage"]["coverage_plhiv"] = scaled_params["ipt_coverage_plhiv"]
+            p["ipt_coverage"]["coverage_paediatric"] = scaled_params["ipt_coverage_paediatric"]
 
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual

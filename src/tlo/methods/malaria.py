@@ -199,7 +199,7 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
             "number of years after state date at which program scale-up will occur"
         ),
         "scaleup_parameters": Parameter(
-            Types.DATA_FRAME,
+            Types.DICT,
             "the parameters and values changed in scenario analysis"
         )
     }
@@ -261,7 +261,7 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         p['sev_inc'] = pd.read_csv(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria_SevInc_expanded.csv')
 
         # load parameters for scale-up projections
-        p["scaleup_parameters"] = workbook["scaleup_parameters"]
+        p["scaleup_parameters"] = workbook["scaleup_parameters"].set_index('parameter')['scaleup_value'].to_dict()
 
         # check itn projected values are <=0.7 and rounded to 1dp for matching to incidence tables
         p['itn'] = round(p['itn'], 1)
@@ -670,14 +670,11 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
             # scale-up malaria program
             # increase testing
             # prob_malaria_case_tests=0.4 default
-            p["prob_malaria_case_tests"] = scaled_params.loc[
-                scaled_params.parameter == "prob_malaria_case_tests", "scaleup_value"].values[0]
+            p["prob_malaria_case_tests"] = scaled_params["prob_malaria_case_tests"]
 
             # gen pop testing rates
             # annual Rate_rdt_testing=0.64 at 2023
-            p["rdt_testing_rates"]["Rate_rdt_testing"] = \
-                scaled_params.loc[
-                    scaled_params.parameter == "rdt_testing_rates", "scaleup_value"].values[0]
+            p["rdt_testing_rates"]["Rate_rdt_testing"] = scaled_params["rdt_testing_rates"]
 
             # treatment reaches XX
             # no default between testing and treatment, governed by tx availability
@@ -686,8 +683,7 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
             # given during ANC visits and MalariaIPTp Event which selects ALL eligible women
 
             # treatment success reaches 1 - default is currently 1 also
-            p["prob_of_treatment_success"] = scaled_params.loc[
-                scaled_params.parameter == "prob_of_treatment_success", "scaleup_value"].values[0]
+            p["prob_of_treatment_success"] = scaled_params["prob_of_treatment_success"]
 
             # bednet and ITN coverage
             # set IRS for 4 high-risk districts
@@ -701,19 +697,16 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
                 highrisk_distr_num)
 
             # IRS values can be 0 or 0.8 - no other value in lookup table
-            self.itn_irs['irs_rate'].loc[mask] = scaled_params.loc[
-                scaled_params.parameter == "irs_district", "scaleup_value"].values[0]
+            self.itn_irs['irs_rate'].loc[mask] = scaled_params["irs_district"]
 
             # set ITN for all districts
             # Set these values to 0.7 - this is the max value possible in lookup table
             # equivalent to 0.7 of all pop sleeping under bednet
             # household coverage could be 100%, but not everyone in household sleeping under bednet
-            self.itn_irs['itn_rate'] = scaled_params.loc[
-                scaled_params.parameter == "itn_district", "scaleup_value"].values[0]
+            self.itn_irs['itn_rate'] = scaled_params["itn_district"]
 
             # itn rates for 2019 onwards
-            p["itn"] = scaled_params.loc[
-                scaled_params.parameter == "itn", "scaleup_value"].values[0]
+            p["itn"] = scaled_params["itn"]
 
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
