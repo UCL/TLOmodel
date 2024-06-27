@@ -56,7 +56,6 @@ def check_initial_params(sim):
 
     original_params = pd.read_excel(resourcefilepath / 'ResourceFile_HIV.xlsx', sheet_name='parameters')
 
-    # todo do we need to be exhaustive and check every parameter here?
     # check initial parameters
     assert sim.modules["Hiv"].parameters["beta"] == \
            original_params.loc[original_params.parameter_name == "beta", "value"].values[0]
@@ -84,7 +83,7 @@ def test_hiv_scale_up(seed):
     # check initial parameters
     check_initial_params(sim)
 
-    # update parameters
+    # update parameters to instruct there to be a scale-up
     sim.modules["Hiv"].parameters["do_scaleup"] = True
     sim.modules["Hiv"].parameters["scaleup_start"] = years_until_scale_up
 
