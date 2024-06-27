@@ -7,6 +7,7 @@ The scenarios are:
 *1 scale-up HIV program
 *2 scale-up TB program
 *3 scale-up malaria program
+*4 scale-up HIV and Tb and malaria programs
 
 scale-up occurs on the default scale-up start date (01/01/2025: in parameters list of resourcefiles)
 
