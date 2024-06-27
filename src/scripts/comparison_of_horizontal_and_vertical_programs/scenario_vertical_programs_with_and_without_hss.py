@@ -19,7 +19,7 @@ from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScen
 from tlo.scenario import BaseScenario
 
 
-class HorizontalAndVerticalPrograms(BaseScenario):
+class HTMWithAndWithoutHSS(BaseScenario):
     def __init__(self):
         super().__init__()
         self.seed = 0
@@ -32,7 +32,7 @@ class HorizontalAndVerticalPrograms(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'horizontal_and_vertical_programs',
+            'filename': 'htm_with_and_without_hss',
             'directory': Path('./outputs'),
             'custom_levels': {
                 '*': logging.WARNING,
