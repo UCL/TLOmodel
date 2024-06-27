@@ -870,7 +870,7 @@ class Tb(Module):
         if self.parameters["do_scaleup"]:
             scaleup_start_date = Date(self.parameters["scaleup_start_year"], 1, 1)
             assert scaleup_start_date >= self.sim.start_date, f"Date {scaleup_start_date} is before simulation starts."
-            sim.schedule_event(ScaleUpSetupEvent(self), scaleup_start_date)
+            sim.schedule_event(TbScaleUpEvent(self), scaleup_start_date)
 
         # 2) log at the end of the year
         sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(years=1))
@@ -1415,7 +1415,7 @@ class TbRegularEvents(RegularEvent, PopulationScopeEventMixin):
         self.module.relapse_event(population)
 
 
-class ScaleUpSetupEvent(Event, PopulationScopeEventMixin):
+class TbScaleUpEvent(Event, PopulationScopeEventMixin):
     """ This event exists to change parameters or functions
     depending on the scenario for projections which has been set
     It only occurs once on date: scaleup_start_date,

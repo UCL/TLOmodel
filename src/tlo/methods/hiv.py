@@ -914,7 +914,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         if self.parameters["do_scaleup"]:
             scaleup_start_date = Date(self.parameters["scaleup_start_year"], 1, 1)
             assert scaleup_start_date >= self.sim.start_date, f"Date {scaleup_start_date} is before simulation starts."
-            sim.schedule_event(ScaleUpSetupEvent(self), scaleup_start_date)
+            sim.schedule_event(HivScaleUpEvent(self), scaleup_start_date)
 
         # 3) Determine who has AIDS and impose the Symptoms 'aids_symptoms'
 
@@ -2274,7 +2274,7 @@ class Hiv_DecisionToContinueTreatment(Event, IndividualScopeEventMixin):
             )
 
 
-class ScaleUpSetupEvent(Event, PopulationScopeEventMixin):
+class HivScaleUpEvent(Event, PopulationScopeEventMixin):
     """ This event exists to change parameters or functions
     depending on the scenario for projections which has been set
     It only occurs once on date: scaleup_start_date,

@@ -602,7 +602,7 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         if self.parameters["do_scaleup"]:
             scaleup_start_date = Date(self.parameters["scaleup_start_year"], 1, 1)
             assert scaleup_start_date >= self.sim.start_date, f"Date {scaleup_start_date} is before simulation starts."
-            sim.schedule_event(ScaleUpSetupEvent(self), scaleup_start_date)
+            sim.schedule_event(MalariaScaleUpEvent(self), scaleup_start_date)
 
         # 2) ----------------------------------- DIAGNOSTIC TESTS -----------------------------------
         # Create the diagnostic test representing the use of RDT for malaria diagnosis
@@ -894,7 +894,7 @@ class MalariaPollingEventDistrict(RegularEvent, PopulationScopeEventMixin):
         self.module.general_population_rdt_scheduler(population)
 
 
-class ScaleUpSetupEvent(Event, PopulationScopeEventMixin):
+class MalariaScaleUpEvent(Event, PopulationScopeEventMixin):
     """ This event exists to change parameters or functions
     depending on the scenario for projections which has been set
     It only occurs once on date: scaleup_start_date,
