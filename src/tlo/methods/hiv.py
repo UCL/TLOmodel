@@ -2467,17 +2467,6 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
             # set cap for number of repeat tests
             self.counter_for_test_not_available += 1  # The current appointment is included in the count.
 
-            if (
-                self.counter_for_test_not_available
-                <= self.module.parameters["hiv_healthseekingbehaviour_cap"]
-            ):
-                # repeat appt for HIV test
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    self,
-                    topen=self.sim.date + pd.DateOffset(days=7),
-                    tclose=None,
-                    priority=0,
-                )
 
             if (
                 self.counter_for_test_not_available
