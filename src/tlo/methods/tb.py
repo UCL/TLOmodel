@@ -884,7 +884,7 @@ class Tb(Module):
                 TbCheckPropertiesEvent(self), sim.date + pd.DateOffset(months=1)
             )
 
-    def update_parameters(self):
+    def update_parameters_for_program_scaleup(self):
 
         p = self.parameters
         scaled_params = p["scaleup_parameters"]
@@ -1427,7 +1427,7 @@ class ScaleUpSetupEvent(Event, PopulationScopeEventMixin):
 
     def apply(self, population):
 
-        self.module.update_parameters()
+        self.module.update_parameters_for_program_scaleup()
 
 
 class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):

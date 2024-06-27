@@ -1098,7 +1098,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             )
         )
 
-    def update_parameters(self):
+    def update_parameters_for_program_scaleup(self):
 
         p = self.parameters
         scaled_params = p["scaleup_parameters"]
@@ -2285,8 +2285,7 @@ class ScaleUpSetupEvent(Event, PopulationScopeEventMixin):
         super().__init__(module)
 
     def apply(self, population):
-
-        self.module.update_parameters()
+        self.module.update_parameters_for_program_scaleup()
 
 
 # ---------------------------------------------------------------------------
