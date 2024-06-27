@@ -39,16 +39,7 @@ def get_sim(seed):
         demography.Demography(resourcefilepath=resourcefilepath),
         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(
-            resourcefilepath=resourcefilepath,
-            service_availability=["*"],  # all treatment allowed
-            mode_appt_constraints=1,  # mode of constraints to do with officer numbers and time
-            cons_availability="default",  # mode for consumable constraints (if ignored, all consumables available)
-            ignore_priority=True,  # do not use the priority information in HSI event to schedule
-            capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
-            disable=False,  # disables the healthsystem (no constraints and no logging) and every HSI runs
-            disable_and_reject_all=False,  # disable healthsystem and no HSI runs
-        ),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
