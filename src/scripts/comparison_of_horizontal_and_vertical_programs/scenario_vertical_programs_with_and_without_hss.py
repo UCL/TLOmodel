@@ -3,7 +3,7 @@
 Run on the batch system using:
 ```
 tlo batch-submit
- src/scripts/comparison_of_horizontal_and_vertical_programs/scenario_hss_elements.py
+ src/scripts/comparison_of_horizontal_and_vertical_programs/scenario_vertical_programs_with_and_without_hss.py
 ```
 
 """
