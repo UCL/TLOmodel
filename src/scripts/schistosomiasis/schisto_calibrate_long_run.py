@@ -70,7 +70,7 @@ def run_simulation(popsize,
                                        equal_allocation_by_district=equal_allocation_by_district),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 # healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  # healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            disable_and_reject_all=hs_disable_and_reject_all),
@@ -82,8 +82,7 @@ def run_simulation(popsize,
                      ]
                  ),
 
-                 schisto.Schisto(resourcefilepath=resourcefilepath, mda_execute=mda_execute,
-                                 scaleup_WASH=scaleup_WASH),
+                 schisto.Schisto(resourcefilepath=resourcefilepath, mda_execute=mda_execute),
                  )
 
     sim.modules["Schisto"].parameters["calibration_scenario"] = 0
@@ -99,7 +98,7 @@ def run_simulation(popsize,
 
 
 # todo update these parameters
-sim, output = run_simulation(popsize=5_000,
+sim, output = run_simulation(popsize=15_000,
                              use_really_simplified_births=False,
                              equal_allocation_by_district=True,
                              hs_disable_and_reject_all=False,  # if True, no HSIs run

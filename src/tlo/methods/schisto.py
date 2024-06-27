@@ -84,26 +84,30 @@ class Schisto(Module):
         'projection_scenario': Parameter(Types.REAL,
                                          'Scenario used to set parameters for projections'),
         'urine_filtration_sensitivity_moderateWB': Parameter(Types.REAL,
-                                          'Sensitivity of UF in detecting moderate worm burdens'),
+                                                             'Sensitivity of UF in detecting moderate WB'),
         'urine_filtration_sensitivity_highWB': Parameter(Types.REAL,
-                                         'Sensitivity of UF in detecting high worm burdens'),
+                                                         'Sensitivity of UF in detecting high WB'),
         'kato_katz_sensitivity_moderateWB': Parameter(Types.REAL,
-                                        'Sensitivity of KK in detecting moderate worm burdens'),
+                                                      'Sensitivity of KK in detecting moderate WB'),
         'kato_katz_sensitivity_highWB': Parameter(Types.REAL,
-                                        'Sensitivity of KK in detecting high worm burdens'),
+                                                  'Sensitivity of KK in detecting high WB'),
+        'scaleup_WASH': Parameter(Types.BOOL,
+                                                  'Boolean whether to scale-up WASH during simulation'),
+        'scaleup_WASH_start_time': Parameter(Types.INT,
+                                                  'Start date to scale-up WASH, years after sim start date'),
         'MDA_coverage_historical': Parameter(Types.DATA_FRAME,
                                              'Probability of getting PZQ in the MDA for PSAC, SAC and Adults '
                                              'in historic rounds'),
         'MDA_coverage_prognosed': Parameter(Types.DATA_FRAME,
                                             'Probability of getting PZQ in the MDA for PSAC, SAC and Adults '
                                             'in future rounds, with the frequency given in months'),
+        # NOTE add these also to _load_parameters_from_workbook
     }
 
-    def __init__(self, name=None, resourcefilepath=None, mda_execute=True, scaleup_WASH=False):
+    def __init__(self, name=None, resourcefilepath=None, mda_execute=True):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
         self.mda_execute = mda_execute
-        self.scaleup_WASH = scaleup_WASH
 
         # Create pointer that will be to dict of disability weights
         self.disability_weights = None
@@ -200,8 +204,9 @@ class Schisto(Module):
             self._schedule_mda_events()
 
         # schedule WASH scale-up
-        if self.scaleup_WASH:
-            sim.schedule_event(SchistoLoggingEvent(self), sim.date + DateOffset(years=15))
+        if self.parameters['scaleup_WASH']:
+            sim.schedule_event(SchistoWashScaleUp(self),
+                               sim.date + DateOffset(years=self.parameters['scaleup_WASH_start_time']))
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -286,7 +291,9 @@ class Schisto(Module):
                             'urine_filtration_sensitivity_moderateWB',
                             'urine_filtration_sensitivity_highWB',
                             'kato_katz_sensitivity_moderateWB',
-                            'kato_katz_sensitivity_highWB'
+                            'kato_katz_sensitivity_highWB',
+                            'scaleup_WASH',
+                            'scaleup_WASH_start_time'
                             ):
             parameters[_param_name] = float(param_list[_param_name])
 
@@ -495,10 +502,10 @@ class Schisto(Module):
                                                  'fever',
                                                  'ascites',
                                                  'diarrhoea',
-                                                 'vomiting,'
+                                                 'vomiting',
                                                  'hepatomegaly'}
 
-        if set_of_symptoms_indicative_of_schisto.issubset(symptoms):
+        if any(symptom in set_of_symptoms_indicative_of_schisto for symptom in symptoms):
             event = HSI_Schisto_TestingFollowingSymptoms(
                 module=self, person_id=patient_id
             )

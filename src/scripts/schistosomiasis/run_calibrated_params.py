@@ -24,6 +24,7 @@ from tlo.methods import (
     demography,
     enhanced_lifestyle,
     healthsystem,
+    healthseekingbehaviour,
     schisto,
     simplified_births,
     symptommanager,
@@ -64,9 +65,9 @@ class TestScenario(BaseScenario):
                 resourcefilepath=self.resources,
                 disable_and_reject_all=False,  # if True, disable healthsystem and no HSI runs
             ),
+            healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
             symptommanager.SymptomManager(resourcefilepath=self.resources),
             schisto.Schisto(resourcefilepath=self.resources, mda_execute=False),
-
         ]
 
     def draw_parameters(self, draw_number, rng):
