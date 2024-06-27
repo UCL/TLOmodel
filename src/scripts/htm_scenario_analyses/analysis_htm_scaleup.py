@@ -13,16 +13,16 @@ scale-up occurs on the default scale-up start date (01/01/2025: in parameters li
 For all scenarios, keep all default health system settings
 
 check the batch configuration gets generated without error:
-tlo scenario-run --draw-only src/scripts/scenario_analyses/analysis_htm_scaleup.py
+tlo scenario-run --draw-only src/scripts/htm_scenario_analyses/analysis_htm_scaleup.py
 
 Run on the batch system using:
-tlo batch-submit src/scripts/scenario_analyses/analysis_htm_scaleup.py
+tlo batch-submit src/scripts/htm_scenario_analyses/analysis_htm_scaleup.py
 
 or locally using:
-tlo scenario-run src/scripts/scenario_analyses/analysis_htm_scaleup.py
+tlo scenario-run src/scripts/htm_scenario_analyses/analysis_htm_scaleup.py
 
 or execute a single run:
-tlo scenario-run src/scripts/scenario_analyses/analysis_htm_scaleup.py --draw 1 0
+tlo scenario-run src/scripts/htm_scenario_analyses/analysis_htm_scaleup.py --draw 1 0
 
 """
 
