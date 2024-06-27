@@ -86,7 +86,7 @@ class EffectOfProgrammes(BaseScenario):
         ]
 
     def draw_parameters(self, draw_number, rng):
-        scaleup_start = 2012
+        scaleup_start_year = 2012
 
         return {
             'Hiv': {
