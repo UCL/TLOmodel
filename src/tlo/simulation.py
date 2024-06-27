@@ -1,5 +1,5 @@
 """The main simulation controller."""
-
+import os
 import datetime
 import heapq
 import itertools
@@ -312,6 +312,11 @@ class Simulation:
 
         return person_events
 
+    def read_resources(self, *args):
+        """The path to the resourcefile"""
+        self.resourcefilepath = Path('./resources')
+        lastfile = os.path.join(self.resourcefilepath, str(*args))
+        return lastfile
 
 class EventQueue:
     """A simple priority queue for events.
