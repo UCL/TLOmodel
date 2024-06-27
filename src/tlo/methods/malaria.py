@@ -192,13 +192,16 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         # ------------------ scale-up parameters for scenario analysis ------------------ #
         "do_scaleup": Parameter(
             Types.BOOL,
-            "argument to determine whether scale-up of program will be implemented"),
+            "argument to determine whether scale-up of program will be implemented"
+        ),
         "scaleup_start": Parameter(
             Types.INT,
-            "number of years after state date at which program scale-up will occur"),
+            "number of years after state date at which program scale-up will occur"
+        ),
         "scaleup_parameters": Parameter(
             Types.DATA_FRAME,
-            "list of parameters and values changed in scenario analysis")
+            "the parameters and values changed in scenario analysis"
+        )
     }
 
     PROPERTIES = {
