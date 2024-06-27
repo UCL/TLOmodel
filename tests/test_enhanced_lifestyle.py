@@ -64,7 +64,7 @@ def test_properties_and_dtypes(simulation):
     df = simulation.population.props
     orig = simulation.population.new_row
     assert (df.dtypes == orig.dtypes).all()
-
+    print(f'Function Output {simulation.resource_file_path()}')
 
 def test_assign_rural_urban_by_district(simulation):
     """ test linear model integrity in assigning individual rural urban status based on their districts """
