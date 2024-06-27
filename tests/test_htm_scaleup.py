@@ -23,8 +23,8 @@ from tlo.methods import (
 resourcefilepath = Path(os.path.dirname(__file__)) / "../resources"
 
 start_date = Date(2010, 1, 1)
-years_until_scale_up = 2
-end_date = start_date + pd.DateOffset(years=years_until_scale_up+1)
+scaleup_start_year = 2012  # <-- the scale-up will occur on 1st January of that year
+end_date = Date(2013, 1, 1)
 
 
 def get_sim(seed):
@@ -85,7 +85,7 @@ def test_hiv_scale_up(seed):
 
     # update parameters to instruct there to be a scale-up
     sim.modules["Hiv"].parameters["do_scaleup"] = True
-    sim.modules["Hiv"].parameters["scaleup_start"] = years_until_scale_up
+    sim.modules["Hiv"].parameters["scaleup_start_year"] = scaleup_start_year
 
     # Make the population
     sim.make_initial_population(n=popsize)
@@ -155,11 +155,11 @@ def test_htm_scale_up(seed):
 
     # update parameters
     sim.modules["Hiv"].parameters["do_scaleup"] = True
-    sim.modules["Hiv"].parameters["scaleup_start"] = years_until_scale_up
+    sim.modules["Hiv"].parameters["scaleup_start_year"] = scaleup_start_year
     sim.modules["Tb"].parameters["do_scaleup"] = True
-    sim.modules["Tb"].parameters["scaleup_start"] = years_until_scale_up
+    sim.modules["Tb"].parameters["scaleup_start_year"] = scaleup_start_year
     sim.modules["Malaria"].parameters["do_scaleup"] = True
-    sim.modules["Malaria"].parameters["scaleup_start"] = years_until_scale_up
+    sim.modules["Malaria"].parameters["scaleup_start_year"] = scaleup_start_year
 
     # Make the population
     sim.make_initial_population(n=popsize)

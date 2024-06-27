@@ -194,9 +194,9 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
             Types.BOOL,
             "argument to determine whether scale-up of program will be implemented"
         ),
-        "scaleup_start": Parameter(
+        "scaleup_start_year": Parameter(
             Types.INT,
-            "number of years after state date at which program scale-up will occur"
+            "the year when the scale-up starts (it will occur on 1st January of that year)"
         ),
         "scaleup_parameters": Parameter(
             Types.DICT,
@@ -600,13 +600,8 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
 
         # Optional: Schedule the scale-up of programs
         if self.parameters["do_scaleup"]:
-            scaleup_start_date = sim.date + DateOffset(years=self.parameters["scaleup_start"])
-
-            assert isinstance(scaleup_start_date, Date), "Value is not a Date object"
-            # Check if scale-up start date is on or after sim start date
-            assert scaleup_start_date >= Date(2010, 1, 1), \
-                f"Date {scaleup_start_date} is before January 1, 2010"
-
+            scaleup_start_date = Date(self.parameters["scaleup_start_year"], 1, 1)
+            assert scaleup_start_date >= self.sim.start_date, f"Date {scaleup_start_date} is before simulation starts."
             sim.schedule_event(ScaleUpSetupEvent(self), scaleup_start_date)
 
         # 2) ----------------------------------- DIAGNOSTIC TESTS -----------------------------------

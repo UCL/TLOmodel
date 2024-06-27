@@ -87,20 +87,20 @@ class EffectOfProgrammes(BaseScenario):
         ]
 
     def draw_parameters(self, draw_number, rng):
-        scaleup_start = 2
+        scaleup_start = 2012
 
         return {
             'Hiv': {
                 'do_scaleup': [False, True, False, False, True][draw_number],
-                'scaleup_start': scaleup_start
+                'scaleup_start_year': scaleup_start_year
             },
             'Tb': {
                 'do_scaleup': [False, False, True, False, True][draw_number],
-                'scaleup_start':  scaleup_start
+                'scaleup_start_year':  scaleup_start_year
             },
             'Malaria': {
                 'do_scaleup': [False, False, False, True, True][draw_number],
-                'scaleup_start':  scaleup_start
+                'scaleup_start_year':  scaleup_start_year
             },
         }
 
