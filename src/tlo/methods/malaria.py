@@ -265,7 +265,7 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
 
         # check itn projected values are <=0.7 and rounded to 1dp for matching to incidence tables
         p['itn'] = round(p['itn'], 1)
-        assert p['itn'] <= 0.7
+        assert (p['itn'] <= 0.7)
 
         # ===============================================================================
         # single dataframe for itn and irs district/year data; set index for fast lookup

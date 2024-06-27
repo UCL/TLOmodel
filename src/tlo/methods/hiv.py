@@ -1232,7 +1232,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             # usually performed by care_of_women_during_pregnancy module
             if not mother.hv_diagnosed and \
                 mother.is_alive and (
-                    self.rng.random_sample() < p["prob_hiv_test_at_anc_or_delivery"]):
+                self.rng.random_sample() < p["prob_hiv_test_at_anc_or_delivery"]):
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_TestAndRefer(
                         person_id=abs(mother_id),  # Pass mother's id, whether from true or direct birth
@@ -1257,7 +1257,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             )
 
             if "newborn_outcomes" not in self.sim.modules and (
-                    self.rng.random_sample() < p['prob_hiv_test_for_newborn_infant']):
+                self.rng.random_sample() < p['prob_hiv_test_for_newborn_infant']):
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_TestAndRefer(
                         person_id=child_id,
