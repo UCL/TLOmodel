@@ -48,7 +48,13 @@ class Tb(Module):
         # initialise empty dict with set keys
         self.tb_outputs = {k: [] for k in keys}
 
-    INIT_DEPENDENCIES = {"Demography", "HealthSystem", "Lifestyle", "SymptomManager", "Epi"}
+    INIT_DEPENDENCIES = {
+        "Demography",
+        "HealthSystem",
+        "Lifestyle",
+        "SymptomManager",
+        "Epi",
+    }
 
     OPTIONAL_INIT_DEPENDENCIES = {"HealthBurden", "Hiv"}
 
