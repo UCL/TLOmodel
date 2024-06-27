@@ -70,7 +70,6 @@ class EffectOfProgrammes(BaseScenario):
         }
 
     def modules(self):
-        # return fullmodel(resourcefilepath=self.resources)
 
         return [
             demography.Demography(resourcefilepath=self.resources),
