@@ -3,7 +3,7 @@
 Run on the batch system using:
 ```
 tlo batch-submit
- src/scripts/comparison_of_horizontal_and_vertical_programs/scenario_comparison_of_horizontal_and_vertical_programs.py
+ src/scripts/comparison_of_horizontal_and_vertical_programs/scenario_hss_elements.py
 ```
 
 """
@@ -11,6 +11,7 @@ tlo batch-submit
 from pathlib import Path
 from typing import Dict
 
+from scripts.comparison_of_horizontal_and_vertical_programs.scenario_definitions import ScenarioDefinitions
 from tlo import Date, logging
 from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios
 from tlo.methods.fullmodel import fullmodel
@@ -55,6 +56,9 @@ class HorizontalAndVerticalPrograms(BaseScenario):
 
     def _get_scenarios(self) -> Dict[str, Dict]:
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
+        # todo - decide on final definition of scenarios and the scenario package
+        # todo - refactorize to use the ScenariosDefinitions helperclass, which will make sure that this script and
+        #  'scenario_vertical_programs)_with_and_without_hss.py' are synchronised (e.g. baseline and HSS pkg scenarios)
 
         self.YEAR_OF_CHANGE = 2019
         # <-- baseline year of Human Resources for Health is 2018, and this is consistent with calibration during
@@ -202,30 +206,6 @@ class HorizontalAndVerticalPrograms(BaseScenario):
                     },
                 ),
 
-            # ***************************
-            # VERTICAL PROGRAMS
-            # ***************************
-
-            # # - - - HIV - - -
-            # "HIV Programs Scale-up":
-            #     mix_scenarios(
-            #         self._baseline(),
-            #         # todo HIV
-            #     ),
-            #
-            # # - - - TB - - -
-            # "TB Programs Scale-up":
-            #     mix_scenarios(
-            #         self._baseline(),
-            #         # todo TB
-            #     ),
-            #
-            # # - - - MALARIA - - -
-            # "Malaria Programs Scale-up":
-            #     mix_scenarios(
-            #         self._baseline(),
-            #         # todo MALARIA
-            #     ),
         }
 
     def _baseline(self) -> Dict:
