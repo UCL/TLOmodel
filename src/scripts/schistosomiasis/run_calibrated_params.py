@@ -1,26 +1,23 @@
 """
-This file sets the calibration runs
-the calibration parameter calibration_scenario sets the initial worm burden at the start
-of the simulation
+This file uses the calibrated parameters for prop_susceptible
+and runs with no MDA running
+outputs can be plotted against data to check calibration
 
 check the batch configuration gets generated without error:
-tlo scenario-run --draw-only src/scripts/schistosomiasis/calibrate_batch_runs.py
+tlo scenario-run --draw-only src/scripts/schistosomiasis/run_calibrated_params.py
 
 Run locally:
-tlo scenario-run src/scripts/schistosomiasis/calibrate_batch_runs.py
+tlo scenario-run src/scripts/schistosomiasis/run_calibrated_params.py
 
 or execute a single run:
-tlo scenario-run src/scripts/schistosomiasis/calibrate_batch_runs.py --draw 1 0
+tlo scenario-run src/scripts/schistosomiasis/run_calibrated_params.py --draw 1 0
 
 Run on the batch system using:
-tlo batch-submit src/scripts/schistosomiasis/calibrate_batch_runs.py
+tlo batch-submit src/scripts/schistosomiasis/run_calibrated_params.py
 
 """
 
-import os
 import random
-
-import pandas as pd
 
 from tlo import Date, logging
 from tlo.methods import (
@@ -28,24 +25,23 @@ from tlo.methods import (
     enhanced_lifestyle,
     healthsystem,
     schisto,
-    really_simplified_births,
+    simplified_births,
     symptommanager,
 )
 from tlo.scenario import BaseScenario
 
-number_of_draws = 8  # todo reset
-runs_per_draw = 1
+number_of_draws = 1  # todo reset
+runs_per_draw = 4
 
 
 class TestScenario(BaseScenario):
-    # this imports the resource filepath automatically
 
     def __init__(self):
         super().__init__()
         self.seed = random.randint(0, 50000)
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2099, 12, 31)  # todo reset
-        self.pop_size = 5_000  # todo reset
+        self.end_date = Date(2015, 12, 31)  # todo reset
+        self.pop_size = 160_000  # todo reset
         self.number_of_draws = number_of_draws
         self.runs_per_draw = runs_per_draw
 
@@ -62,11 +58,11 @@ class TestScenario(BaseScenario):
     def modules(self):
         return [
             demography.Demography(resourcefilepath=self.resources),
-            really_simplified_births.ReallySimplifiedBirths(resourcefilepath=self.resources),
+            simplified_births.SimplifiedBirths(resourcefilepath=self.resources),
             enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
             healthsystem.HealthSystem(
                 resourcefilepath=self.resources,
-                disable_and_reject_all=True,  # disable healthsystem and no HSI runs
+                disable_and_reject_all=False,  # if True, disable healthsystem and no HSI runs
             ),
             symptommanager.SymptomManager(resourcefilepath=self.resources),
             schisto.Schisto(resourcefilepath=self.resources, mda_execute=False),
@@ -74,12 +70,7 @@ class TestScenario(BaseScenario):
         ]
 
     def draw_parameters(self, draw_number, rng):
-
-        return {
-            'Schisto': {
-                'calibration_scenario': [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0][draw_number],
-            },
-        }
+        return
 
 
 if __name__ == '__main__':

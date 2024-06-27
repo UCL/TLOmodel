@@ -553,8 +553,6 @@ class SchistoSpecies:
                                       ' Efficacy of praziquantel in reducing worm burden'),
             'mean_worm_burden2010': Parameter(Types.DATA_FRAME,
                                               'Mean worm burden per infected person per district in 2010'),
-            # 'prevalence_2010': Parameter(Types.DATA_FRAME,
-            #                              'Initial prevalence in each district in 2010'),
             'prop_susceptible': Parameter(Types.DATA_FRAME,
                                           'Proportion of population in each district susceptible to schisto infection'),
             'gamma_alpha': Parameter(Types.DATA_FRAME, 'Parameter alpha for Gamma distribution for harbouring rates'),
@@ -615,7 +613,6 @@ class SchistoSpecies:
         # todo this is the updated (calibrated) data
         schisto_initial_reservoir = workbook[f'Data_{self.name}'].set_index("District")
         parameters['mean_worm_burden2010'] = schisto_initial_reservoir['Mean_worm_burden']
-        # parameters['prevalence_2010'] = schisto_initial_reservoir['Prevalence']
         parameters['R0'] = schisto_initial_reservoir['R0']
         parameters['gamma_alpha'] = schisto_initial_reservoir['gamma_alpha']
         parameters['prop_susceptible'] = schisto_initial_reservoir['prop_susceptible']
@@ -893,7 +890,6 @@ class SchistoSpecies:
             if len(in_the_district):
                 harbouring_rates = df.loc[in_the_district, prop('harbouring_rate')].values
                 rates = np.multiply(harbouring_rates, contact_and_susceptibility)
-                # reservoir_distr = int(reservoir * len(in_the_district))
 
                 # Distribute a worm burden among persons, according to their 'contact rate'
                 if (reservoir > 0) and (rates.sum() > 0):
@@ -988,12 +984,6 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
         # prop calls the property starting with the prefix species property, i.e. ss_sm or ss_sh
         prop = self.species.prefix_species_property
 
-        # todo remove
-        event = HSI_Schisto_TestingFollowingSymptoms(
-            module=self.module, person_id=10
-        )
-        self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=0, topen=self.sim.date)
-
         # betas (exposure rates) are fixed for each age-group
         # exposure rates determine contribution to transmission and acquisition risk
         betas = [params['beta_PSAC'], params['beta_SAC'], params['beta_Adults']]
@@ -1009,8 +999,6 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
 
         # --------------------- get the size of reservoir per district ---------------------
         # returns the mean worm burden and the total worm burden by age and district
-        # mean_count_burden_district_age_group = df.loc[where].groupby(['district_of_residence', age_group])[
-        #     prop('aggregate_worm_burden')].agg([np.mean, np.size])
         mean_count_burden_district_age_group = \
             df.loc[where].groupby(['district_of_residence', age_group], observed=False)[
                 prop('aggregate_worm_burden')].agg(['mean', 'size'])
@@ -1029,11 +1017,12 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
         reservoir = age_worm_burden.groupby(['district_of_residence'], observed=False).sum()
 
         # --------------------- harbouring new worms ---------------------
+
         # the harbouring rates are randomly assigned to each individual
         # using a gamma distribution to reflect clustering of worms in high-risk people
         # this is not age-specific
         contact_rates = age_group.map(beta_by_age_group).astype(float)
-        # # multiply by susceptibility
+        # multiply by susceptibility
         contact_rates = contact_rates * df.loc[where, prop('susceptibility')]
 
         harbouring_rates = df.loc[where, prop('harbouring_rate')]
