@@ -347,37 +347,43 @@ class Schisto(Module):
         """Look-up the item code for Praziquantel"""
         return self.sim.modules['HealthSystem'].get_item_code_from_item_name("Praziquantel 600mg_1000_CMST")
 
+    def _calculate_praziquantel_dosage(self, person_id):
+        age = self.sim.population.props.at[person_id, "age_years"]
+
+        # PZQ dose is 20mg per 1kg BW, 3x per day
+
+        # assume child 0-5, maximum weight 17.5kg (WHO- average between girls/boys)
+        if age < 5:
+            dose = 20 * 17.5 * 3
+        # child aged 5-15, use mid-point age 10: 50th percentile weight=30kg
+        elif age >= 5 and age < 15:
+            dose = 20 * 30 * 3
+        # adult, average weight 62kg
+        else:
+            dose = 20 * 62 * 3
+
+        return int(dose)
+
     def _get_consumables_for_dx(self):
         p = self.parameters
         hs = self.sim.modules["HealthSystem"]
 
         # diagnostic test consumables
-        # todo update quantities
         self.item_codes_for_consumables_required['malachite_stain'] = hs.get_item_code_from_item_name(
             "Malachite green oxalate")
 
         self.item_codes_for_consumables_required['iodine_stain'] = hs.get_item_code_from_item_name(
-            "Lugol's iodine for staining (1:2:100 aqueous), 1 L_1_IDA")
+            "Iodine strong 10% solution_500ml_CMST")
 
         self.item_codes_for_consumables_required['microscope_slide'] = hs.get_item_code_from_item_name(
-            "Microscope slides, lime-soda-glass, pack of 50")
+            "Microscope slides-frosted end(Tropical packaging)_50_CMST")
 
         self.item_codes_for_consumables_required['filter_paper'] = hs.get_item_code_from_item_name(
-            "Filter paper round, diameter 150, packs of 100")
-
-        # self.item_codes_for_consumables_required['malachite_stain'] = {
-        #     hs.get_item_code_from_item_name("Malachite green oxalate"): 0.01}
-        #
-        # self.item_codes_for_consumables_required['iodine_stain'] = {
-        #     hs.get_item_code_from_item_name("Lugol's iodine for staining (1:2:100 aqueous), 1 L_1_IDA"): 0.001}
-        #
-        # self.item_codes_for_consumables_required['microscope_slide'] = {
-        #     hs.get_item_code_from_item_name("Microscope slides, lime-soda-glass, pack of 50"): 0.02}
-        #
-        # self.item_codes_for_consumables_required['filter_paper'] = {
-        #     hs.get_item_code_from_item_name("Filter paper round, diameter 150, packs of 100"): 0.01}
+            "Paper filter Whatman no.1 size 10cm_100_CMST")
 
         # KATO-KATZ TEST
+        # todo update quantities
+        # e.g. item_codes = {self.module.item_codes_for_consumables_required['item']: 63}
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             KK_schisto_test_lowWB=DxTest(
                 property='ss_sm_infection_status',
@@ -1276,7 +1282,7 @@ class HSI_Schisto_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin)
 
         # select and perform the appropriate diagnostic test
         test = self.module.select_test(person_id)
-        test_result = False
+        test_result = None
 
         # perform the test
         if test == 'urine_filtration_test':
@@ -1327,6 +1333,10 @@ class HSI_Schisto_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin)
                     dx_tests_to_run="KK_schisto_test_highWB", hsi_event=self
                 )
 
+        # add equipment
+        if test_result is not None:
+            self.add_equipment({'Ordinary Microscope'})
+
         if test_result:
             self.module.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Schisto_TreatmentFollowingDiagnosis(
@@ -1368,7 +1378,9 @@ class HSI_Schisto_TreatmentFollowingDiagnosis(HSI_Event, IndividualScopeEventMix
 
     def apply(self, person_id, squeeze_factor):
         """Do the treatment for this person."""
-        if self.get_consumables(item_codes=self.module.item_code_for_praziquantel):
+        dosage = self.module._calculate_praziquantel_dosage(person_id)
+
+        if self.get_consumables(item_codes={self.module.item_code_for_praziquantel: dosage}):
             self.module.do_effect_of_treatment(person_id=person_id)
 
 
