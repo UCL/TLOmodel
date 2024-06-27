@@ -7,10 +7,15 @@ from tlo.analysis.utils import mix_scenarios, get_parameters_for_status_quo
 class ScenarioDefinitions:
 
     @property
-    def YEAR_OF_CHANGE(self) -> int:
-        """Year at which all changes are made."""
+    def YEAR_OF_CHANGE_FOR_HSS(self) -> int:
+        """Year in which Health Systems Strengthening changes are made."""
         return 2019  # <-- baseline year of Human Resources for Health is 2018, and this is consistent with calibration
         #                  during 2015-2019 period.
+
+    def YEAR_OF_CHANGE_FOR_HTM(self) -> int:
+        """Year in which HIV, TB, Malaria scale-up changes are made."""
+        return 2019  # todo <-- what is the natural year of scale-up? Should this be the same as the when the HSS
+        #               changes happen?
 
     def _baseline(self) -> Dict:
         """Return the Dict with values for the parameter changes that define the baseline scenario. """
@@ -22,10 +27,10 @@ class ScenarioDefinitions:
                     "mode_appt_constraints_postSwitch": 2,  # <-- Mode 2 post-change to show effects of HRH
                     "scale_to_effective_capabilities": True,
                     # <-- Transition into Mode2 with the effective capabilities in HRH 'revealed' in Mode 1
-                    "year_mode_switch": self.YEAR_OF_CHANGE,
+                    "year_mode_switch": self.YEAR_OF_CHANGE_FOR_HSS,
 
                     # Baseline scenario is with absence of HCW
-                    'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE,
+                    'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE_FOR_HSS,
                     'HR_scaling_by_level_and_officer_type_mode': 'with_absence',
                     # todo <-- Do we want the first part of the run be with_abscence too...? (Although that will mean
                     #          that there is actually greater capacity if we do the rescaling)
@@ -44,13 +49,13 @@ class ScenarioDefinitions:
             'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
                 'max_healthsystem_function': [False, True],  # <-- switch from False to True mid-way
                 'max_healthcare_seeking': [False, True],  # <-- switch from False to True mid-way
-                'year_of_switch': self.YEAR_OF_CHANGE
+                'year_of_switch': self.YEAR_OF_CHANGE_FOR_HSS
             },
             'HealthSystem': {
-                'year_cons_availability_switch': self.YEAR_OF_CHANGE,
+                'year_cons_availability_switch': self.YEAR_OF_CHANGE_FOR_HSS,
                 'cons_availability_postSwitch': 'all',
                 'yearly_HR_scaling_mode': 'GDP_growth_fHE_case5',
-                'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE,
+                'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE_FOR_HSS,
                 'HR_scaling_by_level_and_officer_type_mode': 'no_absence_&_x2_fac0+1',
             }
         }
@@ -60,8 +65,7 @@ class ScenarioDefinitions:
         return {
             "Hiv": {
                 'do_scaleup': True,
-                'scaleup_start_year': self.YEAR_OF_CHANGE,  # todo what is the natural year of scale-up? Should this
-                #                                                   be the same as the when the HSS changes happen?
+                'scaleup_start_year': self.YEAR_OF_CHANGE_FOR_HTM,
             }
         }
 
@@ -70,8 +74,7 @@ class ScenarioDefinitions:
         return {
             "Tb": {
                 'do_scaleup': True,
-                'scaleup_start_year': self.YEAR_OF_CHANGE,  # todo what is the natural year of scale-up? Should this
-                #                                                   be the same as the when the HSS changes happen?
+                'scaleup_start_year': self.YEAR_OF_CHANGE_FOR_HTM,
             }
         }
 
@@ -80,7 +83,6 @@ class ScenarioDefinitions:
         return {
             'Malaria': {
                 'do_scaleup': True,
-                'scaleup_start_year': self.YEAR_OF_CHANGE,  # todo what is the natural year of scale-up? Should this
-                #                                                   be the same as the when the HSS changes happen?
+                'scaleup_start_year': self.YEAR_OF_CHANGE_FOR_HTM,
             }
         }
