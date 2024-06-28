@@ -344,7 +344,7 @@ info = get_scenario_info(results_folder)
 
 # 1) Extract the parameters that have varied over the set of simulations
 params = extract_params(results_folder)
-params_dict  = {'default': 'Status Quo', 'scenario1': 'General consumables', 'scenario2': 'Vital medicines',
+params_dict  = {'default': 'Actual', 'scenario1': 'General consumables', 'scenario2': 'Vital medicines',
                 'scenario3': 'Pharmacist-managed', 'scenario4': 'Level 1b', 'scenario5': 'CHAM',
                 'scenario6': '75th percentile facility', 'scenario7': '90th percentile facility', 'scenario8': 'Best facility',
                 'all': 'Perfect'}
@@ -401,7 +401,7 @@ num_dalys_averted = summarize(
         pd.DataFrame(
             find_difference_relative_to_comparison(
                 num_dalys.loc[0],
-                comparison= 0) # sets the comparator to 0 which is the Status Quo scenario
+                comparison= 0) # sets the comparator to 0 which is the Actual scenario
         ).T
     ).iloc[0].unstack()
 num_dalys_averted['scenario'] = scenarios.to_list()[1:10]
@@ -413,7 +413,7 @@ pc_dalys_averted = 100.0 * summarize(
     pd.DataFrame(
         find_difference_relative_to_comparison(
             num_dalys.loc[0],
-            comparison= 0, # sets the comparator to 0 which is the Status Quo scenario
+            comparison= 0, # sets the comparator to 0 which is the Actual scenario
             scaled=True)
     ).T
 ).iloc[0].unstack()
@@ -422,7 +422,7 @@ pc_dalys_averted = pc_dalys_averted.set_index('scenario')
 
 # %% Chart of number of DALYs averted
 # Plot DALYS averted (with xtickabels horizontal and wrapped)
-name_of_plot = f'Additional DALYs Averted vs Status Quo, {target_period()}'
+name_of_plot = f'Additional DALYs Averted vs Actual, {target_period()}'
 chosen_num_dalys_averted = num_dalys_averted[~num_dalys_averted.index.isin(drop_scenarios)]
 chosen_pc_dalys_averted = pc_dalys_averted[~pc_dalys_averted.index.isin(drop_scenarios)]
 fig, ax = do_bar_plot_with_ci(
@@ -455,11 +455,11 @@ num_dalys_by_cause_summarized = num_dalys_by_cause_summarized.reset_index()
 num_dalys_by_cause_summarized = num_dalys_by_cause_summarized.rename(columns = {'level_2':'cause', 0: 'DALYs_accrued'})
 num_dalys_by_cause_summarized = num_dalys_by_cause_summarized.pivot(index=['draw','cause'], columns='stat', values='DALYs_accrued')
 
-# Get top 10 causes until status quo
-num_dalys_by_cause_status_quo = num_dalys_by_cause_summarized[num_dalys_by_cause_summarized.index.get_level_values(0) == 0]
-num_dalys_by_cause_status_quo = num_dalys_by_cause_status_quo.sort_values('mean', ascending = False)
-num_dalys_by_cause_status_quo =num_dalys_by_cause_status_quo[0:10]
-top_10_causes_of_dalys = num_dalys_by_cause_status_quo.index.get_level_values(1).unique()
+# Get top 10 causes until Actual
+num_dalys_by_cause_actual = num_dalys_by_cause_summarized[num_dalys_by_cause_summarized.index.get_level_values(0) == 0]
+num_dalys_by_cause_actual = num_dalys_by_cause_actual.sort_values('mean', ascending = False)
+num_dalys_by_cause_actual =num_dalys_by_cause_actual[0:10]
+top_10_causes_of_dalys = num_dalys_by_cause_actual.index.get_level_values(1).unique()
 
 # Get DALYs aveterted by cause and plot bar chats
 for cause in top_10_causes_of_dalys:
@@ -469,7 +469,7 @@ for cause in top_10_causes_of_dalys:
             pd.DataFrame(
                 find_difference_relative_to_comparison(
                     num_dalys_by_cause_pivoted.squeeze(),
-                    comparison= 0) # sets the comparator to 0 which is the Status Quo scenario
+                    comparison= 0) # sets the comparator to 0 which is the Actual scenario
             ).T
         ).iloc[0].unstack()
     num_dalys_averted_by_cause['scenario'] = scenarios.to_list()[1:10]
@@ -481,7 +481,7 @@ for cause in top_10_causes_of_dalys:
         pd.DataFrame(
             find_difference_relative_to_comparison(
                 num_dalys_by_cause_pivoted.squeeze(),
-                comparison= 0, # sets the comparator to 0 which is the Status Quo scenario
+                comparison= 0, # sets the comparator to 0 which is the Actual scenario
                 scaled=True)
         ).T
     ).iloc[0].unstack()
@@ -491,7 +491,7 @@ for cause in top_10_causes_of_dalys:
     # Create a plot of DALYs averted by cause
     chosen_num_dalys_averted_by_cause = num_dalys_averted_by_cause[~num_dalys_averted_by_cause.index.isin(drop_scenarios)]
     chosen_pc_dalys_averted_by_cause = pc_dalys_averted_by_cause[~pc_dalys_averted_by_cause.index.isin(drop_scenarios)]
-    name_of_plot = f'Additional DALYs averted vs Status Quo by cause - \n ({cause}), {target_period()}'
+    name_of_plot = f'Additional DALYs averted vs Actual by cause - \n ({cause}), {target_period()}'
     fig, ax = do_bar_plot_with_ci(
         (chosen_num_dalys_averted_by_cause / 1e6).clip(lower=0.0),
         annotations=[
@@ -559,7 +559,7 @@ num_dalys_averted_per_person_year = summarize(
         pd.DataFrame(
             find_difference_relative_to_comparison(
                 num_dalys_per_person_year.loc[0],
-                comparison= 0) # sets the comparator to 0 which is the Status Quo scenario
+                comparison= 0) # sets the comparator to 0 which is the Actual scenario
         ).T
     ).iloc[0].unstack()
 num_dalys_averted_per_person_year['scenario'] = scenarios.to_list()[1:10]
@@ -571,7 +571,7 @@ pct_dalys_averted_per_person_year = 100.0 * summarize(
     pd.DataFrame(
         find_difference_relative_to_comparison(
             num_dalys_per_person_year.loc[0],
-            comparison= 0, # sets the comparator to 0 which is the Status Quo scenario
+            comparison= 0, # sets the comparator to 0 which is the Actual scenario
             scaled=True)
     ).T
 ).iloc[0].unstack()
@@ -580,7 +580,7 @@ pct_dalys_averted_per_person_year = pct_dalys_averted_per_person_year.set_index(
 
 # %% Chart of number of DALYs averted
 # Plot DALYS averted (with xtickabels horizontal and wrapped)
-name_of_plot = f'Additional DALYs Averted Per Person vs Status Quo, \n {target_period()}'
+name_of_plot = f'Additional DALYs Averted Per Person vs Actual, \n {target_period()}'
 chosen_num_dalys_averted_per_person_year = num_dalys_averted_per_person_year[~num_dalys_averted_per_person_year.index.isin(drop_scenarios)]
 chosen_pct_dalys_averted_per_person_year = pct_dalys_averted_per_person_year[~pct_dalys_averted_per_person_year.index.isin(drop_scenarios)]
 fig, ax = do_bar_plot_with_ci(
@@ -618,7 +618,7 @@ for cause in top_10_causes_of_dalys:
         pd.DataFrame(
             find_difference_relative_to_comparison(
                 num_dalys_per_person_year_by_cause.squeeze(),
-                comparison=0)  # sets the comparator to 0 which is the Status Quo scenario
+                comparison=0)  # sets the comparator to 0 which is the Actual scenario
         ).T
     ).iloc[0].unstack()
     num_dalys_averted_per_person_year_by_cause['scenario'] = scenarios.to_list()[1:10]
@@ -630,7 +630,7 @@ for cause in top_10_causes_of_dalys:
         pd.DataFrame(
             find_difference_relative_to_comparison(
                 num_dalys_per_person_year_by_cause.squeeze(),
-                comparison=0,  # sets the comparator to 0 which is the Status Quo scenario
+                comparison=0,  # sets the comparator to 0 which is the Actual scenario
                 scaled=True)
         ).T
     ).iloc[0].unstack()
