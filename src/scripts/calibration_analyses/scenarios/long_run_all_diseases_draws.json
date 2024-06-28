@@ -1,0 +1,28 @@
+{
+  "scenario_script_path": "src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py",
+  "scenario_seed": 0,
+  "arguments": [],
+  "runs_per_draw": 2,
+  "draws": [
+    {
+      "draw_number": 0,
+      "parameters": {
+        "SymptomManager": {
+          "spurious_symptoms": true
+        },
+        "HealthSystem": {
+          "Service_Availability": [
+            "*"
+          ],
+          "use_funded_or_actual_staffing": "actual",
+          "mode_appt_constraints": 1,
+          "cons_availability": "default",
+          "beds_availability": "default",
+          "equip_availability": "all"
+        }
+      }
+    }
+  ],
+  "commit": "66c588ba7a6c8619d5fd4599ee73f7b63e9e17ae",
+  "github": "https://github.com/UCL/TLOmodel/tree/66c588ba7a6c8619d5fd4599ee73f7b63e9e17ae"
+}
