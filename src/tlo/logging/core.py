@@ -6,7 +6,7 @@ import logging as _logging
 import sys
 from functools import partialmethod
 from pathlib import Path
-from typing import Callable, List, Optional, TypeAlias, Union
+from typing import Any, Callable, List, Optional, TypeAlias, Union
 
 import numpy as np
 import pandas as pd
@@ -26,7 +26,8 @@ WARNING = _logging.WARNING
 
 _DEFAULT_LEVEL = INFO
 
-_DEFAULT_FORMATTER = _logging.Formatter('%(message)s')
+_DEFAULT_FORMATTER = _logging.Formatter("%(message)s")
+
 
 class InconsistentLoggedColumnsError(Exception):
     """Error raised when structured log entry has different columns from header."""
@@ -48,7 +49,7 @@ def initialise(
     formatter: _logging.Formatter = _DEFAULT_FORMATTER,
 ) -> None:
     """Initialise logging system and set up root `tlo` logger.
-    
+
     :param add_stdout_handler: Whether to add a handler to output log entries to stdout.
     :param simulation_date_getter: Zero-argument function returning simulation date as
         string in ISO format to use in log entries. Defaults to function returning a
@@ -60,13 +61,28 @@ def initialise(
     _get_simulation_date = simulation_date_getter
     for logger in _loggers.values():
         logger.reset_attributes()
-    root_logger = Logger("tlo", root_level)
-    _loggers["tlo"] = root_logger
+    root_logger = getLogger("tlo")
+    root_logger.setLevel(root_level)
     if add_stdout_handler:
         handler = _logging.StreamHandler(sys.stdout)
         handler.setLevel(stdout_handler_level)
         handler.setFormatter(formatter)
+        root_logger.handlers = [
+            h
+            for h in root_logger.handlers
+            if not (isinstance(h, _logging.StreamHandler) and h.stream is sys.stdout)
+        ]
         root_logger.addHandler(handler)
+
+
+def reset():
+    """Reset global logging state to values at initial import."""
+    global _get_simulation_date, _loggers
+    while len(_loggers) > 0:
+        name, _ = _loggers.popitem()
+        _logging.root.manager.loggerDict.pop(name, None)
+    _loggers.clear()
+    _get_simulation_date = _mock_simulation_date_getter
 
 
 def set_output_file(
@@ -80,7 +96,7 @@ def set_output_file(
     """
     file_handler = _logging.FileHandler(log_path)
     file_handler.setFormatter(formatter)
-    logger = getLogger('tlo')
+    logger = getLogger("tlo")
     logger.handlers = [
         h for h in logger.handlers if not isinstance(h, _logging.FileHandler)
     ]
@@ -100,19 +116,39 @@ def getLogger(name: str = "tlo") -> Logger:
     return _loggers[name]
 
 
-def _sort_by_numeric_or_str_key(data: dict) -> dict:
-    """Sort a data dictionary with keys that may be either strings or numeric types."""
-    return dict(sorted(data.items(), key=lambda i: (isinstance(i[0], str), i[0])))
+def _numeric_or_str_sort_key(value):
+    """Key function to sort mixture of numeric and string items.
+
+    Orders non-string values first and then string values, assuming ascending order.
+    """
+    return isinstance(value, str), value
+
+
+def _convert_keys_to_strings_and_sort(data: dict) -> dict[str, Any]:
+    """Convert all dictionary keys to strings and sort dictionary by key."""
+    sorted_data = dict(
+        sorted(((str(k), v) for k, v in data.items()), key=lambda i: i[0])
+    )
+    if len(sorted_data) != len(data):
+        raise ValueError(
+            f"At least one pair of keys in data dictionary {data} map to same string."
+        )
+    return sorted_data
+
+
+def _sort_set_with_numeric_or_str_elements(data: set) -> list:
+    """Sort a set with elements that may be either strings or numeric types."""
+    return sorted(data, key=_numeric_or_str_sort_key)
 
 
 def _get_log_data_as_dict(data: LogData) -> dict:
     """Convert log data to a dictionary if it isn't already"""
     if isinstance(data, dict):
-        return _sort_by_numeric_or_str_key(data)
+        return _convert_keys_to_strings_and_sort(data)
     if isinstance(data, pd.DataFrame):
         if len(data) == 1:
             data_dict = data.iloc[0].to_dict()
-            return _sort_by_numeric_or_str_key(data_dict)
+            return _convert_keys_to_strings_and_sort(data_dict)
         else:
             raise ValueError(
                 "Logging multirow dataframes is not currently supported - "
@@ -120,7 +156,7 @@ def _get_log_data_as_dict(data: LogData) -> dict:
             )
     if isinstance(data, (list, set, tuple, pd.Series)):
         if isinstance(data, set):
-            data = sorted(data)
+            data = _sort_set_with_numeric_or_str_elements(data)
         return {f"item_{index + 1}": value for index, value in enumerate(data)}
     if isinstance(data, str):
         return {"message": data}
@@ -147,11 +183,11 @@ class Logger:
     Outputs structured log messages in JSON format along with simulation date log entry
     was generated at. Log messages are associated with a string key and for each key
     the log message data is expected to have a fixed structure:
-    
+
     - Collection like data (tuples, lists, sets) should be of fixed length.
     - Mapping like data (dictionaries, pandas series and dataframes) should have a fixed
       set of keys and the values should be of fixed data types.
-    
+
     The first log message for a given key will generate a 'header' log entry which
     records the structure of the message with subsequent log messages only logging the
     values for efficiency, hence the requirement for the structure to remain fixed.
@@ -166,7 +202,7 @@ class Logger:
         # we build our logger on top of the standard python logging
         self._std_logger = _logging.getLogger(name=name)
         self._std_logger.setLevel(level)
-        # don't propograte messages up from "tlo" to root logger
+        # don't propagate messages up from "tlo" to root logger
         if name == "tlo":
             self._std_logger.propagate = False
         # the unique identifiers of the structured logging calls for this logger
@@ -285,7 +321,7 @@ class Logger:
         if self._std_logger.level == DEBUG:
             # in DEBUG mode we echo the module and key for easier eyeballing
             row["module"] = self.name
-            row["key"] = self.name
+            row["key"] = key
 
         row_json = json.dumps(row, cls=encoding.PandasEncoder)
 
@@ -299,7 +335,7 @@ class Logger:
         description: Optional[str] = None,
     ) -> None:
         """Log structured data for a key at specified level with optional description.
-        
+
         :param level: Level the message is being logged as.
         :param key: Logging key.
         :param data: Data to be logged.
@@ -310,8 +346,8 @@ class Logger:
                 level=level, key=key, data=data, description=description
             )
             self._std_logger.log(level=level, msg=msg)
-            
-    critical = partialmethod(log, level=CRITICAL)
-    debug = partialmethod(log, level=DEBUG)
-    info = partialmethod(log, level=INFO)
-    warning = partialmethod(log, level=WARNING)
+
+    critical = partialmethod(log, CRITICAL)
+    debug = partialmethod(log, DEBUG)
+    info = partialmethod(log, INFO)
+    warning = partialmethod(log, WARNING)
