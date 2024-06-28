@@ -29,6 +29,7 @@ from tlo.analysis.utils import (
 
 PREFIX_ON_FILENAME = '2'
 
+results_folder = Path('/Users/rem76/PycharmProjects/TLOmodel/outputs')
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     # Declare path for output graphs from this script
