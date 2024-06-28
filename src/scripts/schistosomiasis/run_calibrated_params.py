@@ -53,6 +53,7 @@ class TestScenario(BaseScenario):
             'custom_levels': {
                 '*': logging.WARNING,
                 "tlo.methods.schisto": logging.INFO,
+                "tlo.methods.healthsystem.summary": logging.INFO,
             }
         }
 
