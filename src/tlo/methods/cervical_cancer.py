@@ -1193,28 +1193,28 @@ class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         random_value = random.random()
 
-        if (random_value <= p['prob_cure_stage1'] and df.at[person_id, "ce_hpv_cc_status" == "stage1"]
-            and df.at[person_id, "ce_date_treatment"] == self.sim.date):
+        if (df.at[person_id, "ce_hpv_cc_status"] == "stage1" and random_value <= p['prob_cure_stage1']
+                and df.at[person_id, "ce_date_treatment"] == self.sim.date):
             df.at[person_id, "ce_hpv_cc_status"] = 'none'
             df.at[person_id, 'ce_current_cc_diagnosed'] = False
         else:
             df.at[person_id, "ce_hpv_cc_status"] = 'stage1'
 
-        if (random_value <= p['prob_cure_stage2a'] and df.at[person_id, "ce_hpv_cc_status" == "stage2a"]
+        if (random_value <= p['prob_cure_stage2a'] and df.at[person_id, "ce_hpv_cc_status"] == "stage2a"
             and df.at[person_id, "ce_date_treatment"] == self.sim.date):
             df.at[person_id, "ce_hpv_cc_status"] = 'none'
             df.at[person_id, 'ce_current_cc_diagnosed'] = False
         else:
             df.at[person_id, "ce_hpv_cc_status"] = 'stage2a'
 
-        if (random_value <= p['prob_cure_stage2b'] and df.at[person_id, "ce_hpv_cc_status" == "stage2b"]
+        if (random_value <= p['prob_cure_stage2b'] and df.at[person_id, "ce_hpv_cc_status"] == "stage2b"
             and df.at[person_id, "ce_date_treatment"] == self.sim.date):
             df.at[person_id, "ce_hpv_cc_status"] = 'none'
             df.at[person_id, 'ce_current_cc_diagnosed'] = False
         else:
             df.at[person_id, "ce_hpv_cc_status"] = 'stage2b'
 
-        if (random_value <= p['prob_cure_stage3'] and df.at[person_id, "ce_hpv_cc_status" == "stage3"]
+        if (random_value <= p['prob_cure_stage3'] and df.at[person_id, "ce_hpv_cc_status"] == "stage3"
             and df.at[person_id, "ce_date_treatment"] == self.sim.date):
             df.at[person_id, "ce_hpv_cc_status"] = 'none'
             df.at[person_id, 'ce_current_cc_diagnosed'] = False
