@@ -5,21 +5,40 @@ as single year estimates
 """
 
 from pathlib import Path
-
+import datetime
 import matplotlib.pyplot as plt
 import pandas as pd
+# import lacroix
+import matplotlib.colors as colors
+import numpy as np
+import statsmodels.api as sm
+import seaborn as sns
+from collections import defaultdict
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import (
     format_gbd,
     make_age_grp_types,
     parse_log_file,
+    compare_number_of_deaths,
+    extract_params,
+    extract_results,
+    get_scenario_info,
+    get_scenario_outputs,
+    load_pickled_dataframes,
+    summarize,
+    make_age_grp_lookup,
+    make_age_grp_types,
     unflatten_flattened_multi_index_in_logging,
 )
 
-resourcefilepath = Path("./resources")
-outputpath = Path("./outputs")
 
+resourcefilepath = Path("./resources")
+# outputpath = Path("./outputs")
+
+outputpath = Path("./outputs/t.mangal@imperial.ac.uk")
+
+results_folder = get_scenario_outputs("schisto_calibration.py", outputpath)[-1]
 
 # Declare path for output graphs from this script
 def make_graph_file_name(name):
@@ -29,6 +48,14 @@ def make_graph_file_name(name):
 # Name of species that being considered:
 species = ('mansoni', 'haematobium')
 
+# look at one log (so can decide what to extract)
+log = load_pickled_dataframes(results_folder)
+
+# get basic information about the results
+scenario_info = get_scenario_info(results_folder)
+
+# Extract the parameters that have varied over the set of simulations
+params = extract_params(results_folder)
 
 # %% Extract and process the `pd.DataFrame`s needed
 
@@ -41,7 +68,7 @@ def construct_dfs(schisto_log) -> dict:
     }
 
 
-dfs = construct_dfs(output['tlo.methods.schisto'])
+dfs = construct_dfs(log['tlo.methods.schisto'])
 
 
 # %% Plot the district-level prevalence summarised over the simulation period and compare with data
@@ -50,57 +77,143 @@ def get_model_prevalence_one_year(spec: str, year: int, include: str):
     """Get the prevalence of a particular species 2010
      SAC infections only, moderate|high infections
      """
-    _df = dfs[f'infection_status_{spec}']
+    all_prevalence = defaultdict(list)
 
-    # Select columns where 'age_years' level is 'SAC'
-    _df = _df.loc[:, _df.columns.get_level_values('age_years') == 'SAC']
-    t = _df.loc[_df.index.year == year].iloc[-1]  # gets the last entry for 2010 (Dec)
+    # for every model run:
+    for i in range(scenario_info["runs_per_draw"]):
+        log = load_pickled_dataframes(results_folder, draw=0, run=i)
 
-    counts = t.unstack(level=1).groupby(level=0).sum().T
+        dfs = construct_dfs(log['tlo.methods.schisto'])
 
-    if include == "HM":
-        return ((counts['High-infection'] + counts['Moderate-infection']) / counts.sum(axis=1)).to_dict()
-    else:
-        return ((counts['High-infection'] + counts['Moderate-infection'] + counts['Low-infection']) / counts.sum(
-            axis=1)).to_dict()
+        _df = dfs[f'infection_status_{spec}']
 
+        # Select columns where 'age_years' level is 'SAC'
+        _df = _df.loc[:, _df.columns.get_level_values('age_years') == 'SAC']
+        t = _df.loc[_df.index.year == year].iloc[-1]  # gets the last entry for 2010 (Dec)
 
-def get_model_average_prevalence(spec: str, include: str):
-    """Get the prevalence of a particular species 2010-2015
-     SAC infections only, moderate|high infections
-     """
-    _df = dfs[f'infection_status_{spec}']
-    _df = _df.loc[:, _df.columns.get_level_values('age_years') == 'SAC']
-    _df = _df.loc[_df.index <= '2015-12-31']
+        # calculate the prop_infected for each year for each district
+        counts = t.unstack(level=1).groupby(level=0).sum().T
 
-    # Calculate the ratio for each row and district
-    districts = _df.columns.get_level_values('district_of_residence').unique()
-
-    for district in districts:
-
-        if include == 'HM':
-            infected_sum = (_df.loc[:, ('High-infection', district, 'SAC')] +
-                            _df.loc[:, ('Moderate-infection', district, 'SAC')])
+        if include == "HM":
+            tmp = ((counts['High-infection'] + counts['Moderate-infection']) / counts.sum(axis=1)).to_dict()
         else:
-            infected_sum = (_df.loc[:, ('High-infection', district, 'SAC')] +
-                            _df.loc[:, ('Moderate-infection', district, 'SAC')] +
-                            _df.loc[:, ('Low-infection', district, 'SAC')])
+            tmp = ((counts['High-infection'] + counts['Moderate-infection'] + counts['Low-infection']) / counts.sum(
+                axis=1)).to_dict()
 
-        total_district_sum = _df.loc[:, (slice(None), district, 'SAC')].sum(
-            axis=1)
-        prop_infected = infected_sum / total_district_sum
-        _df[('prop_infected', district, 'SAC')] = prop_infected
+        # Append the results to the all_prevalence dictionary
+        for district, prevalence in tmp.items():
+            all_prevalence[district].append(prevalence)
 
-    # Calculate total prop_infected for each district
-    prop_infected_data = _df.loc[:, ('prop_infected', slice(None), 'SAC')]
+    # take the median values of prop_infected across the years and runs for every district
+    # output will be dict with key=district, value=median prop_infected, percentiles etc
+    # take median/percentiles of each value in dict
+    prevalence_stats = {
+        district: {
+            "median": np.median(prevalences),
+            "percentile_2.5": np.percentile(prevalences, 2.5),
+            "percentile_97.5": np.percentile(prevalences, 97.5)
+        }
+        for district, prevalences in all_prevalence.items()
+    }
 
-    # Calculate mean across columns (axis=0)
-    mean_prop_infected = prop_infected_data.mean(axis=0)
+    return prevalence_stats
 
-    # Dropping unnecessary levels from index
-    mean_prop_infected.index = mean_prop_infected.index.droplevel(['infection_status', 'age_years'])
 
-    return mean_prop_infected
+def get_mean_model_prevalence(spec: str, year: int, include: str):
+    """Get the median prevalence of a particular species for every district by year and runs."""
+
+    all_prevalence = defaultdict(list)
+
+    # Loop through each model run
+    for i in range(scenario_info["runs_per_draw"]):
+        log = load_pickled_dataframes(results_folder, draw=0, run=i)
+        dfs = construct_dfs(log['tlo.methods.schisto'])
+        _df = dfs[f'infection_status_{spec}']
+
+        # Filter data for SAC (School-Age Children) and up to the specified year
+        _df = _df.loc[:, _df.columns.get_level_values('age_years') == 'SAC']
+
+        _df = _df.loc[_df.index.year < year]
+        _df_last_entry = _df.groupby(_df.index.year).tail(1).copy()
+
+        # Calculate the ratio for each row and district
+        districts = _df.columns.get_level_values('district_of_residence').unique()
+
+        for district in districts:
+
+            if include == 'HM':
+                infected_sum = (_df_last_entry.loc[:, ('High-infection', district, 'SAC')] +
+                                _df_last_entry.loc[:, ('Moderate-infection', district, 'SAC')])
+            else:
+                infected_sum = (_df_last_entry.loc[:, ('High-infection', district, 'SAC')] +
+                                _df_last_entry.loc[:, ('Moderate-infection', district, 'SAC')] +
+                                _df_last_entry.loc[:, ('Low-infection', district, 'SAC')])
+
+            # total_district_sum = _df_last_entry.loc[:, (slice(None), district, 'SAC')].sum(
+            #     axis=1)
+            total_district_sum = _df_last_entry.loc[:, (slice(None), district, 'SAC')].sum(axis=1)
+
+            prop_infected = infected_sum / total_district_sum.replace(0, np.nan)
+
+            _df_last_entry.loc[:, ('prop_infected', district, 'SAC')] = prop_infected
+
+        # todo
+        # now we have df with prop_infected as a column multiIndex for every district, one row per year
+        # repeat this for every run and append to dataframe - or create new one for storage
+        # take median for every district, and percentiles
+
+
+
+
+
+
+
+
+
+
+
+
+
+t1 = get_mean_model_prevalence(spec='haematobium', year=2015, include='HML')
+
+
+
+    # def get_model_average_prevalence(spec: str, include: str):
+    """Get the prevalence of a particular species 2010-2015
+    #  SAC infections only, moderate|high infections
+    #  """
+    # _df = dfs[f'infection_status_{spec}']
+    # _df = _df.loc[:, _df.columns.get_level_values('age_years') == 'SAC']
+    # _df = _df.loc[_df.index <= '2015-12-31']
+    #
+    # # Calculate the ratio for each row and district
+    # districts = _df.columns.get_level_values('district_of_residence').unique()
+    #
+    # for district in districts:
+    #
+    #     if include == 'HM':
+    #         infected_sum = (_df.loc[:, ('High-infection', district, 'SAC')] +
+    #                         _df.loc[:, ('Moderate-infection', district, 'SAC')])
+    #     else:
+    #         infected_sum = (_df.loc[:, ('High-infection', district, 'SAC')] +
+    #                         _df.loc[:, ('Moderate-infection', district, 'SAC')] +
+    #                         _df.loc[:, ('Low-infection', district, 'SAC')])
+    #
+    #     total_district_sum = _df.loc[:, (slice(None), district, 'SAC')].sum(
+    #         axis=1)
+    #     prop_infected = infected_sum / total_district_sum
+    #     _df[('prop_infected', district, 'SAC')] = prop_infected
+    #
+    # # Calculate total prop_infected for each district
+    # prop_infected_data = _df.loc[:, ('prop_infected', slice(None), 'SAC')]
+    #
+    # # Calculate mean across columns (axis=0)
+    # mean_prop_infected = prop_infected_data.mean(axis=0)
+    #
+    # # Dropping unnecessary levels from index
+    # mean_prop_infected.index = mean_prop_infected.index.droplevel(['infection_status', 'age_years'])
+    #
+    # return mean_prop_infected
 
 
 def get_expected_prevalence_by_district_2010(species: str):
@@ -118,47 +231,131 @@ def get_expected_prevalence_by_district_2010_2015(species: str):
                                                  sheet_name='Data_' + species.lower())
     expected_district_prevalence.set_index("District", inplace=True)
     expected_district_prevalence.loc[:, 'mean_prevalence'] = expected_district_prevalence.loc[:, 'mean_prevalence'] / 100
-    expected_district_prevalence = expected_district_prevalence['mean_prevalence'].to_dict()
+    expected_district_prevalence.loc[:, 'min_prevalence'] = expected_district_prevalence.loc[:, 'min_prevalence'] / 100
+    expected_district_prevalence.loc[:, 'max_prevalence'] = expected_district_prevalence.loc[:, 'max_prevalence'] / 100
 
-    return expected_district_prevalence
+    district_data = expected_district_prevalence[['mean_prevalence', 'min_prevalence', 'max_prevalence']].to_dict(orient='index')
+
+    return district_data
 
 
 # ----------- PLOTS -----------------
 
 # Districts with prevalence fitted
-# todo include HM only or HML for all infections in model
-fig, axes = plt.subplots(2, 1, sharex=True)
-for i, _spec in enumerate(species):
-    ax = axes[i]
-    pd.DataFrame(data={
-        'Data 2010': get_expected_prevalence_by_district_2010(_spec),
-        'Model 2010': get_model_prevalence_one_year(_spec, year=2010, include='HML')}
-    ).plot.bar(ax=ax)
-    ax.set_title(f"{_spec}")
-    ax.set_xlabel('District (Fitted)')
-    ax.set_ylabel('Prevalence, 2010-2011')
-    ax.set_ylim(0, 1.0)
-    ax.legend(loc=1)
-fig.tight_layout()
-# fig.savefig(make_graph_file_name('prev_in_districts_all'))
-fig.show()
+# # todo include HM only or HML for all infections in model
+
+def plot_2010model_prevalence_with_2010data(species, include='HM'):
+    fig, axes = plt.subplots(2, 1, sharex=True, figsize=(10, 8))
+
+    for i, _spec in enumerate(species):
+        ax = axes[i]
+
+        # Fetch expected and model prevalence data
+        data_2010 = get_expected_prevalence_by_district_2010(_spec)
+        model_prevalence_stats = get_model_prevalence_one_year(_spec, year=2010, include=include)
+
+        # Extract median and confidence intervals
+        districts = list(model_prevalence_stats.keys())
+        median_values = [model_prevalence_stats[d]['median'] for d in districts]
+        lower_bounds = [model_prevalence_stats[d]['percentile_2.5'] for d in districts]
+        upper_bounds = [model_prevalence_stats[d]['percentile_97.5'] for d in districts]
+
+        # Calculate error bars
+        yerr_lower = [median_values[j] - lower_bounds[j] for j in range(len(median_values))]
+        yerr_upper = [upper_bounds[j] - median_values[j] for j in range(len(median_values))]
+        yerr = [yerr_lower, yerr_upper]
+
+        # Plot Data 2010 points
+        data_prevalence = [data_2010[d] for d in districts]
+        x_districts = range(len(districts))
+
+        # Stagger the points
+        offset = 0.2
+        x_data = [x - offset for x in x_districts]
+        x_model = [x + offset for x in x_districts]
+
+        # Plot Data 2010 points
+        ax.plot(x_data, data_prevalence, 'o', label='Data 2010', color='blue')
+
+        # Plot Model 2010 median with error bars
+        ax.errorbar(x_model, median_values, yerr=yerr, fmt='none', ecolor='red', capsize=4)
+        ax.plot(x_model, median_values, '_', markersize=10, color='red', label='Model 2010')
+
+        # Add vertical lines between districts
+        for x in x_districts:
+            ax.axvline(x - 0.5, color='lightgrey', linestyle='--', linewidth=0.5)
+
+        ax.set_title(f"{_spec}")
+        ax.set_xlabel('District')
+        ax.set_ylabel('Prevalence 2010')
+        ax.set_ylim(0, 0.6)
+        ax.legend(loc=1)
+        ax.set_xticks(x_districts)
+        ax.set_xticklabels(districts, rotation=90)
+
+    fig.tight_layout()
+    # fig.savefig(make_graph_file_name('prev_in_districts_all'))
+    plt.show()
+
+
+plot_2010model_prevalence_with_2010data(species, include='HL')
 
 
 # -----------------------------------------------------------------------
 # Average prevalence with summarised survey data 2010-2015
-# todo include HM only or HML for all infections in model
-fig, axes = plt.subplots(2, 1, sharex=True)
-for i, _spec in enumerate(species):
-    ax = axes[i]
-    pd.DataFrame(data={
-        'Data 2010-2015': get_expected_prevalence_by_district_2010_2015(_spec),
-        'Model 2010-2015': get_model_average_prevalence(_spec, include='HM')}
-    ).plot.bar(ax=ax)
-    ax.set_title(f"{_spec}")
-    ax.set_xlabel('District (Fitted)')
-    ax.set_ylabel('Prevalence, 2010-2011')
-    ax.set_ylim(0, 1.0)
-    ax.legend(loc=1)
-fig.tight_layout()
-# fig.savefig(make_graph_file_name('prev_in_districts_all'))
-fig.show()
+
+
+def plot_2010model_prevalence_with_2010_2015data(species, include='HM'):
+    fig, axes = plt.subplots(2, 1, sharex=True, figsize=(10, 8))
+
+    for i, _spec in enumerate(species):
+        ax = axes[i]
+
+        # Fetch expected and model prevalence data
+        data_2010 = get_expected_prevalence_by_district_2010_2015(_spec)
+        model_prevalence_stats = get_model_prevalence_one_year(_spec, year=2010, include=include)
+
+        # Extract median and confidence intervals from model prevalence stats
+        districts = list(model_prevalence_stats.keys())
+        median_values = [model_prevalence_stats[d]['median'] for d in districts]
+        lower_bounds = [model_prevalence_stats[d]['percentile_2.5'] for d in districts]
+        upper_bounds = [model_prevalence_stats[d]['percentile_97.5'] for d in districts]
+
+        # Calculate error bars for model data
+        yerr_lower_model = np.array(median_values) - np.array(lower_bounds)
+        yerr_upper_model = np.array(upper_bounds) - np.array(median_values)
+        yerr_model = [yerr_lower_model, yerr_upper_model]
+
+        # Plot Data 2010 points with error bars as confidence intervals
+        x_districts = np.arange(len(districts))
+        data_prevalence = np.array([data_2010[d]['mean_prevalence'] for d in districts])
+        min_prevalence = np.array([data_2010[d]['min_prevalence'] for d in districts])
+        max_prevalence = np.array([data_2010[d]['max_prevalence'] for d in districts])
+        yerr_data = [data_prevalence - min_prevalence, max_prevalence - data_prevalence]
+
+        # Stagger the x-coordinates
+        offset = 0.2
+        x_data = x_districts - offset
+        x_model = x_districts + offset
+
+        ax.errorbar(x_data, data_prevalence, yerr=yerr_data, fmt='_', color='blue', label='Data 2010-2015', capsize=4)
+        ax.errorbar(x_model, median_values, yerr=yerr_model, fmt='_', color='red',
+                    label='Model', capsize=4)
+
+        # Add vertical lines between districts
+        for x in x_districts:
+            ax.axvline(x - 0.5, color='lightgrey', linestyle='--', linewidth=0.5)
+
+        ax.set_title(f"{_spec}")
+        ax.set_xlabel('District')
+        ax.set_ylabel('Prevalence in SAC')
+        ax.set_ylim(0, 1.0)  # Adjust as needed
+        ax.legend(loc=1)
+        ax.set_xticks(x_districts)
+        ax.set_xticklabels(districts, rotation=90)
+
+    fig.tight_layout()
+    plt.show()
+
+plot_2010model_prevalence_with_2010_2015data(species, include='HML')
+

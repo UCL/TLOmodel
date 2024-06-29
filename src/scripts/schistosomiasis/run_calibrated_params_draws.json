@@ -1,0 +1,13 @@
+{
+  "scenario_script_path": "src/scripts/schistosomiasis/run_calibrated_params.py",
+  "scenario_seed": 7646,
+  "runs_per_draw": 4,
+  "draws": [
+    {
+      "draw_number": 0,
+      "parameters": null
+    }
+  ],
+  "commit": "f6d81d90f006eb972aa83fdfecb98dd8f91581ea",
+  "github": "https://github.com/UCL/TLOmodel/tree/f6d81d90f006eb972aa83fdfecb98dd8f91581ea"
+}
