@@ -29,6 +29,7 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
 from tlo.methods import Metadata
+from tlo.methods.cancer_consumables import get_consumable_item_codes_cancers
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -50,7 +51,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         self.linear_models_for_progression_of_hpv_cc_status = dict()
         self.lm_onset_vaginal_bleeding = None
         self.daly_wts = dict()
-        self.cervical_cancer_cons = dict()
+        self.item_codes_cervical_can = None # (Will store consumable item codes)
 
     INIT_DEPENDENCIES = {
         'Demography', 'SimplifiedBirths', 'HealthSystem', 'Lifestyle', 'SymptomManager'
@@ -350,15 +351,6 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         # For simplicity we assume all these are null at baseline - we don't think this will influence population
         # status in the present to any significant degree
 
-    # consumables
-
-    def get_cervical_cancer_item_codes(self):
-        get_items = self.sim.modules['HealthSystem'].get_item_code_from_item_name
-
-        self.cervical_cancer_cons['cervical_cancer_screening_via'] = {get_items('Clean delivery kit'): 1}
-        # self.cervical_cancer_cons['cervical_cancer_screening_via_optional'] = {get_items('gloves'): 1}
-
-    # todo:  add others as above
 
     def initialise_simulation(self, sim):
         """
@@ -370,7 +362,11 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         * Schedule the palliative care appointments for those that are on palliative care at initiation
         """
 
-        self.get_cervical_cancer_item_codes()
+        # We call the following function to store the required consumables for the simulation run within the appropriate
+        # dictionary
+        # myitems = get_consumable_item_codes_cancers(self)
+        # print(f'My Items {myitems}')
+        # self.item_codes_cervical_can = get_consumable_item_codes_cancers(self)
 
         # ----- SCHEDULE MAIN POLLING EVENTS -----
         # Schedule main polling event to happen immediately
@@ -379,6 +375,9 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         # ----- SCHEDULE LOGGING EVENTS -----
         # Schedule logging event to happen immediately
         sim.schedule_event(CervicalCancerLoggingEvent(self), sim.date + DateOffset(months=1))
+
+        # Look-up consumable item codes
+        self.look_up_consumable_item_codes()
 
         # ----- LINEAR MODELS -----
         # Define LinearModels for the progression of cancer, in each 1 month period
@@ -618,6 +617,14 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         df.at[child_id, "ce_biopsy"] = False
         df.at[child_id, "ce_ever_screened"] = False
         df.at[child_id, "ce_ever_diagnosed"] = False
+
+    def look_up_consumable_item_codes(self):
+        """Look up the item codes that used in the HSI in the module"""
+        get_item_codes = self.sim.modules['HealthSystem'].get_item_code_from_item_name
+
+        self.item_codes_cervical_can = dict()
+        self.item_codes_cervical_can['cervical_cancer_screening_via'] = get_item_codes('Clean delivery kit')
+        # self.item_codes_cervical_can['cervical_cancer_screening_via_optional'] = get_item_codes('Gloves')
 
     def report_daly_values(self):
 
@@ -893,49 +900,54 @@ class HSI_CervicalCancer_AceticAcidScreening(HSI_Event, IndividualScopeEventMixi
         person = df.loc[person_id]
         hs = self.sim.modules["HealthSystem"]
 
-        # Run a test to diagnose whether the person has condition:
-        dx_result = hs.dx_manager.run_dx_test(
-            dx_tests_to_run='screening_with_via_for_cin_and_cervical_cancer',
-            hsi_event=self
-        )
 
-        cons_availability = self.get_consumables(item_code=self.cervical_cancer_cons['cervical_cancer_screening_via'],
-                                optional_item_codes=self.cervical_cancer_cons['cervical_cancer_screening_via_optional'])
+        # Check consumables are available
+        # cons_avail = self.get_consumables(item_codes=self.module.item_codes_cervical_can['cervical_cancer_screening_via'],
+        #                         optional_item_codes=self.module.item_codes_cervical_can['cervical_cancer_screening_via_optional'])
+        cons_avail = self.get_consumables(
+            item_codes=self.module.item_codes_cervical_can['cervical_cancer_screening_via'])
 
-        self.add_equipment({'Drip stand', 'Infusion pump'})
-        self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
+        if self.get_consumables(item_codes=self.module.item_codes_cervical_can['cervical_cancer_screening_via']):
+            self.add_equipment({'Infusion pump', 'Drip stand'})
+            # self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
 
-        if dx_result and cons_availability:
-            df.at[person_id, 'ce_via_cin_ever_detected'] = True
-
-            if (df.at[person_id, 'ce_hpv_cc_status'] == 'cin1'
-                        or df.at[person_id, 'ce_hpv_cc_status'] == 'cin2'
-                        or df.at[person_id, 'ce_hpv_cc_status'] == 'cin3'
-                        ):
-                hs.schedule_hsi_event(
-                    hsi_event=HSI_CervicalCancer_Cryotherapy_CIN(
-                        module=self.module,
-                        person_id=person_id
-                           ),
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None
-                           )
-
-            elif (df.at[person_id, 'ce_hpv_cc_status'] == 'stage1'
-                        or df.at[person_id, 'ce_hpv_cc_status'] == 'stage2a'
-                        or df.at[person_id, 'ce_hpv_cc_status'] == 'stage2b'
-                        or df.at[person_id, 'ce_hpv_cc_status'] == 'stage3'
-                        or df.at[person_id, 'ce_hpv_cc_status'] == 'stage4'):
-                hs.schedule_hsi_event(
-                    hsi_event=HSI_CervicalCancer_Biopsy(
-                        module=self.module,
-                        person_id=person_id
-                    ),
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None
+            # Run a test to diagnose whether the person has condition:
+            dx_result = hs.dx_manager.run_dx_test(
+                dx_tests_to_run='screening_with_via_for_cin_and_cervical_cancer',
+                hsi_event=self
             )
+
+            if dx_result:
+                df.at[person_id, 'ce_via_cin_ever_detected'] = True
+
+                if (df.at[person_id, 'ce_hpv_cc_status'] == 'cin1'
+                            or df.at[person_id, 'ce_hpv_cc_status'] == 'cin2'
+                            or df.at[person_id, 'ce_hpv_cc_status'] == 'cin3'
+                            ):
+                    hs.schedule_hsi_event(
+                        hsi_event=HSI_CervicalCancer_Cryotherapy_CIN(
+                            module=self.module,
+                            person_id=person_id
+                               ),
+                        priority=0,
+                        topen=self.sim.date,
+                        tclose=None
+                               )
+
+                elif (df.at[person_id, 'ce_hpv_cc_status'] == 'stage1'
+                            or df.at[person_id, 'ce_hpv_cc_status'] == 'stage2a'
+                            or df.at[person_id, 'ce_hpv_cc_status'] == 'stage2b'
+                            or df.at[person_id, 'ce_hpv_cc_status'] == 'stage3'
+                            or df.at[person_id, 'ce_hpv_cc_status'] == 'stage4'):
+                    hs.schedule_hsi_event(
+                        hsi_event=HSI_CervicalCancer_Biopsy(
+                            module=self.module,
+                            person_id=person_id
+                        ),
+                        priority=0,
+                        topen=self.sim.date,
+                        tclose=None
+                )
 
         # sy_chosen_via_screening_for_cin_cervical_cancer reset to 0
         # if df.at[person_id, 'sy_chosen_via_screening_for_cin_cervical_cancer'] == 2:
@@ -1193,8 +1205,8 @@ class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         random_value = random.random()
 
-        if (df.at[person_id, "ce_hpv_cc_status"] == "stage1" and random_value <= p['prob_cure_stage1']
-                and df.at[person_id, "ce_date_treatment"] == self.sim.date):
+        if (random_value <= p['prob_cure_stage1'] and df.at[person_id, "ce_hpv_cc_status"] == "stage1"
+            and df.at[person_id, "ce_date_treatment"] == self.sim.date):
             df.at[person_id, "ce_hpv_cc_status"] = 'none'
             df.at[person_id, 'ce_current_cc_diagnosed'] = False
         else:
@@ -1552,6 +1564,18 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         out.update({"n_diagnosed_1_year_ago": n_diagnosed_1_year_ago})
         out.update({"n_diagnosed_1_year_ago_died": n_diagnosed_1_year_ago_died})
 
+        pop = len(df[df.is_alive])
+        count_summary = {
+            "population": pop,
+            "n_deaths_past_year": n_deaths_past_year,
+            "n_women_alive": n_women_alive,
+            "n_women_living_with_diagnosed_cc": n_women_living_with_diagnosed_cc,
+        }
+
+        logger.info(key="deaths",
+                    data=count_summary,
+                    description="summary of deaths")
+
         # todo:
         # ? move to using the logger:
         # i.e. logger.info(key='cervical_cancer_stats_every_month', description='XX', data=out)
@@ -1596,16 +1620,16 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
 # comment out this code below only when running tests
 
-        with open(out_csv, "a", newline="") as csv_file:
-            # Create a CSV writer
-            csv_writer = csv.DictWriter(csv_file, fieldnames=out.keys())
-
-            # If the file is empty, write the header
-            if csv_file.tell() == 0:
-                csv_writer.writeheader()
-
-            # Write the data to the CSV file
-            csv_writer.writerow(out)
+        # with open(out_csv, "a", newline="") as csv_file:
+        #     # Create a CSV writer
+        #     csv_writer = csv.DictWriter(csv_file, fieldnames=out.keys())
+        #
+        #     # If the file is empty, write the header
+        #     if csv_file.tell() == 0:
+        #         csv_writer.writeheader()
+        #
+        #     # Write the data to the CSV file
+        #     csv_writer.writerow(out)
 
 #       print(out)
 
