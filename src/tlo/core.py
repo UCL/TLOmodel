@@ -288,7 +288,7 @@ class Module:
                 f"The value of '{parameter_value}' for parameter '{parameter_name}' "
                 f"could not be parsed as a {parameter_definition.type_.name} data type"
             )
-            if parameter_definition.python_type == list:
+            if parameter_definition.python_type is list:
                 try:
                     # chose json.loads instead of save_eval
                     # because it raises error instead of joining two strings without a comma
