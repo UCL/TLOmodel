@@ -57,6 +57,69 @@ def get_all_dependencies(
     )
 
 
+def get_missing_dependencies(
+    module_instances: Iterable[Module],
+    get_dependencies: DependencyGetter = get_all_dependencies,
+) -> Set[str]:
+    """Get the set of missing required dependencies if any from an iterable of modules.
+
+    :param module_instances: Iterable of ``Module`` subclass instances to get missing
+        dependencies for.
+    :param get_dependencies: Callable which extracts the set of dependencies to check
+        for from a module instance. Defaults to extracting all dependencies.
+    :return: Set of ``Module`` subclass names corresponding to missing dependencies.
+    """
+    module_instances = list(module_instances)
+    modules_present = {type(module).__name__ for module in module_instances}
+    modules_present_are_alternatives_to = set.union(
+        # Force conversion to set to avoid errors when using set.union with frozenset
+        *(set(module.ALTERNATIVE_TO) for module in module_instances)
+    )
+    modules_required = set.union(
+        *(set(get_dependencies(module, modules_present)) for module in module_instances)
+    )
+
+    missing_dependencies = modules_required - modules_present
+    return (
+        missing_dependencies - modules_present_are_alternatives_to
+    )
+
+
+def initialise_missing_dependencies(modules, **module_kwargs):
+    """Get list of initialised instances of any missing dependencies for an iterable of modules.
+
+    :param modules: Iterable of ``Module`` subclass instances to get instances of missing
+        dependencies for.
+    :param module_kwargs: Any keyword arguments to use when initialising missing
+        module dependencies.
+    :return: List of ``Module`` subclass instances corresponding to missing dependencies.
+    """
+    module_instances = modules
+    module_class_map = get_module_class_map(set())
+    all_missing_dependencies = list()
+    all_module_instances = list(module_instances)
+
+    def get_all_missing_dependencies(module_instance: Iterable[Module]):
+        """ get all missing dependencies and return their module instances """
+        missing_dependencies = get_missing_dependencies(
+            module_instance, get_all_dependencies
+        )
+
+        if not missing_dependencies.issubset(all_missing_dependencies):
+            all_missing_dependencies.extend(missing_dependencies - set(all_missing_dependencies))
+            dependencies = [
+                module_class_map[dependency](**module_kwargs)
+                for dependency in missing_dependencies
+            ]
+            all_module_instances.extend(dependencies)
+            get_all_missing_dependencies(all_module_instances)
+
+        return all_module_instances
+
+    missing_module_instances = get_all_missing_dependencies(module_instances)
+    return set(missing_module_instances) - set(module_instances)
+
+
 def get_all_required_dependencies(
     module: Union[Module, Type[Module]],
     module_names_present: Optional[Set[str]] = None
@@ -76,7 +139,7 @@ def get_all_required_dependencies(
 
 def topologically_sort_modules(
     module_instances: Iterable[Module],
-    get_dependencies: DependencyGetter = get_init_dependencies,
+    get_dependencies: DependencyGetter = get_init_dependencies
 ) -> Generator[Module, None, None]:
     """Generator which yields topological sort of modules based on their dependencies.
 
@@ -120,6 +183,7 @@ def topologically_sort_modules(
             dependencies = get_dependencies(
                 module_instance_map[module], module_instance_map.keys()
             )
+
             for dependency in sorted(dependencies):
                 if dependency not in module_instance_map:
                     alternatives_with_instances = [
@@ -264,23 +328,12 @@ def check_dependencies_present(
 
     :raises ModuleDependencyError: Raised if any dependencies are missing.
     """
-    module_instances = list(module_instances)
-    modules_present = {type(module).__name__ for module in module_instances}
-    modules_present_are_alternatives_to = set.union(
-        # Force conversion to set to avoid errors when using set.union with frozenset
-        *(set(module.ALTERNATIVE_TO) for module in module_instances)
+    missing_dependencies = get_missing_dependencies(
+        module_instances, get_dependencies
     )
-    modules_required = set.union(
-        *(set(get_dependencies(module, modules_present)) for module in module_instances)
-    )
-    missing_dependencies = modules_required - modules_present
-    missing_dependencies_without_alternatives_present = (
-        missing_dependencies - modules_present_are_alternatives_to
-    )
-    if not missing_dependencies_without_alternatives_present == set():
-
+    if len(missing_dependencies) > 0:
         raise ModuleDependencyError(
             'One or more required dependency is missing from the module list and no '
             'alternative to this / these modules are available either: '
-            f'{missing_dependencies_without_alternatives_present}'
+            f'{missing_dependencies}'
         )
