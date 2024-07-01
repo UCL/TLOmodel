@@ -2823,7 +2823,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         if new_mdr_cases:
             prop_mdr = new_mdr_cases / new_tb_cases
         else:
-            prop_mdr = 0
+            prop_mdr = 0.0
 
         logger.info(
             key="tb_mdr",
