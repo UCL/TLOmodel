@@ -12,6 +12,7 @@ from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
+from tlo.logging.helpers import grouped_counts_with_all_combinations
 from tlo.util import get_person_id_to_inherit_from
 
 logger = logging.getLogger(__name__)
@@ -1939,47 +1940,42 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         for _property in all_lm_keys:
             if _property in log_by_age_15up:
                 if _property in cat_by_rural_urban_props:
-                    data = df.loc[df.is_alive & (df.age_years >= 15)].groupby(by=[
-                        'li_urban', 'sex', _property, 'age_range']).size()
+                    data = grouped_counts_with_all_combinations(
+                        df.loc[df.is_alive & (df.age_years >= 15)],
+                        ["li_urban", "sex", _property, "age_range"]
+                    )
                 else:
-                    data = df.loc[df.is_alive & (df.age_years >= 15)].groupby(by=[
-                        'sex', _property, 'age_range']).size()
-
+                    data = grouped_counts_with_all_combinations(
+                        df.loc[df.is_alive & (df.age_years >= 15)],
+                        ["sex", _property, "age_range"]
+                    )
             elif _property == 'li_in_ed':
-                subset = df.loc[df.is_alive & df.age_years.between(5, 19)].copy()
-                # Make age_years categorical so that non-observed combinations in
-                # groupby are included with zero counts to keep log entries aligned
-                subset["age_years"] = pd.Categorical(
-                    subset["age_years"], categories=range(5, 20)
+                data = grouped_counts_with_all_combinations(
+                    df.loc[df.is_alive & df.age_years.between(5, 19)],
+                    ["sex", "li_wealth", "li_in_ed", "age_years"],
+                    {"age_years": range(5, 20)}
                 )
-                data = subset.groupby(
-                    by=['sex', 'li_wealth', _property, 'age_years']
-                ).size()
-
             elif _property == 'li_ed_lev':
-                subset = df.loc[df.is_alive & df.age_years.between(15, 49)].copy()
-                # Make age_years categorical so that non-observed combinations in
-                # groupby are included with zero counts to keep log entries aligned
-                subset["age_years"] = pd.Categorical(
-                    subset["age_years"], categories=range(15, 50)
+                data = grouped_counts_with_all_combinations(
+                    df.loc[df.is_alive & df.age_years.between(15, 49)],
+                    ["sex", "li_wealth", "li_ed_lev", "age_years"],
+                    {"age_years": range(15, 50)}
                 )
-                data = subset.groupby(
-                    by=['sex', 'li_wealth', _property, 'age_years']
-                ).size()
-
             elif _property == 'li_is_sexworker':
-                data = df.loc[df.is_alive & (df.age_years.between(15, 49))].groupby(by=[
-                    'sex', _property, 'age_range']).size()
-
+                data = grouped_counts_with_all_combinations(
+                    df.loc[df.is_alive & (df.age_years.between(15, 49))],
+                    ["sex", "li_is_sexworker", "age_range"],
+                )
             elif _property in cat_by_rural_urban_props:
                 # log all properties that are also categorised by rural or urban in addition to ex and age groups
-                data = df.loc[df.is_alive].groupby(by=[
-                    'li_urban', 'sex', _property, 'age_range']).size()
-
+                data = grouped_counts_with_all_combinations(
+                    df.loc[df.is_alive], ["li_urban", "sex", _property, "age_range"]
+                )
             else:
                 # log all other remaining properties
-                data = df.loc[df.is_alive].groupby(by=['sex', _property, 'age_range']).size()
-
+                data = grouped_counts_with_all_combinations(
+                    df.loc[df.is_alive], ["sex", _property, "age_range"]
+                )
             # log data
             logger.info(
                 key=_property,
