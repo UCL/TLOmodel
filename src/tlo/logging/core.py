@@ -79,7 +79,7 @@ def reset():
     global _get_simulation_date, _loggers
     while len(_loggers) > 0:
         name, _ = _loggers.popitem()
-        _logging.root.manager.loggerDict.pop(name, None)
+        _logging.root.manager.loggerDict.pop(name, None)  # pylint: disable=E1101
     _loggers.clear()
     _get_simulation_date = _mock_simulation_date_getter
 
