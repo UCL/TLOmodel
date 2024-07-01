@@ -1788,7 +1788,7 @@ class HealthSystem(Module):
                 'Number_By_Appt_Type_Code': dict(event_details.appt_footprint),
                 'Person_ID': person_id,
                 'priority': priority,
-                'Facility_Level': event_details.facility_level if event_details.facility_level is not None else -99,
+                'Facility_Level': event_details.facility_level if event_details.facility_level is not None else "-99",
                 'Facility_ID': facility_id if facility_id is not None else -99,
             },
             description="record of each HSI event that never ran"
