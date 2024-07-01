@@ -1,0 +1,20 @@
+name: "Calibrations (nightly)"
+
+on:
+  schedule:
+    - cron: 31 2 * * *
+  pull_request:
+    branches: "master"
+
+jobs:
+  version-matrix:
+    name: "Calibration for mode ${{ matrix.hs_mode }}"
+    strategy:
+      fail-fast: false
+      matrix:
+        hs_mode: [1, 2]
+    uses: ./.github/workflows/calibrations_common.yaml
+    with:
+      hs_mode: ${{ matrix.hs_mode }}
+      commit: ${{ github.sha }}
+    secrets: inherit
