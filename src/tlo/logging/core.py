@@ -126,8 +126,12 @@ def _numeric_or_str_sort_key(value):
 
 def _convert_keys_to_strings_and_sort(data: dict) -> dict[str, Any]:
     """Convert all dictionary keys to strings and sort dictionary by key."""
+    # Sort by mix of numeric or string keys _then_ convert all keys to strings to
+    # ensure stringified numeric keys have natural numeric ordering, for example
+    # '1', '2', '10' not '1', '10', '2'
     sorted_data = dict(
-        sorted(((str(k), v) for k, v in data.items()), key=lambda i: i[0])
+        (str(k), v)
+        for k, v in sorted(data.items(), key=lambda i: _numeric_or_str_sort_key(i[0]))
     )
     if len(sorted_data) != len(data):
         raise ValueError(
