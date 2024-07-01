@@ -9,8 +9,8 @@ import scipy.stats
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.logging.helpers import get_dataframe_row_as_dict_for_logging
 from tlo.lm import LinearModel, LinearModelType
+from tlo.logging.helpers import get_dataframe_row_as_dict_for_logging
 from tlo.methods import Metadata, labour_lm, pregnancy_helper_functions
 from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
