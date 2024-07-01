@@ -170,7 +170,9 @@ def _get_log_data_as_dict(data: LogData) -> dict:
 def _convert_numpy_scalars_to_python_types(data: dict) -> dict:
     """Convert NumPy scalar types to suitable standard Python types."""
     return {
-        key: value.item() if isinstance(value, (np.number, np.bool_)) else value
+        key: (
+            value.item() if isinstance(value, (np.number, np.bool_, np.str_)) else value
+        )
         for key, value in data.items()
     }
 
