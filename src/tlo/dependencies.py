@@ -222,7 +222,7 @@ def is_valid_tlo_module_subclass(obj: Any, excluded_modules: Set[str]) -> bool:
     """Determine whether object is a ``Module`` subclass and not in an excluded set.
 
     :param obj: Object to check if ``Module`` subclass.
-    :param excluded_modules: Set of names of ``Modu12le`` subclasses to force check to
+    :param excluded_modules: Set of names of ``Module`` subclasses to force check to
         return ``False`` for.
 
     :return: ``True`` is ``obj`` is a _strict_ subclass of ``Module`` and not in the
