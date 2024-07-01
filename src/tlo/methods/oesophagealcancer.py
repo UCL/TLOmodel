@@ -688,13 +688,15 @@ class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, Individ
             return hs.get_blank_appt_footprint()
 
         # Check the consumables are available
-        # todo: replace with endoscope?
-        cons_avail = self.get_consumables(item_codes=self.module.item_codes_oesophageal_can['screening_biopsy_core'],
+        cons_avail = self.get_consumables(item_codes=self.module.item_codes_oesophageal_can['screening_endoscopy_core'],
                                           optional_item_codes=
-                                          self.module.item_codes_oesophageal_can['screening_biopsy_optional'])
+                                          self.module.item_codes_oesophageal_can[
+                                              'screening_biopsy_endoscopy_cystoscopy_optional'])
 
         if cons_avail:
-            # If consumables are available, run the dx_test representing the biopsy
+            # If consumables are available add used equipment and run the dx_test representing the biopsy
+            # n.b. endoscope not in equipment list
+            self.add_equipment({'Endoscope', 'Ordinary Microscope'})
 
             # Use an endoscope to diagnose whether the person has Oesophageal Cancer:
             dx_result = hs.dx_manager.run_dx_test(
@@ -783,7 +785,8 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
                                           self.module.item_codes_oesophageal_can['treatment_surgery_optional'])
 
         if cons_avail:
-            # If consumables are available and the treatment will go ahead
+            # If consumables are available and the treatment will go ahead - update the equipment
+            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
 
             # Log chemotherapy consumables
             self.get_consumables(
@@ -892,7 +895,8 @@ class HSI_OesophagealCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin)
             item_codes=self.module.item_codes_oesophageal_can['palliation'])
 
         if cons_available:
-            # If consumables are available and the treatment will go ahead
+            # If consumables are available and the treatment will go ahead - update the equipment
+            self.add_equipment({'Infusion pump', 'Drip stand'})
 
             # Record the start of palliative care if this is first appointment
             if pd.isnull(df.at[person_id, "oc_date_palliative_care"]):

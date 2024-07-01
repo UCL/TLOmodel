@@ -13,7 +13,6 @@ Health care seeking is prompted by the onset of the symptom diarrhoea. The indiv
 
  Outstanding Issues
  * To include rotavirus vaccine
- * See todo
 
 """
 from __future__ import annotations
@@ -1571,6 +1570,8 @@ class HSI_Diarrhoea_Treatment_Inpatient(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         if not df.at[person_id, 'is_alive']:
             return
+
+        self.add_equipment({'Infusion pump', 'Drip stand'})
 
         self.module.do_treatment(person_id=person_id, hsi_event=self)
 

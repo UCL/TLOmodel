@@ -3213,8 +3213,13 @@ class HSI_RTI_Imaging_Event(HSI_Event, IndividualScopeEventMixin):
         self.sim.population.props.at[person_id, 'rt_diagnosed'] = True
         road_traffic_injuries = self.sim.modules['RTI']
         road_traffic_injuries.rti_injury_diagnosis(person_id, self.EXPECTED_APPT_FOOTPRINT)
-        if 'Tomography' in list(self.EXPECTED_APPT_FOOTPRINT.keys()):
+
+        if 'DiagRadio' in list(self.EXPECTED_APPT_FOOTPRINT.keys()):
+            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('X-ray'))
+
+        elif 'Tomography' in list(self.EXPECTED_APPT_FOOTPRINT.keys()):
             self.ACCEPTED_FACILITY_LEVEL = '3'
+            self.add_equipment({'Computed Tomography (CT machine)', 'CT scanner accessories'})
 
     def did_not_run(self, *args, **kwargs):
         pass
@@ -3516,6 +3521,9 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         # determine the number of ICU days used to treat patient
 
         if df.loc[person_id, 'rt_ISS_score'] > self.hdu_cut_off_iss_score:
+
+            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('ICU'))
+
             mean_icu_days = p['mean_icu_days']
             sd_icu_days = p['sd_icu_days']
             mean_tbi_icu_days = p['mean_tbi_icu_days']
@@ -3808,8 +3816,6 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
     """
     This HSI event handles the process of treating hypovolemic shock, as recommended by the pediatric
     handbook for Malawi and (TODO: FIND ADULT REFERENCE)
-    Currently this HSI_Event is described only and not used, as I still need to work out how to model the occurrence
-    of shock
     """
 
     def __init__(self, module, person_id):
@@ -3857,6 +3863,7 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
             logger.debug(key='rti_general_message',
                          data=f"Hypovolemic shock treatment available for person {person_id}")
             df.at[person_id, 'rt_in_shock'] = False
+            self.add_equipment({'Infusion pump', 'Drip stand', 'Oxygen cylinder, with regulator', 'Nasal Prongs'})
         else:
             self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
             return self.make_appt_footprint({})
@@ -3956,6 +3963,9 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
                          data=f"Fracture casts available for person %d's {fracturecastcounts + slingcounts} fractures, "
                               f"{person_id}"
                          )
+
+            self.add_equipment({'Casting platform', 'Casting chairs', 'Bucket, 10L'})
+
             # update the property rt_med_int to indicate they are recieving treatment
             df.at[person_id, 'rt_med_int'] = True
             # Find the persons injuries
@@ -4092,6 +4102,9 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
             logger.debug(key='rti_general_message',
                          data=f"Fracture casts available for person {person_id} {open_fracture_counts} open fractures"
                          )
+
+            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
+
             person = df.loc[person_id]
             # update the dataframe to show this person is recieving treatment
             df.loc[person_id, 'rt_med_int'] = True
@@ -4256,6 +4269,7 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
 
         p = self.module.parameters
         self.prob_mild_burns = p['prob_mild_burns']
+
 
     def apply(self, person_id, squeeze_factor):
         get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
@@ -4810,6 +4824,9 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
             # RTI_Med
             assert df.loc[person_id, 'rt_diagnosed'], 'This person has not been through a and e'
             assert df.loc[person_id, 'rt_med_int'], 'This person has not been through rti med int'
+
+            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
+
             # ------------------------ Track permanent disabilities with treatment -------------------------------------
             # --------------------------------- Perm disability from TBI -----------------------------------------------
             codes = ['133', '133a', '133b', '133c', '133d', '134', '134a', '134b', '135']
@@ -5125,6 +5142,8 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
         # todo: think about consequences of certain consumables not being available for minor surgery and model health
         #  outcomes
         if request_outcome:
+            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
+
             # create a dictionary to store the recovery times for each injury in days
             minor_surg_recov_time_days = {
                 '322': 180,
