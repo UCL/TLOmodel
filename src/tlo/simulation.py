@@ -6,9 +6,16 @@ import itertools
 import time
 from collections import OrderedDict
 from pathlib import Path
-from typing import Dict, Optional, Union
+from typing import Dict, Optional, Tuple, Union
 
 import numpy as np
+
+try:
+    import dill
+
+    DILL_AVAILABLE = True
+except ImportError:
+    DILL_AVAILABLE = False
 
 from tlo import Date, Population, logging
 from tlo.dependencies import check_dependencies_present, topologically_sort_modules
@@ -17,6 +24,14 @@ from tlo.progressbar import ProgressBar
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+
+class SimulationPreviouslyInitialisedError(Exception):
+    """Exception raised when trying to initialise an already initialised simulation."""
+
+
+class SimulationNotInitialisedError(Exception):
+    """Exception raised when trying to run simulation before initialising."""
 
 
 class Simulation:
@@ -43,8 +58,14 @@ class Simulation:
         with independent state.
     """
 
-    def __init__(self, *, start_date: Date, seed: int = None, log_config: dict = None,
-                 show_progress_bar=False):
+    def __init__(
+        self,
+        *,
+        start_date: Date,
+        seed: Optional[int] = None,
+        log_config: Optional[dict] = None,
+        show_progress_bar: bool = False,
+    ):
         """Create a new simulation.
 
         :param start_date: the date the simulation begins; must be given as
@@ -72,14 +93,17 @@ class Simulation:
         self._configure_logging(**log_config)
 
         # random number generator
-        seed_from = 'auto' if seed is None else 'user'
+        seed_from = "auto" if seed is None else "user"
         self._seed = seed
         self._seed_seq = np.random.SeedSequence(seed)
         logger.info(
-            key='info',
-            data=f'Simulation RNG {seed_from} entropy = {self._seed_seq.entropy}'
+            key="info",
+            data=f"Simulation RNG {seed_from} entropy = {self._seed_seq.entropy}",
         )
         self.rng = np.random.RandomState(np.random.MT19937(self._seed_seq))
+
+        # Whether simulation has been initialised
+        self._initialised = False
 
     def _configure_logging(self, filename: str = None, directory: Union[Path, str] = "./outputs",
                            custom_levels: Dict[str, int] = None, suppress_stdout: bool = False):
@@ -99,7 +123,9 @@ class Simulation:
         # clear logging environment
         # if using progress bar we do not print log messages to stdout to avoid
         # clashes between progress bar and log output
-        logging.init_logging(add_stdout_handler=not (self.show_progress_bar or suppress_stdout))
+        logging.init_logging(
+            add_stdout_handler=not (self.show_progress_bar or suppress_stdout)
+        )
         logging.set_simulation(self)
 
         if custom_levels:
@@ -111,10 +137,10 @@ class Simulation:
                 self._custom_log_levels = custom_levels
 
         if filename and directory:
-            timestamp = datetime.datetime.now().strftime('%Y-%m-%dT%H%M%S')
+            timestamp = datetime.datetime.now().strftime("%Y-%m-%dT%H%M%S")
             log_path = Path(directory) / f"{filename}__{timestamp}.log"
             self.output_file = logging.set_output_file(log_path)
-            logger.info(key='info', data=f'Log output: {log_path}')
+            logger.info(key="info", data=f"Log output: {log_path}")
             self._log_filepath = log_path
             return log_path
 
@@ -151,21 +177,23 @@ class Simulation:
         # Iterate over modules and per-module seed sequences spawned from simulation
         # level seed sequence
         for module, seed_seq in zip(modules, self._seed_seq.spawn(len(modules))):
-            assert module.name not in self.modules, f'A module named {module.name} has already been registered'
+            assert (
+                module.name not in self.modules
+            ), f"A module named {module.name} has already been registered"
 
             # Seed the RNG for the registered module using spawned seed sequence
             logger.info(
-                key='info',
+                key="info",
                 data=(
-                    f'{module.name} RNG auto (entropy, spawn key) = '
-                    f'({seed_seq.entropy}, {seed_seq.spawn_key[0]})'
-                )
+                    f"{module.name} RNG auto (entropy, spawn key) = "
+                    f"({seed_seq.entropy}, {seed_seq.spawn_key[0]})"
+                ),
             )
             module.rng = np.random.RandomState(np.random.MT19937(seed_seq))
 
             self.modules[module.name] = module
             module.sim = self
-            module.read_parameters('')
+            module.read_parameters("")
 
         if self._custom_log_levels:
             logging.set_logging_levels(self._custom_log_levels)
@@ -192,10 +220,103 @@ class Simulation:
         for module in self.modules.values():
             start1 = time.time()
             module.initialise_population(self.population)
-            logger.debug(key='debug', data=f'{module.name}.initialise_population() {time.time() - start1} s')
+            logger.debug(
+                key="debug",
+                data=f"{module.name}.initialise_population() {time.time() - start1} s",
+            )
 
         end = time.time()
-        logger.info(key='info', data=f'make_initial_population() {end - start} s')
+        logger.info(key="info", data=f"make_initial_population() {end - start} s")
+
+    def initialise(self, *, end_date: Date) -> None:
+        """Initialise all modules in simulation.
+
+        :param end_date: Date to end simulation on - accessible to modules to allow
+            initialising data structures which may depend (in size for example) on the
+            date range being simulated.
+        """
+        if self._initialised:
+            msg = "initialise method should only be called once"
+            raise SimulationPreviouslyInitialisedError(msg)
+        self.date = self.start_date
+        self.end_date = end_date  # store the end_date so that others can reference it
+        for module in self.modules.values():
+            module.initialise_simulation(self)
+        self._initialised = True
+
+    def finalise(self, wall_clock_time: Optional[float] = None) -> None:
+        """Finalise all modules in simulation and close logging file if open.
+
+        :param wall_clock_time: Optional argument specifying total time taken to
+            simulate, to be written out to log before closing.
+        """
+        for module in self.modules.values():
+            module.on_simulation_end()
+        if wall_clock_time is not None:
+            logger.info(key="info", data=f"simulate() {wall_clock_time} s")
+        if self.output_file:
+            self.close_output_file()
+
+    def close_output_file(self):
+        # From Python logging.shutdown
+        try:
+            self.output_file.acquire()
+            self.output_file.flush()
+            self.output_file.close()
+        except (OSError, ValueError):
+            pass
+        finally:
+            self.output_file.release()
+
+    def _initialise_progress_bar(self, end_date):
+        num_simulated_days = (end_date - self.date).days
+        progress_bar = ProgressBar(
+            num_simulated_days, "Simulation progress", unit="day"
+        )
+        progress_bar.start()
+        return progress_bar
+
+    def _update_progress_bar(self, progress_bar, date):
+        simulation_day = (date - self.start_date).days
+        stats_dict = {
+            "date": str(date.date()),
+            "dataframe size": str(len(self.population.props)),
+            "queued events": str(len(self.event_queue)),
+        }
+        if "HealthSystem" in self.modules:
+            stats_dict["queued HSI events"] = str(
+                len(self.modules["HealthSystem"].HSI_EVENT_QUEUE)
+            )
+        progress_bar.update(simulation_day, stats_dict=stats_dict)
+
+    def run_simulation_to(self, *, to_date: Date):
+        """Run simulation up to a specified date.
+
+        Unlike :py:meth:`simulate` this method does not initialise or finalise
+        simulation and the date simulated to can be any date before or equal to
+        simulation end date.
+
+        :param to_date: Date to simulate up to but not including - must be before or
+            equal to simulation end date specified in call to :py:meth:`initialise`.
+        """
+        if not self._initialised:
+            msg = "Simulation must be initialised before calling run_simulation_to"
+            raise SimulationNotInitialisedError(msg)
+        if to_date > self.end_date:
+            msg = f"to_date {to_date} after simulation end date {self.end_date}"
+            raise ValueError(msg)
+        if self.show_progress_bar:
+            progress_bar = self._initialise_progress_bar(to_date)
+        while (
+            len(self.event_queue) > 0 and self.event_queue.date_of_next_event < to_date
+        ):
+            event, date = self.event_queue.pop_next_event_and_date()
+            if self.show_progress_bar:
+                self._update_progress_bar(progress_bar, date)
+            self.fire_single_event(event, date)
+        self.date = to_date
+        if self.show_progress_bar:
+            progress_bar.stop()
 
     def simulate(self, *, end_date):
         """Simulation until the given end date
@@ -205,58 +326,9 @@ class Simulation:
             Must be given as a keyword parameter for clarity.
         """
         start = time.time()
-        self.end_date = end_date  # store the end_date so that others can reference it
-
-        for module in self.modules.values():
-            module.initialise_simulation(self)
-
-        progress_bar = None
-        if self.show_progress_bar:
-            num_simulated_days = (end_date - self.start_date).days
-            progress_bar = ProgressBar(
-                num_simulated_days, "Simulation progress", unit="day")
-            progress_bar.start()
-
-        while self.event_queue:
-            event, date = self.event_queue.next_event()
-
-            if self.show_progress_bar:
-                simulation_day = (date - self.start_date).days
-                stats_dict = {
-                    "date": str(date.date()),
-                    "dataframe size": str(len(self.population.props)),
-                    "queued events": str(len(self.event_queue)),
-                }
-                if "HealthSystem" in self.modules:
-                    stats_dict["queued HSI events"] = str(
-                        len(self.modules["HealthSystem"].HSI_EVENT_QUEUE)
-                    )
-                progress_bar.update(simulation_day, stats_dict=stats_dict)
-
-            if date >= end_date:
-                self.date = end_date
-                break
-            self.fire_single_event(event, date)
-
-        # The simulation has ended.
-        if self.show_progress_bar:
-            progress_bar.stop()
-
-        for module in self.modules.values():
-            module.on_simulation_end()
-
-        logger.info(key='info', data=f'simulate() {time.time() - start} s')
-
-        # From Python logging.shutdown
-        if self.output_file:
-            try:
-                self.output_file.acquire()
-                self.output_file.flush()
-                self.output_file.close()
-            except (OSError, ValueError):
-                pass
-            finally:
-                self.output_file.release()
+        self.initialise(end_date=end_date)
+        self.run_simulation_to(to_date=end_date)
+        self.finalise(time.time() - start)
 
     def schedule_event(self, event, date):
         """Schedule an event to happen on the given future date.
@@ -264,12 +336,14 @@ class Simulation:
         :param event: the Event to schedule
         :param date: when the event should happen
         """
-        assert date >= self.date, 'Cannot schedule events in the past'
+        assert date >= self.date, "Cannot schedule events in the past"
 
-        assert 'TREATMENT_ID' not in dir(event), \
-            'This looks like an HSI event. It should be handed to the healthsystem scheduler'
-        assert (event.__str__().find('HSI_') < 0), \
-            'This looks like an HSI event. It should be handed to the healthsystem scheduler'
+        assert "TREATMENT_ID" not in dir(
+            event
+        ), "This looks like an HSI event. It should be handed to the healthsystem scheduler"
+        assert (
+            event.__str__().find("HSI_") < 0
+        ), "This looks like an HSI event. It should be handed to the healthsystem scheduler"
         assert isinstance(event, Event)
 
         self.event_queue.schedule(event=event, date=date)
@@ -313,6 +387,34 @@ class Simulation:
 
         return person_events
 
+    def save_to_pickle(self, pickle_path: Path) -> None:
+        """Save simulation state to a pickle file using :py:mod:`dill`.
+
+        Requires :py:mod:`dill` to be importable.
+
+        :param pickle_path: File path to save simulation state to.
+        """
+        if not DILL_AVAILABLE:
+            raise RuntimeError("Cannot save to pickle as dill is not installed")
+        with open(pickle_path, "wb") as pickle_file:
+            dill.dump(self, pickle_file)
+
+    @staticmethod
+    def load_from_pickle(pickle_path: Path) -> "Simulation":
+        """Load simulation state from a pickle file using :py:mod:`dill`.
+
+        Requires :py:mod:`dill` to be importable.
+
+        :param pickle_path: File path to load simulation state from.
+
+        :returns: Loaded :py:class:`Simulation` object.
+        """
+        if not DILL_AVAILABLE:
+            raise RuntimeError("Cannot load from pickle as dill is not installed")
+        with open(pickle_path, "rb") as pickle_file:
+            simulation = dill.load(pickle_file)
+        return simulation
+
 
 class EventQueue:
     """A simple priority queue for events.
@@ -325,7 +427,7 @@ class EventQueue:
         self.counter = itertools.count()
         self.queue = []
 
-    def schedule(self, event, date):
+    def schedule(self, event: Event, date: Date) -> None:
         """Schedule a new event.
 
         :param event: the event to schedule
@@ -334,14 +436,23 @@ class EventQueue:
         entry = (date, event.priority, next(self.counter), event)
         heapq.heappush(self.queue, entry)
 
-    def next_event(self):
-        """Get the earliest event in the queue.
+    def pop_next_event_and_date(self) -> Tuple[Event, Date]:
+        """Get and remove the earliest event and corresponding date in the queue.
 
         :returns: an (event, date) pair
         """
         date, _, _, event = heapq.heappop(self.queue)
         return event, date
 
-    def __len__(self):
+    @property
+    def date_of_next_event(self) -> Date:
+        """Get the date of the earliest event in queue without removing from queue.
+
+        :returns: Date of next event in queue.
+        """
+        date, *_ = self.queue[0]
+        return date
+
+    def __len__(self) -> int:
         """:return: the length of the queue"""
         return len(self.queue)
