@@ -9,6 +9,7 @@ import scipy.stats
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.logging.helpers import get_dataframe_row_as_dict_for_logging
 from tlo.lm import LinearModel, LinearModelType
 from tlo.methods import Metadata, labour_lm, pregnancy_helper_functions
 from tlo.methods.causes import Cause
@@ -3253,8 +3254,10 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
                 # If intervention is delivered - add used equipment
                 self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
 
-                person = df.loc[person_id]
-                logger.info(key='caesarean_delivery', data=person.to_dict())
+                logger.info(
+                    key='caesarean_delivery',
+                    data=get_dataframe_row_as_dict_for_logging(df, person_id),
+                )
                 logger.info(key='cs_indications', data={'id': person_id,
                                                         'indication': mni[person_id]['cs_indication']})
 
