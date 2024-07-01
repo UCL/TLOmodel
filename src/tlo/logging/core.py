@@ -13,7 +13,6 @@ import pandas as pd
 
 from tlo.logging import encoding
 
-
 LogLevel: TypeAlias = int
 LogData: TypeAlias = Union[str, dict, list, set, tuple, pd.DataFrame, pd.Series]
 SimulationDateGetter: TypeAlias = Callable[[], str]
