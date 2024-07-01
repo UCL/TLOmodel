@@ -4,7 +4,6 @@ import importlib
 import inspect
 import os
 import pkgutil
-from pathlib import Path
 from typing import Any, Callable, Generator, Iterable, Mapping, Optional, Set, Type, Union
 
 import tlo.methods
@@ -79,11 +78,11 @@ def get_missing_dependencies(
     modules_required = set.union(
         *(set(get_dependencies(module, modules_present)) for module in module_instances)
     )
-    print(f'the list modules are{modules_required, modules_present}')
-    missing_dependencies = modules_required - modules_present
-    m_dependencies = missing_dependencies - modules_present_are_alternatives_to
 
-    return m_dependencies
+    missing_dependencies = modules_required - modules_present
+    return (
+        missing_dependencies - modules_present_are_alternatives_to
+    )
 
 
 def initialise_missing_dependencies(modules, **module_kwargs):
@@ -96,28 +95,29 @@ def initialise_missing_dependencies(modules, **module_kwargs):
     :return: List of ``Module`` subclass instances corresponding to missing dependencies.
     """
     module_instances = modules
-    print(f'init modules {type(module_instances)}')
     module_class_map = get_module_class_map(set())
+    all_missing_dependencies = list()
+    all_module_instances = list(module_instances)
 
     def get_all_missing_dependencies(module_instance: Iterable[Module]):
+        """ get all missing dependencies and return their module instances """
         missing_dependencies = get_missing_dependencies(
             module_instance, get_all_dependencies
         )
 
-        dependencies = [
-            module_class_map[dependency](**module_kwargs)
-            for dependency in missing_dependencies
-        ]
-        return dependencies
+        if not missing_dependencies.issubset(all_missing_dependencies):
+            all_missing_dependencies.extend(missing_dependencies - set(all_missing_dependencies))
+            dependencies = [
+                module_class_map[dependency](**module_kwargs)
+                for dependency in missing_dependencies
+            ]
+            all_module_instances.extend(dependencies)
+            get_all_missing_dependencies(all_module_instances)
 
-    dependencies = get_all_missing_dependencies(module_instances)
-    if len(dependencies) != 0:
-        all_instances = list(module_instances) + dependencies
-        print(f'all missing dependencies {all_instances}')
-        dependencies = dependencies + get_all_missing_dependencies(all_instances)
-        print(f'again dependency {dependencies}')
+        return all_module_instances
 
-    return dependencies
+    missing_module_instances = get_all_missing_dependencies(module_instances)
+    return set(missing_module_instances) - set(module_instances)
 
 
 def get_all_required_dependencies(
@@ -164,7 +164,6 @@ def topologically_sort_modules(
     """
     module_instances = list(module_instances)
     module_instance_map = {type(module).__name__: module for module in module_instances}
-    print(f'the module insitance {module_instance_map}')
     if len(module_instance_map) != len(module_instances):
         raise MultipleModuleInstanceError(
             'Multiple instances of one or more `Module` subclasses were passed to the '
@@ -184,7 +183,7 @@ def topologically_sort_modules(
             dependencies = get_dependencies(
                 module_instance_map[module], module_instance_map.keys()
             )
-            module_class_map = get_module_class_map(set())
+
             for dependency in sorted(dependencies):
                 if dependency not in module_instance_map:
                     alternatives_with_instances = [
