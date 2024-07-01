@@ -125,12 +125,17 @@ class Demography(Module):
         'date_of_death': Property(Types.DATE, 'Date of death of this individual'),
         'sex': Property(Types.CATEGORICAL, 'Male or female', categories=['M', 'F']),
         'mother_id': Property(Types.INT, 'Unique identifier of mother of this individual'),
-        'district_num_of_residence': Property(Types.INT, 'The district number in which the person is resident'),
 
         # the categories of these properties are set in `pre_initialise_population`
         'cause_of_death': Property(
             Types.CATEGORICAL,
             'The cause of death of this individual (the tlo_cause defined by the module)',
+            categories=['SET_AT_RUNTIME']
+        ),
+
+        'district_num_of_residence': Property(
+            Types.CATEGORICAL, 
+            'The district number in which the person is resident',
             categories=['SET_AT_RUNTIME']
         ),
 
@@ -220,6 +225,11 @@ class Demography(Module):
             Types.CATEGORICAL,
             'The cause of death of this individual (the tlo_cause defined by the module)',
             categories=list(self.causes_of_death.keys())
+        )
+        self.PROPERTIES['district_num_of_residence'] = Property(
+            Types.CATEGORICAL,
+            'The district (name) of residence (mapped from district_num_of_residence).',
+            categories=sorted(self.parameters['district_num_to_region_name']),
         )
         self.PROPERTIES['district_of_residence'] = Property(
             Types.CATEGORICAL,
