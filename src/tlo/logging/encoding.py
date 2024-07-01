@@ -17,7 +17,7 @@ class PandasEncoder(json.JSONEncoder):
             return obj.isoformat()
         elif is_extension_array_dtype(obj):
             # for pandas extension dtypes assume length 1 arrays / series are scalars
-            return obj.tolist()[0 if len(obj) == 0 else slice(None)]
+            return obj.tolist()[0 if len(obj) == 1 else slice(None)]
         elif isinstance(obj, set):
             return list(obj)
         elif isinstance(obj, (type(pd.NaT), type(pd.NA))):
