@@ -343,7 +343,7 @@ class Lifestyle(Module):
     def read_parameters(self, data_folder):
         p = self.parameters
         dataframes = pd.read_excel(
-            Path(self.resourcefilepath) / 'ResourceFile_Lifestyle_Enhanced.xlsx',
+            self.sim.read_resource_file_path('ResourceFile_Lifestyle_Enhanced.xlsx'),
             sheet_name=["parameter_values", "urban_rural_by_district"],
         )
         self.load_parameters_from_dataframe(dataframes["parameter_values"])
