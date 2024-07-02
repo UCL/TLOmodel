@@ -1521,7 +1521,7 @@ class HealthSystem(Module):
         It returns an empty Counter instance.
 
         """
-        return Counter()
+        return
 
     def get_facility_info(self, hsi_event) -> FacilityInfo:
         """Helper function to find the facility at which an HSI event will take place based on their district of
