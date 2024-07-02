@@ -68,8 +68,8 @@ class Simulation:
         if log_config is None:
             log_config = {}
         self._custom_log_levels = None
-        self._log_filepath = None
-        self._configure_logging(**log_config)
+        self._log_filepath = self._configure_logging(**log_config)
+        
 
         # random number generator
         seed_from = 'auto' if seed is None else 'user'
@@ -99,8 +99,10 @@ class Simulation:
         # clear logging environment
         # if using progress bar we do not print log messages to stdout to avoid
         # clashes between progress bar and log output
-        logging.init_logging(add_stdout_handler=not (self.show_progress_bar or suppress_stdout))
-        logging.set_simulation(self)
+        logging.initialise(
+            add_stdout_handler=not (self.show_progress_bar or suppress_stdout),
+            simulation_date_getter=lambda: self.date.isoformat(),
+        )
 
         if custom_levels:
             # if modules have already been registered
@@ -115,7 +117,6 @@ class Simulation:
             log_path = Path(directory) / f"{filename}__{timestamp}.log"
             self.output_file = logging.set_output_file(log_path)
             logger.info(key='info', data=f'Log output: {log_path}')
-            self._log_filepath = log_path
             return log_path
 
         return None

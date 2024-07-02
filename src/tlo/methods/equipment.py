@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import logging
+from tlo.logging.helpers import get_dataframe_row_as_dict_for_logging
 
 logger_summary = logging.getLogger("tlo.methods.healthsystem.summary")
 
@@ -239,14 +240,13 @@ class Equipment:
             right_index=True,
             how='left',
         ).drop(columns=['Facility_ID', 'Facility_Name'])
-
         # Log multi-row data-frame
-        for _, row in output.iterrows():
+        for row_index in output.index:
             logger_summary.info(
                 key='EquipmentEverUsed_ByFacilityID',
                 description='For each facility_id (the set of facilities of the same level in a district), the set of'
                             'equipment items that are ever used.',
-                data=row.to_dict(),
+                data=get_dataframe_row_as_dict_for_logging(output, row_index)
             )
 
     def from_pkg_names(self, pkg_names: Union[str, Iterable[str]]) -> Set[int]:

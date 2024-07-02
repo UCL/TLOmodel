@@ -869,10 +869,10 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_ever_talk_ther = (df.de_ever_talk_ther & df.is_alive & df.de_depr).sum()
 
         def zero_out_nan(x):
-            return x if not np.isnan(x) else 0
+            return x if not np.isnan(x) else 0.0
 
         def safe_divide(x, y):
-            return x / y if y > 0.0 else 0.0
+            return float(x / y) if y > 0.0 else 0.0
 
         dict_for_output = {
             'prop_ge15_depr': zero_out_nan(safe_divide(n_ge15_depr, n_ge15)),

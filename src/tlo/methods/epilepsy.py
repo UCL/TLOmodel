@@ -563,16 +563,16 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_seiz_stat_1_3 = sum(status_groups.iloc[1:].is_alive)
         n_seiz_stat_2_3 = sum(status_groups.iloc[2:].is_alive)
 
-        n_antiep = (df.is_alive & df.ep_antiep).sum()
+        n_antiep = int((df.is_alive & df.ep_antiep).sum())
 
-        n_epi_death = df.ep_epi_death.sum()
+        n_epi_death = int(df.ep_epi_death.sum())
 
         status_groups['prop_seiz_stats'] = status_groups.is_alive / sum(status_groups.is_alive)
 
         status_groups['prop_seiz_stat_on_anti_ep'] = status_groups['ep_antiep'] / status_groups.is_alive
         status_groups['prop_seiz_stat_on_anti_ep'] = status_groups['prop_seiz_stat_on_anti_ep'].fillna(0)
         epi_death_rate = \
-            (n_epi_death * 4 * 1000) / n_seiz_stat_2_3 if n_seiz_stat_2_3 > 0 else 0
+            (n_epi_death * 4 * 1000) / n_seiz_stat_2_3 if n_seiz_stat_2_3 > 0 else 0.0
 
         cum_deaths = (~df.is_alive).sum()
 

@@ -490,9 +490,9 @@ class CareOfWomenDuringPregnancy(Module):
 
             # We log the total number of ANC contacts a woman has undergone at the time of birth via this dictionary
             if 'ga_anc_one' in mni[mother_id]:
-                ga_anc_one = mni[mother_id]['ga_anc_one']
+                ga_anc_one = float(mni[mother_id]['ga_anc_one'])
             else:
-                ga_anc_one = 0
+                ga_anc_one = 0.0
 
             total_anc_visit_count = {'person_id': mother_id,
                                      'total_anc': df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'],
