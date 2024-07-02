@@ -1016,6 +1016,10 @@ class RTI(Module, GenericFirstAppointmentsMixin):
             Types.INT,
             "A cut-off score above which an injuries will be considered severe enough to cause mortality in those who"
             "have not sought care."
+        ),
+        'maximum_number_of_times_HSI_events_should_run': Parameter(
+            Types.INT,
+            "limit on the number of times an HSI event can run"
         )
 
     }
@@ -1525,6 +1529,7 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         sim.schedule_event(RTI_Check_Death_No_Med(self), sim.date + DateOffset(months=0))
         # Begin logging the RTI events
         sim.schedule_event(RTI_Logging_Event(self), sim.date + DateOffset(months=1))
+
 
     def rti_do_when_diagnosed(self, person_id):
         """
@@ -3825,9 +3830,12 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Rti_ShockTreatment'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self._number_of_times_this_event_has_run = 0
+        self._maximum_number_times_event_should_run = self.module.parameters['maximum_number_of_times_HSI_events_should_run']
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
+        self._number_of_times_this_event_has_run += 1
         # determine if this is a child
         if df.loc[person_id, 'age_years'] < 15:
             is_child = True
@@ -3845,9 +3853,8 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
                 get_item_code('Blood, one unit'): 2,
                 get_item_code("Oxygen, 1000 liters, primarily with oxygen cylinders"): 23_040
             }
-            is_cons_available = self.get_consumables(
-                self.module.item_codes_for_consumables_required['shock_treatment_child']
-            )
+            is_cons_available = self.get_consumables(item_codes=
+                  self.module.item_codes_for_consumables_required['shock_treatment_child'])
         else:
             self.module.item_codes_for_consumables_required['shock_treatment_adult'] = {
                 get_item_code("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 2000,
@@ -3855,9 +3862,8 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
                 get_item_code('Blood, one unit'): 2,
                 get_item_code("Oxygen, 1000 liters, primarily with oxygen cylinders"): 23_040
             }
-            is_cons_available = self.get_consumables(
-                self.module.item_codes_for_consumables_required['shock_treatment_adult']
-            )
+            is_cons_available = self.get_consumables(item_codes=
+                  self.module.item_codes_for_consumables_required['shock_treatment_adult'])
 
         if is_cons_available:
             logger.debug(key='rti_general_message',
@@ -3865,7 +3871,8 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, 'rt_in_shock'] = False
             self.add_equipment({'Infusion pump', 'Drip stand', 'Oxygen cylinder, with regulator', 'Nasal Prongs'})
         else:
-            self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
+            if self._number_of_times_this_event_has_run < self._maximum_number_times_event_should_run:
+                self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
             return self.make_appt_footprint({})
 
     def did_not_run(self):
@@ -3918,11 +3925,15 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Rti_FractureCast'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self._number_of_times_this_event_has_run = 0
+        self._maximum_number_times_event_should_run = self.module.parameters[
+            'maximum_number_of_times_HSI_events_should_run']
 
     def apply(self, person_id, squeeze_factor):
         # Get the population and health system
         df = self.sim.population.props
         p = df.loc[person_id]
+        self._number_of_times_this_event_has_run += 1
         # if the person isn't alive return a blank footprint
         if not df.at[person_id, 'is_alive']:
             return self.make_appt_footprint({})
@@ -4017,12 +4028,13 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
             df.loc[person_id, 'rt_injuries_to_cast'].clear()
             df.loc[person_id, 'rt_date_death_no_med'] = pd.NaT
         else:
-            self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
-            if pd.isnull(df.loc[person_id, 'rt_date_death_no_med']):
-                df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
-            logger.debug(key='rti_general_message',
-                         data=f"Person {person_id} has {fracturecastcounts + slingcounts} fractures without treatment"
-                         )
+            if self._number_of_times_this_event_has_run < self._maximum_number_times_event_should_run:
+                self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
+                if pd.isnull(df.loc[person_id, 'rt_date_death_no_med']):
+                    df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
+                logger.debug(key='rti_general_message',
+                             data=f"Person {person_id} has {fracturecastcounts + slingcounts}"
+                                  f" fractures without treatment")
             return self.make_appt_footprint({})
 
     def did_not_run(self):
@@ -4057,9 +4069,13 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Rti_OpenFractureTreatment'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MinorSurg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self._number_of_times_this_event_has_run = 0
+        self._maximum_number_times_event_should_run = self.module.parameters[
+            'maximum_number_of_times_HSI_events_should_run']
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
+        self._number_of_times_this_event_has_run += 1
         if not df.at[person_id, 'is_alive']:
             return self.make_appt_footprint({})
         road_traffic_injuries = self.sim.modules['RTI']
@@ -4131,12 +4147,13 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
             if code[0] in df.loc[person_id, 'rt_injuries_for_open_fracture_treatment']:
                 df.loc[person_id, 'rt_injuries_for_open_fracture_treatment'].remove(code[0])
         else:
-            self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
-            if pd.isnull(df.loc[person_id, 'rt_date_death_no_med']):
-                df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
-            logger.debug(key='rti_general_message',
-                         data=f"Person {person_id}'s has {open_fracture_counts} open fractures without treatment",
-                         )
+            if self._number_of_times_this_event_has_run < self._maximum_number_times_event_should_run:
+                self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
+                if pd.isnull(df.loc[person_id, 'rt_date_death_no_med']):
+                    df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
+                logger.debug(key='rti_general_message',
+                             data=f"Person {person_id}'s has {open_fracture_counts} open fractures without treatment",
+                             )
 
     def did_not_run(self):
         person_id = self.target
@@ -4174,10 +4191,15 @@ class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
             ('Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD'): 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self._number_of_times_this_event_has_run = 0
+        self._maximum_number_times_event_should_run = self.module.parameters[
+            'maximum_number_of_times_HSI_events_should_run']
 
     def apply(self, person_id, squeeze_factor):
         get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
         df = self.sim.population.props
+        self._number_of_times_this_event_has_run += 1
+
         if not df.at[person_id, 'is_alive']:
             return self.make_appt_footprint({})
         road_traffic_injuries = self.sim.modules['RTI']
@@ -4222,11 +4244,12 @@ class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
                     assert df.loc[person_id, date_to_remove_daly_column] > self.sim.date
                 df.loc[person_id, 'rt_date_death_no_med'] = pd.NaT
             else:
-                self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
-                if pd.isnull(df.loc[person_id, 'rt_date_death_no_med']):
-                    df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
-                logger.debug(key='rti_general_message',
-                             data="This facility has no treatment for open wounds available.")
+                if self._number_of_times_this_event_has_run < self._maximum_number_times_event_should_run:
+                    self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
+                    if pd.isnull(df.loc[person_id, 'rt_date_death_no_med']):
+                        df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
+                    logger.debug(key='rti_general_message',
+                                 data="This facility has no treatment for open wounds available.")
                 return self.make_appt_footprint({})
 
     def did_not_run(self):
@@ -4269,11 +4292,15 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
 
         p = self.module.parameters
         self.prob_mild_burns = p['prob_mild_burns']
+        self._number_of_times_this_event_has_run = 0
+        self._maximum_number_times_event_should_run = p['maximum_number_of_times_HSI_events_should_run']
 
 
     def apply(self, person_id, squeeze_factor):
         get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
         df = self.sim.population.props
+        self._number_of_times_this_event_has_run += 1
+
         if not df.at[person_id, 'is_alive']:
             return self.make_appt_footprint({})
         road_traffic_injuries = self.sim.modules['RTI']
@@ -4346,11 +4373,12 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
                 )
                 df.loc[person_id, 'rt_date_death_no_med'] = pd.NaT
             else:
-                self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
-                if pd.isnull(df.loc[person_id, 'rt_date_death_no_med']):
-                    df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
-                logger.debug(key='rti_general_message',
-                             data="This facility has no treatment for burns available.")
+                if self._number_of_times_this_event_has_run < self._maximum_number_times_event_should_run:
+                    self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
+                    if pd.isnull(df.loc[person_id, 'rt_date_death_no_med']):
+                        df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
+                    logger.debug(key='rti_general_message',
+                                 data="This facility has no treatment for burns available.")
 
     def did_not_run(self):
         person_id = self.target
@@ -4373,9 +4401,14 @@ class HSI_RTI_Tetanus_Vaccine(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Rti_TetanusVaccine'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'EPI': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self._number_of_times_this_event_has_run = 0
+        self._maximum_number_times_event_should_run = self.module.parameters[
+            'maximum_number_of_times_HSI_events_should_run']
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
+        self._number_of_times_this_event_has_run += 1
+
         if not df.at[person_id, 'is_alive']:
             return self.make_appt_footprint({})
         person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
@@ -4404,9 +4437,10 @@ class HSI_RTI_Tetanus_Vaccine(HSI_Event, IndividualScopeEventMixin):
                 logger.debug(key='rti_general_message',
                              data=f"Tetanus vaccine requested for person {person_id} and given")
             else:
-                self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
-                logger.debug(key='rti_general_message',
-                             data=f"Tetanus vaccine requested for person {person_id}, not given")
+                if self._number_of_times_this_event_has_run < self._maximum_number_times_event_should_run:
+                    self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
+                    logger.debug(key='rti_general_message',
+                                 data=f"Tetanus vaccine requested for person {person_id}, not given")
                 return self.make_appt_footprint({})
 
     def did_not_run(self):
@@ -4434,9 +4468,14 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
             ('Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD'): 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self._number_of_times_this_event_has_run = 0
+        self._maximum_number_times_event_should_run = self.module.parameters[
+            'maximum_number_of_times_HSI_events_should_run']
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
+        self._number_of_times_this_event_has_run += 1
+
         if not df.at[person_id, 'is_alive']:
             return self.make_appt_footprint({})
         # Check that the person sent here is alive, has been through A&E and RTI_Med_int
@@ -4545,10 +4584,11 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
                             data=dict_to_output,
                             description='Pain medicine successfully provided to the person')
             else:
-                self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
-                logger.debug(key='rti_general_message',
-                             data=f"This facility has no pain management available for their mild pain, person "
-                                  f"{person_id}.")
+                if self._number_of_times_this_event_has_run < self._maximum_number_times_event_should_run:
+                    self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
+                    logger.debug(key='rti_general_message',
+                                 data=f"This facility has no pain management available for their mild pain, person "
+                                      f"{person_id}.")
                 return self.make_appt_footprint({})
 
         if pain_level == "moderate":
@@ -4576,10 +4616,11 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
                             data=dict_to_output,
                             description='Pain medicine successfully provided to the person')
             else:
-                self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
-                logger.debug(key='rti_general_message',
-                             data=f"This facility has no pain management available for moderate pain for person "
-                                  f"{person_id}.")
+                if self._number_of_times_this_event_has_run < self._maximum_number_times_event_should_run:
+                    self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
+                    logger.debug(key='rti_general_message',
+                                 data=f"This facility has no pain management available for moderate pain for person "
+                                      f"{person_id}.")
                 return self.make_appt_footprint({})
 
         if pain_level == "severe":
@@ -4608,10 +4649,11 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
                             data=dict_to_output,
                             description='Pain medicine successfully provided to the person')
             else:
-                self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
-                logger.debug(key='rti_general_message',
-                             data=f"This facility has no pain management available for severe pain for person "
-                                  f"{person_id}.")
+                if self._number_of_times_this_event_has_run < self._maximum_number_times_event_should_run:
+                    self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
+                    logger.debug(key='rti_general_message',
+                                 data=f"This facility has no pain management available for severe pain for person "
+                                      f"{person_id}.")
                 return self.make_appt_footprint({})
 
     def did_not_run(self):
