@@ -51,8 +51,8 @@ class EffectOfProgrammes(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2020, 1, 1)
-        self.pop_size = 75_000
+        self.end_date = Date(2030, 1, 1)
+        self.pop_size = 15_000
         self.number_of_draws = 5
         self.runs_per_draw = 1
 
@@ -86,7 +86,7 @@ class EffectOfProgrammes(BaseScenario):
         ]
 
     def draw_parameters(self, draw_number, rng):
-        scaleup_start_year = 2012
+        scaleup_start_year = 2019
 
         return {
             'Hiv': {
