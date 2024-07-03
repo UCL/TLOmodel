@@ -1128,9 +1128,6 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["prob_hiv_test_at_anc_or_delivery"] = scaled_params["prob_hiv_test_at_anc_or_delivery"]
             p["prob_hiv_test_for_newborn_infant"] = scaled_params["prob_hiv_test_for_newborn_infant"]
 
-            # prob ART start if dx, this is already 95% at 2020
-            p["prob_start_art_after_hiv_test"] = scaled_params["prob_start_art_after_hiv_test"]
-
             # viral suppression rates
             # adults already at 95% by 2020
             # change all column values
