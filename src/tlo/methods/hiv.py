@@ -1121,7 +1121,6 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["prob_circ_after_hiv_test"] = scaled_params["prob_circ_after_hiv_test"]
 
             # increase testing/diagnosis rates, default 2020 0.03/0.25 -> 93% dx
-            p["hiv_testing_rates"]["annual_testing_rate_children"] = scaled_params["annual_testing_rate_children"]
             p["hiv_testing_rates"]["annual_testing_rate_adults"] = scaled_params["annual_testing_rate_adults"]
 
             # ANC testing - value for mothers and infants testing
