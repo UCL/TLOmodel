@@ -1133,6 +1133,9 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             # change all column values
             p["prob_start_art_or_vs"]["virally_suppressed_on_art"] = scaled_params["virally_suppressed_on_art"]
 
+            # update exising linear models to use new scaled-up paramters
+            self.pre_initialise_population()
+
     def on_birth(self, mother_id, child_id):
         """
         * Initialise our properties for a newborn individual;

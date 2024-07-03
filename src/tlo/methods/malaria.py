@@ -703,6 +703,9 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
             # itn rates for 2019 onwards
             p["itn"] = scaled_params["itn"]
 
+            # update exising linear models to use new scaled-up paramters
+            self.pre_initialise_population()
+
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
         df.at[child_id, 'ma_is_infected'] = False

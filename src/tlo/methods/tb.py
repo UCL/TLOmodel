@@ -909,6 +909,9 @@ class Tb(Module):
             p["ipt_coverage"]["coverage_plhiv"] = scaled_params["ipt_coverage_plhiv"]
             p["ipt_coverage"]["coverage_paediatric"] = scaled_params["ipt_coverage_paediatric"]
 
+            # update exising linear models to use new scaled-up paramters
+            self.pre_initialise_population()
+
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual
         allocate IPT for child if mother diagnosed with TB

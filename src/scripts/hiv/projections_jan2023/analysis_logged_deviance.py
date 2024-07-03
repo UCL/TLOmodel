@@ -87,8 +87,8 @@ sim.register(
 )
 
 # set the scenario
-# sim.modules["Hiv"].parameters["beta"] = 0.129671
-# sim.modules["Tb"].parameters["scaling_factor_WHO"] = 1.5
+sim.modules["Hiv"].parameters["do_scaleup"] = True
+sim.modules["Hiv"].parameters["scaleup_start_year"] = 2011
 # sim.modules["Tb"].parameters["scenario"] = scenario
 # sim.modules["Tb"].parameters["scenario_start_date"] = Date(2010, 1, 1)
 # sim.modules["Tb"].parameters["scenario_SI"] = "z"
