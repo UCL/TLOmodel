@@ -51,7 +51,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         self.linear_models_for_progression_of_hpv_cc_status = dict()
         self.lm_onset_vaginal_bleeding = None
         self.daly_wts = dict()
-        self.item_codes_cervical_can = None # (Will store consumable item codes)
+        self.item_codes_cervical_can = dict()
 
     INIT_DEPENDENCIES = {
         'Demography', 'SimplifiedBirths', 'HealthSystem', 'Lifestyle', 'SymptomManager'
@@ -362,11 +362,6 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         * Schedule the palliative care appointments for those that are on palliative care at initiation
         """
 
-        # We call the following function to store the required consumables for the simulation run within the appropriate
-        # dictionary
-        # myitems = get_consumable_item_codes_cancers(self)
-        # print(f'My Items {myitems}')
-        # self.item_codes_cervical_can = get_consumable_item_codes_cancers(self)
 
         # ----- SCHEDULE MAIN POLLING EVENTS -----
         # Schedule main polling event to happen immediately
@@ -377,7 +372,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         sim.schedule_event(CervicalCancerLoggingEvent(self), sim.date + DateOffset(months=1))
 
         # Look-up consumable item codes
-        self.look_up_consumable_item_codes()
+        self.item_codes_cervical_can = get_consumable_item_codes_cancers(self)
 
         # ----- LINEAR MODELS -----
         # Define LinearModels for the progression of cancer, in each 1 month period
@@ -618,13 +613,6 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         df.at[child_id, "ce_ever_screened"] = False
         df.at[child_id, "ce_ever_diagnosed"] = False
 
-    def look_up_consumable_item_codes(self):
-        """Look up the item codes that used in the HSI in the module"""
-        get_item_codes = self.sim.modules['HealthSystem'].get_item_code_from_item_name
-
-        self.item_codes_cervical_can = dict()
-        self.item_codes_cervical_can['cervical_cancer_screening_via'] = get_item_codes('Clean delivery kit')
-        # self.item_codes_cervical_can['cervical_cancer_screening_via_optional'] = get_item_codes('Gloves')
 
     def report_daly_values(self):
 
@@ -902,12 +890,10 @@ class HSI_CervicalCancer_AceticAcidScreening(HSI_Event, IndividualScopeEventMixi
 
 
         # Check consumables are available
-        # cons_avail = self.get_consumables(item_codes=self.module.item_codes_cervical_can['cervical_cancer_screening_via'],
-        #                         optional_item_codes=self.module.item_codes_cervical_can['cervical_cancer_screening_via_optional'])
         cons_avail = self.get_consumables(
             item_codes=self.module.item_codes_cervical_can['cervical_cancer_screening_via'])
 
-        if self.get_consumables(item_codes=self.module.item_codes_cervical_can['cervical_cancer_screening_via']):
+        if cons_avail:
             self.add_equipment({'Infusion pump', 'Drip stand'})
             # self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
 

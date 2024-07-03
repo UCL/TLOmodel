@@ -26,10 +26,10 @@ def get_consumable_item_codes_cancers(self) -> Dict[str, int]:
         {get_item_code("Biopsy needle"): 1}
 
     # cons_dict['cervical_cancer_screening_via_optional'] = \
-    #     {get_item_code("Gloves"): 1}
-    #
-    # cons_dict['cervical_cancer_screening_via'] = \
-    #     {get_item_code("Clean delivery kit"): 1}
+    #     {get_item_code("Gloves"): 2}
+
+    cons_dict['cervical_cancer_screening_via'] = \
+        {get_item_code("Clean delivery kit"): 1}
 
     cons_dict['treatment_surgery_core'] = \
         {get_item_code("Halothane (fluothane)_250ml_CMST"): 100,
