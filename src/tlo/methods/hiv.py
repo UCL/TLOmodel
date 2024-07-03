@@ -1116,6 +1116,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             # increase retention to 75% for FSW and AGYW
             p["prob_prep_for_agyw"] = scaled_params["prob_prep_for_agyw"]
             p["probability_of_being_retained_on_prep_every_3_months"] = scaled_params["probability_of_being_retained_on_prep_every_3_months"]
+            p["probability_of_being_retained_on_art_every_3_months"] = scaled_params["probability_of_being_retained_on_art_every_3_months"]
 
             # increase probability of VMMC after hiv test
             p["prob_circ_after_hiv_test"] = scaled_params["prob_circ_after_hiv_test"]

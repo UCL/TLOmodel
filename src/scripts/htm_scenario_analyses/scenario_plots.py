@@ -62,7 +62,7 @@ num_deaths_by_cause_label = extract_results(
         module='tlo.methods.demography',
         key='death',
         custom_generate_series=get_num_deaths_by_cause_label,
-        do_scaling=True
+        do_scaling=False
     )
 
 
