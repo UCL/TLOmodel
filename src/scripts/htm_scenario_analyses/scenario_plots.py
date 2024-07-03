@@ -55,7 +55,7 @@ def get_num_deaths_by_cause_label(_df):
         .size()
 
 
-TARGET_PERIOD = (Date(2015, 1, 1), Date(2020, 1, 1))
+TARGET_PERIOD = (Date(2020, 1, 1), Date(2025, 1, 1))
 
 num_deaths_by_cause_label = extract_results(
         results_folder,
