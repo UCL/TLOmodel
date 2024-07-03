@@ -103,9 +103,9 @@ aids_deaths = summarise_deaths_for_one_cause(results_folder, 'AIDS')
 tb_deaths = summarise_deaths_for_one_cause(results_folder, 'TB (non-AIDS)')
 malaria_deaths = summarise_deaths_for_one_cause(results_folder, 'Malaria')
 
-draw_labels = ['No scale-up', 'HIV, scale-up', 'TB scale-up', 'Malaria scale-up']
+draw_labels = ['No scale-up', 'HIV, scale-up', 'TB scale-up', 'Malaria scale-up', 'HTM scale-up']
 
-colors = sns.color_palette("Set1", 4) # Blue, Orange, Green, Red
+colors = sns.color_palette("Set1", 5) # Blue, Orange, Green, Red
 
 
 # Create subplots
@@ -116,19 +116,19 @@ for i, col in enumerate(aids_deaths.columns):
     axs[0].plot(aids_deaths.index, aids_deaths[col], label=draw_labels[i], color=colors[i])
 axs[0].set_title('HIV/AIDS')
 axs[0].legend()
-axs[0].axvline(x=2015, color='gray', linestyle='--')
+axs[0].axvline(x=2019, color='gray', linestyle='--')
 
 # Plot for df2
 for i, col in enumerate(tb_deaths.columns):
     axs[1].plot(tb_deaths.index, tb_deaths[col], color=colors[i])
 axs[1].set_title('TB')
-axs[1].axvline(x=2015, color='gray', linestyle='--')
+axs[1].axvline(x=2019, color='gray', linestyle='--')
 
 # Plot for df3
 for i, col in enumerate(malaria_deaths.columns):
     axs[2].plot(malaria_deaths.index, malaria_deaths[col], color=colors[i])
 axs[2].set_title('Malaria')
-axs[2].axvline(x=2015, color='gray', linestyle='--')
+axs[2].axvline(x=2019, color='gray', linestyle='--')
 
 for ax in axs:
     ax.set_xlabel('Years')
