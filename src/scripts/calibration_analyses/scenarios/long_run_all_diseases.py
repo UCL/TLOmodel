@@ -21,7 +21,7 @@ class LongRun(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2021, 1, 1)  # The simulation will stop before reaching this date.
+        self.end_date = Date(2015, 1, 1)  # The simulation will stop before reaching this date.
         self.pop_size = 10_000
         self.number_of_draws = 1
         self.runs_per_draw = 2
