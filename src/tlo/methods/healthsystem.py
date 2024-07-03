@@ -1521,7 +1521,7 @@ class HealthSystem(Module):
         It returns an empty Counter instance.
 
         """
-        return
+        return Counter()
 
     def get_facility_info(self, hsi_event) -> FacilityInfo:
         """Helper function to find the facility at which an HSI event will take place based on their district of
@@ -1725,7 +1725,7 @@ class HealthSystem(Module):
             },
             description="record of each HSI event"
         )
-        if did_run:
+        if did_run and event_details.appt_footprint is not None:
             if self._hsi_event_count_log_period is not None:
                 # Do logging for HSI Event using counts of each 'unique type' of HSI event (as defined by
                 # `HSIEventDetails`).
