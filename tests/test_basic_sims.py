@@ -184,7 +184,7 @@ def test_regular_event_with_end(seed):
             super().__init__(module=module, frequency=DateOffset(days=1), end_date=end_date)
 
         def apply(self, population):
-            population.props.loc[0, 'last_run'] = population.sim.date
+            population.props.loc[0, 'last_run'] = self.module.sim.date
 
     class MyOtherEvent(PopulationScopeEventMixin, RegularEvent):
         def __init__(self, module):

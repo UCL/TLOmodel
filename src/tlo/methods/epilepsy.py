@@ -1,23 +1,28 @@
+from __future__ import annotations
+
 from pathlib import Path
-from typing import List, Union
+from typing import TYPE_CHECKING, List, Union
 
 import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.core import IndividualPropertyUpdates
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.hsi_event import HSI_Event
+from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
+
+if TYPE_CHECKING:
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class Epilepsy(Module):
+class Epilepsy(Module, GenericFirstAppointmentsMixin):
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
@@ -395,13 +400,14 @@ class Epilepsy(Module):
 
     def do_at_generic_first_appt_emergency(
         self,
-        patient_id: int,
+        person_id: int,
         symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
         **kwargs,
-    ) -> IndividualPropertyUpdates:
+    ) -> None:
         if "seizures" in symptoms:
-            event = HSI_Epilepsy_Start_Anti_Epileptic(person_id=patient_id, module=self)
-            self.healthsystem.schedule_hsi_event(event, priority=0, topen=self.sim.date)
+            event = HSI_Epilepsy_Start_Anti_Epileptic(person_id=person_id, module=self)
+            schedule_hsi_event(event, priority=0, topen=self.sim.date)
 
 
 class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
@@ -611,7 +617,14 @@ class HSI_Epilepsy_Start_Anti_Epileptic(HSI_Event, IndividualScopeEventMixin):
 
         if best_available_medicine is not None:
             # Request the medicine from the health system
-            self.get_consumables(self.module.item_codes[best_available_medicine])
+
+            dose = {'phenobarbitone': 9131,  # 100mg per day - 3 months
+                    'carbamazepine': 91_311,  # 1000mg per day - 3 months
+                    'phenytoin': 27_393}  # 300mg per day - 3 months
+
+            self.get_consumables({self.module.item_codes[best_available_medicine]:
+                                  dose[best_available_medicine]})
+
             # Update this person's properties to show that they are currently on medication
             df.at[person_id, 'ep_antiep'] = True
 
@@ -662,18 +675,30 @@ class HSI_Epilepsy_Follow_Up(HSI_Event, IndividualScopeEventMixin):
         # Request the medicine
         best_available_medicine = self.module.get_best_available_medicine(self)
         if best_available_medicine is not None:
+
+            # Schedule a reoccurrence of this follow-up in 3 months if ep_seiz_stat == '3',
+            # else, schedule this reoccurrence of it in 1 year (i.e., if ep_seiz_stat == '2'
+            if df.at[person_id, 'ep_seiz_stat'] == '3':
+                fu_mnths = 3
+            else:
+                fu_mnths = 12
+
             # The medicine is available, so request it
-            self.get_consumables(self.module.item_codes[best_available_medicine])
+            dose = {'phenobarbitone_3_mnths': 9131, 'phenobarbitone_12_mnths': 36_525,  # 100mg per day - 3/12 months
+                    'carbamazepine_3_mnths': 91_311, 'carbamazepine_12_mnths': 365_250,  # 1000mg per day - 3/12 months
+                    'phenytoin_3_mnths': 27_393,  'phenytoin_12_mnths': 109_575}  # 300mg per day - 3/12 months
+
+            self.get_consumables({self.module.item_codes[best_available_medicine]:
+                                  dose[f'{best_available_medicine}_{fu_mnths}_mnths']})
 
             # Reset counter of "failed attempts" and put the appointment for the next occurrence to the usual
             self._counter_of_failed_attempts_due_to_unavailable_medicines = 0
             self.EXPECTED_APPT_FOOTPRINT = self._DEFAULT_APPT_FOOTPRINT
 
-            # Schedule a reoccurrence of this follow-up in 3 months if ep_seiz_stat == '3',
-            # else, schedule this reoccurrence of it in 1 year (i.e., if ep_seiz_stat == '2')
+            # Schedule follow-up
             hs.schedule_hsi_event(
                 hsi_event=self,
-                topen=self.sim.date + DateOffset(months=3 if df.at[person_id, 'ep_seiz_stat'] == '3' else 12),
+                topen=self.sim.date + DateOffset(months=fu_mnths),
                 tclose=None,
                 priority=0
             )

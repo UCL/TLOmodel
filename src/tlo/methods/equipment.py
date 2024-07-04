@@ -1,6 +1,6 @@
 import warnings
 from collections import defaultdict
-from typing import Counter, Iterable, Literal, Set, Union
+from typing import Counter, Dict, Iterable, Literal, Set, Union
 
 import numpy as np
 import pandas as pd
@@ -77,6 +77,7 @@ class Equipment:
 
         # - Data structures for quick look-ups for items and descriptors
         self._item_code_lookup = self.catalogue.set_index('Item_Description')['Item_Code'].to_dict()
+        self._pkg_lookup = self._create_pkg_lookup()
         self._all_item_descriptors = set(self._item_code_lookup.keys())
         self._all_item_codes = set(self._item_code_lookup.values())
         self._all_fac_ids = self.master_facilities_list['Facility_ID'].unique()
@@ -115,7 +116,7 @@ class Equipment:
         calculation if the equipment availability change event occurs during the simulation.
         """
         dat = self.data_availability.set_index(
-            [self.data_availability["Facility_ID"].astype(int), self.data_availability["Item_Code"].astype(int)]
+            [self.data_availability["Facility_ID"].astype(np.int64), self.data_availability["Item_Code"].astype(np.int64)]
         )["Pr_Available"]
 
         # Confirm that there is an estimate for every item_code at every facility_id
@@ -134,11 +135,11 @@ class Equipment:
 
         def check_item_codes_recognised(item_codes: set[int]):
             if not item_codes.issubset(self._all_item_codes):
-                warnings.warn(f'Item code(s) "{item_codes}" not recognised.')
+                warnings.warn(f'At least one item code was unrecognised: "{item_codes}".')
 
         def check_item_descriptors_recognised(item_descriptors: set[str]):
             if not item_descriptors.issubset(self._all_item_descriptors):
-                warnings.warn(f'Item descriptor(s) "{item_descriptors}" not recognised.')
+                warnings.warn(f'At least one item descriptor was unrecognised "{item_descriptors}".')
 
         # Make into a set if it is not one already
         if isinstance(items, (str, int)):
@@ -248,13 +249,41 @@ class Equipment:
                 data=row.to_dict(),
             )
 
-    def lookup_item_codes_from_pkg_name(self, pkg_name: str) -> Set[int]:
-        """Convenience function to find the set of item_codes that are grouped under a package name in the catalogue.
-        It is expected that this is used by the disease module once and then the resulting equipment item_codes are
-        saved on the module."""
+    def from_pkg_names(self, pkg_names: Union[str, Iterable[str]]) -> Set[int]:
+        """Convenience function to find the set of item_codes that are grouped under requested package name(s) in the
+        catalogue."""
+        # Make into a set if it is not one already
+        if isinstance(pkg_names, (str, int)):
+            pkg_names = set([pkg_names])
+        else:
+            pkg_names = set(pkg_names)
+
+        item_codes = set()
+        for pkg_name in pkg_names:
+            if pkg_name in self._pkg_lookup.keys():
+                item_codes.update(self._pkg_lookup[pkg_name])
+            else:
+                raise ValueError(f'That Pkg_Name is not in the catalogue: {pkg_name=}')
+
+        return item_codes
+
+    def _create_pkg_lookup(self) -> Dict[str, Set[int]]:
+        """Create a lookup from a Package Name to a set of Item_Codes that are contained with that package.
+        N.B. In the Catalogue, there is one row for each Item, and the Packages to which each Item belongs (if any)
+        is given in a column 'Pkg_Name': if an item belongs to multiple packages, these names are separated by commas,
+        and if it doesn't belong to any package, then there is a NULL value."""
         df = self.catalogue
 
-        if pkg_name not in df['Pkg_Name'].unique():
-            raise ValueError(f'That Pkg_Name is not in the catalogue: {pkg_name=}')
+        # Make dataframe with columns for each package, and bools showing whether each item_code is included
+        pkgs = df['Pkg_Name'].replace({float('nan'): None}) \
+                             .str.get_dummies(sep=',') \
+                             .set_index(df.Item_Code) \
+                             .astype(bool)
 
-        return set(df.loc[df['Pkg_Name'] == pkg_name, 'Item_Code'].values)
+        # Make dict of the form: {'Pkg_Code': <Set of item_codes>}
+        pkg_lookup_dict = {
+            pkg_name.strip(): set(pkgs[pkg_name].loc[pkgs[pkg_name]].index.to_list())
+            for pkg_name in pkgs.columns
+        }
+
+        return pkg_lookup_dict

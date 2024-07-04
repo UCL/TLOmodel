@@ -44,17 +44,23 @@ def cli(ctx, config_file, verbose):
     ctx.obj["verbose"] = verbose
 
 
-@cli.command()
+@cli.command(context_settings=dict(ignore_unknown_options=True))
 @click.argument("scenario_file", type=click.Path(exists=True))
 @click.option("--draw-only", is_flag=True, help="Only generate draws; do not run the simulation")
 @click.option("--draw", "-d", nargs=2, type=int)
 @click.option("--output-dir", type=str)
-def scenario_run(scenario_file, draw_only, draw: tuple, output_dir=None):
+@click.argument('scenario_args', nargs=-1, type=click.UNPROCESSED)
+def scenario_run(scenario_file, draw_only, draw: tuple, output_dir=None, scenario_args=None):
     """Run the specified scenario locally.
 
     SCENARIO_FILE is path to file containing a scenario class
     """
     scenario = load_scenario(scenario_file)
+
+    # if we have other scenario arguments, parse them
+    if scenario_args is not None:
+        scenario.parse_arguments(scenario_args)
+
     config = scenario.save_draws(return_config=True)
     json_string = json.dumps(config, indent=2)
 
