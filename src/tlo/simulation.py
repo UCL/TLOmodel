@@ -14,7 +14,6 @@ from tlo import Date, Population, logging
 from tlo.dependencies import check_dependencies_present, topologically_sort_modules
 from tlo.events import Event, IndividualScopeEventMixin
 from tlo.progressbar import ProgressBar
-import os
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -81,6 +80,7 @@ class Simulation:
             data=f'Simulation RNG {seed_from} entropy = {self._seed_seq.entropy}'
         )
         self.rng = np.random.RandomState(np.random.MT19937(self._seed_seq))
+        self.res_path = "./resources"
 
     def _configure_logging(self, filename: str = None, directory: Union[Path, str] = "./outputs",
                            custom_levels: Dict[str, int] = None, suppress_stdout: bool = False):
@@ -166,7 +166,7 @@ class Simulation:
 
             self.modules[module.name] = module
             module.sim = self
-            module.read_parameters('')
+            module.read_parameters(self.res_path)
 
         if self._custom_log_levels:
             logging.set_logging_levels(self._custom_log_levels)
@@ -313,11 +313,6 @@ class Simulation:
                     person_events.append((date, event))
 
         return person_events
-    def read_resource_file_path(self, *args):
-        """The path to the resourcefile"""
-        self.resourcefilepath = Path('./resources')
-        file_path = os.path.join(self.resourcefilepath, *args)
-        return file_path
 
 class EventQueue:
     """A simple priority queue for events.

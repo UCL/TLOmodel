@@ -515,7 +515,7 @@ def run():
     sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
     # Path to the resource files used by the disease and intervention methods
-    resources = "./resources"
+    resources = sim.res_path
 
     # We register all modules in a single call to the register method, calling once with multiple
     # objects. This is preferred to registering each module in multiple calls because we will be
