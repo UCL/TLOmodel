@@ -510,20 +510,20 @@ def run():
     end_date = Date(2050, 1, 1)
     pop_size = 20000
 
+    # Path to the resource files used by the disease and intervention methods
+    resourcefilepath = './resources'
+
     # This creates the Simulation instance for this run. Because we"ve passed the `seed` and
     # `log_config` arguments, these will override the default behaviour.
-    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
-
-    # Path to the resource files used by the disease and intervention methods
-    resources = sim.res_path
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, resourcefilepath=resourcefilepath)
 
     # We register all modules in a single call to the register method, calling once with multiple
     # objects. This is preferred to registering each module in multiple calls because we will be
     # able to handle dependencies if modules are registered together
     sim.register(
-        demography.Demography(resourcefilepath=resources),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
-        simplified_births.SimplifiedBirths(resourcefilepath=resources)
+        demography.Demography(),
+        enhanced_lifestyle.Lifestyle(),
+        simplified_births.SimplifiedBirths()
 
     )
 

@@ -24,9 +24,8 @@ class Lifestyle(Module):
     by urban/rural, wealth, tobacco usage etc.
     """
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         super().__init__(name)
-        self.resourcefilepath: Path = resourcefilepath
 
         # a pointer to the linear models class
         self.models = None
@@ -340,10 +339,10 @@ class Lifestyle(Module):
         "li_is_circ": Property(Types.BOOL, "Is the person circumcised if they are male (False for all females)"),
     }
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath = None):
         p = self.parameters
         dataframes = pd.read_excel(
-            Path(self.resourcefilepath) / 'ResourceFile_Lifestyle_Enhanced.xlsx',
+            Path(resourcefilepath) / 'ResourceFile_Lifestyle_Enhanced.xlsx',
             sheet_name=["parameter_values", "urban_rural_by_district"],
         )
         self.load_parameters_from_dataframe(dataframes["parameter_values"])

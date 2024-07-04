@@ -44,7 +44,7 @@ class Simulation:
     """
 
     def __init__(self, *, start_date: Date, seed: int = None, log_config: dict = None,
-                 show_progress_bar=False):
+                 show_progress_bar=False, resourcefilepath = None):
         """Create a new simulation.
 
         :param start_date: the date the simulation begins; must be given as
@@ -53,6 +53,7 @@ class Simulation:
         :param log_config: sets up the logging configuration for this simulation
         :param show_progress_bar: whether to show a progress bar instead of the logger
             output during the simulation
+        :param resourcefilepath: path to the resources folder
         """
         # simulation
         self.date = self.start_date = start_date
@@ -80,7 +81,7 @@ class Simulation:
             data=f'Simulation RNG {seed_from} entropy = {self._seed_seq.entropy}'
         )
         self.rng = np.random.RandomState(np.random.MT19937(self._seed_seq))
-        self.res_path = "./resources"
+        self.resourcefilepath = resourcefilepath
 
     def _configure_logging(self, filename: str = None, directory: Union[Path, str] = "./outputs",
                            custom_levels: Dict[str, int] = None, suppress_stdout: bool = False):
@@ -166,7 +167,7 @@ class Simulation:
 
             self.modules[module.name] = module
             module.sim = self
-            module.read_parameters(self.res_path)
+            module.read_parameters(self.resourcefilepath)
 
         if self._custom_log_levels:
             logging.set_logging_levels(self._custom_log_levels)

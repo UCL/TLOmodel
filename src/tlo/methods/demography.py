@@ -73,9 +73,8 @@ class Demography(Module):
     The core demography module.
     """
 
-    def __init__(self, name=None, resourcefilepath=None, equal_allocation_by_district: bool = False):
+    def __init__(self, name=None, equal_allocation_by_district: bool = False):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
         self.equal_allocation_by_district = equal_allocation_by_district
         self.initial_model_to_data_popsize_ratio = None  # will store scaling factor
         self.popsize_by_year = dict()  # will store total population size each year
@@ -154,17 +153,17 @@ class Demography(Module):
         'age_days': Property(Types.INT, 'The age of the individual in whole days'),
     }
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath = None):
         """Load the parameters from `ResourceFile_Demography_parameters.csv` and data from other `ResourceFiles`."""
 
         # General parameters
         self.load_parameters_from_dataframe(pd.read_csv(
-            Path(self.resourcefilepath) / 'demography' / 'ResourceFile_Demography_parameters.csv')
+            Path(resourcefilepath) / 'demography' / 'ResourceFile_Demography_parameters.csv')
         )
 
         # Initial population size:
         self.parameters['pop_2010'] = pd.read_csv(
-            Path(self.resourcefilepath) / 'demography' / 'ResourceFile_Population_2010.csv'
+            Path(resourcefilepath) / 'demography' / 'ResourceFile_Population_2010.csv'
         )
 
         # Lookup dicts to map from district_num_of_residence (in the df) and District name and Region name
@@ -186,17 +185,17 @@ class Demography(Module):
 
         # Fraction of babies that are male
         self.parameters['fraction_of_births_male'] = pd.read_csv(
-            Path(self.resourcefilepath) / 'demography' / 'ResourceFile_Pop_Frac_Births_Male.csv'
+            Path(resourcefilepath) / 'demography' / 'ResourceFile_Pop_Frac_Births_Male.csv'
         ).set_index('Year')['frac_births_male']
 
         # All-Cause Mortality schedule:
         self.parameters['all_cause_mortality_schedule'] = pd.read_csv(
-            Path(self.resourcefilepath) / 'demography' / 'ResourceFile_Pop_DeathRates_Expanded_WPP.csv'
+            Path(resourcefilepath) / 'demography' / 'ResourceFile_Pop_DeathRates_Expanded_WPP.csv'
         )
 
         # GBD Dataset for Causes of Death
         self.parameters['gbd_causes_of_death_data'] = pd.read_csv(
-            Path(self.resourcefilepath) / 'gbd' / 'ResourceFile_CausesOfDeath_GBD2019.csv'
+            Path(resourcefilepath) / 'gbd' / 'ResourceFile_CausesOfDeath_GBD2019.csv'
         ).set_index(['Sex', 'Age_Grp'])
 
     def pre_initialise_population(self):
