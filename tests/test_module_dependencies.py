@@ -16,7 +16,7 @@ from tlo.dependencies import (
     get_module_class_map,
     topologically_sort_modules,
 )
-from tlo.methods import demography, hiv, simplified_births
+from tlo.methods import hiv, simplified_births
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / "../resources"
