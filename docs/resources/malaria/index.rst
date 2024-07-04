@@ -1,0 +1,14 @@
+malaria
+=======
+
+.. toctree::
+    :maxdepth: 1
+
+    ResourceFile_malaria.xlsx
+    ResourceFile_malaria_ClinInc.csv
+    ResourceFile_malaria_ClinInc_expanded.csv
+    ResourceFile_malaria_InfInc.csv
+    ResourceFile_malaria_InfInc_expanded.csv
+    ResourceFile_malaria_SevInc.csv
+    ResourceFile_malaria_SevInc_expanded.csv
+

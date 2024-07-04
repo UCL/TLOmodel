@@ -1,0 +1,50 @@
+Resource files
+==============
+
+Resource  files used in ``TLOmodel`` simulations
+
+.. toctree::
+    :maxdepth: 1
+
+    cmd/index.rst
+    contraception/index.rst
+    costing/index.rst
+    demography/index.rst
+    epilepsy/index.rst
+    gbd/index.rst
+    healthsystem/index.rst
+    malaria/index.rst
+    mapping/index.rst
+    .DS_Store
+    ResourceFile_AbortionAndMiscarriage.xlsx
+    ResourceFile_Alri.xlsx
+    ResourceFile_AntenatalCare.xlsx
+    ResourceFile_Bladder_Cancer.xlsx
+    ResourceFile_Breast_Cancer.xlsx
+    ResourceFile_Childhood_Pneumonia.xlsx
+    ResourceFile_Copd.csv
+    ResourceFile_DALY_Weights.csv
+    ResourceFile_Depression.xlsx
+    ResourceFile_Diarrhoea.xlsx
+    ResourceFile_EPI_WHO_estimates.xlsx
+    ResourceFile_EPI_vaccine_coverage.csv
+    ResourceFile_GenericSymptoms_and_HealthSeeking.csv
+    ResourceFile_HIV.xlsx
+    ResourceFile_HealthSeekingBehaviour.csv
+    ResourceFile_HypertensiveDisordersOfPregnancy.xlsx
+    ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking.xlsx
+    ResourceFile_LabourSkilledBirthAttendance.xlsx
+    ResourceFile_Lifestyle_Enhanced.xlsx
+    ResourceFile_Measles.xlsx
+    ResourceFile_NewbornOutcomes.xlsx
+    ResourceFile_Oesophageal_Cancer.xlsx
+    ResourceFile_Other_Adult_Cancers.xlsx
+    ResourceFile_PostnatalSupervisor.xlsx
+    ResourceFile_PregnancySupervisor.xlsx
+    ResourceFile_Prostate_Cancer.xlsx
+    ResourceFile_RTI.xlsx
+    ResourceFile_Schisto.xlsx
+    ResourceFile_Stunting.xlsx
+    ResourceFile_SymptomManager.csv
+    ResourceFile_TB.xlsx
+

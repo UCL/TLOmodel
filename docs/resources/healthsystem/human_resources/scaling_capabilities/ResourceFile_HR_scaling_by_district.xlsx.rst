@@ -1,0 +1,47 @@
+HR scaling by district (.xlsx)
+==============================
+
+:download:`Download original .xlsx file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/healthsystem/human_resources/scaling_capabilities/ResourceFile_HR_scaling_by_district.xlsx>`
+
+.. contents::
+
+default
+-------
+
+====  =============  ========
+  ..  District         Factor
+====  =============  ========
+   0  Balaka                1
+   1  Blantyre              1
+   2  Blantyre City         1
+   3  Chikwawa              1
+   4  Chiradzulu            1
+   5  Chitipa               1
+   6  Dedza                 1
+   7  Dowa                  1
+   8  Karonga               1
+   9  Kasungu               1
+  10  Likoma                1
+  11  Lilongwe              1
+  12  Lilongwe City         1
+  13  Machinga              1
+  14  Mangochi              1
+  15  Mchinji               1
+  16  Mulanje               1
+  17  Mwanza                1
+  18  Mzimba                1
+  19  Mzuzu City            1
+  20  Neno                  1
+  21  Nkhata Bay            1
+  22  Nkhotakota            1
+  23  Nsanje                1
+  24  Ntcheu                1
+  25  Ntchisi               1
+  26  Phalombe              1
+  27  Rumphi                1
+  28  Salima                1
+  29  Thyolo                1
+  30  Zomba                 1
+  31  Zomba City            1
+====  =============  ========
+

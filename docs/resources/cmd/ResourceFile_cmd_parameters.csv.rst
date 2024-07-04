@@ -1,0 +1,10 @@
+cmd parameters (.csv)
+=====================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/cmd/ResourceFile_cmd_parameters.csv>`
+
+====  ==================================================  =======
+  ..  parameter\_name                                       value
+====  ==================================================  =======
+   0  prob\_care\_provided\_given\_seek\_emergency\_care      0.5
+====  ==================================================  =======

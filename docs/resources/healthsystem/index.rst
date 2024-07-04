@@ -1,0 +1,15 @@
+healthsystem
+============
+
+.. toctree::
+    :maxdepth: 1
+
+    consumables/index.rst
+    human_resources/index.rst
+    infrastructure_and_equipment/index.rst
+    organisation/index.rst
+    priority_policies/index.rst
+    real_appt_usage_data/index.rst
+    .DS_Store
+    ResourceFile_HealthSystem_parameters.csv
+

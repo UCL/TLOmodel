@@ -1,0 +1,59 @@
+ApptType By FacLevel (.csv)
+===========================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/healthsystem/human_resources/definitions/ResourceFile_ApptType_By_FacLevel.csv>`
+
+====  ==================  ====================  =====================  =====================  ====================  ====================  ====================  ====================
+  ..  Appt\_Type\_Code    Facility\_Level\_0    Facility\_Level\_1a    Facility\_Level\_1b    Facility\_Level\_2    Facility\_Level\_3    Facility\_Level\_4    Facility\_Level\_5
+====  ==================  ====================  =====================  =====================  ====================  ====================  ====================  ====================
+   0  InpatientDays       False                 True                   True                   True                  True                  False                 False
+   1  IPAdmission         False                 True                   True                   True                  True                  False                 False
+   2  Under5OPD           False                 True                   True                   True                  True                  False                 False
+   3  Over5OPD            False                 True                   True                   True                  True                  False                 False
+   4  NormalDelivery      False                 True                   True                   True                  True                  False                 False
+   5  CompDelivery        False                 True                   True                   True                  True                  False                 False
+   6  Csection            False                 True                   True                   True                  True                  False                 False
+   7  FamPlan             False                 True                   True                   True                  False                 False                 False
+   8  AntenatalFirst      False                 True                   True                   True                  True                  False                 False
+   9  ANCSubsequent       False                 True                   True                   True                  True                  False                 False
+  10  EPI                 False                 True                   True                   True                  False                 False                 False
+  11  STI                 False                 True                   True                   True                  True                  False                 False
+  12  U5Malnutr           False                 True                   True                   True                  True                  False                 False
+  13  AccidentsandEmerg   False                 True                   True                   True                  True                  False                 False
+  14  MajorSurg           False                 False                  True                   True                  True                  False                 False
+  15  MinorSurg           False                 True                   True                   True                  True                  False                 False
+  16  TBNew               False                 True                   True                   True                  True                  False                 False
+  17  TBFollowUp          False                 True                   True                   True                  False                 False                 False
+  18  VCTNegative         False                 True                   True                   True                  True                  False                 False
+  19  VCTPositive         False                 True                   True                   True                  True                  False                 False
+  20  MaleCirc            False                 True                   True                   True                  False                 False                 False
+  21  NewAdult            False                 True                   True                   True                  True                  False                 False
+  22  EstMedCom           False                 True                   True                   True                  True                  False                 False
+  23  EstNonCom           False                 True                   True                   True                  True                  False                 False
+  24  PMTCT               False                 True                   True                   True                  True                  False                 False
+  25  Peds                False                 True                   True                   True                  True                  False                 False
+  26  LabHaem             False                 True                   True                   True                  True                  False                 False
+  27  LabPOC              False                 True                   True                   True                  True                  False                 False
+  28  LabParasit          False                 True                   True                   True                  True                  False                 False
+  29  LabBiochem          False                 True                   True                   True                  True                  False                 False
+  30  LabMicrobio         False                 True                   True                   True                  True                  False                 False
+  31  LabMolec            False                 True                   True                   True                  True                  False                 False
+  32  LabTBMicro          False                 True                   True                   True                  True                  False                 False
+  33  LabSero             False                 True                   True                   True                  True                  False                 False
+  34  LabCyto             False                 True                   True                   True                  True                  False                 False
+  35  LabTrans            False                 True                   True                   True                  True                  False                 False
+  36  Ultrasound          False                 False                  True                   True                  True                  False                 False
+  37  Mammography         False                 False                  False                  False                 True                  False                 False
+  38  MRI                 False                 False                  False                  True                  True                  False                 False
+  39  Tomography          False                 False                  False                  False                 True                  False                 False
+  40  Radiotherapy        False                 False                  False                  False                 True                  False                 False
+  41  DiagRadio           False                 False                  True                   True                  True                  False                 False
+  42  DentAccidEmerg      False                 True                   True                   True                  True                  False                 False
+  43  DentSurg            False                 False                  False                  True                  True                  False                 False
+  44  DentalU5            False                 True                   True                   True                  True                  False                 False
+  45  DentalO5            False                 True                   True                   True                  True                  False                 False
+  46  MentOPD             False                 False                  True                   True                  True                  True                  False
+  47  MentClinic          False                 False                  True                   True                  True                  True                  False
+  48  ConWithDCSA         True                  False                  False                  False                 False                 False                 False
+  49  PharmDispensing     False                 True                   True                   True                  True                  False                 False
+====  ==================  ====================  =====================  =====================  ====================  ====================  ====================  ====================

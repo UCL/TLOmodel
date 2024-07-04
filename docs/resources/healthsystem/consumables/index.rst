@@ -1,0 +1,11 @@
+consumables
+===========
+
+.. toctree::
+    :maxdepth: 1
+
+    ResourceFile_Consumables_Item_Designations.csv
+    ResourceFile_Consumables_Items_and_Packages.csv
+    ResourceFile_Consumables_availability_small.csv
+    ResourceFile_consumables_matched.csv
+
