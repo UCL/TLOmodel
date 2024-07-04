@@ -11,7 +11,11 @@ from typing import Dict, Optional, Union
 import numpy as np
 
 from tlo import Date, Population, logging
-from tlo.dependencies import check_dependencies_present, topologically_sort_modules, initialise_missing_dependencies
+from tlo.dependencies import (
+    check_dependencies_present,
+    initialise_missing_dependencies,
+    topologically_sort_modules,
+)
 from tlo.events import Event, IndividualScopeEventMixin
 from tlo.progressbar import ProgressBar
 
