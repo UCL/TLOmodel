@@ -23,6 +23,7 @@ resourcefilepath = Path("./resources")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 outputspath = Path("./outputs")
+# outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
 
 
 # 0) Find results_folder associated with a given batch_file (and get most recent [-1])
@@ -32,7 +33,7 @@ results_folder = get_scenario_outputs("scaleup_tests", outputspath)[-1]
 make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
 
 # look at one log (so can decide what to extract)
-log = load_pickled_dataframes(results_folder)
+log = load_pickled_dataframes(results_folder, draw=1)
 
 # get basic information about the results
 info = get_scenario_info(results_folder)

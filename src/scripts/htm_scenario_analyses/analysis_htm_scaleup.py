@@ -52,8 +52,8 @@ class EffectOfProgrammes(BaseScenario):
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2025, 1, 1)
-        self.pop_size = 75_000
-        self.number_of_draws = 5
+        self.pop_size = 5_000
+        self.number_of_draws = 2
         self.runs_per_draw = 1
 
     def log_configuration(self):
@@ -75,7 +75,7 @@ class EffectOfProgrammes(BaseScenario):
             demography.Demography(resourcefilepath=self.resources),
             simplified_births.SimplifiedBirths(resourcefilepath=self.resources),
             enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
-            healthsystem.HealthSystem(resourcefilepath=self.resources, cons_availability="all"),
+            healthsystem.HealthSystem(resourcefilepath=self.resources),
             symptommanager.SymptomManager(resourcefilepath=self.resources),
             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
             healthburden.HealthBurden(resourcefilepath=self.resources),
