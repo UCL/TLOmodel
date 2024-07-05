@@ -55,7 +55,7 @@ class LongRun(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         return list(self._scenarios.values())[draw_number]
 
-    def _get_scenarios(self) -> Dict[str, Dict]:
+    def _get_scenarios(self) -> Dict[str, Dict]:  # todo: create many scenarios of expanding HCW
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
 
         return {
