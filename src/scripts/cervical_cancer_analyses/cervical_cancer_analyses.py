@@ -33,75 +33,151 @@ from tlo.methods import (
     hiv
 )
 
+# Where outputs will go
+output_csv_file = Path("./outputs/output1_data.csv")
 seed = 100
 
-log_config = {
-    "filename": "cervical_cancer_analysis",   # The name of the output file (a timestamp will be appended).
-    "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
-    "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
-        "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
-        "tlo.methods.cervical_cancer": logging.INFO,
-        "tlo.methods.healthsystem": logging.INFO,
-    }
-}
+# date-stamp to label log files and any other outputs
+datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
+# The resource files
+resourcefilepath = Path("./resources")
 
+# Set parameters for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 12, 31)
-pop_size = 15000
+end_date = Date(2011, 1, 1)
+popsize = 170000
 
-# This creates the Simulation instance for this run. Because we've passed the `seed` and
-# `log_config` arguments, these will override the default behaviour.
-sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
+def run_sim(service_availability):
+    # Establish the simulation object and set the seed
+    sim = Simulation(start_date=start_date, seed=0)
+#     sim = Simulation(start_date=start_date, log_config={"filename": "logfile"})
 
-# Path to the resource files used by the disease and intervention methods
-# resources = "./resources"
-resourcefilepath = Path('./resources')
-
-# Used to configure health system behaviour
-service_availability = ["*"]
-
-# Register the appropriate modules
-sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-             cervical_cancer.CervicalCancer(resourcefilepath=resourcefilepath),
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 cervical_cancer.CervicalCancer(resourcefilepath=resourcefilepath),
 #                cc_test.CervicalCancer(resourcefilepath=resourcefilepath),
-             simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-             enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-             healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                       disable=False,
-                                       cons_availability='all'),
-             symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-             healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-             epi.Epi(resourcefilepath=resourcefilepath),
-             tb.Tb(resourcefilepath=resourcefilepath, run_with_checks=False),
-             hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False)
-             )
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           disable=False,
+                                           cons_availability='all'),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 epi.Epi(resourcefilepath=resourcefilepath),
+                 tb.Tb(resourcefilepath=resourcefilepath, run_with_checks=False),
+                 hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False)
+                 )
 
-# create and run the simulation
-sim.make_initial_population(n=pop_size)
-sim.simulate(end_date=end_date)
+    logfile = sim._configure_logging(filename="LogFile")
 
-# parse the simulation logfile to get the output dataframes
-log_df = parse_log_file(sim.log_filepath)
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=end_date)
 
-model_deaths_past_year = log_df["tlo.methods.cervical_cancer"]["deaths"]["n_women_alive"]
-model_diagnosed = log_df["tlo.methods.cervical_cancer"]["deaths"]["n_women_living_with_diagnosed_cc"]
-model_date = log_df["tlo.methods.cervical_cancer"]["deaths"]["date"]
-print(f'Women Diagnosed {model_diagnosed}')
 
-plt.style.use("ggplot")
+output_csv_file = Path("./outputs/output1_data.csv")
+if output_csv_file.exists():
+    output_csv_file.unlink()
 
-# Measles incidence
-plt.subplot(111)  # numrows, numcols, fignum
-plt.plot(model_date, model_diagnosed)
-plt.title("Women Diagnosed")
-plt.xlabel("Date")
-plt.ylabel("No of Women")
-plt.xticks(rotation=90)
-plt.legend(["Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
-plt.tight_layout()
+run_sim(service_availability=['*'])
+
+
+scale_factor = 17000000 / popsize
+print(scale_factor)
+
+
+# plot number of deaths in past year
+out_df = pd.read_csv(output_csv_file)
+# out_df = pd.read_csv('C:/Users/User/PycharmProjects/TLOmodel/outputs/output_data.csv', encoding='ISO-8859-1')
+out_df = out_df[['n_deaths_past_year', 'rounded_decimal_year']].dropna()
+out_df = out_df[out_df['rounded_decimal_year'] >= 2011]
+out_df['n_deaths_past_year'] = out_df['n_deaths_past_year'] * scale_factor
+print(out_df)
+plt.figure(figsize=(10, 6))
+plt.plot(out_df['rounded_decimal_year'], out_df['n_deaths_past_year'], marker='o')
+plt.title('Total deaths by Year')
+plt.xlabel('Year')
+plt.ylabel('Total deaths past year')
+plt.grid(True)
+plt.ylim(0, 10000)
 plt.show()
+
+
+# plot number of cc diagnoses in past year
+out_df_4 = pd.read_csv(output_csv_file)
+out_df_4 = out_df_4[['n_diagnosed_past_year', 'rounded_decimal_year']].dropna()
+out_df_4 = out_df_4[out_df_4['rounded_decimal_year'] >= 2011]
+out_df_4['n_diagnosed_past_year'] = out_df_4['n_diagnosed_past_year'] * scale_factor
+print(out_df_4)
+plt.figure(figsize=(10, 6))
+plt.plot(out_df_4['rounded_decimal_year'], out_df_4['n_diagnosed_past_year'], marker='o')
+plt.title('Total diagnosed per Year')
+plt.xlabel('Year')
+plt.ylabel('Total diagnosed per year')
+plt.grid(True)
+plt.ylim(0,10000)
+plt.show()
+
+
+
+
+# plot prevalence of each ce stage
+out_df_2 = pd.read_csv(output_csv_file)
+columns_to_calculate = ['total_none', 'total_hpv', 'total_cin1', 'total_cin2', 'total_cin3', 'total_stage1',
+                        'total_stage2a', 'total_stage2b', 'total_stage3', 'total_stage4']
+for column in columns_to_calculate:
+    new_column_name = column.replace('total_', '')
+    out_df_2[f'proportion_{new_column_name}'] = out_df_2[column] / out_df_2[columns_to_calculate].sum(axis=1)
+print(out_df_2)
+columns_to_plot = ['proportion_hpv', 'proportion_cin1', 'proportion_cin2', 'proportion_cin3',
+                   'proportion_stage1', 'proportion_stage2a', 'proportion_stage2b', 'proportion_stage3',
+                   'proportion_stage4']
+plt.figure(figsize=(10, 6))
+# Initialize the bottom of the stack
+bottom = 0
+for column in columns_to_plot:
+    plt.fill_between(out_df_2['rounded_decimal_year'],
+                     bottom,
+                     bottom + out_df_2[column],
+                     label=column,
+                     alpha=0.7)
+    bottom += out_df_2[column]
+# plt.plot(out_df_2['rounded_decimal_year'], out_df_2['proportion_cin1'], marker='o')
+plt.title('Proportion of women aged 15+ with HPV, CIN, cervical cancer')
+plt.xlabel('Year')
+plt.ylabel('Proportion')
+plt.grid(True)
+plt.legend(loc='upper right')
+plt.ylim(0, 0.10)
+plt.show()
+
+
+
+# Proportion of people with cervical cancer who are HIV positive
+out_df_3 = pd.read_csv(output_csv_file)
+out_df_3 = out_df_3[['prop_cc_hiv', 'rounded_decimal_year']].dropna()
+plt.figure(figsize=(10, 6))
+plt.plot(out_df_3['rounded_decimal_year'], out_df_3['prop_cc_hiv'], marker='o')
+plt.title('Proportion of people with cervical cancer who are HIV positive')
+plt.xlabel('Year')
+plt.ylabel('Proportion')
+plt.grid(True)
+plt.ylim(0, 1)
+plt.show()
+
+# log_config = {
+#     "filename": "cervical_cancer_analysis",   # The name of the output file (a timestamp will be appended).
+#     "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
+#     "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
+#         "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
+#         "tlo.methods.cervical_cancer": logging.INFO,
+#         "tlo.methods.healthsystem": logging.INFO,
+#     }
+# }
+
+
+
 
 # ---------------------------------------------------------------------------
 # output_csv_file = Path("./outputs/output1_data.csv")
@@ -110,7 +186,6 @@ plt.show()
 #
 # run_sim(service_availability=['*'])
 #
-# # output_csv_file = Path("./outputs/output1_data.csv")
 #
 # scale_factor = 17000000 / popsize
 # print(scale_factor)

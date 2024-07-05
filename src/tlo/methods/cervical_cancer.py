@@ -1606,16 +1606,16 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
 # comment out this code below only when running tests
 
-        # with open(out_csv, "a", newline="") as csv_file:
-        #     # Create a CSV writer
-        #     csv_writer = csv.DictWriter(csv_file, fieldnames=out.keys())
-        #
-        #     # If the file is empty, write the header
-        #     if csv_file.tell() == 0:
-        #         csv_writer.writeheader()
-        #
-        #     # Write the data to the CSV file
-        #     csv_writer.writerow(out)
+        with open(out_csv, "a", newline="") as csv_file:
+            # Create a CSV writer
+            csv_writer = csv.DictWriter(csv_file, fieldnames=out.keys())
+
+            # If the file is empty, write the header
+            if csv_file.tell() == 0:
+                csv_writer.writeheader()
+
+            # Write the data to the CSV file
+            csv_writer.writerow(out)
 
 #       print(out)
 
