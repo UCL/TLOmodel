@@ -57,7 +57,9 @@ class LongRun(BaseScenario):
     def _get_scenarios(self) -> Dict[str, Dict]:  # todo: create many scenarios of expanding HCW (C, NM, P)
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
 
-        self.YEAR_OF_CHANGE = 2030  # This is the year to change the HR scaling mode
+        self.YEAR_OF_CHANGE = 2030  # This is the year to change HR scaling mode.
+        # Year 2030 is when the Establishment HCW will be met as estimated by Berman 2022.
+        # But it can be 2020 to reduce running time (2010-2030 instead of 2010-2040).
 
         return {
             "Establishment HCW":
