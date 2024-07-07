@@ -11,8 +11,8 @@ or locally using:
 ```
 tlo scenario-run src/scripts/healthsystem/impact_of_hcw_capabilities_expansion/scenario_of_expanding_funed_plus_hcw.py
 ```
-
 """
+
 from pathlib import Path
 from typing import Dict
 
@@ -28,7 +28,7 @@ class LongRun(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2020, 1, 1)
+        self.end_date = Date(2040, 1, 1)
         self.pop_size = 20_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
@@ -57,215 +57,186 @@ class LongRun(BaseScenario):
     def _get_scenarios(self) -> Dict[str, Dict]:  # todo: create many scenarios of expanding HCW (C, NM, P)
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
 
+        self.YEAR_OF_CHANGE = 2030  # This is the year to change the HR scaling mode
+
         return {
             "Establishment HCW":
                 mix_scenarios(
-                    get_parameters_for_status_quo(),
+                    self._baseline(),
                     {'HealthSystem': {
-                        'equip_availability': 'default',  # if not specify here, the value will be 'all'
-                        'use_funded_or_actual_staffing': 'funded_plus',
-                        'yearly_HR_scaling_mode': 'no_scaling',
-                        'mode_appt_constraints': 2,
-                        'HR_scaling_by_level_and_officer_type_mode': 'default'
+                        'HR_scaling_by_level_and_officer_type_mode': 'default',
+                        'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE
                     }
                     }
                 ),
 
             "Establishment HCW Expansion C1":
                 mix_scenarios(
-                    get_parameters_for_status_quo(),
+                    self._baseline(),
                     {'HealthSystem': {
-                        'equip_availability': 'default',  # if not specify here, the value will be 'all'
-                        'use_funded_or_actual_staffing': 'funded_plus',
-                        'yearly_HR_scaling_mode': 'no_scaling',
-                        'mode_appt_constraints': 2,
-                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_c1'
+                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_c1',
+                        'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE
                     }
                     }
                 ),
 
             "Establishment HCW Expansion C2":
                 mix_scenarios(
-                    get_parameters_for_status_quo(),
+                    self._baseline(),
                     {'HealthSystem': {
-                        'equip_availability': 'default',  # if not specify here, the value will be 'all'
-                        'use_funded_or_actual_staffing': 'funded_plus',
-                        'yearly_HR_scaling_mode': 'no_scaling',
-                        'mode_appt_constraints': 2,
-                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_c2'
+                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_c2',
+                        'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE
                     }
                     }
                 ),
 
             "Establishment HCW Expansion C3":
                 mix_scenarios(
-                    get_parameters_for_status_quo(),
+                    self._baseline(),
                     {'HealthSystem': {
-                        'equip_availability': 'default',  # if not specify here, the value will be 'all'
-                        'use_funded_or_actual_staffing': 'funded_plus',
-                        'yearly_HR_scaling_mode': 'no_scaling',
-                        'mode_appt_constraints': 2,
-                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_c3'
+                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_c3',
+                        'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE
                     }
                     }
                 ),
 
             "Establishment HCW Expansion P1":
                 mix_scenarios(
-                    get_parameters_for_status_quo(),
+                    self._baseline(),
                     {'HealthSystem': {
-                        'equip_availability': 'default',  # if not specify here, the value will be 'all'
-                        'use_funded_or_actual_staffing': 'funded_plus',
-                        'yearly_HR_scaling_mode': 'no_scaling',
-                        'mode_appt_constraints': 2,
-                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_p1'
+                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_p1',
+                        'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE
                     }
                     }
                 ),
 
             "Establishment HCW Expansion P2":
                 mix_scenarios(
-                    get_parameters_for_status_quo(),
+                    self._baseline(),
                     {'HealthSystem': {
-                        'equip_availability': 'default',  # if not specify here, the value will be 'all'
-                        'use_funded_or_actual_staffing': 'funded_plus',
-                        'yearly_HR_scaling_mode': 'no_scaling',
-                        'mode_appt_constraints': 2,
-                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_p2'
+                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_p2',
+                        'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE
                     }
                     }
                 ),
 
             "Establishment HCW Expansion P3":
                 mix_scenarios(
-                    get_parameters_for_status_quo(),
+                    self._baseline(),
                     {'HealthSystem': {
-                        'equip_availability': 'default',  # if not specify here, the value will be 'all'
-                        'use_funded_or_actual_staffing': 'funded_plus',
-                        'yearly_HR_scaling_mode': 'no_scaling',
-                        'mode_appt_constraints': 2,
-                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_p3'
+                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_p3',
+                        'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE
                     }
                     }
                 ),
 
             "Establishment HCW Expansion C1P1":
                 mix_scenarios(
-                    get_parameters_for_status_quo(),
+                    self._baseline(),
                     {'HealthSystem': {
-                        'equip_availability': 'default',  # if not specify here, the value will be 'all'
-                        'use_funded_or_actual_staffing': 'funded_plus',
-                        'yearly_HR_scaling_mode': 'no_scaling',
-                        'mode_appt_constraints': 2,
-                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_c1p1'
+                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_c1p1',
+                        'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE
                     }
                     }
                 ),
 
             "Establishment HCW Expansion C2P1":
                 mix_scenarios(
-                    get_parameters_for_status_quo(),
+                    self._baseline(),
                     {'HealthSystem': {
-                        'equip_availability': 'default',  # if not specify here, the value will be 'all'
-                        'use_funded_or_actual_staffing': 'funded_plus',
-                        'yearly_HR_scaling_mode': 'no_scaling',
-                        'mode_appt_constraints': 2,
-                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_c2p1'
+                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_c2p1',
+                        'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE
                     }
                     }
                 ),
 
             "Establishment HCW Expansion C3P1":
                 mix_scenarios(
-                    get_parameters_for_status_quo(),
+                    self._baseline(),
                     {'HealthSystem': {
-                        'equip_availability': 'default',  # if not specify here, the value will be 'all'
-                        'use_funded_or_actual_staffing': 'funded_plus',
-                        'yearly_HR_scaling_mode': 'no_scaling',
-                        'mode_appt_constraints': 2,
-                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_c3p1'
+                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_c3p1',
+                        'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE
                     }
                     }
                 ),
 
             "Establishment HCW Expansion C1P2":
                 mix_scenarios(
-                    get_parameters_for_status_quo(),
+                    self._baseline(),
                     {'HealthSystem': {
-                        'equip_availability': 'default',  # if not specify here, the value will be 'all'
-                        'use_funded_or_actual_staffing': 'funded_plus',
-                        'yearly_HR_scaling_mode': 'no_scaling',
-                        'mode_appt_constraints': 2,
-                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_c1p2'
+                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_c1p2',
+                        'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE
                     }
                     }
                 ),
 
             "Establishment HCW Expansion C2P2":
                 mix_scenarios(
-                    get_parameters_for_status_quo(),
+                    self._baseline(),
                     {'HealthSystem': {
-                        'equip_availability': 'default',  # if not specify here, the value will be 'all'
-                        'use_funded_or_actual_staffing': 'funded_plus',
-                        'yearly_HR_scaling_mode': 'no_scaling',
-                        'mode_appt_constraints': 2,
-                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_c2p2'
+                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_c2p2',
+                        'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE
                     }
                     }
                 ),
 
             "Establishment HCW Expansion C3P2":
                 mix_scenarios(
-                    get_parameters_for_status_quo(),
+                    self._baseline(),
                     {'HealthSystem': {
-                        'equip_availability': 'default',  # if not specify here, the value will be 'all'
-                        'use_funded_or_actual_staffing': 'funded_plus',
-                        'yearly_HR_scaling_mode': 'no_scaling',
-                        'mode_appt_constraints': 2,
-                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_c3p2'
+                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_c3p2',
+                        'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE
                     }
                     }
                 ),
 
             "Establishment HCW Expansion C1P3":
                 mix_scenarios(
-                    get_parameters_for_status_quo(),
+                    self._baseline(),
                     {'HealthSystem': {
-                        'equip_availability': 'default',  # if not specify here, the value will be 'all'
-                        'use_funded_or_actual_staffing': 'funded_plus',
-                        'yearly_HR_scaling_mode': 'no_scaling',
-                        'mode_appt_constraints': 2,
-                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_c1p3'
+                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_c1p3',
+                        'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE
                     }
                     }
                 ),
 
             "Establishment HCW Expansion C2P3":
                 mix_scenarios(
-                    get_parameters_for_status_quo(),
+                    self._baseline(),
                     {'HealthSystem': {
-                        'equip_availability': 'default',  # if not specify here, the value will be 'all'
-                        'use_funded_or_actual_staffing': 'funded_plus',
-                        'yearly_HR_scaling_mode': 'no_scaling',
-                        'mode_appt_constraints': 2,
-                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_c2p3'
+                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_c2p3',
+                        'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE
                     }
                     }
                 ),
 
             "Establishment HCW Expansion C3P3":
                 mix_scenarios(
-                    get_parameters_for_status_quo(),
+                    self._baseline(),
                     {'HealthSystem': {
-                        'equip_availability': 'default',  # if not specify here, the value will be 'all'
-                        'use_funded_or_actual_staffing': 'funded_plus',
-                        'yearly_HR_scaling_mode': 'no_scaling',
-                        'mode_appt_constraints': 2,
-                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_c3p3'
+                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_c3p3',
+                        'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE
                     }
                     }
                 ),
         }
+
+    def _baseline(self) -> Dict:
+        return mix_scenarios(
+            get_parameters_for_status_quo(),
+            {'HealthSystem': {
+                'equip_availability': 'default',  # if not specify here, the value will be 'all'
+                'use_funded_or_actual_staffing': 'actual',
+                'use_funded_or_actual_staffing_postSwitch': 'funded_plus',
+                'year_use_funded_or_actual_staffing_switch': 2020,
+                'mode_appt_constraints': 1,
+                'mode_appt_constraints_postSwitch': 2,
+                "year_mode_switch": 2020,
+                'yearly_HR_scaling_mode': 'no_scaling',
+
+            }
+            },
+        )
 
 
 if __name__ == '__main__':
