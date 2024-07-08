@@ -83,8 +83,8 @@ increase_str = f"Average increase: {round(100 * gradient, 0)}% per year"
 
 plt.title('Change in the Number of Healthcare Workers, 2017-2022')
 plt.ylabel('Number of Staff\n(Normalised to 2017)')
-plt.plot(x, 1.0 + (x-2017) * gradient, '--r', label='Best Fit, 2017-2022\n'+increase_str)
-plt.plot(x, [1.0] * len(x), '-go', label='No Scale-up Counterfactual')
+plt.plot(x, 1.0 + (x-2017) * gradient, '--rx', label='Best Fit, 2017-2022\n'+increase_str)
+plt.plot(x, [1.0] * len(x), '-gx', label='No Scale-up Counterfactual')
 plt.legend()
 plt.grid()
 # plt.axhline(y=1.0, color='k')
