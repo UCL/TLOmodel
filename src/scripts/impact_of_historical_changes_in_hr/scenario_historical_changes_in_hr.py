@@ -58,7 +58,7 @@ class HistoricalChangesInHRH(BaseScenario):
                     {
                         "HealthSystem": {
                             # SCALE-UP IN HRH
-                            'yearly_HR_scaling_mode': 'historical_scaling',  # Scale-up of HRH by 9% per year from 2018, onwards
+                            'yearly_HR_scaling_mode': 'historical_scaling',  # Scale-up of HRH by 12% per year from 2018, onwards
                         }
                     }
                 ),
