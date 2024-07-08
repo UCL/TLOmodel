@@ -77,7 +77,6 @@ def _calculate_probability_of_dying_before_70(
 def get_probability_of_dying_before_70(
     results_folder: Path,
     target_period: Tuple[datetime.date, datetime.date],
-    max_age: int,
     summary: bool = True
 ) -> pd.DataFrame:
     """
@@ -86,7 +85,6 @@ def get_probability_of_dying_before_70(
     Args:
     - results_folder (PosixPath): The path to the results folder containing log, `tlo.methods.demography`
     - target period (tuple of dates): Declare the date range (inclusively) in which the probability is to be estimated.
-    - max_age (int): The age before which the probability of dying is to be calculated.
     - summary (bool): Declare whether to return a summarized value (mean with 95% uncertainty intervals)
         or return the estimate for each draw/run.
 
