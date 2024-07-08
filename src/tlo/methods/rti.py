@@ -4031,11 +4031,11 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
         else:
             if self._number_of_times_this_event_has_run < self._maximum_number_times_event_should_run:
                 self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
-                if pd.isnull(df.loc[person_id, 'rt_date_death_no_med']):
-                    df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
-                logger.debug(key='rti_general_message',
-                             data=f"Person {person_id} has {fracturecastcounts + slingcounts}"
-                                  f" fractures without treatment")
+            if pd.isnull(df.loc[person_id, 'rt_date_death_no_med']):
+                df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
+            logger.debug(key='rti_general_message',
+                         data=f"Person {person_id} has {fracturecastcounts + slingcounts} fractures without treatment"
+                         )
             return self.make_appt_footprint({})
 
     def did_not_run(self):
@@ -4150,11 +4150,11 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
         else:
             if self._number_of_times_this_event_has_run < self._maximum_number_times_event_should_run:
                 self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
-                if pd.isnull(df.loc[person_id, 'rt_date_death_no_med']):
-                    df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
-                logger.debug(key='rti_general_message',
-                             data=f"Person {person_id}'s has {open_fracture_counts} open fractures without treatment",
-                             )
+            if pd.isnull(df.loc[person_id, 'rt_date_death_no_med']):
+                df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
+            logger.debug(key='rti_general_message',
+                         data=f"Person {person_id}'s has {open_fracture_counts} open fractures without treatment",
+                         )
 
     def did_not_run(self):
         person_id = self.target
@@ -4247,10 +4247,10 @@ class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
             else:
                 if self._number_of_times_this_event_has_run < self._maximum_number_times_event_should_run:
                     self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
-                    if pd.isnull(df.loc[person_id, 'rt_date_death_no_med']):
-                        df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
-                    logger.debug(key='rti_general_message',
-                                 data="This facility has no treatment for open wounds available.")
+                if pd.isnull(df.loc[person_id, 'rt_date_death_no_med']):
+                    df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
+                logger.debug(key='rti_general_message',
+                             data="This facility has no treatment for open wounds available.")
                 return self.make_appt_footprint({})
 
     def did_not_run(self):
@@ -4376,10 +4376,10 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
             else:
                 if self._number_of_times_this_event_has_run < self._maximum_number_times_event_should_run:
                     self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
-                    if pd.isnull(df.loc[person_id, 'rt_date_death_no_med']):
-                        df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
-                    logger.debug(key='rti_general_message',
-                                 data="This facility has no treatment for burns available.")
+                if pd.isnull(df.loc[person_id, 'rt_date_death_no_med']):
+                    df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
+                logger.debug(key='rti_general_message',
+                             data="This facility has no treatment for burns available.")
 
     def did_not_run(self):
         person_id = self.target
@@ -4440,8 +4440,8 @@ class HSI_RTI_Tetanus_Vaccine(HSI_Event, IndividualScopeEventMixin):
             else:
                 if self._number_of_times_this_event_has_run < self._maximum_number_times_event_should_run:
                     self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
-                    logger.debug(key='rti_general_message',
-                                 data=f"Tetanus vaccine requested for person {person_id}, not given")
+                logger.debug(key='rti_general_message',
+                             data=f"Tetanus vaccine requested for person {person_id}, not given")
                 return self.make_appt_footprint({})
 
     def did_not_run(self):
@@ -4587,9 +4587,9 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
             else:
                 if self._number_of_times_this_event_has_run < self._maximum_number_times_event_should_run:
                     self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
-                    logger.debug(key='rti_general_message',
-                                 data=f"This facility has no pain management available for their mild pain, person "
-                                      f"{person_id}.")
+                logger.debug(key='rti_general_message',
+                             data=f"This facility has no pain management available for their mild pain, person "
+                                  f"{person_id}.")
                 return self.make_appt_footprint({})
 
         if pain_level == "moderate":
@@ -4619,9 +4619,9 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
             else:
                 if self._number_of_times_this_event_has_run < self._maximum_number_times_event_should_run:
                     self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
-                    logger.debug(key='rti_general_message',
-                                 data=f"This facility has no pain management available for moderate pain for person "
-                                      f"{person_id}.")
+                logger.debug(key='rti_general_message',
+                             data=f"This facility has no pain management available for moderate pain for person "
+                                  f"{person_id}.")
                 return self.make_appt_footprint({})
 
         if pain_level == "severe":
@@ -4652,9 +4652,9 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
             else:
                 if self._number_of_times_this_event_has_run < self._maximum_number_times_event_should_run:
                     self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
-                    logger.debug(key='rti_general_message',
-                                 data=f"This facility has no pain management available for severe pain for person "
-                                      f"{person_id}.")
+                logger.debug(key='rti_general_message',
+                             data=f"This facility has no pain management available for severe pain for person "
+                                  f"{person_id}.")
                 return self.make_appt_footprint({})
 
     def did_not_run(self):
