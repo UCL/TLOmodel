@@ -75,10 +75,6 @@ class HistoricalChangesInHRH(BaseScenario):
                 ),
         }
 
-    @property
-    def YEAR_OF_CHANGE(self) -> int:
-        return 2017
-
     def _common_baseline(self) -> Dict:
         return mix_scenarios(
             get_parameters_for_status_quo(),
@@ -87,7 +83,7 @@ class HistoricalChangesInHRH(BaseScenario):
                     "mode_appt_constraints": 1,                 # <-- Mode 1 prior to change to preserve calibration
                     "mode_appt_constraints_postSwitch": 2,      # <-- Mode 2 post-change to show effects of HRH
                     "scale_to_effective_capabilities": True,    # <-- Transition into Mode2 with the effective capabilities in HRH 'revealed' in Mode 1
-                    "year_mode_switch": self.YEAR_OF_CHANGE,    # <-- The transition happens in 2017, when we start to model the scale-up of HRH
+                    "year_mode_switch": 2017,    # <-- The transition happens in 2017, when we start to model the scale-up of HRH
 
                     # Normalize the behaviour of Mode 2
                     "policy_name": "Naive",
