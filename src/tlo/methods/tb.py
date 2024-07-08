@@ -470,9 +470,13 @@ class Tb(Module):
         )
 
     def pre_initialise_population(self):
-        """
-        * Establish the Linear Models
-        """
+        """Do things required before the population is created
+        * Build the LinearModels"""
+        self._build_linear_models()
+
+    def _build_linear_models(self):
+        """Establish the Linear Models"""
+
         p = self.parameters
 
         # risk of active tb
@@ -885,32 +889,29 @@ class Tb(Module):
             )
 
     def update_parameters_for_program_scaleup(self):
-
         p = self.parameters
         scaled_params = p["scaleup_parameters"]
 
-        if p["do_scaleup"]:
+        # scale-up TB program
+        # use NTP treatment rates
+        p["rate_testing_active_tb"]["treatment_coverage"] = scaled_params["tb_treatment_coverage"]
 
-            # scale-up TB program
-            # use NTP treatment rates
-            p["rate_testing_active_tb"]["treatment_coverage"] = scaled_params["tb_treatment_coverage"]
+        # increase tb treatment success rates
+        p["prob_tx_success_ds"] = scaled_params["tb_prob_tx_success_ds"]
+        p["prob_tx_success_mdr"] = scaled_params["tb_prob_tx_success_mdr"]
+        p["prob_tx_success_0_4"] = scaled_params["tb_prob_tx_success_0_4"]
+        p["prob_tx_success_5_14"] = scaled_params["tb_prob_tx_success_5_14"]
 
-            # increase tb treatment success rates
-            p["prob_tx_success_ds"] = scaled_params["tb_prob_tx_success_ds"]
-            p["prob_tx_success_mdr"] = scaled_params["tb_prob_tx_success_mdr"]
-            p["prob_tx_success_0_4"] = scaled_params["tb_prob_tx_success_0_4"]
-            p["prob_tx_success_5_14"] = scaled_params["tb_prob_tx_success_5_14"]
+        # change first-line testing for TB to xpert
+        p["first_line_test"] = scaled_params["first_line_test"]
+        p["second_line_test"] = scaled_params["second_line_test"]
 
-            # change first-line testing for TB to xpert
-            p["first_line_test"] = scaled_params["first_line_test"]
-            p["second_line_test"] = scaled_params["second_line_test"]
+        # increase coverage of IPT
+        p["ipt_coverage"]["coverage_plhiv"] = scaled_params["ipt_coverage_plhiv"]
+        p["ipt_coverage"]["coverage_paediatric"] = scaled_params["ipt_coverage_paediatric"]
 
-            # increase coverage of IPT
-            p["ipt_coverage"]["coverage_plhiv"] = scaled_params["ipt_coverage_plhiv"]
-            p["ipt_coverage"]["coverage_paediatric"] = scaled_params["ipt_coverage_paediatric"]
-
-            # update exising linear models to use new scaled-up paramters
-            self.pre_initialise_population()
+        # update exising linear models to use new scaled-up paramters
+        self._build_linear_models()
 
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual
