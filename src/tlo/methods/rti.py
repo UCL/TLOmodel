@@ -4779,6 +4779,8 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MajorSurg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({})
+        self._number_of_times_this_event_has_run = 0
+        self._maximum_number_times_event_should_run = self.module.parameters['maximum_number_of_times_HSI_events_should_run']
 
         p = self.module.parameters
         self.prob_perm_disability_with_treatment_severe_TBI = p['prob_perm_disability_with_treatment_severe_TBI']
@@ -4786,6 +4788,7 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
         self.treated_code = 'none'
 
     def apply(self, person_id, squeeze_factor):
+        self._number_of_times_this_event_has_run += 1
         df = self.sim.population.props
         rng = self.module.rng
         road_traffic_injuries = self.sim.modules['RTI']
@@ -5058,7 +5061,8 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
                 ['Treated injury code not removed', self.treated_code]
             df.loc[person_id, 'rt_date_death_no_med'] = pd.NaT
         else:
-            self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
+            if self._number_of_times_this_event_has_run < self._maximum_number_times_event_should_run:
+                self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
             if pd.isnull(df.loc[person_id, 'rt_date_death_no_med']):
                 df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
             return self.make_appt_footprint({})
