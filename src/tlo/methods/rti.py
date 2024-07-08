@@ -1530,7 +1530,6 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         # Begin logging the RTI events
         sim.schedule_event(RTI_Logging_Event(self), sim.date + DateOffset(months=1))
 
-
     def rti_do_when_diagnosed(self, person_id):
         """
         This function is called by the generic first appointments when an injured person has been diagnosed
@@ -3853,8 +3852,9 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
                 get_item_code('Blood, one unit'): 2,
                 get_item_code("Oxygen, 1000 liters, primarily with oxygen cylinders"): 23_040
             }
-            is_cons_available = self.get_consumables(item_codes=
-                  self.module.item_codes_for_consumables_required['shock_treatment_child'])
+            is_cons_available = self.get_consumables(
+                self.module.item_codes_for_consumables_required['shock_treatment_child']
+            )
         else:
             self.module.item_codes_for_consumables_required['shock_treatment_adult'] = {
                 get_item_code("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 2000,
@@ -3862,8 +3862,9 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
                 get_item_code('Blood, one unit'): 2,
                 get_item_code("Oxygen, 1000 liters, primarily with oxygen cylinders"): 23_040
             }
-            is_cons_available = self.get_consumables(item_codes=
-                  self.module.item_codes_for_consumables_required['shock_treatment_adult'])
+            is_cons_available = self.get_consumables(
+                self.module.item_codes_for_consumables_required['shock_treatment_adult']
+            )
 
         if is_cons_available:
             logger.debug(key='rti_general_message',
