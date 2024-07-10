@@ -6,8 +6,9 @@ produce summary statistics
 
 import datetime
 from pathlib import Path
-import pandas as pd
 from typing import Dict, Tuple
+
+import pandas as pd
 
 from tlo.analysis.life_expectancy import (
     _aggregate_person_years_by_age,
