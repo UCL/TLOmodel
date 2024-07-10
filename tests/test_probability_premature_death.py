@@ -1,10 +1,10 @@
 import datetime
 import os
-import pandas as pd
 from pathlib import Path
-from tlo.analysis.probability_premature_death import (
-    get_probability_of_dying_before_70,
-)
+
+import pandas as pd
+
+from tlo.analysis.probability_premature_death import get_probability_of_dying_before_70
 
 
 def test_get_probability_premature_death():
