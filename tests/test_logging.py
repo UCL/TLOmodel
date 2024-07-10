@@ -560,11 +560,11 @@ def test_logging_to_file(level: core.LogLevel, tmp_path: Path) -> None:
         ("foo", "bar", ["spam"]),
     ],
 )
-def test_logging_structured_data_inconsistent_columns_raises(
+def test_logging_structured_data_inconsistent_columns_warns(
     inconsistent_data_iterables: Iterable[core.LogData], root_level: core.LogLevel
 ) -> None:
     logger = logging.getLogger("tlo")
-    with pytest.raises(core.InconsistentLoggedColumnsError):
+    with pytest.warns(core.InconsistentLoggedColumnsWarning):
         for data in inconsistent_data_iterables:
             logger.log(level=root_level, key="message", data=data)
 
@@ -577,6 +577,7 @@ def test_logging_structured_data_inconsistent_columns_raises(
         ((1.5, 2), (np.float64(0), np.int64(2))),
     ],
 )
+@pytest.mark.filterwarnings("error")
 def test_logging_structured_data_mixed_numpy_python_scalars(
     consistent_data_iterables: Iterable[core.LogData], root_level: core.LogLevel
 ) -> None:

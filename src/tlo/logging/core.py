@@ -4,6 +4,7 @@ import hashlib
 import json
 import logging as _logging
 import sys
+import warnings
 from functools import partialmethod
 from pathlib import Path
 from typing import Any, Callable, List, Optional, TypeAlias, Union
@@ -28,8 +29,8 @@ _DEFAULT_LEVEL = INFO
 _DEFAULT_FORMATTER = _logging.Formatter("%(message)s")
 
 
-class InconsistentLoggedColumnsError(Exception):
-    """Error raised when structured log entry has different columns from header."""
+class InconsistentLoggedColumnsWarning(UserWarning):
+    """Warning raised when structured log entry has different columns from header."""
 
 
 def _mock_simulation_date_getter() -> str:
@@ -315,7 +316,13 @@ class Logger:
                     f"  Columns in logged values not in header are\n"
                     f"  {dict(sorted(logged_columns - header_columns))}"
                 )
-                raise InconsistentLoggedColumnsError(msg)
+                warnings.warn(
+                    msg,
+                    InconsistentLoggedColumnsWarning,
+                    # Set stack level so that user is given location of top-level
+                    # {info,warning,debug,critical} convenience method call
+                    stacklevel=3,
+                )
 
         # create data json row
         row = {
