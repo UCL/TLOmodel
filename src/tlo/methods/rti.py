@@ -3934,7 +3934,7 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
             is_child = False
         if not df.at[person_id, 'is_alive']:
             return self.make_appt_footprint({})
-        get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
+
         # TODO: find a more complete list of required consumables for adults
         if is_child:
             is_cons_available = self.get_consumables(
@@ -4009,12 +4009,12 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
         # Get the population and health system
         df = self.sim.population.props
         p = df.loc[person_id]
+        get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
         # if the person isn't alive return a blank footprint
         if not df.at[person_id, 'is_alive']:
             return self.make_appt_footprint({})
         # get a shorthand reference to RTI and consumables modules
         road_traffic_injuries = self.sim.modules['RTI']
-        get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
         # isolate the relevant injury information
         # Find the untreated injuries
         untreated_injury_cols = _get_untreated_injury_columns(person_id, df)
@@ -4365,6 +4365,7 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
                 get_item_code("Gauze, absorbent 90cm x 40m_each_CMST"): burncounts,
                 get_item_code('Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST'): burncounts,
             })
+
             possible_large_TBSA_burn_codes = ['7113', '8113', '4113', '5113']
             idx2, bigburncounts = \
                 road_traffic_injuries.rti_find_and_count_injuries(person_injuries, possible_large_TBSA_burn_codes)
@@ -4507,7 +4508,6 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
         assert df.loc[person_id, 'rt_diagnosed'], 'This person has not been through a and e'
         assert df.loc[person_id, 'rt_med_int'], 'This person has not been through rti med int'
         person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
-        get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
         road_traffic_injuries = self.sim.modules['RTI']
         pain_level = "none"
         # create a dictionary to associate the level of pain to the codes
