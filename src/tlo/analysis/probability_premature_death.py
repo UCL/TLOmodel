@@ -10,15 +10,10 @@ from typing import Dict, Tuple
 
 import pandas as pd
 
-from tlo.analysis.utils import (
-    get_scenario_info,
-    summarize,
-)
+from tlo.analysis.utils import get_scenario_info, summarize
 
-from tlo.analysis.life_expectancy import (
-    _num_deaths_by_age_group,
-    _aggregate_person_years_by_age,
-)
+from tlo.analysis.life_expectancy import _aggregate_person_years_by_age, _num_deaths_by_age_group
+
 def _calculate_probability_of_dying_before_70(
     _person_years_at_risk: pd.Series,
     _number_of_deaths_in_interval: pd.Series
