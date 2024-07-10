@@ -751,40 +751,47 @@ tlo_availability_df = tlo_availability_df.merge(mfl[['District', 'Facility_Level
 programs = pd.read_csv(resourcefilepath / 'healthsystem'/ 'consumables' / "ResourceFile_Consumables_availability_and_usage.csv")[['category', 'item_code', 'module_name']]
 programs = programs.drop_duplicates('item_code')
 tlo_availability_df = tlo_availability_df.merge(programs, on = ['item_code'], how = 'left')
+availability_scenarios = ['available_prop',
+       'available_prop_scenario1', 'available_prop_scenario2',
+       'available_prop_scenario3', 'available_prop_scenario4',
+       'available_prop_scenario5', 'available_prop_scenario6',
+       'available_prop_scenario7', 'available_prop_scenario8']
+i = 0
+for avail_scenario in availability_scenarios:
+    # Generate a heatmap
+    # Pivot the DataFrame
+    aggregated_df = tlo_availability_df.groupby(['category', 'Facility_Level'])[avail_scenario].mean().reset_index()
+    aggregated_df = aggregated_df[aggregated_df.Facility_Level.isin(['1a', '1b'])]
+    aggregated_df.loc[aggregated_df.Facility_Level == '1a','Facility_Level'] = 'Health centres'
+    aggregated_df.loc[aggregated_df.Facility_Level == '1b','Facility_Level'] = 'Hospitals'
+    heatmap_data = aggregated_df.pivot("category", "Facility_Level", avail_scenario)
 
-# Generate a heatmap
-# Pivot the DataFrame
-aggregated_df = tlo_availability_df.groupby(['category', 'Facility_Level'])['available_prop'].mean().reset_index()
-aggregated_df = aggregated_df[aggregated_df.Facility_Level.isin(['1a', '1b'])]
-aggregated_df.loc[aggregated_df.Facility_Level == '1a','Facility_Level'] = 'Health centres'
-aggregated_df.loc[aggregated_df.Facility_Level == '1b','Facility_Level'] = 'Hospitals'
-heatmap_data = aggregated_df.pivot("category", "Facility_Level", "available_prop")
+    # Calculate the aggregate row and column
+    aggregate_col= aggregated_df.groupby('Facility_Level')[avail_scenario].mean()
+    aggregate_row = aggregated_df.groupby('category')[avail_scenario].mean()
+    overall_aggregate = aggregated_df[avail_scenario].mean()
 
-# Calculate the aggregate row and column
-aggregate_col= aggregated_df.groupby('Facility_Level')['available_prop'].mean()
-aggregate_row = aggregated_df.groupby('category')['available_prop'].mean()
-overall_aggregate = aggregated_df['available_prop'].mean()
+    # Add aggregate row and column
+    heatmap_data['Average'] = aggregate_row
+    aggregate_col['Average'] = overall_aggregate
+    heatmap_data.loc['Average'] = aggregate_col
 
-# Add aggregate row and column
-heatmap_data['Average'] = aggregate_row
-aggregate_col['Average'] = overall_aggregate
-heatmap_data.loc['Average'] = aggregate_col
+    # Generate the heatmap
+    sns.set(font_scale=1.5)
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn', cbar_kws={'label': 'Proportion of days on which consumable is available'})
 
-# Generate the heatmap
-sns.set(font_scale=1.5)
-plt.figure(figsize=(10, 8))
-sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn', cbar_kws={'label': 'Proportion of days on which consumable is available'})
+    # Customize the plot
+    plt.title(scenarios[i])
+    plt.xlabel('Facility Level')
+    plt.ylabel(f'Disease/Public health \n program')
+    plt.xticks(rotation=45)
+    plt.yticks(rotation=0)
 
-# Customize the plot
-#plt.title('Consumable availability by Facility Level and Category')
-plt.xlabel('Facility Level')
-plt.ylabel(f'Disease/Public health \n program')
-plt.xticks(rotation=45)
-plt.yticks(rotation=0)
-
-plt.savefig(figurespath /'consumable_availability_heatmap_1a_2.png', dpi=300, bbox_inches='tight')
-plt.show()
-plt.close()
+    plt.savefig(figurespath /f'consumable_availability_heatmap_1a_2_{avail_scenario}.png', dpi=300, bbox_inches='tight')
+    plt.show()
+    plt.close()
+    i = i + 1
 
 # TODO Justify the focus on levels 1a and 1b - where do HSIs occur?; at what level is there most misallocation within districts
 # TODO get graphs of percentage of successful HSIs under different scenarios for levels 1a and 1b
