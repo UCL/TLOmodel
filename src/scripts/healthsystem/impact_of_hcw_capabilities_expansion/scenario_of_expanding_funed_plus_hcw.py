@@ -227,13 +227,15 @@ class LongRun(BaseScenario):
         return mix_scenarios(
             get_parameters_for_status_quo(),
             {'HealthSystem': {
-                'equip_availability': 'default',  # if not specify here, the value will be 'all'
                 'use_funded_or_actual_staffing': 'actual',
                 'use_funded_or_actual_staffing_postSwitch': 'funded_plus',
                 'year_use_funded_or_actual_staffing_switch': 2020,
                 'mode_appt_constraints': 1,
                 'mode_appt_constraints_postSwitch': 2,
                 "year_mode_switch": 2020,
+                'cons_availability': 'default',
+                'cons_availability_postSwitch': 'all',
+                'year_cons_availability_switch': 2020,
                 'yearly_HR_scaling_mode': 'no_scaling',
 
             }
