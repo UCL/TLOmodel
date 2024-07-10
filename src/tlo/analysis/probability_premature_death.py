@@ -9,8 +9,14 @@ from pathlib import Path
 import pandas as pd
 from typing import Dict, Tuple
 
-from tlo.analysis.life_expectancy import _aggregate_person_years_by_age, _num_deaths_by_age_group
-from tlo.analysis.utils import get_scenario_info, summarize
+from tlo.analysis.life_expectancy import (
+    _aggregate_person_years_by_age,
+    _num_deaths_by_age_group,
+)
+from tlo.analysis.utils import (
+    get_scenario_info,
+    summarize,
+)
 
 
 def _calculate_probability_of_dying_before_70(
