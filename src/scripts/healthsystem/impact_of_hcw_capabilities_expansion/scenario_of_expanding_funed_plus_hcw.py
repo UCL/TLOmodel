@@ -28,7 +28,7 @@ class LongRun(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2040, 1, 1)
+        self.end_date = Date(2030, 1, 1)
         self.pop_size = 20_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
@@ -57,9 +57,9 @@ class LongRun(BaseScenario):
     def _get_scenarios(self) -> Dict[str, Dict]:  # todo: create many scenarios of expanding HCW (C, NM, P)
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
 
-        self.YEAR_OF_CHANGE = 2030  # This is the year to change HR scaling mode.
+        self.YEAR_OF_CHANGE = 2020  # This is the year to change HR scaling mode.
         # Year 2030 is when the Establishment HCW will be met as estimated by Berman 2022.
-        # But it can be 2020 to reduce running time (2010-2030 instead of 2010-2040).
+        # But it can be 2020, or 2019, to reduce running time (2010-2030 instead of 2010-2040).
 
         return {
             "Establishment HCW":
@@ -229,13 +229,13 @@ class LongRun(BaseScenario):
             {'HealthSystem': {
                 'use_funded_or_actual_staffing': 'actual',
                 'use_funded_or_actual_staffing_postSwitch': 'funded_plus',
-                'year_use_funded_or_actual_staffing_switch': 2020,
+                'year_use_funded_or_actual_staffing_switch': self.YEAR_OF_CHANGE,
                 'mode_appt_constraints': 1,
                 'mode_appt_constraints_postSwitch': 2,
-                "year_mode_switch": 2020,
+                "year_mode_switch": self.YEAR_OF_CHANGE,
                 'cons_availability': 'default',
                 'cons_availability_postSwitch': 'all',
-                'year_cons_availability_switch': 2020,
+                'year_cons_availability_switch': self.YEAR_OF_CHANGE,
                 'yearly_HR_scaling_mode': 'no_scaling',
 
             }
