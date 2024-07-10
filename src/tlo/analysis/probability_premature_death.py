@@ -4,6 +4,7 @@ generate life tables to estimate probability of premature death (defined as befo
 produce summary statistics
 """
 
+
 import datetime
 from pathlib import Path
 from typing import Dict, Tuple
