@@ -516,6 +516,14 @@ class HealthSystem(Module):
             # Dictionary mapping from HSI event details to unique integer keys
             self._never_ran_hsi_event_details = dict()
 
+            # Counters for binning HSI events that have no empty footprints (by unique integer keys) over
+            # simulation period specified by hsi_event_count_log_period and cumulative
+            # counts over previous log periods
+            self._hsi_event_no_blank_counts_log_period = Counter()
+            self._hsi_event_no_blank_counts_cumulative = Counter()
+            # Dictionary mapping from HSI event details to unique integer keys
+            self._hsi_event_no_blank_details = dict()
+
         elif hsi_event_count_log_period is not None:
             raise ValueError(
                 "hsi_event_count_log_period argument should be one of 'day', 'month' "
@@ -787,6 +795,7 @@ class HealthSystem(Module):
         if self._hsi_event_count_log_period == "simulation":
             self._write_hsi_event_counts_to_log_and_reset()
             self._write_never_ran_hsi_event_counts_to_log_and_reset()
+            self._write_hsi_event_no_blank_counts_to_log_and_reset()
         if self._hsi_event_count_log_period is not None:
             logger_summary.info(
                 key="hsi_event_details",
@@ -803,6 +812,15 @@ class HealthSystem(Module):
                 data={
                     "never_ran_hsi_event_key_to_event_details": {
                         k: d._asdict() for d, k in self._never_ran_hsi_event_details.items()
+                    }
+                }
+            )
+            logger_summary.info(
+                key="hsi_event_no_blank_footprint",
+                description="Map from integer keys to hsis that have no blank footprint event detail dictionaries",
+                data={
+                    "hsi_event_no_blank_key_to_event_details": {
+                        k: d._asdict() for d, k in self._hsi_event_no_blank_details.items()
                     }
                 }
             )
@@ -1697,6 +1715,14 @@ class HealthSystem(Module):
                 did_run=did_run,
                 priority=priority,
             )
+            self.write_to_hsi_no_blank_footprint_log(
+                event_details=hsi_event.as_namedtuple(actual_appt_footprint),
+                person_id=hsi_event.target,
+                facility_id=hsi_event.facility_info.id,
+                squeeze_factor=_squeeze_factor,
+                did_run=did_run,
+                priority=priority,
+            )
 
     def write_to_hsi_log(
         self,
@@ -1796,6 +1822,10 @@ class HealthSystem(Module):
             description="record of each HSI event"
         )
         if did_run and len(event_details.appt_footprint) != 0 and not all(x == 0 for x in event_details.appt_footprint):
+            event_details_key = self._hsi_event_no_blank_hsi_event_details.setdefault(
+                event_details, len(self._hsi_event_no_blank_hsi_event_details)
+            )
+            self._hsi_event_no_blank_counts_log_period[event_details_key] += 1
             # Do logging for 'summary logger'
             self._summary_counter.record_hsi_event_no_blank_appt_footprints(
                 treatment_id=event_details.treatment_id,
@@ -1961,18 +1991,33 @@ class HealthSystem(Module):
         self._never_ran_hsi_event_counts_cumulative += self._never_ran_hsi_event_counts_log_period
         self._never_ran_hsi_event_counts_log_period.clear()
 
+    def _write_hsi_event_no_blank_counts_to_log_and_reset(self):
+            logger_summary.info(
+                key="hsi_event_no_blank_counts",
+                description=(
+                    f"Counts of the HSI events that have run and have no blank footprint in this "
+                    f"{self._hsi_event_no_blank_counts_log_period} with keys corresponding to integer"
+                    f" keys recorded in dictionary in hsi_event_details log entry."
+                ),
+                data={"hsi_event_key_to_counts": dict(self._hsi_event_counts_log_period)},
+            )
+            self._hsi_event_no_blank_counts_cumulative += self._hsi_event_no_blank_counts_log_period
+            self._hsi_event_no_blank_counts_log_period.clear()
+
     def on_end_of_day(self) -> None:
         """Do jobs to be done at the end of the day (after all HSI run)"""
         self.bed_days.on_end_of_day()
         if self._hsi_event_count_log_period == "day":
             self._write_hsi_event_counts_to_log_and_reset()
             self._write_never_ran_hsi_event_counts_to_log_and_reset()
+            self._write_hsi_event_no_blank_counts_to_log_and_reset()
 
     def on_end_of_month(self) -> None:
         """Do jobs to be done at the end of the month (after all HSI run)"""
         if self._hsi_event_count_log_period == "month":
             self._write_hsi_event_counts_to_log_and_reset()
             self._write_never_ran_hsi_event_counts_to_log_and_reset()
+            self._write_hsi_event_no_blank_counts_to_log_and_reset()
 
     def on_end_of_year(self) -> None:
         """Write to log the current states of the summary counters and reset them."""
@@ -1990,6 +2035,7 @@ class HealthSystem(Module):
         if self._hsi_event_count_log_period == "year":
             self._write_hsi_event_counts_to_log_and_reset()
             self._write_never_ran_hsi_event_counts_to_log_and_reset()
+            self._write_hsi_event_no_blank_counts_to_log_and_reset()
 
     def run_population_level_events(self, _list_of_population_hsi_event_tuples: List[HSIEventQueueItem]) -> None:
         """Run a list of population level events."""
@@ -2181,6 +2227,34 @@ class HealthSystem(Module):
                     in self._never_ran_hsi_event_details.items()
                 }
             )
+
+        def hsi_no_blank_footprint_event_counts(self) -> Counter:
+            """Counts of details of HSI events which have a blank footprint.
+
+            Returns a ``Counter`` instance with keys ``HSIEventDetail`` named tuples
+            corresponding to details of HSI events that have run but have a blank footprint.
+            """
+            if self._hsi_event_count_log_period is None:
+                return Counter()
+
+            # Combine cumulative and current log period counts
+            total_hsi_event_no_blank_counts = (
+                self._hsi_event_no_blanks_counts_cumulative + self._hsi_event_no_blanks_counts_log_period
+            )
+
+            # Count events with blank footprints
+            blank_footprint_counts = Counter()
+
+            for event_details, count in total_hsi_event_no_blank_counts.items():
+                if self._is_blank_footprint(event_details):  # Assuming there's a method to check for blank footprint
+                    blank_footprint_counts[event_details] += count
+
+            return blank_footprint_counts
+
+        # You need to define the method _is_blank_footprint to determine if the event has a blank footprint
+        def _is_blank_footprint(self, event_details):
+            # Implement the logic to check if the event has a blank footprint
+            pass
 
 
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
