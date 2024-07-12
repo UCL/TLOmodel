@@ -1800,7 +1800,6 @@ class HealthSystem(Module):
             self._summary_counter.record_hsi_event_no_blank_appt_footprints(
                 treatment_id=event_details.treatment_id,
                 hsi_event_name=event_details.event_name,
-                squeeze_factor=squeeze_factor,
                 appt_footprint=event_details.appt_footprint,
                 level=event_details.facility_level,
             )
