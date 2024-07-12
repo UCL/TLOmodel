@@ -1725,7 +1725,7 @@ class HealthSystem(Module):
             },
             description="record of each HSI event"
         )
-        if did_run and len(event_details.appt_footprint) != 0 and not all(x == 0 for x in event_details.appt_footprint):
+        if did_run:
             if self._hsi_event_count_log_period is not None:
                 # Do logging for HSI Event using counts of each 'unique type' of HSI event (as defined by
                 # `HSIEventDetails`).
@@ -1741,6 +1741,7 @@ class HealthSystem(Module):
                 appt_footprint=event_details.appt_footprint,
                 level=event_details.facility_level,
             )
+
 
     def call_and_record_never_ran_hsi_event(self, hsi_event, priority=None):
         """
@@ -1766,6 +1767,43 @@ class HealthSystem(Module):
                  facility_id=-1,
                  priority=priority,
                  )
+
+    def write_to_hsi_no_blank_footprint_log(
+        self,
+        event_details: HSIEventDetails,
+        person_id: int,
+        facility_id: Optional[int],
+        squeeze_factor: float,
+        did_run: bool,
+        priority: int,
+    ):
+        """Write the log `HSI_Event` and add to the summary counter only if the appointment footprint is not blank."""
+        # Debug logger gives simple line-list for every HSI event
+        logger.debug(
+            key="HSI_Event_No_Blank_Footprint",
+            data={
+                'Event_Name': event_details.event_name,
+                'TREATMENT_ID': event_details.treatment_id,
+                'Number_By_Appt_Type_Code': dict(event_details.appt_footprint),
+                'Person_ID': person_id,
+                'Squeeze_Factor': squeeze_factor,
+                'priority': priority,
+                'did_run': did_run,
+                'Facility_Level': event_details.facility_level if event_details.facility_level is not None else -99,
+                'Facility_ID': facility_id if facility_id is not None else -99,
+                'Equipment': sorted(event_details.equipment),
+            },
+            description="record of each HSI event"
+        )
+        if did_run and len(event_details.appt_footprint) != 0 and not all(x == 0 for x in event_details.appt_footprint):
+            # Do logging for 'summary logger'
+            self._summary_counter.record_hsi_event_no_blank_appt_footprints(
+                treatment_id=event_details.treatment_id,
+                hsi_event_name=event_details.event_name,
+                squeeze_factor=squeeze_factor,
+                appt_footprint=event_details.appt_footprint,
+                level=event_details.facility_level,
+            )
 
     def write_to_never_ran_hsi_log(
         self,
@@ -2653,6 +2691,12 @@ class HealthSystemSummaryCounter:
         self._never_ran_appts = defaultdict(int)  # As above, but for `HSI_Event`s that have never ran
         self._never_ran_appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
 
+        # Log HSI_Events that have a non-blank appointment footprint
+        self._no_blank_appt_treatment_ids = defaultdict(int)  # As above, but for `HSI_Event`s that never ran
+        self._no_blank_appt_appts = defaultdict(int)  # As above, but for `HSI_Event`s that have never ran
+        self._no_blank_appt_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
+
+
         self._frac_time_used_overall = []  # Running record of the usage of the healthcare system
         self._sum_of_daily_frac_time_used_by_officer_type_and_level = Counter()
         self._squeeze_factor_by_hsi_event_name = defaultdict(list)  # Running record the squeeze-factor applying to each
@@ -2697,6 +2741,22 @@ class HealthSystemSummaryCounter:
             self._never_ran_appts[appt_type] += number
             self._never_ran_appts_by_level[level][appt_type] += number
 
+    def record_hsi_event_no_blank_appt_footprints(self,
+                                                  treatment_id: str,
+                                                  hsi_event_name: str,
+                                                  appt_footprint: Counter,
+                                                  level: str
+                                                  ) -> None:
+        """Add information about a`HSI_Event` that has a non-blank appointment footprint to the running summaries."""
+
+        # Count the treatment_id:
+        self._no_blank_appt_treatment_ids[treatment_id] += 1
+
+        # Count each type of appointment:
+        for appt_type, number in appt_footprint:
+            self._no_blank_appt_appts[appt_type] += number
+            self._no_blank_appt_by_level[level][appt_type] += number
+
     def record_hs_status(
         self,
         fraction_time_used_across_all_facilities: float,
@@ -2735,6 +2795,17 @@ class HealthSystemSummaryCounter:
                 "TREATMENT_ID": self._never_ran_treatment_ids,
                 "Number_By_Appt_Type_Code": self._never_ran_appts,
                 "Number_By_Appt_Type_Code_And_Level": self._never_ran_appts_by_level,
+            },
+        )
+            # Log summary of HSI_Events that do not have a blank appointment footprint
+        logger_summary.info(
+            key="HSI_Event_non_blank_appt_footprint",
+            description = "Counts of the HSI_Events that do not have a blank appointment footprint in this calendar year by TREATMENT_ID, "
+                      "and the respective 'Appt_Type's that have not occurred in this calendar year.",
+            data = {
+            "TREATMENT_ID": self._no_blank_appt_treatment_ids,
+            "Number_By_Appt_Type_Code": self._no_blank_appt_appts,
+            "Number_By_Appt_Type_Code_And_Level": self._no_blank_appt_by_level,
             },
         )
 
