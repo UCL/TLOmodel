@@ -47,11 +47,10 @@ hr['individual_increase_%'] = hr['individual_increase'] * 100 / hr['Staff_Count_
 # if to expand multiple cadres in ['Clinical', 'Nursing_and_Midwifery', 'Pharmacy', 'DCSA']
 hr_expand = hr.loc[hr.Officer_Category.isin(['Clinical', 'Nursing_and_Midwifery', 'Pharmacy', 'DCSA']),
                    ['Officer_Category', 'individual_increase']].copy()
-hr_expand['individual_increase_0%'] = np.floor(hr_expand['individual_increase'] * 0)
-hr_expand['individual_increase_25%'] = np.floor(hr_expand['individual_increase'] * 0.25)
-hr_expand['individual_increase_50%'] = np.floor(hr_expand['individual_increase'] * 0.5)
-hr_expand['individual_increase_75%'] = np.floor(hr_expand['individual_increase'] * 0.75)
-hr_expand['individual_increase_100%'] = np.floor(hr_expand['individual_increase'] * 1.0)
+hr_expand['individual_increase_0'] = np.floor(hr_expand['individual_increase'] * 0)
+hr_expand['individual_increase_1/3'] = np.floor(hr_expand['individual_increase'] * 1/3)
+hr_expand['individual_increase_2/3'] = np.floor(hr_expand['individual_increase'] * 2/3)
+hr_expand['individual_increase_1'] = np.floor(hr_expand['individual_increase'] * 1.0)
 hr_expand.drop(columns='individual_increase', inplace=True)
 hr_expand.set_index('Officer_Category', inplace=True)
 
@@ -91,6 +90,5 @@ hr_expand_scenario_budget.loc['Total'] = hr_expand_scenario_budget.sum()
 # to examine combined impact of multiple cadres, do keep the increase of a cadre that is as large as possible
 # to do this selection in Excel
 
-
-
+# if the resulted 48 scenarios are too many, try reducing the individual increase of each cadre into 4 cases.
 
