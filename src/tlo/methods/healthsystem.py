@@ -1822,8 +1822,8 @@ class HealthSystem(Module):
             description="record of each HSI event"
         )
         if did_run and len(event_details.appt_footprint) != 0 and not all(x == 0 for x in event_details.appt_footprint):
-            event_details_key = self._hsi_event_no_blank_hsi_event_details.setdefault(
-                event_details, len(self._hsi_event_no_blank_hsi_event_details)
+            event_details_key = self._hsi_event_no_blank_details.setdefault(
+                event_details, len(self._hsi_event_no_blank_details)
             )
             self._hsi_event_no_blank_counts_log_period[event_details_key] += 1
             # Do logging for 'summary logger'
