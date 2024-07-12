@@ -165,7 +165,7 @@ class HealthSystem(Module):
         'use_funded_or_actual_staffing': Parameter(
             Types.STRING, "If `actual`, then use the numbers and distribution of staff estimated to be available"
                           " currently; If `funded`, then use the numbers and distribution of staff that are "
-                          "potentially available. If 'funded_plus`, then use a dataset in which the allocation of "
+                          "potentially available. If `funded_plus`, then use a dataset in which the allocation of "
                           "staff to facilities is tweaked so as to allow each appointment type to run at each "
                           "facility_level in each district for which it is defined. N.B. This parameter is "
                           "over-ridden if an argument is provided to the module initialiser.",
