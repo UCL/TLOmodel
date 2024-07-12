@@ -9,9 +9,7 @@ from tlo import Date, Module, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.events import IndividualScopeEventMixin
 from tlo.methods import Metadata, demography, healthsystem
-from tlo.methods.consumables import (
-    create_dummy_data_for_cons_availability,
-)
+from tlo.methods.consumables import create_dummy_data_for_cons_availability
 from tlo.methods.hsi_event import HSI_Event
 
 # Set up logging configuration
