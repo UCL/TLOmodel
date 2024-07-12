@@ -84,9 +84,12 @@ hr_expand_scenario_budget.drop(index='Total', inplace=True)
 hr_expand_scenario_budget.loc[:, hr_expand_scenario_budget.columns[1:]] = \
     hr_expand_scenario_budget.loc[:, hr_expand_scenario_budget.columns[1:]].div(
     hr_expand_scenario_budget.loc[:, hr_expand_scenario_budget.columns[0]], axis='index')
+hr_expand_scenario_budget.loc['Total'] = hr_expand_scenario_budget.sum()
 
-# todo: further reduce scenarios
-
+# further reduce scenarios
+# to examine marginal impact of each cadre, do keep the individual increase (0%, 25%, 50%, 100%) of the four cadres
+# to examine combined impact of multiple cadres, do keep the increase of a cadre that is as large as possible
+# to do this selection in Excel
 
 
 
