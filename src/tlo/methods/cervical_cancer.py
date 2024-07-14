@@ -794,7 +794,8 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # in the generic appointment, in which case point them both to the same function)
 
 
-
+        #todo: create a date of last via screen (and same for xpert) and make it a condition of screening
+        # that last screen was x years ago
 
         df.ce_selected_for_via_this_month = False
 
@@ -1465,7 +1466,7 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         n_screened_via_this_month = (df.is_alive & df.ce_selected_for_via_this_month).sum()
         n_screened_xpert_this_month = (df.is_alive & df.ce_selected_for_xpert_this_month).sum()
-        n_ever_screened = (df.is_alive & df.ce_ever_screened).sum()
+        n_ever_screened = (df.is_alive & df.ce_ever_screened & df.age_years > 15 & df.age_years < 50).sum()
 
         n_vaginal_bleeding_stage1 = (df.is_alive & (df.sy_vaginal_bleeding == 2) &
                                      (df.ce_hpv_cc_status == 'stage1')).sum()
@@ -1503,6 +1504,8 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_ever_diagnosed = ((df['is_alive']) & (df['ce_ever_diagnosed'])).sum()
 
         n_women_alive = ((df['is_alive']) & (df['sex'] == 'F') & (df['age_years'] > 15)).sum()
+        n_women_alive_1549 = ((df['is_alive']) & (df['sex'] == 'F') & (df['age_years'] > 15)
+                              & (df['age_years'] < 50)).sum()
 
         n_women_vaccinated = ((df['is_alive']) & (df['sex'] == 'F') & (df['age_years'] > 15)
                               & df['va_hpv']).sum()
@@ -1532,6 +1535,7 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         out.update({"n_screened_xpert_this_month": n_screened_xpert_this_month})
         out.update({"n_screened_via_this_month": n_screened_via_this_month})
         out.update({"n_women_alive": n_women_alive})
+        out.update({"n_women_alive_1549": n_women_alive_1549})
         out.update({"n_ever_screened": n_ever_screened})
         out.update({"n_women_vaccinated": n_women_vaccinated})
         out.update({"n_vaginal_bleeding_stage1": n_vaginal_bleeding_stage1})
@@ -1586,6 +1590,7 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
               'n_screened_xpert_this_month:', out['n_screened_xpert_this_month'],
               'n_screened_via_this_month:', out['n_screened_via_this_month'],
               'n_women_alive', out['n_women_alive'],
+              'n_women_alive_1549', out['n_women_alive_1549'],
               'n_women_vaccinated', out['n_women_vaccinated'],
               'n_ever_screened', out['n_ever_screened'],
               'n_diagnosed_past_year:', out['n_diagnosed_past_year'],
