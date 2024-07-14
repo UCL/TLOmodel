@@ -364,6 +364,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
+    # percent of DALYS averted in HTM
+    1.0 - (total_num_dalys_by_label_results_averted_vs_baseline.loc['Other'] / total_num_dalys_by_label_results_averted_vs_baseline.sum())
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

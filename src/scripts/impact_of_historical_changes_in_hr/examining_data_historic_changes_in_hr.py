@@ -28,47 +28,32 @@ df = pd.concat([process_sheet(sheet) for sheet in wb.keys() if sheet in (str(y) 
 df.index = df.index.set_names(['District', 'Month', 'Year'])
 
 
-# Summarise trend over years
-df.groupby('Year').sum().plot()
-plt.show()
+# Summarise trend over years (taking average by month and summing over District)
+year_by_year = df.groupby(by=['Year', 'District']).mean().groupby(by='Year').sum()
 
-# Summarise trend over years, in each district
-fig, ax = plt.subplots(figsize=(6, 4), layout='constrained')
-df.groupby(['Year', 'District']).sum().unstack().plot(ax=ax, legend=False)
-ax.set_title('Trend in Healthcare Workers by District, 2017-2022', fontweight='bold', fontsize=10)
+fig, ax = plt.subplots()
+year_by_year .plot(ax=ax, legend=False)
+ax.set_title('Trend in Healthcare Workers, 2017-2022', fontweight='bold', fontsize=10)
 ax.set_ylabel('Number of HCW')
-ax.set_ylim([0, 300_000])
-fig.legend(loc="outside lower center", ncols=5, fontsize='small')
+ax.set_ylim(0, 200_000)
+fig.tight_layout()
 fig.show()
 
 
-#%% Summary Plot
-# Normalise to 2018 numbers
-year_on_year_trend = df.groupby('Year').sum()
-year_on_year_trend_normalised = year_on_year_trend / year_on_year_trend[2018]
-year_on_year_trend_normalised.plot(label='Data', marker='o')
+# Summarise trend over years, in each district
+fig, ax = plt.subplots(figsize=(6, 4), layout='constrained')
+df.groupby(by=['Year', 'District']).mean().unstack().plot(ax=ax, legend=False)
+ax.set_title('Trend in Healthcare Workers by District, 2017-2022', fontweight='bold', fontsize=10)
+ax.set_ylabel('Number of HCW')
+ax.set_ylim([0, 30_000])
+fig.legend(loc="outside lower center", ncols=5, fontsize='small')
+fig.show()
 
-# Fit a regression line from 2017 to 2022
-snippet_to_fit_to = year_on_year_trend_normalised.loc[slice(2017, 2022)]
-x = np.array(snippet_to_fit_to.index)
-y = snippet_to_fit_to.values
-
-coef = np.polyfit(x, y, 1)
-gradient = coef[0]
-increase_str = f"Average increase: {round(100 * gradient, 0)}% per year"
-poly1d_fn = np.poly1d(coef)
-# poly1d_fn is now a function which takes in x and returns an estimate for y
-plt.title('Change in the Number of Healthcare Workers, 2017-2022')
-plt.ylabel('Number of Staff\n(Normalised to 2018)')
-plt.plot(x, poly1d_fn(x), '--r', label='Best Fit, 2017-2022\n'+increase_str)
-plt.legend()
-plt.axhline(y=1.0, color='k')
-plt.show()
-
+# difference vs 2017
+diff_since_2017 = year_by_year - year_by_year.at[2017]
 
 #%% Plot to explain setup of Scenario
-year_on_year_trend = df.groupby('Year').sum()
-year_on_year_trend_normalised = year_on_year_trend / year_on_year_trend[2017]
+year_on_year_trend_normalised = year_by_year / year_by_year[2017]
 year_on_year_trend_normalised.plot(label='Data', marker='o')
 
 # Fit a regression line from 2017 to 2022
