@@ -33,11 +33,13 @@ df.groupby('Year').sum().plot()
 plt.show()
 
 # Summarise trend over years, in each district
-df.groupby(['Year', 'District']).sum().unstack().plot()
-plt.title('Change in the Number of Healthcare Workers by District, 2017-2024')
-plt.ylabel('Number of Staff')
-plt.tight_layout()
-plt.show()
+fig, ax = plt.subplots(figsize=(6, 4), layout='constrained')
+df.groupby(['Year', 'District']).sum().unstack().plot(ax=ax, legend=False)
+ax.set_title('Trend in Healthcare Workers by District, 2017-2022', fontweight='bold', fontsize=10)
+ax.set_ylabel('Number of HCW')
+ax.set_ylim([0, 300_000])
+fig.legend(loc="outside lower center", ncols=5, fontsize='small')
+fig.show()
 
 
 #%% Summary Plot

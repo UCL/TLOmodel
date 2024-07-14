@@ -70,11 +70,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _df.columns = _df.columns.set_levels(names_of_cols_level0, level=0)
         return _df
 
-    def find_difference_relative_to_comparison(_ser: pd.Series,
-                                               comparison: str,
-                                               scaled: bool = False,
-                                               drop_comparison: bool = True,
-                                               ):
+    def find_difference_relative_to_comparison_series(
+        _ser: pd.Series,
+        comparison: str,
+        scaled: bool = False,
+        drop_comparison: bool = True,
+    ):
         """Find the difference in the values in a pd.Series with a multi-index, between the draws (level 0)
         within the runs (level 1), relative to where draw = `comparison`.
         The comparison is `X - COMPARISON`."""
@@ -83,6 +84,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             .apply(lambda x: (x - x[comparison]) / (x[comparison] if scaled else 1.0), axis=1) \
             .drop(columns=([comparison] if drop_comparison else [])) \
             .stack()
+
+    def find_difference_relative_to_comparison_series_dataframe(_df: pd.DataFrame, **kwargs):
+        """Apply `find_difference_relative_to_comparison_series` to each row in a dataframe"""
+        return pd.concat({
+            _idx: find_difference_relative_to_comparison_series(row, **kwargs)
+            for _idx, row in _df.iterrows()
+        }, axis=1).T
 
     def do_bar_plot_with_ci(_df, annotations=None, xticklabels_horizontal_and_wrapped=False, put_labels_in_legend=True):
         """Make a vertical bar plot for each row of _df, using the columns to identify the height of the bar and the
@@ -168,7 +176,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     num_deaths_summarized = summarize(num_deaths).loc[0].unstack().reindex(param_names)
 
     name_of_plot = f'Deaths, {target_period()}'
-    fig, ax = do_bar_plot_with_ci(num_deaths_summarized / 1e6)
+    fig, ax = do_bar_plot_with_ci(num_deaths_summarized / 1e6, xticklabels_horizontal_and_wrapped=True, put_labels_in_legend=False)
     ax.set_title(name_of_plot)
     ax.set_ylabel('(Millions)')
     fig.tight_layout()
@@ -177,8 +185,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    name_of_plot = f'All Scenarios: DALYs, {target_period()}'
-    fig, ax = do_bar_plot_with_ci(num_dalys_summarized / 1e6)
+    name_of_plot = f'DALYs, {target_period()}'
+    fig, ax = do_bar_plot_with_ci(num_dalys_summarized / 1e6, xticklabels_horizontal_and_wrapped=True, put_labels_in_legend=False)
     ax.set_title(name_of_plot)
     ax.set_ylabel('(Millions)')
     # ax.axhline(num_dalys_summarized.loc['Baseline', 'mean']/1e6, color='black', alpha=0.5)
@@ -191,11 +199,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # %% Deaths and DALYS averted relative to Counterfactual
 
     counterfactual_scenario = 'Counterfactual (No Scale-up since 2017)'
+    actual_scenario = 'Actual (Scale-up)'
 
     num_deaths_averted = summarize(
         -1.0 *
         pd.DataFrame(
-            find_difference_relative_to_comparison(
+            find_difference_relative_to_comparison_series(
                 num_deaths.loc[0],
                 comparison=counterfactual_scenario)
         ).T
@@ -204,7 +213,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     pc_deaths_averted = 100.0 * summarize(
         -1.0 *
         pd.DataFrame(
-            find_difference_relative_to_comparison(
+            find_difference_relative_to_comparison_series(
                 num_deaths.loc[0],
                 comparison=counterfactual_scenario,
                 scaled=True)
@@ -214,7 +223,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     num_dalys_averted = summarize(
         -1.0 *
         pd.DataFrame(
-            find_difference_relative_to_comparison(
+            find_difference_relative_to_comparison_series(
                 num_dalys.loc[0],
                 comparison=counterfactual_scenario)
         ).T
@@ -223,7 +232,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     pc_dalys_averted = 100.0 * summarize(
         -1.0 *
         pd.DataFrame(
-            find_difference_relative_to_comparison(
+            find_difference_relative_to_comparison_series(
                 num_dalys.loc[0],
                 comparison=counterfactual_scenario,
                 scaled=True)
@@ -262,11 +271,99 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    # todo: Neaten graphs
-    # todo: Graph showing difference broken down by disease (this can be cribbed from the calcs about wealth from the
-    #  third set of analyses in the overview paper).
-    # todo: other metrics of health
-    # todo: other graphs, broken down by age/sex (this can also be cribbed from overview paper stuff)
+
+    # Graphs showing difference by disease (HTM/OTHER and split by age/sex)
+
+    def get_total_num_dalys_by_label(_df):
+        """Return the total number of DALYS in the TARGET_PERIOD by wealth and cause label."""
+        y = _df \
+            .loc[_df['year'].between(*[d.year for d in TARGET_PERIOD])] \
+            .drop(columns=['date', 'year', 'li_wealth']) \
+            .sum(axis=0)
+
+        # define course cause mapper for HIV, TB, MALARIA and OTHER
+        causes = {
+            'AIDS': 'HIV/AIDS',
+            'TB (non-AIDS)': 'TB',
+            'Malaria': 'Malaria',
+            '': 'Other',    # defined in order to use this dict to determine ordering of the causes in output
+        }
+        causes_relabels = y.index.map(causes).fillna('Other')
+
+        return y.groupby(by=causes_relabels).sum()[list(causes.values())]
+
+    total_num_dalys_by_label_results = extract_results(
+        results_folder,
+        module="tlo.methods.healthburden",
+        key="dalys_by_wealth_stacked_by_age_and_time",
+        custom_generate_series=get_total_num_dalys_by_label,
+        do_scaling=True,
+    ).pipe(set_param_names_as_column_index_level_0)
+
+    total_num_dalys_by_label_results_averted_vs_baseline = summarize(
+        -1.0 * find_difference_relative_to_comparison_series_dataframe(
+            total_num_dalys_by_label_results,
+            comparison=counterfactual_scenario,
+        ),
+        only_mean=True
+    )
+
+    # Check that when we sum across the causes, we get the same total as calculated when we didn't split by cause.
+    assert (
+        (total_num_dalys_by_label_results_averted_vs_baseline.sum(axis=0).sort_index()
+         - num_dalys_averted['mean'].sort_index()
+         ) < 1e-6
+    ).all()
+
+    # Make a separate plot for the scale-up of each program/programs
+    name_of_plot = f'DALYS Averted: Actual vs Counterfactual, {target_period()}'
+    fig, ax = plt.subplots()
+
+    yerr = np.array([
+        (num_dalys_averted['mean'].values - num_dalys_averted['lower']).values,
+        (num_dalys_averted['upper'].values - num_dalys_averted['mean']).values,
+    ])/1e6
+
+    (total_num_dalys_by_label_results_averted_vs_baseline.iloc[::-1] /1e6).T.plot.bar(
+        stacked=True,
+        ax=ax,
+        rot=0,
+        alpha=0.75,
+        zorder=3,
+        legend=False,
+    )
+    ax.errorbar(0, num_dalys_averted['mean'].values/1e6, yerr=yerr, fmt="o", color="black", zorder=4)
+
+    make_string_number = lambda row: f"{round(row['mean']/1e6,1)} ({round(row['lower']/1e6, 1)}-{round(row['upper']/1e6, 1)}) Million"
+    str_num_dalys_averted = f'DALYS Averted: {make_string_number(num_dalys_averted.loc[actual_scenario])}'
+
+    make_string_percent = lambda row: f"{round(row['mean'], 1)} ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
+    str_pc_dalys_averted = f'{make_string_percent(pc_dalys_averted.loc[actual_scenario])}% of Potential DALYS'
+
+    ax.text(0.03,
+            3.4,
+            str_num_dalys_averted + '\n' + str_pc_dalys_averted,
+            horizontalalignment='center',
+            backgroundcolor='white',
+            bbox=dict(boxstyle='round', ec='black', fc='white'),
+            )
+
+    ax.set_ylim([0, 4])
+    ax.set_title(name_of_plot)
+    ax.set_ylabel(f'DALYs Averted\n(Millions)')
+    ax.set_xlabel('')
+    ax.set_xlim(-0.5, 0.65)
+    ax.get_xaxis().set_ticks([])
+    wrapped_labs = ["\n".join(textwrap.wrap(_lab.get_text(), 20)) for _lab in ax.get_xticklabels()]
+    ax.set_xticklabels(wrapped_labs)
+    ax.grid(axis='y', zorder=0)
+    handles, labels = ax.get_legend_handles_labels()
+    ax.legend(handles[::-1], labels[::-1], title='Cause of DALYS', loc='center right')
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
