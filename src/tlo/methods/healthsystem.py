@@ -1715,12 +1715,11 @@ class HealthSystem(Module):
                 did_run=did_run,
                 priority=priority,
             )
-            if did_run and len(actual_appt_footprint) != 0 and not all(x == 0 for x in actual_appt_footprint):
-                self.write_to_hsi_no_blank_footprint_log(
+            #if did_run and len(actual_appt_footprint) != 0 and not all(x == 0 for x in actual_appt_footprint):
+            self.write_to_hsi_no_blank_footprint_log(
                 event_details=hsi_event.as_namedtuple(actual_appt_footprint),
                 person_id=hsi_event.target,
                 facility_id=hsi_event.facility_info.id,
-                squeeze_factor=_squeeze_factor,
                 did_run=did_run,
                 priority=priority,
                 )
@@ -1800,13 +1799,11 @@ class HealthSystem(Module):
         event_details: HSIEventDetails,
         person_id: int,
         facility_id: Optional[int],
-        squeeze_factor: float,
         did_run: bool,
         priority: int,
     ):
         """Write the log `HSI_Event` and add to the summary counter only if the appointment footprint is not blank."""
         # Debug logger gives simple line-list for every HSI event
-
         logger.debug(
             key="HSI_Event_No_Blank_Footprint",
             data={
@@ -1814,7 +1811,6 @@ class HealthSystem(Module):
                 'TREATMENT_ID': event_details.treatment_id,
                 'Number_By_Appt_Type_Code': dict(event_details.appt_footprint),
                 'Person_ID': person_id,
-                'Squeeze_Factor': squeeze_factor,
                 'priority': priority,
                 'did_run': did_run,
                 'Facility_Level': event_details.facility_level if event_details.facility_level is not None else -99,
@@ -1824,15 +1820,17 @@ class HealthSystem(Module):
             description="record of each HSI event"
         )
         if did_run and len(event_details.appt_footprint) != 0 and not all(x == 0 for x in event_details.appt_footprint):
-            event_details_key = self._hsi_event_no_blank_details.setdefault(event_details, len(self._hsi_event_no_blank_details))
-            self._hsi_event_no_blank_counts_log_period[event_details_key] += 1
+            if self._hsi_event_count_log_period is not None:
+                event_details_key = self._hsi_event_no_blank_details.setdefault(event_details,
+                                                                            len(self._hsi_event_no_blank_details))
+                self._hsi_event_no_blank_counts_log_period[event_details_key] += 1
                 # Do logging for 'summary logger'
             self._summary_counter.record_hsi_event_no_blank_appt_footprints(
-                    treatment_id=event_details.treatment_id,
-                    hsi_event_name=event_details.event_name,
-                    appt_footprint=event_details.appt_footprint,
-                    level=event_details.facility_level,
-            )
+                        treatment_id=event_details.treatment_id,
+                        hsi_event_name=event_details.event_name,
+                        appt_footprint=event_details.appt_footprint,
+                        level=event_details.facility_level,
+                )
 
     def write_to_never_ran_hsi_log(
         self,
@@ -1999,7 +1997,7 @@ class HealthSystem(Module):
                 f"{self._hsi_event_no_blank_counts_log_period} with keys corresponding to integer"
                 f" keys recorded in dictionary in hsi_event_details log entry."
             ),
-            data={"hsi_event_key_to_counts": dict(self._hsi_event_counts_log_period)},
+            data={"hsi_event_no_blank_key_to_counts": dict(self._hsi_event_no_blank_counts_log_period)},
             )
         self._hsi_event_no_blank_counts_cumulative += self._hsi_event_no_blank_counts_log_period
         self._hsi_event_no_blank_counts_log_period.clear()
@@ -2716,7 +2714,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         ),
                         person_id=-1,
                         facility_id=_fac_id,
-                        squeeze_factor=0.0,
                         priority=-1,
                         did_run=True,
                     )
