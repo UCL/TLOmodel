@@ -2244,13 +2244,11 @@ class HealthSystem(Module):
             return Counter(
                 {
                     event_details: total_hsi_event_no_blank_counts[event_details_key]
-                    for event_details, event_details_key in self._hsi_event_no_blank_details()
+                    for event_details, event_details_key
+                    in self._hsi_event_no_blank_details.items()
                 }
             )
 
-    # Define the method _is_blank_footprint to determine if the event has a blank footprint
-    def _is_blank_footprint(self, event_details):
-        pass
 
 
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
