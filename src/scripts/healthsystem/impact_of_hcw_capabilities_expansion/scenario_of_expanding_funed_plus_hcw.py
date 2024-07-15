@@ -28,11 +28,11 @@ class LongRun(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2030, 1, 1)
-        self.pop_size = 20_000
+        self.end_date = Date(2025, 1, 1)  # todo: TBC
+        self.pop_size = 20_000  # todo: TBC
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 10
+        self.runs_per_draw = 10  # todo: TBC
 
     def log_configuration(self):
         return {
@@ -49,12 +49,12 @@ class LongRun(BaseScenario):
 
     def modules(self):
         return (fullmodel(resourcefilepath=self.resources) +
-                [ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=self.resources)])
+                [ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=self.resources)])  # todo: TBC
 
     def draw_parameters(self, draw_number, rng):
         return list(self._scenarios.values())[draw_number]
 
-    def _get_scenarios(self) -> Dict[str, Dict]:  # todo: create many scenarios of expanding HCW (C, NM, P)
+    def _get_scenarios(self) -> Dict[str, Dict]:  # todo: create many scenarios of expanding HCW (C, NM, P, DCSA)
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
 
         self.YEAR_OF_CHANGE = 2020  # This is the year to change HR scaling mode.
