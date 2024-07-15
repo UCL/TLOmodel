@@ -2238,8 +2238,8 @@ class HealthSystem(Module):
             # If in middle of log period _hsi_event_counts_log_period will not be empty
             # and so overall total counts is sums of counts in both
             total_hsi_event_no_blank_counts = (
-                self._hsi_event_no_blanks_counts_cumulative +
-                self._hsi_event_no_blanks_counts_log_period
+                self._hsi_event_no_blank_counts_cumulative +
+                self._hsi_event_no_blank_counts_log_period
             )
             return Counter(
                 {
