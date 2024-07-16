@@ -511,6 +511,19 @@ def test_has_what(
         ][0]
         assert symptom not in symptom_manager.has_what(person_without_symptom)
 
+        # Do the same checks but using an IndividualDetails context
+        with simulation.population.individual_properties(
+            person_with_symptom, read_only=True
+        ) as with_symptom_properties:
+            assert symptom in symptom_manager.has_what(
+                individual_details=with_symptom_properties
+            )
+        with simulation.population.individual_properties(
+            person_without_symptom, read_only=True
+        ) as without_symptom_properties:
+            assert symptom not in symptom_manager.has_what(
+                individual_details=without_symptom_properties
+            )
 
 def test_has_what_disease_module(
     symptom_manager, disease_module, disease_module_symptoms, simulation
