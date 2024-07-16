@@ -205,7 +205,6 @@ class BladderCancer(_BaseCancer):
         self.linear_models_for_progession_of_bc_status = dict()
         self.lm_onset_blood_urine = None
         self.lm_onset_pelvic_pain = None
-        self.daly_wts = dict()
         self.item_codes_bladder_can = dict()
 
     def initialise_population(self, population):

@@ -203,7 +203,6 @@ class OesophagealCancer(_BaseCancer):
         super().__init__(name=name, resourcefilepath=resourcefilepath)
         self.linear_models_for_progession_of_oc_status = dict()
         self.lm_onset_dysphagia = None
-        self.daly_wts = dict()
         self.item_codes_oesophageal_can = dict()
 
     def initialise_population(self, population):

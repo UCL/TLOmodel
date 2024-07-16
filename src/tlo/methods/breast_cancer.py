@@ -183,7 +183,6 @@ class BreastCancer(_BaseCancer):
         super().__init__(name=name, resourcefilepath=resourcefilepath)
         self.linear_models_for_progession_of_brc_status = dict()
         self.lm_onset_breast_lump_discernible = None
-        self.daly_wts = dict()
         self.item_codes_breast_can = dict()
 
     def initialise_population(self, population):

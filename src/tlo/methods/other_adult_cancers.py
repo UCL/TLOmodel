@@ -207,7 +207,6 @@ class OtherAdultCancer(_BaseCancer):
         super().__init__(name=name, resource_filepath=resourcefilepath)
         self.linear_models_for_progession_of_oac_status = dict()
         self.lm_onset_early_other_adult_ca_symptom = None
-        self.daly_wts = dict()
         self.item_codes_other_can = dict()
 
     def initialise_population(self, population):

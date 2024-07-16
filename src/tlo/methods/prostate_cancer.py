@@ -194,7 +194,6 @@ class ProstateCancer(_BaseCancer):
         self.linear_models_for_progression_of_pc_status = dict()
         self.lm_prostate_ca_onset_urinary_symptoms = None
         self.lm_onset_pelvic_pain = None
-        self.daly_wts = dict()
         self.item_codes_prostate_can = dict()
 
     def initialise_population(self, population):

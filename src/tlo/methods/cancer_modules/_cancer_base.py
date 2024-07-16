@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 import pandas as pd
 
@@ -35,6 +35,8 @@ class _BaseCancer(Module, GenericFirstAppointmentsMixin):
     # during read_parameters().
     _symptoms_to_register: List[Symptom] = []
 
+    # DALY weights from the HealthBurden module
+    daly_wts: Dict[str, float]
     # Directory containing resource files.
     resourcefilepath: Path
 
@@ -50,6 +52,8 @@ class _BaseCancer(Module, GenericFirstAppointmentsMixin):
     ) -> None:
         super().__init__(name=name)
         self.resourcefilepath = resource_filepath
+        self.daly_wts = {}
+        # daly_wts (weights) and item codes can totally be refactored, but be careful since the events in teh same files will also use the old names and won't update with the refactoring tool :(
 
         # Impose common cancer dependencies, optionals, etc
         self.INIT_DEPENDENCIES = self.INIT_DEPENDENCIES.union(
