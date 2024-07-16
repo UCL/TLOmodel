@@ -719,7 +719,7 @@ class HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms(HSI_Event, Ind
             return hs.get_blank_appt_footprint()
 
         # Check that this event has been called for someone with the urinary symptoms
-        assert 'urinary' in self.sim.modules['SymptomManager'].has_what(person_id)
+        assert 'urinary' in self.sim.modules['SymptomManager'].has_what(person_id=person_id)
 
         # If the person is already diagnosed, then take no action:
         if not pd.isnull(df.at[person_id, "pc_date_diagnosis"]):
@@ -767,7 +767,7 @@ class HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(HSI_Event, Individu
             return hs.get_blank_appt_footprint()
 
         # Check that this event has been called for someone with the pelvic pain
-        assert 'pelvic_pain' in self.sim.modules['SymptomManager'].has_what(person_id)
+        assert 'pelvic_pain' in self.sim.modules['SymptomManager'].has_what(person_id=person_id)
 
         # If the person is already diagnosed, then take no action:
         if not pd.isnull(df.at[person_id, "pc_date_diagnosis"]):

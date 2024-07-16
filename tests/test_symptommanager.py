@@ -227,7 +227,7 @@ def test_baby_born_has_no_symptoms(seed):
     person_id = sim.do_birth(mother_id)
 
     # check that the new person does not have symptoms:
-    assert [] == sim.modules['SymptomManager'].has_what(person_id)
+    assert [] == sim.modules['SymptomManager'].has_what(person_id=person_id)
 
 
 def test_auto_onset_symptom(seed):
@@ -250,7 +250,7 @@ def test_auto_onset_symptom(seed):
     sim.population.props.loc[person_id, 'is_alive'] = True
     for symptom in sm.symptom_names:
         sim.population.props.loc[person_id, sm.get_column_name_for_symptom(symptom)] = 0
-    assert 0 == len(sm.has_what(person_id))
+    assert 0 == len(sm.has_what(person_id=person_id))
 
     def get_events_in_sim():
         return [ev for ev in sim.event_queue.queue if (person_id in ev[3].person_id)]
@@ -273,7 +273,7 @@ def test_auto_onset_symptom(seed):
     )
 
     # check that the symptom is not imposed
-    assert 0 == len(sm.has_what(person_id))
+    assert 0 == len(sm.has_what(person_id=person_id))
 
     # get the future events for this person (should be just the auto-onset event)
     assert 1 == len(get_events_in_sim())
@@ -285,7 +285,7 @@ def test_auto_onset_symptom(seed):
     # run the events and check for the changing of symptoms
     sim.date = date_of_onset
     onset[3].apply(sim.population)
-    assert symptom_string in sm.has_what(person_id)
+    assert symptom_string in sm.has_what(person_id=person_id)
 
     # get the future events for this person (should now include the auto-resolve event)
     assert 2 == len(get_events_in_sim())
@@ -295,7 +295,7 @@ def test_auto_onset_symptom(seed):
     assert isinstance(resolve[3], SymptomManager_AutoResolveEvent)
 
     resolve[3].apply(sim.population)
-    assert 0 == len(sm.has_what(person_id))
+    assert 0 == len(sm.has_what(person_id=person_id))
 
 
 def test_nonemergency_spurious_symptoms_during_simulation(seed):

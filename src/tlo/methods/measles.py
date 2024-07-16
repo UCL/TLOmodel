@@ -442,7 +442,7 @@ class HSI_Measles_Treatment(HSI_Event, IndividualScopeEventMixin):
                      data=f"HSI_Measles_Treatment: treat person {person_id} for measles")
 
         df = self.sim.population.props
-        symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
+        symptoms = self.sim.modules["SymptomManager"].has_what(person_id=person_id)
 
         # for non-complicated measles
         item_codes = [self.module.consumables['vit_A']]

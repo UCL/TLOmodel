@@ -1698,7 +1698,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
 
         # check if patient has: cough, fever, night sweat, weight loss
         # if none of the above conditions are present, no further action
-        persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
+        persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id=person_id)
         if not any(x in self.module.symptom_list for x in persons_symptoms):
             return self.make_appt_footprint({})
 
@@ -1961,7 +1961,7 @@ class HSI_Tb_ClinicalDiagnosis(HSI_Event, IndividualScopeEventMixin):
 
         # check if patient has: cough, fever, night sweat, weight loss
         set_of_symptoms_that_indicate_tb = set(self.module.symptom_list)
-        persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
+        persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id=person_id)
 
         if not set_of_symptoms_that_indicate_tb.intersection(persons_symptoms):
             # if none of the above conditions are present, no further action
@@ -2465,7 +2465,7 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
             return
 
         # if currently have symptoms of TB, refer for screening/testing
-        persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
+        persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id=person_id)
         if any(x in self.module.symptom_list for x in persons_symptoms):
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
