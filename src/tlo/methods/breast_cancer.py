@@ -7,20 +7,19 @@ Limitations to note:
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import DateOffset, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods import Metadata
+from tlo.methods.cancer_modules._cancer_base import _BaseCancer
 from tlo.methods.cancer_consumables import get_consumable_item_codes_cancers
 from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
-from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
 
 if TYPE_CHECKING:
@@ -31,34 +30,20 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class BreastCancer(Module, GenericFirstAppointmentsMixin):
+class BreastCancer(_BaseCancer):
     """Breast Cancer Disease Module"""
 
-    def __init__(self, name=None, resourcefilepath=None):
-        super().__init__(name)
-        self.resourcefilepath = resourcefilepath
-        self.linear_models_for_progession_of_brc_status = dict()
-        self.lm_onset_breast_lump_discernible = None
-        self.daly_wts = dict()
-        self.item_codes_breast_can = dict()
+    _resource_filename = "ResourceFile_Breast_Cancer.xlsx"
+    _symptoms_to_register = [
+        Symptom(
+            name="breast_lump_discernible", odds_ratio_health_seeking_in_adults=4.00
+        )
+    ]
 
-    INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
-
-    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
-
-    METADATA = {
-        Metadata.DISEASE_MODULE,
-        Metadata.USES_SYMPTOMMANAGER,
-        Metadata.USES_HEALTHSYSTEM,
-        Metadata.USES_HEALTHBURDEN
-    }
-
-    # Declare Causes of Death
     CAUSES_OF_DEATH = {
         'BreastCancer': Cause(gbd_causes='Breast cancer', label='Cancer (Breast)'),
     }
 
-    # Declare Causes of Disability
     CAUSES_OF_DISABILITY = {
         'BreastCancer': Cause(gbd_causes='Breast cancer', label='Cancer (Breast)'),
     }
@@ -192,20 +177,14 @@ class BreastCancer(Module, GenericFirstAppointmentsMixin):
         )
     }
 
-    def read_parameters(self, data_folder):
-        """Setup parameters used by the module, now including disability weights"""
-
-        # Update parameters from the resourcefile
-        self.load_parameters_from_dataframe(
-            pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_Breast_Cancer.xlsx",
-                          sheet_name="parameter_values")
-        )
-
-        # Register Symptom that this module will use
-        self.sim.modules['SymptomManager'].register_symptom(
-            Symptom(name='breast_lump_discernible',
-                    odds_ratio_health_seeking_in_adults=4.00)
-        )
+    def __init__(
+        self, name: Optional[str] = None, resourcefilepath: Optional[Path] = None
+    ):
+        super().__init__(name=name, resourcefilepath=resourcefilepath)
+        self.linear_models_for_progession_of_brc_status = dict()
+        self.lm_onset_breast_lump_discernible = None
+        self.daly_wts = dict()
+        self.item_codes_breast_can = dict()
 
     def initialise_population(self, population):
         """Set property values for the initial population."""

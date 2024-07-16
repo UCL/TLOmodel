@@ -7,20 +7,19 @@ Limitations to note:
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import DateOffset, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods import Metadata
 from tlo.methods.cancer_consumables import get_consumable_item_codes_cancers
+from tlo.methods.cancer_modules._cancer_base import _BaseCancer
 from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
-from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
 
 if TYPE_CHECKING:
@@ -31,35 +30,27 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class ProstateCancer(Module, GenericFirstAppointmentsMixin):
+class ProstateCancer(_BaseCancer):
     """Prostate Cancer Disease Module"""
 
-    def __init__(self, name=None, resourcefilepath=None):
-        super().__init__(name)
-        self.resourcefilepath = resourcefilepath
-        self.linear_models_for_progression_of_pc_status = dict()
-        self.lm_prostate_ca_onset_urinary_symptoms = None
-        self.lm_onset_pelvic_pain = None
-        self.daly_wts = dict()
-        self.item_codes_prostate_can = dict()
+    _resource_filename = "ResourceFile_Prostate_Cancer.xlsx"
+    _symptoms_to_register = [
+        Symptom(
+            name="urinary",
+            odds_ratio_health_seeking_in_adults=4.00,
+            no_healthcareseeking_in_children=True,
+        ),
+        Symptom(
+            name="pelvic_pain",
+            odds_ratio_health_seeking_in_adults=4.00,
+            no_healthcareseeking_in_children=True,
+        ),
+    ]
 
-    INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
-
-    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
-
-    METADATA = {
-        Metadata.DISEASE_MODULE,
-        Metadata.USES_SYMPTOMMANAGER,
-        Metadata.USES_HEALTHSYSTEM,
-        Metadata.USES_HEALTHBURDEN
-    }
-
-    # Declare Causes of Death
     CAUSES_OF_DEATH = {
         'ProstateCancer': Cause(gbd_causes='Prostate cancer', label='Cancer (Prostate)'),
     }
 
-    # Declare Causes of Disability
     CAUSES_OF_DISABILITY = {
         'ProstateCancer': Cause(gbd_causes='Prostate cancer', label='Cancer (Prostate)'),
     }
@@ -196,28 +187,15 @@ class ProstateCancer(Module, GenericFirstAppointmentsMixin):
         )
     }
 
-    def read_parameters(self, data_folder):
-        """Setup parameters used by the module, now including disability weights"""
-
-        # Update parameters from the resourcefile
-        self.load_parameters_from_dataframe(
-            pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_Prostate_Cancer.xlsx",
-                          sheet_name="parameter_values")
-        )
-
-        # Register Symptom that this module will use
-        self.sim.modules['SymptomManager'].register_symptom(
-            Symptom(name='urinary',
-                    odds_ratio_health_seeking_in_adults=4.00,
-                    no_healthcareseeking_in_children=True)
-        )
-
-        # Register Symptom that this module will use
-        self.sim.modules['SymptomManager'].register_symptom(
-            Symptom(name='pelvic_pain',
-                    odds_ratio_health_seeking_in_adults=4.00,
-                    no_healthcareseeking_in_children=True)
-        )
+    def __init__(
+        self, name: Optional[str] = None, resourcefilepath: Optional[Path] = None
+    ):
+        super().__init__(name=name, resource_filepath=resourcefilepath)
+        self.linear_models_for_progression_of_pc_status = dict()
+        self.lm_prostate_ca_onset_urinary_symptoms = None
+        self.lm_onset_pelvic_pain = None
+        self.daly_wts = dict()
+        self.item_codes_prostate_can = dict()
 
     def initialise_population(self, population):
         """Set property values for the initial population."""

@@ -28,12 +28,13 @@ class _BaseCancer(Module, GenericFirstAppointmentsMixin):
         Metadata.USES_HEALTHBURDEN,
     }
 
-    # List of symptoms that this class will register with the SymptomManager
-    # during read_parameters().
-    _symptoms_to_register: List[Symptom] = []
     # The name of the resource file in the resource file directory that this
     # module should read parameters from.
     _resource_filename: str = ""
+    # List of symptoms that this class will register with the SymptomManager
+    # during read_parameters().
+    _symptoms_to_register: List[Symptom] = []
+
     # Directory containing resource files.
     resourcefilepath: Path
 

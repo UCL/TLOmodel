@@ -33,7 +33,8 @@ logger.setLevel(logging.INFO)
 
 class BladderCancer(_BaseCancer):
     """Bladder Cancer Disease Module"""
-
+    
+    _resource_filename: str = "ResourceFile_Bladder_Cancer.xlsx"
     _symptoms_to_register = [
         Symptom(
             name="blood_urine",
@@ -46,17 +47,6 @@ class BladderCancer(_BaseCancer):
             no_healthcareseeking_in_children=True,
         ),
     ]
-    _resource_filename: str = "ResourceFile_Bladder_Cancer.xlsx"
-
-    def __init__(
-        self, name: Optional[str] = None, resourcefilepath: Optional[Path] = None
-    ):
-        super().__init__(name=name, resource_filepath=resourcefilepath)
-        self.linear_models_for_progession_of_bc_status = dict()
-        self.lm_onset_blood_urine = None
-        self.lm_onset_pelvic_pain = None
-        self.daly_wts = dict()
-        self.item_codes_bladder_can = dict()
 
     INIT_DEPENDENCIES = {'Lifestyle'}
 
@@ -207,6 +197,16 @@ class BladderCancer(_BaseCancer):
             "date bc death"
         )
     }
+
+    def __init__(
+        self, name: Optional[str] = None, resourcefilepath: Optional[Path] = None
+    ):
+        super().__init__(name=name, resource_filepath=resourcefilepath)
+        self.linear_models_for_progession_of_bc_status = dict()
+        self.lm_onset_blood_urine = None
+        self.lm_onset_pelvic_pain = None
+        self.daly_wts = dict()
+        self.item_codes_bladder_can = dict()
 
     def initialise_population(self, population):
         """Set property values for the initial population."""
