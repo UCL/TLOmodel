@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, Sequence, Union
+from typing import TYPE_CHECKING, List, Optional, Sequence, Union
 
 import numpy as np
 import pandas as pd
@@ -467,18 +467,21 @@ class SymptomManager(Module):
 
     def has_what(
         self,
-        person_id: int = 0,
+        person_id: Optional[int] = None,
         disease_module: Optional[Module] = None,
         individual_details: Optional[IndividualProperties] = None,
-    ):
+    ) -> List[str]:
         """
         This is a helper function that will give a list of strings for the symptoms that a _single_ person
         is currently experiencing.
-        Optionally can specify disease_module_name to limit to the symptoms caused by that disease module
+        Optionally can specify disease_module_name to limit to the symptoms caused by that disease module.
+        If working in a `tlo.population.IndividualProperties` context, one can pass the context object
+        instead of supplying the person's DataFrame index.
 
-        :param person_id: the person_of of interest
-        :param disease_module: (optional) disease module of interest
-        :return: list of strings for the symptoms that are currently being experienced
+        :param person_id: the person_of of interest.
+        :param disease_module: (optional) disease module of interest.
+        :param individual_details: `tlo.population.IndividualProperties` object for the person of interest.
+        :return: list of strings for the symptoms that are currently being experienced.
         """
         if individual_details is not None:
             # We are working in an IndividualDetails context, avoid lookups to the
@@ -490,22 +493,33 @@ class SymptomManager(Module):
                 if individual_details[f"sy_{symptom}"] > 0
             ]
         else:
-            assert isinstance(person_id, (int, np.integer)), 'person_id must be a single integer for one particular person'
+            assert isinstance(
+                person_id, (int, np.integer)
+            ), "person_id must be a single integer for one particular person"
 
             df = self.sim.population.props
-            assert df.at[person_id, 'is_alive'], "The person is not alive"
+            assert df.at[person_id, "is_alive"], "The person is not alive"
 
             if disease_module is not None:
-                assert disease_module.name in ([self.name] + self.recognised_module_names), \
-                    "Disease Module Name is not recognised"
-                sy_columns = [self.get_column_name_for_symptom(s) for s in self.symptom_names]
+                assert disease_module.name in (
+                    [self.name] + self.recognised_module_names
+                ), "Disease Module Name is not recognised"
+                sy_columns = [
+                    self.get_column_name_for_symptom(s) for s in self.symptom_names
+                ]
                 person_has = self.bsh.has(
                     [person_id], disease_module.name, first=True, columns=sy_columns
                 )
-                return [s for s in self.symptom_names if person_has[f'sy_{s}']]
+                return [s for s in self.symptom_names if person_has[f"sy_{s}"]]
             else:
-                symptom_cols = df.loc[person_id, [f'sy_{s}' for s in self.symptom_names]]
-                return symptom_cols.index[symptom_cols > 0].str.removeprefix("sy_").to_list()
+                symptom_cols = df.loc[
+                    person_id, [f"sy_{s}" for s in self.symptom_names]
+                ]
+                return (
+                    symptom_cols.index[symptom_cols > 0]
+                    .str.removeprefix("sy_")
+                    .to_list()
+                )
 
     def have_what(self, person_ids: Sequence[int]):
         """Find the set of symptoms for a list of person_ids.
