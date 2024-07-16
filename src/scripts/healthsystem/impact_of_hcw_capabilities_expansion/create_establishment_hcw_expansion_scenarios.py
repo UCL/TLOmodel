@@ -48,10 +48,15 @@ hr['individual_increase_%'] = hr['individual_increase'] * 100 / hr['Staff_Count_
 hr_expand = hr.loc[hr.Officer_Category.isin(['Clinical', 'Nursing_and_Midwifery', 'Pharmacy', 'DCSA']),
                    ['Officer_Category', 'individual_increase']].copy()
 hr_expand['individual_increase_0'] = np.floor(hr_expand['individual_increase'] * 0)
+hr_expand['individual_increase_10%'] = np.floor(hr_expand['individual_increase'] * 0.1)
 hr_expand['individual_increase_20%'] = np.floor(hr_expand['individual_increase'] * 0.2)
+hr_expand['individual_increase_30%'] = np.floor(hr_expand['individual_increase'] * 0.3)
 hr_expand['individual_increase_40%'] = np.floor(hr_expand['individual_increase'] * 0.4)
+hr_expand['individual_increase_50%'] = np.floor(hr_expand['individual_increase'] * 0.5)
 hr_expand['individual_increase_60%'] = np.floor(hr_expand['individual_increase'] * 0.6)
+hr_expand['individual_increase_70%'] = np.floor(hr_expand['individual_increase'] * 0.7)
 hr_expand['individual_increase_80%'] = np.floor(hr_expand['individual_increase'] * 0.8)
+hr_expand['individual_increase_90%'] = np.floor(hr_expand['individual_increase'] * 0.9)
 hr_expand['individual_increase_1'] = np.floor(hr_expand['individual_increase'] * 1)
 
 hr_expand.drop(columns='individual_increase', inplace=True)
