@@ -205,7 +205,6 @@ class BladderCancer(_BaseCancer):
         self.linear_models_for_progession_of_bc_status = dict()
         self.lm_onset_blood_urine = None
         self.lm_onset_pelvic_pain = None
-        self.item_codes_bladder_can = dict()
 
     def initialise_population(self, population):
         """Set property values for the initial population."""
@@ -367,7 +366,7 @@ class BladderCancer(_BaseCancer):
         """
         # We call the following function to store the required consumables for the simulation run within the appropriate
         # dictionary
-        self.item_codes_bladder_can = get_consumable_item_codes_cancers(self)
+        self.item_codes = get_consumable_item_codes_cancers(self)
 
         # ----- SCHEDULE LOGGING EVENTS -----
         # Schedule logging event to happen immediately
@@ -707,8 +706,8 @@ class HSI_BladderCancer_Investigation_Following_Blood_Urine(HSI_Event, Individua
             return hs.get_blank_appt_footprint()
 
         # Check consumables are available
-        cons_avail = self.get_consumables(item_codes=self.module.item_codes_bladder_can['screening_cystoscopy_core'],
-                                          optional_item_codes=self.module.item_codes_bladder_can[
+        cons_avail = self.get_consumables(item_codes=self.module.item_codes['screening_cystoscopy_core'],
+                                          optional_item_codes=self.module.item_codes[
                                               'screening_biopsy_endoscopy_cystoscopy_optional'])
 
         if cons_avail:
@@ -780,8 +779,8 @@ class HSI_BladderCancer_Investigation_Following_pelvic_pain(HSI_Event, Individua
             return hs.get_blank_appt_footprint()
 
         # Check consumables are available
-        cons_avail = self.get_consumables(item_codes=self.module.item_codes_bladder_can['screening_cystoscopy_core'],
-                                          optional_item_codes=self.module.item_codes_bladder_can[
+        cons_avail = self.get_consumables(item_codes=self.module.item_codes['screening_cystoscopy_core'],
+                                          optional_item_codes=self.module.item_codes[
                                               'screening_biopsy_endoscopy_cystoscopy_optional'])
 
         if cons_avail:
@@ -871,9 +870,9 @@ class HSI_BladderCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         assert pd.isnull(df.at[person_id, "bc_date_treatment"])
 
         # Check consumables are available
-        cons_avail = self.get_consumables(item_codes=self.module.item_codes_bladder_can['treatment_surgery_core'],
+        cons_avail = self.get_consumables(item_codes=self.module.item_codes['treatment_surgery_core'],
                                           optional_item_codes=
-                                          self.module.item_codes_bladder_can['treatment_surgery_optional'])
+                                          self.module.item_codes['treatment_surgery_optional'])
 
         if cons_avail:
             # If consumables are available and the treatment will go ahead - update the equipment
@@ -978,7 +977,7 @@ class HSI_BladderCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
 
         # Check consumables are available
         cons_available = self.get_consumables(
-            item_codes=self.module.item_codes_bladder_can['palliation'])
+            item_codes=self.module.item_codes['palliation'])
 
         if cons_available:
             # If consumables are available and the treatment will go ahead - update the equipment

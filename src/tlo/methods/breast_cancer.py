@@ -183,7 +183,6 @@ class BreastCancer(_BaseCancer):
         super().__init__(name=name, resourcefilepath=resourcefilepath)
         self.linear_models_for_progession_of_brc_status = dict()
         self.lm_onset_breast_lump_discernible = None
-        self.item_codes_breast_can = dict()
 
     def initialise_population(self, population):
         """Set property values for the initial population."""
@@ -329,7 +328,7 @@ class BreastCancer(_BaseCancer):
         """
         # We call the following function to store the required consumables for the simulation run within the appropriate
         # dictionary
-        self.item_codes_breast_can = get_consumable_item_codes_cancers(self)
+        self.item_codes = get_consumable_item_codes_cancers(self)
 
         # ----- SCHEDULE LOGGING EVENTS -----
         # Schedule logging event to happen immediately
@@ -672,9 +671,9 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
         df.at[person_id, 'brc_breast_lump_discernible_investigated'] = True
 
         # Check consumables to undertake biopsy are available
-        cons_avail = self.get_consumables(item_codes=self.module.item_codes_breast_can['screening_biopsy_core'],
+        cons_avail = self.get_consumables(item_codes=self.module.item_codes['screening_biopsy_core'],
                                           optional_item_codes=
-                                          self.module.item_codes_breast_can[
+                                          self.module.item_codes[
                                               'screening_biopsy_endoscopy_cystoscopy_optional'])
 
         if cons_avail:
@@ -771,8 +770,8 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # Check that consumables are available
         cons_available = self.get_consumables(
-            item_codes=self.module.item_codes_breast_can['treatment_surgery_core'],
-            optional_item_codes=self.module.item_codes_breast_can['treatment_surgery_optional'],
+            item_codes=self.module.item_codes['treatment_surgery_core'],
+            optional_item_codes=self.module.item_codes['treatment_surgery_optional'],
         )
 
         if cons_available:
@@ -781,8 +780,8 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
             # Log the use of adjuvant chemotherapy
             self.get_consumables(
-                item_codes=self.module.item_codes_breast_can['treatment_chemotherapy'],
-                optional_item_codes=self.module.item_codes_breast_can['iv_drug_cons'])
+                item_codes=self.module.item_codes['treatment_chemotherapy'],
+                optional_item_codes=self.module.item_codes['iv_drug_cons'])
 
             # Record date and stage of starting treatment
             df.at[person_id, "brc_date_treatment"] = self.sim.date
@@ -883,7 +882,7 @@ class HSI_BreastCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
 
         # Check consumables are available
         cons_available = self.get_consumables(
-            item_codes=self.module.item_codes_breast_can['palliation'])
+            item_codes=self.module.item_codes['palliation'])
 
         if cons_available:
             # If consumables are available and the treatment will go ahead - add the used equipment

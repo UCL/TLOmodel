@@ -37,6 +37,8 @@ class _BaseCancer(Module, GenericFirstAppointmentsMixin):
 
     # DALY weights from the HealthBurden module
     daly_wts: Dict[str, float]
+    # Items codes for consumables
+    item_codes: Dict[str, int]
     # Directory containing resource files.
     resourcefilepath: Path
 
@@ -53,7 +55,7 @@ class _BaseCancer(Module, GenericFirstAppointmentsMixin):
         super().__init__(name=name)
         self.resourcefilepath = resource_filepath
         self.daly_wts = {}
-        # daly_wts (weights) and item codes can totally be refactored, but be careful since the events in teh same files will also use the old names and won't update with the refactoring tool :(
+        self.item_codes = {}
 
         # Impose common cancer dependencies, optionals, etc
         self.INIT_DEPENDENCIES = self.INIT_DEPENDENCIES.union(

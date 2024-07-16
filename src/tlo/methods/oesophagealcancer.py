@@ -203,7 +203,6 @@ class OesophagealCancer(_BaseCancer):
         super().__init__(name=name, resourcefilepath=resourcefilepath)
         self.linear_models_for_progession_of_oc_status = dict()
         self.lm_onset_dysphagia = None
-        self.item_codes_oesophageal_can = dict()
 
     def initialise_population(self, population):
         """Set property values for the initial population."""
@@ -344,7 +343,7 @@ class OesophagealCancer(_BaseCancer):
         """
         # We call the following function to store the required consumables for the simulation run within the appropriate
         # dictionary
-        self.item_codes_oesophageal_can = get_consumable_item_codes_cancers(self)
+        self.item_codes = get_consumable_item_codes_cancers(self)
 
         # ----- SCHEDULE LOGGING EVENTS -----
         # Schedule logging event to happen immediately
@@ -666,9 +665,9 @@ class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, Individ
             return hs.get_blank_appt_footprint()
 
         # Check the consumables are available
-        cons_avail = self.get_consumables(item_codes=self.module.item_codes_oesophageal_can['screening_endoscopy_core'],
+        cons_avail = self.get_consumables(item_codes=self.module.item_codes['screening_endoscopy_core'],
                                           optional_item_codes=
-                                          self.module.item_codes_oesophageal_can[
+                                          self.module.item_codes[
                                               'screening_biopsy_endoscopy_cystoscopy_optional'])
 
         if cons_avail:
@@ -758,9 +757,9 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
         assert pd.isnull(df.at[person_id, "oc_date_treatment"])
 
         # Check consumables are available
-        cons_avail = self.get_consumables(item_codes=self.module.item_codes_oesophageal_can['treatment_surgery_core'],
+        cons_avail = self.get_consumables(item_codes=self.module.item_codes['treatment_surgery_core'],
                                           optional_item_codes=
-                                          self.module.item_codes_oesophageal_can['treatment_surgery_optional'])
+                                          self.module.item_codes['treatment_surgery_optional'])
 
         if cons_avail:
             # If consumables are available and the treatment will go ahead - update the equipment
@@ -768,8 +767,8 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
 
             # Log chemotherapy consumables
             self.get_consumables(
-                item_codes=self.module.item_codes_oesophageal_can['treatment_chemotherapy'],
-                optional_item_codes=self.module.item_codes_oesophageal_can['iv_drug_cons'])
+                item_codes=self.module.item_codes['treatment_chemotherapy'],
+                optional_item_codes=self.module.item_codes['iv_drug_cons'])
 
             # Record date and stage of starting treatment
             df.at[person_id, "oc_date_treatment"] = self.sim.date
@@ -870,7 +869,7 @@ class HSI_OesophagealCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin)
 
         # Check consumables are available
         cons_available = self.get_consumables(
-            item_codes=self.module.item_codes_oesophageal_can['palliation'])
+            item_codes=self.module.item_codes['palliation'])
 
         if cons_available:
             # If consumables are available and the treatment will go ahead - update the equipment

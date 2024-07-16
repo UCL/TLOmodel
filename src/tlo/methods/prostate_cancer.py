@@ -194,7 +194,6 @@ class ProstateCancer(_BaseCancer):
         self.linear_models_for_progression_of_pc_status = dict()
         self.lm_prostate_ca_onset_urinary_symptoms = None
         self.lm_onset_pelvic_pain = None
-        self.item_codes_prostate_can = dict()
 
     def initialise_population(self, population):
         """Set property values for the initial population."""
@@ -356,7 +355,7 @@ class ProstateCancer(_BaseCancer):
         """
         # We call the following function to store the required consumables for the simulation run within the appropriate
         # dictionary
-        self.item_codes_prostate_can = get_consumable_item_codes_cancers(self)
+        self.item_codes = get_consumable_item_codes_cancers(self)
 
         # ----- SCHEDULE LOGGING EVENTS -----
         # Schedule logging event to happen immediately
@@ -712,7 +711,7 @@ class HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms(HSI_Event, Ind
             )
 
         # Check consumable availability
-        cons_avail = self.get_consumables(item_codes=self.module.item_codes_prostate_can['screening_psa_test_optional'])
+        cons_avail = self.get_consumables(item_codes=self.module.item_codes['screening_psa_test_optional'])
 
         if dx_result and cons_avail:
             # send for biopsy
@@ -759,7 +758,7 @@ class HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(HSI_Event, Individu
             hsi_event=self
         )
 
-        cons_avail = self.get_consumables(item_codes=self.module.item_codes_prostate_can['screening_psa_test_optional'])
+        cons_avail = self.get_consumables(item_codes=self.module.item_codes['screening_psa_test_optional'])
 
         if dx_result and cons_avail:
             # send for biopsy
@@ -798,8 +797,8 @@ class HSI_ProstateCancer_Investigation_Following_psa_positive(HSI_Event, Individ
 
         # todo: stratify by pc_status
 
-        cons_available = self.get_consumables(item_codes=self.module.item_codes_prostate_can['screening_biopsy_core'],
-                                              optional_item_codes=self.module.item_codes_prostate_can[
+        cons_available = self.get_consumables(item_codes=self.module.item_codes['screening_biopsy_core'],
+                                              optional_item_codes=self.module.item_codes[
                                               'screening_biopsy_endoscopy_cystoscopy_optional'])
 
         if cons_available:
@@ -888,8 +887,8 @@ class HSI_ProstateCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         assert not pd.isnull(df.at[person_id, "pc_date_diagnosis"])
         assert pd.isnull(df.at[person_id, "pc_date_treatment"])
 
-        cons_available = self.get_consumables(item_codes=self.module.item_codes_prostate_can['treatment_surgery_core'],
-                                              optional_item_codes=self.module.item_codes_prostate_can[
+        cons_available = self.get_consumables(item_codes=self.module.item_codes['treatment_surgery_core'],
+                                              optional_item_codes=self.module.item_codes[
                                                   'treatment_surgery_optional'])
 
         if cons_available:
@@ -995,7 +994,7 @@ class HSI_ProstateCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
 
         # Check consumables are available
         cons_available = self.get_consumables(
-            item_codes=self.module.item_codes_prostate_can['palliation'])
+            item_codes=self.module.item_codes['palliation'])
 
         if cons_available:
             # If consumables are available and the treatment will go ahead - update the equipment
