@@ -313,7 +313,9 @@ def summarize(results: pd.DataFrame, only_mean: bool = False, collapse_columns: 
 
     summary = pd.concat(
         {
-            'mean': results.groupby(axis=1, by='draw', sort=False).mean(),
+            'mean': results.groupby(axis=1, by='draw', sort=False).median(),  # ***** NB. Central summary measure is
+            #                                                                   the MEDIAN but the column is labelled
+            #                                                                   as "mean". *****
             'lower': results.groupby(axis=1, by='draw', sort=False).quantile(0.025),
             'upper': results.groupby(axis=1, by='draw', sort=False).quantile(0.975),
         },
