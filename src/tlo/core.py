@@ -221,7 +221,7 @@ class Module:
 
     # Subclasses can override this set to add metadata tags to their class
     # See tlo.methods.Metadata class
-    METADATA: Set[Metadata] = {}
+    METADATA: Set[Metadata] = frozenset()
 
     # Subclasses can override this set to declare the causes death that this module contributes to
     # This is a dict of the form {<name_used_by_the_module : Cause()}: see core.Cause
