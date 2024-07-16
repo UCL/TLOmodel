@@ -11,9 +11,11 @@ Outstanding issues
 * The probability of spurious symptoms is not informed by data.
 
 """
+from __future__ import annotations
+
 from collections import defaultdict
 from pathlib import Path
-from typing import Sequence, Union
+from typing import TYPE_CHECKING, Optional, Sequence, Union
 
 import numpy as np
 import pandas as pd
@@ -22,6 +24,9 @@ from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.util import BitsetHandler
+
+if TYPE_CHECKING:
+    from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -460,7 +465,12 @@ class SymptomManager(Module):
             )
         ]
 
-    def has_what(self, person_id, disease_module: Module = None):
+    def has_what(
+        self,
+        person_id: int = 0,
+        disease_module: Optional[Module] = None,
+        individual_details: Optional[IndividualProperties] = None,
+    ):
         """
         This is a helper function that will give a list of strings for the symptoms that a _single_ person
         is currently experiencing.
@@ -470,23 +480,32 @@ class SymptomManager(Module):
         :param disease_module: (optional) disease module of interest
         :return: list of strings for the symptoms that are currently being experienced
         """
-
-        assert isinstance(person_id, (int, np.integer)), 'person_id must be a single integer for one particular person'
-
-        df = self.sim.population.props
-        assert df.at[person_id, 'is_alive'], "The person is not alive"
-
-        if disease_module is not None:
-            assert disease_module.name in ([self.name] + self.recognised_module_names), \
-                "Disease Module Name is not recognised"
-            sy_columns = [self.get_column_name_for_symptom(s) for s in self.symptom_names]
-            person_has = self.bsh.has(
-                [person_id], disease_module.name, first=True, columns=sy_columns
-            )
-            return [s for s in self.symptom_names if person_has[f'sy_{s}']]
+        if individual_details is not None:
+            # We are working in an IndividualDetails context, avoid lookups to the
+            # population DataFrame as we have this context stored already.
+            assert individual_details["is_alive"], "The person is not alive"
+            return [
+                symptom
+                for symptom in self.symptom_names
+                if individual_details[f"sy_{symptom}"] > 0
+            ]
         else:
-            symptom_cols = df.loc[person_id, [f'sy_{s}' for s in self.symptom_names]]
-            return symptom_cols.index[symptom_cols > 0].str.removeprefix("sy_").to_list()
+            assert isinstance(person_id, (int, np.integer)), 'person_id must be a single integer for one particular person'
+
+            df = self.sim.population.props
+            assert df.at[person_id, 'is_alive'], "The person is not alive"
+
+            if disease_module is not None:
+                assert disease_module.name in ([self.name] + self.recognised_module_names), \
+                    "Disease Module Name is not recognised"
+                sy_columns = [self.get_column_name_for_symptom(s) for s in self.symptom_names]
+                person_has = self.bsh.has(
+                    [person_id], disease_module.name, first=True, columns=sy_columns
+                )
+                return [s for s in self.symptom_names if person_has[f'sy_{s}']]
+            else:
+                symptom_cols = df.loc[person_id, [f'sy_{s}' for s in self.symptom_names]]
+                return symptom_cols.index[symptom_cols > 0].str.removeprefix("sy_").to_list()
 
     def have_what(self, person_ids: Sequence[int]):
         """Find the set of symptoms for a list of person_ids.
