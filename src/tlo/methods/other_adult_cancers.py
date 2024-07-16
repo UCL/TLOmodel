@@ -205,7 +205,7 @@ class OtherAdultCancer(_BaseCancer):
         self, name: Optional[str] = None, resourcefilepath: Optional[Path] = None
     ):
         super().__init__(name=name, resource_filepath=resourcefilepath)
-        self.linear_models_for_progession_of_oac_status = dict()
+        self.linear_models = dict()
         self.lm_onset_early_other_adult_ca_symptom = None
 
     def initialise_population(self, population):
@@ -374,7 +374,7 @@ class OtherAdultCancer(_BaseCancer):
 
         df = sim.population.props
         p = self.parameters
-        lm = self.linear_models_for_progession_of_oac_status
+        lm = self.linear_models
 
         predictors = [
             Predictor('age_years', conditions_are_mutually_exclusive=True)

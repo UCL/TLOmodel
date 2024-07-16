@@ -202,7 +202,6 @@ class BladderCancer(_BaseCancer):
         self, name: Optional[str] = None, resourcefilepath: Optional[Path] = None
     ):
         super().__init__(name=name, resource_filepath=resourcefilepath)
-        self.linear_models_for_progession_of_bc_status = dict()
         self.lm_onset_blood_urine = None
         self.lm_onset_pelvic_pain = None
 
@@ -383,7 +382,7 @@ class BladderCancer(_BaseCancer):
 
         df = sim.population.props
         p = self.parameters
-        lm = self.linear_models_for_progession_of_bc_status
+        lm = self.linear_models
 
         predictors = [
             Predictor('age_years', conditions_are_mutually_exclusive=True)

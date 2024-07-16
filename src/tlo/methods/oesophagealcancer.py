@@ -201,7 +201,6 @@ class OesophagealCancer(_BaseCancer):
         self, name: Optional[str] = None, resourcefilepath: Optional[Path] = None
     ):
         super().__init__(name=name, resourcefilepath=resourcefilepath)
-        self.linear_models_for_progession_of_oc_status = dict()
         self.lm_onset_dysphagia = None
 
     def initialise_population(self, population):
@@ -360,7 +359,7 @@ class OesophagealCancer(_BaseCancer):
 
         df = sim.population.props
         p = self.parameters
-        lm = self.linear_models_for_progession_of_oc_status
+        lm = self.linear_models
 
         lm['low_grade_dysplasia'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,

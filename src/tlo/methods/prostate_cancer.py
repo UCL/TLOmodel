@@ -191,7 +191,6 @@ class ProstateCancer(_BaseCancer):
         self, name: Optional[str] = None, resourcefilepath: Optional[Path] = None
     ):
         super().__init__(name=name, resource_filepath=resourcefilepath)
-        self.linear_models_for_progression_of_pc_status = dict()
         self.lm_prostate_ca_onset_urinary_symptoms = None
         self.lm_onset_pelvic_pain = None
 
@@ -372,7 +371,7 @@ class ProstateCancer(_BaseCancer):
 
         df = sim.population.props
         p = self.parameters
-        lm = self.linear_models_for_progression_of_pc_status
+        lm = self.linear_models
 
         lm['prostate_confined'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,

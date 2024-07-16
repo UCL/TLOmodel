@@ -11,6 +11,7 @@ from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
 
 if TYPE_CHECKING:
+    from tlo.lm import LinearModel
     from tlo.methods.symptommanager import SymptomManager
 
 
@@ -39,6 +40,8 @@ class _BaseCancer(Module, GenericFirstAppointmentsMixin):
     daly_wts: Dict[str, float]
     # Items codes for consumables
     item_codes: Dict[str, int]
+    # Linear models for cancer stages
+    linear_models: Dict[str, LinearModel]
     # Directory containing resource files.
     resourcefilepath: Path
 
@@ -54,6 +57,7 @@ class _BaseCancer(Module, GenericFirstAppointmentsMixin):
     ) -> None:
         super().__init__(name=name)
         self.resourcefilepath = resource_filepath
+        self.linear_models = {}
         self.daly_wts = {}
         self.item_codes = {}
 
