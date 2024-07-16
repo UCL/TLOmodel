@@ -504,12 +504,12 @@ def test_has_what(
             df.is_alive
             & (df[symptom_manager.get_column_name_for_symptom(symptom)] > 0)
         ][0]
-        assert symptom in symptom_manager.has_what(person_with_symptom)
+        assert symptom in symptom_manager.has_what(person_id=person_with_symptom)
         person_without_symptom = df.index[
             df.is_alive
             & (df[symptom_manager.get_column_name_for_symptom(symptom)] == 0)
         ][0]
-        assert symptom not in symptom_manager.has_what(person_without_symptom)
+        assert symptom not in symptom_manager.has_what(person_id=person_without_symptom)
 
         # Do the same checks but using an IndividualDetails context
         with simulation.population.individual_properties(
@@ -535,12 +535,16 @@ def test_has_what_disease_module(
             df.is_alive
             & (df[symptom_manager.get_column_name_for_symptom(symptom)] > 0)
         ][0]
-        assert symptom in symptom_manager.has_what(person_with_symptom, disease_module)
+        assert symptom in symptom_manager.has_what(
+            person_id=person_with_symptom, disease_module=disease_module
+        )
         person_without_symptom = df.index[
             df.is_alive
             & (df[symptom_manager.get_column_name_for_symptom(symptom)] == 0)
         ][0]
-        assert symptom not in symptom_manager.has_what(person_without_symptom, disease_module)
+        assert symptom not in symptom_manager.has_what(
+            person_id=person_without_symptom, disease_module=disease_module
+        )
 
 
 def test_have_what(
