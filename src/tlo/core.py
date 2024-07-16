@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import json
 from enum import Enum, auto
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, Set
 
 import numpy as np
 import pandas as pd
@@ -16,6 +16,8 @@ import pandas as pd
 if TYPE_CHECKING:
     from typing import Optional
 
+    from tlo.methods import Metadata
+    from tlo.methods.causes import Cause
     from tlo.simulation import Simulation
 
 class Types(Enum):
@@ -219,23 +221,23 @@ class Module:
 
     # Subclasses can override this set to add metadata tags to their class
     # See tlo.methods.Metadata class
-    METADATA = {}
+    METADATA: Set[Metadata] = {}
 
     # Subclasses can override this set to declare the causes death that this module contributes to
     # This is a dict of the form {<name_used_by_the_module : Cause()}: see core.Cause
-    CAUSES_OF_DEATH = {}
+    CAUSES_OF_DEATH: Dict[str, Cause] = {}
 
     # Subclasses can override this set to declare the causes disability that this module contributes to
     # This is a dict of the form {<name_used_by_the_module : Cause()}: see core.Cause
-    CAUSES_OF_DISABILITY = {}
+    CAUSES_OF_DISABILITY: Dict[str, Cause] = {}
 
     # Subclasses may declare this dictionary to specify module-level parameters.
     # We give an empty definition here as default.
-    PARAMETERS = {}
+    PARAMETERS: Dict[str, Parameter] = {}
 
     # Subclasses may declare this dictionary to specify properties of individuals.
     # We give an empty definition here as default.
-    PROPERTIES = {}
+    PROPERTIES: Dict[str, Property] = {}
 
     # The explicit attributes of the module. We list these to distinguish dynamic
     # parameters created from the PARAMETERS specification.
