@@ -468,19 +468,23 @@ class SymptomManager(Module):
     def has_what(
         self,
         person_id: Optional[int] = None,
-        disease_module: Optional[Module] = None,
         individual_details: Optional[IndividualProperties] = None,
+        disease_module: Optional[Module] = None,
     ) -> List[str]:
         """
         This is a helper function that will give a list of strings for the symptoms that a _single_ person
         is currently experiencing.
-        Optionally can specify disease_module_name to limit to the symptoms caused by that disease module.
+
         If working in a `tlo.population.IndividualProperties` context, one can pass the context object
         instead of supplying the person's DataFrame index.
+        Note that at least one of these inputs must be passed as a keyword argument however.
+        In the event that both arguments are passed, the individual_details argument takes precedence over the person_id.
+
+        Optionally can specify disease_module_name to limit to the symptoms caused by that disease module.
 
         :param person_id: the person_of of interest.
-        :param disease_module: (optional) disease module of interest.
         :param individual_details: `tlo.population.IndividualProperties` object for the person of interest.
+        :param disease_module: (optional) disease module of interest.
         :return: list of strings for the symptoms that are currently being experienced.
         """
         if individual_details is not None:
