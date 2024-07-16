@@ -265,7 +265,9 @@ def test_severe_exacerbation():
     copd.CopdExacerbationEvent(copd_module, person_id, severe=True).run()
 
     # severe exacerbation should lead to severe symptom(breathless severe in this case). check this is true
-    assert 'breathless_severe' in sim.modules['SymptomManager'].has_what(person_id, copd_module)
+    assert "breathless_severe" in sim.modules["SymptomManager"].has_what(
+        person_id=person_id, disease_module=copd_module
+    )
 
     # # Run health seeking behavior event and check emergency care is sought
     hsp = HealthSeekingBehaviourPoll(module=sim.modules['HealthSeekingBehaviour'])
@@ -426,7 +428,9 @@ def test_referral_logic():
     copd.CopdExacerbationEvent(copd_module, person_id, severe=True).run()
 
     # severe exacerbation should lead to severe symptom(breathless severe in this case). check this is true
-    assert 'breathless_severe' in sim.modules['SymptomManager'].has_what(person_id, copd_module)
+    assert "breathless_severe" in sim.modules["SymptomManager"].has_what(
+        person_id=person_id, disease_module=copd_module
+    )
 
     # Run health seeking behavior event and check emergency care is sought
     hsp = HealthSeekingBehaviourPoll(module=sim.modules['HealthSeekingBehaviour'])
