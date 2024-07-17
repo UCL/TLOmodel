@@ -11,6 +11,8 @@ resourcefilepath = Path('./resources')
 
 hr_salary = pd.read_csv(resourcefilepath /
                         'costing' / 'ResourceFile_Annual_Salary_Per_Cadre.csv', index_col=False)
+hr_salary_per_level = pd.read_excel(resourcefilepath /
+                                    'costing' / 'ResourceFile_Costing.xlsx', sheet_name='human_resources')
 hr_current = pd.read_csv(resourcefilepath /
                          'healthsystem' / 'human_resources' / 'actual' / 'ResourceFile_Daily_Capabilities.csv')
 hr_established = pd.read_csv(resourcefilepath /
@@ -104,4 +106,15 @@ hr_expand_scenario_budget.loc['Total'] = hr_expand_scenario_budget.sum()
 # step by 50%.
 # if try increasing the individual increase of each cadre into 6 cases, a step by 20%
 
+# to get minute salary per cadre per level
+Annual_PFT = hr_current.groupby(['Facility_Level', 'Officer_Category']).agg(
+    {'Total_Mins_Per_Day': 'sum', 'Staff_Count': 'sum'}).reset_index()
+Annual_PFT['Annual_Mins_Per_Staff'] = 365.25 * Annual_PFT['Total_Mins_Per_Day']/Annual_PFT['Staff_Count']
 
+hr_salary_per_level['Facility_Level'] = hr_salary_per_level['Facility_Level'].astype(str)
+
+Minute_Salary = Annual_PFT.merge(hr_salary_per_level, on=['Facility_Level', 'Officer_Category'], how='outer')
+Minute_Salary['Minute_Salary_USD'] = Minute_Salary['Salary_USD']/Minute_Salary['Annual_Mins_Per_Staff']
+
+Minute_Salary[['Facility_Level', 'Officer_Category', 'Minute_Salary_USD']].to_csv(
+    resourcefilepath / 'costing' / 'Minute_Salary_HR.csv', index=False)
