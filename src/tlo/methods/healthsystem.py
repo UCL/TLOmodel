@@ -307,6 +307,32 @@ class HealthSystem(Module):
                           "a worksheet of the file `ResourceFile_dynamic_HR_scaling.xlsx`."
         ),
 
+        'HR_expansion_by_officer_type': Parameter(
+            Types.LIST, "This list comprises of four floats, which specifies the proportions of extra budget "
+                        "allocated to four cadres - Clinical, DCSA, Nursing_and_Midwifery and Pharmacy - in order, "
+                        "every year from start_year_HR_expansion_by_officer_type and onwards. "
+                        "The extra budget for this year is 4.2% of the total salary of these cadres in last year, "
+                        "assuming the annual GDP growth rate is 4.2% and the proportion of GDP expenditure on "
+                        "expanding these cadres is fixed. Given the allocated extra budget and annual salary, "
+                        "we calculate the extra staff and minutes for these cadres of this year. The expansion is done "
+                        "on 1 Jan of every year from start_year_HR_expansion_by_officer_type."
+        ),
+
+        'start_year_HR_expansion_by_officer_type': Parameter(
+            Types.INT, "Year from which the HR expansion by officer type will take place. The change happens "
+                       "on 1 Jan of every year onwards."
+        ),
+
+        'end_year_HR_expansion_by_officer_type': Parameter(
+            Types.INT, "Year in which the HR expansion by officer type will stop. This happens on 1 Jan of "
+                       "that year. When submit the scenario to run, this should be the same year of the end year of "
+                       "the run."
+        ),
+
+        'minute_salary': Parameter(
+            Types.DATA_FRAME, "This specifies the minute salary in USD per officer type per level."
+        ),
+
         'tclose_overwrite': Parameter(
             Types.INT, "Decide whether to overwrite tclose variables assigned by disease modules"),
 
@@ -627,6 +653,10 @@ class HealthSystem(Module):
         # Ensure that a value for the year at the start of the simulation is provided.
         assert all(2010 in sheet['year'].values for sheet in self.parameters['yearly_HR_scaling'].values())
 
+        # Read in ResourceFile_Annual_Salary_Per_Cadre.csv
+        self.parameters['minute_salary'] = pd.read_csv(
+            Path(self.resourcefilepath) / 'costing' / 'Minute_Salary_HR.csv')
+
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
 
@@ -774,6 +804,12 @@ class HealthSystem(Module):
         # The first event scheduled for the start of the simulation is only used to update self.last_year_pop_size,
         # whilst the actual scaling will only take effect from 2011 onwards.
         sim.schedule_event(DynamicRescalingHRCapabilities(self), Date(sim.date))
+
+        # Schedule recurring event that expands HR by officer type
+        # from the start_year_HR_expansion_by_officer_type to the end_year_HR_expansion_by_officer_type.
+        for yr in range(self.parameters["start_year_HR_expansion_by_officer_type"],
+                        self.parameters["end_year_HR_expansion_by_officer_type"]):
+            sim.schedule_event(HRExpansionByOfficerType(self), Date(yr, 1, 1))
 
     def on_birth(self, mother_id, child_id):
         self.bed_days.on_birth(self.sim.population.props, mother_id, child_id)
@@ -2919,6 +2955,16 @@ class RescaleHRCapabilities_ByDistrict(Event, PopulationScopeEventMixin):
             district = self.module._facility_by_facility_id[facility_id].district
             if district in HR_scaling_factor_by_district:
                 self.module._daily_capabilities[officer] *= HR_scaling_factor_by_district[district]
+
+
+class HRExpansionByOfficerType(Event, PopulationScopeEventMixin):
+    """ This event exists to expand the HR by officer type (Clinical, DCSA, Nursing_and_Midwifery, Pharmacy)
+    given an extra budget."""
+    def __init__(self, module):
+        super().__init__(module)
+
+    def apply(self, population):
+        # get total cost of last year
 
 
 class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
