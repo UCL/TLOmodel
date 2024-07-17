@@ -19,7 +19,32 @@ if TYPE_CHECKING:
 
 class _BaseCancer(Module, GenericFirstAppointmentsMixin):
     """
-    NB: INIT_DEPENDENCIES, OPTIONAL_INIT_DEPENDENCIES, METADATA are already pre-filled with values common to all cancer modules. Providing these attributes in the derived classes can be done without listing these common items, they will be added automatically on instantiation.
+    Base class from which Cancer disease modules should inherit. Provides automation of tasks that are
+    common to all cancer modules and reduces code repetition across the separate cancer modules.
+
+    The various cancer modules share common requirements. Typically these would be defined in attributes inherited
+    from `tlo.Module`, however this would result in repeating such requirements across every module. As such, cancer
+    modules should instead put additional requirements in these attributes, and on creation will automatically have
+    the base requirements added to them, if not present already. Explicitly:
+    - Module dependencies: base requirements are in __all_cancer_dependencies, additional requirements for specific cancers should go in the usual INIT_DEPENDENCIES attribute.
+    - Optional module dependencies: base in __all_cancer_optionals, additional in OPTIONAL_INIT_DEPENDENCIES.
+    - Metadata: base in __all_cancer_metadata, additional in METADATA.
+    - Consumable items, base in __all_cancer_common_items, additional in _cancer_specific_items.
+    NOTE: To ensure the base requirements are correctly added to a cancer subclass, the __init__ method should invoke
+    super().__init__ to invoke _BaseCancer.__init__.
+    
+    Cancer modules are also similar in a number of other respects; there are common steps at each stage of the
+    simulation setup to all cancer modules, before they then implement cancer-specific instructions. Where possible,
+    these steps have been refactored out into "hooks". For example, all cancer modules set the PROPERTIES columns of
+    the population DataFrame to their defaults in `Module.initialise_population`, before then going on to define their
+    `tlo.lm.LinearModel`s. The later step should be implemented explicitly in the cancer subclass, within the
+    `_BaseCancer.initialise_population_hook` method, which will run automatically after the common steps defined by
+    this class (setting the PROPERTIES columns to defaults).
+
+    Similarly, certain attributes such as _resource_filename, _symptoms_to_register are cancer-specific, but are used
+    in exactly the same way for each cancer module. To avoid code repetition, these values should be explicitly
+    set when defining a cancer module, and the `_BaseCancer` class will take care of setting them up without the
+    subclass needing to worry about this.
     """
 
     __all_cancer_dependencies = {"Demography", "HealthSystem", "SymptomManager"}
