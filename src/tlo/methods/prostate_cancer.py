@@ -627,7 +627,7 @@ class ProstateCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # todo: people can move through more than one stage per month (this event runs every month)
         # todo: I am guessing this is somehow a consequence of this way of looping through the stages
         # todo: I imagine this issue is the same for bladder cancer and oesophageal cancer
-        for stage, lm in self.module.linear_models_for_progression_of_pc_status.items():
+        for stage, lm in self.module.linear_models.items():
             gets_new_stage = lm.predict(df.loc[df.is_alive], rng,
                                         had_treatment_during_this_stage=had_treatment_during_this_stage)
             idx_gets_new_stage = gets_new_stage[gets_new_stage].index

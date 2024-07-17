@@ -629,7 +629,7 @@ class BladderCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             df.is_alive & ~pd.isnull(df.bc_date_treatment) & (df.bc_status == df.bc_stage_at_which_treatment_given)
         )
 
-        for stage, lm in m.linear_models_for_progession_of_bc_status.items():
+        for stage, lm in m.linear_models.items():
             gets_new_stage = lm.predict(df.loc[df.is_alive], rng,
                                         had_treatment_during_this_stage=had_treatment_during_this_stage)
             df.loc[gets_new_stage[gets_new_stage].index, 'bc_status'] = stage

@@ -600,7 +600,7 @@ class OtherAdultCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             df.is_alive & ~pd.isnull(df.oac_date_treatment) & \
             (df.oac_status == df.oac_stage_at_which_treatment_given)
 
-        for stage, lm in self.module.linear_models_for_progession_of_oac_status.items():
+        for stage, lm in self.module.linear_models.items():
             gets_new_stage = lm.predict(df.loc[df.is_alive], rng,
                                         had_treatment_during_this_stage=had_treatment_during_this_stage)
             idx_gets_new_stage = gets_new_stage[gets_new_stage].index
