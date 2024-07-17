@@ -2,9 +2,6 @@ import datetime
 import time
 from pathlib import Path
 
-import pandas as pd
-from matplotlib import pyplot as plt
-
 from tlo import Date, logging
 from tlo.analysis.utils import get_parameters_for_status_quo
 from tlo.scenario import BaseScenario
@@ -76,22 +73,22 @@ class LongRun(BaseScenario):
             hiv.Hiv(resourcefilepath=self.resources),
             tb.Tb(resourcefilepath=self.resources),
             malaria.Malaria(resourcefilepath=self.resources),
-            alri.Alri,
-            diarrhoea.Diarrhoea,
-            stunting.Stunting,
-            wasting.Wasting,
-            measles.Measles,
-            schisto.Schisto,
-            bladder_cancer.BladderCancer,
-            breast_cancer.BreastCancer,
-            oesophagealcancer.OesophagealCancer,
-            other_adult_cancers.OtherAdultCancer,
-            prostate_cancer.ProstateCancer,
-            cardio_metabolic_disorders.CardioMetabolicDisorders,
-            rti.RTI,
-            copd.Copd,
-            depression.Depression,
-            epilepsy.Epilepsy,
+            alri.Alri(resourcefilepath=self.resources),
+            diarrhoea.Diarrhoea(resourcefilepath=self.resources),
+            stunting.Stunting(resourcefilepath=self.resources),
+            wasting.Wasting(resourcefilepath=self.resources),
+            measles.Measles(resourcefilepath=self.resources),
+            schisto.Schisto(resourcefilepath=self.resources),
+            bladder_cancer.BladderCancer(resourcefilepath=self.resources),
+            breast_cancer.BreastCancer(resourcefilepath=self.resources),
+            oesophagealcancer.OesophagealCancer(resourcefilepath=self.resources),
+            other_adult_cancers.OtherAdultCancer(resourcefilepath=self.resources),
+            prostate_cancer.ProstateCancer(resourcefilepath=self.resources),
+            cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=self.resources),
+            rti.RTI(resourcefilepath=self.resources),
+            copd.Copd(resourcefilepath=self.resources),
+            depression.Depression(resourcefilepath=self.resources),
+            epilepsy.Epilepsy(resourcefilepath=self.resources),
         ]
 
     def draw_parameters(self, draw_number, rng):
