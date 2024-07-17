@@ -14,7 +14,7 @@ import pandas as pd
 from tlo import DateOffset, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods.cancer_modules._cancer_base import _BaseCancer
+from tlo.methods.cancer_modules._base_cancer import _BaseCancer
 from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
