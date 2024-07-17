@@ -197,7 +197,7 @@ class ProstateCancer(_BaseCancer):
     def __init__(
         self, name: Optional[str] = None, resourcefilepath: Optional[Path] = None
     ):
-        super().__init__(name=name, resource_filepath=resourcefilepath)
+        super().__init__(name=name, resourcefilepath=resourcefilepath)
         self.lm_prostate_ca_onset_urinary_symptoms = None
         self.lm_onset_pelvic_pain = None
 

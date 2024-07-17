@@ -103,10 +103,10 @@ class _BaseCancer(Module, GenericFirstAppointmentsMixin):
         return self.sim.modules["SymptomManager"]
 
     def __init__(
-        self, name: Optional[str] = None, resource_filepath: Optional[Path] = None
+        self, name: Optional[str] = None, resourcefilepath: Optional[Path] = None
     ) -> None:
         super().__init__(name=name)
-        self.resourcefilepath = resource_filepath
+        self.resourcefilepath = resourcefilepath
         self.linear_models = {}
         self.daly_wts = {}
         self.item_codes = {}

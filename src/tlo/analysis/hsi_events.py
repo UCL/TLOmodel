@@ -23,7 +23,20 @@ from tlo.dependencies import (
     get_module_class_map,
     is_valid_tlo_module_subclass,
 )
-from tlo.methods import alri, contraception, diarrhoea, healthseekingbehaviour, hiv, stunting, tb
+from tlo.methods import (
+    alri,
+    bladder_cancer,
+    breast_cancer,
+    contraception,
+    diarrhoea,
+    healthseekingbehaviour,
+    hiv,
+    oesophagealcancer,
+    other_adult_cancers,
+    prostate_cancer,
+    stunting,
+    tb,
+)
 from tlo.methods.healthsystem import HSI_Event, HSIEventDetails
 
 
@@ -113,12 +126,17 @@ def get_details_of_defined_hsi_events(
         }
     if multiple_module_class_map is None:
         multiple_module_class_map = {
-            'hiv': hiv.Hiv,
-            'tb': tb.Tb,
-            'alri': alri.Alri,
-            'diarrhoea': diarrhoea.Diarrhoea,
-            'contraception': contraception.Contraception,
-            'stunting': stunting.Stunting
+            "alri": alri.Alri,
+            "bladder_cancer": bladder_cancer.BladderCancer,
+            "breast_cancer": breast_cancer.BreastCancer,
+            "contraception": contraception.Contraception,
+            "diarrhoea": diarrhoea.Diarrhoea,
+            "hiv": hiv.Hiv,
+            "oesophagealcancer": oesophagealcancer.OesophagealCancer,
+            "other_adult_cancers": other_adult_cancers.OtherAdultCancer,
+            "prostate_cancer": prostate_cancer.ProstateCancer,
+            "stunting": stunting.Stunting,
+            "tb": tb.Tb,
         }
     if resource_file_path is None:
         resource_file_path = get_root_path() / 'resources'

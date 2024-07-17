@@ -204,7 +204,7 @@ class BladderCancer(_BaseCancer):
     def __init__(
         self, name: Optional[str] = None, resourcefilepath: Optional[Path] = None
     ):
-        super().__init__(name=name, resource_filepath=resourcefilepath)
+        super().__init__(name=name, resourcefilepath=resourcefilepath)
         self.lm_onset_blood_urine = None
         self.lm_onset_pelvic_pain = None
 

@@ -203,7 +203,7 @@ class OtherAdultCancer(_BaseCancer):
     def __init__(
         self, name: Optional[str] = None, resourcefilepath: Optional[Path] = None
     ):
-        super().__init__(name=name, resource_filepath=resourcefilepath)
+        super().__init__(name=name, resourcefilepath=resourcefilepath)
         self.linear_models = dict()
         self.lm_onset_early_other_adult_ca_symptom = None
 
