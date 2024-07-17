@@ -470,21 +470,6 @@ class BreastCancer(_BaseCancer):
                 tclose=self.sim.date + DateOffset(months=1) + DateOffset(weeks=1)
             )
 
-    def on_birth(self, mother_id, child_id):
-        """Initialise properties for a newborn individual.
-        :param mother_id: the mother for this child
-        :param child_id: the new child
-        """
-        df = self.sim.population.props
-        df.at[child_id, "brc_status"] = "none"
-        df.at[child_id, "brc_date_diagnosis"] = pd.NaT
-        df.at[child_id, "brc_date_treatment"] = pd.NaT
-        df.at[child_id, "brc_stage_at_which_treatment_given"] = "none"
-        df.at[child_id, "brc_date_palliative_care"] = pd.NaT
-        df.at[child_id, "brc_new_stage_this_month"] = False
-        df.at[child_id, "brc_breast_lump_discernible_investigated"] = False
-        df.at[child_id, "brc_date_death"] = pd.NaT
-
     def on_hsi_alert(self, person_id, treatment_id):
         pass
 

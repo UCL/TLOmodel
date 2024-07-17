@@ -138,7 +138,7 @@ class _BaseCancer(Module, GenericFirstAppointmentsMixin):
             for group_name, items_in_group in self.all_consumable_items.items()
         }
 
-    def read_parameters(self, *args, **kwargs):
+    def read_parameters(self, *args, **kwargs) -> None:
         """
         Setup parameters used by the module, and register any symptoms. 
         """
@@ -171,7 +171,7 @@ class _BaseCancer(Module, GenericFirstAppointmentsMixin):
                 if property.type_ is not Types.CATEGORICAL
                 else "none"
             )
-        
+
         # Run any cancer-specific setup steps
         self.initialise_population_hook(population=population)
 
@@ -211,8 +211,23 @@ class _BaseCancer(Module, GenericFirstAppointmentsMixin):
         """
         raise NotImplementedError("initialise_simulation_hook must be explicitly defined by Cancer subclass.")
 
-    def on_birth(self, mother_id, child_id):
-        return super().on_birth(mother_id, child_id)
+    def on_birth(self, mother_id: int, child_id: int) -> None:
+        """
+        Initialise DF columns relevant to this module for the newborn child.
+
+        All cancer modules take this opportunity to set the property columns for the newborn
+        child to their default values, like is done in the initialise_population method for the
+        whole population.
+        """
+        df = self.sim.population.props
+
+        for property_name, property in self.PROPERTIES.items():
+            # Note that Types.CATEGORICAL Properties are default set to "none" for Cancer modules.
+            df.loc[child_id, property_name] = (
+                property._default_value
+                if property.type_ is not Types.CATEGORICAL
+                else "none"
+            )
 
     def on_hsi_alert(self, person_id: int, treatment_id):
         pass
