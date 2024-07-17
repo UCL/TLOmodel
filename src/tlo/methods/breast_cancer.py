@@ -7,7 +7,7 @@ Limitations to note:
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List, Optional, Type
 
 import pandas as pd
 
@@ -33,6 +33,7 @@ class BreastCancer(_BaseCancer):
     """Breast Cancer Disease Module"""
 
     _resource_filename = "ResourceFile_Breast_Cancer.xlsx"
+    _first_polling_event_runs_after = pd.DateOffset(months=1)
     _symptoms_to_register = [
         Symptom(
             name="breast_lump_discernible", odds_ratio_health_seeking_in_adults=4.00
@@ -176,6 +177,14 @@ class BreastCancer(_BaseCancer):
         )
     }
 
+    @staticmethod
+    def main_polling_event_class() -> Type[BreastCancerMainPollingEvent]:
+        return BreastCancerMainPollingEvent
+
+    @staticmethod
+    def main_logging_event_class() -> Type[BreastCancerLoggingEvent]:
+        return BreastCancerLoggingEvent
+
     def __init__(
         self, name: Optional[str] = None, resourcefilepath: Optional[Path] = None
     ):
@@ -307,21 +316,11 @@ class BreastCancer(_BaseCancer):
 
     def initialise_simulation_hook(self, sim):
         """
-        * Schedule the main polling event
-        * Schedule the main logging event
         * Define the LinearModels
         * Define the Diagnostic used
         * Define the Disability-weights
         * Schedule the palliative care appointments for those that are on palliative care at initiation
         """
-        # ----- SCHEDULE LOGGING EVENTS -----
-        # Schedule logging event to happen immediately
-        sim.schedule_event(BreastCancerLoggingEvent(self), sim.date + DateOffset(months=0))
-
-        # ----- SCHEDULE MAIN POLLING EVENTS -----
-        # Schedule main polling event to happen immediately
-        sim.schedule_event(BreastCancerMainPollingEvent(self), sim.date + DateOffset(months=1))
-
         # ----- LINEAR MODELS -----
         # Define LinearModels for the progression of cancer, in each 3 month period
         # NB. The effect being produced is that treatment only has the effect for during the stage at which the

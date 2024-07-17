@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional, Type
 
 import pandas as pd
 
@@ -12,6 +12,7 @@ from tlo.methods.symptommanager import Symptom
 
 if TYPE_CHECKING:
     from tlo import Simulation
+    from tlo.events import RegularEvent
     from tlo.lm import LinearModel
     from tlo.methods.symptommanager import SymptomManager
     from tlo.population import Population
@@ -44,7 +45,9 @@ class _BaseCancer(Module, GenericFirstAppointmentsMixin):
     Similarly, certain attributes such as _resource_filename, _symptoms_to_register are cancer-specific, but are used
     in exactly the same way for each cancer module. To avoid code repetition, these values should be explicitly
     set when defining a cancer module, and the `_BaseCancer` class will take care of setting them up without the
-    subclass needing to worry about this.
+    subclass needing to worry about this. Notable here are the static methods `main_polling_event_class` and
+    `main_logging_event_class` which also need to be defined by each concrete subclass - these are methods rather
+    than attributes to avoid circular references between a cancer type and the Events it wants to schedule.
     """
 
     __all_cancer_dependencies = {"Demography", "HealthSystem", "SymptomManager"}
@@ -95,6 +98,9 @@ class _BaseCancer(Module, GenericFirstAppointmentsMixin):
     # Dictionary of additional consumable items and quantities that need to be
     # fetched for this particular cancer.
     _cancer_specific_items: Dict[str, Dict[str, int]] = {}
+    # The first polling event will be scheduled to run this much time after
+    # the simulation starts (default is immediately)
+    _first_polling_event_runs_after: pd.DateOffset = pd.DateOffset(months=0)
     # The name of the resource file in the resource file directory that this
     # module should read parameters from.
     _resource_filename: str = ""
@@ -126,6 +132,32 @@ class _BaseCancer(Module, GenericFirstAppointmentsMixin):
         Points to the SymptomManager instance registered with the simulation.
         """
         return self.sim.modules["SymptomManager"]
+
+    @staticmethod
+    def main_polling_event_class() -> Type[RegularEvent]:
+        """
+        The RegularEvent (sub)class that controls the population-wide polling for this class.
+        Must be overwritten by subclass to return the appropriate class.
+
+        Declaration as the return value of a staticmethod avoids issues with circular definitions
+        between Events and their respective modules.
+        """
+        raise NotImplementedError(
+            "Main polling event class must be set by cancer subclass."
+        )
+
+    @staticmethod
+    def main_logging_event_class() -> Type[RegularEvent]:
+        """
+        The RegularEvent (sub)class that controls the population-wide logging for this class.
+        Must be overwritten by subclass to return the appropriate class.
+
+        Declaration as the return value of a staticmethod avoids issues with circular definitions
+        between Events and their respective modules.
+        """
+        raise NotImplementedError(
+            "Main logging event class must be set by cancer subclass."
+        )
 
     def __init__(
         self, name: Optional[str] = None, resourcefilepath: Optional[Path] = None
@@ -219,10 +251,19 @@ class _BaseCancer(Module, GenericFirstAppointmentsMixin):
 
         Common steps are:
         - Set the consumable item codes.
+        - Setup the main polling and logging events.
         """
         # Set the consumable item codes now that the HealthSystem has been initialised,
         # storing them in the item_codes attribute.
         self._set_item_codes()
+
+        # Schedule the initial occurrences of the main polling event and logging event
+        sim.schedule_event(
+            self.main_logging_event_class()(self), sim.date + pd.DateOffset(months=0)
+        ) # Logging event
+        sim.schedule_event(
+            self.main_polling_event_class()(self), sim.date + self._first_polling_event_runs_after
+        ) # Polling event
 
         # Run any cancer-specific steps at this point.
         self.initialise_simulation_hook(sim)

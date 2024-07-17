@@ -8,7 +8,7 @@ Limitations to note:
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List, Optional, Type
 
 import pandas as pd
 
@@ -201,6 +201,14 @@ class BladderCancer(_BaseCancer):
         )
     }
 
+    @staticmethod
+    def main_polling_event_class() -> Type[BladderCancerMainPollingEvent]:
+        return BladderCancerMainPollingEvent
+
+    @staticmethod
+    def main_logging_event_class() -> Type[BladderCancerLoggingEvent]:
+        return BladderCancerLoggingEvent
+
     def __init__(
         self, name: Optional[str] = None, resourcefilepath: Optional[Path] = None
     ):
@@ -351,21 +359,11 @@ class BladderCancer(_BaseCancer):
 
     def initialise_simulation_hook(self, sim):
         """
-        * Schedule the main polling event
-        * Schedule the main logging event
         * Define the LinearModels
         * Define the Diagnostic used
         * Define the Disability-weights
         * Schedule the palliative care appointments for those that are on palliative care at initiation
         """
-        # ----- SCHEDULE LOGGING EVENTS -----
-        # Schedule logging event to happen immediately
-        sim.schedule_event(BladderCancerLoggingEvent(self), sim.date + DateOffset(months=0))
-
-        # ----- SCHEDULE MAIN POLLING EVENTS -----
-        # Schedule main polling event to happen immediately
-        sim.schedule_event(BladderCancerMainPollingEvent(self), sim.date + DateOffset(months=0))
-
         # ----- LINEAR MODELS -----
         # Define LinearModels for the progression of cancer, in each 3 month period
         # NB. The effect being produced is that treatment only has the effect for during the stage at which the
