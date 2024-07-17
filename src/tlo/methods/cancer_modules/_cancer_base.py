@@ -235,7 +235,7 @@ class _BaseCancer(Module, GenericFirstAppointmentsMixin):
         """
         pass
 
-    def report_daily_values():
+    def report_daly_values(self):
         raise NotImplementedError("Must be directly implemented by subclass")
 
     def do_at_generic_first_appt(self, *args, **kwargs) -> None:
