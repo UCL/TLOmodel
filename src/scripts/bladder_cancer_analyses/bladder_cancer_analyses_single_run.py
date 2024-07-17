@@ -8,7 +8,6 @@ from pathlib import Path
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
-    bladder_cancer,
     care_of_women_during_pregnancy,
     contraception,
     demography,
@@ -22,6 +21,7 @@ from tlo.methods import (
     pregnancy_supervisor,
     symptommanager,
 )
+from tlo.methods.cancer_modules import bladder_cancer
 
 # import numpy as np
 # import pandas as pd

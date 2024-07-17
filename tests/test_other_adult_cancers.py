@@ -11,11 +11,10 @@ from tlo.methods import (
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    oesophagealcancer,
-    other_adult_cancers,
     simplified_births,
     symptommanager,
 )
+from tlo.methods.cancer_modules import oesophagealcancer, other_adult_cancers
 
 # %% Setup:
 try:

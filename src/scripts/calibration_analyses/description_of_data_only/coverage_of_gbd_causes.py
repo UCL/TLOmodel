@@ -9,8 +9,6 @@ from tlo import Date, Module, Simulation
 from tlo.analysis.utils import format_gbd
 from tlo.methods import (
     Metadata,
-    bladder_cancer,
-    breast_cancer,
     cardio_metabolic_disorders,
     care_of_women_during_pregnancy,
     contraception,
@@ -28,13 +26,11 @@ from tlo.methods import (
     malaria,
     measles,
     newborn_outcomes,
-    oesophagealcancer,
-    other_adult_cancers,
     postnatal_supervisor,
     pregnancy_supervisor,
-    prostate_cancer,
     symptommanager,
 )
+from tlo.methods.cancer_modules import bladder_cancer, breast_cancer, oesophagealcancer, other_adult_cancers, prostate_cancer
 from tlo.methods.causes import Cause
 
 resourcefilepath = Path("./resources")

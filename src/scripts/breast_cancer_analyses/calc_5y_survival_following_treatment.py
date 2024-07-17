@@ -17,15 +17,14 @@ import pandas as pd
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
-    breast_cancer,
     demography,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    oesophagealcancer,
     symptommanager,
 )
+from tlo.methods.cancer_modules import breast_cancer, oesophagealcancer
 
 # Where will outputs go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs

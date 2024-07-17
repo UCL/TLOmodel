@@ -6,7 +6,6 @@ import pytest
 
 from tlo import DAYS_IN_YEAR, Date, Simulation
 from tlo.methods import (
-    bladder_cancer,
     demography,
     enhanced_lifestyle,
     healthburden,
@@ -15,6 +14,7 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
 )
+from tlo.methods.cancer_modules import bladder_cancer
 
 # %% Setup:
 try:

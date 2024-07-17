@@ -22,9 +22,9 @@ from tlo.methods import (
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    oesophagealcancer,
     symptommanager,
 )
+from tlo.methods.cancer_modules import oesophagealcancer
 
 # Where will outputs go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs

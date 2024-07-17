@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 
 import pandas as pd
+from tlo.methods.cancer_modules import oesophagealcancer, other_adult_cancers
 import shared
 
 from tlo import Date, Simulation, logging
@@ -27,8 +28,6 @@ from tlo.methods import (
     healthsystem,
     hiv,
     malaria,
-    oesophagealcancer,
-    other_adult_cancers,
     simplified_births,
     symptommanager,
 )

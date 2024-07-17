@@ -6,16 +6,15 @@ import pytest
 
 from tlo import DAYS_IN_YEAR, Date, Simulation
 from tlo.methods import (
-    breast_cancer,
     demography,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    oesophagealcancer,
     simplified_births,
     symptommanager,
 )
+from tlo.methods.cancer_modules import breast_cancer, oesophagealcancer
 
 # %% Setup:
 try:

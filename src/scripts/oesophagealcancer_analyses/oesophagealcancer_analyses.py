@@ -26,11 +26,11 @@ from tlo.methods import (
     healthsystem,
     labour,
     newborn_outcomes,
-    oesophagealcancer,
     postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
 )
+from tlo.methods.cancer_modules import oesophagealcancer
 
 # Where will outputs go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs

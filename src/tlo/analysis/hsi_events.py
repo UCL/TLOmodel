@@ -25,17 +25,19 @@ from tlo.dependencies import (
 )
 from tlo.methods import (
     alri,
-    bladder_cancer,
-    breast_cancer,
     contraception,
     diarrhoea,
     healthseekingbehaviour,
     hiv,
+    stunting,
+    tb,
+)
+from tlo.methods.cancer_modules import (
+    bladder_cancer,
+    breast_cancer,
     oesophagealcancer,
     other_adult_cancers,
     prostate_cancer,
-    stunting,
-    tb,
 )
 from tlo.methods.healthsystem import HSI_Event, HSIEventDetails
 

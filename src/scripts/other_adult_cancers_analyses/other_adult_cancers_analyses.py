@@ -23,10 +23,10 @@ from tlo.methods import (
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    other_adult_cancers,
     simplified_births,
     symptommanager,
 )
+from tlo.methods.cancer_modules import other_adult_cancers
 
 # Where will outputs go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs

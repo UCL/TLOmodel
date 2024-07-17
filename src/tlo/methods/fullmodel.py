@@ -4,8 +4,6 @@ from typing import Dict, List, Optional
 from tlo import Module
 from tlo.methods import (
     alri,
-    bladder_cancer,
-    breast_cancer,
     cardio_metabolic_disorders,
     care_of_women_during_pregnancy,
     contraception,
@@ -24,11 +22,8 @@ from tlo.methods import (
     malaria,
     measles,
     newborn_outcomes,
-    oesophagealcancer,
-    other_adult_cancers,
     postnatal_supervisor,
     pregnancy_supervisor,
-    prostate_cancer,
     rti,
     schisto,
     simplified_births,
@@ -37,6 +32,7 @@ from tlo.methods import (
     tb,
     wasting,
 )
+from tlo.methods.cancer_modules import bladder_cancer, breast_cancer, oesophagealcancer, other_adult_cancers, prostate_cancer
 
 
 def fullmodel(

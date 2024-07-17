@@ -18,7 +18,6 @@ import pandas as pd
 from tlo import Date, Simulation
 from tlo.analysis.utils import make_age_grp_types, parse_log_file
 from tlo.methods import (
-    breast_cancer,
     care_of_women_during_pregnancy,
     contraception,
     demography,
@@ -28,11 +27,11 @@ from tlo.methods import (
     healthsystem,
     labour,
     newborn_outcomes,
-    oesophagealcancer,
     postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
 )
+from tlo.methods.cancer_modules import breast_cancer, oesophagealcancer
 
 # Where will outputs go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs

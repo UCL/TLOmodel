@@ -4,7 +4,6 @@ from pathlib import Path
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
-    breast_cancer,
     care_of_women_during_pregnancy,
     contraception,
     demography,
@@ -18,6 +17,7 @@ from tlo.methods import (
     pregnancy_supervisor,
     symptommanager,
 )
+from tlo.methods.cancer_modules import breast_cancer
 
 # Where will outputs go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
