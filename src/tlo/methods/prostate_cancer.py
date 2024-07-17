@@ -14,7 +14,6 @@ import pandas as pd
 from tlo import DateOffset, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods.cancer_consumables import get_consumable_item_codes_cancers
 from tlo.methods.cancer_modules._cancer_base import _BaseCancer
 from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
@@ -33,6 +32,14 @@ logger.setLevel(logging.INFO)
 class ProstateCancer(_BaseCancer):
     """Prostate Cancer Disease Module"""
 
+    _cancer_specific_items = {
+        "screening_psa_test_core": {"Prostate specific antigen test": 1},
+        "screening_psa_test_optional": {
+            "Blood collecting tube, 5 ml": 1,
+            "Disposables gloves, powder free, 100 pieces per box": 1,
+            "Gauze, swabs 8-ply 10cm x 10cm_100_CMST": 1,
+        },
+    }
     _resource_filename = "ResourceFile_Prostate_Cancer.xlsx"
     _symptoms_to_register = [
         Symptom(
@@ -343,7 +350,7 @@ class ProstateCancer(_BaseCancer):
         # set date of palliative care being initiated: same as diagnosis (NB. future HSI will be scheduled for this)
         df.loc[select_for_care, "pc_date_palliative_care"] = df.loc[select_for_care, "pc_date_diagnosis"]
 
-    def initialise_simulation(self, sim):
+    def initialise_simulation_hook(self, sim):
         """
         * Schedule the main polling event
         * Schedule the main logging event
@@ -352,11 +359,7 @@ class ProstateCancer(_BaseCancer):
         * Define the Disability-weights
         * Schedule the palliative care appointments for those that are on palliative care at initiation
         """
-        # We call the following function to store the required consumables for the simulation run within the appropriate
-        # dictionary
-        self.item_codes = get_consumable_item_codes_cancers(self)
-
-        # ----- SCHEDULE LOGGING EVENTS -----
+       # ----- SCHEDULE LOGGING EVENTS -----
         # Schedule logging event to happen immediately
         sim.schedule_event(ProstateCancerLoggingEvent(self), sim.date + DateOffset(months=0))
 

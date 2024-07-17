@@ -17,7 +17,6 @@ from tlo import DateOffset, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods.cancer_modules._cancer_base import _BaseCancer
-from tlo.methods.cancer_consumables import get_consumable_item_codes_cancers
 from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
@@ -35,6 +34,7 @@ logger.setLevel(logging.INFO)
 class OesophagealCancer(_BaseCancer):
     """Oesophageal Cancer Disease Module"""
 
+    _cancer_specific_items = {"screening_endoscopy_core": {"Endoscope": 1}}
     _resource_filename = "ResourceFile_Oesophageal_Cancer.xlsx"
     _symptoms_to_register = [
         Symptom(name="dysphagia", odds_ratio_health_seeking_in_adults=4.00)
@@ -331,7 +331,7 @@ class OesophagealCancer(_BaseCancer):
         # set date of palliative care being initiated: same as diagnosis (NB. future HSI will be scheduled for this)
         df.loc[select_for_care, "oc_date_palliative_care"] = df.loc[select_for_care, "oc_date_diagnosis"]
 
-    def initialise_simulation(self, sim):
+    def initialise_simulation_hook(self, sim):
         """
         * Schedule the main polling event
         * Schedule the main logging event
@@ -340,10 +340,6 @@ class OesophagealCancer(_BaseCancer):
         * Define the Disability-weights
         * Schedule the palliative care appointments for those that are on palliative care at initiation
         """
-        # We call the following function to store the required consumables for the simulation run within the appropriate
-        # dictionary
-        self.item_codes = get_consumable_item_codes_cancers(self)
-
         # ----- SCHEDULE LOGGING EVENTS -----
         # Schedule logging event to happen immediately
         sim.schedule_event(OesCancerLoggingEvent(self), sim.date + DateOffset(months=0))
