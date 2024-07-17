@@ -230,6 +230,9 @@ class _BaseCancer(Module, GenericFirstAppointmentsMixin):
             )
 
     def on_hsi_alert(self, person_id: int, treatment_id):
+        """
+        All cancer modules by default will pass on this method.
+        """
         pass
 
     def report_daily_values():

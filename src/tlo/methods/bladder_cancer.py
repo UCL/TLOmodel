@@ -510,9 +510,6 @@ class BladderCancer(_BaseCancer):
                 tclose=self.sim.date + DateOffset(months=1) + DateOffset(weeks=1)
             )
 
-    def on_hsi_alert(self, person_id, treatment_id):
-        pass
-
     def report_daly_values(self):
         # This must send back a dataframe that reports on the HealthStates for all individuals over the past month
 
