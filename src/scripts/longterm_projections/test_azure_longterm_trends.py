@@ -12,6 +12,7 @@ from tlo.methods import (
     malaria, measles, oesophagealcancer, other_adult_cancers, prostate_cancer,
     rti, schisto, simplified_births, stunting, symptommanager, tb, wasting
 )
+from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScenarioSwitcher
 
 # Start time for the simulation
 start_time = time.time()
@@ -89,6 +90,7 @@ class LongRun(BaseScenario):
             copd.Copd(resourcefilepath=self.resources),
             depression.Depression(resourcefilepath=self.resources),
             epilepsy.Epilepsy(resourcefilepath=self.resources),
+            ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=self.resources)
         ]
 
     def draw_parameters(self, draw_number, rng):
