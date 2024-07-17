@@ -301,7 +301,10 @@ class _BaseCancer(Module, GenericFirstAppointmentsMixin):
         """
         pass
 
-    def report_daly_values(self):
+    def report_daly_values(self) -> pd.DataFrame:
+        """
+        Return a `pd.DataFrame` that reports on the HealthStates for all individuals over the past month.
+        """
         raise NotImplementedError("Must be directly implemented by subclass")
 
     def do_at_generic_first_appt(self, *args, **kwargs) -> None:

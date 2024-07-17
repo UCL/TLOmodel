@@ -22,8 +22,9 @@ from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.symptommanager import Symptom
 
 if TYPE_CHECKING:
+    from tlo.simulation import Simulation
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
-    from tlo.population import IndividualProperties
+    from tlo.population import IndividualProperties, Population
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -205,13 +206,12 @@ class ProstateCancer(_BaseCancer):
 
     def __init__(
         self, name: Optional[str] = None, resourcefilepath: Optional[Path] = None
-    ):
+    ) -> None:
         super().__init__(name=name, resourcefilepath=resourcefilepath)
         self.lm_prostate_ca_onset_urinary_symptoms = None
         self.lm_onset_pelvic_pain = None
 
-    def initialise_population_hook(self, population):
-        """Set property values for the initial population."""
+    def initialise_population_hook(self, population: Population) -> None:
         df = population.props  # a shortcut to the data-frame
         p = self.parameters
 
@@ -349,7 +349,7 @@ class ProstateCancer(_BaseCancer):
         # set date of palliative care being initiated: same as diagnosis (NB. future HSI will be scheduled for this)
         df.loc[select_for_care, "pc_date_palliative_care"] = df.loc[select_for_care, "pc_date_diagnosis"]
 
-    def initialise_simulation_hook(self, sim):
+    def initialise_simulation_hook(self, sim: Simulation) -> None:
         """
         * Define the LinearModels
         * Define the Diagnostic used
@@ -493,10 +493,7 @@ class ProstateCancer(_BaseCancer):
                 tclose=self.sim.date + DateOffset(months=1) + DateOffset(weeks=1)
             )
 
-    def report_daly_values(self):
-        # This must send back a dataframe that reports on the HealthStates for all individuals over
-        # the past month
-
+    def report_daly_values(self) -> pd.DataFrame:
         df = self.sim.population.props  # shortcut to population properties dataframe for alive persons
 
         disability_series_for_alive_persons = pd.Series(index=df.index[df.is_alive], data=0.0)
