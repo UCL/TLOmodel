@@ -2966,15 +2966,15 @@ class HRExpansionByOfficerType(Event, PopulationScopeEventMixin):
     def apply(self, population):
 
         # get total minutes per cadre per facility id, for only the four cadres
-        # get total cost of last year = total minutes per cadre per facility id * minute salary per cadre per level (summing up cadres and facility ids)
-        # get extra budget for this year = 4.2% * total cost
+        # get total daily cost of last year = minutes per cadre per facility id * minute salary per cadre per level (summing up cadres and facility ids)
+        # get daily extra budget for this year = 4.2% * total cost
 
-        # get proportional extra budget for each of the four cadre = extra budget * proportion of a cadre
+        # get proportional daily extra budget for each of the four cadre = extra budget * proportion of a cadre
         # get the scale up factor for each cadre, assumed to be the same for each facility id of that cadre
-        # r * total minutes per cadre per facility id  * minute salary per cadre per facility id (summing up facility ids) = \
-        # total minutes per cadre per facility id * minute salary per cadre per facility id (summing up facility ids) + proportional extra budget
+        # r * minutes per cadre per facility id  * minute salary per cadre per facility id (summing up facility ids) = \
+        # minutes per cadre per facility id * minute salary per cadre per facility id (summing up facility ids) + proportional extra budget
 
-        # scale up the minutes per cadre per facility id, by multiplying the current values with r
+        # scale up the daily minutes per cadre per facility id, by multiplying the current values with r
 
 
 class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
