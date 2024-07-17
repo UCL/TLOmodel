@@ -182,20 +182,10 @@ class BreastCancer(_BaseCancer):
         super().__init__(name=name, resourcefilepath=resourcefilepath)
         self.lm_onset_breast_lump_discernible = None
 
-    def initialise_population(self, population):
+    def initialise_population_hook(self, population):
         """Set property values for the initial population."""
         df = population.props  # a shortcut to the data-frame
         p = self.parameters
-
-        # defaults
-        df.loc[df.is_alive, "brc_status"] = "none"
-        df.loc[df.is_alive, "brc_date_diagnosis"] = pd.NaT
-        df.loc[df.is_alive, "brc_date_treatment"] = pd.NaT
-        df.loc[df.is_alive, "brc_stage_at_which_treatment_given"] = "none"
-        df.loc[df.is_alive, "brc_date_palliative_care"] = pd.NaT
-        df.loc[df.is_alive, "brc_date_death"] = pd.NaT
-        df.loc[df.is_alive, "brc_breast_lump_discernible_investigated"] = False
-        df.loc[df.is_alive, "brc_new_stage_this_month"] = False
 
         # -------------------- brc_status -----------
         # Determine who has cancer at ANY cancer stage:

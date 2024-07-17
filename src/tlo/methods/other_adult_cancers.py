@@ -207,18 +207,10 @@ class OtherAdultCancer(_BaseCancer):
         self.linear_models = dict()
         self.lm_onset_early_other_adult_ca_symptom = None
 
-    def initialise_population(self, population):
+    def initialise_population_hook(self, population):
         """Set property values for the initial population."""
         df = population.props  # a shortcut to the data-frame
         p = self.parameters
-
-        # defaults
-        df.loc[df.is_alive, "oac_status"] = "none"
-        df.loc[df.is_alive, "oac_date_diagnosis"] = pd.NaT
-        df.loc[df.is_alive, "oac_date_treatment"] = pd.NaT
-        df.loc[df.is_alive, "oac_stage_at_which_treatment_given"] = "none"
-        df.loc[df.is_alive, "oac_date_palliative_care"] = pd.NaT
-        df.loc[df.is_alive, "oac_date_death"] = pd.NaT
 
         # -------------------- oac_status -----------
         # Determine who has cancer at ANY cancer stage:

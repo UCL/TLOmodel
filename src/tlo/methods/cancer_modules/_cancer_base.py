@@ -5,14 +5,16 @@ from typing import TYPE_CHECKING, Dict, List, Optional
 
 import pandas as pd
 
-from tlo import Module
+from tlo import Module, Types
 from tlo.methods import Metadata
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
 
 if TYPE_CHECKING:
+    from tlo import Simulation
     from tlo.lm import LinearModel
     from tlo.methods.symptommanager import SymptomManager
+    from tlo.population import Population
 
 
 class _BaseCancer(Module, GenericFirstAppointmentsMixin):
@@ -151,15 +153,47 @@ class _BaseCancer(Module, GenericFirstAppointmentsMixin):
         for str in self._symptoms_to_register:
             self.symptom_manager.register_symptom(str)
 
-    def initialise_population(self, population):
-        return super().initialise_population(population)
-
-    def initialise_simulation(self, sim):
+    def initialise_population(self, population: Population) -> None:
         """
         Common initialise_simulation steps for all cancer modules.
-
         After common steps complete, the initialise_simulation_hook will be invoked, which
         should be explicitly implemented by subclasses.
+
+        Common steps are:
+        - Set default values for properties columns in the population DF.
+        """
+        df = population.props
+
+        for property_name, property in self.PROPERTIES.items():
+            # Note that Types.CATEGORICAL Properties are default set to "none" for Cancer modules.
+            df.loc[df.is_alive, property_name] = (
+                property._default_value
+                if property.type_ is not Types.CATEGORICAL
+                else "none"
+            )
+        
+        # Run any cancer-specific setup steps
+        self.initialise_population_hook(population=population)
+
+    def initialise_population_hook(self, population: Population) -> None:
+        """
+        Cancer-specific steps to run during population initialisation.
+
+        These steps will be run after the steps common to all cancer modules.
+        Must be implemented by subclass, even if it is just to pass.
+        """
+        raise NotImplementedError(
+            "initialise_population_hook must be explicitly defined by Cancer subclass."
+        )
+
+    def initialise_simulation(self, sim: Simulation) -> None:
+        """
+        Common initialise_simulation steps for all cancer modules.
+        After common steps complete, the initialise_simulation_hook will be invoked, which
+        should be explicitly implemented by subclasses.
+
+        Common steps are:
+        - Set the consumable item codes.
         """
         # Set the consumable item codes now that the HealthSystem has been initialised,
         # storing them in the item_codes attribute.
@@ -168,7 +202,7 @@ class _BaseCancer(Module, GenericFirstAppointmentsMixin):
         # Run any cancer-specific steps at this point.
         self.initialise_simulation_hook(sim)
 
-    def initialise_simulation_hook(self, sim) -> None:
+    def initialise_simulation_hook(self, sim: Simulation) -> None:
         """
         Cancer-specific steps to run during simulation initialisation.
         

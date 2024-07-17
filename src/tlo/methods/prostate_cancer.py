@@ -201,20 +201,10 @@ class ProstateCancer(_BaseCancer):
         self.lm_prostate_ca_onset_urinary_symptoms = None
         self.lm_onset_pelvic_pain = None
 
-    def initialise_population(self, population):
+    def initialise_population_hook(self, population):
         """Set property values for the initial population."""
         df = population.props  # a shortcut to the data-frame
         p = self.parameters
-
-        # defaults
-        df.loc[df.is_alive, "pc_status"] = "none"
-        df.loc[df.is_alive, "pc_date_diagnosis"] = pd.NaT
-        df.loc[df.is_alive, "pc_date_treatment"] = pd.NaT
-        df.loc[df.is_alive, "pc_stage_at_which_treatment_given"] = "none"
-        df.loc[df.is_alive, "pc_date_palliative_care"] = pd.NaT
-        df.loc[df.is_alive, "pc_date_death"] = pd.NaT
-        df.loc[df.is_alive, "pc_date_psa_test"] = pd.NaT
-        df.loc[df.is_alive, "pc_date_biopsy"] = pd.NaT
 
         # -------------------- pc_status -----------
         # Determine who has cancer at ANY cancer stage:
