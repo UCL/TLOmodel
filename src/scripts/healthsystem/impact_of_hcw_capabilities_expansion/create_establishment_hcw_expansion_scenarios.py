@@ -118,3 +118,9 @@ Minute_Salary['Minute_Salary_USD'] = Minute_Salary['Salary_USD']/Minute_Salary['
 
 Minute_Salary[['Facility_Level', 'Officer_Category', 'Minute_Salary_USD']].to_csv(
     resourcefilepath / 'costing' / 'Minute_Salary_HR.csv', index=False)
+
+# todo: get the minute salary per facility id; note levels 1b and 2 are now treated as level 2 in daily capabilities;
+# note should fill level 4 and 5 with values of level 3;
+# ask Sakshi if salary of 1b and 2 can to transferred to level 2, or if to treat level 1b/2 have same salary
+# note that dental and radio cadre has 2 salary in hr_salary_per level
+# need to group level 1b and 2 capabilities
