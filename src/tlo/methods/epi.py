@@ -96,38 +96,10 @@ class Epi(Module):
         })
 
     def initialise_population(self, population):
+        super().initialise_population(population=population)
+
         df = population.props
         p = self.parameters
-
-        # Set default for properties
-        df.loc[df.is_alive, [
-            "va_bcg",
-            "va_opv",
-            "va_dtp",
-            "va_hib",
-            "va_hep",
-            "va_pneumo",
-            "va_rota",
-            "va_measles",
-            "va_rubella",
-            "va_hpv",
-            "va_td"]
-        ] = 0
-
-        df.loc[df.is_alive, [
-            "va_bcg_all_doses",
-            "va_opv_all_doses",
-            "va_dtp_all_doses",
-            "va_hib_all_doses",
-            "va_hep_all_doses",
-            "va_pneumo_all_doses",
-            "va_rota_all_doses",
-            "va_measles_all_doses",
-            "va_rubella_all_doses",
-            "va_hpv_all_doses",
-            "va_td_all_doses"]
-        ] = False
-
         # BCG
         # from 1981-2009 average bcg coverage is 92% (WHO estimates)
         # use vaccine coverage estimates for each year prior to 2010
