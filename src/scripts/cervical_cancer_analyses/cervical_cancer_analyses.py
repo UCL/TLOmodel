@@ -46,7 +46,7 @@ resourcefilepath = Path("./resources")
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2025, 1, 1)
-popsize = 17000
+popsize = 85000
 
 def run_sim(service_availability):
     # Establish the simulation object and set the seed
@@ -179,19 +179,51 @@ plt.show()
 
 
 # plot number of women living with unsuppressed HIV
-out_df = pd.read_csv(output_csv_file)
-out_df = out_df[['n_women_hiv_unsuppressed', 'rounded_decimal_year']].dropna()
-out_df = out_df[out_df['rounded_decimal_year'] >= 2011]
-out_df['n_women_hiv_unsuppressed'] = out_df['n_women_hiv_unsuppressed'] * scale_factor
-print(out_df)
+out_df_4 = pd.read_csv(output_csv_file)
+out_df_4 = out_df_4[['n_women_hiv_unsuppressed', 'rounded_decimal_year']].dropna()
+out_df_4 = out_df_4[out_df_4['rounded_decimal_year'] >= 2011]
+out_df_4['n_women_hiv_unsuppressed'] = out_df_4['n_women_hiv_unsuppressed'] * scale_factor
+print(out_df_4)
 plt.figure(figsize=(10, 6))
-plt.plot(out_df['rounded_decimal_year'], out_df['n_women_hiv_unsuppressed'], marker='o')
+plt.plot(out_df_4['rounded_decimal_year'], out_df_4['n_women_hiv_unsuppressed'], marker='o')
 plt.title('n_women_hiv_unsuppressed')
 plt.xlabel('Year')
 plt.ylabel('n_women_hiv_unsuppressed')
 plt.grid(True)
 plt.ylim(0, 300000)
 plt.show()
+
+
+
+# plot prevalence of each ce stage for hivneg
+out_df_3 = pd.read_csv(output_csv_file)
+columns_to_calculate = ['total_hivneg_none', 'total_hivneg_hpv', 'total_hivneg_cin1', 'total_hivneg_cin2', 'total_hivneg_cin3',
+                        'total_hivneg_stage1','total_hivneg_stage2a', 'total_hivneg_stage2b', 'total_hivneg_stage3', 'total_hivneg_stage4']
+for column in columns_to_calculate:
+    new_column_name = column.replace('total_hivneg', '')
+    out_df_3[f'proportion_{new_column_name}'] = out_df_3[column] / out_df_3[columns_to_calculate].sum(axis=1)
+print(out_df_3)
+columns_to_plot = ['proportion_hivneg_hpv', 'proportion_hivneg_cin1', 'proportion_hivneg_cin2', 'proportion_hivneg_cin3',
+                   'proportion_hivneg_stage1', 'proportion_hivneg_stage2a', 'proportion_hivneg_stage2b', 'proportion_hivneg_stage3',
+                   'proportion_hivneg_stage4']
+plt.figure(figsize=(10, 6))
+# Initialize the bottom of the stack
+bottom = 0
+for column in columns_to_plot:
+    plt.fill_between(out_df_3['rounded_decimal_year'],
+                     bottom,
+                     bottom + out_df_3[column],
+                     label=column,
+                     alpha=0.7)
+    bottom += out_df_3[column]
+plt.title('Proportion of hivneg women aged 15+ with HPV, CIN, cervical cancer')
+plt.xlabel('Year')
+plt.ylabel('Proportion')
+plt.grid(True)
+plt.legend(loc='upper right')
+plt.ylim(0, 0.10)
+plt.show()
+
 
 
 
