@@ -159,7 +159,8 @@ class Property(Specifiable):
         :param ordered: Whether categories are ordered  if ``type_`` is
             ``Types.CATEGORICAL``.
         :param default_category_value: The default category in the set of categories to
-            assign on instantiation (if ``type_`` is ``Types.CATEGORICAL``).
+            assign on instantiation (if ``type_`` is ``Types.CATEGORICAL``). Value must
+            be in the categories argument to take effect, otherwise this will not be set.
         """
         if type_ in [Types.SERIES, Types.DATA_FRAME]:
             raise TypeError("Property cannot be of type SERIES or DATA_FRAME.")
@@ -167,8 +168,7 @@ class Property(Specifiable):
         super().__init__(type_, description, categories)
         self.ordered = ordered
 
-        if self.type_ is Types.CATEGORICAL:
-            assert default_category_value in categories
+        if self.type_ is Types.CATEGORICAL and default_category_value in categories:
             self._default_category_value = default_category_value
         else:
             self._default_category_value = None

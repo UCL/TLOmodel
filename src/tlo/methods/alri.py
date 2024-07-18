@@ -748,54 +748,65 @@ class Alri(Module, GenericFirstAppointmentsMixin):
 
     PROPERTIES = {
         # ---- Alri status ----
-        'ri_current_infection_status':
-            Property(Types.BOOL,
-                     'Does the person currently have an infection with a pathogen that can cause Alri.'
-                     ),
-
+        "ri_current_infection_status": Property(
+            Types.BOOL,
+            "Does the person currently have an infection with a pathogen that can cause Alri.",
+        ),
         # ---- The pathogen which is the attributed cause of Alri ----
-        'ri_primary_pathogen':
-            Property(Types.CATEGORICAL,
-                     'If infected, what is the pathogen with which the person is currently infected. (np.nan if not '
-                     'infected)',
-                     categories=list(all_pathogens)
-                     ),
+        "ri_primary_pathogen": Property(
+            Types.CATEGORICAL,
+            "If infected, what is the pathogen with which the person is currently infected. (np.nan if not "
+            "infected)",
+            categories=list(all_pathogens),
+            default_category_value=np.nan,
+        ),
         # ---- The bacterial pathogen which is the attributed co-/secondary infection ----
-        'ri_secondary_bacterial_pathogen':
-            Property(Types.CATEGORICAL,
-                     'If infected, is there a secondary bacterial pathogen (np.nan if none or not applicable)',
-                     categories=list(pathogens['bacterial'])
-                     ),
+        "ri_secondary_bacterial_pathogen": Property(
+            Types.CATEGORICAL,
+            "If infected, is there a secondary bacterial pathogen (np.nan if none or not applicable)",
+            categories=list(pathogens["bacterial"]),
+            default_category_value=np.nan,
+        ),
         # ---- The underlying Alri condition ----
-        'ri_disease_type':
-            Property(Types.CATEGORICAL, 'If infected, what disease type is the person currently suffering from.',
-                     categories=disease_types
-                     ),
+        "ri_disease_type": Property(
+            Types.CATEGORICAL,
+            "If infected, what disease type is the person currently suffering from.",
+            categories=disease_types,
+            default_category_value=np.nan,
+        ),
         # ---- The peripheral oxygen saturation level ----
-        'ri_SpO2_level':
-            Property(Types.CATEGORICAL, 'Peripheral oxygen saturation level (Sp02), measure for hypoxaemia',
-                     categories=['<90%', '90-92%', '>=93%']
-                     ),
-
+        "ri_SpO2_level": Property(
+            Types.CATEGORICAL,
+            "Peripheral oxygen saturation level (Sp02), measure for hypoxaemia",
+            categories=["<90%", "90-92%", ">=93%"],
+            default_category_value=">=93%",
+        ),
         # ---- Treatment Status ----
-        'ri_on_treatment': Property(Types.BOOL, 'Is this person currently receiving treatment.'),
-
+        "ri_on_treatment": Property(
+            Types.BOOL, "Is this person currently receiving treatment."
+        ),
         # < --- (N.B. Other properties of the form 'ri_complication_{complication-name}' are added later.) -->
-
         # ---- Internal variables to schedule onset and deaths due to Alri ----
-        'ri_start_of_current_episode': Property(Types.DATE,
-                                                'date of onset of current Alri event (pd.NaT is not infected)'),
-        'ri_scheduled_recovery_date': Property(Types.DATE,
-                                               '(scheduled) date of recovery from current Alri event (pd.NaT is not '
-                                               'infected or episode is scheduled to end in death)'),
-        'ri_scheduled_death_date': Property(Types.DATE,
-                                            '(scheduled) date of death caused by current Alri event (pd.NaT is not '
-                                            'infected or episode will not cause death)'),
-        'ri_end_of_current_episode': Property(Types.DATE,
-                                              'date on which the last episode of Alri is resolved, (including allowing '
-                                              'for the possibility that a cure is scheduled following onset). This is '
-                                              'used to determine when a new episode can begin. This stops successive'
-                                              ' episodes interfering with one another.'),
+        "ri_start_of_current_episode": Property(
+            Types.DATE, "date of onset of current Alri event (pd.NaT is not infected)"
+        ),
+        "ri_scheduled_recovery_date": Property(
+            Types.DATE,
+            "(scheduled) date of recovery from current Alri event (pd.NaT is not "
+            "infected or episode is scheduled to end in death)",
+        ),
+        "ri_scheduled_death_date": Property(
+            Types.DATE,
+            "(scheduled) date of death caused by current Alri event (pd.NaT is not "
+            "infected or episode will not cause death)",
+        ),
+        "ri_end_of_current_episode": Property(
+            Types.DATE,
+            "date on which the last episode of Alri is resolved, (including allowing "
+            "for the possibility that a cure is scheduled following onset). This is "
+            "used to determine when a new episode can begin. This stops successive"
+            " episodes interfering with one another.",
+        ),
     }
 
     def __init__(self, name=None, resourcefilepath=None, log_indivdual=None, do_checks=False):
@@ -872,27 +883,6 @@ class Alri(Module, GenericFirstAppointmentsMixin):
             Alri.PROPERTIES[f"ri_complication_{complication}"] = Property(
                 Types.BOOL, f"Whether this person has complication {complication}"
             )
-
-    def initialise_population(self, population):
-        """
-        Sets that there is no one with Alri at initiation.
-        """
-        df = population.props  # a shortcut to the data-frame storing data for individuals
-
-        # ---- Key Current Status Classification Properties ----
-        df.loc[df.is_alive, 'ri_current_infection_status'] = False
-        df.loc[df.is_alive, 'ri_primary_pathogen'] = np.nan
-        df.loc[df.is_alive, 'ri_secondary_bacterial_pathogen'] = np.nan
-        df.loc[df.is_alive, 'ri_disease_type'] = np.nan
-        df.loc[df.is_alive, [f"ri_complication_{complication}" for complication in self.complications]] = False
-        df.loc[df.is_alive, 'ri_SpO2_level'] = ">=93%"
-
-        # ---- Internal values ----
-        df.loc[df.is_alive, 'ri_start_of_current_episode'] = pd.NaT
-        df.loc[df.is_alive, 'ri_scheduled_recovery_date'] = pd.NaT
-        df.loc[df.is_alive, 'ri_scheduled_death_date'] = pd.NaT
-        df.loc[df.is_alive, 'ri_end_of_current_episode'] = pd.NaT
-        df.loc[df.is_alive, 'ri_on_treatment'] = False
 
     def initialise_simulation(self, sim):
         """
@@ -1120,7 +1110,6 @@ class Alri(Module, GenericFirstAppointmentsMixin):
         self.consumables_used_in_hsi['Inhaled_Brochodilator'] = {
             get_item_code(item='Salbutamol sulphate 1mg/ml, 5ml_each_CMST'): 2
         }
-
 
     def end_episode(self, person_id):
         """End the episode infection for a person (i.e. reset all properties to show no current infection or
