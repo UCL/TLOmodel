@@ -92,6 +92,9 @@ class LongRun(BaseScenario):
             epilepsy.Epilepsy(resourcefilepath=self.resources),
             ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=self.resources)
         ]
+        module.parameters["year_of_switch"] = 2010
+        module.parameters["max_healthsystem_function"] = True
+        module.parameters["max_healthcare_seeking"] = True
 
     def draw_parameters(self, draw_number, rng):
         return get_parameters_for_status_quo()
