@@ -54,6 +54,11 @@ def drop_outside_period(_df):
 results_folder = get_scenario_outputs('long_run_all_diseases.py', outputfilepath)[0] # impact_of_cons_regression_scenarios
 #results_folder = get_scenario_outputs('scenario_impact_of_consumables_availability.py', outputfilepath)[0] # impact_of_cons_regression_scenarios
 
+# Load equipment log
+equipment_results_folder = Path('./outputs/sakshi.mohan@york.ac.uk/021_long_run_all_diseases_run')
+# check can read results from draw=0, run=0
+log_equipment = load_pickled_dataframes(equipment_results_folder, 0, 0)
+
 # look at one log (so can decide what to extract)
 log = load_pickled_dataframes(results_folder)
 
@@ -66,6 +71,14 @@ params = extract_params(results_folder)
 # Load costing resourcefile
 workbook_cost = pd.read_excel((resourcefilepath / "costing/ResourceFile_Costing.xlsx"),
                                     sheet_name = None)
+
+# Extract districts and facility levels from the Master Facility List
+mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "ResourceFile_Master_Facilities_List.csv")
+districts = set(pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_Population_2010.csv')['District'])
+fac_levels = set(mfl.Facility_Level)
+
+# Extract count of facilities from Actual Facilities List
+#afl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "ResourceFile_Actual_Facilities_List.csv")
 
 # 1. HR cost
 # 1.1 HR Cost - Financial (Given the staff available)
@@ -283,6 +296,70 @@ unit_cost_equipment['spare_parts_annual'] = unit_cost_equipment.apply(lambda row
 unit_cost_equipment['upfront_repair_cost_annual'] = unit_cost_equipment.apply(lambda row: row['unit_purchase_cost'] * 0.2 * 0.2 / 8 if row['unit_purchase_cost'] < 250000 else 0, axis=1) # 20% of the value of 20% of the items over 8 years
 unit_cost_equipment['replacement_cost_annual'] = unit_cost_equipment.apply(lambda row: row['unit_purchase_cost'] * 0.1 / 8 if row['unit_purchase_cost'] < 250000 else 0, axis=1) # 10% of the items over 8 years
 
+unit_cost_equipment = unit_cost_equipment[['Item_code','Equipment_tlo',
+                                           'service_fee_annual', 'spare_parts_annual',  'upfront_repair_cost_annual', 'replacement_cost_annual',
+                                           'Health Post_prioritised', 'Community_prioritised', 'Health Center_prioritised', 'District_prioritised', 'Central_prioritised']]
+unit_cost_equipment = unit_cost_equipment.rename(columns={col: 'Quantity_' + col.replace('_prioritised', '') for col in unit_cost_equipment.columns if col.endswith('_prioritised')})
+unit_cost_equipment = unit_cost_equipment.rename(columns={col: col.replace(' ', '_') for col in unit_cost_equipment.columns})
+unit_cost_equipment = unit_cost_equipment[unit_cost_equipment.Item_code.notna()]
+
+unit_cost_equipment = pd.wide_to_long(unit_cost_equipment, stubnames=['Quantity_'],
+                          i=['Item_code', 'Equipment_tlo', 'service_fee_annual', 'spare_parts_annual', 'upfront_repair_cost_annual', 'replacement_cost_annual'],
+                          j='Facility_Level', suffix='(\d+|\w+)').reset_index()
+facility_level_mapping = {'Health_Post': '0', 'Health_Center': '1a', 'Community': '1b', 'District': '2', 'Central': '3'}
+unit_cost_equipment['Facility_Level'] = unit_cost_equipment['Facility_Level'].replace(facility_level_mapping)
+unit_cost_equipment = unit_cost_equipment.rename(columns = {'Quantity_': 'Quantity'})
+#unit_cost_equipment_small  = unit_cost_equipment[['Item_code', 'Facility_Level', 'Quantity','service_fee_annual', 'spare_parts_annual', 'upfront_repair_cost_annual', 'replacement_cost_annual']]
+#equipment_cost_dict = unit_cost_equipment_small.groupby('Facility_Level').apply(lambda x: x.to_dict(orient='records')).to_dict()
+
+# Get list of equipment used by district and level
+equip = pd.DataFrame(
+    log_equipment['tlo.methods.healthsystem.summary']['EquipmentEverUsed_ByFacilityID']
+)
+
+equip['EquipmentEverUsed'] = equip['EquipmentEverUsed'].apply(ast.literal_eval)
+
+# Extract a list of equipment which was used at each facility level within each district
+equipment_used = {district: {level: [] for level in fac_levels} for district in districts} # create a dictionary with a key for each district and facility level
+for dist in districts:
+    for level in fac_levels:
+        equip_subset = equip[(equip['District'] == dist) & (equip['Facility_Level'] == level)]
+        equipment_used[dist][level] = set().union(*equip_subset['EquipmentEverUsed'])
+equipment_used = pd.concat({
+        k: pd.DataFrame.from_dict(v, 'index') for k, v in equipment_used.items()},
+        axis=0)
+list_of_equipment_used = set().union(*equip['EquipmentEverUsed'])
+
+equipment_df = pd.DataFrame()
+equipment_df.index = equipment_used.index
+for item in list_of_equipment_used:
+    equipment_df[str(item)] = 0
+    for dist_fac_index in equipment_df.index:
+        equipment_df.loc[equipment_df.index == dist_fac_index, str(item)] = equipment_used[equipment_used.index == dist_fac_index].isin([item]).any(axis=1)
+equipment_df.to_csv('./outputs/equipment_use.csv')
+equipment_df = equipment_df.reset_index().rename(columns = {'level_0' : 'District', 'level_1': 'Facility_Level'})
+equipment_df = pd.melt(equipment_df, id_vars = ['District', 'Facility_Level']).rename(columns = {'variable': 'Item_code', 'value': 'whether_item_was_used'})
+equipment_df['Item_code'] = pd.to_numeric(equipment_df['Item_code'])
+
+# Merge the two datasets to calculate cost
+equipment_cost = pd.merge(equipment_df, unit_cost_equipment[['Item_code', 'Equipment_tlo', 'Facility_Level', 'Quantity','service_fee_annual', 'spare_parts_annual', 'upfront_repair_cost_annual', 'replacement_cost_annual']],
+                          on = ['Item_code', 'Facility_Level'], how = 'left', validate = "m:1")
+categories_of_equipment_cost = ['replacement_cost', 'upfront_repair_cost', 'spare_parts', 'service_fee']
+for cost_category in categories_of_equipment_cost:
+    equipment_cost['total_' + cost_category] = equipment_cost[cost_category + '_annual'] * equipment_cost['whether_item_was_used'] * equipment_cost['Quantity']
+equipment_cost['annual_cost'] = equipment_cost[['total_' + item for item in categories_of_equipment_cost]].sum(axis = 1)
+#equipment_cost.to_csv('./outputs/equipment_cost.csv')
+
+equipment_costs = pd.DataFrame({
+    'Cost_Category': ['Equipment'] * len(categories_of_equipment_cost),
+    'Cost_Sub-category': categories_of_equipment_cost,
+    'Value_2023USD': equipment_cost[['total_' + item for item in categories_of_equipment_cost]].sum().values.tolist()
+})
+# Append new_data to scenario_cost_financial
+scenario_cost_financial = pd.concat([scenario_cost_financial, equipment_costs], ignore_index=True)
+
+# TODO Use AFL to multiple the number of facilities at each level
+# TODO PLot which equipment is used by district and facility or a heatmap of the number of facilities at which an equipment is used
 # TODO From the log, extract the facility IDs which use any equipment item
 # TODO Collapse facility IDs by level of care to get the total number of facilities at each level using an item
 # TODO Multiply number of facilities by level with the quantity needed of each equipment and collapse to get total number of equipment (nationally)
