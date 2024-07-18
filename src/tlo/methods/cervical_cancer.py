@@ -1466,7 +1466,8 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         n_screened_via_this_month = (df.is_alive & df.ce_selected_for_via_this_month).sum()
         n_screened_xpert_this_month = (df.is_alive & df.ce_selected_for_xpert_this_month).sum()
-        n_ever_screened = (df.is_alive & df.ce_ever_screened & df.age_years > 15 & df.age_years < 50).sum()
+        n_ever_screened = (
+                (df['is_alive']) & (df['ce_ever_screened']) & (df['age_years'] > 15) & (df['age_years'] < 50)).sum()
 
         n_vaginal_bleeding_stage1 = (df.is_alive & (df.sy_vaginal_bleeding == 2) &
                                      (df.ce_hpv_cc_status == 'stage1')).sum()
@@ -1509,6 +1510,10 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         n_women_vaccinated = ((df['is_alive']) & (df['sex'] == 'F') & (df['age_years'] > 15)
                               & df['va_hpv']).sum()
+
+        n_women_hiv_unsuppressed = ((df['is_alive']) & (df['sex'] == 'F') & (df['age_years'] > 15)
+                              & df['ce_hiv_unsuppressed']).sum()
+
 
         rate_diagnosed_cc = n_diagnosed_past_year / n_women_alive
 
@@ -1553,6 +1558,7 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         out.update({"n_women_living_with_diagnosed_cc_age_gt_50": n_women_living_with_diagnosed_cc_age_gt_50})
         out.update({"n_diagnosed_1_year_ago": n_diagnosed_1_year_ago})
         out.update({"n_diagnosed_1_year_ago_died": n_diagnosed_1_year_ago_died})
+        out.update({"n_women_hiv_unsuppressed": n_women_hiv_unsuppressed})
 
         pop = len(df[df.is_alive])
         count_summary = {
@@ -1602,7 +1608,8 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
               'n_women_living_with_diagnosed_cc_age_3050:', out['n_women_living_with_diagnosed_cc_age_3050'],
               'n_women_living_with_diagnosed_cc_age_gt_50:', out['n_women_living_with_diagnosed_cc_age_gt_50'],
               'n_diagnosed_1_year_ago_died:', out['n_diagnosed_1_year_ago_died'],
-              'n_diagnosed_1_year_ago:', out['n_diagnosed_1_year_ago'])
+              'n_diagnosed_1_year_ago:', out['n_diagnosed_1_year_ago'],
+              'n_women_hiv_unsuppressed:', out['n_women_hiv_unsuppressed'])
 
         # comment out this below when running tests
 

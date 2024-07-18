@@ -178,6 +178,23 @@ plt.show()
 
 
 
+# plot number of women living with unsuppressed HIV
+out_df = pd.read_csv(output_csv_file)
+out_df = out_df[['n_women_hiv_unsuppressed', 'rounded_decimal_year']].dropna()
+out_df = out_df[out_df['rounded_decimal_year'] >= 2011]
+out_df['n_women_hiv_unsuppressed'] = out_df['n_women_hiv_unsuppressed'] * scale_factor
+print(out_df)
+plt.figure(figsize=(10, 6))
+plt.plot(out_df['rounded_decimal_year'], out_df['n_women_hiv_unsuppressed'], marker='o')
+plt.title('n_women_hiv_unsuppressed')
+plt.xlabel('Year')
+plt.ylabel('n_women_hiv_unsuppressed')
+plt.grid(True)
+plt.ylim(0, 300000)
+plt.show()
+
+
+
 
 # ---------------------------------------------------------------------------
 # output_csv_file = Path("./outputs/output1_data.csv")
