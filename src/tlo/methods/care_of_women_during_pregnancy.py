@@ -143,60 +143,88 @@ class CareOfWomenDuringPregnancy(Module):
     }
 
     PROPERTIES = {
-        'ac_total_anc_visits_current_pregnancy': Property(Types.INT, 'rolling total of antenatal visits this woman has '
-                                                                     'attended during her pregnancy'),
-        'ac_date_next_contact': Property(Types.DATE, 'Date on which this woman is scheduled to return for her next '
-                                                     'ANC contact'),
-        'ac_to_be_admitted': Property(Types.BOOL, 'Whether this woman requires admission following an ANC visit'),
-        'ac_receiving_iron_folic_acid': Property(Types.BOOL, 'whether this woman is receiving daily iron & folic acid '
-                                                             'supplementation'),
-        'ac_receiving_bep_supplements': Property(Types.BOOL, 'whether this woman is receiving daily balanced energy '
-                                                             'and protein supplementation'),
-        'ac_receiving_calcium_supplements': Property(Types.BOOL, 'whether this woman is receiving daily calcium '
-                                                                 'supplementation'),
-        'ac_gest_htn_on_treatment': Property(Types.BOOL, 'Whether this woman has been initiated on treatment for '
-                                                         'gestational hypertension'),
-        'ac_gest_diab_on_treatment': Property(Types.CATEGORICAL, 'Treatment this woman is receiving for gestational '
-                                                                 'diabetes', categories=['none', 'diet_exercise',
-                                                                                         'orals', 'insulin']),
-        'ac_ectopic_pregnancy_treated': Property(Types.BOOL, 'Whether this woman has received treatment for an ectopic '
-                                                             'pregnancy'),
-        'ac_received_post_abortion_care': Property(Types.BOOL, 'bitset list of interventions delivered to a woman '
-                                                               'undergoing post abortion care'),
-        'ac_received_abx_for_prom': Property(Types.BOOL, 'Whether this woman has received antibiotics as treatment for '
-                                                         'premature rupture of membranes'),
-        'ac_mag_sulph_treatment': Property(Types.BOOL, 'Whether this woman has received magnesium sulphate for '
-                                                       'treatment of severe pre-eclampsia/eclampsia'),
-        'ac_iv_anti_htn_treatment': Property(Types.BOOL, 'Whether this woman has received intravenous antihypertensive '
-                                                         'drugs for treatment of severe hypertension'),
-        'ac_admitted_for_immediate_delivery': Property(Types.CATEGORICAL, 'Admission type for women needing urgent '
-                                                                          'delivery in the antenatal period',
-                                                       categories=['none', 'induction_now', 'induction_future',
-                                                                   'caesarean_now', 'caesarean_future', 'avd_now']),
+        "ac_total_anc_visits_current_pregnancy": Property(
+            Types.INT,
+            "rolling total of antenatal visits this woman has "
+            "attended during her pregnancy",
+        ),
+        "ac_date_next_contact": Property(
+            Types.DATE,
+            "Date on which this woman is scheduled to return for her next "
+            "ANC contact",
+        ),
+        "ac_to_be_admitted": Property(
+            Types.BOOL, "Whether this woman requires admission following an ANC visit"
+        ),
+        "ac_receiving_iron_folic_acid": Property(
+            Types.BOOL,
+            "whether this woman is receiving daily iron & folic acid "
+            "supplementation",
+        ),
+        "ac_receiving_bep_supplements": Property(
+            Types.BOOL,
+            "whether this woman is receiving daily balanced energy "
+            "and protein supplementation",
+        ),
+        "ac_receiving_calcium_supplements": Property(
+            Types.BOOL,
+            "whether this woman is receiving daily calcium " "supplementation",
+        ),
+        "ac_gest_htn_on_treatment": Property(
+            Types.BOOL,
+            "Whether this woman has been initiated on treatment for "
+            "gestational hypertension",
+        ),
+        "ac_gest_diab_on_treatment": Property(
+            Types.CATEGORICAL,
+            "Treatment this woman is receiving for gestational " "diabetes",
+            categories=["none", "diet_exercise", "orals", "insulin"],
+            default_category_value="none",
+        ),
+        "ac_ectopic_pregnancy_treated": Property(
+            Types.BOOL,
+            "Whether this woman has received treatment for an ectopic " "pregnancy",
+        ),
+        "ac_received_post_abortion_care": Property(
+            Types.BOOL,
+            "bitset list of interventions delivered to a woman "
+            "undergoing post abortion care",
+        ),
+        "ac_received_abx_for_prom": Property(
+            Types.BOOL,
+            "Whether this woman has received antibiotics as treatment for "
+            "premature rupture of membranes",
+        ),
+        "ac_mag_sulph_treatment": Property(
+            Types.BOOL,
+            "Whether this woman has received magnesium sulphate for "
+            "treatment of severe pre-eclampsia/eclampsia",
+        ),
+        "ac_iv_anti_htn_treatment": Property(
+            Types.BOOL,
+            "Whether this woman has received intravenous antihypertensive "
+            "drugs for treatment of severe hypertension",
+        ),
+        "ac_admitted_for_immediate_delivery": Property(
+            Types.CATEGORICAL,
+            "Admission type for women needing urgent "
+            "delivery in the antenatal period",
+            categories=[
+                "none",
+                "induction_now",
+                "induction_future",
+                "caesarean_now",
+                "caesarean_future",
+                "avd_now",
+            ],
+            default_category_value="none",
+        ),
     }
 
     def read_parameters(self, data_folder):
         parameter_dataframe = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_AntenatalCare.xlsx',
                                             sheet_name='parameter_values')
         self.load_parameters_from_dataframe(parameter_dataframe)
-
-    def initialise_population(self, population):
-        df = population.props
-
-        df.loc[df.is_alive, 'ac_total_anc_visits_current_pregnancy'] = 0
-        df.loc[df.is_alive, 'ac_date_next_contact'] = pd.NaT
-        df.loc[df.is_alive, 'ac_to_be_admitted'] = False
-        df.loc[df.is_alive, 'ac_receiving_iron_folic_acid'] = False
-        df.loc[df.is_alive, 'ac_receiving_bep_supplements'] = False
-        df.loc[df.is_alive, 'ac_receiving_calcium_supplements'] = False
-        df.loc[df.is_alive, 'ac_gest_htn_on_treatment'] = False
-        df.loc[df.is_alive, 'ac_gest_diab_on_treatment'] = 'none'
-        df.loc[df.is_alive, 'ac_ectopic_pregnancy_treated'] = False
-        df.loc[df.is_alive, 'ac_received_post_abortion_care'] = False
-        df.loc[df.is_alive, 'ac_received_abx_for_prom'] = False
-        df.loc[df.is_alive, 'ac_mag_sulph_treatment'] = False
-        df.loc[df.is_alive, 'ac_iv_anti_htn_treatment'] = False
-        df.loc[df.is_alive, 'ac_admitted_for_immediate_delivery'] = 'none'
 
     def get_and_store_pregnancy_item_codes(self):
         """
