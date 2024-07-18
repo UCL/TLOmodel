@@ -81,13 +81,18 @@ class ChronicSyndrome(Module, GenericFirstAppointmentsMixin):
     }
 
     PROPERTIES = {
-        'cs_has_cs': Property(Types.BOOL, 'Current status of mockitis'),
-        'cs_status': Property(
-            Types.CATEGORICAL, 'Historical status: N=never; C=currently 2; P=previously', categories=['N', 'C', 'P']
+        "cs_has_cs": Property(Types.BOOL, "Current status of mockitis"),
+        "cs_status": Property(
+            Types.CATEGORICAL,
+            "Historical status: N=never; C=currently 2; P=previously",
+            categories=["N", "C", "P"],
+            default_category_value="N",
         ),
-        'cs_date_acquired': Property(Types.DATE, 'Date of latest infection'),
-        'cs_scheduled_date_death': Property(Types.DATE, 'Date of scheduled death of infected individual'),
-        'cs_date_cure': Property(Types.DATE, 'Date an infected individual was cured'),
+        "cs_date_acquired": Property(Types.DATE, "Date of latest infection"),
+        "cs_scheduled_date_death": Property(
+            Types.DATE, "Date of scheduled death of infected individual"
+        ),
+        "cs_date_cure": Property(Types.DATE, "Date an infected individual was cured"),
     }
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -136,15 +141,10 @@ class ChronicSyndrome(Module, GenericFirstAppointmentsMixin):
 
         :param population: the population of individuals
         """
-        df = population.props  # a shortcut to the dataframe storing data for individiuals
-        p = self.parameters
+        super().initialise_population(population=population)
 
-        # Set default for properties
-        df.loc[df.is_alive, 'cs_has_cs'] = False  # default: no individuals infected
-        df.loc[df.is_alive, 'cs_status'].values[:] = 'N'  # default: never infected
-        df.loc[df.is_alive, 'cs_date_acquired'] = pd.NaT  # default: not a time
-        df.loc[df.is_alive, 'cs_scheduled_date_death'] = pd.NaT  # default: not a time
-        df.loc[df.is_alive, 'cs_date_cure'] = pd.NaT  # default: not a time
+        df = population.props
+        p = self.parameters
 
         # randomly selected some individuals as infected
         num_alive = df.is_alive.sum()
