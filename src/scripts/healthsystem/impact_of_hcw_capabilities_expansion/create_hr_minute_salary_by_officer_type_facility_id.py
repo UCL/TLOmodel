@@ -4,8 +4,9 @@ We calculate the salar cost of current and funded plus HCW.
 
 from pathlib import Path
 
-import numpy as np
+# import numpy as np
 import pandas as pd
+# import re
 
 resourcefilepath = Path('./resources')
 
@@ -124,6 +125,21 @@ Minute_Salary['Minute_Salary_USD'] = Minute_Salary['Annual_Salary_USD']/Minute_S
 Minute_Salary = Minute_Salary[['Facility_Level', 'Officer_Category', 'Minute_Salary_USD']].merge(
     mfl[['Facility_Level', 'Facility_ID']], on=['Facility_Level'], how='outer'
 )
-Minute_Salary[['Facility_ID', 'Facility_Level', 'Officer_Category', 'Minute_Salary_USD']].to_csv(
-    resourcefilepath / 'costing' / 'Minute_Salary_HR.csv', index=False)
+Minute_Salary.drop(columns=['Facility_Level'], inplace=True)
+Minute_Salary = Minute_Salary.fillna(0)
 
+# Minute_Salary = Minute_Salary.loc[Minute_Salary.Officer_Category.isin(
+#     ['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy'])]
+# Minute_Salary = Minute_Salary.set_index(
+#     'FacilityID_'
+#     + Minute_Salary['Facility_ID'].astype(str)
+#     + '_Officer_'
+#     + Minute_Salary['Officer_Category']
+# )
+# Minute_Salary = Minute_Salary['Minute_Salary_USD']
+# Minute_Salary = pd.DataFrame(Minute_Salary).reset_index().rename(columns={'index': 'facilityid_officer'})
+# Minute_Salary[['Facility_ID', 'Officer_Type_Code']] = Minute_Salary.facilityid_officer.str.split(
+#     pat='_', n=3, expand=True)[[1, 3]]
+
+Minute_Salary.rename(columns={'Officer_Category': 'Officer_Type_Code'}, inplace=True)
+Minute_Salary.to_csv(resourcefilepath / 'costing' / 'Minute_Salary_HR.csv', index=False)
