@@ -184,10 +184,20 @@ def get_module_class_map(excluded_modules: Set[str]) -> Mapping[str, Type[Module
     :raises RuntimError: Raised if multiple ``Module`` subclasses with the same name are
         defined (and not included in the ``exclude_modules`` set).
     """
+    from pathlib import Path
     methods_package_path = os.path.dirname(inspect.getfile(tlo.methods))
+    tlo_dir = Path(methods_package_path).parent.parent
+    methods_modules = [
+        str(path.relative_to(tlo_dir) / f"{methods_module_name}").replace("/", ".")
+        for path in [Path(path) for path, _, _ in os.walk(methods_package_path)]
+        for _, methods_module_name, contains_further_modules in pkgutil.iter_modules(
+            [path]
+        )
+        if not contains_further_modules
+    ]
     module_classes = {}
-    for _, methods_module_name, _ in pkgutil.iter_modules([methods_package_path]):
-        methods_module = importlib.import_module(f'tlo.methods.{methods_module_name}')
+    for module in methods_modules:
+        methods_module = importlib.import_module(module)
         for _, obj in inspect.getmembers(methods_module):
             if is_valid_tlo_module_subclass(obj, excluded_modules):
                 if module_classes.get(obj.__name__) not in {None, obj}:
@@ -195,7 +205,7 @@ def get_module_class_map(excluded_modules: Set[str]) -> Mapping[str, Type[Module
                         f'Multiple modules with name {obj.__name__} are defined'
                     )
                 else:
-                    module_classes[obj.__name__] = obj
+                    module_classes[f"{obj.__name__}"] = obj
     return module_classes
 
 

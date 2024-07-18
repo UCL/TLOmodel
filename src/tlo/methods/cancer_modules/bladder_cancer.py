@@ -52,9 +52,9 @@ class BladderCancer(_BaseCancer):
         ),
     ]
 
-    INIT_DEPENDENCIES = {'Lifestyle'}
+    INIT_DEPENDENCIES = _BaseCancer.INIT_DEPENDENCIES.union({'Lifestyle'})
 
-    OPTIONAL_INIT_DEPENDENCIES = {'Schisto'}
+    OPTIONAL_INIT_DEPENDENCIES = _BaseCancer.OPTIONAL_INIT_DEPENDENCIES.union({'Schisto'})
 
     CAUSES_OF_DEATH = {
         'BladderCancer': Cause(gbd_causes='Bladder cancer', label='Cancer (Bladder)'),

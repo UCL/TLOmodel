@@ -23,17 +23,24 @@ class _BaseCancer(Module, GenericFirstAppointmentsMixin):
     Base class from which Cancer disease modules should inherit. Provides automation of tasks that are
     common to all cancer modules and reduces code repetition across the separate cancer modules.
 
-    The various cancer modules share common requirements. Typically these would be defined in attributes inherited
-    from `tlo.Module`, however this would result in repeating such requirements across every module. As such, cancer
-    modules should instead put additional requirements in these attributes, and on creation will automatically have
-    the base requirements added to them, if not present already. Explicitly:
-    - Module dependencies: base requirements are in __all_cancer_dependencies, additional requirements for specific cancers should go in the usual INIT_DEPENDENCIES attribute.
-    - Optional module dependencies: base in __all_cancer_optionals, additional in OPTIONAL_INIT_DEPENDENCIES.
-    - Metadata: base in __all_cancer_metadata, additional in METADATA.
-    - Consumable items, base in __all_cancer_common_items, additional in _cancer_specific_items.
-    NOTE: To ensure the base requirements are correctly added to a cancer subclass, the __init__ method should invoke
-    super().__init__ to invoke _BaseCancer.__init__.
-    
+    The various cancer modules share common requirements. Where appropriate, these have been set as the module-wide
+    values for these attributes. For example;
+    - INIT_DEPENDENCIES is set to {"Demography", "HealthSystem", "SymptomManager"}, which are the modules that all
+    cancer submodules depend on.
+    - OPTIONAL_INIT_DEPENDENCIES is set to {"HealthBurden"}, since all cancer submodules have this as an optional
+    dependency.
+    - METADATA is also preset to the common METADATA value for all cancer modules.
+    To add additional values to these attributes for a specific cancer subclass, the value will need to be redefined
+    explicitly in the class. One can use the syntax
+
+    ATTRIBUTE = _BaseCancer.ATTRIBUTE.union("new", "values")
+
+    to avoid repeating the common base requirements, however.
+    The __all_cancer_common_items attribute contains the item code lookup table for all consumable items that all
+    cancer subclasses use. To avoid having to redefine this when a cancer subclass uses additional consumable items,
+    one can define the additional items in the _cancer_specific_items attribute. The all_consumable_items property
+    will then return the combination of the additional items and items common to all cancers.
+
     Cancer modules are also similar in a number of other respects; there are common steps at each stage of the
     simulation setup to all cancer modules, before they then implement cancer-specific instructions. Where possible,
     these steps have been refactored out into "hooks". For example, all cancer modules set the PROPERTIES columns of
@@ -50,14 +57,16 @@ class _BaseCancer(Module, GenericFirstAppointmentsMixin):
     than attributes to avoid circular references between a cancer type and the Events it wants to schedule.
     """
 
-    __all_cancer_dependencies = {"Demography", "HealthSystem", "SymptomManager"}
-    __all_cancer_optionals = {"HealthBurden"}
-    __all_cancer_metadata = {
-        Metadata.DISEASE_MODULE,
-        Metadata.USES_SYMPTOMMANAGER,
-        Metadata.USES_HEALTHSYSTEM,
-        Metadata.USES_HEALTHBURDEN,
-    }
+    INIT_DEPENDENCIES = frozenset({"Demography", "HealthSystem", "SymptomManager"})
+    OPTIONAL_INIT_DEPENDENCIES = frozenset({"HealthBurden"})
+    METADATA = frozenset(
+        {
+            Metadata.DISEASE_MODULE,
+            Metadata.USES_SYMPTOMMANAGER,
+            Metadata.USES_HEALTHSYSTEM,
+            Metadata.USES_HEALTHBURDEN,
+        }
+    )
     # Add items that are needed for all cancer modules
     __all_cancer_common_items = {
         "screening_biopsy_endoscopy_cystoscopy_optional": {
@@ -167,15 +176,6 @@ class _BaseCancer(Module, GenericFirstAppointmentsMixin):
         self.linear_models = {}
         self.daly_wts = {}
         self.item_codes = {}
-
-        # Impose common cancer dependencies, optionals, etc
-        self.INIT_DEPENDENCIES = self.INIT_DEPENDENCIES.union(
-            _BaseCancer.__all_cancer_dependencies
-        )
-        self.OPTIONAL_INIT_DEPENDENCIES = self.OPTIONAL_INIT_DEPENDENCIES.union(
-            _BaseCancer.__all_cancer_optionals
-        )
-        self.METADATA = self.METADATA.union(_BaseCancer.__all_cancer_metadata)
 
     def _set_item_codes(self) -> None:
         """

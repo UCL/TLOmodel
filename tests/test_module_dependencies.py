@@ -31,6 +31,7 @@ simulation_initial_population = 1000
 
 module_class_map = get_module_class_map(
     excluded_modules={
+        "_BaseCancer",
         "Module",
         "Skeleton",
         "SimplifiedPregnancyAndLabour",
@@ -234,13 +235,14 @@ def test_module_dependencies_complete(sim, module_class):
             ),
             check_all_dependencies=True
         )
-    except Exception:
+    except Exception as e:
         all_dependencies = get_all_required_dependencies(module_class)
         pytest.fail(
             f"Module {module_class.__name__} appears to be missing dependencies "
             f"required to run simulation in the union of the INIT_DEPENDENCIES and "
             f"ADDITIONAL_DEPENDENCIES class attributes which is currently "
-            f"{{{', '.join(all_dependencies)}}}."
+            f"{{{', '.join(all_dependencies)}}}.\n"
+            f"Exception caught was:\n{str(e)}"
         )
 
 

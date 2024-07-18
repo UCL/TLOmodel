@@ -41,7 +41,7 @@ class OesophagealCancer(_BaseCancer):
         Symptom(name="dysphagia", odds_ratio_health_seeking_in_adults=4.00)
     ]
 
-    INIT_DEPENDENCIES = {'Lifestyle'}
+    INIT_DEPENDENCIES = _BaseCancer.INIT_DEPENDENCIES.union({'Lifestyle'})
 
     CAUSES_OF_DEATH = {
         'OesophagealCancer': Cause(gbd_causes='Esophageal cancer', label='Cancer (Oesophagus)'),

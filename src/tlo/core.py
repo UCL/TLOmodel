@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import json
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Dict, Set
+from typing import TYPE_CHECKING, Dict, FrozenSet
 
 import numpy as np
 import pandas as pd
@@ -221,7 +221,7 @@ class Module:
 
     # Subclasses can override this set to add metadata tags to their class
     # See tlo.methods.Metadata class
-    METADATA: Set[Metadata] = frozenset()
+    METADATA: FrozenSet[Metadata] = frozenset()
 
     # Subclasses can override this set to declare the causes death that this module contributes to
     # This is a dict of the form {<name_used_by_the_module : Cause()}: see core.Cause

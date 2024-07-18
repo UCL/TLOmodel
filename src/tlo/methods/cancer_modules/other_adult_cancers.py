@@ -43,7 +43,7 @@ class OtherAdultCancer(_BaseCancer):
         )
     ]
 
-    OPTIONAL_INIT_DEPENDENCIES = {'Hiv'}
+    OPTIONAL_INIT_DEPENDENCIES = _BaseCancer.OPTIONAL_INIT_DEPENDENCIES.union({'Hiv'})
 
     gbd_causes_of_cancer_represented_in_this_module = [
         'Other malignant neoplasms',
