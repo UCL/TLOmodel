@@ -120,19 +120,30 @@ class Contraception(Module):
     # contraceptive or after using a method which is not in this category.
 
     PROPERTIES = {
-        'co_contraception': Property(Types.CATEGORICAL, 'Current contraceptive method',
-                                     categories=sorted(all_contraception_states)),
-        'is_pregnant': Property(Types.BOOL, 'Whether this individual is currently pregnant'),
-        'date_of_last_pregnancy': Property(Types.DATE, 'Date that the most recent or current pregnancy began.'),
-        'co_unintended_preg': Property(Types.BOOL, 'Whether the most recent or current pregnancy was unintended.'),
-        'co_date_of_last_fp_appt': Property(Types.DATE,
-                                            'The date of the most recent Family Planning appointment. This is used to '
-                                            'determine if a Family Planning appointment is needed to maintain the '
-                                            'person on their current contraceptive. If the person is to maintain use of'
-                                            ' the current contraceptive, they will have an HSI only if the days elapsed'
-                                            ' since this value exceeds the method-specific parameter '
-                                            '`days_between_appts_for_maintenance`.'
-                                            )
+        "co_contraception": Property(
+            Types.CATEGORICAL,
+            "Current contraceptive method",
+            categories=sorted(all_contraception_states),
+            default_category_value="not_using",
+        ),
+        "is_pregnant": Property(
+            Types.BOOL, "Whether this individual is currently pregnant"
+        ),
+        "date_of_last_pregnancy": Property(
+            Types.DATE, "Date that the most recent or current pregnancy began."
+        ),
+        "co_unintended_preg": Property(
+            Types.BOOL, "Whether the most recent or current pregnancy was unintended."
+        ),
+        "co_date_of_last_fp_appt": Property(
+            Types.DATE,
+            "The date of the most recent Family Planning appointment. This is used to "
+            "determine if a Family Planning appointment is needed to maintain the "
+            "person on their current contraceptive. If the person is to maintain use of"
+            " the current contraceptive, they will have an HSI only if the days elapsed"
+            " since this value exceeds the method-specific parameter "
+            "`days_between_appts_for_maintenance`.",
+        ),
     }
 
     def __init__(self, name=None, resourcefilepath=None, use_healthsystem=True, run_update_contraceptive=True):
@@ -213,14 +224,10 @@ class Contraception(Module):
 
     def initialise_population(self, population):
         """Set initial values for properties"""
-
         # 1) Set default values for properties
+        super().initialise_population(population=population)
+
         df = population.props
-        df.loc[df.is_alive, 'co_contraception'] = 'not_using'
-        df.loc[df.is_alive, 'is_pregnant'] = False
-        df.loc[df.is_alive, 'date_of_last_pregnancy'] = pd.NaT
-        df.loc[df.is_alive, 'co_unintended_preg'] = False
-        df.loc[df.is_alive, 'co_date_of_last_fp_appt'] = pd.NaT
 
         # 2) Assign contraception method
         # Select females aged 15-49 from population, for current year
