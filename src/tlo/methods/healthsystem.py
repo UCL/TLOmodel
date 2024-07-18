@@ -686,6 +686,8 @@ class HealthSystem(Module):
         self.setup_priority_policy()
 
     def initialise_population(self, population):
+        super().initialise_population(population)
+        
         self.bed_days.initialise_population(population.props)
 
     def initialise_simulation(self, sim):

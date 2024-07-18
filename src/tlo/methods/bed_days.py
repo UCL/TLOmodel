@@ -89,8 +89,6 @@ class BedDays:
             self.list_of_cols_with_internal_dates['entries'] + self.list_of_cols_with_internal_dates['exits']
 
     def initialise_population(self, df):
-        df.loc[df.is_alive, 'hs_is_inpatient'] = False
-
         # Put pd.NaT for all the properties concerned with entry/exit of different types of bed.
         df.loc[df.is_alive, self.list_of_cols_with_internal_dates['all']] = pd.NaT
 
