@@ -123,16 +123,20 @@ class Copd(Module, GenericFirstAppointmentsMixin):
     }
 
     PROPERTIES = {
-        'ch_lungfunction': Property(
-            Types.CATEGORICAL, 'Lung function of the person.'
-                               '0 for those under 15; on a 7-point scale for others, from 0 (Perfect) to 6 (End-Stage'
-                               ' COPD).', categories=ch_lungfunction_cats, ordered=True,
+        "ch_lungfunction": Property(
+            Types.CATEGORICAL,
+            "Lung function of the person."
+            "0 for those under 15; on a 7-point scale for others, from 0 (Perfect) to 6 (End-Stage"
+            " COPD).",
+            categories=ch_lungfunction_cats,
+            ordered=True,
         ),
-        'ch_will_die_this_episode': Property(
-            Types.BOOL, 'Whether this person will die during a current severe exacerbation'
+        "ch_will_die_this_episode": Property(
+            Types.BOOL,
+            "Whether this person will die during a current severe exacerbation",
         ),
-        'ch_has_inhaler': Property(
-            Types.BOOL, 'Whether the person is currently using an inhaler'
+        "ch_has_inhaler": Property(
+            Types.BOOL, "Whether the person is currently using an inhaler"
         ),
     }
 
@@ -154,11 +158,11 @@ class Copd(Module, GenericFirstAppointmentsMixin):
         self.models = CopdModels(self.parameters, self.rng)
 
     def initialise_population(self, population):
-        """ Set initial values of properties values for all individuals"""
+        """Set initial values of properties values for all individuals"""
+        super().initialise_population(population=population)
+
         df = population.props
         df.loc[df.is_alive, 'ch_lungfunction'] = self.models.init_lung_function(df.loc[df.is_alive])
-        df.loc[df.is_alive, 'ch_will_die_this_episode'] = False
-        df.loc[df.is_alive, 'ch_has_inhaler'] = False
 
     def initialise_simulation(self, sim):
         """ Get ready for simulation start:
