@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import json
 from enum import Enum, auto
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, FrozenSet
 
 import numpy as np
 import pandas as pd
@@ -17,6 +17,9 @@ if TYPE_CHECKING:
     from typing import Optional
 
     from tlo.simulation import Simulation
+    from tlo.population import Population
+    from tlo.methods import Metadata
+    from tlo.methods.causes import Cause
 
 class Types(Enum):
     """Possible types for parameters and properties.
@@ -201,46 +204,45 @@ class Module:
     # Subclasses can override this to declare the set of initialisation dependencies
     # Declares modules that need to be registered in simulation and initialised before
     # this module
-    INIT_DEPENDENCIES = frozenset()
+    INIT_DEPENDENCIES: FrozenSet[str] = frozenset()
 
     # Subclasses can override this to declare the set of optional init. dependencies
     # Declares modules that need to be registered in simulation and initialised before
     # this module if they are present, but are not required otherwise
-    OPTIONAL_INIT_DEPENDENCIES = frozenset()
+    OPTIONAL_INIT_DEPENDENCIES: FrozenSet[str] = frozenset()
 
     # Subclasses can override this to declare the set of additional dependencies
     # Declares any modules that need to be registered in simulation in addition to those
     # in INIT_DEPENDENCIES to allow running simulation
-    ADDITIONAL_DEPENDENCIES = frozenset()
+    ADDITIONAL_DEPENDENCIES: FrozenSet[str] = frozenset()
 
     # Subclasses can override this to declare the set of modules that this module can be
     # used in place of as a dependency
-    ALTERNATIVE_TO = frozenset()
+    ALTERNATIVE_TO: FrozenSet[str] = frozenset()
 
     # Subclasses can override this set to add metadata tags to their class
     # See tlo.methods.Metadata class
-    METADATA = {}
+    METADATA: FrozenSet[Metadata] = frozenset()
 
-    # Subclasses can override this set to declare the causes death that this module contributes to
+    # Subclasses can override this dict to declare the causes death that this module contributes to
     # This is a dict of the form {<name_used_by_the_module : Cause()}: see core.Cause
-    CAUSES_OF_DEATH = {}
+    CAUSES_OF_DEATH: Dict[str, Cause] = {}
 
     # Subclasses can override this set to declare the causes disability that this module contributes to
     # This is a dict of the form {<name_used_by_the_module : Cause()}: see core.Cause
-    CAUSES_OF_DISABILITY = {}
+    CAUSES_OF_DISABILITY: Dict[str, Cause] = {}
 
     # Subclasses may declare this dictionary to specify module-level parameters.
     # We give an empty definition here as default.
-    PARAMETERS = {}
+    PARAMETERS: Dict[str, Parameter] = {}
 
     # Subclasses may declare this dictionary to specify properties of individuals.
     # We give an empty definition here as default.
-    PROPERTIES = {}
+    PROPERTIES: Dict[str, Property] = {}
 
     # The explicit attributes of the module. We list these to distinguish dynamic
     # parameters created from the PARAMETERS specification.
     __slots__ = ('name', 'parameters', 'rng', 'sim')
-
 
     def __init__(self, name=None):
         """Construct a new disease module ready to be included in a simulation.
@@ -326,7 +328,7 @@ class Module:
         """
         raise NotImplementedError
 
-    def initialise_population(self, population):
+    def initialise_population(self, population: Population) -> None:
         """Set our property values for the initial population.
 
         Must be implemented by subclasses.
@@ -340,7 +342,15 @@ class Module:
 
         :param population: the population of individuals
         """
-        raise NotImplementedError
+        df = population.props
+
+        for property_name, property in self.PROPERTIES.items():
+            # Types.CATEGORICAL Properties are default set to float("nan")
+            # We might need to overwrite this behaviour in the Property class itself,
+            # or just skip any CATEGORICAL dtypes...?
+            df.loc[df.is_alive, property_name] = (
+                property._default_value
+            )
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
