@@ -390,20 +390,12 @@ class Depression(Module, GenericFirstAppointmentsMixin):
         return self.rng.random_sample(len(df)) < lm.predict(df)
 
     def initialise_population(self, population):
+        super().initialise_population(population=population)
         df = population.props
-        df['de_depr'] = False
-        df['de_ever_depr'] = False
-        df['de_date_init_most_rec_depr'] = pd.NaT
-        df['de_date_depr_resolved'] = pd.NaT
-        df['de_intrinsic_3mo_risk_of_depr_resolution'] = np.NaN
-        df['de_ever_diagnosed_depression'] = False
-        df['de_on_antidepr'] = False
-        df['de_ever_talk_ther'] = False
-        df['de_ever_non_fatal_self_harm_event'] = False
+        
         df['de_recently_pregnant'] = df['is_pregnant'] | (
             df['date_of_last_pregnancy'] > (self.sim.date - DateOffset(years=1))
         )
-        df['de_cc'] = False
 
         # Assign initial 'current depression' status
         df.loc[df['is_alive'], 'de_depr'] = self.apply_linear_model(
