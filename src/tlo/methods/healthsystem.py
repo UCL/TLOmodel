@@ -330,7 +330,7 @@ class HealthSystem(Module):
         ),
 
         'minute_salary': Parameter(
-            Types.DATA_FRAME, "This specifies the minute salary in USD per officer type per level."
+            Types.DATA_FRAME, "This specifies the minute salary in USD per officer type per facility id."
         ),
 
         'tclose_overwrite': Parameter(
@@ -656,6 +656,12 @@ class HealthSystem(Module):
         # Read in ResourceFile_Annual_Salary_Per_Cadre.csv
         self.parameters['minute_salary'] = pd.read_csv(
             Path(self.resourcefilepath) / 'costing' / 'Minute_Salary_HR.csv')
+
+        # Set default values for HR_expansion_by_officer_type, start_year_HR_expansion_by_officer_type,
+        # end_year_HR_expansion_by_officer_type
+        self.parameters['HR_expansion_by_officer_type'] = [0, 0, 0, 0]
+        self.parameters['start_year_HR_expansion_by_officer_type'] = 2020
+        self.parameters['end_year_HR_expansion_by_officer_type'] = 2030
 
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
@@ -2959,22 +2965,66 @@ class RescaleHRCapabilities_ByDistrict(Event, PopulationScopeEventMixin):
 
 class HRExpansionByOfficerType(Event, PopulationScopeEventMixin):
     """ This event exists to expand the HR by officer type (Clinical, DCSA, Nursing_and_Midwifery, Pharmacy)
-    given an extra budget."""
+    given an extra budget. This is done for daily capabilities, as a year consists of 365.25 equal days."""
     def __init__(self, module):
         super().__init__(module)
 
     def apply(self, population):
 
-        # get total minutes per cadre per facility id, for only the four cadres
-        # get total daily cost of last year = minutes per cadre per facility id * minute salary per cadre per level (summing up cadres and facility ids)
+        # get minute salary for the four cadres
+        minute_salary_by_officer_facility_id = self.module.parameters['minute_salary']
+
+        # get current daily minutes and format it to be consistent with minute salary
+        daily_minutes = pd.DataFrame(self.module._daily_capabilities).reset_index().rename(
+            columns={'index': 'facilityid_officer'})
+        daily_minutes[['Facility_ID', 'Officer_Type_Code']] = daily_minutes.facilityid_officer.str.split(
+            pat='_', n=3, expand=True)[[1, 3]]
+
+        # get daily cost per officer per facility id
+        daily_cost = minute_salary_by_officer_facility_id.merge(
+            daily_minutes, on=['Facility_ID', 'Officer_Type_Code'], how='outer')
+        daily_cost['Total_Cost_Per_Day'] = daily_cost['Minute_Salary_USD'] * daily_cost['Total_Minutes_Per_Day']
+
+        # get daily cost per officer type of the four cadres
+        daily_cost = daily_cost.groupby('Officer_Type_Code').agg({'Total_Cost_Per_Day': 'sum'}).reset_index()
+        daily_cost = daily_cost.loc[daily_cost.Officer_Type_Code.isin(
+            ['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy'])]
+
+        # get total daily cost of each of the four cadres
+        total_cost_clinical = daily_cost.loc[daily_cost.Officer_Type_Code == 'Clinical', 'Total_Cost_Per_Day'].sum()
+        total_cost_dcsa = daily_cost.loc[daily_cost.Officer_Type_Code == 'DCSA', 'Total_Cost_Per_Day'].sum()
+        total_cost_nursing = daily_cost.loc[
+            daily_cost.Officer_Type_Code == 'Nursing_and_Midwifery', 'Total_Cost_Per_Day'].sum()
+        total_cost_pharmacy = daily_cost.loc[daily_cost.Officer_Type_Code == 'Pharmacy', 'Total_Cost_Per_Day'].sum()
+
         # get daily extra budget for this year = 4.2% * total cost
+        daily_extra_budget = 0.042*(total_cost_clinical + total_cost_dcsa + total_cost_nursing + total_cost_pharmacy)
 
-        # get proportional daily extra budget for each of the four cadre = extra budget * proportion of a cadre
+        # get proportional daily extra budget for each of the four cadres
+        daily_extra_budget_by_officer = daily_extra_budget * self.parameters['HR_expansion_by_officer_type']
+
         # get the scale up factor for each cadre, assumed to be the same for each facility id of that cadre
-        # r * minutes per cadre per facility id  * minute salary per cadre per facility id (summing up facility ids) = \
-        # minutes per cadre per facility id * minute salary per cadre per facility id (summing up facility ids) + proportional extra budget
+        sf_clinical = (total_cost_clinical + daily_extra_budget_by_officer[0])/total_cost_clinical
+        sf_dcsa = (total_cost_dcsa + daily_extra_budget_by_officer[1]) / total_cost_dcsa
+        sf_nursing = (total_cost_nursing + daily_extra_budget_by_officer[2]) / total_cost_nursing
+        sf_pharmacy = (total_cost_pharmacy + daily_extra_budget_by_officer[3]) / total_cost_pharmacy
 
-        # scale up the daily minutes per cadre per facility id, by multiplying the current values with r
+        # scale up the daily minutes per cadre per facility id
+        pattern = r"FacilityID_(\w+)_Officer_(\w+)"
+        for officer in self.module._daily_capabilities.keys():
+            matches = re.match(pattern, officer)
+            # Extract officer type
+            officer_type = matches.group(2)
+            if officer_type == 'Clinical':
+                self.module._daily_capabilities[officer] *= sf_clinical
+            elif officer_type == 'DCSA':
+                self.module._daily_capabilities[officer] *= sf_dcsa
+            elif officer_type == 'Nursing_and_Midwifery':
+                self.module._daily_capabilities[officer] *= sf_nursing
+            elif officer_type == 'Pharmacy':
+                self.module._daily_capabilities[officer] *= sf_pharmacy
+            else:
+                self.module._daily_capabilities[officer] *= 1
 
 
 class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
