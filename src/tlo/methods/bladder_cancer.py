@@ -178,6 +178,7 @@ class BladderCancer(Module, GenericFirstAppointmentsMixin):
             Types.CATEGORICAL,
             "Current status of the health condition, bladder cancer",
             categories=["none", "tis_t1", "t2p", "metastatic"],
+            default_category_value="none",
         ),
         "bc_date_diagnosis": Property(
             Types.DATE,
@@ -192,6 +193,7 @@ class BladderCancer(Module, GenericFirstAppointmentsMixin):
             "the cancer stage at which treatment is given (because the treatment only has an effect during the stage"
             "at which it is given ",
             categories=["none", "tis_t1", "t2p", "metastatic"],
+            default_category_value="none",
         ),
         "bc_date_palliative_care": Property(
             Types.DATE,
@@ -227,16 +229,10 @@ class BladderCancer(Module, GenericFirstAppointmentsMixin):
 
     def initialise_population(self, population):
         """Set property values for the initial population."""
+        super().initialise_population(population=population)
+
         df = population.props  # a shortcut to the data-frame
         p = self.parameters
-
-        # defaults
-        df.loc[df.is_alive, "bc_status"] = "none"
-        df.loc[df.is_alive, "bc_date_diagnosis"] = pd.NaT
-        df.loc[df.is_alive, "bc_date_treatment"] = pd.NaT
-        df.loc[df.is_alive, "bc_stage_at_which_treatment_given"] = "none"
-        df.loc[df.is_alive, "bc_date_palliative_care"] = pd.NaT
-        df.loc[df.is_alive, "bc_date_death"] = pd.NaT
 
         # -------------------- bc_status -----------
         # Determine who has cancer at ANY cancer stage:
