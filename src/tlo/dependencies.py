@@ -75,19 +75,9 @@ def get_missing_dependencies(
         # Force conversion to set to avoid errors when using set.union with frozenset
         *(set(module.ALTERNATIVE_TO) for module in module_instances)
     )
-    module_class_map = get_module_class_map(set())
-
-    def add_required_dependencies(module_name, modules_required):
-        modules_required.add(module_name)
-        module_class = module_class_map[module_name]
-        dependencies = get_dependencies(module_class, modules_present)
-        for dependency in dependencies:
-            if dependency not in modules_required:
-                add_required_dependencies(dependency, modules_required)
-
-    modules_required = set()
-    for module in modules_present:
-        add_required_dependencies(module, modules_required)
+    modules_required = set.union(
+        *(set(get_dependencies(module, modules_present)) for module in module_instances)
+    )
 
     missing_dependencies = modules_required - modules_present
     return (
@@ -95,23 +85,35 @@ def get_missing_dependencies(
     )
 
 
-def initialise_missing_dependencies(modules: Iterable[Module], **module_kwargs) -> list[Module]:
+def initialise_missing_dependencies(modules: Iterable[Module], **module_kwargs) -> Set[Module]:
     """Get list of initialised instances of any missing dependencies for an iterable of modules.
 
     :param modules: Iterable of ``Module`` subclass instances to get instances of missing
         dependencies for.
     :param module_kwargs: Any keyword arguments to use when initialising missing
         module dependencies.
-    :return: List of ``Module`` subclass instances corresponding to missing dependencies.
+    :return: Set of ``Module`` subclass instances corresponding to missing dependencies.
     """
     module_class_map = get_module_class_map(set())
-    missing_dependencies = get_missing_dependencies(
-        modules, get_all_dependencies
-    )
-    return [
-        module_class_map[dependency](**module_kwargs)
-        for dependency in missing_dependencies
-    ]
+    all_module_instances = list(modules)
+
+    def add_missing_module_instances(modules: Iterable[Module], all_missing_module_names):
+        """ add missing module instances to all_module_instances list """
+        missing_dependencies = get_missing_dependencies(
+            modules, get_all_dependencies
+        )
+        if not missing_dependencies.issubset(all_missing_module_names):
+            all_missing_module_names |= missing_dependencies
+            missing_module_instances = [
+                module_class_map[dependency](**module_kwargs)
+                for dependency in missing_dependencies
+            ]
+            all_module_instances.extend(missing_module_instances)
+            add_missing_module_instances(all_module_instances, all_missing_module_names)
+
+    all_missing_module_names = set()
+    add_missing_module_instances(modules, all_missing_module_names)
+    return set(all_module_instances) - set(modules)
 
 
 def get_all_required_dependencies(
