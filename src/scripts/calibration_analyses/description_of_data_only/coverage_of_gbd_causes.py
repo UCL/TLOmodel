@@ -30,7 +30,13 @@ from tlo.methods import (
     pregnancy_supervisor,
     symptommanager,
 )
-from tlo.methods.cancer_modules import bladder_cancer, breast_cancer, oesophagealcancer, other_adult_cancers, prostate_cancer
+from tlo.methods.cancer_modules import (
+    bladder_cancer,
+    breast_cancer,
+    oesophagealcancer,
+    other_adult_cancers,
+    prostate_cancer,
+)
 from tlo.methods.causes import Cause
 
 resourcefilepath = Path("./resources")

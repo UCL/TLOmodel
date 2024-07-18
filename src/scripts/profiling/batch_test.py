@@ -10,7 +10,6 @@ import sys
 from pathlib import Path
 
 import pandas as pd
-from tlo.methods.cancer_modules import oesophagealcancer, other_adult_cancers
 import shared
 
 from tlo import Date, Simulation, logging
@@ -31,6 +30,7 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
 )
+from tlo.methods.cancer_modules import oesophagealcancer, other_adult_cancers
 
 seed_arg = sys.argv[1]
 

@@ -23,9 +23,9 @@ from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.symptommanager import Symptom
 
 if TYPE_CHECKING:
-    from tlo.simulation import Simulation
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
     from tlo.population import IndividualProperties, Population
+    from tlo.simulation import Simulation
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

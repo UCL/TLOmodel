@@ -33,9 +33,9 @@ class _BaseCancer(Module, GenericFirstAppointmentsMixin):
     To add additional values to these attributes for a specific cancer subclass, the value will need to be redefined
     explicitly in the class. One can use the syntax
 
-    ATTRIBUTE = _BaseCancer.ATTRIBUTE.union("new", "values")
+    ATTRIBUTE = _BaseCancer.ATTRIBUTE.union({"additional", "values"})
 
-    to avoid repeating the common base requirements, however.
+    to avoid repeating the common base requirements.
     The __all_cancer_common_items attribute contains the item code lookup table for all consumable items that all
     cancer subclasses use. To avoid having to redefine this when a cancer subclass uses additional consumable items,
     one can define the additional items in the _cancer_specific_items attribute. The all_consumable_items property
@@ -45,7 +45,7 @@ class _BaseCancer(Module, GenericFirstAppointmentsMixin):
     simulation setup to all cancer modules, before they then implement cancer-specific instructions. Where possible,
     these steps have been refactored out into "hooks". For example, all cancer modules set the PROPERTIES columns of
     the population DataFrame to their defaults in `Module.initialise_population`, before then going on to define their
-    `tlo.lm.LinearModel`s. The later step should be implemented explicitly in the cancer subclass, within the
+    `tlo.lm.LinearModel`s. The latter step should be implemented explicitly in the cancer subclass, within the
     `_BaseCancer.initialise_population_hook` method, which will run automatically after the common steps defined by
     this class (setting the PROPERTIES columns to defaults).
 
@@ -56,7 +56,7 @@ class _BaseCancer(Module, GenericFirstAppointmentsMixin):
     `main_logging_event_class` which also need to be defined by each concrete subclass - these are methods rather
     than attributes to avoid circular references between a cancer type and the Events it wants to schedule.
     """
-
+    # Required attributes from Module inheritance
     INIT_DEPENDENCIES = frozenset({"Demography", "HealthSystem", "SymptomManager"})
     OPTIONAL_INIT_DEPENDENCIES = frozenset({"HealthBurden"})
     METADATA = frozenset(
@@ -106,6 +106,8 @@ class _BaseCancer(Module, GenericFirstAppointmentsMixin):
 
     # Dictionary of additional consumable items and quantities that need to be
     # fetched for this particular cancer.
+    # Use self.all_consumable_items to combine the additional items with the items
+    # that all cancers need to use.
     _cancer_specific_items: Dict[str, Dict[str, int]] = {}
     # The first polling event will be scheduled to run this much time after
     # the simulation starts (default is immediately)
@@ -130,8 +132,10 @@ class _BaseCancer(Module, GenericFirstAppointmentsMixin):
     def all_consumable_items(self) -> Dict[str, Dict[str, int]]:
         """
         Dictionary of all consumable item names (keys) and their quantity (values)
-        that this cancer module requires. Combines the __all_cancer_items with
-        the module-(cancer-) specific items.
+        that this cancer module requires.
+        
+        Combines the __all_cancer_items (items all cancers need to use) with
+        _cancer_specific_items (the subclass-specific items).
         """
         return {**_BaseCancer.__all_cancer_common_items, **self._cancer_specific_items}
 
@@ -181,10 +185,6 @@ class _BaseCancer(Module, GenericFirstAppointmentsMixin):
         """
         Set the item codes for this type of cancer, which can only be done when the
         HeathSystem is ready.
-
-        Items to fetch are defined by the _cancer_specific_items (for items that only
-        this particular type of cancer needs) and __all_cancer_common_items (items that
-        all types of cancer need).
         """
         get_item_code = self.sim.modules["HealthSystem"].get_item_code_from_item_name
         self.item_codes = {
@@ -213,7 +213,7 @@ class _BaseCancer(Module, GenericFirstAppointmentsMixin):
     def initialise_population(self, population: Population) -> None:
         """
         Common initialise_simulation steps for all cancer modules.
-        After common steps complete, the initialise_simulation_hook will be invoked, which
+        After common steps complete, the initialise_population_hook will be invoked, which
         should be explicitly implemented by subclasses.
 
         Common steps are:

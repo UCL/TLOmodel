@@ -14,7 +14,6 @@ For use in profiling.
 from pathlib import Path
 
 import pandas as pd
-from tlo.methods.cancer_modules import oesophagealcancer, other_adult_cancers
 import shared
 
 from tlo import Date, Simulation, logging
@@ -36,6 +35,7 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
 )
+from tlo.methods.cancer_modules import oesophagealcancer, other_adult_cancers
 
 """
 A run of the model at scale using all disease modules currently included in Master - with no logging

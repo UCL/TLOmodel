@@ -32,7 +32,13 @@ from tlo.methods import (
     tb,
     wasting,
 )
-from tlo.methods.cancer_modules import bladder_cancer, breast_cancer, oesophagealcancer, other_adult_cancers, prostate_cancer
+from tlo.methods.cancer_modules import (
+    bladder_cancer,
+    breast_cancer,
+    oesophagealcancer,
+    other_adult_cancers,
+    prostate_cancer,
+)
 
 
 def fullmodel(

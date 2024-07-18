@@ -23,15 +23,7 @@ from tlo.dependencies import (
     get_module_class_map,
     is_valid_tlo_module_subclass,
 )
-from tlo.methods import (
-    alri,
-    contraception,
-    diarrhoea,
-    healthseekingbehaviour,
-    hiv,
-    stunting,
-    tb,
-)
+from tlo.methods import alri, contraception, diarrhoea, healthseekingbehaviour, hiv, stunting, tb
 from tlo.methods.cancer_modules import (
     bladder_cancer,
     breast_cancer,
