@@ -487,15 +487,34 @@ class SymptomManager(Module):
         :param disease_module: (optional) disease module of interest.
         :return: list of strings for the symptoms that are currently being experienced.
         """
+        assert (
+            disease_module.name in ([self.name] + self.recognised_module_names)
+            if disease_module is not None
+            else True
+        ), "Disease Module Name is not recognised"
+
         if individual_details is not None:
             # We are working in an IndividualDetails context, avoid lookups to the
             # population DataFrame as we have this context stored already.
             assert individual_details["is_alive"], "The person is not alive"
-            return [
-                symptom
-                for symptom in self.symptom_names
-                if individual_details[f"sy_{symptom}"] > 0
-            ]
+
+            if disease_module is not None:
+                int_repr = self.bsh._element_to_int_map[disease_module.name]
+                return [
+                    symptom
+                    for symptom in self.symptom_names
+                    if individual_details[
+                        self.bsh._get_columns(self.get_column_name_for_symptom(symptom))
+                    ]
+                    & int_repr
+                    != 0
+                ]
+            else:
+                return [
+                    symptom
+                    for symptom in self.symptom_names
+                    if individual_details[self.get_column_name_for_symptom(symptom)] > 0
+                ]
         else:
             assert isinstance(
                 person_id, (int, np.integer)
@@ -505,9 +524,6 @@ class SymptomManager(Module):
             assert df.at[person_id, "is_alive"], "The person is not alive"
 
             if disease_module is not None:
-                assert disease_module.name in (
-                    [self.name] + self.recognised_module_names
-                ), "Disease Module Name is not recognised"
                 sy_columns = [
                     self.get_column_name_for_symptom(s) for s in self.symptom_names
                 ]

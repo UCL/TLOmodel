@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import os
 from pathlib import Path
+from typing import TYPE_CHECKING, List
 
 import pytest
 from pandas import DateOffset
@@ -23,6 +26,9 @@ from tlo.methods.symptommanager import (
     SymptomManager_AutoResolveEvent,
     SymptomManager_SpuriousSymptomOnset,
 )
+
+if TYPE_CHECKING:
+    from tlo.methods.symptommanager import SymptomManager
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -187,8 +193,9 @@ def test_adding_quering_and_removing_symptoms(seed):
     assert set(has_symp) == set(ids)
 
     for person_id in ids:
-        assert symp in sim.modules['SymptomManager'].has_what(person_id=person_id,
-                                                              disease_module=sim.modules['Mockitis'])
+        assert symp in sim.modules["SymptomManager"].has_what(
+            person_id=person_id, disease_module=sim.modules["Mockitis"]
+        )
 
     # Check cause of the symptom:
     for person in ids:
@@ -201,6 +208,103 @@ def test_adding_quering_and_removing_symptoms(seed):
         sim.modules['SymptomManager'].clear_symptoms(person, disease_module=sim.modules['Mockitis'])
 
     assert list() == sim.modules['SymptomManager'].who_has(symp)
+
+
+@pytest.mark.parametrize(
+    "supply_disease_module",
+    [
+        pytest.param(False, id="disease_module kwarg NOT supplied"),
+        pytest.param(True, id="disease_module kwarg supplied"),
+    ],
+)
+def test_has_what_via_individual_properties(seed, supply_disease_module: bool):
+    """
+    Test that the has_what method returns the same symptoms for an individual
+    when supplied a person_id and the individual_properties context for that
+    same person.
+
+    Test the case when the optional disease_module kwarg is supplied as well.
+
+    We will create 3 'dummy' symptoms and select 8 individuals in the
+    population to infect with these symptoms; in the following combinations:
+
+    id    has_symp1   has_symp2   has_symp3
+    0     1           1           1
+    1     1           1           0
+    2     1           0           1
+    3     1           0           0
+    4     0           1           1
+    5     0           1           0
+    6     0           0           1
+    7     0           0           0
+    
+    We will then assert that has_what returns the expected symptoms for the
+    individuals, and that supplying either the person_id keyword or the
+    individual_properties keyword gives the same answer.
+    """
+    sim = Simulation(start_date=start_date, seed=seed)
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(
+            resourcefilepath=resourcefilepath
+        ),
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+        mockitis.Mockitis(),
+        chronicsyndrome.ChronicSyndrome(),
+    )
+    disease_module: mockitis.Mockitis = sim.modules["Mockitis"]
+    symptom_manager: SymptomManager = sim.modules["SymptomManager"]
+
+    # Generate the symptoms and select the people to infect
+    n_symptoms = 3
+    n_patients = 2 ** n_symptoms
+    symptoms = [f"test_symptom{i}" for i in range(n_symptoms)]
+    symptom_manager.register_symptom(*[Symptom(name=symptom) for symptom in symptoms])
+
+    # Create the initial population after generating extra symptoms, so that they are registered
+    sim.make_initial_population(n=popsize)
+    df = sim.population.props
+
+    # Infect the people with the corresponding symptoms
+    persons_infected_with: List[int] = [
+        id for id in sim.rng.choice(list(df.index[df.is_alive]), n_patients)
+    ]
+    for i, id in enumerate(persons_infected_with):
+        bin_rep = format(i, f"0{n_symptoms}b")
+        for symptom_number, digit in enumerate(bin_rep):
+            if digit == "1":
+                symptom_manager.change_symptom(
+                    symptom_string=symptoms[symptom_number],
+                    person_id=[id],
+                    add_or_remove="+",
+                    disease_module=disease_module,
+                )
+
+    # Now check that has_what returns the same (correct!) arguments when supplied with
+    # individual_properties and person_id.
+    for person_id in persons_infected_with:
+        symptoms_via_pid = symptom_manager.has_what(
+            person_id=person_id,
+            disease_module=disease_module if supply_disease_module else None,
+        )
+        with sim.population.individual_properties(
+            person_id, read_only=True
+        ) as individual_properties:
+            symptoms_via_iprops = symptom_manager.has_what(
+                individual_details=individual_properties,
+                disease_module=disease_module if supply_disease_module else None,
+            )
+
+        # Assert all returned symptoms are in agreement
+        assert len(symptoms_via_pid) == len(
+            symptoms_via_iprops
+        ), "Method does not return same number of symptoms."
+        assert set(symptoms_via_pid) == set(
+            symptoms_via_iprops
+        ), "Method does not return the same symptoms"
 
 
 def test_baby_born_has_no_symptoms(seed):
