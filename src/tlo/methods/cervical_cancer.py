@@ -1519,8 +1519,10 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_women_hiv_unsuppressed = ((df['is_alive']) & (df['sex'] == 'F') & (df['age_years'] > 15)
                                     & df['ce_hiv_unsuppressed']).sum()
 
-        n_women_hivneg = ((df['is_alive']) & (df['sex'] == 'F') & (df['age_years'] > 15)
-                                    & ~df['ce_hiv_unsuppressed']).sum()
+        n_women_hivneg = ((df['is_alive']) &
+                          (df['sex'] == 'F') &
+                          (df['age_years'] > 15) &
+                          (~df['hv_inf'])).sum()
 
         rate_diagnosed_cc = n_diagnosed_past_year / n_women_alive
 
