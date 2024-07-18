@@ -453,56 +453,79 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
 
     PROPERTIES = {
         # ---- Core Properties of Actual Status and Intrinsic Properties of A Current Episode  ----
-        'gi_has_diarrhoea': Property(Types.BOOL,
-                                     'Whether or not the person currently has an episode of diarrhoea.'
-                                     ),
-        'gi_pathogen': Property(Types.CATEGORICAL,
-                                'The attributable pathogen for the current episode of diarrhoea '
-                                '(np.nan if the person does not currently have diarrhoea).',
-                                categories=list(pathogens)),
-        'gi_type': Property(Types.CATEGORICAL,
-                            'Type (watery or blood) of the current episode of diarrhoea '
-                            '(np.nan if the person does not currently have diarrhoea).',
-                            categories=['watery',
-                                        'bloody']),
-        'gi_dehydration': Property(Types.CATEGORICAL,
-                                   'Severity of dehydration for the current episode of diarrhoea '
-                                   '(np.nan if the person does not currently have diarrhoea).',
-                                   categories=['none',
-                                               'some',  # <-- this level is not used currently.
-                                               'severe'
-                                               ]),
-        'gi_duration_longer_than_13days': Property(Types.BOOL,
-                                                   'Whether the duration of the current episode would last longer than '
-                                                   '13 days if untreated. (False if does not have current episode)'),
-        'gi_number_of_episodes': Property(Types.INT,
-                                          "Number of episodes of diarrhoea caused by a pathogen"),
-
+        "gi_has_diarrhoea": Property(
+            Types.BOOL,
+            "Whether or not the person currently has an episode of diarrhoea.",
+        ),
+        "gi_pathogen": Property(
+            Types.CATEGORICAL,
+            "The attributable pathogen for the current episode of diarrhoea "
+            "(np.nan if the person does not currently have diarrhoea).",
+            categories=list(pathogens),
+            default_category_value=np.nan,
+        ),
+        "gi_type": Property(
+            Types.CATEGORICAL,
+            "Type (watery or blood) of the current episode of diarrhoea "
+            "(np.nan if the person does not currently have diarrhoea).",
+            categories=["watery", "bloody"],
+            default_category_value=np.nan,
+        ),
+        "gi_dehydration": Property(
+            Types.CATEGORICAL,
+            "Severity of dehydration for the current episode of diarrhoea "
+            "(np.nan if the person does not currently have diarrhoea).",
+            categories=[
+                "none",
+                "some",  # <-- this level is not used currently.
+                "severe",
+            ],
+            default_category_value=np.nan,
+        ),
+        "gi_duration_longer_than_13days": Property(
+            Types.BOOL,
+            "Whether the duration of the current episode would last longer than "
+            "13 days if untreated. (False if does not have current episode)",
+        ),
+        "gi_number_of_episodes": Property(
+            Types.INT, "Number of episodes of diarrhoea caused by a pathogen"
+        ),
         # ---- Internal variables storing dates of scheduled events  ----
-        'gi_date_of_onset': Property(Types.DATE, 'Date of onset of current episode of diarrhoea (pd.NaT if does not '
-                                                 'have current episode of diarrhoea).'),
-        'gi_scheduled_date_recovery': Property(Types.DATE,
-                                               'Scheduled date of recovery from current episode of diarrhoea '
-                                               '(pd.NaT if does not have current episode or current episode '
-                                               'is scheduled to result in death). This is scheduled when the '
-                                               'episode is onset and may be revised subsequently if the episode '
-                                               'is cured by a treatment'),
-        'gi_scheduled_date_death': Property(Types.DATE, 'Scheduled date of death caused by current episode of diarrhoea'
-                                                        ' (pd.NaT if does not have current episode or if current '
-                                                        'episode will not result in death). This is scheduled when the '
-                                                        'episode is onset and may be revised subsequently if the '
-                                                        'episode is cured by a treatment.'),
-        'gi_date_end_of_last_episode': Property(Types.DATE,
-                                                'The date on which the last episode of diarrhoea is fully resolved, '
-                                                'including allowing for the possibility of HSI events (pd.NaT if has '
-                                                'never had an episode). This is used to determine when a new episode '
-                                                'can begin and stops successive episodes interfering with one another.'
-                                                'This is notnull when the person has ever had an episode of diarrhoea.'
-                                                ),
-        'gi_treatment_date': Property(Types.DATE,
-                                      'The actual date on which treatment is first administered for the current episode'
-                                      ' (pd.NaT if does not have current episode or if no treatment has yet been '
-                                      'provided in the current episode).')
+        "gi_date_of_onset": Property(
+            Types.DATE,
+            "Date of onset of current episode of diarrhoea (pd.NaT if does not "
+            "have current episode of diarrhoea).",
+        ),
+        "gi_scheduled_date_recovery": Property(
+            Types.DATE,
+            "Scheduled date of recovery from current episode of diarrhoea "
+            "(pd.NaT if does not have current episode or current episode "
+            "is scheduled to result in death). This is scheduled when the "
+            "episode is onset and may be revised subsequently if the episode "
+            "is cured by a treatment",
+        ),
+        "gi_scheduled_date_death": Property(
+            Types.DATE,
+            "Scheduled date of death caused by current episode of diarrhoea"
+            " (pd.NaT if does not have current episode or if current "
+            "episode will not result in death). This is scheduled when the "
+            "episode is onset and may be revised subsequently if the "
+            "episode is cured by a treatment.",
+        ),
+        "gi_date_end_of_last_episode": Property(
+            Types.DATE,
+            "The date on which the last episode of diarrhoea is fully resolved, "
+            "including allowing for the possibility of HSI events (pd.NaT if has "
+            "never had an episode). This is used to determine when a new episode "
+            "can begin and stops successive episodes interfering with one another."
+            "This is notnull when the person has ever had an episode of diarrhoea.",
+        ),
+        "gi_treatment_date": Property(
+            Types.DATE,
+            "The actual date on which treatment is first administered for the current episode"
+            " (pd.NaT if does not have current episode or if no treatment has yet been "
+            "provided in the current episode).",
+        ),
     }
 
     def __init__(self, name=None, resourcefilepath=None, do_checks=False):
@@ -531,27 +554,6 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
             assert isinstance(p[param_name],
                               param_type.python_type), f'Parameter "{param_name}" is not read in correctly from the ' \
                                                        f'resourcefile.'
-
-    def initialise_population(self, population):
-        """
-        Sets that there is no one with diarrhoea at initiation.
-        """
-        df = population.props  # a shortcut to the data-frame storing data for individuals
-
-        # ---- Key Current Status Classification Properties ----
-        df.loc[df.is_alive, 'gi_has_diarrhoea'] = False
-        df.loc[df.is_alive, 'gi_pathogen'] = np.nan
-        df.loc[df.is_alive, 'gi_type'] = np.nan
-        df.loc[df.is_alive, 'gi_dehydration'] = np.nan
-        df.loc[df.is_alive, 'gi_duration_longer_than_13days'] = False
-        df.loc[df.is_alive, 'gi_number_of_episodes'] = 0
-
-        # ---- Internal values ----
-        df.loc[df.is_alive, 'gi_date_of_onset'] = pd.NaT
-        df.loc[df.is_alive, 'gi_scheduled_date_recovery'] = pd.NaT
-        df.loc[df.is_alive, 'gi_scheduled_date_death'] = pd.NaT
-        df.loc[df.is_alive, 'gi_treatment_date'] = pd.NaT
-        df.loc[df.is_alive, 'gi_date_end_of_last_episode'] = pd.NaT
 
     def initialise_simulation(self, sim):
         """Prepares for simulation:
