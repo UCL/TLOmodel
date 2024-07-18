@@ -1439,6 +1439,11 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             f'total_{k}': v for k, v in df.loc[df.is_alive & (df['sex'] == 'F') &
                                                (df['age_years'] > 15)].ce_hpv_cc_status.value_counts().items()})
 
+        # Current counts, total hiv negative
+        out.update({
+            f'total_hivneg_{k}': v for k, v in df.loc[df.is_alive & (df['sex'] == 'F') &
+                                               (df['age_years'] > 15) & (df['hv_inf'])].ce_hpv_cc_status.value_counts().items()})
+
         # Get the day of the year
         day_of_year = self.sim.date.timetuple().tm_yday
 
@@ -1512,8 +1517,10 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                               & df['va_hpv']).sum()
 
         n_women_hiv_unsuppressed = ((df['is_alive']) & (df['sex'] == 'F') & (df['age_years'] > 15)
-                              & df['ce_hiv_unsuppressed']).sum()
+                                    & df['ce_hiv_unsuppressed']).sum()
 
+        n_women_hivneg = ((df['is_alive']) & (df['sex'] == 'F') & (df['age_years'] > 15)
+                                    & ~df['ce_hiv_unsuppressed']).sum()
 
         rate_diagnosed_cc = n_diagnosed_past_year / n_women_alive
 
@@ -1559,6 +1566,7 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         out.update({"n_diagnosed_1_year_ago": n_diagnosed_1_year_ago})
         out.update({"n_diagnosed_1_year_ago_died": n_diagnosed_1_year_ago_died})
         out.update({"n_women_hiv_unsuppressed": n_women_hiv_unsuppressed})
+        out.update({"n_women_hivneg": n_women_hivneg})
 
         pop = len(df[df.is_alive])
         count_summary = {
@@ -1580,6 +1588,10 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
               'total_cin2:', out['total_cin2'], 'total_cin3:', out['total_cin3'], 'total_stage1:', out['total_stage1'],
               'total_stage2a:', out['total_stage2a'], 'total_stage2b:', out['total_stage2b'],
               'total_stage3:', out['total_stage3'],'total_stage4:', out['total_stage4'],
+              'total_hivneg_none:', out['total_hivneg_none'], 'total_hivneg_hpv:', out['total_hivneg_hpv'], 'total_hivneg_cin1:', out['total_hivneg_cin1'],
+              'total_hivneg_cin2:', out['total_hivneg_cin2'], 'total_hivneg_cin3:', out['total_hivneg_cin3'], 'total_hivneg_stage1:', out['total_hivneg_stage1'],
+              'total_hivneg_stage2a:', out['total_hivneg_stage2a'], 'total_hivneg_stage2b:', out['total_hivneg_stage2b'],
+              'total_hivneg_stage3:', out['total_hivneg_stage3'], 'total_hivneg_stage4:', out['total_hivneg_stage4'],
               'year:', out['rounded_decimal_year'], 'deaths_past_year:', out['n_deaths_past_year'],
               'treated past year:', out['n_treated_past_year'], 'prop cc hiv:', out['prop_cc_hiv'],
               'n_vaginal_bleeding_stage1:', out['n_vaginal_bleeding_stage1'],
@@ -1609,7 +1621,8 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
               'n_women_living_with_diagnosed_cc_age_gt_50:', out['n_women_living_with_diagnosed_cc_age_gt_50'],
               'n_diagnosed_1_year_ago_died:', out['n_diagnosed_1_year_ago_died'],
               'n_diagnosed_1_year_ago:', out['n_diagnosed_1_year_ago'],
-              'n_women_hiv_unsuppressed:', out['n_women_hiv_unsuppressed'])
+              'n_women_hiv_unsuppressed:', out['n_women_hiv_unsuppressed'],
+              'n_women_hivneg', out['n_women_hivneg'])
 
         # comment out this below when running tests
 
