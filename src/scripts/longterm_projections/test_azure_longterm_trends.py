@@ -10,8 +10,9 @@ from tlo.methods import (
     contraception, copd, demography, depression, diarrhoea, enhanced_lifestyle, epi,
     epilepsy, healthburden, healthseekingbehaviour, healthsystem, hiv, labour,
     malaria, measles, newborn_outcomes, oesophagealcancer, other_adult_cancers, pregnancy_supervisor, postnatal_supervisor,
-    prostate_cancer, rti, schisto, simplified_births, stunting, symptommanager, tb, wasting
+    prostate_cancer, rti, schisto, simplified_births, stunting, symptommanager, tb, wasting, fullmodel
 )
+
 from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScenarioSwitcher
 
 # Start time for the simulation
@@ -51,58 +52,26 @@ class LongRun(BaseScenario):
         }
 
     def modules(self):
-        return [
-            demography.Demography(resourcefilepath=self.resources),
-            simplified_births.SimplifiedBirths(resourcefilepath=self.resources),
-            enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
-            healthsystem.HealthSystem(
-                resourcefilepath=resource_file_path,
-                service_availability=["*"],
-                mode_appt_constraints=0,
-                cons_availability="all",
-                ignore_priority=False,
-                beds_availability='all',
-                equip_availability='all',
-                capabilities_coefficient=1.0,
-                use_funded_or_actual_staffing="funded",
-                disable=False,
-                disable_and_reject_all=False,
-            ),
-            symptommanager.SymptomManager(resourcefilepath=self.resources),
-            healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
-            healthburden.HealthBurden(resourcefilepath=self.resources),
-            epi.Epi(resourcefilepath=self.resources),
-            hiv.Hiv(resourcefilepath=self.resources),
-            tb.Tb(resourcefilepath=self.resources),
-            malaria.Malaria(resourcefilepath=self.resources),
-            alri.Alri(resourcefilepath=self.resources),
-            diarrhoea.Diarrhoea(resourcefilepath=self.resources),
-            stunting.Stunting(resourcefilepath=self.resources),
-            wasting.Wasting(resourcefilepath=self.resources),
-            measles.Measles(resourcefilepath=self.resources),
-            schisto.Schisto(resourcefilepath=self.resources),
-            bladder_cancer.BladderCancer(resourcefilepath=self.resources),
-            breast_cancer.BreastCancer(resourcefilepath=self.resources),
-            oesophagealcancer.OesophagealCancer(resourcefilepath=self.resources),
-            other_adult_cancers.OtherAdultCancer(resourcefilepath=self.resources),
-            prostate_cancer.ProstateCancer(resourcefilepath=self.resources),
-            cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=self.resources),
-            rti.RTI(resourcefilepath=self.resources),
-            copd.Copd(resourcefilepath=self.resources),
-            depression.Depression(resourcefilepath=self.resources),
-            epilepsy.Epilepsy(resourcefilepath=self.resources),
-            ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=self.resources),
-            contraception.Contraception,
-            pregnancy_supervisor.PregnancySupervisor,
-            care_of_women_during_pregnancy.CareOfWomenDuringPregnancy,
-            labour.Labour,
-            newborn_outcomes.NewbornOutcomes,
-            postnatal_supervisor.PostnatalSupervisor,
-        ]
-        module.parameters["year_of_switch"] = 2010
-        module.parameters["max_healthsystem_function"] = True
-        module.parameters["max_healthcare_seeking"] = True
+         fullmodel_instance = fullmodel.fullmodel(resourcefilepath=self.resources, use_simplified_births=False, module_kwargs = {"HealthSystem": {
+            "mode_appt_constraints":0,
+            "cons_availability":"all",
+            "ignore_priority":False,
+            "beds_availability":'all',
+            "equip_availability":'all',
+            "capabilities_coefficient":1.0,
+            "use_funded_or_actual_staffing":"funded",
+            "disable":False,
+            "disable_and_reject_all":False}})
 
+         switcher = ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=self.resources)
+
+         switcher.parameters = {
+                "year_of_switch": 2010,
+                "max_healthsystem_function": [True, True],
+                "max_healthcare_seeking": [True, True]
+            }
+         fullmodel_instance =  fullmodel_instance + [switcher]
+         return fullmodel_instance
     def draw_parameters(self, draw_number, rng):
         return get_parameters_for_status_quo()
 
