@@ -7,7 +7,7 @@ from tlo.analysis.utils import get_parameters_for_status_quo
 from tlo.scenario import BaseScenario
 from tlo.methods import (
     alri, bladder_cancer, breast_cancer, cardio_metabolic_disorders,
-    copd, demography, depression, diarrhoea, enhanced_lifestyle, epi,
+    contraception, copd, demography, depression, diarrhoea, enhanced_lifestyle, epi,
     epilepsy, healthburden, healthseekingbehaviour, healthsystem, hiv,
     malaria, measles, oesophagealcancer, other_adult_cancers, prostate_cancer,
     rti, schisto, simplified_births, stunting, symptommanager, tb, wasting
@@ -29,9 +29,10 @@ class LongRun(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2060, 12, 31)
-        self.pop_size = 1000
+        self.end_date = Date(2099, 12, 31)
+        self.pop_size = 100
         self.number_of_draws = 1
+
         self.runs_per_draw = 1
 
     def log_configuration(self):
@@ -90,7 +91,13 @@ class LongRun(BaseScenario):
             copd.Copd(resourcefilepath=self.resources),
             depression.Depression(resourcefilepath=self.resources),
             epilepsy.Epilepsy(resourcefilepath=self.resources),
-            ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=self.resources)
+            ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=self.resources),
+            contraception.Contraception,
+            pregnancy_supervisor.PregnancySupervisor,
+            care_of_women_during_pregnancy.CareOfWomenDuringPregnancy,
+            labour.Labour,
+            newborn_outcomes.NewbornOutcomes,
+            postnatal_supervisor.PostnatalSupervisor,
         ]
         module.parameters["year_of_switch"] = 2010
         module.parameters["max_healthsystem_function"] = True
