@@ -6,11 +6,11 @@ from tlo import Date, logging
 from tlo.analysis.utils import get_parameters_for_status_quo
 from tlo.scenario import BaseScenario
 from tlo.methods import (
-    alri, bladder_cancer, breast_cancer, cardio_metabolic_disorders,
+    alri, bladder_cancer, breast_cancer, cardio_metabolic_disorders, care_of_women_during_pregnancy,
     contraception, copd, demography, depression, diarrhoea, enhanced_lifestyle, epi,
-    epilepsy, healthburden, healthseekingbehaviour, healthsystem, hiv,
-    malaria, measles, oesophagealcancer, other_adult_cancers, prostate_cancer,
-    rti, schisto, simplified_births, stunting, symptommanager, tb, wasting
+    epilepsy, healthburden, healthseekingbehaviour, healthsystem, hiv, labour,
+    malaria, measles, newborn_outcomes, oesophagealcancer, other_adult_cancers, pregnancy_supervisor, postnatal_supervisor,
+    prostate_cancer, rti, schisto, simplified_births, stunting, symptommanager, tb, wasting
 )
 from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScenarioSwitcher
 
