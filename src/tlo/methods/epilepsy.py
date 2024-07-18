@@ -119,15 +119,17 @@ class Epilepsy(Module, GenericFirstAppointmentsMixin):
 
     # Properties of individuals 'owned' by this module
     PROPERTIES = {
-        'ep_seiz_stat': Property(
+        "ep_seiz_stat": Property(
             Types.CATEGORICAL,
-            '(0 = never epilepsy, 1 = previous seizures none now, 2 = infrequent seizures, 3 = frequent seizures)',
-            categories=['0', '1', '2', '3'],
+            "(0 = never epilepsy, 1 = previous seizures none now, 2 = infrequent seizures, 3 = frequent seizures)",
+            categories=["0", "1", "2", "3"],
+            default_category_value="0",
         ),
-        'ep_antiep': Property(Types.BOOL, 'on antiepileptic'),
-        'ep_epi_death': Property(Types.BOOL, 'epilepsy death this 3 month period'),
-        'ep_unified_symptom_code': Property(Types.CATEGORICAL, '', categories=['0', '1', '2', '3']),
-        'ep_disability': Property(Types.REAL, 'disability weight for current 3 month period'),
+        "ep_antiep": Property(Types.BOOL, "on antiepileptic"),
+        "ep_epi_death": Property(Types.BOOL, "epilepsy death this 3 month period"),
+        "ep_disability": Property(
+            Types.REAL, "disability weight for current 3 month period"
+        ),
     }
 
     # Declaration of how we will refer to any treatments that are related to this disease.
@@ -165,15 +167,11 @@ class Epilepsy(Module, GenericFirstAppointmentsMixin):
         responsible for assigning initial values, for every individual, of those properties
         'owned' by this module, i.e. those declared in the PROPERTIES dictionary above.
         """
+        super().initialise_population(population=population)
 
         df = population.props  # a shortcut to the data-frame storing data for individuals
         p = self.parameters
         rng = self.rng
-
-        df.loc[df.is_alive, 'ep_seiz_stat'] = '0'
-        df.loc[df.is_alive, 'ep_antiep'] = False
-        df.loc[df.is_alive, 'ep_epi_death'] = False
-        df.loc[df.is_alive, 'ep_disability'] = 0
 
         # allocate initial ep_seiz_stat
         alive_idx = df.index[df.is_alive]
