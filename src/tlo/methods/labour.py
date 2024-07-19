@@ -578,44 +578,102 @@ class Labour(Module, GenericFirstAppointmentsMixin):
     }
 
     PROPERTIES = {
-        'la_due_date_current_pregnancy': Property(Types.DATE, 'The date on which a newly pregnant woman is scheduled to'
-                                                              ' go into labour'),
-        'la_currently_in_labour': Property(Types.BOOL, 'whether this woman is currently in labour'),
-        'la_intrapartum_still_birth': Property(Types.BOOL, 'whether this womans most recent pregnancy has ended '
-                                                           'in a stillbirth'),
-        'la_parity': Property(Types.REAL, 'total number of previous deliveries'),
-        'la_previous_cs_delivery': Property(Types.INT, 'total number of previous deliveries'),
-        'la_obstructed_labour': Property(Types.BOOL, 'Whether this woman is experiencing obstructed labour'),
-        'la_placental_abruption': Property(Types.BOOL, 'whether the woman has experienced placental abruption'),
-        'la_antepartum_haem': Property(Types.CATEGORICAL, 'whether the woman has experienced an antepartum haemorrhage'
-                                                          ' in this delivery and it severity',
-                                       categories=['none', 'mild_moderate', 'severe']),
-
-        'la_uterine_rupture': Property(Types.BOOL, 'whether the woman has experienced uterine rupture in this '
-                                                   'delivery'),
-        'la_uterine_rupture_treatment': Property(Types.BOOL, 'whether this womans uterine rupture has been treated'),
-        'la_sepsis': Property(Types.BOOL, 'whether this woman has developed sepsis due to an intrapartum infection'),
-        'la_sepsis_pp': Property(Types.BOOL, 'whether this woman has developed sepsis due to a postpartum infection'),
-        'la_sepsis_treatment': Property(Types.BOOL, 'If this woman has received treatment for maternal sepsis'),
-        'la_eclampsia_treatment': Property(Types.BOOL, 'whether this womans eclampsia has been treated'),
-        'la_severe_pre_eclampsia_treatment': Property(Types.BOOL, 'whether this woman has been treated for severe '
-                                                                  'pre-eclampsia'),
-        'la_maternal_hypertension_treatment': Property(Types.BOOL, 'whether this woman has been treated for maternal '
-                                                                   'hypertension'),
-        'la_gest_htn_on_treatment': Property(Types.BOOL, 'whether this woman has is receiving regular '
-                                                         'antihypertensives'),
-        'la_postpartum_haem': Property(Types.BOOL, 'whether the woman has experienced an postpartum haemorrhage in this'
-                                                   'delivery'),
-        'la_postpartum_haem_treatment': Property(Types.BITSET, ' Treatment for received for postpartum haemorrhage '
-                                                               '(bitset)'),
-        'la_has_had_hysterectomy': Property(Types.BOOL, 'whether this woman has had a hysterectomy as treatment for a '
-                                                        'complication of labour, and therefore is unable to conceive'),
-        'la_date_most_recent_delivery': Property(Types.DATE, 'date of on which this mother last delivered'),
-        'la_is_postpartum': Property(Types.BOOL, 'Whether a woman is in the postpartum period, from delivery until '
-                                                 'day +42 (6 weeks)'),
-        'la_pn_checks_maternal': Property(Types.INT, 'Number of postnatal checks this woman has received'),
-        'la_iron_folic_acid_postnatal': Property(Types.BOOL, 'Whether a woman is receiving iron and folic acid during '
-                                                             'the postnatal period'),
+        "la_due_date_current_pregnancy": Property(
+            Types.DATE,
+            "The date on which a newly pregnant woman is scheduled to"
+            " go into labour",
+        ),
+        "la_currently_in_labour": Property(
+            Types.BOOL, "whether this woman is currently in labour"
+        ),
+        "la_intrapartum_still_birth": Property(
+            Types.BOOL,
+            "whether this womans most recent pregnancy has ended " "in a stillbirth",
+        ),
+        "la_parity": Property(
+            Types.REAL,
+            "total number of previous deliveries",
+            default_property_value=0.0,
+        ),
+        "la_previous_cs_delivery": Property(
+            Types.INT, "total number of previous deliveries"
+        ),
+        "la_obstructed_labour": Property(
+            Types.BOOL, "Whether this woman is experiencing obstructed labour"
+        ),
+        "la_placental_abruption": Property(
+            Types.BOOL, "whether the woman has experienced placental abruption"
+        ),
+        "la_antepartum_haem": Property(
+            Types.CATEGORICAL,
+            "whether the woman has experienced an antepartum haemorrhage"
+            " in this delivery and it severity",
+            categories=["none", "mild_moderate", "severe"],
+            default_property_value="none",
+        ),
+        "la_uterine_rupture": Property(
+            Types.BOOL,
+            "whether the woman has experienced uterine rupture in this " "delivery",
+        ),
+        "la_uterine_rupture_treatment": Property(
+            Types.BOOL, "whether this womans uterine rupture has been treated"
+        ),
+        "la_sepsis": Property(
+            Types.BOOL,
+            "whether this woman has developed sepsis due to an intrapartum infection",
+        ),
+        "la_sepsis_pp": Property(
+            Types.BOOL,
+            "whether this woman has developed sepsis due to a postpartum infection",
+        ),
+        "la_sepsis_treatment": Property(
+            Types.BOOL, "If this woman has received treatment for maternal sepsis"
+        ),
+        "la_eclampsia_treatment": Property(
+            Types.BOOL, "whether this womans eclampsia has been treated"
+        ),
+        "la_severe_pre_eclampsia_treatment": Property(
+            Types.BOOL,
+            "whether this woman has been treated for severe " "pre-eclampsia",
+        ),
+        "la_maternal_hypertension_treatment": Property(
+            Types.BOOL,
+            "whether this woman has been treated for maternal " "hypertension",
+        ),
+        "la_gest_htn_on_treatment": Property(
+            Types.BOOL,
+            "whether this woman has is receiving regular " "antihypertensives",
+        ),
+        "la_postpartum_haem": Property(
+            Types.BOOL,
+            "whether the woman has experienced an postpartum haemorrhage in this"
+            "delivery",
+        ),
+        "la_postpartum_haem_treatment": Property(
+            Types.BITSET,
+            " Treatment for received for postpartum haemorrhage " "(bitset)",
+        ),
+        "la_has_had_hysterectomy": Property(
+            Types.BOOL,
+            "whether this woman has had a hysterectomy as treatment for a "
+            "complication of labour, and therefore is unable to conceive",
+        ),
+        "la_date_most_recent_delivery": Property(
+            Types.DATE, "date of on which this mother last delivered"
+        ),
+        "la_is_postpartum": Property(
+            Types.BOOL,
+            "Whether a woman is in the postpartum period, from delivery until "
+            "day +42 (6 weeks)",
+        ),
+        "la_pn_checks_maternal": Property(
+            Types.INT, "Number of postnatal checks this woman has received"
+        ),
+        "la_iron_folic_acid_postnatal": Property(
+            Types.BOOL,
+            "Whether a woman is receiving iron and folic acid during "
+            "the postnatal period",
+        ),
     }
 
     def read_parameters(self, data_folder):
@@ -625,37 +683,13 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         self.load_parameters_from_dataframe(parameter_dataframe)
 
     def initialise_population(self, population):
-        df = population.props
-
         # For the first period (2010-2015) we use the first value in each list as a parameter
         pregnancy_helper_functions.update_current_parameter_dictionary(self, list_position=0)
 
-        params = self.current_parameters
+        super().initialise_population(population=population)
 
-        df.loc[df.is_alive, 'la_currently_in_labour'] = False
-        df.loc[df.is_alive, 'la_intrapartum_still_birth'] = False
-        df.loc[df.is_alive, 'la_parity'] = 0
-        df.loc[df.is_alive, 'la_previous_cs_delivery'] = 0
-        df.loc[df.is_alive, 'la_due_date_current_pregnancy'] = pd.NaT
-        df.loc[df.is_alive, 'la_obstructed_labour'] = False
-        df.loc[df.is_alive, 'la_placental_abruption'] = False
-        df.loc[df.is_alive, 'la_antepartum_haem'] = 'none'
-        df.loc[df.is_alive, 'la_uterine_rupture'] = False
-        df.loc[df.is_alive, 'la_uterine_rupture_treatment'] = False
-        df.loc[df.is_alive, 'la_sepsis'] = False
-        df.loc[df.is_alive, 'la_sepsis_pp'] = False
-        df.loc[df.is_alive, 'la_sepsis_treatment'] = False
-        df.loc[df.is_alive, 'la_eclampsia_treatment'] = False
-        df.loc[df.is_alive, 'la_severe_pre_eclampsia_treatment'] = False
-        df.loc[df.is_alive, 'la_maternal_hypertension_treatment'] = False
-        df.loc[df.is_alive, 'la_gest_htn_on_treatment'] = False
-        df.loc[df.is_alive, 'la_postpartum_haem'] = False
-        df.loc[df.is_alive, 'la_postpartum_haem_treatment'] = 0
-        df.loc[df.is_alive, 'la_has_had_hysterectomy'] = False
-        df.loc[df.is_alive, 'la_date_most_recent_delivery'] = pd.NaT
-        df.loc[df.is_alive, 'la_is_postpartum'] = False
-        df.loc[df.is_alive, 'la_pn_checks_maternal'] = 0
-        df.loc[df.is_alive, 'la_iron_folic_acid_postnatal'] = False
+        df = population.props
+        params = self.current_parameters
 
         #  we store different potential treatments for postpartum haemorrhage via bistet
         self.pph_treatment = BitsetHandler(self.sim.population, 'la_postpartum_haem_treatment',
