@@ -256,57 +256,147 @@ class NewbornOutcomes(Module):
     }
 
     PROPERTIES = {
-        'nb_is_twin': Property(Types.BOOL, 'whether this is part of a twin pair'),
-        'nb_twin_sibling_id': Property(Types.INT, 'id number of this twins sibling'),
-        'nb_early_preterm': Property(Types.BOOL, 'whether this neonate has been born early preterm (24-33 weeks '
-                                                 'gestation)'),
-        'nb_late_preterm': Property(Types.BOOL, 'whether this neonate has been born late preterm (34-36 weeks '
-                                                'gestation)'),
-        'nb_preterm_birth_disab': Property(Types.CATEGORICAL, 'Disability associated with preterm delivery',
-                                           categories=['none', 'mild_motor_and_cog', 'mild_motor', 'moderate_motor',
-                                                       'severe_motor']),
-        'nb_congenital_anomaly': Property(Types.BITSET, 'Types of congenital anomaly of the newborn stored as bitset'),
-        'nb_early_onset_neonatal_sepsis': Property(Types.BOOL, 'whether this neonate has developed neonatal sepsis'
-                                                               ' following birth'),
-        'nb_inj_abx_neonatal_sepsis': Property(Types.BOOL, 'If this neonate has injectable antibiotics as treatment '
-                                                           'for neonatal sepsis'),
-        'nb_supp_care_neonatal_sepsis': Property(Types.BOOL, 'If this neonate has received full supportive care for '
-                                                             'neonatal sepsis (in hospital)'),
-        'nb_neonatal_sepsis_disab': Property(Types.CATEGORICAL, 'Disability associated neonatal sepsis',
-                                             categories=['none', 'mild_motor_and_cog', 'mild_motor',
-                                                         'moderate_motor', 'severe_motor']),
-        'nb_preterm_respiratory_distress': Property(Types.BOOL, 'whether this preterm newborn has respiratory '
-                                                                'distress syndrome (RDS)'),
-        'nb_not_breathing_at_birth': Property(Types.BOOL, 'whether this neonate has failed to transition to breathing '
-                                                          'on their own following birth'),
-        'nb_received_neonatal_resus': Property(Types.BOOL, 'If this neonate has received resuscitation'),
-        'nb_encephalopathy': Property(Types.CATEGORICAL, 'None, mild encephalopathy, moderate encephalopathy, '
-                                                         'severe encephalopathy',
-                                      categories=['none', 'mild_enceph', 'moderate_enceph', 'severe_enceph']),
-        'nb_encephalopathy_disab': Property(Types.CATEGORICAL, 'Disability associated neonatal sepsis',
-                                            categories=['none', 'mild_motor_and_cog', 'mild_motor',
-                                                        'moderate_motor', 'severe_motor']),
-        'nb_retinopathy_prem': Property(Types.CATEGORICAL, 'Level of visual disturbance due to retinopathy of'
-                                                           ' prematurity: None, mild, moderate, severe, blindness',
-                                        categories=['none', 'mild', 'moderate', 'severe', 'blindness']),
-        'nb_low_birth_weight_status': Property(Types.CATEGORICAL, 'extremely low birth weight (<1000g), '
-                                                                  ' very low birth weight (<1500g), '
-                                                                  'low birth weight (<2500g),'
-                                                                  'normal birth weight (>2500g), macrosomia (>4000g)',
-                                               categories=['extremely_low_birth_weight', 'very_low_birth_weight',
-                                                           'low_birth_weight', 'normal_birth_weight', 'macrosomia']),
-        'nb_size_for_gestational_age': Property(Types.CATEGORICAL, 'size for gestational age categories',
-                                                categories=['small_for_gestational_age', 'average_for_gestational_age',
-                                                            'large_for_gestational_age']),
-        'nb_early_init_breastfeeding': Property(Types.BOOL, 'whether this neonate initiated breastfeeding '
-                                                            'within 1 hour of birth '),
-        'nb_breastfeeding_status': Property(Types.CATEGORICAL, 'How this neonate is being breastfed',
-                                            categories=['none', 'non_exclusive', 'exclusive']),
-        'nb_kangaroo_mother_care': Property(Types.BOOL, 'whether this neonate received kangaroo mother care following '
-                                                        'birth'),
-        'nb_clean_birth': Property(Types.BOOL, 'whether this neonate received clean birth practices at delivery'),
-        'nb_death_after_birth': Property(Types.BOOL, 'whether this child has died following complications after birth'),
-        'nb_pnc_check': Property(Types.INT, 'Number of postnatal checks received in the postnatal period'),
+        "nb_is_twin": Property(Types.BOOL, "whether this is part of a twin pair"),
+        "nb_twin_sibling_id": Property(Types.INT, "id number of this twins sibling"),
+        "nb_early_preterm": Property(
+            Types.BOOL,
+            "whether this neonate has been born early preterm (24-33 weeks "
+            "gestation)",
+        ),
+        "nb_late_preterm": Property(
+            Types.BOOL,
+            "whether this neonate has been born late preterm (34-36 weeks "
+            "gestation)",
+        ),
+        "nb_preterm_birth_disab": Property(
+            Types.CATEGORICAL,
+            "Disability associated with preterm delivery",
+            categories=[
+                "none",
+                "mild_motor_and_cog",
+                "mild_motor",
+                "moderate_motor",
+                "severe_motor",
+            ],
+            default_property_value="none",
+        ),
+        "nb_congenital_anomaly": Property(
+            Types.BITSET, "Types of congenital anomaly of the newborn stored as bitset"
+        ),
+        "nb_early_onset_neonatal_sepsis": Property(
+            Types.BOOL,
+            "whether this neonate has developed neonatal sepsis" " following birth",
+        ),
+        "nb_inj_abx_neonatal_sepsis": Property(
+            Types.BOOL,
+            "If this neonate has injectable antibiotics as treatment "
+            "for neonatal sepsis",
+        ),
+        "nb_supp_care_neonatal_sepsis": Property(
+            Types.BOOL,
+            "If this neonate has received full supportive care for "
+            "neonatal sepsis (in hospital)",
+        ),
+        "nb_neonatal_sepsis_disab": Property(
+            Types.CATEGORICAL,
+            "Disability associated neonatal sepsis",
+            categories=[
+                "none",
+                "mild_motor_and_cog",
+                "mild_motor",
+                "moderate_motor",
+                "severe_motor",
+            ],
+            default_property_value="none",
+        ),
+        "nb_preterm_respiratory_distress": Property(
+            Types.BOOL,
+            "whether this preterm newborn has respiratory " "distress syndrome (RDS)",
+        ),
+        "nb_not_breathing_at_birth": Property(
+            Types.BOOL,
+            "whether this neonate has failed to transition to breathing "
+            "on their own following birth",
+        ),
+        "nb_received_neonatal_resus": Property(
+            Types.BOOL, "If this neonate has received resuscitation"
+        ),
+        "nb_encephalopathy": Property(
+            Types.CATEGORICAL,
+            "None, mild encephalopathy, moderate encephalopathy, "
+            "severe encephalopathy",
+            categories=["none", "mild_enceph", "moderate_enceph", "severe_enceph"],
+            default_property_value="none",
+        ),
+        "nb_encephalopathy_disab": Property(
+            Types.CATEGORICAL,
+            "Disability associated neonatal sepsis",
+            categories=[
+                "none",
+                "mild_motor_and_cog",
+                "mild_motor",
+                "moderate_motor",
+                "severe_motor",
+            ],
+            default_property_value="none",
+        ),
+        "nb_retinopathy_prem": Property(
+            Types.CATEGORICAL,
+            "Level of visual disturbance due to retinopathy of"
+            " prematurity: None, mild, moderate, severe, blindness",
+            categories=["none", "mild", "moderate", "severe", "blindness"],
+            default_property_value="none",
+        ),
+        "nb_low_birth_weight_status": Property(
+            Types.CATEGORICAL,
+            "extremely low birth weight (<1000g), "
+            " very low birth weight (<1500g), "
+            "low birth weight (<2500g),"
+            "normal birth weight (>2500g), macrosomia (>4000g)",
+            categories=[
+                "extremely_low_birth_weight",
+                "very_low_birth_weight",
+                "low_birth_weight",
+                "normal_birth_weight",
+                "macrosomia",
+            ],
+            default_property_value="normal_birth_weight",
+        ),
+        "nb_size_for_gestational_age": Property(
+            Types.CATEGORICAL,
+            "size for gestational age categories",
+            categories=[
+                "small_for_gestational_age",
+                "average_for_gestational_age",
+                "large_for_gestational_age",
+            ],
+            default_property_value="average_for_gestational_age",
+        ),
+        "nb_early_init_breastfeeding": Property(
+            Types.BOOL,
+            "whether this neonate initiated breastfeeding " "within 1 hour of birth ",
+        ),
+        "nb_breastfeeding_status": Property(
+            Types.CATEGORICAL,
+            "How this neonate is being breastfed",
+            categories=["none", "non_exclusive", "exclusive"],
+            default_property_value="none",
+        ),
+        "nb_kangaroo_mother_care": Property(
+            Types.BOOL,
+            "whether this neonate received kangaroo mother care following " "birth",
+        ),
+        "nb_clean_birth": Property(
+            Types.BOOL,
+            "whether this neonate received clean birth practices at delivery",
+        ),
+        "nb_death_after_birth": Property(
+            Types.BOOL,
+            "whether this child has died following complications after birth",
+        ),
+        "nb_pnc_check": Property(
+            Types.INT, "Number of postnatal checks received in the postnatal period"
+        ),
     }
 
     def read_parameters(self, data_folder):
@@ -341,36 +431,14 @@ class NewbornOutcomes(Module):
                 'mild_motor_cognitive_sepsis': self.sim.modules['HealthBurden'].get_daly_weight(441)}
 
     def initialise_population(self, population):
-        df = population.props
-
-        df.loc[df.is_alive, 'nb_is_twin'] = False
-        df.loc[df.is_alive, 'nb_twin_sibling_id'] = -1
-        df.loc[df.is_alive, 'nb_early_preterm'] = False
-        df.loc[df.is_alive, 'nb_late_preterm'] = False
-        df.loc[df.is_alive, 'nb_preterm_birth_disab'] = 'none'
-        df.loc[df.is_alive, 'nb_congenital_anomaly'] = 0
-        df.loc[df.is_alive, 'nb_early_onset_neonatal_sepsis'] = False
-        df.loc[df.is_alive, 'nb_inj_abx_neonatal_sepsis'] = False
-        df.loc[df.is_alive, 'nb_supp_care_neonatal_sepsis'] = False
-        df.loc[df.is_alive, 'nb_neonatal_sepsis_disab'] = 'none'
-        df.loc[df.is_alive, 'nb_preterm_respiratory_distress'] = False
-        df.loc[df.is_alive, 'nb_not_breathing_at_birth'] = False
-        df.loc[df.is_alive, 'nb_received_neonatal_resus'] = False
-        df.loc[df.is_alive, 'nb_encephalopathy'] = 'none'
-        df.loc[df.is_alive, 'nb_encephalopathy_disab'] = 'none'
-        df.loc[df.is_alive, 'nb_retinopathy_prem'] = 'none'
-        df.loc[df.is_alive, 'nb_low_birth_weight_status'] = 'normal_birth_weight'
-        df.loc[df.is_alive, 'nb_size_for_gestational_age'] = 'average_for_gestational_age'
-        df.loc[df.is_alive, 'nb_early_init_breastfeeding'] = False
-        df.loc[df.is_alive, 'nb_breastfeeding_status'] = 'none'
-        df.loc[df.is_alive, 'nb_kangaroo_mother_care'] = False
-        df.loc[df.is_alive, 'nb_clean_birth'] = False
-        df.loc[df.is_alive, 'nb_death_after_birth'] = False
-        df.loc[df.is_alive, 'nb_pnc_check'] = 0
+        super().initialise_population(population=population)
 
         # We store congenital anomalies as bitset
-        self.congeintal_anomalies = BitsetHandler(self.sim.population, 'nb_congenital_anomaly',
-                                                  ['heart', 'limb_musc_skeletal', 'urogenital', 'digestive', 'other'])
+        self.congeintal_anomalies = BitsetHandler(
+            population,
+            "nb_congenital_anomaly",
+            ["heart", "limb_musc_skeletal", "urogenital", "digestive", "other"],
+        )
 
     def get_and_store_newborn_item_codes(self):
         """
