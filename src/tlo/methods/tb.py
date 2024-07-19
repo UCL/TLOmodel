@@ -88,6 +88,7 @@ class Tb(Module):
                 "active",
             ],
             description="tb status",
+            default_property_value="uninfected",
         ),
         "tb_strain": Property(
             Types.CATEGORICAL,
@@ -97,6 +98,7 @@ class Tb(Module):
                 "mdr",
             ],
             description="tb strain: drug-susceptible (ds) or multi-drug resistant (mdr)",
+            default_property_value="none",
         ),
         "tb_date_latent": Property(
             Types.DATE, "Date acquired tb infection (latent stage)"
@@ -134,6 +136,7 @@ class Tb(Module):
                 "tb_mdrtx",
             ],
             description="current tb treatment regimen",
+            default_property_value="none",
         ),
         "tb_ever_treated": Property(Types.BOOL, "if ever treated for active tb"),
         "tb_treatment_failure": Property(Types.BOOL, "failed first line tb treatment"),
@@ -789,10 +792,10 @@ class Tb(Module):
             hs.get_item_code_from_item_name("Isoniazid/Rifapentine")
 
     def initialise_population(self, population):
+        super().initialise_population(population=population)
 
         df = population.props
         p = self.parameters
-
         # if HIV is not registered, create a dummy property
         if "Hiv" not in self.sim.modules:
             population.make_test_property("hv_inf", Types.BOOL)
@@ -802,31 +805,6 @@ class Tb(Module):
             df["hv_inf"] = False
             df["sy_aids_symptoms"] = 0
             df["hv_art"] = "not"
-
-        # Set our property values for the initial population
-        df["tb_inf"].values[:] = "uninfected"
-        df["tb_strain"].values[:] = "none"
-
-        df["tb_date_latent"] = pd.NaT
-        df["tb_scheduled_date_active"] = pd.NaT
-        df["tb_date_active"] = pd.NaT
-        df["tb_smear"] = False
-
-        # ------------------ testing status ------------------ #
-        df["tb_date_tested"] = pd.NaT
-        df["tb_diagnosed"] = False
-        df["tb_date_diagnosed"] = pd.NaT
-        df["tb_diagnosed_mdr"] = False
-
-        # ------------------ treatment status ------------------ #
-        df["tb_on_treatment"] = False
-        df["tb_date_treated"] = pd.NaT
-        df["tb_treatment_regimen"].values[:] = "none"
-        df["tb_ever_treated"] = False
-        df["tb_treatment_failure"] = False
-
-        df["tb_on_ipt"] = False
-        df["tb_date_ipt"] = pd.NaT
 
         # # ------------------ infection status ------------------ #
         # WHO estimates of active TB for 2010 to get infected initial population
