@@ -184,32 +184,28 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
             Types.CATEGORICAL,
             "Current status of the health condition, other_adult cancer",
             categories=["none", "site_confined", "local_ln", "metastatic"],
+            default_property_value="none",
         ),
-
         "oac_date_diagnosis": Property(
             Types.DATE,
-            "the date of diagnosis of the other_adult_cancer (pd.NaT if never diagnosed)"
+            "the date of diagnosis of the other_adult_cancer (pd.NaT if never diagnosed)",
         ),
-
         "oac_date_treatment": Property(
             Types.DATE,
-            "date of first receiving attempted curative treatment (pd.NaT if never started treatment)"
+            "date of first receiving attempted curative treatment (pd.NaT if never started treatment)",
         ),
-
         "oac_stage_at_which_treatment_given": Property(
             Types.CATEGORICAL,
             "the cancer stage at which treatment is given (because the treatment only has an effect during the stage"
             "at which it is given.",
             categories=["none", "site_confined", "local_ln", "metastatic"],
+            default_property_value="none",
         ),
         "oac_date_palliative_care": Property(
             Types.DATE,
-            "date of first receiving palliative care (pd.NaT is never had palliative care)"
+            "date of first receiving palliative care (pd.NaT is never had palliative care)",
         ),
-        "oac_date_death": Property(
-            Types.DATE,
-            "date of oac death"
-        )
+        "oac_date_death": Property(Types.DATE, "date of oac death"),
     }
 
     def read_parameters(self, data_folder):
@@ -229,17 +225,10 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
         )
 
     def initialise_population(self, population):
-        """Set property values for the initial population."""
-        df = population.props  # a shortcut to the data-frame
+        super().initialise_population(population=population)
+        
+        df = population.props
         p = self.parameters
-
-        # defaults
-        df.loc[df.is_alive, "oac_status"] = "none"
-        df.loc[df.is_alive, "oac_date_diagnosis"] = pd.NaT
-        df.loc[df.is_alive, "oac_date_treatment"] = pd.NaT
-        df.loc[df.is_alive, "oac_stage_at_which_treatment_given"] = "none"
-        df.loc[df.is_alive, "oac_date_palliative_care"] = pd.NaT
-        df.loc[df.is_alive, "oac_date_death"] = pd.NaT
 
         # -------------------- oac_status -----------
         # Determine who has cancer at ANY cancer stage:
