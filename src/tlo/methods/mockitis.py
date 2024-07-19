@@ -71,17 +71,18 @@ class Mockitis(Module, GenericFirstAppointmentsMixin):
     }
 
     PROPERTIES = {
-        'mi_is_infected': Property(
-            Types.BOOL, 'Current status of mockitis'),
-        'mi_status': Property(
-            Types.CATEGORICAL, 'Historical status: N=never; C=currently; P=previously',
-            categories=['N', 'C', 'P']),
-        'mi_date_infected': Property(
-            Types.DATE, 'Date of latest infection'),
-        'mi_scheduled_date_death': Property(
-            Types.DATE, 'Date of scheduled death of infected individual'),
-        'mi_date_cure': Property(
-            Types.DATE, 'Date an infected individual was cured')
+        "mi_is_infected": Property(Types.BOOL, "Current status of mockitis"),
+        "mi_status": Property(
+            Types.CATEGORICAL,
+            "Historical status: N=never; C=currently; P=previously",
+            categories=["N", "C", "P"],
+            default_property_value="N",
+        ),
+        "mi_date_infected": Property(Types.DATE, "Date of latest infection"),
+        "mi_scheduled_date_death": Property(
+            Types.DATE, "Date of scheduled death of infected individual"
+        ),
+        "mi_date_cure": Property(Types.DATE, "Date an infected individual was cured"),
     }
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -125,24 +126,9 @@ class Mockitis(Module, GenericFirstAppointmentsMixin):
         )
 
     def initialise_population(self, population):
-        """Set our property values for the initial population.
-
-        This method is called by the simulation when creating the initial population, and is
-        responsible for assigning initial values, for every individual, of those properties
-        'owned' by this module, i.e. those declared in the PROPERTIES dictionary above.
-
-        :param population: the population of individuals
-        """
+        super().initialise_population(population=population)
 
         df = population.props  # a shortcut to the dataframe storing data for individiuals
-
-        # Set default for properties
-        df.loc[df.is_alive, 'mi_is_infected'] = False  # default: no individuals infected
-        df.loc[df.is_alive, 'mi_status'] = 'N'  # default: never infected
-        df.loc[df.is_alive, 'mi_date_infected'] = pd.NaT  # default: not a time
-        df.loc[df.is_alive, 'mi_scheduled_date_death'] = pd.NaT  # default: not a time
-        df.loc[df.is_alive, 'mi_date_cure'] = pd.NaT  # default: not a time
-
         alive_count = df.is_alive.sum()
 
         # randomly selected some individuals as infected
