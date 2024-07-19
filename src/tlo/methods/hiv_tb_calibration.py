@@ -47,9 +47,6 @@ class Deviance(Module):
     def read_parameters(self, data_folder):
         pass
 
-    def initialise_population(self, population):
-        pass
-
     def initialise_simulation(self, sim):
         pass
 

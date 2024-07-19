@@ -135,11 +135,6 @@ class HealthSeekingBehaviour(Module, GenericFirstAppointmentsMixin):
         # `self.force_any_symptom_to_lead_to_healthcareseeking` without any further checking).
         assert isinstance(self.parameters['force_any_symptom_to_lead_to_healthcareseeking'], bool)
 
-    def initialise_population(self, population):
-        """Nothing to initialise in the population
-        """
-        pass
-
     def initialise_simulation(self, sim):
         """
         * define the linear models that govern healthcare seeking

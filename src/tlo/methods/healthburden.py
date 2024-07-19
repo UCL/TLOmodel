@@ -72,9 +72,6 @@ class HealthBurden(Module):
         p['gbd_causes_of_disability'] = set(pd.read_csv(
             Path(self.resourcefilepath) / 'gbd' / 'ResourceFile_CausesOfDALYS_GBD2019.csv', header=None)[0].values)
 
-    def initialise_population(self, population):
-        pass
-
     def initialise_simulation(self, sim):
         """Do before simulation starts:
         1) Prepare data storage structures
