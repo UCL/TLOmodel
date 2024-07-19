@@ -111,6 +111,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.CATEGORICAL,
             "ART status of person, whether on ART or not; and whether viral load is suppressed or not if on ART.",
             categories=["not", "on_VL_suppressed", "on_not_VL_suppressed"],
+            default_property_value="not",
         ),
         "hv_on_cotrimoxazole": Property(
             Types.BOOL,
@@ -610,24 +611,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         )
 
     def initialise_population(self, population):
-        """Set our property values for the initial population."""
-
-        df = population.props
-
-        # --- Current status
-        df.loc[df.is_alive, "hv_inf"] = False
-        df.loc[df.is_alive, "hv_art"] = "not"
-        df.loc[df.is_alive, "hv_is_on_prep"] = False
-        df.loc[df.is_alive, "hv_behaviour_change"] = False
-        df.loc[df.is_alive, "hv_diagnosed"] = False
-        df.loc[df.is_alive, "hv_number_tests"] = 0
-
-        # --- Dates on which things have happened
-        df.loc[df.is_alive, "hv_date_inf"] = pd.NaT
-        df.loc[df.is_alive, "hv_last_test_date"] = pd.NaT
-        df.loc[df.is_alive, "hv_date_treated"] = pd.NaT
-        df.loc[df.is_alive, "hv_date_last_ART"] = pd.NaT
-
+        super().initialise_population(population=population)
+        
         # Launch sub-routines for allocating the right number of people into each category
         self.initialise_baseline_prevalence(population)  # allocate baseline prevalence
 
