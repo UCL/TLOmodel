@@ -5,7 +5,7 @@
 
 import json
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Union
 
 import pandas as pd
 
@@ -106,7 +106,7 @@ class SimplifiedBirths(Module):
     }
 
     @property
-    def default_properties(self) -> Dict[str, pd.NaT | str | bool]:
+    def default_properties(self) -> Dict[str, Union[pd.NaT, str, bool]]:
         """
         Easy-access defaults for properties.
         
