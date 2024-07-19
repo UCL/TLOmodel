@@ -205,40 +205,45 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
     }
 
     PROPERTIES = {
-        'ma_is_infected': Property(
-            Types.BOOL, 'Current status of malaria, infected with malaria parasitaemia'
+        "ma_is_infected": Property(
+            Types.BOOL, "Current status of malaria, infected with malaria parasitaemia"
         ),
-        'ma_date_infected': Property(Types.DATE, 'Date of latest infection'),
-        'ma_date_symptoms': Property(
-            Types.DATE, 'Date of symptom start for clinical infection'
+        "ma_date_infected": Property(Types.DATE, "Date of latest infection"),
+        "ma_date_symptoms": Property(
+            Types.DATE, "Date of symptom start for clinical infection"
         ),
-        'ma_date_death': Property(Types.DATE, 'Date of death due to malaria'),
-        'ma_tx': Property(Types.CATEGORICAL, 'Type of anti-malarial treatment person is currently using',
-                          categories=['none', 'uncomplicated', 'complicated']),
-        'ma_date_tx': Property(
-            Types.DATE, 'Date treatment started for most recent malaria episode'
-        ),
-        'ma_inf_type': Property(
+        "ma_date_death": Property(Types.DATE, "Date of death due to malaria"),
+        "ma_tx": Property(
             Types.CATEGORICAL,
-            'specific symptoms with malaria infection',
-            categories=['none', 'asym', 'clinical', 'severe'],
+            "Type of anti-malarial treatment person is currently using",
+            categories=["none", "uncomplicated", "complicated"],
+            default_property_value="none",
         ),
-        'ma_age_edited': Property(
-            Types.REAL, 'age values redefined to match with malaria data'
+        "ma_date_tx": Property(
+            Types.DATE, "Date treatment started for most recent malaria episode"
         ),
-        'ma_clinical_counter': Property(
-            Types.INT, 'annual counter for malaria clinical episodes'
+        "ma_inf_type": Property(
+            Types.CATEGORICAL,
+            "specific symptoms with malaria infection",
+            categories=["none", "asym", "clinical", "severe"],
+            default_property_value="none",
         ),
-        'ma_dx_counter': Property(
-            Types.INT, 'annual counter for malaria diagnoses'
+        "ma_age_edited": Property(
+            Types.REAL,
+            "age values redefined to match with malaria data",
+            default_property_value=0.0,
         ),
-        'ma_tx_counter': Property(
-            Types.INT, 'annual counter for malaria treatment episodes'
+        "ma_clinical_counter": Property(
+            Types.INT, "annual counter for malaria clinical episodes"
         ),
-        'ma_clinical_preg_counter': Property(
-            Types.INT, 'annual counter for malaria clinical episodes in pregnant women'
+        "ma_dx_counter": Property(Types.INT, "annual counter for malaria diagnoses"),
+        "ma_tx_counter": Property(
+            Types.INT, "annual counter for malaria treatment episodes"
         ),
-        'ma_iptp': Property(Types.BOOL, 'if woman has IPTp in current pregnancy'),
+        "ma_clinical_preg_counter": Property(
+            Types.INT, "annual counter for malaria clinical episodes in pregnant women"
+        ),
+        "ma_iptp": Property(Types.BOOL, "if woman has IPTp in current pregnancy"),
     }
 
     def read_parameters(self, data_folder):
@@ -376,26 +381,6 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
 
         self.lm["rr_of_severe_malaria"] = LinearModel.multiplicative(
             *(predictors + conditional_predictors))
-
-    def initialise_population(self, population):
-        df = population.props
-
-        # ----------------------------------- INITIALISE THE POPULATION-----------------------------------
-        # Set default for properties
-        df.loc[df.is_alive, 'ma_is_infected'] = False
-        df.loc[df.is_alive, 'ma_date_infected'] = pd.NaT
-        df.loc[df.is_alive, 'ma_date_symptoms'] = pd.NaT
-        df.loc[df.is_alive, 'ma_date_death'] = pd.NaT
-        df.loc[df.is_alive, 'ma_tx'] = 'none'
-        df.loc[df.is_alive, 'ma_date_tx'] = pd.NaT
-        df.loc[df.is_alive, 'ma_inf_type'] = 'none'
-        df.loc[df.is_alive, 'ma_age_edited'] = 0.0
-
-        df.loc[df.is_alive, 'ma_clinical_counter'] = 0
-        df.loc[df.is_alive, 'ma_dx_counter'] = 0
-        df.loc[df.is_alive, 'ma_tx_counter'] = 0
-        df.loc[df.is_alive, 'ma_clinical_preg_counter'] = 0
-        df.loc[df.is_alive, 'ma_iptp'] = False
 
     def malaria_poll2(self, population):
         df = population.props
