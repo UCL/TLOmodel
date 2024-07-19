@@ -30,7 +30,7 @@ class LongRun(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2099, 12, 31)
+        self.end_date = Date(2010, 1, 12)#Date(2099, 12, 31)
         self.pop_size = 20_000
         self.number_of_draws = 1
         self.runs_per_draw = 10
@@ -71,8 +71,6 @@ class LongRun(BaseScenario):
             }
          fullmodel_instance =  fullmodel_instance + [switcher]
          return fullmodel_instance
-    def draw_parameters(self, draw_number, rng):
-        return get_parameters_for_status_quo()
 
 if __name__ == '__main__':
     from tlo.cli import scenario_run
