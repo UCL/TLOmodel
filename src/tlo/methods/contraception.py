@@ -124,7 +124,7 @@ class Contraception(Module):
             Types.CATEGORICAL,
             "Current contraceptive method",
             categories=sorted(all_contraception_states),
-            default_category_value="not_using",
+            default_property_value="not_using",
         ),
         "is_pregnant": Property(
             Types.BOOL, "Whether this individual is currently pregnant"

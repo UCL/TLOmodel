@@ -179,7 +179,7 @@ class CareOfWomenDuringPregnancy(Module):
             Types.CATEGORICAL,
             "Treatment this woman is receiving for gestational " "diabetes",
             categories=["none", "diet_exercise", "orals", "insulin"],
-            default_category_value="none",
+            default_property_value="none",
         ),
         "ac_ectopic_pregnancy_treated": Property(
             Types.BOOL,
@@ -217,7 +217,7 @@ class CareOfWomenDuringPregnancy(Module):
                 "caesarean_future",
                 "avd_now",
             ],
-            default_category_value="none",
+            default_property_value="none",
         ),
     }
 

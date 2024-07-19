@@ -86,7 +86,7 @@ class ChronicSyndrome(Module, GenericFirstAppointmentsMixin):
             Types.CATEGORICAL,
             "Historical status: N=never; C=currently 2; P=previously",
             categories=["N", "C", "P"],
-            default_category_value="N",
+            default_property_value="N",
         ),
         "cs_date_acquired": Property(Types.DATE, "Date of latest infection"),
         "cs_scheduled_date_death": Property(

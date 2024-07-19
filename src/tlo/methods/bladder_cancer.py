@@ -178,7 +178,7 @@ class BladderCancer(Module, GenericFirstAppointmentsMixin):
             Types.CATEGORICAL,
             "Current status of the health condition, bladder cancer",
             categories=["none", "tis_t1", "t2p", "metastatic"],
-            default_category_value="none",
+            default_property_value="none",
         ),
         "bc_date_diagnosis": Property(
             Types.DATE,
@@ -193,7 +193,7 @@ class BladderCancer(Module, GenericFirstAppointmentsMixin):
             "the cancer stage at which treatment is given (because the treatment only has an effect during the stage"
             "at which it is given ",
             categories=["none", "tis_t1", "t2p", "metastatic"],
-            default_category_value="none",
+            default_property_value="none",
         ),
         "bc_date_palliative_care": Property(
             Types.DATE,

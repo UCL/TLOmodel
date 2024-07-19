@@ -136,9 +136,9 @@ class Property(Specifiable):
         object: float("nan"),
         np.uint32: 0,
     }
-    # Default value for categorical-properties, which needs to be set at instantiation
-    # for Properties defined by modules. Leave as None to be ignored.
-    _default_category_value: Any
+    # An overwrite for the default value map above, if a specific property needs
+    # to instantiate at a different default value.
+    _default_property_value: Any
 
     def __init__(
         self,
@@ -147,7 +147,7 @@ class Property(Specifiable):
         categories: Set[Any] = None,
         *,
         ordered: bool = False,
-        default_category_value: Optional[Any] = None,
+        default_property_value: Optional[Any] = None,
     ) -> None:
         """Create a new property specification.
 
@@ -158,27 +158,36 @@ class Property(Specifiable):
             ``Types.CATEGORICAL``.
         :param ordered: Whether categories are ordered  if ``type_`` is
             ``Types.CATEGORICAL``.
-        :param default_category_value: The default category in the set of categories to
-            assign on instantiation (if ``type_`` is ``Types.CATEGORICAL``). Value must
-            be in the categories argument to take effect, otherwise this will not be set.
+        :param default_property_value: The default value to assign to elements in a series
+            of this ``Property``. If ``type_`` is ``Types.CATEGORICAL``, this value must
+            be one of the supplied categories, otherwise it must be of type ``type_``.
         """
         if type_ in [Types.SERIES, Types.DATA_FRAME]:
             raise TypeError("Property cannot be of type SERIES or DATA_FRAME.")
-        
+
         super().__init__(type_, description, categories)
         self.ordered = ordered
 
-        if self.type_ is Types.CATEGORICAL and default_category_value in categories:
-            self._default_category_value = default_category_value
-        else:
-            self._default_category_value = None
+        # Set supplied default value, if appropriate
+        self._default_property_value = (
+            default_property_value
+            if default_property_value is not None
+            and (
+                (
+                    self.type_ is Types.CATEGORICAL
+                    and default_property_value in categories
+                )
+                or isinstance(default_property_value, self.python_type)
+            )
+            else None
+        )
 
     @property
     def _default_value(self) -> Type[Any]:
         return (
             self.PANDAS_TYPE_DEFAULT_VALUE_MAP[self.pandas_type]
-            if self._default_category_value is None
-            else self._default_category_value
+            if self._default_property_value is None
+            else self._default_property_value
         )
 
     def create_series(self, name: str, size: int) -> pd.Series:

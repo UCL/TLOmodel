@@ -462,14 +462,14 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
             "The attributable pathogen for the current episode of diarrhoea "
             "(np.nan if the person does not currently have diarrhoea).",
             categories=list(pathogens),
-            default_category_value=np.nan,
+            default_property_value=np.nan,
         ),
         "gi_type": Property(
             Types.CATEGORICAL,
             "Type (watery or blood) of the current episode of diarrhoea "
             "(np.nan if the person does not currently have diarrhoea).",
             categories=["watery", "bloody"],
-            default_category_value=np.nan,
+            default_property_value=np.nan,
         ),
         "gi_dehydration": Property(
             Types.CATEGORICAL,
@@ -480,7 +480,7 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
                 "some",  # <-- this level is not used currently.
                 "severe",
             ],
-            default_category_value=np.nan,
+            default_property_value=np.nan,
         ),
         "gi_duration_longer_than_13days": Property(
             Types.BOOL,

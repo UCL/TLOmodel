@@ -758,28 +758,28 @@ class Alri(Module, GenericFirstAppointmentsMixin):
             "If infected, what is the pathogen with which the person is currently infected. (np.nan if not "
             "infected)",
             categories=list(all_pathogens),
-            default_category_value=np.nan,
+            default_property_value=np.nan,
         ),
         # ---- The bacterial pathogen which is the attributed co-/secondary infection ----
         "ri_secondary_bacterial_pathogen": Property(
             Types.CATEGORICAL,
             "If infected, is there a secondary bacterial pathogen (np.nan if none or not applicable)",
             categories=list(pathogens["bacterial"]),
-            default_category_value=np.nan,
+            default_property_value=np.nan,
         ),
         # ---- The underlying Alri condition ----
         "ri_disease_type": Property(
             Types.CATEGORICAL,
             "If infected, what disease type is the person currently suffering from.",
             categories=disease_types,
-            default_category_value=np.nan,
+            default_property_value=np.nan,
         ),
         # ---- The peripheral oxygen saturation level ----
         "ri_SpO2_level": Property(
             Types.CATEGORICAL,
             "Peripheral oxygen saturation level (Sp02), measure for hypoxaemia",
             categories=["<90%", "90-92%", ">=93%"],
-            default_category_value=">=93%",
+            default_property_value=">=93%",
         ),
         # ---- Treatment Status ----
         "ri_on_treatment": Property(
