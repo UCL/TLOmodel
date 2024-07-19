@@ -16,14 +16,14 @@ from tlo.methods import (
 from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScenarioSwitcher
 
 # Start time for the simulation
-start_time = time.time()
+#start_time = time.time()
 
 # Paths for outputs and resources
-output_path = Path("./outputs/longterm_trends")
-resource_file_path = Path("./resources")
+#output_path = Path("./outputs/longterm_trends")
+#resource_file_path = Path("./resources")
 
 # Date-stamp for labeling log files and other outputs
-date_stamp = datetime.date.today().strftime("__%Y_%m_%d")
+#date_stamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 class LongRun(BaseScenario):
     def __init__(self):
