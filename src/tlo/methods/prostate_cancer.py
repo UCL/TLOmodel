@@ -160,40 +160,35 @@ class ProstateCancer(Module, GenericFirstAppointmentsMixin):
             Types.CATEGORICAL,
             "Current status of the health condition, prostate cancer",
             categories=["none", "prostate_confined", "local_ln", "metastatic"],
+            default_property_value="none",
         ),
         "pc_date_psa_test": Property(
-            Types.DATE,
-            "the date of psa test in response to symptoms"
+            Types.DATE, "the date of psa test in response to symptoms"
         ),
         "pc_date_biopsy": Property(
             Types.DATE,
-            "the date of biopsy in response to symptoms and positive psa test"
+            "the date of biopsy in response to symptoms and positive psa test",
         ),
         "pc_date_diagnosis": Property(
             Types.DATE,
-            "the date of diagnosis of the prostate cancer (pd.NaT if never diagnosed)"
+            "the date of diagnosis of the prostate cancer (pd.NaT if never diagnosed)",
         ),
-
         "pc_date_treatment": Property(
             Types.DATE,
-            "date of first receiving attempted curative treatment (pd.NaT if never started treatment)"
+            "date of first receiving attempted curative treatment (pd.NaT if never started treatment)",
         ),
-
         "pc_stage_at_which_treatment_given": Property(
             Types.CATEGORICAL,
             "the cancer stage at which treatment is given (because the treatment only has an effect during the stage"
             "at which it is given.",
             categories=["none", "prostate_confined", "local_ln", "metastatic"],
+            default_property_value="none",
         ),
-
         "pc_date_palliative_care": Property(
             Types.DATE,
-            "date of first receiving palliative care (pd.NaT is never had palliative care)"
+            "date of first receiving palliative care (pd.NaT is never had palliative care)",
         ),
-        "pc_date_death": Property(
-            Types.DATE,
-            "date pc death"
-        )
+        "pc_date_death": Property(Types.DATE, "date pc death"),
     }
 
     def read_parameters(self, data_folder):
@@ -220,19 +215,10 @@ class ProstateCancer(Module, GenericFirstAppointmentsMixin):
         )
 
     def initialise_population(self, population):
-        """Set property values for the initial population."""
-        df = population.props  # a shortcut to the data-frame
+        super().initialise_population(population=population)
+        
+        df = population.props
         p = self.parameters
-
-        # defaults
-        df.loc[df.is_alive, "pc_status"] = "none"
-        df.loc[df.is_alive, "pc_date_diagnosis"] = pd.NaT
-        df.loc[df.is_alive, "pc_date_treatment"] = pd.NaT
-        df.loc[df.is_alive, "pc_stage_at_which_treatment_given"] = "none"
-        df.loc[df.is_alive, "pc_date_palliative_care"] = pd.NaT
-        df.loc[df.is_alive, "pc_date_death"] = pd.NaT
-        df.loc[df.is_alive, "pc_date_psa_test"] = pd.NaT
-        df.loc[df.is_alive, "pc_date_biopsy"] = pd.NaT
 
         # -------------------- pc_status -----------
         # Determine who has cancer at ANY cancer stage:
