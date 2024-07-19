@@ -376,6 +376,9 @@ def test_mtct_during_breastfeeding_if_mother_infected_already(seed):
 
     child_id = sim.population.do_birth()
     sim.modules['Demography'].on_birth(mother_id, child_id)
+    # We need to explicitly set the breastfeeding status of the
+    # newborn infant, since by default is is nan
+    sim.population.props.loc[child_id, "nb_breastfeeding_status"] = "exclusive"
     sim.modules['Hiv'].on_birth(mother_id, child_id)
 
     # Check child is not yet HIV-positive
@@ -414,7 +417,10 @@ def test_mtct_during_breastfeeding_if_mother_infected_during_breastfeeding(seed)
     df.at[mother_id, 'date_of_last_pregnancy'] = sim.date
 
     child_id = sim.population.do_birth()
-    sim.modules['Demography'].on_birth(mother_id, child_id)
+    sim.modules["Demography"].on_birth(mother_id, child_id)
+    # We need to explicitly set the breastfeeding status of the
+    # newborn infant, since by default is is nan
+    sim.population.props.loc[child_id, "nb_breastfeeding_status"] = "exclusive"
     sim.modules['Hiv'].on_birth(mother_id, child_id)
 
     # Check child is not yet HIV-positive
