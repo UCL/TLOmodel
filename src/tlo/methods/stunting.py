@@ -133,12 +133,15 @@ class Stunting(Module, GenericFirstAppointmentsMixin):
     }
 
     PROPERTIES = {
-        'un_HAZ_category': Property(Types.CATEGORICAL,
-                                    'Indicator of current stunting status - the height-for-age z-score category:'
-                                    '"HAZ>=-2" == No Stunting (within 2 standard deviations of mean); '
-                                    '"-3<=HAZ<-2" == Non-Severe Stunting (2-3 standard deviations from mean); '
-                                    '"HAZ<-3 == Severe Stunting (more than 3 standard deviations from mean)',
-                                    categories=['HAZ<-3', '-3<=HAZ<-2', 'HAZ>=-2']),
+        "un_HAZ_category": Property(
+            Types.CATEGORICAL,
+            "Indicator of current stunting status - the height-for-age z-score category:"
+            '"HAZ>=-2" == No Stunting (within 2 standard deviations of mean); '
+            '"-3<=HAZ<-2" == Non-Severe Stunting (2-3 standard deviations from mean); '
+            '"HAZ<-3 == Severe Stunting (more than 3 standard deviations from mean)',
+            categories=["HAZ<-3", "-3<=HAZ<-2", "HAZ>=-2"],
+            default_property_value="HAZ>=-2",
+        ),
     }
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -155,11 +158,10 @@ class Stunting(Module, GenericFirstAppointmentsMixin):
 
     def initialise_population(self, population):
         """Set initial prevalence of stunting according to distributions provided in parameters"""
+        super().initialise_population(population=population)
+        
         df = population.props
         p = self.parameters
-
-        # Set default for property
-        df.loc[df.is_alive, 'un_HAZ_category'] = 'HAZ>=-2'
 
         def get_probs_stunting(_agegp):
             """For the a given HAZ distribution (specified in the parameters by age-group), find the odds of
