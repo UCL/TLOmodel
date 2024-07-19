@@ -142,16 +142,6 @@ class Measles(Module, GenericFirstAppointmentsMixin):
     def pre_initialise_population(self):
         self.process_parameters()
 
-    def initialise_population(self, population):
-        """Set our property values for the initial population.
-        set whole population to measles-free for 1st jan
-        """
-        df = population.props
-
-        df.loc[df.is_alive, "me_has_measles"] = False  # default: no individuals infected
-        df.loc[df.is_alive, "me_date_measles"] = pd.NaT
-        df.loc[df.is_alive, "me_on_treatment"] = False
-
     def initialise_simulation(self, sim):
         """Schedule measles event to start straight away. Each month it will assign new infections"""
         sim.schedule_event(MeaslesEvent(self), sim.date)
