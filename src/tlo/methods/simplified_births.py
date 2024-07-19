@@ -5,6 +5,7 @@
 
 import json
 from pathlib import Path
+from typing import Dict
 
 import pandas as pd
 
@@ -45,62 +46,81 @@ class SimplifiedBirths(Module):
 
     PROPERTIES = {
         # (Internal property)
-        'si_date_of_last_delivery': Property(Types.DATE,
-                                             'Date of delivery for the most recent pregnancy for this individual (if '
-                                             'has ever been pregnant). Maybe in the future if is currently pregnant.'),
-
+        "si_date_of_last_delivery": Property(
+            Types.DATE,
+            "Date of delivery for the most recent pregnancy for this individual (if "
+            "has ever been pregnant). Maybe in the future if is currently pregnant.",
+        ),
         # (Internal property)
-        'si_breastfeeding_status_6mo_to_23mo': Property(Types.CATEGORICAL,
-                                                        'How this neonate is breastfeed during ages 6mo to 23 months',
-                                                        categories=['none', 'non_exclusive', 'exclusive']),
-
+        "si_breastfeeding_status_6mo_to_23mo": Property(
+            Types.CATEGORICAL,
+            "How this neonate is breastfeed during ages 6mo to 23 months",
+            categories=["none", "non_exclusive", "exclusive"],
+            default_property_value="none",
+        ),
         # (Mocked property, usually handled by Contraception module)
-        'is_pregnant': Property(Types.BOOL,
-                                'Whether this individual is currently pregnant'),
-
+        "is_pregnant": Property(
+            Types.BOOL, "Whether this individual is currently pregnant"
+        ),
         # (Mocked property, usually handled by Contraception module)
-        'date_of_last_pregnancy': Property(Types.DATE,
-                                           'Date of the onset of the last pregnancy of this individual (if has ever '
-                                           'been pregnant).'),
-
+        "date_of_last_pregnancy": Property(
+            Types.DATE,
+            "Date of the onset of the last pregnancy of this individual (if has ever "
+            "been pregnant).",
+        ),
         # (Mocked property, usually managed by Newborn_outcomes module)
-        'nb_low_birth_weight_status': Property(Types.CATEGORICAL, 'temporary property',
-                                               categories=['extremely_low_birth_weight', 'very_low_birth_weight',
-                                                           'low_birth_weight', 'normal_birth_weight', 'macrosomia']),
-
+        "nb_low_birth_weight_status": Property(
+            Types.CATEGORICAL,
+            "temporary property",
+            categories=[
+                "extremely_low_birth_weight",
+                "very_low_birth_weight",
+                "low_birth_weight",
+                "normal_birth_weight",
+                "macrosomia",
+            ],
+            default_property_value="normal_birth_weight",
+        ),
         # (Mocked property, managed by Newborn_outcomes module)
-        'nb_size_for_gestational_age': Property(Types.CATEGORICAL, 'temporary property',
-                                                categories=['small_for_gestational_age', 'average_for_gestational_age',
-                                                            'large_for_gestational_age']),
-
+        "nb_size_for_gestational_age": Property(
+            Types.CATEGORICAL,
+            "temporary property",
+            categories=[
+                "small_for_gestational_age",
+                "average_for_gestational_age",
+                "large_for_gestational_age",
+            ],
+            default_property_value="average_for_gestational_age",
+        ),
         # (Mocked property, usually managed by Newborn_outcomes module)
-        'nb_late_preterm': Property(Types.BOOL, 'temporary property'),
-
+        "nb_late_preterm": Property(Types.BOOL, "temporary property"),
         # (Mocked property, usually managed by Newborn_outcomes module)
-        'nb_early_preterm': Property(Types.BOOL, 'temporary property'),
-
+        "nb_early_preterm": Property(Types.BOOL, "temporary property"),
         # (Mocked property, usually managed by Newborn_outcomes module)
-        'nb_breastfeeding_status': Property(Types.CATEGORICAL, 'temporary property',
-                                            categories=['none', 'non_exclusive', 'exclusive']),
+        "nb_breastfeeding_status": Property(
+            Types.CATEGORICAL,
+            "temporary property",
+            categories=["none", "non_exclusive", "exclusive"],
+            default_property_value="none",
+        ),
     }
+
+    @property
+    def default_properties(self) -> Dict[str, pd.NaT | str | bool]:
+        """
+        Easy-access defaults for properties.
+        
+        This attribute was needed before the initialise_population refactor,
+        however it can now be defined as a property rather than dynamically.
+        """
+        return {
+            p_name : p._default_value for p_name, p in self.PROPERTIES.items()
+        }
 
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
         self.asfr = dict()
-
-        # Define defaults for properties:
-        self.default_properties = {
-            'si_date_of_last_delivery': pd.NaT,
-            'si_breastfeeding_status_6mo_to_23mo': 'none',
-            'is_pregnant': False,
-            'date_of_last_pregnancy': pd.NaT,
-            'nb_low_birth_weight_status': 'normal_birth_weight',
-            'nb_size_for_gestational_age': 'average_for_gestational_age',
-            'nb_late_preterm': False,
-            'nb_early_preterm': False,
-            'nb_breastfeeding_status': 'none',
-        }
 
     def read_parameters(self, data_folder):
         """Load parameters for probability of pregnancy/birth and breastfeeding status for newborns"""
@@ -115,11 +135,6 @@ class SimplifiedBirths(Module):
         param_as_string = rf.loc[rf.parameter_name == 'prob_breastfeeding_type']['value'].iloc[0]
         parameter = json.loads(param_as_string)[0]
         self.parameters['prob_breastfeeding_type'] = parameter
-
-    def initialise_population(self, population):
-        """Set property values to their defaults for the initial population."""
-        df = population.props
-        df.loc[df.is_alive, self.default_properties.keys()] = self.default_properties.values()
 
     def initialise_simulation(self, sim):
         """Schedule the SimplifiedBirthsPoll and the SimplifiedBirthEvent to occur every month."""
