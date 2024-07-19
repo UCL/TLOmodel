@@ -143,11 +143,8 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
             _spec.update_parameters_from_schisto_module()
 
     def initialise_population(self, population):
-        """Set the property values for the initial population."""
-
-        df = population.props
-        df.loc[df.is_alive, f'{self.module_prefix}_last_PZQ_date'] = pd.NaT
-
+        super().initialise_population(population=population)
+        
         for _spec in self.species.values():
             _spec.initialise_population(population)
 
