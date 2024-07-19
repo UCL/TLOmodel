@@ -388,48 +388,108 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
     }
 
     PROPERTIES = {
-        'ps_gestational_age_in_weeks': Property(Types.REAL, 'current gestational age, in weeks, of a woman '
-                                                            'pregnancy'),
-        'ps_date_of_anc1': Property(Types.DATE, 'Date first ANC visit is scheduled for'),
-        'ps_ectopic_pregnancy': Property(Types.CATEGORICAL, 'Whether a woman is experiencing ectopic pregnancy and'
-                                                            ' its current state',
-                                         categories=['none', 'not_ruptured', 'ruptured']),
-        'ps_multiple_pregnancy': Property(Types.BOOL, 'Whether a woman is pregnant with multiple fetuses'),
-        'ps_placenta_praevia': Property(Types.BOOL, 'Whether a woman pregnancy will be complicated by placenta'
-                                                    'praevia'),
-        'ps_syphilis': Property(Types.BOOL, 'Whether a woman has syphilis during pregnancy'),
-        'ps_anaemia_in_pregnancy': Property(Types.CATEGORICAL, 'Whether a woman has anaemia in pregnancy and its '
-                                                               'severity',
-                                            categories=['none', 'mild', 'moderate', 'severe']),
-
-        'ps_anc4': Property(Types.BOOL, 'Whether this woman is predicted to attend 4 or more antenatal care visits '
-                                        'during her pregnancy'),
-        'ps_abortion_complications': Property(Types.BITSET, 'Bitset column holding types of abortion complication'),
-        'ps_prev_spont_abortion': Property(Types.BOOL, 'Whether this woman has had any previous pregnancies end in '
-                                                       'spontaneous abortion'),
-        'ps_prev_stillbirth': Property(Types.BOOL, 'Whether this woman has had any previous pregnancies end in '
-                                                   'still birth'),
-        'ps_htn_disorders': Property(Types.CATEGORICAL, 'if this woman suffers from a hypertensive disorder of '
-                                                        'pregnancy',
-                                     categories=['none', 'gest_htn', 'severe_gest_htn', 'mild_pre_eclamp',
-                                                 'severe_pre_eclamp', 'eclampsia']),
-        'ps_prev_pre_eclamp': Property(Types.BOOL, 'whether this woman has experienced pre-eclampsia in a previous '
-                                                   'pregnancy'),
-        'ps_gest_diab': Property(Types.CATEGORICAL, 'whether this woman is experiencing gestational diabetes',
-                                 categories=['none', 'uncontrolled', 'controlled']),
-        'ps_prev_gest_diab': Property(Types.BOOL, 'whether this woman has ever suffered from gestational diabetes '
-                                                  'during a previous pregnancy'),
-        'ps_placental_abruption': Property(Types.BOOL, 'Whether this woman is experiencing placental abruption'),
-        'ps_antepartum_haemorrhage': Property(Types.CATEGORICAL, 'severity of this womans antepartum haemorrhage',
-                                              categories=['none', 'mild_moderate', 'severe']),
-        'ps_premature_rupture_of_membranes': Property(Types.BOOL, 'whether this woman has experience rupture of '
-                                                                  'membranes before the onset of labour. If this is '
-                                                                  '<37 weeks from gestation the woman has preterm '
-                                                                  'premature rupture of membranes'),
-        'ps_chorioamnionitis': Property(Types.BOOL, 'Whether a woman is experiencing chorioamnionitis'),
-        'ps_emergency_event': Property(Types.BOOL, 'signifies a woman in undergoing an acute emergency event in her '
-                                                   'pregnancy- used to consolidated care seeking in the instance of '
-                                                   'multiple complications')
+        "ps_gestational_age_in_weeks": Property(
+            Types.REAL,
+            "current gestational age, in weeks, of a woman " "pregnancy",
+            default_property_value=0.0,
+        ),
+        "ps_date_of_anc1": Property(
+            Types.DATE, "Date first ANC visit is scheduled for"
+        ),
+        "ps_ectopic_pregnancy": Property(
+            Types.CATEGORICAL,
+            "Whether a woman is experiencing ectopic pregnancy and"
+            " its current state",
+            categories=["none", "not_ruptured", "ruptured"],
+            default_property_value="none",
+        ),
+        "ps_multiple_pregnancy": Property(
+            Types.BOOL, "Whether a woman is pregnant with multiple fetuses"
+        ),
+        "ps_placenta_praevia": Property(
+            Types.BOOL,
+            "Whether a woman pregnancy will be complicated by placenta" "praevia",
+        ),
+        "ps_syphilis": Property(
+            Types.BOOL, "Whether a woman has syphilis during pregnancy"
+        ),
+        "ps_anaemia_in_pregnancy": Property(
+            Types.CATEGORICAL,
+            "Whether a woman has anaemia in pregnancy and its " "severity",
+            categories=["none", "mild", "moderate", "severe"],
+            default_property_value="none",
+        ),
+        "ps_anc4": Property(
+            Types.BOOL,
+            "Whether this woman is predicted to attend 4 or more antenatal care visits "
+            "during her pregnancy",
+        ),
+        "ps_abortion_complications": Property(
+            Types.BITSET, "Bitset column holding types of abortion complication"
+        ),
+        "ps_prev_spont_abortion": Property(
+            Types.BOOL,
+            "Whether this woman has had any previous pregnancies end in "
+            "spontaneous abortion",
+        ),
+        "ps_prev_stillbirth": Property(
+            Types.BOOL,
+            "Whether this woman has had any previous pregnancies end in " "still birth",
+        ),
+        "ps_htn_disorders": Property(
+            Types.CATEGORICAL,
+            "if this woman suffers from a hypertensive disorder of " "pregnancy",
+            categories=[
+                "none",
+                "gest_htn",
+                "severe_gest_htn",
+                "mild_pre_eclamp",
+                "severe_pre_eclamp",
+                "eclampsia",
+            ],
+            default_property_value="none",
+        ),
+        "ps_prev_pre_eclamp": Property(
+            Types.BOOL,
+            "whether this woman has experienced pre-eclampsia in a previous "
+            "pregnancy",
+        ),
+        "ps_gest_diab": Property(
+            Types.CATEGORICAL,
+            "whether this woman is experiencing gestational diabetes",
+            categories=["none", "uncontrolled", "controlled"],
+            default_property_value="none",
+        ),
+        "ps_prev_gest_diab": Property(
+            Types.BOOL,
+            "whether this woman has ever suffered from gestational diabetes "
+            "during a previous pregnancy",
+        ),
+        "ps_placental_abruption": Property(
+            Types.BOOL, "Whether this woman is experiencing placental abruption"
+        ),
+        "ps_antepartum_haemorrhage": Property(
+            Types.CATEGORICAL,
+            "severity of this womans antepartum haemorrhage",
+            categories=["none", "mild_moderate", "severe"],
+            default_property_value="none",
+        ),
+        "ps_premature_rupture_of_membranes": Property(
+            Types.BOOL,
+            "whether this woman has experience rupture of "
+            "membranes before the onset of labour. If this is "
+            "<37 weeks from gestation the woman has preterm "
+            "premature rupture of membranes",
+        ),
+        "ps_chorioamnionitis": Property(
+            Types.BOOL, "Whether a woman is experiencing chorioamnionitis"
+        ),
+        "ps_emergency_event": Property(
+            Types.BOOL,
+            "signifies a woman in undergoing an acute emergency event in her "
+            "pregnancy- used to consolidated care seeking in the instance of "
+            "multiple complications",
+        ),
     }
 
     def read_parameters(self, data_folder):
@@ -470,29 +530,9 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
                  }
 
     def initialise_population(self, population):
+        super().initialise_population(population=population)
+
         df = population.props
-
-        df.loc[df.is_alive, 'ps_gestational_age_in_weeks'] = 0
-        df.loc[df.is_alive, 'ps_date_of_anc1'] = pd.NaT
-        df.loc[df.is_alive, 'ps_ectopic_pregnancy'] = 'none'
-        df.loc[df.is_alive, 'ps_placenta_praevia'] = False
-        df.loc[df.is_alive, 'ps_multiple_pregnancy'] = False
-        df.loc[df.is_alive, 'ps_syphilis'] = False
-        df.loc[df.is_alive, 'ps_anaemia_in_pregnancy'] = 'none'
-        df.loc[df.is_alive, 'ps_anc4'] = False
-        df.loc[df.is_alive, 'ps_abortion_complications'] = 0
-        df.loc[df.is_alive, 'ps_prev_spont_abortion'] = False
-        df.loc[df.is_alive, 'ps_prev_stillbirth'] = False
-        df.loc[df.is_alive, 'ps_htn_disorders'] = 'none'
-        df.loc[df.is_alive, 'ps_prev_pre_eclamp'] = False
-        df.loc[df.is_alive, 'ps_gest_diab'] = 'none'
-        df.loc[df.is_alive, 'ps_prev_gest_diab'] = False
-        df.loc[df.is_alive, 'ps_placental_abruption'] = False
-        df.loc[df.is_alive, 'ps_antepartum_haemorrhage'] = 'none'
-        df.loc[df.is_alive, 'ps_premature_rupture_of_membranes'] = False
-        df.loc[df.is_alive, 'ps_chorioamnionitis'] = False
-        df.loc[df.is_alive, 'ps_emergency_event'] = False
-
         # This bitset property stores 'types' of complication that can occur after an abortion
         self.abortion_complications = BitsetHandler(self.sim.population, 'ps_abortion_complications',
                                                     ['sepsis', 'haemorrhage', 'injury', 'other'])
