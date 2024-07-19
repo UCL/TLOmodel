@@ -38,7 +38,7 @@ class LongRun(BaseScenario):
     def log_configuration(self):
         return {
             'filename': 'longterm_trends_all_diseases',
-            'directory': './outputs/longterm_trends',
+            'directory':  Path('./outputs'),
             'custom_levels': {
                 '*': logging.WARNING,
                 'tlo.methods.demography': logging.INFO,
@@ -71,6 +71,9 @@ class LongRun(BaseScenario):
             }
          fullmodel_instance =  fullmodel_instance + [switcher]
          return fullmodel_instance
+
+    def draw_parameters(self, draw_number, rng):
+        return
 
 if __name__ == '__main__':
     from tlo.cli import scenario_run
