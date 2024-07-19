@@ -15,9 +15,13 @@ class Wasting(Module):
     INIT_DEPENDENCIES = {'Demography'}
 
     PROPERTIES = {
-        'un_clinical_acute_malnutrition': Property(Types.CATEGORICAL,
-                                                   'temporary property', categories=['MAM', 'SAM', 'well']),
-        'un_ever_wasted': Property(Types.BOOL, 'temporary property')
+        "un_clinical_acute_malnutrition": Property(
+            Types.CATEGORICAL,
+            "temporary property",
+            categories=["MAM", "SAM", "well"],
+            default_property_value="well",
+        ),
+        "un_ever_wasted": Property(Types.BOOL, "temporary property"),
     }
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -26,11 +30,6 @@ class Wasting(Module):
 
     def read_parameters(self, data_folder):
         pass
-
-    def initialise_population(self, population):
-        df = population.props
-        df.loc[df.is_alive, 'un_clinical_acute_malnutrition'] = 'well'
-        df.loc[df.is_alive, 'un_ever_wasted'] = False
 
     def initialise_simulation(self, sim):
         pass
