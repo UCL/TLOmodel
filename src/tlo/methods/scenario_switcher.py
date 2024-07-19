@@ -94,9 +94,6 @@ class ImprovedHealthSystemAndCareSeekingScenarioSwitcher(Module):
                         f"module={module}, name={name}.",
                     )
 
-    def initialise_population(self, population):
-        pass
-
     def initialise_simulation(self, sim):
         """Schedule an event at which the parameters are changed."""
 
