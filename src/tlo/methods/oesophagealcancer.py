@@ -187,29 +187,43 @@ class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
         "oc_status": Property(
             Types.CATEGORICAL,
             "Current status of the health condition, oesophageal dysplasia",
-            categories=["none", "low_grade_dysplasia", "high_grade_dysplasia", "stage1", "stage2", "stage3", "stage4"],
+            categories=[
+                "none",
+                "low_grade_dysplasia",
+                "high_grade_dysplasia",
+                "stage1",
+                "stage2",
+                "stage3",
+                "stage4",
+            ],
+            default_property_value="none",
         ),
-
         "oc_date_diagnosis": Property(
             Types.DATE,
-            "the date of diagnsosis of the oes_cancer (pd.NaT if never diagnosed)"
+            "the date of diagnsosis of the oes_cancer (pd.NaT if never diagnosed)",
         ),
-
         "oc_date_treatment": Property(
             Types.DATE,
-            "date of first receiving attempted curative treatment (pd.NaT if never started treatment)"
+            "date of first receiving attempted curative treatment (pd.NaT if never started treatment)",
         ),
-
         "oc_stage_at_which_treatment_applied": Property(
             Types.CATEGORICAL,
             "the cancer stage at which treatment is applied (because the treatment only has an effect during the stage"
             "at which it is applied.",
-            categories=["none", "low_grade_dysplasia", "high_grade_dysplasia", "stage1", "stage2", "stage3", "stage4"],
+            categories=[
+                "none",
+                "low_grade_dysplasia",
+                "high_grade_dysplasia",
+                "stage1",
+                "stage2",
+                "stage3",
+                "stage4",
+            ],
+            default_property_value="none",
         ),
-
         "oc_date_palliative_care": Property(
             Types.DATE,
-            "date of first receiving palliative care (pd.NaT is never had palliative care)"
+            "date of first receiving palliative care (pd.NaT is never had palliative care)",
         ),
     }
 
@@ -228,16 +242,10 @@ class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
         )
 
     def initialise_population(self, population):
-        """Set property values for the initial population."""
-        df = population.props  # a shortcut to the data-frame
-        p = self.parameters
+        super().initialise_population(population=population)
 
-        # defaults
-        df.loc[df.is_alive, "oc_status"] = "none"
-        df.loc[df.is_alive, "oc_date_diagnosis"] = pd.NaT
-        df.loc[df.is_alive, "oc_date_treatment"] = pd.NaT
-        df.loc[df.is_alive, "oc_stage_at_which_treatment_applied"] = "none"
-        df.loc[df.is_alive, "oc_date_palliative_care"] = pd.NaT
+        df = population.props
+        p = self.parameters
 
         # -------------------- oc_status -----------
         # Determine who has cancer at ANY cancer stage:
