@@ -110,9 +110,29 @@ class Skeleton(Module):
         responsible for assigning initial values, for every individual, of those properties
         'owned' by this module, i.e. those declared in the PROPERTIES dictionary above.
 
+        - If all you need to do at this stage is set the properties owned by this module to
+        their defaults, you don't need to define this method as this will happen automatically -
+        you can safely delete this method.
+        - If you want to do something in addition to setting the properties to their defaults
+        (EG sample a random amount of the initial population to infect with a disease) then you
+        should call super().initialise_population(population=population) right at the top of
+        this method, and then perform your additional steps underneath. This will ensure your
+        module's properties are still set for individuals you don't consider.
+        - If you want to handle the setting of the initial values entirely by yourself (which is
+        not recommended) then you will need to implement this here without calling
+        super().initialise_population.
+
         :param population: the population of individuals
         """
-        raise NotImplementedError
+        # The command below sets all the PROPERTIES defined above to their defaults.
+        # If you don't want your properties to be automatically set, delete the command
+        # below.
+        # If all you want to do is have your properties set to their defaults,
+        # you can just delete this entire function and its docstring.
+        super().initialise_population(population=population)
+
+        # If you have additional tasks to perform after setting your properties,
+        # you should do them here after calling super().
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.

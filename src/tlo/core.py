@@ -372,6 +372,11 @@ class Module:
 
         By default, all ``Property``s in ``self.PROPERTIES`` will have
         their columns set to the default value for their dtype in the population dataframe.
+        Modules that inherit from this class do not have to redefine this method to obtain
+        this behaviour by default, however if you want to add additional steps or initialise
+        your properties in another way, you may need to define this method explicitly and
+        call super().initialise_population. See the template docstring in
+        ``tlo.methods.skeleton.initialise_population`` for more information.
 
         TODO: We probably need to declare somehow which properties we 'read' here, so the
         simulation knows what order to initialise modules in!
