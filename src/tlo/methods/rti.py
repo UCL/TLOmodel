@@ -1026,16 +1026,21 @@ class RTI(Module, GenericFirstAppointmentsMixin):
 
     # Define the module's parameters
     PROPERTIES = {
-        'rt_road_traffic_inc': Property(Types.BOOL, 'involved in a road traffic injury'),
-        'rt_inj_severity': Property(Types.CATEGORICAL,
-                                    'Injury status relating to road traffic injury: none, mild, severe',
-                                    categories=['none', 'mild', 'severe'],
-                                    ),
+        "rt_road_traffic_inc": Property(
+            Types.BOOL, "involved in a road traffic injury"
+        ),
+        "rt_inj_severity": Property(
+            Types.CATEGORICAL,
+            "Injury status relating to road traffic injury: none, mild, severe",
+            categories=["none", "mild", "severe"],
+            default_property_value="none",
+        ),
         **{
-            f'rt_injury_{injury_index}': Property(
+            f"rt_injury_{injury_index}": Property(
                 Types.CATEGORICAL,
-                f'Codes for injury {injury_index} from RTI',
+                f"Codes for injury {injury_index} from RTI",
                 categories=categories,
+                default_property_value="none",
             )
             # hacky solution to avoid issue that names defined in class scope are not
             # accessible in scope of comprehension expresions _except for_ outermost
@@ -1045,44 +1050,95 @@ class RTI(Module, GenericFirstAppointmentsMixin):
             )
         },
         **{
-            f'rt_date_to_remove_daly_{injury_index}': Property(
+            f"rt_date_to_remove_daly_{injury_index}": Property(
                 Types.DATE,
-                f'Date to remove the daly weight for injury {injury_index}',
+                f"Date to remove the daly weight for injury {injury_index}",
             )
             for injury_index in INJURY_INDICES
         },
-        'rt_in_shock': Property(Types.BOOL, 'A property determining if this person is in shock'),
-        'rt_death_from_shock': Property(Types.BOOL, 'whether this person died from shock'),
-        'rt_injuries_to_cast': Property(Types.LIST, 'A list of injuries that are to be treated with casts'),
-        'rt_injuries_for_minor_surgery': Property(Types.LIST, 'A list of injuries that are to be treated with a minor'
-                                                              'surgery'),
-        'rt_injuries_for_major_surgery': Property(Types.LIST, 'A list of injuries that are to be treated with a minor'
-                                                              'surgery'),
-        'rt_injuries_to_heal_with_time': Property(Types.LIST, 'A list of injuries that heal without further treatment'),
-        'rt_injuries_for_open_fracture_treatment': Property(Types.LIST, 'A list of injuries that with open fracture '
-                                                                        'treatment'),
-        'rt_ISS_score': Property(Types.INT, 'The ISS score associated with the injuries resulting from a road traffic'
-                                            'accident'),
-        'rt_perm_disability': Property(Types.BOOL, 'whether the injuries from an RTI result in permanent disability'),
-        'rt_polytrauma': Property(Types.BOOL, 'polytrauma from RTI'),
-        'rt_imm_death': Property(Types.BOOL, 'death at scene True/False'),
-        'rt_diagnosed': Property(Types.BOOL, 'Person has had their injuries diagnosed'),
-        'rt_post_med_death': Property(Types.BOOL, 'death in following month despite medical intervention True/False'),
-        'rt_no_med_death': Property(Types.BOOL, 'death in following month without medical intervention True/False'),
-        'rt_unavailable_med_death': Property(Types.BOOL, 'death in the following month without medical intervention '
-                                                         'being able to be provided'),
-        'rt_recovery_no_med': Property(Types.BOOL, 'recovery without medical intervention True/False'),
-        'rt_disability': Property(Types.REAL, 'disability weight for current month'),
-        'rt_date_inj': Property(Types.DATE, 'date of latest injury'),
-        'rt_med_int': Property(Types.BOOL, 'whether this person is currently undergoing medical treatment'),
-        'rt_in_icu_or_hdu': Property(Types.BOOL, 'whether this person is currently in ICU for RTI'),
-        'rt_MAIS_military_score': Property(Types.INT, 'the maximum AIS-military score, used as a proxy to calculate the'
-                                                      'probability of mortality without medical intervention'),
-        'rt_date_death_no_med': Property(Types.DATE, 'the date which the person has is scheduled to die without medical'
-                                                     'intervention'),
-        'rt_debugging_DALY_wt': Property(Types.REAL, 'The true value of the DALY weight burden'),
-        'rt_injuries_left_untreated': Property(Types.LIST, 'A list of injuries that have been left untreated due to a '
-                                                           'blocked intervention')
+        "rt_in_shock": Property(
+            Types.BOOL, "A property determining if this person is in shock"
+        ),
+        "rt_death_from_shock": Property(
+            Types.BOOL, "whether this person died from shock"
+        ),
+        "rt_injuries_to_cast": Property(
+            Types.LIST, "A list of injuries that are to be treated with casts"
+        ),
+        "rt_injuries_for_minor_surgery": Property(
+            Types.LIST,
+            "A list of injuries that are to be treated with a minor" "surgery",
+        ),
+        "rt_injuries_for_major_surgery": Property(
+            Types.LIST,
+            "A list of injuries that are to be treated with a minor" "surgery",
+        ),
+        "rt_injuries_to_heal_with_time": Property(
+            Types.LIST, "A list of injuries that heal without further treatment"
+        ),
+        "rt_injuries_for_open_fracture_treatment": Property(
+            Types.LIST, "A list of injuries that with open fracture " "treatment"
+        ),
+        "rt_ISS_score": Property(
+            Types.INT,
+            "The ISS score associated with the injuries resulting from a road traffic"
+            "accident",
+        ),
+        "rt_perm_disability": Property(
+            Types.BOOL,
+            "whether the injuries from an RTI result in permanent disability",
+        ),
+        "rt_polytrauma": Property(Types.BOOL, "polytrauma from RTI"),
+        "rt_imm_death": Property(Types.BOOL, "death at scene True/False"),
+        "rt_diagnosed": Property(Types.BOOL, "Person has had their injuries diagnosed"),
+        "rt_post_med_death": Property(
+            Types.BOOL,
+            "death in following month despite medical intervention True/False",
+        ),
+        "rt_no_med_death": Property(
+            Types.BOOL,
+            "death in following month without medical intervention True/False",
+        ),
+        "rt_unavailable_med_death": Property(
+            Types.BOOL,
+            "death in the following month without medical intervention "
+            "being able to be provided",
+        ),
+        "rt_recovery_no_med": Property(
+            Types.BOOL, "recovery without medical intervention True/False"
+        ),
+        "rt_disability": Property(
+            Types.REAL,
+            "disability weight for current month",
+            default_property_value=0.0,
+        ),
+        "rt_date_inj": Property(Types.DATE, "date of latest injury"),
+        "rt_med_int": Property(
+            Types.BOOL, "whether this person is currently undergoing medical treatment"
+        ),
+        "rt_in_icu_or_hdu": Property(
+            Types.BOOL, "whether this person is currently in ICU for RTI"
+        ),
+        "rt_MAIS_military_score": Property(
+            Types.INT,
+            "the maximum AIS-military score, used as a proxy to calculate the"
+            "probability of mortality without medical intervention",
+        ),
+        "rt_date_death_no_med": Property(
+            Types.DATE,
+            "the date which the person has is scheduled to die without medical"
+            "intervention",
+        ),
+        "rt_debugging_DALY_wt": Property(
+            Types.REAL,
+            "The true value of the DALY weight burden",
+            default_property_value=0.0,
+        ),
+        "rt_injuries_left_untreated": Property(
+            Types.LIST,
+            "A list of injuries that have been left untreated due to a "
+            "blocked intervention",
+        ),
     }
 
     # Declare Metadata
@@ -1474,31 +1530,12 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         """Sets up the default properties used in the RTI module and applies them to the dataframe. The default state
         for the RTI module is that people haven't been involved in a road traffic accident and are therefor alive and
         healthy."""
+        super().initialise_population(population=population)
+
+        # Set LIST-valued dataframe columns manually
         df = population.props
-        df.loc[df.is_alive, 'rt_road_traffic_inc'] = False
-        df.loc[df.is_alive, 'rt_inj_severity'] = "none"  # default: no one has been injured in a RTI
-        for injury_index in RTI.INJURY_INDICES:
-            df.loc[df.is_alive, f'rt_injury_{injury_index}'] = "none"
-            df.loc[df.is_alive, f'rt_date_to_remove_daly_{injury_index}'] = pd.NaT
-        df.loc[df.is_alive, 'rt_in_shock'] = False
-        df.loc[df.is_alive, 'rt_death_from_shock'] = False
-        df.loc[df.is_alive, 'rt_polytrauma'] = False
-        df.loc[df.is_alive, 'rt_ISS_score'] = 0
-        df.loc[df.is_alive, 'rt_perm_disability'] = False
-        df.loc[df.is_alive, 'rt_imm_death'] = False  # default: no one is dead on scene of crash
-        df.loc[df.is_alive, 'rt_diagnosed'] = False
-        df.loc[df.is_alive, 'rt_recovery_no_med'] = False  # default: no recovery without medical intervention
-        df.loc[df.is_alive, 'rt_post_med_death'] = False  # default: no death after medical intervention
-        df.loc[df.is_alive, 'rt_no_med_death'] = False
-        df.loc[df.is_alive, 'rt_unavailable_med_death'] = False
-        df.loc[df.is_alive, 'rt_disability'] = 0  # default: no DALY
-        df.loc[df.is_alive, 'rt_date_inj'] = pd.NaT
-        df.loc[df.is_alive, 'rt_med_int'] = False
-        df.loc[df.is_alive, 'rt_in_icu_or_hdu'] = False
-        df.loc[df.is_alive, 'rt_MAIS_military_score'] = 0
-        df.loc[df.is_alive, 'rt_date_death_no_med'] = pd.NaT
-        df.loc[df.is_alive, 'rt_debugging_DALY_wt'] = 0
         alive_count = sum(df.is_alive)
+
         df.loc[df.is_alive, 'rt_injuries_to_cast'] = pd.Series([[] for _ in range(alive_count)])
         df.loc[df.is_alive, 'rt_injuries_for_minor_surgery'] = pd.Series([[] for _ in range(alive_count)])
         df.loc[df.is_alive, 'rt_injuries_for_major_surgery'] = pd.Series([[] for _ in range(alive_count)])
