@@ -41,6 +41,8 @@ class LongRun(BaseScenario):
             'directory':  Path('./outputs'),
             'custom_levels': {
                 '*': logging.WARNING,
+                "*": logging.DEBUG,
+                "*": logging.FATAL,
                 'tlo.methods.demography': logging.INFO,
                 'tlo.methods.demography.detail': logging.WARNING,
                 'tlo.methods.healthburden': logging.INFO,
