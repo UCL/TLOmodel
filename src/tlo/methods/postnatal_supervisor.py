@@ -208,45 +208,64 @@ class PostnatalSupervisor(Module):
     }
 
     PROPERTIES = {
-        'pn_postnatal_period_in_weeks': Property(Types.REAL, 'The number of weeks a woman is in the postnatal period '
-                                                             '(1-6)'),
-        'pn_htn_disorders': Property(Types.CATEGORICAL, 'Hypertensive disorders of the postnatal period',
-                                     categories=['none', 'resolved', 'gest_htn', 'severe_gest_htn', 'mild_pre_eclamp',
-                                                 'severe_pre_eclamp', 'eclampsia']),
-        'pn_postpartum_haem_secondary': Property(Types.BOOL, 'Whether this woman is experiencing a secondary '
-                                                             'postpartum haemorrhage'),
-        'pn_sepsis_late_postpartum': Property(Types.BOOL, 'Whether this woman is experiencing postnatal (day7+) '
-                                                          'sepsis'),
-        'pn_obstetric_fistula': Property(Types.CATEGORICAL, 'Type of fistula developed after birth',
-                                         categories=['none', 'vesicovaginal', 'rectovaginal']),
-        'pn_sepsis_early_neonatal': Property(Types.BOOL, 'Whether this neonate has developed early onset neonatal'
-                                                         ' sepsis during week one of life'),
-        'pn_sepsis_late_neonatal': Property(Types.BOOL, 'Whether this neonate has developed late neonatal sepsis '
-                                                        'following discharge'),
-        'pn_anaemia_following_pregnancy': Property(Types.CATEGORICAL, 'severity of anaemia following pregnancy',
-                                                   categories=['none', 'mild', 'moderate', 'severe']),
-        'pn_emergency_event_mother': Property(Types.BOOL, 'Whether a mother is experiencing an emergency complication'
-                                                          ' postnatally'),
+        "pn_postnatal_period_in_weeks": Property(
+            Types.REAL,
+            "The number of weeks a woman is in the postnatal period " "(1-6)",
+            default_property_value=0.0,
+        ),
+        "pn_htn_disorders": Property(
+            Types.CATEGORICAL,
+            "Hypertensive disorders of the postnatal period",
+            categories=[
+                "none",
+                "resolved",
+                "gest_htn",
+                "severe_gest_htn",
+                "mild_pre_eclamp",
+                "severe_pre_eclamp",
+                "eclampsia",
+            ],
+            default_property_value="none",
+        ),
+        "pn_postpartum_haem_secondary": Property(
+            Types.BOOL,
+            "Whether this woman is experiencing a secondary " "postpartum haemorrhage",
+        ),
+        "pn_sepsis_late_postpartum": Property(
+            Types.BOOL, "Whether this woman is experiencing postnatal (day7+) " "sepsis"
+        ),
+        "pn_obstetric_fistula": Property(
+            Types.CATEGORICAL,
+            "Type of fistula developed after birth",
+            categories=["none", "vesicovaginal", "rectovaginal"],
+            default_property_value="none",
+        ),
+        "pn_sepsis_early_neonatal": Property(
+            Types.BOOL,
+            "Whether this neonate has developed early onset neonatal"
+            " sepsis during week one of life",
+        ),
+        "pn_sepsis_late_neonatal": Property(
+            Types.BOOL,
+            "Whether this neonate has developed late neonatal sepsis "
+            "following discharge",
+        ),
+        "pn_anaemia_following_pregnancy": Property(
+            Types.CATEGORICAL,
+            "severity of anaemia following pregnancy",
+            categories=["none", "mild", "moderate", "severe"],
+            default_property_value="none",
+        ),
+        "pn_emergency_event_mother": Property(
+            Types.BOOL,
+            "Whether a mother is experiencing an emergency complication" " postnatally",
+        ),
     }
 
     def read_parameters(self, data_folder):
         parameter_dataframe = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_PostnatalSupervisor.xlsx',
                                             sheet_name='parameter_values')
         self.load_parameters_from_dataframe(parameter_dataframe)
-
-    def initialise_population(self, population):
-        df = population.props
-
-        df.loc[df.is_alive, 'pn_postnatal_period_in_weeks'] = 0
-        df.loc[df.is_alive, 'pn_htn_disorders'] = 'none'
-        df.loc[df.is_alive, 'pn_postpartum_haem_secondary'] = False
-        df.loc[df.is_alive, 'pn_sepsis_late_postpartum'] = False
-        df.loc[df.is_alive, 'pn_sepsis_early_neonatal'] = False
-        df.loc[df.is_alive, 'pn_sepsis_late_neonatal'] = False
-        df.loc[df.is_alive, 'pn_sepsis_late_neonatal'] = False
-        df.loc[df.is_alive, 'pn_anaemia_following_pregnancy'] = 'none'
-        df.loc[df.is_alive, 'pn_obstetric_fistula'] = 'none'
-        df.loc[df.is_alive, 'pn_emergency_event_mother'] = False
 
     def initialise_simulation(self, sim):
         # For the first period (2010-2015) we use the first value in each list as a parameter
