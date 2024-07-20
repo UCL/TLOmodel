@@ -1442,7 +1442,7 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Current counts, total hiv negative
         out.update({
             f'total_hivneg_{k}': v for k, v in df.loc[df.is_alive & (df['sex'] == 'F') &
-                                               (df['age_years'] > 15) & (df['hv_inf'])].ce_hpv_cc_status.value_counts().items()})
+                                               (df['age_years'] > 15) & (~df['hv_inf'])].ce_hpv_cc_status.value_counts().items()})
 
         # Get the day of the year
         day_of_year = self.sim.date.timetuple().tm_yday

@@ -45,7 +45,7 @@ resourcefilepath = Path("./resources")
 
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2025, 1, 1)
+end_date = Date(2024, 1, 1)
 popsize = 17000
 
 def run_sim(service_availability):
@@ -200,7 +200,7 @@ out_df_5 = pd.read_csv(output_csv_file)
 columns_to_calculate = ['total_hivneg_none', 'total_hivneg_hpv', 'total_hivneg_cin1', 'total_hivneg_cin2', 'total_hivneg_cin3',
                         'total_hivneg_stage1','total_hivneg_stage2a', 'total_hivneg_stage2b', 'total_hivneg_stage3', 'total_hivneg_stage4']
 for column in columns_to_calculate:
-    new_column_name = column.replace('total_hivneg', '')
+    new_column_name = column.replace('total_hivneg_', '')
     out_df_5[f'proportion_hivneg_{new_column_name}'] = out_df_5[column] / out_df_5[columns_to_calculate].sum(axis=1)
 print(out_df_5)
 columns_to_plot = ['proportion_hivneg_hpv', 'proportion_hivneg_cin1', 'proportion_hivneg_cin2', 'proportion_hivneg_cin3',
