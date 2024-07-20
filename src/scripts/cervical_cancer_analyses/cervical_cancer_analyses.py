@@ -87,7 +87,7 @@ scale_factor = 17000000 / popsize
 print(scale_factor)
 
 
-# plot number of deaths in past year
+# plot number of cervical cancer deaths in past year
 out_df = pd.read_csv(output_csv_file)
 # out_df = pd.read_csv('C:/Users/User/PycharmProjects/TLOmodel/outputs/output_data.csv', encoding='ISO-8859-1')
 out_df = out_df[['n_deaths_past_year', 'rounded_decimal_year']].dropna()
@@ -99,6 +99,22 @@ plt.plot(out_df['rounded_decimal_year'], out_df['n_deaths_past_year'], marker='o
 plt.title('Total deaths by Year')
 plt.xlabel('Year')
 plt.ylabel('Total deaths past year')
+plt.grid(True)
+plt.ylim(0, 10000)
+plt.show()
+
+
+# plot number of cervical cancer deaths in hivneg in past year
+out_df_6 = pd.read_csv(output_csv_file)
+out_df_6 = out_df_6[['n_deaths_cc_hivneg_past_year', 'rounded_decimal_year']].dropna()
+out_df_6 = out_df_6[out_df_6['rounded_decimal_year'] >= 2011]
+out_df_6['n_deaths_cc_hivneg_past_year'] = out_df_6['n_deaths_past_year'] * scale_factor
+print(out_df_6)
+plt.figure(figsize=(10, 6))
+plt.plot(out_df_6['rounded_decimal_year'], out_df_6['n_deaths_cc_hivneg_past_year'], marker='o')
+plt.title('Total deaths cervical cancer in hivneg by Year')
+plt.xlabel('Year')
+plt.ylabel('Total deaths cervical cancer in hivneg past year')
 plt.grid(True)
 plt.ylim(0, 10000)
 plt.show()
