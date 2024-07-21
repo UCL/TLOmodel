@@ -1453,7 +1453,8 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         date_1_year_ago = self.sim.date - pd.DateOffset(days=365)
         n_deaths_past_year = df.ce_date_death.between(date_1_year_ago, self.sim.date).sum()
-        n_deaths_cc_hivneg_past_year = (~df['hv_inf'] & df.ce_date_death.between(date_1_year_ago, self.sim.date)).sum()
+        n_deaths_cc_hivneg_past_year = ((~df['hv_inf']) & df.ce_date_death.between(date_1_year_ago, self.sim.date)).sum()
+        n_deaths_cc_hiv_past_year = ((df['hv_inf']) & df.ce_date_death.between(date_1_year_ago, self.sim.date)).sum()
         n_treated_past_year = df.ce_date_treatment.between(date_1_year_ago, self.sim.date).sum()
 
         date_1p25_years_ago = self.sim.date - pd.DateOffset(days=456)
@@ -1540,6 +1541,7 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         out.update({"rounded_decimal_year": rounded_decimal_year})
         out.update({"n_deaths_past_year": n_deaths_past_year})
         out.update({"n_deaths_cc_hivneg_past_year": n_deaths_cc_hivneg_past_year})
+        out.update({"n_deaths_cc_hiv_past_year": n_deaths_cc_hiv_past_year})
         out.update({"n_treated_past_year": n_treated_past_year})
         out.update({"prop_cc_hiv": prop_cc_hiv})
         out.update({"n_diagnosed_past_year_stage1": n_diagnosed_past_year_stage1})
@@ -1597,7 +1599,8 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
               'total_hivneg_stage2a:', out['total_hivneg_stage2a'], 'total_hivneg_stage2b:', out['total_hivneg_stage2b'],
               'total_hivneg_stage3:', out['total_hivneg_stage3'], 'total_hivneg_stage4:', out['total_hivneg_stage4'],
               'year:', out['rounded_decimal_year'], 'deaths_past_year:', out['n_deaths_past_year'],
-              out['n_deaths_cc_hivneg_past_year'],
+              'n_deaths_cc_hivneg_past_year:', out['n_deaths_cc_hivneg_past_year'],
+              'n_deaths_cc_hiv_past_year:', out['n_deaths_cc_hiv_past_year'],
               'treated past year:', out['n_treated_past_year'], 'prop cc hiv:', out['prop_cc_hiv'],
               'n_vaginal_bleeding_stage1:', out['n_vaginal_bleeding_stage1'],
               'n_vaginal_bleeding_stage2a:', out['n_vaginal_bleeding_stage2a'],

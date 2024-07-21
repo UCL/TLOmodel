@@ -45,7 +45,7 @@ resourcefilepath = Path("./resources")
 
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2024, 1, 1)
+end_date = Date(2025, 1, 1)
 popsize = 17000
 
 def run_sim(service_availability):
@@ -108,7 +108,7 @@ plt.show()
 out_df_6 = pd.read_csv(output_csv_file)
 out_df_6 = out_df_6[['n_deaths_cc_hivneg_past_year', 'rounded_decimal_year']].dropna()
 out_df_6 = out_df_6[out_df_6['rounded_decimal_year'] >= 2011]
-out_df_6['n_deaths_cc_hivneg_past_year'] = out_df_6['n_deaths_past_year'] * scale_factor
+out_df_6['n_deaths_cc_hivneg_past_year'] = out_df_6['n_deaths_cc_hivneg_past_year'] * scale_factor
 print(out_df_6)
 plt.figure(figsize=(10, 6))
 plt.plot(out_df_6['rounded_decimal_year'], out_df_6['n_deaths_cc_hivneg_past_year'], marker='o')
