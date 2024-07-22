@@ -2990,7 +2990,11 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
             self.module.consumables.availability = self._parameters['cons_availability']
 
         if 'beds_availability' in self._parameters:
-            self.module.bed_days.availability = self._parameters['beds_availability']
+            self.module.bed_days.switch_beddays_availability(
+                new_availability=self._parameters["beds_availability"],
+                effective_on_and_from=self.sim.date,
+                model_to_data_popsize_ratio=self.sim.modules["Demography"].initial_model_to_data_popsize_ratio
+            )
 
         if 'equip_availability' in self._parameters:
             self.module.equipment.availability = self._parameters['equip_availability']
