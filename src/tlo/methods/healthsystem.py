@@ -1715,7 +1715,6 @@ class HealthSystem(Module):
                 did_run=did_run,
                 priority=priority,
             )
-            #if did_run and len(actual_appt_footprint) != 0 and not all(x == 0 for x in actual_appt_footprint):
             self.write_to_hsi_no_blank_footprint_log(
                 event_details=hsi_event.as_namedtuple(actual_appt_footprint),
                 person_id=hsi_event.target,
@@ -1802,8 +1801,17 @@ class HealthSystem(Module):
         did_run: bool,
         priority: int,
     ):
-        """Write the log `HSI_Event` and add to the summary counter only if the appointment footprint is not blank."""
-        # Debug logger gives simple line-list for every HSI event
+        """Write the log `HSI_Event` and add to the summary counter only if the appointment footprint is not blank.
+               :param event_details: What event_details is responsible for
+               :param TREATMENT_ID: the treatment ID of the HSI that ran
+               :param Number_By_Appt_Type_Code: dictionary with number of HSIs types
+               :param Person_ID:  A sequence of person ID index values to use as the targets of the HSI events being scheduled
+               :param priority: The priority for the HSI events: 0 (highest), 1 or 2 (lowest). Either a single value for all events or an iterable of per-target values.
+               :param did_run: Boolean asserting if the HSI event did happen
+               :param Facility_Level: The level of the facility where the HSI ran. Can be 0, 1a, 1b, 2, 3, 4, or 5.
+               :param Facility_id: Facility where the HSI ran
+               :param Equipment: The set of equipment that is used in the HSI.
+               """
         logger.debug(
             key="HSI_Event_No_Blank_Footprint",
             data={
@@ -1990,6 +1998,11 @@ class HealthSystem(Module):
         self._never_ran_hsi_event_counts_log_period.clear()
 
     def _write_hsi_event_no_blank_counts_to_log_and_reset(self):
+        """
+        Logs and resets the counts of HSI events with no blank footprint.
+        _hsi_event_no_blank_counts_log_period: Stores the number of HSI events with no blank footprint for the current logging period.
+        _hsi_event_no_blank_counts_cumulative: Stores the cumulative number of HSI events with no blank footprint across all periods.
+        """
         logger_summary.info(
             key="hsi_event_no_blank_counts",
             description=(
@@ -2826,11 +2839,14 @@ class HealthSystemSummaryCounter:
 
     def record_hsi_event_no_blank_appt_footprints(self,
                                                   treatment_id: str,
-                                                  hsi_event_name: str,
                                                   appt_footprint: Counter,
                                                   level: str
                                                   ) -> None:
-        """Add information about a`HSI_Event` that has a non-blank appointment footprint to the running summaries."""
+        """Add information about a`HSI_Event` that has a non-blank appointment footprint to the running summaries.
+            :param treatment_id: the treatment ID of the HSI that ran
+            :param appt_footprint: the appointment footprint (mins) for the HSI
+            :param level: the facility level of the HSI
+        """
 
         # Count the treatment_id:
         self._no_blank_appt_treatment_ids[treatment_id] += 1
@@ -2880,7 +2896,7 @@ class HealthSystemSummaryCounter:
                 "Number_By_Appt_Type_Code_And_Level": self._never_ran_appts_by_level,
             },
         )
-            # Log summary of HSI_Events that do not have a blank appointment footprint
+        # Log summary of HSI_Events that do not have a blank appointment footprint
         logger_summary.info(
             key="HSI_Event_non_blank_appt_footprint",
             description = "Counts of the HSI_Events that do not have a blank appointment footprint in this calendar year by TREATMENT_ID, "
