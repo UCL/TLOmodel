@@ -54,7 +54,7 @@ def run_simulation(popsize,
                    scaleup_WASH):
 
     start_date = Date(2010, 1, 1)
-    end_date = Date(2015, 12, 31)
+    end_date = Date(2040, 12, 31)
 
     # For logging
     custom_levels = {
@@ -102,7 +102,7 @@ sim, output = run_simulation(popsize=15_000,
                              use_really_simplified_births=False,
                              equal_allocation_by_district=True,
                              hs_disable_and_reject_all=False,  # if True, no HSIs run
-                             mda_execute=False,
+                             mda_execute=True,
                              scaleup_WASH=False)
 
 

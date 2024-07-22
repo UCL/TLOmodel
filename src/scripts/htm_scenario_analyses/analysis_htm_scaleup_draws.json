@@ -1,0 +1,95 @@
+{
+  "scenario_script_path": "src/scripts/htm_scenario_analyses/analysis_htm_scaleup.py",
+  "scenario_seed": 0,
+  "arguments": [],
+  "runs_per_draw": 1,
+  "draws": [
+    {
+      "draw_number": 0,
+      "parameters": {
+        "Hiv": {
+          "do_scaleup": false,
+          "scaleup_start_year": 2019
+        },
+        "Tb": {
+          "do_scaleup": false,
+          "scaleup_start_year": 2019
+        },
+        "Malaria": {
+          "do_scaleup": false,
+          "scaleup_start_year": 2019
+        }
+      }
+    },
+    {
+      "draw_number": 1,
+      "parameters": {
+        "Hiv": {
+          "do_scaleup": true,
+          "scaleup_start_year": 2019
+        },
+        "Tb": {
+          "do_scaleup": false,
+          "scaleup_start_year": 2019
+        },
+        "Malaria": {
+          "do_scaleup": false,
+          "scaleup_start_year": 2019
+        }
+      }
+    },
+    {
+      "draw_number": 2,
+      "parameters": {
+        "Hiv": {
+          "do_scaleup": false,
+          "scaleup_start_year": 2019
+        },
+        "Tb": {
+          "do_scaleup": true,
+          "scaleup_start_year": 2019
+        },
+        "Malaria": {
+          "do_scaleup": false,
+          "scaleup_start_year": 2019
+        }
+      }
+    },
+    {
+      "draw_number": 3,
+      "parameters": {
+        "Hiv": {
+          "do_scaleup": false,
+          "scaleup_start_year": 2019
+        },
+        "Tb": {
+          "do_scaleup": false,
+          "scaleup_start_year": 2019
+        },
+        "Malaria": {
+          "do_scaleup": true,
+          "scaleup_start_year": 2019
+        }
+      }
+    },
+    {
+      "draw_number": 4,
+      "parameters": {
+        "Hiv": {
+          "do_scaleup": true,
+          "scaleup_start_year": 2019
+        },
+        "Tb": {
+          "do_scaleup": true,
+          "scaleup_start_year": 2019
+        },
+        "Malaria": {
+          "do_scaleup": true,
+          "scaleup_start_year": 2019
+        }
+      }
+    }
+  ],
+  "commit": "fdceeed5790a57342bf8da8ca1899e73f5ebdc07",
+  "github": "https://github.com/UCL/TLOmodel/tree/fdceeed5790a57342bf8da8ca1899e73f5ebdc07"
+}

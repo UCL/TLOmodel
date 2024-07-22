@@ -264,12 +264,17 @@ class Schisto(Module):
 
         # Set properties to be not-infected (any species), and zero-out all worm burden information.
         for spec_prefix in [_spec.prefix for _spec in self.species.values()]:
-            pzq_efficacy = self.parameters[f'PZQ_efficacy_{spec_prefix}']
+            pzq_efficacy = self.parameters[f'{spec_prefix}_PZQ_efficacy']
+
             # df.loc[person_id, f'{self.module_prefix}_{spec_prefix}_aggregate_worm_burden'] = 0
             df.loc[person_id, f'{self.module_prefix}_{spec_prefix}_aggregate_worm_burden'] = df.loc[
                                                                                                  person_id, f'{self.module_prefix}_{spec_prefix}_aggregate_worm_burden'] * (
                                                                                                  1 - pzq_efficacy)
-            df.loc[person_id, f'{self.module_prefix}_{spec_prefix}_infection_status'] = 'Non-infected'
+            # todo if worm burden >1, still infected
+            mask = df.loc[person_id, f'{self.module_prefix}_{spec_prefix}_aggregate_worm_burden'] == 0
+            df.loc[mask.index[mask], f'{self.module_prefix}_{spec_prefix}_infection_status'] = 'Non-infected'
+
+            # df.loc[person_id, f'{self.module_prefix}_{spec_prefix}_infection_status'] = 'Non-infected'
             # df.loc[person_id, f'{self.module_prefix}_{spec_prefix}_start_of_prevalent_period'] = pd.NaT
             # df.loc[person_id, f'{self.module_prefix}_{spec_prefix}_start_of_high_infection'] = pd.NaT
 
@@ -298,15 +303,19 @@ class Schisto(Module):
             parameters[_param_name] = float(param_list[_param_name])
 
         # MDA coverage - historic
-        historical_mda = workbook['MDA_historical_Coverage'].set_index(['District', 'Year'])[
-            ['Coverage PSAC', 'Coverage SAC', 'Coverage Adults']]
-        historical_mda.columns = historical_mda.columns.str.replace('Coverage ', '')
+        # todo this is updated now with the EPSEN data
+        historical_mda = workbook['ESPEN_MDA'].set_index(['District', 'Year'])[
+            ['EpiCov_PSAC', 'EpiCov_SAC', 'EpiCov_Adults']]
+        historical_mda.columns = historical_mda.columns.str.replace('EpiCov_', '')
+
         parameters['MDA_coverage_historical'] = historical_mda.astype(float)
+        # clip upper limit of MDA coverage at 99%
+        parameters['MDA_coverage_historical'] = parameters['MDA_coverage_historical'].clip(upper=0.99)
 
         # MDA coverage - prognosed
         prognosed_mda = workbook['MDA_prognosed_Coverage'].set_index(['District', 'Frequency'])[
-            ['Coverage PSAC', 'Coverage SAC', 'Coverage Adults']]
-        prognosed_mda.columns = prognosed_mda.columns.str.replace('Coverage ', '')
+            ['Cov_PSAC', 'Cov_SAC', 'Cov_Adults']]
+        prognosed_mda.columns = prognosed_mda.columns.str.replace('Cov_', '')
         parameters['MDA_coverage_prognosed'] = prognosed_mda.astype(float)
 
         return parameters
@@ -350,17 +359,17 @@ class Schisto(Module):
     def _calculate_praziquantel_dosage(self, person_id):
         age = self.sim.population.props.at[person_id, "age_years"]
 
-        # PZQ dose is 20mg per 1kg BW, 3x per day
-
+        # 40mg per kg, as single dose (MSTG)
+        # in children <4 years, 20mg/kg
         # assume child 0-5, maximum weight 17.5kg (WHO- average between girls/boys)
         if age < 5:
-            dose = 20 * 17.5 * 3
+            dose = 20 * 17.5
         # child aged 5-15, use mid-point age 10: 50th percentile weight=30kg
         elif age >= 5 and age < 15:
-            dose = 20 * 30 * 3
+            dose = 40 * 30
         # adult, average weight 62kg
         else:
-            dose = 20 * 62 * 3
+            dose = 40 * 62
 
         return int(dose)
 

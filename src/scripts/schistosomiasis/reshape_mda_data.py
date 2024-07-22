@@ -104,6 +104,16 @@ districts = pop_file['District'].drop_duplicates().to_list()
 for district in districts:
     assert district in ordered_df['ADMIN2'].values, f"District '{district}' not found in dataframe."
 
+ordered_df.rename(columns={'ADMIN2': 'District'}, inplace=True)
+
+# add column coverage PSAC
+ordered_df['Cov_PSAC'] = 0
+ordered_df['EpiCov_PSAC'] = 0
+
+# divide all coverage columns by 100 to get proportion covered
+columns_to_divide = ordered_df.filter(regex='^(EpiCov|Cov)').columns
+ordered_df[columns_to_divide] = ordered_df[columns_to_divide] / 100
+
 # Save the transformed data to a new CSV file
 output_file_path = '/Users/tmangal/Documents/Thanzi_docs/Schisto/data_MW_SCH_iu_MDA_wide.csv'
 ordered_df.to_csv(output_file_path, index=False)
