@@ -2240,7 +2240,6 @@ class HealthSystem(Module):
 
     def hsi_no_blank_footprint_event_counts(self) -> Counter:
         """Counts of details of HSI events with no blank footprint which have run so far in simulation.
-
         Returns a ``Counter`` instance with keys ``HSIEventDetail`` named tuples
         corresponding to details of HSI events with no blank footprint that have run over simulation so far.
         """
