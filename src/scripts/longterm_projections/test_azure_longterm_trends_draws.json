@@ -2,13 +2,13 @@
   "scenario_script_path": "/Users/rem76/PycharmProjects/TLOmodel/src/scripts/longterm_projections/test_azure_longterm_trends.py",
   "scenario_seed": 0,
   "arguments": [],
-  "runs_per_draw": 10,
+  "runs_per_draw": 1,
   "draws": [
     {
       "draw_number": 0,
       "parameters": null
     }
   ],
-  "commit": "10ce02dd1948998a2f671a7b5c632dbfe2bcbf5a",
-  "github": "https://github.com/UCL/TLOmodel/tree/10ce02dd1948998a2f671a7b5c632dbfe2bcbf5a"
+  "commit": "a357d1df43e302b9b07df6539fe9251ebf0e9d5d",
+  "github": "https://github.com/UCL/TLOmodel/tree/a357d1df43e302b9b07df6539fe9251ebf0e9d5d"
 }
