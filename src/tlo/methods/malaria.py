@@ -1060,7 +1060,7 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
         )
 
         # Log the test: line-list of summary information about each test
-        fever_present = 'fever' in self.sim.modules["SymptomManager"].has_what(person_id)
+        fever_present = 'fever' in self.sim.modules["SymptomManager"].has_what(person_id=person_id)
         person_details_for_test = {
             'person_id': person_id,
             'age': df.at[person_id, 'age_years'],
@@ -1152,7 +1152,7 @@ class HSI_Malaria_rdt_community(HSI_Event, IndividualScopeEventMixin):
         )
 
         # Log the test: line-list of summary information about each test
-        fever_present = 'fever' in self.sim.modules["SymptomManager"].has_what(person_id)
+        fever_present = 'fever' in self.sim.modules["SymptomManager"].has_what(person_id=person_id)
         person_details_for_test = {
             'person_id': person_id,
             'age': df.at[person_id, 'age_years'],
@@ -1214,7 +1214,7 @@ class HSI_Malaria_Treatment(HSI_Event, IndividualScopeEventMixin):
 
                 # rdt is offered as part of the treatment package
                 # Log the test: line-list of summary information about each test
-                fever_present = 'fever' in self.sim.modules["SymptomManager"].has_what(person_id)
+                fever_present = 'fever' in self.sim.modules["SymptomManager"].has_what(person_id=person_id)
                 person_details_for_test = {
                     'person_id': person_id,
                     'age': df.at[person_id, 'age_years'],
@@ -1311,7 +1311,7 @@ class HSI_Malaria_Treatment_Complicated(HSI_Event, IndividualScopeEventMixin):
 
                 # rdt is offered as part of the treatment package
                 # Log the test: line-list of summary information about each test
-                fever_present = 'fever' in self.sim.modules["SymptomManager"].has_what(person_id)
+                fever_present = 'fever' in self.sim.modules["SymptomManager"].has_what(person_id=person_id)
                 person_details_for_test = {
                     'person_id': person_id,
                     'age': df.at[person_id, 'age_years'],
