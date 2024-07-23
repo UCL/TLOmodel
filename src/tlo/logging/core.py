@@ -277,10 +277,6 @@ class Logger:
 
         :returns: String with JSON-encoded data row and optionally header row.
         """
-        # message level less than than the logger level, early exit
-        if level < self._std_logger.level:
-            return
-
         data = _get_log_data_as_dict(data)
         data = _convert_numpy_scalars_to_python_types(data)
         header_json = None
