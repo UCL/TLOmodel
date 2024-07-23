@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import Date, Simulation
-from tlo.analysis.utils import compare_number_of_deaths, parse_log_file
+from tlo.analysis.utils import compare_number_of_deaths, extract_results, parse_log_file, summarize
 from tlo.methods import (
     cardio_metabolic_disorders,
     demography,
@@ -22,7 +22,17 @@ from tlo.methods import (
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     PREFIX_ON_FILENAME = 1
-    output = parse_log_file(output_folder)
+    output = summarize(extract_results(results_folder,
+                                          module="tlo.methods.cardio_metabolic_disorders",
+                                          key="population",
+                                          column="total",
+                                          index="date",
+                                          do_scaling=True
+                                          ),
+                          collapse_columns=True
+                          )
+    output = parse_log_file(output_folder + 'tlo.methods.cardio_metabolic_disorders.log')
+    print(output)
     datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
     make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}.png"  # noqa: E731
