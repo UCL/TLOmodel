@@ -318,9 +318,12 @@ equip = pd.DataFrame(
 )
 
 equip['EquipmentEverUsed'] = equip['EquipmentEverUsed'].apply(ast.literal_eval)
+equip.loc[equip.Facility_Level.isin(['3', '4', '5']),'District'] = 'Central' # Assign a district name for Central health facilities
+districts.add('Central')
 
 # Extract a list of equipment which was used at each facility level within each district
 equipment_used = {district: {level: [] for level in fac_levels} for district in districts} # create a dictionary with a key for each district and facility level
+
 for dist in districts:
     for level in fac_levels:
         equip_subset = equip[(equip['District'] == dist) & (equip['Facility_Level'] == level)]
@@ -337,6 +340,7 @@ for item in list_of_equipment_used:
     for dist_fac_index in equipment_df.index:
         equipment_df.loc[equipment_df.index == dist_fac_index, str(item)] = equipment_used[equipment_used.index == dist_fac_index].isin([item]).any(axis=1)
 equipment_df.to_csv('./outputs/equipment_use.csv')
+
 equipment_df = equipment_df.reset_index().rename(columns = {'level_0' : 'District', 'level_1': 'Facility_Level'})
 equipment_df = pd.melt(equipment_df, id_vars = ['District', 'Facility_Level']).rename(columns = {'variable': 'Item_code', 'value': 'whether_item_was_used'})
 equipment_df['Item_code'] = pd.to_numeric(equipment_df['Item_code'])
