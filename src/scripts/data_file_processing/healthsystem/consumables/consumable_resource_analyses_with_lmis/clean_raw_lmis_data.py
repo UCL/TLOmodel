@@ -39,7 +39,7 @@ figurespath.mkdir(parents=True, exist_ok=True) # create directory if it doesn't 
 # Define relevant dictionaries for analysis
 months_dict = {1: 'January', 2: 'February', 3: 'March', 4: 'April', 5: 'May', 6: 'June', 7: 'July', 8: 'August',
                9: 'September', 10: 'October', 11: 'November', 12: 'December'}
-years_dict = {1: 2021, 2: 2022, 3: 2023}
+years_dict = {1: 2018, 2: 2021, 3: 2022, 4: 2023}
 districts_dict = {1: 'Balaka', 2: 'Blantyre', 3: 'Chikwawa', 4: 'Chiradzulu', 5: 'Chitipa', 6: 'Dedza',
                   7: 'Dowa', 8: 'Karonga', 9: 'Kasungu', 10: 'Lilongwe', 11: 'Machinga', 12: 'Mangochi',
                   13: 'Mchinji', 14: 'Mulanje', 15: 'Mwanza', 16: 'Mzimba North', 17: 'Mzimba South',
@@ -51,16 +51,17 @@ def rename_lmis_columns(_df):
     columns_to_rename = {
         'District Name': 'district',
         'Code': 'fac_code',
-        'Facility Name': 'fac_name',
         'Managed By': 'fac_owner',
-        'Product Name': 'item',
-        'Program Name': 'program',
         'Dispensed': 'dispensed',
         'AMC': 'average_monthly_consumption',
-        'Closing Balance': 'closing_bal',
         'MOS': 'months_of_stock',
-        'Stockout Days': 'stkout_days',
-        'Availability': 'available_days'
+        'Availability': 'available_days',
+        'Facility Name': 'fac_name',
+        # 2018 dataset variables
+        'Name (Geographic Zones)': 'district',
+        'Name (Facility Operators)': 'fac_owner',
+        'Name': 'fac_name',
+        'Name (Facility Types)': 'fac_type',
     }
 
     # Iterating through existing columns to find matches and rename
@@ -69,8 +70,21 @@ def rename_lmis_columns(_df):
             columns_to_rename[col] = 'qty_received'
         elif col.lower().replace(" ", "") in ['quantityissued', 'issuedquantity', 'dispensed']:
             columns_to_rename[col] = 'dispensed'
+        elif 'program' in col.lower():
+            columns_to_rename[col] = 'program'
+        elif 'year' in col.lower():
+            columns_to_rename[col] = 'year'
+        elif col.lower().replace(" ", "") in ['rmonth', 'month']:
+            columns_to_rename[col] = 'month'
+        elif col.lower().replace(" ", "") in ['closingbal', 'closingbalance']:
+            columns_to_rename[col] = 'closing_bal'
+        elif 'productname' in col.lower().replace(" ", ""):
+            columns_to_rename[col] = 'item'
+        elif 'stockoutdays' in col.lower().replace(" ", ""):
+            columns_to_rename[col] = 'stkout_days'
 
     _df.rename(columns=columns_to_rename, inplace=True)
+
 
 # Define function to assign facilities to TLO model levels based on facility names
 # See link: https://docs.google.com/spreadsheets/d/1fcp2-smCwbo0xQDh7bRUnMunCKguBzOIZjPFZKlHh5Y/edit#gid=0
@@ -80,16 +94,20 @@ def assign_facilty_level_based_on_facility_names(_df):
                     (_df['fac_name'].str.replace(' ', '').str.replace('center','centre').str.lower().str.contains('healthcentre')) | \
                     (_df['fac_name'].str.replace(' ', '').str.lower().str.contains('maternity')) | \
                     (_df['fac_name'].str.replace(' ', '').str.lower().str.contains('dispensary')) | \
-                    (_df['fac_name'].str.replace(' ', '').str.lower().str.contains('opd'))
+                    (_df['fac_name'].str.replace(' ', '').str.lower().str.contains('opd')) | \
+                    (_df['fac_type'] == 'Clinic') | (_df['fac_type'] == 'Health Centre')
     cond_level_1b = (_df['fac_name'].str.replace(' ', '').str.lower().str.contains('communityhospital')) | \
                    (_df['fac_name'].str.replace(' ', '').str.lower().str.contains('ruralhospital')) | \
                    (_df['fac_name'].str.replace(' ', '').str.lower().str.contains('stpetershospital')) | \
                    (_df['fac_name'].str.replace(' ', '').str.lower().str.contains('policecollegehospital')) | \
-                   (_df['fac_owner'] == 'CHAM')
+                   (_df['fac_owner'] == 'CHAM') | (_df['fac_type'] == 'CHAM') | \
+                   (_df['fac_type'] == 'Rural/Community Hospital')
     cond_level_2 =  (_df['fac_name'].str.replace(' ', '').str.lower().str.contains('districthealthoffice')) | \
                    (_df['fac_name'].str.replace(' ', '').str.lower().str.contains('districthospital')) | \
-                   (_df['fac_name'].str.replace(' ', '').str.lower().str.contains('dho'))
-    cond_level_3 =  (_df['fac_name'].str.replace(' ', '').str.lower().str.contains('centralhospital'))
+                   (_df['fac_name'].str.replace(' ', '').str.lower().str.contains('dho')) | \
+                    (_df['fac_type'] == 'District Health Office')
+    cond_level_3 =  (_df['fac_name'].str.replace(' ', '').str.lower().str.contains('centralhospital')) | \
+                    (_df['fac_type'] == 'Central Hospital')
     cond_level_4 = (_df['fac_name'].str.replace(' ', '').str.lower().str.contains('zombamentalhospital'))
     _df['fac_level'] = ''
     _df.loc[cond_level_0, 'fac_level'] = '0'
@@ -147,11 +165,11 @@ def generate_summary_heatmap(_df,
 # %%
 # 1. DATA IMPORT AND CLEANING ##
 #########################################################################################
-for y in range(1,len(years_dict)+1):
+for y in range(2,len(years_dict)+1): # the format of the 2018 dataset received was different from the other years so we start at 2 here
     print("processing year ", years_dict[y])
     for m in range(1, 13):
         print("processing month ", months_dict[m])
-        if ((m == 1) & (y == 1)):
+        if ((m == 1) & (y == 2)):
             lmis = pd.read_excel(path_to_files_in_the_tlo_dropbox / f'OpenLMIS/{years_dict[y]}/{months_dict[m]}.xlsx')
             lmis['month'] = months_dict[m]
             lmis['year'] = years_dict[y]
@@ -163,6 +181,16 @@ for y in range(1,len(years_dict)+1):
             rename_lmis_columns(monthly_lmis)
             lmis = pd.concat([lmis, monthly_lmis], axis=0, ignore_index=True)
 lmis_raw = copy.deepcopy(lmis)
+rename_lmis_columns(lmis)
+
+# append 2018 data
+col_list = ['year', 'month', 'district', 'fac_owner', 'fac_name', 'program', 'item', 'closing_bal', 'dispensed', 'stkout_days',
+            'average_monthly_consumption', 'qty_received', 'fac_type']
+lmis_2018 = pd.read_csv(path_to_files_in_the_tlo_dropbox / 'OpenLMIS/ResourceFile_LMIS_2018.csv', low_memory=False)
+rename_lmis_columns(lmis_2018)
+
+lmis['fac_type'] = np.nan
+lmis = pd.concat([lmis[col_list], lmis_2018[col_list]], axis=0, ignore_index=True)
 
 # Drop empty rows
 lmis = lmis[lmis.fac_name.notna()]
@@ -181,37 +209,113 @@ assign_facilty_level_based_on_facility_names(lmis)
 full_district_set = set(districts_dict.values())
 for y in range(1,len(years_dict)+1):
     for m in range(1, 13):
-        print("Checking consistency in data for ", months_dict[m], ", ",  years_dict[y])
+        #print("Checking consistency in data for ", months_dict[m], ", ",  years_dict[y])
         monthly_lmis = lmis[(lmis.month == months_dict[m]) & (lmis.year == years_dict[y])]
         #assert(len(monthly_lmis[monthly_lmis.fac_level == '2']['fac_name'].unique()) == 28) # number of District hospitals
         #assert (len(monthly_lmis[monthly_lmis.fac_level == '3']['fac_name'].unique()) == 4)  # number of Central hospitals
         #assert (len(monthly_lmis[monthly_lmis.fac_level == '4']['fac_name'].unique()) == 1)  # Zomba Mental Hospital
         #assert (len(monthly_lmis[monthly_lmis.stkout_days.notna()]) != 0)  # non-empty data
         districts_in_data = set(monthly_lmis[monthly_lmis.fac_level == '2']['district'].unique())
-        if  districts_in_data!= full_district_set:
-            print(districts_in_data.difference(full_district_set))
+        if (districts_in_data != full_district_set):
+            print(years_dict[y], months_dict[m], ": Districts not in data", full_district_set.difference(districts_in_data))
         central_hospitals = monthly_lmis[monthly_lmis.fac_level == '3']['fac_name'].unique()
         if len(central_hospitals) != 4:
-            print("central hospitals included ", central_hospitals)
+            print(years_dict[y], months_dict[m], ": only the following central hospitals included - ", central_hospitals)
         mental_hospitals = monthly_lmis[monthly_lmis.fac_level == '4']['fac_name'].unique()
         if len(mental_hospitals) != 1:
-            print("mental hospitals included ", mental_hospitals)
+            print(years_dict[y], months_dict[m], ": mental hospitals included - ", mental_hospitals)
 
         # There is data from levels 0, 1a, and 1b from all districts
         for level in ['0', '1a', '1b']:
-            assert(len(monthly_lmis[monthly_lmis.fac_level == level]) != 0)
+            if (len(monthly_lmis[monthly_lmis.fac_level == level]) == 0):
+                print(years_dict[y], months_dict[m], ": No facilities reporting at level ", level)
+            #assert(len(monthly_lmis[monthly_lmis.fac_level == level]) != 0)
 
 print('Data import complete and ready for analysis; verified that data is complete')
+# TODO extract the above missing data as a summary table
 
+# Clean inconsistent names of consumables across years
 # Extract a list of consumables along with the year_month during which they were reported
 lmis['program_item'] = lmis['program'].astype(str) + "---" +  lmis['item'].astype(str)
 consumable_reporting_rate = lmis.groupby(['program_item', 'year_month'])['fac_name'].nunique().reset_index()
 consumable_reporting_rate = consumable_reporting_rate.pivot( 'program_item', 'year_month', 'fac_name')
 consumable_reporting_rate.to_csv(figurespath / 'consumable_reporting_rate.csv')
 
+clean_consumables_names = pd.read_csv(path_to_files_in_the_tlo_dropbox / 'OpenLMIS/cleaned_consumable_names.csv', low_memory = False)[['Program', 'Consumable','Alternate consumable name',	'Substitute group']]
+
+cons_alternate_name_dict = clean_consumables_names[clean_consumables_names['Consumable'] != clean_consumables_names['Alternate consumable name']].set_index('Consumable')['Alternate consumable name'].to_dict()
+cons_substitutes_dict = clean_consumables_names[clean_consumables_names['Substitute group'].notna()][['Alternate consumable name', 'Substitute group']].to_dict()
+def rename_items_to_address_inconsistentencies(_df, item_dict):
+    """Return a dataframe with rows for the same item with inconsistent names collapsed into one"""
+    old_unique_item_count = _df.item.nunique()
+
+    # replace item names with alternate names - these are mostly spelling inconsistencies
+    _df['item'].replace(cons_alternate_name_dict, inplace = True)
+
+
+    # Make a list of column names to be collapsed using different methods
+    columns_to_sum = ['closing_bal', 'dispensed', 'stkout_days', 'average_monthly_consumption', 'qty_received']
+    columns_to_preserve = ['program']
+
+    # Function to remove commas and convert to numeric
+    def clean_convert(x):
+        if isinstance(x, str):  # Checks if the element is a string
+            return pd.to_numeric(x.replace(',', ''))
+        return x  # Returns the element unchanged if it's not a string
+    # Apply the function to the entire DataFrame
+    _df[columns_to_sum] = _df[columns_to_sum].applymap(clean_convert)
+    _df[columns_to_preserve] = _df[columns_to_preserve].astype(str)
+
+    def custom_agg(x):
+        if x.name in columns_to_sum:
+            return x.sum(skipna=True) if np.any(
+                x.notnull() & (x >= 0)) else np.nan  # this ensures that the NaNs are retained
+        # , i.e. not changed to 0, when the corresponding data for both item name variations are NaN, and when there
+        # is a 0 or positive value for one or both item name variation, the sum is taken.
+        elif x.name in columns_to_preserve:
+            return x.str.cat(
+                sep=', ')  # for the data_source column, this function concatenates the string values
+
+    # Collapse dataframe
+    _collapsed_df = _df.groupby(['item', 'district', 'fac_level', 'fac_owner', 'fac_name', 'year', 'month']).agg(
+        {col: custom_agg for col in columns_to_preserve + columns_to_sum}
+    ).reset_index()
+
+    # Test that all items in the dictionary have been found in the dataframe
+    new_unique_item_count = _collapsed_df.item.nunique()
+    #assert len(item_dict) == old_unique_item_count - new_unique_item_count
+    return _collapsed_df
+
+
+# Hold out the dataframe with no naming inconsistencies
+list_of_items_with_inconsistent_names_zipped = set(zip(cons_alternate_name_dict.keys(), cons_alternate_name_dict.values()))
+list_of_items_with_inconsistent_names = [item for sublist in list_of_items_with_inconsistent_names_zipped for item in sublist]
+df_with_consistent_item_names =  lmis[~lmis['item'].isin(list_of_items_with_inconsistent_names)]
+df_without_consistent_item_names = lmis[lmis['item'].isin(list_of_items_with_inconsistent_names)]
+
+# Make inconsistently named drugs uniform across the dataframe
+df_without_consistent_item_names_corrected = rename_items_to_address_inconsistentencies(
+    df_without_consistent_item_names, cons_alternate_name_dict)
+# Append holdout and corrected dataframes
+lmis_with_updated_names = pd.concat([df_without_consistent_item_names_corrected, df_with_consistent_item_names],
+                              ignore_index=True)
+
+# Bar chart of number of months during which each consumable was reported before and after cleaning names
+
+# List of new consumables which are reported from 2020 onwards
+
+# Calculate probability of availability based on the number of days of stock out
+
+# Address substitutes
+
+# Comparative plot of probability of consumable availability (consumable on X-axis, prob on y-axis)
+
+# Monthly availability plots for each year of data (heat map - program on the x-axis, month on the y-axis - one for each year)
+
+# Average heatmaps by program and level (how has availability change across years)
+
 # Interpolation rules
 # If a facility did no report data for a given month, assume same as the average of the three previous months
-
 
 # Descriptive analysis
 # Number of facilities reporting by level
