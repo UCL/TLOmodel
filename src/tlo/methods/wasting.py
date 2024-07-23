@@ -1,7 +1,7 @@
 """Childhood wasting module"""
 import copy
 from pathlib import Path
-from typing import Any, Dict, Union
+from typing import TYPE_CHECKING, Any, Dict, Union
 
 import numpy as np
 import pandas as pd
@@ -13,7 +13,12 @@ from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
+
+if TYPE_CHECKING:
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
+    from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -25,7 +30,7 @@ logger.setLevel(logging.INFO)
 # ---------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------
-class Wasting(Module):
+class Wasting(Module, GenericFirstAppointmentsMixin):
     """
     This module applies the prevalence of wasting at the population-level, based on the Malawi DHS Survey 2015-2016.
     The definitions:
@@ -90,7 +95,7 @@ class Wasting(Module):
         'rr_wasting_preterm_and_AGA': Parameter(
             Types.REAL, 'relative risk of wasting if born preterm and adequate for gestational age'),
         'rr_wasting_SGA_and_term': Parameter(
-            Types.REAL, 'relative risk of wasting if born term and small for geatational age'),
+            Types.REAL, 'relative risk of wasting if born term and small for gestational age'),
         'rr_wasting_SGA_and_preterm': Parameter(
             Types.REAL, 'relative risk of wasting if born preterm and small for gestational age'),
         'rr_wasting_wealth_level': Parameter(
@@ -324,7 +329,7 @@ class Wasting(Module):
     def muac_cutoff_by_WHZ(self, idx, whz):
         """
         Proportion of MUAC<115mm in WHZ<-3 and -3<=WHZ<-2, and proportion of wasted children with oedematous
-        malnutrition ( Kwashiokor, marasmic-kwashiorkor)
+        malnutrition ( Kwashiorkor, marasmic-kwashiorkor)
 
         :param idx: index of children ages 6-59 months or person_id
         :param whz: weight for height category
@@ -442,7 +447,7 @@ class Wasting(Module):
 
     def date_of_outcome_for_untreated_am(self, person_id, duration_am):
         """
-        helper funtion to get the duration and the wasting episode and date of outcome (recovery, progression, or death)
+        helper function to get the duration, the wasting episode and date of outcome (recovery, progression, or death)
         :param person_id:
         :param duration_am:
         :return:
@@ -519,8 +524,8 @@ class Wasting(Module):
                               (~df.un_am_bilateral_oedema)] = daly_wts['SAM_w/o_oedema']
         total_daly_values.loc[df.is_alive & (
                 ((df.un_WHZ_category == '-3<=WHZ<-2') & (df.un_am_MUAC_category != "<115mm")) | (
-                (df.un_WHZ_category != 'WHZ<-3') & (
-                df.un_am_MUAC_category != "[115,125)mm"))) & df.un_am_bilateral_oedema] = daly_wts[
+                    (df.un_WHZ_category != 'WHZ<-3') & (
+                        df.un_am_MUAC_category != "[115,125)mm"))) & df.un_am_bilateral_oedema] = daly_wts[
             'MAM_with_oedema']
         return total_daly_values
 
@@ -541,26 +546,27 @@ class Wasting(Module):
             disease_module=self
         )
 
-    def do_when_acute_malnutrition_assessment(self, person_id):
-        """
-        This is called by the generic HSI event when acute malnutrition is checked.
-        :param person_id:
-        :return:
-        """
-
-        df = self.sim.population.props
+    def do_at_generic_first_appt(
+        self,
+        person_id: int,
+        individual_properties: IndividualProperties,
+        schedule_hsi_event: HSIEventScheduler,
+        **kwargs,
+    ) -> None:
+        if individual_properties["age_years"] > 5:
+            return
         p = self.parameters
 
         # get the clinical states
-        clinical_am = df.at[person_id, 'un_clinical_acute_malnutrition']
-        complications = df.at[person_id, 'un_sam_with_complications']
+        clinical_am = individual_properties['un_clinical_acute_malnutrition']
+        complications = individual_properties['un_sam_with_complications']
 
         # Interventions for MAM
         if clinical_am == 'MAM':
             # Check for coverage of supplementary feeding
             if self.rng.random_sample() < p['coverage_supplementary_feeding_program']:
                 # schedule HSI for supplementary feeding program for MAM
-                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                schedule_hsi_event(
                     hsi_event=HSI_Wasting_SupplementaryFeedingProgramme_MAM(module=self, person_id=person_id),
                     priority=0, topen=self.sim.date)
             else:
@@ -571,7 +577,7 @@ class Wasting(Module):
                 # Check for coverage of outpatient therapeutic care
                 if self.rng.random_sample() < p['coverage_outpatient_therapeutic_care']:
                     # schedule HSI for supplementary feeding program for MAM
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    schedule_hsi_event(
                         hsi_event=HSI_Wasting_OutpatientTherapeuticProgramme_SAM(
                             module=self, person_id=person_id), priority=0, topen=self.sim.date)
                 else:
@@ -581,7 +587,7 @@ class Wasting(Module):
                 # Check for coverage of outpatient therapeutic care
                 if self.rng.random_sample() < p['coverage_inpatient_care']:
                     # schedule HSI for supplementary feeding program for MAM
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    schedule_hsi_event(
                         hsi_event=HSI_Wasting_InpatientCareForComplicated_SAM(
                             module=self, person_id=person_id), priority=0, topen=self.sim.date)
                 else:
@@ -633,7 +639,7 @@ class Wasting(Module):
                 else:
                     self.sim.schedule_event(event=UpdateToMAM(module=self, person_id=person_id),
                                             date=df.at[person_id, 'un_acute_malnutrition_tx_start_date'] +
-                                                 DateOffset(weeks=3))
+                                            DateOffset(weeks=3))
 
         if intervention == 'ITC':
             sam_recovery = self.wasting_models.acute_malnutrition_recovery_sam_lm.predict(

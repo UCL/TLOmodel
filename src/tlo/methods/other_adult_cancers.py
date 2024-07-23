@@ -4,8 +4,10 @@ Other_adult Cancer Disease Module
 Limitations to note:
 * Footprints of HSI -- pending input from expert on resources required.
 """
+from __future__ import annotations
 
 from pathlib import Path
+from typing import TYPE_CHECKING, List
 
 import pandas as pd
 
@@ -13,17 +15,23 @@ from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
+from tlo.methods.cancer_consumables import get_consumable_item_codes_cancers
 from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
-from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.hsi_event import HSI_Event
+from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
+
+if TYPE_CHECKING:
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
+    from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class OtherAdultCancer(Module):
+class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
     """Other Adult Cancers Disease Module"""
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -32,10 +40,11 @@ class OtherAdultCancer(Module):
         self.linear_models_for_progession_of_oac_status = dict()
         self.lm_onset_early_other_adult_ca_symptom = None
         self.daly_wts = dict()
+        self.item_codes_other_can = dict()
 
     INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
 
-    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'Hiv'}
 
     METADATA = {
         Metadata.DISEASE_MODULE,
@@ -112,6 +121,9 @@ class OtherAdultCancer(Module):
         ),
         "rr_site_confined_agege70": Parameter(
             Types.REAL, "rate ratio for site-confined other_adult cancer for age ge 70"
+        ),
+        "rr_site_confined_hiv": Parameter(
+            Types.REAL, "rate ratio for site-confined other_adult_cancer if infected with HIV"
         ),
         "r_local_ln_site_confined_other_adult_ca": Parameter(
             Types.REAL,
@@ -363,6 +375,9 @@ class OtherAdultCancer(Module):
         * Define the Disability-weights
         * Schedule the palliative care appointments for those that are on palliative care at initiation
         """
+        # We call the following function to store the required consumables for the simulation run within the appropriate
+        # dictionary
+        self.item_codes_other_can = get_consumable_item_codes_cancers(self)
 
         # ----- SCHEDULE LOGGING EVENTS -----
         # Schedule logging event to happen immediately
@@ -381,15 +396,26 @@ class OtherAdultCancer(Module):
         p = self.parameters
         lm = self.linear_models_for_progession_of_oac_status
 
-        lm['site_confined'] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            p['r_site_confined_none'],
+        predictors = [
             Predictor('age_years', conditions_are_mutually_exclusive=True)
             .when('.between(30,49)', p['rr_site_confined_age3049'])
             .when('.between(50,69)', p['rr_site_confined_age5069'])
             .when('.between(0,14)', 0.0)
             .when('.between(70,120)', p['rr_site_confined_agege70']),
             Predictor('oac_status').when('none', 1.0).otherwise(0.0)
+        ]
+
+        conditional_predictors = [
+            Predictor().when(
+                'hv_inf & '
+                '(hv_art != "on_VL_suppressed")',
+                p["rr_site_confined_hiv"]),
+        ] if "Hiv" in self.sim.modules else []
+
+        lm['site_confined'] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            p['r_site_confined_none'],
+            *(predictors + conditional_predictors)
         )
 
         lm['local_ln'] = LinearModel(
@@ -549,6 +575,21 @@ class OtherAdultCancer(Module):
 
         return disability_series_for_alive_persons
 
+    def do_at_generic_first_appt(
+        self,
+        person_id: int,
+        individual_properties: IndividualProperties,
+        symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
+        **kwargs
+    ) -> None:
+        if individual_properties["age_years"] > 5 and "early_other_adult_ca_symptom" in symptoms:
+            event = HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom(
+                person_id=person_id,
+                module=self,
+            )
+            schedule_hsi_event(event, priority=0, topen=self.sim.date)
+
 
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
@@ -644,50 +685,60 @@ class HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom(
             return hs.get_blank_appt_footprint()
 
         # Check that this event has been called for someone with the symptom other_adult_ca_symptom
-        assert 'early_other_adult_ca_symptom' in self.sim.modules['SymptomManager'].has_what(person_id)
+        assert 'early_other_adult_ca_symptom' in self.sim.modules['SymptomManager'].has_what(person_id=person_id)
 
         # If the person is already diagnosed, then take no action:
         if not pd.isnull(df.at[person_id, "oac_date_diagnosis"]):
             return hs.get_blank_appt_footprint()
 
-        # Use a diagnostic_device to diagnose whether the person has other adult cancer:
-        dx_result = hs.dx_manager.run_dx_test(
-            dx_tests_to_run='diagnostic_device_for_other_adult_cancer_given_other_adult_ca_symptom',
-            hsi_event=self
-        )
+        # Check consumables are available
+        cons_avail = self.get_consumables(item_codes=self.module.item_codes_other_can['screening_biopsy_core'],
+                                          optional_item_codes=
+                                          self.module.item_codes_other_can[
+                                              'screening_biopsy_endoscopy_cystoscopy_optional'])
 
-        if dx_result:
-            # record date of diagnosis:
-            df.at[person_id, 'oac_date_diagnosis'] = self.sim.date
+        if cons_avail:
+            # If consumables are available add used equipment and run the dx_test representing the biopsy
+            self.add_equipment({'Ultrasound scanning machine', 'Ordinary Microscope'})
 
-            # Check if is in metastatic:
-            in_metastatic = df.at[person_id, 'oac_status'] == 'metastatic'
-            # If the diagnosis does detect cancer, it is assumed that the classification as metastatic is
-            # made accurately.
+            # Use a diagnostic_device to diagnose whether the person has other adult cancer:
+            dx_result = hs.dx_manager.run_dx_test(
+                dx_tests_to_run='diagnostic_device_for_other_adult_cancer_given_other_adult_ca_symptom',
+                hsi_event=self
+            )
 
-            if not in_metastatic:
-                # start treatment:
-                hs.schedule_hsi_event(
-                    hsi_event=HSI_OtherAdultCancer_StartTreatment(
-                        module=self.module,
-                        person_id=person_id
-                    ),
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None
-                )
+            if dx_result:
+                # record date of diagnosis:
+                df.at[person_id, 'oac_date_diagnosis'] = self.sim.date
 
-            else:
-                # start palliative care:
-                hs.schedule_hsi_event(
-                    hsi_event=HSI_OtherAdultCancer_PalliativeCare(
-                        module=self.module,
-                        person_id=person_id
-                    ),
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None
-                )
+                # Check if is in metastatic:
+                in_metastatic = df.at[person_id, 'oac_status'] == 'metastatic'
+                # If the diagnosis does detect cancer, it is assumed that the classification as metastatic is
+                # made accurately.
+
+                if not in_metastatic:
+                    # start treatment:
+                    hs.schedule_hsi_event(
+                        hsi_event=HSI_OtherAdultCancer_StartTreatment(
+                            module=self.module,
+                            person_id=person_id
+                        ),
+                        priority=0,
+                        topen=self.sim.date,
+                        tclose=None
+                    )
+
+                else:
+                    # start palliative care:
+                    hs.schedule_hsi_event(
+                        hsi_event=HSI_OtherAdultCancer_PalliativeCare(
+                            module=self.module,
+                            person_id=person_id
+                        ),
+                        priority=0,
+                        topen=self.sim.date,
+                        tclose=None
+                    )
 
 
 class HSI_OtherAdultCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
@@ -731,20 +782,29 @@ class HSI_OtherAdultCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         assert not pd.isnull(df.at[person_id, "oac_date_diagnosis"])
         assert pd.isnull(df.at[person_id, "oac_date_treatment"])
 
-        # Record date and stage of starting treatment
-        df.at[person_id, "oac_date_treatment"] = self.sim.date
-        df.at[person_id, "oac_stage_at_which_treatment_given"] = df.at[person_id, "oac_status"]
-
-        # Schedule a post-treatment check for 12 months:
-        hs.schedule_hsi_event(
-            hsi_event=HSI_OtherAdultCancer_PostTreatmentCheck(
-                module=self.module,
-                person_id=person_id,
-            ),
-            topen=self.sim.date + DateOffset(months=3),
-            tclose=None,
-            priority=0
+        cons_available = self.get_consumables(
+            item_codes=self.module.item_codes_other_can['treatment_surgery_core'],
+            optional_item_codes=self.module.item_codes_other_can['treatment_surgery_optional'],
         )
+
+        if cons_available:
+            # If consumables are available and the treatment will go ahead - update the equipment
+            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
+
+            # Record date and stage of starting treatment
+            df.at[person_id, "oac_date_treatment"] = self.sim.date
+            df.at[person_id, "oac_stage_at_which_treatment_given"] = df.at[person_id, "oac_status"]
+
+            # Schedule a post-treatment check for 12 months:
+            hs.schedule_hsi_event(
+                hsi_event=HSI_OtherAdultCancer_PostTreatmentCheck(
+                    module=self.module,
+                    person_id=person_id,
+                ),
+                topen=self.sim.date + DateOffset(months=3),
+                tclose=None,
+                priority=0
+            )
 
     def did_not_run(self):
         pass
@@ -835,20 +895,28 @@ class HSI_OtherAdultCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         # Check that the person is in metastatic
         assert df.at[person_id, "oac_status"] == 'metastatic'
 
-        # Record the start of palliative care if this is first appointment
-        if pd.isnull(df.at[person_id, "oac_date_palliative_care"]):
-            df.at[person_id, "oac_date_palliative_care"] = self.sim.date
+        # Check consumables are available
+        cons_available = self.get_consumables(
+            item_codes=self.module.item_codes_other_can['palliation'])
 
-        # Schedule another instance of the event for one month
-        hs.schedule_hsi_event(
-            hsi_event=HSI_OtherAdultCancer_PalliativeCare(
-                module=self.module,
-                person_id=person_id
-            ),
-            topen=self.sim.date + DateOffset(months=1),
-            tclose=None,
-            priority=0
-        )
+        if cons_available:
+            # If consumables are available and the treatment will go ahead - update the equipment
+            self.add_equipment({'Infusion pump', 'Drip stand'})
+
+            # Record the start of palliative care if this is first appointment
+            if pd.isnull(df.at[person_id, "oac_date_palliative_care"]):
+                df.at[person_id, "oac_date_palliative_care"] = self.sim.date
+
+            # Schedule another instance of the event for one month
+            hs.schedule_hsi_event(
+                hsi_event=HSI_OtherAdultCancer_PalliativeCare(
+                    module=self.module,
+                    person_id=person_id
+                ),
+                topen=self.sim.date + DateOffset(months=1),
+                tclose=None,
+                priority=0
+            )
 
     def did_not_run(self):
         pass
