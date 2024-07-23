@@ -324,7 +324,7 @@ def test_recovery_moderate_wasting(tmpdir):
     assert person['un_ever_wasted']
     assert person['un_WHZ_category'] == '-3<=WHZ<-2'
     assert person['un_last_wasting_date_of_onset'] == sim.date
-    assert pd.isnull(person['un_acute_malnutrition_tx_start_date'])
+    assert pd.isnull(person['un_am_tx_start_date'])
     assert pd.isnull(person['un_am_recovery_date'])
     assert pd.isnull(person['un_sam_death_date'])
 
@@ -662,7 +662,7 @@ def test_nat_hist_cure_if_recovery_scheduled(tmpdir):
     assert person['un_ever_wasted']
     assert person['un_WHZ_category'] == '-3<=WHZ<-2'
     assert person['un_last_wasting_date_of_onset'] == sim.date
-    assert pd.isnull(person['un_acute_malnutrition_tx_start_date'])
+    assert pd.isnull(person['un_am_tx_start_date'])
     assert pd.isnull(person['un_am_recovery_date'])
     assert pd.isnull(person['un_sam_death_date'])
 
@@ -733,7 +733,7 @@ def test_nat_hist_cure_if_death_scheduled(tmpdir):
     assert person['un_ever_wasted']
     assert person['un_WHZ_category'] == '-3<=WHZ<-2'
     assert person['un_last_wasting_date_of_onset'] == sim.date
-    assert pd.isnull(person['un_acute_malnutrition_tx_start_date'])
+    assert pd.isnull(person['un_am_tx_start_date'])
     assert pd.isnull(person['un_am_recovery_date'])
     assert pd.isnull(person['un_sam_death_date'])
 
@@ -753,7 +753,7 @@ def test_nat_hist_cure_if_death_scheduled(tmpdir):
     assert person['un_ever_wasted']
     assert person['un_WHZ_category'] == 'WHZ<-3'
     assert person['un_clinical_acute_malnutrition'] == 'SAM'
-    assert pd.isnull(person['un_acute_malnutrition_tx_start_date'])
+    assert pd.isnull(person['un_am_tx_start_date'])
     assert pd.isnull(person['un_am_recovery_date'])
     assert pd.isnull(person['un_sam_death_date'])
 
