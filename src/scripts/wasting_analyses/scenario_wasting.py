@@ -12,9 +12,24 @@ or locally using:
 import warnings
 
 from tlo import Date, logging
-from tlo.methods import demography, healthsystem, healthseekingbehaviour, healthburden, symptommanager, \
-    enhanced_lifestyle, labour, care_of_women_during_pregnancy, contraception, pregnancy_supervisor, \
-    postnatal_supervisor, newborn_outcomes, hiv, tb, epi, wasting
+from tlo.methods import (
+    care_of_women_during_pregnancy,
+    contraception,
+    demography,
+    enhanced_lifestyle,
+    epi,
+    healthburden,
+    healthseekingbehaviour,
+    healthsystem,
+    hiv,
+    labour,
+    newborn_outcomes,
+    postnatal_supervisor,
+    pregnancy_supervisor,
+    symptommanager,
+    tb,
+    wasting,
+)
 from tlo.scenario import BaseScenario
 
 # capture warnings during simulation run
