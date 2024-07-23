@@ -1060,7 +1060,7 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
         )
 
         # Log the test: line-list of summary information about each test
-        fever_present = 'fever' in self.sim.modules["SymptomManager"].has_what(person_id)
+        fever_present = 'fever' in self.sim.modules["SymptomManager"].has_what(person_id=person_id)
         person_details_for_test = _data_for_rdt_log(
             person_id=person_id,
             age=df.at[person_id, 'age_years'],
@@ -1069,7 +1069,6 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
             facility_level=self.ACCEPTED_FACILITY_LEVEL,
             treatment_id=self.TREATMENT_ID,
         )
-        
         logger.info(key='rdt_log', data=person_details_for_test)
 
         if dx_result:
@@ -1153,6 +1152,7 @@ class HSI_Malaria_rdt_community(HSI_Event, IndividualScopeEventMixin):
         )
 
         # Log the test: line-list of summary information about each test
+<<<<<<< HEAD
         fever_present = 'fever' in self.sim.modules["SymptomManager"].has_what(person_id)
         person_details_for_test = _data_for_rdt_log(
             person_id=person_id,
@@ -1163,6 +1163,17 @@ class HSI_Malaria_rdt_community(HSI_Event, IndividualScopeEventMixin):
             treatment_id=self.TREATMENT_ID,
         )
         
+=======
+        fever_present = 'fever' in self.sim.modules["SymptomManager"].has_what(person_id=person_id)
+        person_details_for_test = {
+            'person_id': person_id,
+            'age': df.at[person_id, 'age_years'],
+            'fever_present': fever_present,
+            'rdt_result': dx_result,
+            'facility_level': self.ACCEPTED_FACILITY_LEVEL,
+            'called_by': self.TREATMENT_ID
+        }
+>>>>>>> master
         logger.info(key='rdt_log', data=person_details_for_test)
 
         # if positive, refer for a confirmatory test at level 1a
@@ -1216,6 +1227,7 @@ class HSI_Malaria_Treatment(HSI_Event, IndividualScopeEventMixin):
 
                 # rdt is offered as part of the treatment package
                 # Log the test: line-list of summary information about each test
+<<<<<<< HEAD
                 fever_present = 'fever' in self.sim.modules["SymptomManager"].has_what(person_id)
                 person_details_for_test = _data_for_rdt_log(
                     person_id=person_id,
@@ -1225,6 +1237,17 @@ class HSI_Malaria_Treatment(HSI_Event, IndividualScopeEventMixin):
                     facility_level=self.ACCEPTED_FACILITY_LEVEL,
                     treatment_id=self.TREATMENT_ID,
                 )
+=======
+                fever_present = 'fever' in self.sim.modules["SymptomManager"].has_what(person_id=person_id)
+                person_details_for_test = {
+                    'person_id': person_id,
+                    'age': df.at[person_id, 'age_years'],
+                    'fever_present': fever_present,
+                    'rdt_result': True,
+                    'facility_level': self.ACCEPTED_FACILITY_LEVEL,
+                    'called_by': self.TREATMENT_ID
+                }
+>>>>>>> master
                 logger.info(key='rdt_log', data=person_details_for_test)
 
     def get_drugs(self, age_of_person):
@@ -1313,6 +1336,7 @@ class HSI_Malaria_Treatment_Complicated(HSI_Event, IndividualScopeEventMixin):
 
                 # rdt is offered as part of the treatment package
                 # Log the test: line-list of summary information about each test
+<<<<<<< HEAD
                 fever_present = 'fever' in self.sim.modules["SymptomManager"].has_what(person_id)
                 person_details_for_test = _data_for_rdt_log(
                     person_id=person_id,
@@ -1322,6 +1346,17 @@ class HSI_Malaria_Treatment_Complicated(HSI_Event, IndividualScopeEventMixin):
                     facility_level=self.ACCEPTED_FACILITY_LEVEL,
                     treatment_id=self.TREATMENT_ID,
                 )
+=======
+                fever_present = 'fever' in self.sim.modules["SymptomManager"].has_what(person_id=person_id)
+                person_details_for_test = {
+                    'person_id': person_id,
+                    'age': df.at[person_id, 'age_years'],
+                    'fever_present': fever_present,
+                    'rdt_result': True,
+                    'facility_level': self.ACCEPTED_FACILITY_LEVEL,
+                    'called_by': self.TREATMENT_ID
+                }
+>>>>>>> master
                 logger.info(key='rdt_log', data=person_details_for_test)
 
     def did_not_run(self):

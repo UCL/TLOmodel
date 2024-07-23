@@ -593,7 +593,7 @@ class Depression(Module, GenericFirstAppointmentsMixin):
         and there may need to be screening for depression.
         """
         if self._check_for_suspected_depression(
-            self.sim.modules["SymptomManager"].has_what(person_id),
+            self.sim.modules["SymptomManager"].has_what(person_id=person_id),
             hsi_event.TREATMENT_ID,
             self.sim.population.props.at[person_id, "de_ever_diagnosed_depression"],
         ):
