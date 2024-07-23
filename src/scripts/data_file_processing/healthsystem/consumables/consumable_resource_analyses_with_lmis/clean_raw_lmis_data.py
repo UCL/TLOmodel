@@ -317,6 +317,26 @@ lmis_with_updated_names = pd.concat([df_without_consistent_item_names_corrected,
 # Interpolation rules
 # If a facility did no report data for a given month, assume same as the average of the three previous months
 
+# CALCULATE STOCK OUT RATES BY MONTH and FACILITY ##
+#########################################################################################
+# Define lists of months with the same number of days
+months_dict31 = ['January', 'March', 'May', 'July', 'August', 'October', 'December']
+months_dict30 = ['April', 'June', 'September', 'November']
+
+# Generate variables denoting the stockout proportion in each month
+lmis_with_updated_names['stkout_prop'] = np.nan
+for m in range(1, 13):
+    if months_dict[m] in months_dict31:
+        lmis_with_updated_names[lmis_with_updated_names.month == months_dict[m]]['stkout_prop'] = lmis_with_updated_names[lmis_with_updated_names.month == months_dict[m]]['stkout_days'] / 31
+    elif months_dict[m] in months_dict30:
+        lmis_with_updated_names[lmis_with_updated_names.month == months_dict[m]]['stkout_prop'] = lmis_with_updated_names[lmis_with_updated_names.month == months_dict[m]]['stkout_days'] / 30
+    else:
+        lmis_with_updated_names[lmis_with_updated_names.month == months_dict[m]]['stkout_prop'] = lmis_with_updated_names[lmis_with_updated_names.month == months_dict[m]]['stkout_days'] / 28
+
+consumables_in_2018_lmis_data = lmis_with_updated_names[lmis_with_updated_names.year == '2018']
+lmis_2018_subset = lmis_with_updated_names[lmis_with_updated_names.item.isin(consumables_in_2018_lmis_data)]
+
+
 # Descriptive analysis
 # Number of facilities reporting by level
 generate_summary_heatmap(_df = lmis,
