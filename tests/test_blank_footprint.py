@@ -138,7 +138,10 @@ def get_dummy_hsi_event_instance_blank_footprint(module, facility_id=None):
     hsi_dummy.initialise()
     hsi_dummy.facility_info = module.sim.modules['HealthSystem']._facility_by_facility_id[facility_id]
     return hsi_dummy
-
+def set_person_district_id(sim):
+      # sets facility and person to 0
+      sim.population.props.at[0, 'district_of_residence'] = mfl.set_index('Facility_ID').loc[0].District
+      return sim
 
 def test_outputs_to_log_no_blank(tmpdir):
     """Check that logging from Consumables is as expected."""
