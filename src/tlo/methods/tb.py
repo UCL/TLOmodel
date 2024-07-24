@@ -2719,7 +2719,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         )
 
         # proportion of active TB cases in the last year who are HIV-positive
-        prop_hiv = inc_active_hiv / new_tb_cases if new_tb_cases else 0
+        prop_hiv = inc_active_hiv / new_tb_cases if new_tb_cases else 0.0
 
         logger.info(
             key="tb_incidence",
@@ -2753,7 +2753,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[(df.age_years >= 15) & df.is_alive]
         ) if len(
             df[(df.age_years >= 15) & df.is_alive]
-        ) else 0
+        ) else 0.0
         assert prev_active_adult <= 1
 
         # prevalence of active TB in children
@@ -2764,7 +2764,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[(df.age_years < 15) & df.is_alive]
         ) if len(
             df[(df.age_years < 15) & df.is_alive]
-        ) else 0
+        ) else 0.0
         assert prev_active_child <= 1
 
         # LATENT
@@ -2781,7 +2781,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[(df.age_years >= 15) & df.is_alive]
         ) if len(
             df[(df.age_years >= 15) & df.is_alive]
-        ) else 0
+        ) else 0.0
         assert prev_latent_adult <= 1
 
         # proportion of population with latent TB - children
@@ -2823,7 +2823,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         if new_mdr_cases:
             prop_mdr = new_mdr_cases / new_tb_cases
         else:
-            prop_mdr = 0
+            prop_mdr = 0.0
 
         logger.info(
             key="tb_mdr",
@@ -2845,7 +2845,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         if new_tb_diagnosis:
             prop_dx = new_tb_diagnosis / new_tb_cases
         else:
-            prop_dx = 0
+            prop_dx = 0.0
 
         # ------------------------------------ TREATMENT ------------------------------------
         # number of tb cases who became active in last timeperiod and initiated treatment
@@ -2861,7 +2861,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             tx_coverage = new_tb_tx / new_tb_cases
             # assert tx_coverage <= 1
         else:
-            tx_coverage = 0
+            tx_coverage = 0.0
 
         # ipt coverage
         new_tb_ipt = len(
@@ -2874,7 +2874,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         if new_tb_ipt:
             current_ipt_coverage = new_tb_ipt / len(df[df.is_alive])
         else:
-            current_ipt_coverage = 0
+            current_ipt_coverage = 0.0
 
         logger.info(
             key="tb_treatment",
@@ -2945,7 +2945,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         if adult_num_false_positive:
             adult_prop_false_positive = adult_num_false_positive / new_tb_tx_adult
         else:
-            adult_prop_false_positive = 0
+            adult_prop_false_positive = 0.0
 
         # children
         child_num_false_positive = len(
