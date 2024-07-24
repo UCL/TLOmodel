@@ -290,7 +290,7 @@ def extract_results(results_folder: Path,
             try:
                 df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
                 output_from_eval: pd.Series = generate_series(df)
-                assert pd.Series == type(output_from_eval), 'Custom command does not generate a pd.Series'
+                assert isinstance(output_from_eval, pd.Series), 'Custom command does not generate a pd.Series'
                 if do_scaling:
                     res[draw_run] = output_from_eval * get_multiplier(draw, run)
                 else:
