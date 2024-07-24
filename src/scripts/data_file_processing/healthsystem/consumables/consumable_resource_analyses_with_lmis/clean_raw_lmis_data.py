@@ -235,14 +235,16 @@ print('Data import complete and ready for analysis; verified that data is comple
 # TODO extract the above missing data as a summary table
 
 # Clean inconsistent names of consumables across years
+#--------------------------------------------------------
 # Extract a list of consumables along with the year_month during which they were reported
 lmis['program_item'] = lmis['program'].astype(str) + "---" +  lmis['item'].astype(str)
 consumable_reporting_rate = lmis.groupby(['program_item', 'year_month'])['fac_name'].nunique().reset_index()
 consumable_reporting_rate = consumable_reporting_rate.pivot( 'program_item', 'year_month', 'fac_name')
 consumable_reporting_rate.to_csv(figurespath / 'consumable_reporting_rate.csv')
 
+# Import manually cleaned list of consumable names
 clean_consumables_names = pd.read_csv(path_to_files_in_the_tlo_dropbox / 'OpenLMIS/cleaned_consumable_names.csv', low_memory = False)[['Program', 'Consumable','Alternate consumable name',	'Substitute group']]
-
+# Create a dictionary of cleaned consumable name categories
 cons_alternate_name_dict = clean_consumables_names[clean_consumables_names['Consumable'] != clean_consumables_names['Alternate consumable name']].set_index('Consumable')['Alternate consumable name'].to_dict()
 cons_substitutes_dict = clean_consumables_names[clean_consumables_names['Substitute group'].notna()][['Alternate consumable name', 'Substitute group']].to_dict()
 def rename_items_to_address_inconsistentencies(_df, item_dict):
@@ -286,7 +288,6 @@ def rename_items_to_address_inconsistentencies(_df, item_dict):
     #assert len(item_dict) == old_unique_item_count - new_unique_item_count
     return _collapsed_df
 
-
 # Hold out the dataframe with no naming inconsistencies
 list_of_items_with_inconsistent_names_zipped = set(zip(cons_alternate_name_dict.keys(), cons_alternate_name_dict.values()))
 list_of_items_with_inconsistent_names = [item for sublist in list_of_items_with_inconsistent_names_zipped for item in sublist]
@@ -300,22 +301,84 @@ df_without_consistent_item_names_corrected = rename_items_to_address_inconsisten
 lmis_with_updated_names = pd.concat([df_without_consistent_item_names_corrected, df_with_consistent_item_names],
                               ignore_index=True)
 
-# Bar chart of number of months during which each consumable was reported before and after cleaning names
 
-# List of new consumables which are reported from 2020 onwards
+# Drop months which have inconsistent data
+#-------------------------------------------
+# July 2021 records negative stockout days and infeasibly high stockout days
 
-# Calculate probability of availability based on the number of days of stock out
+# Feb and Mar 2023 record too many consumables
 
-# Address substitutes
+# Browse data missingness
 
-# Comparative plot of probability of consumable availability (consumable on X-axis, prob on y-axis)
+# Interpolation to address missingness
+#-------------------------------------------
+# Reshape dataframe so that each row represent a unique consumable and facility
+lmis_wide = lmis_with_updated_names.pivot_table(index=['district', 'fac_level', 'fac_owner',  'fac_name', 'program', 'item'], columns='year_month',
+                                   values=['closing_bal', 'dispensed', 'qty_received', 'stkout_days', 'average_monthly_consumption'],
+                                   fill_value=-99)
+# Create a list with the correct sequence of the year_month string
+year_month_list = []
+for year in years_dict.values():
+    for month in range(1,13):
+        year_month_list.append(str(year) + "_" + str(month))
 
-# Monthly availability plots for each year of data (heat map - program on the x-axis, month on the y-axis - one for each year)
+lmis_wide = lmis_wide.reindex(year_month_list, axis=1, level=1)
+lmis_wide.reset_index(inplace = True)
 
-# Average heatmaps by program and level (how has availability change across years)
+# Replace all the -99s created in the pivoting process above to NaNs
+num = lmis_wide._get_numeric_data()
+lmis_wide[num < 0] = np.nan
 
-# Interpolation rules
-# If a facility did no report data for a given month, assume same as the average of the three previous months
+count_stkout_entries = lmis_wide['stkout_days'].count(axis=1).sum()
+print(count_stkout_entries, "stockout entries in original data") # TODO Add percentage of values missing
+
+# # RULE 1 --- If i) stockout is missing (or negative?), ii) closing_bal, amc and received are not missing , and iii) amc !=0 and,
+# #          then stkout_days[m] = (amc[m] - closing_bal[m-1] - received)/amc * number of days in the month ---
+# # (Note that the number of entries for closing balance, dispensed and received is always the same)
+for t in year_month_list:
+    # Now update stkout_days if other columns are available
+    cond1 = lmis_df_wide_flat['closing_bal', months_dict[m - 1]].notna() & lmis_df_wide_flat[
+        'amc', months_dict[m]].notna() & lmis_df_wide_flat['received', months_dict[m]].notna()
+    cond2 = lmis_df_wide_flat['stkout_days', months_dict[m]].notna()
+    cond3 = lmis_df_wide_flat['amc', months_dict[m]] != 0
+    lmis_df_wide_flat.loc[cond1 & ~cond2 & cond3, [('data_source', months_dict[m])]] = 'lmis_interpolation_rule1'
+
+    if months_dict[m] in months_dict31:
+        lmis_df_wide_flat.loc[cond1 & ~cond2 & cond3, [('stkout_days', months_dict[m])]] = \
+            (
+                lmis_df_wide_flat[('amc', months_dict[m])]
+                - lmis_df_wide_flat[('closing_bal', months_dict[m - 1])]
+                - lmis_df_wide_flat[('received', months_dict[m])]
+            ) / lmis_df_wide_flat[('amc', months_dict[m])] * 31
+    elif months_dict[m] in months_dict30:
+        lmis_df_wide_flat.loc[cond1 & ~cond2 & cond3, [('stkout_days', months_dict[m])]] = \
+            (
+                lmis_df_wide_flat[('amc', months_dict[m])]
+                - lmis_df_wide_flat[('closing_bal', months_dict[m - 1])]
+                - lmis_df_wide_flat[('received', months_dict[m])]
+            ) / lmis_df_wide_flat[('amc', months_dict[m])] * 30
+    else:
+        lmis_df_wide_flat.loc[cond1 & ~cond2 & cond3, [('stkout_days', months_dict[m])]] = \
+            (
+                lmis_df_wide_flat[('amc', months_dict[m])]
+                - lmis_df_wide_flat[('closing_bal', months_dict[m - 1])]
+                - lmis_df_wide_flat[('received', months_dict[m])]
+            ) / lmis_df_wide_flat[('amc', months_dict[m])] * 28
+
+count_stkout_entries = lmis_df_wide_flat['stkout_days'].count(axis=1).sum()
+print(count_stkout_entries, "stockout entries after first interpolation")
+
+
+# RULE 2 --- If any stockout_days < 0 after the above interpolation, update to stockout_days = 0 ---
+# If closing balance[previous month] - dispensed[this month] + received[this month] > 0, stockout == 0
+
+# RULE 3 --- If the consumable was previously reported and during a given month, if any consumable was reported, assume
+# 100% days of stckout ---
+# If the balance on a consumable is ever reported and if any consumables are reported during the month, stkout_
+# days = number of days of the month
+
+# RULE 4 --- If a facility did not report data for a given month, assume same as the average of the three previous months
+lmis_with_updated_names[(lmis_with_updated_names.stkout_days.isna()) & (lmis_with_updated_names.year == '2018')][['closing_bal', 'qty_received', 'average_monthly_consumption']]
 
 # CALCULATE STOCK OUT RATES BY MONTH and FACILITY ##
 #########################################################################################
@@ -335,6 +398,22 @@ for m in range(1, 13):
 
 consumables_in_2018_lmis_data = lmis_with_updated_names[lmis_with_updated_names.year == '2018']
 lmis_2018_subset = lmis_with_updated_names[lmis_with_updated_names.item.isin(consumables_in_2018_lmis_data)]
+
+
+# Bar chart of number of months during which each consumable was reported before and after cleaning names
+
+# List of new consumables which are reported from 2020 onwards
+
+# Calculate probability of availability based on the number of days of stock out
+
+# Address substitutes
+
+# Comparative plot of probability of consumable availability (consumable on X-axis, prob on y-axis)
+
+# Monthly availability plots for each year of data (heat map - program on the x-axis, month on the y-axis - one for each year)
+
+# Average heatmaps by program and level (how has availability change across years)
+
 
 
 # Descriptive analysis
