@@ -30,17 +30,18 @@ import numpy as np
 import pandas as pd
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
-from tlo.core import IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.hsi_event import HSI_Event
+from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date, sample_outcome
 
 if TYPE_CHECKING:
-    from tlo.population import PatientDetails
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
+    from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -54,7 +55,7 @@ to_prob = lambda odds: odds / (1.0 + odds)  # noqa: E731
 # ---------------------------------------------------------------------------------------------------------
 
 
-class Alri(Module):
+class Alri(Module, GenericFirstAppointmentsMixin):
     """This is the disease module for Acute Lower Respiratory Infections."""
 
     INIT_DEPENDENCIES = {
@@ -1252,7 +1253,7 @@ class Alri(Module):
 
         # Gather underlying properties that will affect success of treatment
         SpO2_level = person.ri_SpO2_level
-        symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
+        symptoms = self.sim.modules['SymptomManager'].has_what(person_id=person_id)
         imci_symptom_based_classification = self.get_imci_classification_based_on_symptoms(
             child_is_younger_than_2_months=person.age_exact_years < (2.0 / 12.0),
             symptoms=symptoms,
@@ -1362,39 +1363,35 @@ class Alri(Module):
 
     def do_at_generic_first_appt(
         self,
-        patient_id: int,
-        patient_details: PatientDetails,
+        person_id: int,
+        individual_properties: IndividualProperties,
         symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
         facility_level: str,
         **kwargs,
-    ) -> IndividualPropertyUpdates:
+    ) -> None:
         # Action taken when a child (under 5 years old) presents at a
         # generic appointment (emergency or non-emergency) with symptoms
         # of `cough` or `difficult_breathing`.
-        if patient_details.age_years <= 5 and (
+        if individual_properties["age_years"] <= 5 and (
             ("cough" in symptoms) or ("difficult_breathing" in symptoms)
         ):
             self.record_sought_care_for_alri()
 
             # All persons have an initial out-patient appointment at the current facility level.
             event = HSI_Alri_Treatment(
-                person_id=patient_id, module=self, facility_level=facility_level
+                person_id=person_id, module=self, facility_level=facility_level
             )
-            self.healthsystem.schedule_hsi_event(
+            schedule_hsi_event(
                 event,
                 topen=self.sim.date,
                 tclose=self.sim.date + pd.DateOffset(days=1),
                 priority=1,
             )
 
-    def do_at_generic_first_appt_emergency(
-        self,
-        **kwargs,
-    ) -> IndividualPropertyUpdates:
+    def do_at_generic_first_appt_emergency(self, **kwargs) -> None:
         # Emergency and non-emergency treatment is identical for alri
-        return self.do_at_generic_first_appt(
-            **kwargs,
-        )
+        self.do_at_generic_first_appt(**kwargs)
 
 
 class Models:
@@ -2554,6 +2551,8 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                  'chest_indrawing_pneumonia',       (symptoms-based assessment)
                  'cough_or_cold'                    (symptoms-based assessment)
          }."""
+        if use_oximeter:
+            self.add_equipment({'Pulse oximeter'})
 
         child_is_younger_than_2_months = age_exact_years < (2.0 / 12.0)
 
@@ -2608,6 +2607,15 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
 
             oxygen_available = self._get_cons('Oxygen_Therapy')
             oxygen_provided = (oxygen_available and oxygen_indicated)
+
+            # If individual is provided with oxygen, add used equipment
+            if oxygen_provided:
+                self.add_equipment({'Oxygen cylinder, with regulator', 'Nasal Prongs'})
+
+            # If individual is provided with intravenous antibiotics, add used equipment
+            if antibiotic_provided in ('1st_line_IV_antibiotics',
+                                       'Benzylpenicillin_gentamicin_therapy_for_severe_pneumonia'):
+                self.add_equipment({'Infusion pump', 'Drip stand'})
 
             all_things_needed_available = antibiotic_available and (
                 (oxygen_available and oxygen_indicated) or (not oxygen_indicated)
@@ -2690,6 +2698,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
             if facility_level == '1a':
                 _ = self._get_cons('Inhaled_Brochodilator')
             else:
+                # n.b. this is never called, see issue 1172
                 _ = self._get_cons('Brochodilator_and_Steroids')
 
     def do_on_follow_up_following_treatment_failure(self):
@@ -2697,9 +2706,12 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
         A further drug will be used but this will have no effect on the chance of the person dying."""
 
         if self._has_staph_aureus():
-            _ = self._get_cons('2nd_line_Antibiotic_therapy_for_severe_staph_pneumonia')
+            cons_avail = self._get_cons('2nd_line_Antibiotic_therapy_for_severe_staph_pneumonia')
         else:
-            _ = self._get_cons('Ceftriaxone_therapy_for_severe_pneumonia')
+            cons_avail = self._get_cons('Ceftriaxone_therapy_for_severe_pneumonia')
+
+        if cons_avail:
+            self.add_equipment({'Infusion pump', 'Drip stand'})
 
     def apply(self, person_id, squeeze_factor):
         """Assess and attempt to treat the person."""
@@ -2714,7 +2726,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                 return
 
             # Do nothing if the persons does not have indicating symptoms
-            symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
+            symptoms = self.sim.modules['SymptomManager'].has_what(person_id=person_id)
             if not {'cough', 'difficult_breathing'}.intersection(symptoms):
                 return self.make_appt_footprint({})
 
@@ -2997,7 +3009,7 @@ class AlriIncidentCase_Lethal_DangerSigns_Pneumonia(AlriIncidentCase):
 
         assert 'danger_signs_pneumonia' == self.module.get_imci_classification_based_on_symptoms(
             child_is_younger_than_2_months=df.at[person_id, 'age_exact_years'] < (2.0 / 12.0),
-            symptoms=self.sim.modules['SymptomManager'].has_what(person_id)
+            symptoms=self.sim.modules['SymptomManager'].has_what(person_id=person_id)
         )
 
 
@@ -3028,7 +3040,7 @@ class AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia(AlriIncidentCase):
 
         assert 'fast_breathing_pneumonia' == \
                self.module.get_imci_classification_based_on_symptoms(
-                   child_is_younger_than_2_months=False, symptoms=self.sim.modules['SymptomManager'].has_what(person_id)
+                   child_is_younger_than_2_months=False, symptoms=self.sim.modules['SymptomManager'].has_what(person_id=person_id)
                )
 
 
