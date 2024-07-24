@@ -160,7 +160,7 @@ def test_outputs_to_log_no_blank(tmpdir):
     def schedule_hsi(sim):
         """Drop-in replacement for `initialise_simulation` in the DummyModule module."""
         # Make the district for person_id=0 such that the HSI will be served by facility_id=0
-        sim.population.props.at[0, 'district_of_residence'] = mfl.set_index('Facility_ID').loc[0].District
+       sim = set_person_district_id(sim)
 
         # Schedule the HSI event with a blank footprint for person_id=0
         sim.modules['HealthSystem'].schedule_hsi_event(
