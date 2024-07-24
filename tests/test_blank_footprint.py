@@ -156,19 +156,19 @@ def test_outputs_to_log_no_blank(tmpdir):
         run=False
     )
 
-    # Edit the `initialise_simulation` method of DummyModule so that, during the simulation, an HSI is run.
-def schedule_hsi(sim):
-    """Drop-in replacement for `initialise_simulation` in the DummyModule module."""
-    # Make the district for person_id=0 such that the HSI will be served by facility_id=0
-    sim = set_person_district_id(sim)
+        # Edit the `initialise_simulation` method of DummyModule so that, during the simulation, an HSI is run.
+    def schedule_hsi(sim):
+        """Drop-in replacement for `initialise_simulation` in the DummyModule module."""
+        # Make the district for person_id=0 such that the HSI will be served by facility_id=0
+        sim = set_person_district_id(sim)
 
-    # Schedule the HSI event with a blank footprint for person_id=0
-    sim.modules['HealthSystem'].schedule_hsi_event(
-        hsi_event=get_dummy_hsi_event_instance(module=sim.modules['DummyModule'], facility_id=0, blank = blank_footprint),
-        topen=sim.start_date,
-        tclose=None,
-        priority=0
-    )
+        # Schedule the HSI event with a blank footprint for person_id=0
+        sim.modules['HealthSystem'].schedule_hsi_event(
+            hsi_event=get_dummy_hsi_event_instance(module=sim.modules['DummyModule'], facility_id=0, blank = blank_footprint),
+            topen=sim.start_date,
+            tclose=None,
+            priority=0
+        )
 
 
     sim.modules['DummyModule'].initialise_simulation = schedule_hsi
