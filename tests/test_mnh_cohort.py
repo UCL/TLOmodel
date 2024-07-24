@@ -1,13 +1,7 @@
 import os
 from pathlib import Path
 
-import numpy as np
-import pandas as pd
-import pytest
-
-from tlo import DAYS_IN_MONTH, DAYS_IN_YEAR, Date, Simulation
-from tlo.analysis.utils import parse_log_file
-from tlo.lm import LinearModel, LinearModelType
+from tlo import Date, Simulation, logging
 from tlo.methods import mnh_cohort_module
 from tlo.methods.fullmodel import fullmodel
 
@@ -39,7 +33,8 @@ def register_modules(sim):
                  )
 
 def test_run_sim_with_mnh_cohort(tmpdir, seed):
-    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
+    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "custom_levels":{
+                "*": logging.DEBUG},"directory": tmpdir})
 
     register_modules(sim)
     sim.make_initial_population(n=1000)
