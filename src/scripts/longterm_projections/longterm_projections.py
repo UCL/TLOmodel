@@ -5,8 +5,7 @@ from typing import Dict
 
 from tlo import Date, logging
 from tlo.scenario import BaseScenario
-from tlo.methods import ( fullmodel
-)
+from tlo.methods.fullmodel import fullmodel
 from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios
 
 from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScenarioSwitcher
@@ -43,7 +42,7 @@ class LongRun(BaseScenario):
         }
 
     def modules(self):
-        return (fullmodel.fullmodel(resourcefilepath=self.resources, use_simplified_births=False,)
+        return (fullmodel(resourcefilepath=self.resources, use_simplified_births=False,)
         + [ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=self.resources)])
 
 
@@ -73,8 +72,8 @@ class LongRun(BaseScenario):
                     "use_funded_or_actual_staffing": "funded_plus",
                     },
                     'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
-                            'max_healthsystem_function': [False, True],  # <-- switch from False to True mid-way
-                            'max_healthcare_seeking': [False, True],  # <-- switch from False to True mid-way
+                            'max_healthsystem_function': [True, True],  # <-- switch from False to True mid-way
+                            'max_healthcare_seeking': [True, True],  # <-- switch from False to True mid-way
                             'year_of_switch': self.YEAR_OF_CHANGE
                             }
 
