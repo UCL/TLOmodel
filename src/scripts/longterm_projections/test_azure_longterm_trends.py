@@ -3,29 +3,12 @@ import time
 from pathlib import Path
 
 from tlo import Date, logging
-from tlo.analysis.utils import get_parameters_for_status_quo
 from tlo.scenario import BaseScenario
-from tlo.methods import (
-    alri, bladder_cancer, breast_cancer, cardio_metabolic_disorders, care_of_women_during_pregnancy,
-    contraception, copd, demography, depression, diarrhoea, enhanced_lifestyle, epi,
-    epilepsy, healthburden, healthseekingbehaviour, healthsystem, hiv, labour,
-    malaria, measles, newborn_outcomes, oesophagealcancer, other_adult_cancers, pregnancy_supervisor,
-    postnatal_supervisor,
-    prostate_cancer, rti, schisto, simplified_births, stunting, symptommanager, tb, wasting, fullmodel
+from tlo.methods import ( fullmodel
 )
 
 from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScenarioSwitcher
 
-
-# Start time for the simulation
-#start_time = time.time()
-
-# Paths for outputs and resources
-#output_path = Path("./outputs/longterm_trends")
-#resource_file_path = Path("./resources")
-
-# Date-stamp for labeling log files and other outputs
-#date_stamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 class LongRun(BaseScenario):
     def __init__(self):
@@ -33,7 +16,7 @@ class LongRun(BaseScenario):
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2099, 1, 12)  #Date(2099, 12, 31)
-        self.pop_size = 1_000
+        self.pop_size = 100_000
         self.number_of_draws = 1
         self.runs_per_draw = 2
 
