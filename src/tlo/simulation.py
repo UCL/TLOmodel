@@ -1,12 +1,14 @@
 """The main simulation controller."""
 
+from __future__ import annotations
+
 import datetime
 import heapq
 import itertools
 import time
 from collections import OrderedDict
 from pathlib import Path
-from typing import Dict, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 
@@ -21,6 +23,10 @@ from tlo import Date, Population, logging
 from tlo.dependencies import check_dependencies_present, topologically_sort_modules
 from tlo.events import Event, IndividualScopeEventMixin
 from tlo.progressbar import ProgressBar
+
+if TYPE_CHECKING:
+    from tlo.core import Module
+    from tlo.logging.core import LogLevel
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -37,25 +43,21 @@ class SimulationNotInitialisedError(Exception):
 class Simulation:
     """The main control centre for a simulation.
 
-    This class contains the core simulation logic and event queue, and holds
-    references to all the information required to run a complete simulation:
-    the population, disease modules, etc.
+    This class contains the core simulation logic and event queue, and holds references
+    to all the information required to run a complete simulation: the population,
+    disease modules, etc.
 
     Key attributes include:
 
-    `date`
-        The current simulation date.
-
-    `modules`
-        A list of the disease modules contributing to this simulation.
-
-    `population`
-        The Population being simulated.
-
-    `rng`
-        The simulation-level random number generator.
-        Note that individual modules also have their own random number generator
-        with independent state.
+    :ivar date: The current simulation date.
+    :ivar modules: A dictionary of the disease modules used in this simulation, keyed
+       by the module name.
+    :ivar population: The population being simulated.
+    :ivar rng: The simulation-level random number generator. 
+    
+    .. note::
+       Individual modules also have their own random number generator with independent
+       state.
     """
 
     def __init__(
@@ -68,12 +70,26 @@ class Simulation:
     ):
         """Create a new simulation.
 
-        :param start_date: the date the simulation begins; must be given as
-            a keyword parameter for clarity
-        :param seed: the seed for random number generator. class will create one if not supplied
-        :param log_config: sets up the logging configuration for this simulation
-        :param show_progress_bar: whether to show a progress bar instead of the logger
-            output during the simulation
+        :param start_date: The date the simulation begins; must be given as
+            a keyword parameter for clarity.
+        :param seed: The seed for random number generator. class will create one if not
+            supplied
+        :param log_config: Dictionary specifying logging configuration for this
+            simulation. Can have entries: `filename` - prefix for log file name, final 
+            file name will have a date time appended, if not present default is to not
+            output log to a file; `directory` - path to output directory to write log
+            file to, default if not specified is to output to the `outputs` folder;
+            `custom_levels` - dictionary to set logging levels, '*' can be used as a key
+            for all registered modules; `suppress_stdout` -  if `True`, suppresses
+            logging to standard output stream (default is `False`).
+        :param show_progress_bar: Whether to show a progress bar instead of the logger
+            output during the simulation.
+            
+        .. note::
+           The `custom_levels` entry in `log_config` argument can be used to disable
+           logging on all disease modules by setting a high level to `*`, and then
+           enabling logging on one module of interest by setting a low level, for
+           example ``{'*': logging.CRITICAL 'tlo.methods.hiv': logging.INFO}``.
         """
         # simulation
         self.date = self.start_date = start_date
@@ -105,18 +121,28 @@ class Simulation:
         # Whether simulation has been initialised
         self._initialised = False
 
-    def _configure_logging(self, filename: str = None, directory: Union[Path, str] = "./outputs",
-                           custom_levels: Dict[str, int] = None, suppress_stdout: bool = False):
-        """Configure logging, can write logging to a logfile in addition the default of stdout.
+    def _configure_logging(
+        self,
+        filename: Optional[str] = None, 
+        directory: Path | str = "./outputs",
+        custom_levels: Optional[dict[str, LogLevel]] = None,
+        suppress_stdout: bool = False
+    ):
+        """Configure logging of simulation outputs.
+         
+        Can write log output to a file in addition the default of `stdout`. Mnimum
+        custom levels for each logger can be specified for filtering out messages.
 
-        Minimum custom levels for each logger can be specified for filtering out messages
-
-        :param filename: Prefix for logfile name, final logfile will have a datetime appended
+        :param filename: Prefix for log file name, final file name will have a date time
+            appended.
         :param directory: Path to output directory, default value is the outputs folder.
-        :param custom_levels: dictionary to set logging levels, '*' can be used as a key for all registered modules.
-                              This is likely to be used to disable all disease modules, and then enable one of interest
-                              e.g. ``{'*': logging.CRITICAL 'tlo.methods.hiv': logging.INFO}``
-        :param suppress_stdout: If True, suppresses logging to standard output stream (default is False)
+        :param custom_levels: Dictionary to set logging levels, '*' can be used as a key
+            for all registered modules. This is likely to be used to disable logging on
+            all disease modules by setting a high level, and then enable one of interest
+            by setting a low level, for example
+            ``{'*': logging.CRITICAL 'tlo.methods.hiv': logging.INFO}``.
+        :param suppress_stdout: If `True`, suppresses logging to standard output stream
+            (default is `False`).
 
         :return: Path of the log file if a filename has been given.
         """
@@ -146,27 +172,33 @@ class Simulation:
         return None
 
     @property
-    def log_filepath(self):
+    def log_filepath(self) -> Path:
         """The path to the log file, if one has been set."""
         return self._log_filepath
 
-    def register(self, *modules, sort_modules=True, check_all_dependencies=True):
+    def register(
+        self,
+        *modules: Module,
+        sort_modules: bool = True,
+        check_all_dependencies: bool = True
+    ) -> None:
         """Register one or more disease modules with the simulation.
 
-        :param modules: the disease module(s) to use as part of this simulation.
+        :param modules: The disease module(s) to use as part of this simulation.
             Multiple modules may be given as separate arguments to one call.
         :param sort_modules: Whether to topologically sort the modules so that any
             initialisation dependencies (specified by the ``INIT_DEPENDENCIES``
             attribute) of a module are initialised before the module itself is. A
-            ``ModuleDependencyError`` exception will be raised if there are missing
-            initialisation dependencies or circular initialisation dependencies between
-            modules that cannot be resolved. If this flag is set to ``True`` there is
-            also a requirement that at most one instance of each module is registered
-            and ``MultipleModuleInstanceError`` will be raised if this is not the case.
+            :py:exc:`.ModuleDependencyError` exception will be raised if there are
+            missing initialisation dependencies or circular initialisation dependencies
+            between modules that cannot be resolved. If this flag is set to ``True``
+            there is also a requirement that at most one instance of each module is
+            registered and :py:exc:`.MultipleModuleInstanceError` will be raised if this
+            is not the case.
         :param check_all_dependencies: Whether to check if all of each module's declared
             dependencies (that is, the union of the ``INIT_DEPENDENCIES`` and
             ``ADDITIONAL_DEPENDENCIES`` attributes) have been included in the set of
-            modules to be registered. A ``ModuleDependencyError`` exception will
+            modules to be registered. A :py:exc:`.ModuleDependencyError` exception will
             be raised if there are missing dependencies.
         """
         if sort_modules:
@@ -197,11 +229,11 @@ class Simulation:
         if self._custom_log_levels:
             logging.set_logging_levels(self._custom_log_levels)
 
-    def make_initial_population(self, *, n):
+    def make_initial_population(self, *, n: int) -> None:
         """Create the initial population to simulate.
 
-        :param n: the number of individuals to create; must be given as
-            a keyword parameter for clarity
+        :param n: The number of individuals to create; must be given as
+            a keyword parameter for clarity.
         """
         start = time.time()
 
@@ -269,7 +301,7 @@ class Simulation:
                 self.output_file.release()
                 self.output_file = None
 
-    def _initialise_progress_bar(self, end_date):
+    def _initialise_progress_bar(self, end_date: Date) -> ProgressBar:
         num_simulated_days = (end_date - self.date).days
         progress_bar = ProgressBar(
             num_simulated_days, "Simulation progress", unit="day"
@@ -277,7 +309,7 @@ class Simulation:
         progress_bar.start()
         return progress_bar
 
-    def _update_progress_bar(self, progress_bar, date):
+    def _update_progress_bar(self, progress_bar: ProgressBar, date: Date) -> None:
         simulation_day = (date - self.start_date).days
         stats_dict = {
             "date": str(date.date()),
@@ -290,7 +322,7 @@ class Simulation:
             )
         progress_bar.update(simulation_day, stats_dict=stats_dict)
 
-    def run_simulation_to(self, *, to_date: Date):
+    def run_simulation_to(self, *, to_date: Date) -> None:
         """Run simulation up to a specified date.
 
         Unlike :py:meth:`simulate` this method does not initialise or finalise
@@ -319,23 +351,23 @@ class Simulation:
         if self.show_progress_bar:
             progress_bar.stop()
 
-    def simulate(self, *, end_date):
-        """Simulation until the given end date
+    def simulate(self, *, end_date: Date) -> None:
+        """Simulate until the given end date
 
-        :param end_date: when to stop simulating. Only events strictly before this
-            date will be allowed to occur.
-            Must be given as a keyword parameter for clarity.
+        :param end_date: When to stop simulating. Only events strictly before this
+            date will be allowed to occur. Must be given as a keyword parameter for
+            clarity.
         """
         start = time.time()
         self.initialise(end_date=end_date)
         self.run_simulation_to(to_date=end_date)
         self.finalise(time.time() - start)
 
-    def schedule_event(self, event, date):
+    def schedule_event(self, event: Event, date: Date) -> None:
         """Schedule an event to happen on the given future date.
 
-        :param event: the Event to schedule
-        :param date: when the event should happen
+        :param event: The event to schedule.
+        :param date: wWen the event should happen.
         """
         assert date >= self.date, "Cannot schedule events in the past"
 
@@ -349,35 +381,39 @@ class Simulation:
 
         self.event_queue.schedule(event=event, date=date)
 
-    def fire_single_event(self, event, date):
+    def fire_single_event(self, event: Event, date: Date) -> None:
         """Fires the event once for the given date
 
-        :param event: :py:class:`Event` to fire
-        :param date: the date of the event
+        :param event: :py:class:`Event` to fire.
+        :param date: The date of the event.
         """
         self.date = date
         event.run()
 
-    def do_birth(self, mother_id):
+    def do_birth(self, mother_id: int) -> int:
         """Create a new child person.
 
         We create a new person in the population and then call the `on_birth` method in
         all modules to initialise the child's properties.
 
-        :param mother_id: the maternal parent
-        :return: the new child
+        :param mother_id: Row index label of the maternal parent.
+        :return: Row index label of the new child.
         """
         child_id = self.population.do_birth()
         for module in self.modules.values():
             module.on_birth(mother_id, child_id)
         return child_id
 
-    def find_events_for_person(self, person_id: int):
+    def find_events_for_person(self, person_id: int) -> list[tuple[Date, Event]]:
         """Find the events in the queue for a particular person.
-        :param person_id: the person_id of interest
-        :returns list of tuples (date_of_event, event) for that person_id in the queue.
+    
+        :param person_id: The row index of the person of interest.
+        :return: List of tuples `(date_of_event, event)` for that `person_id` in the
+            queue.
 
-        NB. This is for debugging and testing only - not for use in real simulations as it is slow
+        .. note::
+           This is for debugging and testing only. Not for use in real simulations as it
+           is slow.
         """
         person_events = []
 
@@ -437,16 +473,16 @@ class EventQueue:
     def schedule(self, event: Event, date: Date) -> None:
         """Schedule a new event.
 
-        :param event: the event to schedule
-        :param date: when it should happen
+        :param event: The event to schedule.
+        :param date: When it should happen.
         """
         entry = (date, event.priority, next(self.counter), event)
         heapq.heappush(self.queue, entry)
 
-    def pop_next_event_and_date(self) -> Tuple[Event, Date]:
+    def pop_next_event_and_date(self) -> tuple[Event, Date]:
         """Get and remove the earliest event and corresponding date in the queue.
 
-        :returns: an (event, date) pair
+        :returns: An `(event, date)` pair.
         """
         date, _, _, event = heapq.heappop(self.queue)
         return event, date
@@ -461,5 +497,5 @@ class EventQueue:
         return date
 
     def __len__(self) -> int:
-        """:return: the length of the queue"""
+        """:return: The length of the queue."""
         return len(self.queue)
