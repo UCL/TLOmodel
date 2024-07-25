@@ -253,19 +253,20 @@ class Simulation:
             module.on_simulation_end()
         if wall_clock_time is not None:
             logger.info(key="info", data=f"simulate() {wall_clock_time} s")
-        if self.output_file:
-            self.close_output_file()
+        self.close_output_file()
 
     def close_output_file(self):
-        # From Python logging.shutdown
-        try:
-            self.output_file.acquire()
-            self.output_file.flush()
-            self.output_file.close()
-        except (OSError, ValueError):
-            pass
-        finally:
-            self.output_file.release()
+        if self.output_file:
+            # From Python logging.shutdown
+            try:
+                self.output_file.acquire()
+                self.output_file.flush()
+                self.output_file.close()
+            except (OSError, ValueError):
+                pass
+            finally:
+                self.output_file.release()
+                self.output_file = None
 
     def _initialise_progress_bar(self, end_date):
         num_simulated_days = (end_date - self.date).days
@@ -399,12 +400,14 @@ class Simulation:
             dill.dump(self, pickle_file)
 
     @staticmethod
-    def load_from_pickle(pickle_path: Path) -> "Simulation":
+    def load_from_pickle(pickle_path: Path, log_config: Optional[dict] = None) -> "Simulation":
         """Load simulation state from a pickle file using :py:mod:`dill`.
 
         Requires :py:mod:`dill` to be importable.
 
         :param pickle_path: File path to load simulation state from.
+        :param log_config: New log configuration to override previous configuration. If
+            `None` previous configuration (including output file) will be retained. 
 
         :returns: Loaded :py:class:`Simulation` object.
         """
@@ -412,6 +415,8 @@ class Simulation:
             raise RuntimeError("Cannot load from pickle as dill is not installed")
         with open(pickle_path, "rb") as pickle_file:
             simulation = dill.load(pickle_file)
+        if log_config is not None:
+            simulation._log_filepath = simulation._configure_logging(**log_config)
         return simulation
 
 

@@ -396,11 +396,11 @@ class SampleRunner:
         logger.info(key="message", data=f"Running draw {sample['draw_number']}, sample {sample['sample_number']}")
 
         # if user has specified a restore simulation, we load it from a pickle file
-        if self.scenario.resume_simulation is not None:
+        if hasattr(self.scenario, "resume_simulation") and self.scenario.resume_simulation is not None:
             sim = Simulation.load_from_pickle(
-                pickle_path=Path(self.scenario.get_log_config()["directory"]) / self.scenario.resume_simulation / str(draw_number) / str(sample_number) / "suspended_simulation.pickle",
+                pickle_path=Path(self.scenario.resume_simulation) / str(draw_number) / str(sample_number) / "suspended_simulation.pickle",
+                log_config=log_config,
             )
-            sim.configure_logging(**log_config)
         else:
             sim = Simulation(
                 start_date=self.scenario.start_date,
@@ -415,12 +415,12 @@ class SampleRunner:
             sim.make_initial_population(n=self.scenario.pop_size)
 
         # if user has specified a suspend date, we run the simulation to that date and save it to a pickle file
-        if self.scenario.suspend_date is not None:
+        if hasattr(self.scenario, "suspend_date") and self.scenario.suspend_date is not None:
             sim.initialise(end_date=self.scenario.end_date)
             sim.run_simulation_to(to_date=self.scenario.suspend_date)
             sim.save_to_pickle(pickle_path=Path(log_config["directory"]) / "suspended_simulation.pickle")
-            sim.finalise()
-        elif self.scenario.resume_simulation is not None:
+            sim.close_output_file()
+        elif hasattr(self.scenario, "resume_simulation") and self.scenario.resume_simulation is not None:
             sim.run_simulation_to(to_date=self.scenario.end_date)
             sim.finalise()
         else:
