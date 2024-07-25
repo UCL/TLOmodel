@@ -403,7 +403,9 @@ def test_recovery_severe_wasting_without_complications(tmpdir):
     progression_event.apply(person_id=person_id)
 
     # Check this individual has symptom(weight loss) caused by Wasting (SAM only)
-    assert 'weight_loss' in sim.modules['SymptomManager'].has_what(person_id, sim.modules['Wasting'])
+    assert 'weight_loss' in sim.modules['SymptomManager'].has_what(
+        person_id=person_id, disease_module=sim.modules['Wasting']
+    )
 
     # Check properties of this individual: (should now be severely wasted, diagnosed as SAM and without a scheduled
     # death date)
@@ -454,7 +456,7 @@ def test_recovery_severe_wasting_without_complications(tmpdir):
     assert pd.isnull(person['un_sam_death_date'])
 
     # check they have no symptoms:
-    assert 0 == len(sim.modules['SymptomManager'].has_what(person_id, sim.modules['Wasting']))
+    assert 0 == len(sim.modules['SymptomManager'].has_what(person_id=person_id, disease_module=sim.modules['Wasting']))
 
 
 def test_recovery_severe_wasting_with_complications(tmpdir):
@@ -542,7 +544,7 @@ def test_recovery_severe_wasting_with_complications(tmpdir):
     assert pd.isnull(person['un_sam_death_date'])
 
     # check they have no symptoms:
-    assert 0 == len(sim.modules['SymptomManager'].has_what(person_id, sim.modules['Wasting']))
+    assert 0 == len(sim.modules['SymptomManager'].has_what(person_id=person_id, disease_module=sim.modules['Wasting']))
 
 
 def test_nat_hist_death(tmpdir):
