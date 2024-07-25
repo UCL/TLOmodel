@@ -257,10 +257,12 @@ def test_continuous_and_interrupted_simulations_equal(
     simulation.run_simulation_to(to_date=intermediate_date)
     pickle_path = tmp_path / "simulation.pkl"
     simulation.save_to_pickle(pickle_path=pickle_path)
-    interrupted_simulation = Simulation.load_from_pickle(pickle_path)
-    interrupted_simulation.configure_logging(
-        "test_continued", tmp_path, custom_levels=logging_custom_levels
-    )
+    log_config = {
+        "filename": "test_continued",
+        "directory": tmp_path,
+        "custom_levels": logging_custom_levels,
+    }
+    interrupted_simulation = Simulation.load_from_pickle(pickle_path, log_config)
     interrupted_simulation.run_simulation_to(to_date=end_date)
     interrupted_simulation.finalise()
     _check_simulations_are_equal(simulated_simulation, interrupted_simulation)
