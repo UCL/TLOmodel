@@ -1,6 +1,3 @@
-import datetime
-import time
-from pathlib import Path
 from typing import Dict
 
 from tlo import Date, logging
@@ -44,48 +41,36 @@ class LongRun(BaseScenario):
             + [ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=self.resources)]
         )
 
-
     def draw_parameters(self, draw_number, rng):
         if draw_number < len(self._scenarios):
             print(list(self._scenarios.values())[draw_number])
             return list(self._scenarios.values())[draw_number]
 
-
     def _get_scenarios(self) -> Dict[str, Dict]:
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
-        # Load helper class containing the definitions of the elements of all the scenarios
-        return {"FULL PACKAGE":
-                mix_scenarios(
-                    self._baseline(),
-                    {
-                        'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
-                            'max_healthsystem_function': [True, True],
-                            'max_healthcare_seeking': [True, True],
-                            'year_of_switch': self.YEAR_OF_CHANGE
-                        },
-                    },
-                ),}
+        return {'Baseline': self._baseline()}
 
     def _baseline(self) -> Dict:
         """Return the Dict with values for the parameter changes that define the baseline scenario. """
         return mix_scenarios(
             get_parameters_for_status_quo(),
-            {"HealthSystem":{
-                    "mode_appt_constraints": 1,
-                    "mode_appt_constraints_postSwitch": 1,
-                    "cons_availability": "all",
-                    "beds_availability": 'all',
-                    "equip_availability": 'all',
-                    "use_funded_or_actual_staffing": "funded_plus",
-                    },})
-    #                'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
-    #                        'max_healthsystem_function': [True, True],
-    #                        'max_healthcare_seeking': [True, True],
-    #                        'year_of_switch': self.YEAR_OF_CHANGE
-    #                       }
+            {'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
+                'max_healthsystem_function': [True, True],
+                'max_healthcare_seeking': [True, True],
+                'year_of_switch': self.YEAR_OF_CHANGE
+                },
+             "HealthSystem": {
+                "mode_appt_constraints": 1,
+                "mode_appt_constraints_postSwitch": 1,
+                "cons_availability": "all",
+                "beds_availability": 'all',
+                "equip_availability": 'all',
+                "use_funded_or_actual_staffing": "funded_plus",
+                },
 
-    #        },
-    #    )
+             },
+        )
+
 
 if __name__ == '__main__':
     from tlo.cli import scenario_run
