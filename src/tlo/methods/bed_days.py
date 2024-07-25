@@ -5,12 +5,12 @@ It maintains a current record of the availability and usage of beds in the healt
 
 """
 from collections import defaultdict
-from typing import Dict, Tuple
+from typing import Dict, Literal, Tuple
 
 import numpy as np
 import pandas as pd
 
-from tlo import Property, Types, logging
+from tlo import Date, Property, Types, logging
 
 # ---------------------------------------------------------------------------------------------------------
 #   CLASS DEFINITIONS
@@ -144,6 +144,40 @@ class BedDays:
             df = df.mul(self._scaled_capacity[bed_type], axis=1)
             assert not df.isna().any().any()
             self.bed_tracker[bed_type] = df
+
+    def switch_beddays_availability(
+        self,
+        new_availability: Literal["all", "none", "default"],
+        effective_on_and_from: Date,
+        model_to_data_popsize_ratio: float = 1.0,
+    ) -> None:
+        """
+        Action to be taken if the beddays availability changes in the middle
+        of the simulation.
+
+        If bed capacities are reduced below the currently scheduled occupancy,
+        inpatients are not evicted from beds and are allowed to remain in the
+        bed until they are scheduled to leave. Obviously, no new patients will
+        be admitted if there is no room in the new capacities.
+
+        :param new_availability: The new bed availability. See __init__ for details.
+        :param effective_on_and_from: First day from which the new capacities will be imposed.
+        :param model_to_data_popsize_ratio: As in initialise_population.
+        """
+        # Store new bed availability
+        self.availability = new_availability
+        # Before we update the bed capacity, we need to store its old values
+        # This is because we will need to update the trackers to reflect the new#
+        # maximum capacities for each bed type.
+        old_max_capacities: pd.DataFrame = self._scaled_capacity.copy()
+        # Set the new capacity for beds
+        self.set_scaled_capacity(model_to_data_popsize_ratio)
+        # Compute the difference between the new max capacities and the old max capacities
+        difference_in_max = self._scaled_capacity - old_max_capacities
+        # For each tracker, after the effective date, impose the difference on the max
+        # number of beds
+        for bed_type, tracker in self.bed_tracker.items():
+            tracker.loc[effective_on_and_from:] += difference_in_max[bed_type]
 
     def on_start_of_day(self):
         """Things to do at the start of each new day:
