@@ -26,12 +26,11 @@ class LongRun(BaseScenario):
             'filename': 'longterm_trends_all_diseases',
             'directory': './outputs',
             'custom_levels': {
+                '*': logging.WARNING,
                 'tlo.methods.demography': logging.INFO,
                 'tlo.methods.demography.detail': logging.WARNING,
                 'tlo.methods.healthburden': logging.INFO,
-                'tlo.methods.healthsystem': logging.INFO,
                 'tlo.methods.healthsystem.summary': logging.INFO,
-                'tlo.methods.contraception': logging.INFO,
             }
         }
 
@@ -43,7 +42,7 @@ class LongRun(BaseScenario):
 
     def draw_parameters(self, draw_number, rng):
         if draw_number < len(self._scenarios):
-            print(list(self._scenarios.values())[draw_number])
+
             return list(self._scenarios.values())[draw_number]
 
     def _get_scenarios(self) -> Dict[str, Dict]:
@@ -55,16 +54,19 @@ class LongRun(BaseScenario):
         return mix_scenarios(
             get_parameters_for_status_quo(),
             {'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
-                'max_healthsystem_function': [True, True],
-                'max_healthcare_seeking': [True, True],
+                'max_healthsystem_function': [False, True],
+                'max_healthcare_seeking': [False, True],
                 'year_of_switch': self.YEAR_OF_CHANGE
                 },
              "HealthSystem": {
                 "mode_appt_constraints": 1,
-                "mode_appt_constraints_postSwitch": 1,
-                "cons_availability": "all",
-                "beds_availability": 'all',
-                "equip_availability": 'all',
+                "cons_availability": "default",
+                "cons_availability_postSwitch": "all",
+                "year_cons_availability_switch": self.YEAR_OF_CHANGE,
+                "beds_availability": "all",
+                "equip_availability": "default",
+                "equip_availability_postSwitch": "all",
+                "year_equip_availability_switch": self.YEAR_OF_CHANGE,
                 "use_funded_or_actual_staffing": "funded_plus",
                 },
 
