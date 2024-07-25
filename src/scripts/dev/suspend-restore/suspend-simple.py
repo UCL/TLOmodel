@@ -13,8 +13,6 @@ class Playing22(BaseScenario):
         self.number_of_draws = 1
         self.runs_per_draw = 1
 
-        self.suspend_date = Date(2015, 1, 1)
-
     def log_configuration(self):
         return {
             # 'filename': 'my-scenario',
