@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, List
 
 import numpy as np
 import pandas as pd
+import copy
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
@@ -41,7 +42,6 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
         self.ASSIGN_INJURIES_AND_DALY_CHANGES = None
-        # self.item_codes_for_consumables_required = dict()
         self.cons_item_codes = None  # (Will store consumable item codes)
 
     INIT_DEPENDENCIES = {"SymptomManager",
@@ -4050,9 +4050,11 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
         assert all(injuries in person_injuries.values for injuries in p['rt_injuries_to_cast'])
 
         # If they have a fracture that needs a cast, ask for plaster of paris, update POP count
-        self.module.cons_item_codes['fracture_treatment'].update({
+        ind_cons_fracture_treatment = copy.deepcopy(self.module.cons_item_codes['fracture_treatment'])
+        ind_cons_fracture_treatment = ind_cons_fracture_treatment.update({
             get_item_code('Plaster of Paris (POP) 10cm x 7.5cm slab_12_CMST'): fracturecastcounts})
-        is_cons_available = self.get_consumables(self.module.cons_item_codes['fracture_treatment'])
+
+        is_cons_available = self.get_consumables(ind_cons_fracture_treatment)
         # if the consumables are available then the appointment can run
         if is_cons_available:
             logger.debug(key='rti_general_message',
@@ -4178,6 +4180,9 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
 
         # If they have an open fracture, ask for consumables to treat fracture
         if open_fracture_counts > 0:
+            self.module.cons_item_codes["open_fracture_treatment"]
+            ind_cons_open_fracture_treatment = copy.deepcopy(self.module.cons_item_codes["open_fracture_treatment"])
+
             # If wound is "grossly contaminated" administer Metronidazole
             # todo: parameterise the probability of wound contamination
             p = self.module.parameters
@@ -4185,13 +4190,12 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
             rand_for_contamination = self.module.rng.random_sample(size=1)
             # NB: Dose used below from BNF is for surgical prophylaxsis
             if rand_for_contamination < prob_open_fracture_contaminated:
-                self.module.cons_item_codes['open_fracture_treatment'].update(
+                ind_cons_open_fracture_treatment = ind_cons_open_fracture_treatment.update(
                     {get_item_code('Metronidazole, injection, 500 mg in 100 ml vial'): 1500}
                 )
+
         # Check that there are enough consumables to treat this person's fractures
-        is_cons_available = self.get_consumables(
-            self.module.cons_item_codes['open_fracture_treatment']
-        )
+        is_cons_available = self.get_consumables(ind_cons_open_fracture_treatment)
 
         if is_cons_available:
             logger.debug(key='rti_general_message',
@@ -4388,12 +4392,17 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
         # check the person sent here didn't die due to rti, has been through A and E and had RTI_med_int
         assert df.loc[person_id, 'rt_diagnosed'], 'this person has not been through a and e'
         assert df.loc[person_id, 'rt_med_int'], 'this person has not been treated'
+        ind_cons_burn_treatment = copy.deepcopy(self.module.cons_item_codes["burn_treatment"])
         if burncounts > 0:
             # Request materials for burn treatment
-            self.module.cons_item_codes['burn_treatment'].update({
+            ind_cons_burn_treatment.update({
                 get_item_code("Gauze, absorbent 90cm x 40m_each_CMST"): burncounts,
                 get_item_code('Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST'): burncounts,
             })
+            # self.module.cons_item_codes['burn_treatment'].update({
+            #     get_item_code("Gauze, absorbent 90cm x 40m_each_CMST"): burncounts,
+            #     get_item_code('Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST'): burncounts,
+            # })
 
             possible_large_TBSA_burn_codes = ['7113', '8113', '4113', '5113']
             idx2, bigburncounts = \
@@ -4403,11 +4412,11 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
             if (burncounts > 1) or ((len(idx2) > 0) & (random_for_severe_burn > self.prob_mild_burns)):
                 # check if they have multiple burns, which implies a higher burned total body surface area (TBSA) which
                 # will alter the treatment plan
-                self.module.cons_item_codes['burn_treatment'].update(
+                ind_cons_burn_treatment.update(
                     {get_item_code("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 4000}
                 )
 
-            is_cons_available = self.get_consumables(self.module.cons_item_codes['burn_treatment'])
+            is_cons_available = self.get_consumables(ind_cons_burn_treatment)
             if is_cons_available:
                 logger.debug(key='rti_general_message',
                              data=f"This facility has burn treatment available which has been used for person "
