@@ -29,6 +29,11 @@ results0 = get_scenario_outputs("scenario0.py", outputspath)[-1]
 results1 = get_scenario_outputs("scenario1.py", outputspath)[-1]
 results2 = get_scenario_outputs("scenario2.py", outputspath)[-1]
 
+# results0 = get_scenario_outputs("mode2_scenario10.py", outputspath)[-1]
+# results1 = get_scenario_outputs("mode2_scenario11.py", outputspath)[-1]
+# results2 = get_scenario_outputs("mode2_scenario12.py", outputspath)[-1]
+
+
 # colour scheme
 berry = lacroix.colorList('CranRaspberry')  # ['#F2B9B8', '#DF7878', '#E40035', '#009A90', '#0054A4', '#001563']
 baseline_colour = berry[5]  # '#001563'
@@ -433,7 +438,8 @@ l_sc2 = mlines.Line2D([], [], color=sc2_colour, label="Unconstrained scale-up")
 
 plt.legend(handles=[l_baseline, l_sc1, l_sc2])
 
-fig.savefig(outputspath / "Epi_outputs_focussed.png")
+# fig.savefig(outputspath / "Epi_outputs_focussed.png")
+fig.savefig(outputspath / "Epi_outputs_focussed.pdf", format='pdf')
 
 plt.show()
 

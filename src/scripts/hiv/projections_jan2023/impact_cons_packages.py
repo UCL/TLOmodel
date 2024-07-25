@@ -74,38 +74,88 @@ median_perfect = deaths_perfect.iloc[-1].median()
 lower_perfect = deaths_perfect.iloc[-1].quantile(q=0.025)
 upper_perfect = deaths_perfect.iloc[-1].quantile(q=0.975)
 
+median_perfect_aids = deaths_perfect.loc['AIDS'].median()
+lower_perfect_aids = deaths_perfect.loc['AIDS'].quantile(q=0.025)
+upper_perfect_aids = deaths_perfect.loc['AIDS'].quantile(q=0.975)
+
+median_perfect_tb = deaths_perfect.loc['TB (non-AIDS)'].median()
+lower_perfect_tb = deaths_perfect.loc['TB (non-AIDS)'].quantile(q=0.025)
+upper_perfect_tb = deaths_perfect.loc['TB (non-AIDS)'].quantile(q=0.975)
+
+
+
 deaths_hivTX = extract_total_deaths(hiv_tx)
-median_hivTX = deaths_hivTX.iloc[-1].median()
-lower_hivTX = deaths_hivTX.iloc[-1].quantile(q=0.025)
-upper_hivTX = deaths_hivTX.iloc[-1].quantile(q=0.975)
+median_hivTX = deaths_hivTX.loc['AIDS'].median()
+lower_hivTX = deaths_hivTX.loc['AIDS'].quantile(q=0.025)
+upper_hivTX = deaths_hivTX.loc['AIDS'].quantile(q=0.975)
+
+median_hivTX_tb = deaths_hivTX.loc['TB (non-AIDS)'].median()
+lower_hivTX_tb = deaths_hivTX.loc['TB (non-AIDS)'].quantile(q=0.025)
+upper_hivTX_tb = deaths_hivTX.loc['TB (non-AIDS)'].quantile(q=0.975)
+
 
 deaths_hivPR = extract_total_deaths(hiv_pre)
-median_hivPR = deaths_hivPR.iloc[-1].median()
-lower_hivPR = deaths_hivPR.iloc[-1].quantile(q=0.025)
-upper_hivPR = deaths_hivPR.iloc[-1].quantile(q=0.975)
+median_hivPR = deaths_hivPR.loc['AIDS'].median()
+lower_hivPR = deaths_hivPR.loc['AIDS'].quantile(q=0.025)
+upper_hivPR = deaths_hivPR.loc['AIDS'].quantile(q=0.975)
+
+print(deaths_hivPR.loc['TB (non-AIDS)'].median())
+print(deaths_hivPR.loc['TB (non-AIDS)'].quantile(q=0.025))
+print(deaths_hivPR.loc['TB (non-AIDS)'].quantile(q=0.975))
+
+
 
 deaths_tbTX = extract_total_deaths(tb_tx)
-median_tbTX = deaths_tbTX.iloc[-1].median()
-lower_tbTX = deaths_tbTX.iloc[-1].quantile(q=0.025)
-upper_tbTX = deaths_tbTX.iloc[-1].quantile(q=0.975)
+median_tbTX = deaths_tbTX.loc['TB (non-AIDS)'].median()
+lower_tbTX = deaths_tbTX.loc['TB (non-AIDS)'].quantile(q=0.025)
+upper_tbTX = deaths_tbTX.loc['TB (non-AIDS)'].quantile(q=0.975)
+
+print(deaths_tbTX.loc['AIDS'].median())
+print(deaths_tbTX.loc['AIDS'].quantile(q=0.025))
+print(deaths_tbTX.loc['AIDS'].quantile(q=0.975))
+
+
 
 deaths_tbPR = extract_total_deaths(tb_pre)
-median_tbPR = deaths_tbPR.iloc[-1].median()
-lower_tbPR = deaths_tbPR.iloc[-1].quantile(q=0.025)
-upper_tbPR = deaths_tbPR.iloc[-1].quantile(q=0.975)
+median_tbPR = deaths_tbPR.loc['TB (non-AIDS)'].median()
+lower_tbPR = deaths_tbPR.loc['TB (non-AIDS)'].quantile(q=0.025)
+upper_tbPR = deaths_tbPR.loc['TB (non-AIDS)'].quantile(q=0.975)
 
-# comparison of total deaths, run by run
+print(deaths_tbPR.loc['AIDS'].median())
+print(deaths_tbPR.loc['AIDS'].quantile(q=0.025))
+print(deaths_tbPR.loc['AIDS'].quantile(q=0.975))
+
+
+# comparison of TOTAL deaths, run by run
 # there are 10 sub-scenarios compared with 25 in main analysis (perfect)
 d1 = deaths_hivTX.iloc[-1].values - deaths_perfect.iloc[-1, 0:10].values
 d2 = deaths_hivPR.iloc[-1].values - deaths_perfect.iloc[-1, 0:10].values
 d3 = deaths_tbTX.iloc[-1].values - deaths_perfect.iloc[-1, 0:10].values
 d4 = deaths_tbPR.iloc[-1].values - deaths_perfect.iloc[-1, 0:10].values
 
-np.quantile(d1, 0.5)
+print(np.quantile(d1, 0.5))  # deaths averted through strengthening HIV tx
+print(np.quantile(d1, 0.25))
+print(np.quantile(d1, 0.75))
+
 np.quantile(d2, 0.5)
 np.quantile(d3, 0.5)
 np.quantile(d4, 0.5)
 
+# use AIDS deaths or TB deaths only
+d1 = deaths_hivTX.loc['AIDS'].values - deaths_perfect.loc['AIDS'][0:10].values
+d2 = deaths_hivPR.loc['AIDS'].values - deaths_perfect.loc['AIDS'][0:10].values
+d3 = deaths_tbTX.loc['TB (non-AIDS)'].values - deaths_perfect.loc['TB (non-AIDS)'][6:16].values
+d4 = deaths_tbPR.loc['TB (non-AIDS)'].values - deaths_perfect.loc['TB (non-AIDS)'][0:10].values
+
+
+print(np.quantile(d1, 0.5))  # deaths averted through strengthening HIV tx
+print(np.quantile(d1, 0.025))
+print(np.quantile(d1, 0.975))
+
+
+print(np.quantile(d3, 0.5))  # deaths averted through strengthening TB PR
+print(np.quantile(d3, 0.025))
+print(np.quantile(d3, 0.975))
 
 # get DALYs - all-cause - for each scenario
 def num_dalys_by_cause(_df):

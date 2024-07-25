@@ -584,7 +584,8 @@ ax4.annotate('D', xy=(0.02, 0.95), xycoords='axes fraction', fontsize=12, fontwe
 ax5.annotate('E', xy=(0.02, 0.95), xycoords='axes fraction', fontsize=12, fontweight='bold')
 ax6.annotate('F', xy=(0.02, 0.95), xycoords='axes fraction', fontsize=12, fontweight='bold')
 
-fig.savefig(outputspath / "Treatment_cascade_6panel.png")
+# fig.savefig(outputspath / "Treatment_cascade_6panel.png")
+fig.savefig(outputspath / "Treatment_cascade_6panel.pdf", format='pdf')
 
 plt.show()
 
