@@ -253,19 +253,21 @@ class Simulation:
             module.on_simulation_end()
         if wall_clock_time is not None:
             logger.info(key="info", data=f"simulate() {wall_clock_time} s")
-        if self.output_file:
-            self.close_output_file()
+        self.close_output_file()
 
-    def close_output_file(self):
-        # From Python logging.shutdown
-        try:
-            self.output_file.acquire()
-            self.output_file.flush()
-            self.output_file.close()
-        except (OSError, ValueError):
-            pass
-        finally:
-            self.output_file.release()
+    def close_output_file(self) -> None:
+        """Close logging file if open."""
+        if self.output_file:
+            # From Python logging.shutdown
+            try:
+                self.output_file.acquire()
+                self.output_file.flush()
+                self.output_file.close()
+            except (OSError, ValueError):
+                pass
+            finally:
+                self.output_file.release()
+                self.output_file = None
 
     def _initialise_progress_bar(self, end_date):
         num_simulated_days = (end_date - self.date).days
