@@ -202,6 +202,32 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
+    # DALYS Averted vs No Healthcare System
+    print(
+        summarize(
+            -1.0 *
+            pd.DataFrame(
+                find_difference_relative_to_comparison(
+                    num_dalys.loc[0],
+                    comparison='No Healthcare System')
+            ).T
+        ).iloc[0].unstack().reindex(param_names) / 1e6
+    )
+
+    # DALYS Averted Due to the Squeezing Being Allowable (= Dalys Averted in Hard Constraints vs Status Quo Scenario)
+    print(
+        summarize(
+            -1.0 *
+            pd.DataFrame(
+                find_difference_relative_to_comparison(
+                    num_dalys.loc[0],
+                    comparison="With Hard Constraints")
+            ).T
+        ).iloc[0].unstack().reindex(param_names).loc["Status Quo"] / 1e6
+    )
+
+
+
     # %% Deaths and DALYS averted relative to Status Quo
     num_deaths_averted = summarize(
         -1.0 *
@@ -452,6 +478,8 @@ if __name__ == "__main__":
 
     apply(
         results_folder=args.results_folder,
-        output_folder=args.results_folder,
+        output_folder=Path(
+            '/Users/tbh03/Library/CloudStorage/OneDrive-ImperialCollegeLondon/Documents/TLM/Papers/Introductory Model Paper/2024_07_11_RESUBMISSION_TO_THE_LANCET_GLOBAL_HEALTH/Comparing results between mean and median/3 - upated using median/healthsystem_under_different_assumptions-2023-11-13T194641Z'
+        ),
         resourcefilepath=Path('./resources')
     )
