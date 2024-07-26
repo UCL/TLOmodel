@@ -533,13 +533,13 @@ class HealthBurden(Module):
             force_cols=self._causes_of_dalys,
         )
         # 5) Log the prevalence of each disease
-        #log_df_line_by_line(
-        #    key='prevalence_of_diseases',
-        #    description='Prevalence of each disease., '
-        #                'broken down by year, sex, age-group',
-        #    df=(disease_prevalence := summarise_results_for_this_year(self.prevalence_of_diseases)),
-        #    force_cols= self._causes_of_dalys,
-        #)
+        log_df_line_by_line(
+            key='prevalence_of_diseases',
+            description='Prevalence of each disease., '
+                        'broken down by year, sex, age-group',
+            df=(disease_prevalence := summarise_results_for_this_year(self.prevalence_of_diseases)),
+            force_cols= self.recognised_modules_names,
+        )
         self._years_written_to_log += [year]
 
     def check_multi_index(self):
@@ -684,14 +684,14 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
         # 1) Ask each disease module to log the prevalence for the previous month
         prevalence_from_each_disease_module = list()
         for disease_module_name in self.module.recognised_modules_names:
-            print(disease_module_name)
+            #print(disease_module_name)
             disease_module = self.sim.modules[disease_module_name]
             prevalence_from_disease_module = disease_module.report_daly_values()
             # Check type is in acceptable form and make into dataframe if not already
             assert type(prevalence_from_disease_module) in (pd.Series, pd.DataFrame)
 
             prevalence_from_disease_module = pd.DataFrame(prevalence_from_disease_module)
-            print(prevalence_from_disease_module)
+            #print(prevalence_from_disease_module)
             # Perform checks on what has been returned
             assert set(prevalence_from_disease_module.index) == set(idx_alive)
             assert not pd.isnull(prevalence_from_disease_module).any().any()
