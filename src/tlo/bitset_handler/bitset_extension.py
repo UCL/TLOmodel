@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import (
     TYPE_CHECKING,
     Callable,
@@ -23,9 +24,12 @@ from pandas.core.dtypes.base import ExtensionDtype
 if TYPE_CHECKING:
     from pandas._typing import type_t
 
-
-ALLOWABLE_ELEMENT_TYPES = (str, int, float)
-NodeType: TypeAlias = str | int | float
+# Assume nodes are strings, else we can't construct from string when passed the name!
+# We can likely get around this with some careful planning, but we'd have to figure out how
+# to pass type-metadata for the elements from inside the output of self.name, so that casting
+# was successful.
+ALLOWABLE_ELEMENT_TYPES = (str,)
+NodeType: TypeAlias = str
 
 class BitsetDtype(ExtensionDtype):
     """
@@ -41,25 +45,40 @@ class BitsetDtype(ExtensionDtype):
     string character.
     """
     _element_map: Dict[NodeType, Tuple[int, np.uint8]]
-    _elements: Tuple[NodeType] # NB: we never assume elements are strings, could bind this to a type
+    _elements: Tuple[NodeType]
     _index_map: Dict[Tuple[int, np.uint8], NodeType]
-    _metadata = ("n_elements", "elements")
+    _metadata = ("_elements",)
 
     @classmethod
     def construct_array_type(cls) -> type_t[BitsetArray]:
         return BitsetArray
 
     @classmethod
-    def construct_from_string(cls, string: str, delimiter: str = ",") -> BitsetDtype:
+    def construct_from_string(cls, string: str) -> BitsetDtype:
         """
-        Construct an instance of this class by passing in a string of set values, separated by the delimiter.
-        Whitespace will be trimmed from the set elements automatically.
+        Construct an instance of this class by passing in a string of the form
+        that str(<instance of this class>) produces.
+        
+        That is, given a string of the form
+        bitset(#elements): e1, e2, e3, ...
+
+        this method will return a BitsetDtype with elements e1, e2, e3, ... etc.
         """
-        return BitsetDtype(s.strip() for s in string.split(delimiter))
+        if not isinstance(string, str):
+            raise TypeError("'construct_from_string' expects a string, got <class 'int'>")
+
+        string_has_bitset_prefix = re.match("bitset\((\d+)\):", string)
+        if string_has_bitset_prefix:
+            string = string.removeprefix(string_has_bitset_prefix.group(0))
+        else:
+            raise TypeError(
+                f"Cannot construct a '{cls.__name__}' from 'another_type'"
+            )
+        return BitsetDtype(s.strip() for s in string.split(","))
 
     @property
-    def elements(self) -> Set[NodeType]:
-        return set(self._elements)
+    def elements(self) -> Tuple[NodeType]:
+        return self._elements
 
     @property
     def fixed_width(self) -> int:
@@ -97,12 +116,20 @@ class BitsetDtype(ExtensionDtype):
         return f"{self.fixed_width}S" if self.fixed_width != 1 else "S"
 
     def __init__(self, elements: Iterable[NodeType]) -> None:
-        # Take only unique elements, and preserve order of the input iterable for consistency
-        # reasons.
-        provided_elements = [e for e in elements]
+        # Take only unique elements.
+        # Sort elements alphabetically for consistency when constructing Bitsets that
+        # represent the same items.
+        # Cast all element types to strings so that construct_from_string does not need
+        # metadata about the type of each element.
+        provided_elements = sorted([e for e in elements])
+        if not all(
+            isinstance(e, ALLOWABLE_ELEMENT_TYPES) for e in provided_elements
+        ):
+            raise TypeError(f"BitSet elements must be one of type: {ALLOWABLE_ELEMENT_TYPES}")
         self._elements = tuple(
             sorted(set(provided_elements), key=lambda x: provided_elements.index(x))
         )
+
         if len(self._elements) == 0:
             raise ValueError("Bitsets must have at least 1 possible element.")
 
