@@ -1286,6 +1286,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         return dalys
 
     def report_prevalence(self, population):
+        # This returns dataframe that reports on the prevalence of HIV for all individuals
+
         df = population.props
         total_prev = len(
             df[df.hv_inf & df.is_alive]
