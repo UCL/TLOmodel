@@ -100,6 +100,7 @@ class HealthBurden(Module):
         self.years_life_lost_stacked_time = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time)
         self.years_life_lost_stacked_age_and_time = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time)
         self.years_lived_with_disability = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time)
+        self.prevalence_of_diseases = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time)
 
         # 2) Collect the module that will use this HealthBurden module
         self.recognised_modules_names = [
@@ -531,7 +532,14 @@ class HealthBurden(Module):
             df=self.get_dalys(yld=yld_by_wealth, yll=yll_by_wealth),
             force_cols=self._causes_of_dalys,
         )
-
+        # 5) Log the prevalence of each disease
+        log_df_line_by_line(
+            key='prevalence_of_diseases',
+            description='Prevalence of each disease., '
+                        'broken down by year, sex, age-group',
+            df=(yld := summarise_results_for_this_year(self.prevalence_of_diseases)),
+            #force_cols=sorted(set(self.causes_of_disability.keys())),
+        )
         self._years_written_to_log += [year]
 
     def check_multi_index(self):
