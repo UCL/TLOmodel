@@ -999,6 +999,14 @@ class Tb(Module):
 
         return health_values.loc[df.is_alive]
 
+    def report_prevalence(self, population):
+        df = population.props
+        total_prev = len(
+            df[((df.tb_inf == "active") | (df.tb_inf == "latent")) & df.is_alive]
+        ) / len(df[df.is_alive])
+
+        return total_prev
+
     def calculate_untreated_proportion(self, population, strain):
         """
         calculate the proportion of active TB cases not on correct treatment
