@@ -4,12 +4,12 @@ Road traffic injury module.
 """
 from __future__ import annotations
 
+import copy
 from pathlib import Path
 from typing import TYPE_CHECKING, List
 
 import numpy as np
 import pandas as pd
-import copy
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
