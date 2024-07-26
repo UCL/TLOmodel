@@ -206,7 +206,7 @@ class Schisto(Module):
         # schedule WASH scale-up
         if self.parameters['scaleup_WASH']:
             sim.schedule_event(SchistoWashScaleUp(self),
-                               sim.date + DateOffset(years=self.parameters['scaleup_WASH_start_time']))
+                               Date(self.parameters['scaleup_WASH_start_year'], 1, 1))
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -824,7 +824,7 @@ class SchistoSpecies:
         """Assign initial distribution of worms to each person (based on district and age-group)."""
         df = population.props
         prop = self.prefix_species_property
-        params = self.params
+        params = self.params  # these are species-specific
         districts = self.schisto_module.districts
         rng = self.schisto_module.rng
 
@@ -834,6 +834,7 @@ class SchistoSpecies:
             in_the_district = df.index[df['district_of_residence'] == district]
 
             # get reservoir in district
+            # for calibration, over-ride the default params to create multiple starting points
 
             # select starting points
             # HAEMATOBIUM CALIBRATION
@@ -1252,21 +1253,33 @@ class SchistoWashScaleUp(RegularEvent, PopulationScopeEventMixin):
         df.loc['li_no_clean_drinking_water'] = False
 
         # change proportion susceptible uniformly across the districts
-        # from everyone currently susceptible, reduce by 60%
+        # reduce the number of people that are currently susceptible by 60% (rr_WASH)
+        # ss_sh_susceptibility is binary 0/1
         # if do this separately for both species, will it over-estimate effect?
         # allow those currently infected to be selected, their exposure now reduces
-        susceptible_haem = df.loc[df.is_alive & (df.ss_sh_susceptibility == 1)].index
+        # alternative method, if any susceptibility to either species then eligible for reduction
+        # if selected for reduced susceptibility, apply to both species
+
+        # susceptible_haem = df.loc[df.is_alive & (df.ss_sh_susceptibility == 1)].index
+        # reduce_susceptibility = (
+        #     self.module.rng.random_sample(len(susceptible_haem))
+        #     < p["rr_WASH"]
+        # )
+        # df.loc[reduce_susceptibility, 'ss_sh_susceptibility'] = 0
+        #
+        # susceptible_mansoni = df.loc[df.is_alive & (df.ss_sm_susceptibility == 1)].index
+        # reduce_susceptibility = (
+        #     self.module.rng.random_sample(len(susceptible_mansoni))
+        #     < p["rr_WASH"]
+        # )
+        # df.loc[reduce_susceptibility, 'ss_sm_susceptibility'] = 0
+
+        susceptible_haem = df.loc[df.is_alive & ((df.ss_sh_susceptibility == 1) | (df.ss_sm_susceptibility == 1))].index
         reduce_susceptibility = (
             self.module.rng.random_sample(len(susceptible_haem))
             < p["rr_WASH"]
         )
         df.loc[reduce_susceptibility, 'ss_sh_susceptibility'] = 0
-
-        susceptible_mansoni = df.loc[df.is_alive & (df.ss_sm_susceptibility == 1)].index
-        reduce_susceptibility = (
-            self.module.rng.random_sample(len(susceptible_mansoni))
-            < p["rr_WASH"]
-        )
         df.loc[reduce_susceptibility, 'ss_sm_susceptibility'] = 0
 
 

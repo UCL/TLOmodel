@@ -41,8 +41,8 @@ class TestScenario(BaseScenario):
         super().__init__()
         self.seed = random.randint(0, 50000)
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2015, 12, 31)  # todo reset
-        self.pop_size = 160_000  # todo reset
+        self.end_date = Date(2025, 12, 31)  # todo reset
+        self.pop_size = 64_000  # todo reset, 64,000=2k per district
         self.number_of_draws = number_of_draws
         self.runs_per_draw = runs_per_draw
 
@@ -68,11 +68,17 @@ class TestScenario(BaseScenario):
             ),
             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
             symptommanager.SymptomManager(resourcefilepath=self.resources),
-            schisto.Schisto(resourcefilepath=self.resources, mda_execute=False),
+            schisto.Schisto(resourcefilepath=self.resources, mda_execute=True),
         ]
 
     def draw_parameters(self, draw_number, rng):
-        return
+        return {
+            'Schisto': {
+                'scaleup_WASH': [False, True][draw_number],
+                'scaleup_WASH_start_year': 2015,
+                'projection_scenario': [0, 1][draw_number],
+            },
+        }
 
 
 if __name__ == '__main__':
