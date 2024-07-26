@@ -248,6 +248,9 @@ class Epilepsy(Module, GenericFirstAppointmentsMixin):
             df[(df['is_alive']) & (df['ep_seiz_stat'] != 0)]
         ) / len(df[df['is_alive']])
 
+        return total_prev
+
+
     def transition_seizure_stat(self):
         """
         This function handles all transitions in epilepsy seizure status, for those on and off anti epileptics. The
