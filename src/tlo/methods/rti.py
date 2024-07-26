@@ -2439,6 +2439,13 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         disability_series_for_alive_persons = df.loc[df.is_alive, "rt_disability"]
         return disability_series_for_alive_persons
 
+    def report_prevalence(self, population):
+        # This returns dataframe that reports on the prevalence of RTIs for all individuals
+        df = population.props
+        total_prev = len(
+            df[(df['is_alive']) & (df['rt_inj_severity'] != 'none')]
+        ) / len(df[df['is_alive']])
+
     def rti_assign_injuries(self, number):
         """
         A function that can be called specifying the number of people affected by RTI injuries
