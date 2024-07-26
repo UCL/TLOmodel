@@ -2795,7 +2795,6 @@ class HealthSystemSummaryCounter:
         self._no_blank_appt_appts = defaultdict(int)  # As above, but for `HSI_Event`s that have never ran
         self._no_blank_appt_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
 
-
         self._frac_time_used_overall = []  # Running record of the usage of the healthcare system
         self._sum_of_daily_frac_time_used_by_officer_type_and_level = Counter()
         self._squeeze_factor_by_hsi_event_name = defaultdict(list)  # Running record the squeeze-factor applying to each
@@ -2904,7 +2903,7 @@ class HealthSystemSummaryCounter:
             key="HSI_Event_non_blank_appt_footprint",
             description = "Counts of the HSI_Events that do not have a blank appointment footprint in this calendar year by TREATMENT_ID, "
                       "and the respective 'Appt_Type's that have not occurred in this calendar year.",
-            data = {
+            data={
             "TREATMENT_ID": self._no_blank_appt_treatment_ids,
             "Number_By_Appt_Type_Code": self._no_blank_appt_appts,
             "Number_By_Appt_Type_Code_And_Level": self._no_blank_appt_by_level,

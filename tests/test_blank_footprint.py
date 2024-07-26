@@ -25,7 +25,7 @@ mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "Resource
 facility_info_0 = 0
 facility_id = 0
 blank_footprint = True
-did_run=True
+did_run = True
 def find_level_of_facility_id(facility_id: int) -> str:
     """Returns the level of a Facility_ID"""
     return mfl.set_index('Facility_ID').loc[facility_id].Facility_Level
@@ -164,7 +164,7 @@ def test_outputs_to_log_no_blank(tmpdir):
 
         # Schedule the HSI event with a blank footprint for person_id=0
         sim.modules['HealthSystem'].schedule_hsi_event(
-            hsi_event=get_dummy_hsi_event_instance(module=sim.modules['DummyModule'], facility_id=0, blank = blank_footprint),
+            hsi_event=get_dummy_hsi_event_instance(module=sim.modules['DummyModule'], facility_id=0, blank=blank_footprint),
             topen=sim.start_date,
             tclose=None,
             priority=0
@@ -178,7 +178,7 @@ def test_outputs_to_log_no_blank(tmpdir):
 
      # Check that log is created and the content is as expected.
     hsi_log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem.summary']['hsi_event_details']
-    assert hsi_log.iloc[0,1]['0']['appt_footprint'] == []
+    assert hsi_log.iloc[0, 1]['0']['appt_footprint'] == []
 
 
 
@@ -217,5 +217,5 @@ def test_outputs_to_log_blank(tmpdir):
 
     # Check that log is created and the content is as expected.
     hsi_log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem.summary']['hsi_event_details']
-    assert hsi_log.iloc[0,1]['0']['appt_footprint'] == []
+    assert hsi_log.iloc[0, 1]['0']['appt_footprint'] == []
 
