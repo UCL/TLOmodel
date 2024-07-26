@@ -156,7 +156,7 @@ def test_outputs_to_log_no_blank(tmpdir):
         run=False
     )
 
-        # Edit the `initialise_simulation` method of DummyModule so that, during the simulation, an HSI is run.
+   # Edit the `initialise_simulation` method of DummyModule so that, during the simulation, an HSI is run.
     def schedule_hsi(sim):
         """Drop-in replacement for `initialise_simulation` in the DummyModule module."""
         # Make the district for person_id=0 such that the HSI will be served by facility_id=0
