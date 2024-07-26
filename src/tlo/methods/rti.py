@@ -2321,6 +2321,8 @@ class RTI(Module, GenericFirstAppointmentsMixin):
             df[(df['is_alive']) & (df['rt_inj_severity'] != 'none')]
         ) / len(df[df['is_alive']])
 
+        return total_prev
+
     def rti_assign_injuries(self, number):
         """
         A function that can be called specifying the number of people affected by RTI injuries
