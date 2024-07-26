@@ -690,7 +690,7 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
 
 
             # Append to list of dalys reported by each module
-            prevalence_from_each_disease_module.append(dalys_from_disease_module)
+            prevalence_from_each_disease_module.append(prevalence_from_disease_module)
 
         # 2) Combine into a single dataframe (each column of this dataframe gives the reports from each module), and
         # add together prevalence reported by different modules that have the same cause (i.e., add together columns with
