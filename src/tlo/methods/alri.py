@@ -995,6 +995,14 @@ class Alri(Module, GenericFirstAppointmentsMixin):
         daly_values_by_pathogen = daly_values_by_pathogen.add_prefix('ALRI_')
         return daly_values_by_pathogen
 
+    def report_prevalence(self, population):
+        # This returns dataframe that reports on the prevalence of ARLI for all individuals
+        df = population.props
+        total_prev = len(
+            df[(df['is_alive']) & (df['ri_current_infection_status'] != 'none')]
+        ) / len(df[df['is_alive']])
+
+        return total_prev
     def over_ride_availability_of_certain_consumables(self):
         """Over-ride the availability of certain consumables, according the parameter values provided."""
         p = self.parameters
