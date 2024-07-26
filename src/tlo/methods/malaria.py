@@ -757,6 +757,7 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
 
 
     def report_prevalence(self, population):
+        # This returns dataframe that reports on the prevalence of malaria for all individuals
         df = population.props
         total_prev = len(
             df[df.is_alive & df.ma_is_infected]
