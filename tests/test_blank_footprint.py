@@ -176,7 +176,7 @@ def test_outputs_to_log_no_blank(tmpdir):
      # Simulate for one day
     sim.simulate(end_date=sim.start_date + pd.DateOffset(days=1))
 
-        # Check that log is created and the content is as expected.
+     # Check that log is created and the content is as expected.
     hsi_log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem.summary']['hsi_event_details']
     assert hsi_log.iloc[0,1]['0']['appt_footprint'] == []
 
