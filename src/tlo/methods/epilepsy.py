@@ -241,6 +241,13 @@ class Epilepsy(Module, GenericFirstAppointmentsMixin):
         df = self.sim.population.props  # shortcut to population properties dataframe
         return df.loc[df.is_alive, 'ep_disability']
 
+    def report_prevalence(self, population):
+        # This returns dataframe that reports on the prevalence of epilepsy for all individuals
+        df = population.props
+        total_prev = len(
+            df[(df['is_alive']) & (df['ep_seiz_stat'] != 0)]
+        ) / len(df[df['is_alive']])
+
     def transition_seizure_stat(self):
         """
         This function handles all transitions in epilepsy seizure status, for those on and off anti epileptics. The
