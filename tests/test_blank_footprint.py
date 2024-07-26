@@ -173,7 +173,7 @@ def test_outputs_to_log_no_blank(tmpdir):
 
     sim.modules['DummyModule'].initialise_simulation = schedule_hsi
 
-        # Simulate for one day
+     # Simulate for one day
     sim.simulate(end_date=sim.start_date + pd.DateOffset(days=1))
 
         # Check that log is created and the content is as expected.
