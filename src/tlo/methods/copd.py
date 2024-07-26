@@ -182,6 +182,15 @@ class Copd(Module, GenericFirstAppointmentsMixin):
         df = self.sim.population.props
         return df.loc[df.is_alive, 'ch_lungfunction'].map(self.models.disability_weight_given_lungfunction)
 
+    def report_prevalence(self, population):
+        # This returns dataframe that reports on the prevalence of COPD for all individuals
+        df = population.props
+        total_prev = len(
+            df[(df['is_alive']) & (df['ch_lungfunction'] != 0)]
+        ) / len(df[df['is_alive']])
+
+        return total_prev
+
     def define_symptoms(self):
         """Define and register Symptoms"""
         self.sim.modules['SymptomManager'].register_symptom(
