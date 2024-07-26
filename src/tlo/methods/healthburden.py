@@ -39,6 +39,7 @@ class HealthBurden(Module):
         self.years_life_lost_stacked_time = None
         self.years_life_lost_stacked_age_and_time = None
         self.years_lived_with_disability = None
+        self.prevalence_of_diseases = None
         self.recognised_modules_names = None
         self.causes_of_disability = None
         self._causes_of_yll = None
@@ -116,8 +117,9 @@ class HealthBurden(Module):
         self.process_causes_of_disability()
         self.process_causes_of_dalys()
 
-        # 4) Launch the DALY Logger to run every month, starting with the end of the first month of simulation
+        # 4) Launch the DALY and Prevalence Logger to run every month, starting with the end of the first month of simulation
         sim.schedule_event(Get_Current_DALYS(self), sim.date + DateOffset(months=1))
+        sim.schedule_event(Get_Current_Prevalence(self), sim.date + DateOffset(months=1))
 
         # 5) Schedule `Healthburden_WriteToLog` that will write to log annually
         last_day_of_the_year = Date(sim.date.year, 12, 31)
@@ -649,6 +651,87 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
         # Check multi-index is in check and that the addition of DALYS has worked
         assert self.module.years_lived_with_disability.index.equals(self.module.multi_index_for_age_and_wealth_and_time)
         assert abs(self.module.years_lived_with_disability.sum().sum() - (dalys_to_add + dalys_current)) < 1e-5
+        self.module.check_multi_index()
+
+class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
+    """
+    This event runs every month and asks each disease module to report the prevalence of each disease
+    during the previous month.
+    """
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(months=1))
+
+    def apply(self, population):
+        # Running the prevalence Logger
+
+        # Do nothing if no disease modules are registered or no causes of disability are registered
+        if (not self.module.recognised_modules_names) or (not self.module.causes_of_disability):
+            return
+
+        # Get the population dataframe
+        df = self.sim.population.props
+        idx_alive = df.loc[df.is_alive].index
+
+        # 1) Ask each disease module to log the prevalence for the previous month
+        prevalence_from_each_disease_module = list()
+        for disease_module_name in self.module.recognised_modules_names:
+
+            disease_module = self.sim.modules[disease_module_name]
+            prevalence_from_disease_module = disease_module.report_daly_values()
+            # Check type is in acceptable form and make into dataframe if not already
+            assert type(prevalence_from_disease_module) in (pd.Series, pd.DataFrame)
+
+            prevalence_from_disease_module = pd.DataFrame(prevalence_from_disease_module)
+
+            # Perform checks on what has been returned
+            assert set(prevalence_from_disease_module.index) == set(idx_alive)
+            assert not pd.isnull(prevalence_from_disease_module).any().any()
+
+
+            # Append to list of dalys reported by each module
+            prevalence_from_each_disease_module.append(dalys_from_disease_module)
+
+        # 2) Combine into a single dataframe (each column of this dataframe gives the reports from each module), and
+        # add together prevalence reported by different modules that have the same cause (i.e., add together columns with
+        # the same name).
+        disease_specific_prevalence_values_this_month = pd.concat(
+            prevalence_from_each_disease_module, axis=1).groupby(axis=1, level=0).sum()
+
+        # 3) Summarise the results for this month wrt sex/age/wealth
+        # - merge in age/wealth/sex information
+        disease_specific_prevalence_values_this_month = disease_specific_prevalence_values_this_month.merge(
+            df.loc[idx_alive, ['sex', 'li_wealth', 'age_range']], left_index=True, right_index=True, how='left')
+
+        # - sum of daly_weight, by sex/age/wealth
+        prevalence_monthly_summary = pd.DataFrame(
+            disease_specific_prevalence_values_this_month.groupby(['sex', 'age_range', 'li_wealth']).sum().fillna(0))
+
+        # - add the year into the multi-index
+        prevalence_monthly_summary['year'] = self.sim.date.year
+        prevalence_monthly_summary.set_index('year', append=True, inplace=True)
+        prevalence_monthly_summary = prevalence_monthly_summary.reorder_levels(
+            ['sex', 'age_range', 'li_wealth', 'year'])
+
+        # 4) Add the monthly summary to the overall dataframe for YearsLivedWithDisability
+        prevalence_to_add = prevalence_monthly_summary.sum().sum()     # for checking
+        prevalence_current = self.module.prevalence_of_diseases.sum().sum()  # for checking
+
+        # (Nb. this will add columns that are not otherwise present and add values to columns where they are.)
+        combined = self.module.prevalence_of_diseases.combine(
+            prevalence_monthly_summary,
+            fill_value=0.0,
+            func=np.add,
+            overwrite=False)
+
+        # Merge into a dataframe with the correct multi-index (the multi-index from combine is subtly different)
+        self.module.prevalence_of_diseases = \
+            pd.DataFrame(index=self.module.multi_index_for_age_and_wealth_and_time)\
+              .merge(combined, left_index=True, right_index=True, how='left')
+
+        # Check multi-index is in check and that the addition of DALYS has worked
+        assert self.module.prevalence_of_diseases.index.equals(self.module.multi_index_for_age_and_wealth_and_time)
+        assert abs(self.module.prevalence_of_diseases.sum().sum() - (prevalence_to_add + prevalence_current)) < 1e-5
         self.module.check_multi_index()
 
 
