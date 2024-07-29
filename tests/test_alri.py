@@ -435,7 +435,11 @@ def test_nat_hist_recovery(sim_hs_all_consumables_and_equipment):
     assert pd.isnull(person['ri_scheduled_death_date'])
 
     # Check that they have some symptoms caused by ALRI
-    assert 0 < len(sim.modules['SymptomManager'].has_what(person_id, sim.modules['Alri']))
+    assert 0 < len(
+        sim.modules["SymptomManager"].has_what(
+            person_id=person_id, disease_module=sim.modules["Alri"]
+        )
+    )
 
     # Check that there is a AlriNaturalRecoveryEvent scheduled for this person:
     recov_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
@@ -458,7 +462,11 @@ def test_nat_hist_recovery(sim_hs_all_consumables_and_equipment):
     assert pd.isnull(person['ri_scheduled_death_date'])
 
     # check they they have no symptoms:
-    assert 0 == len(sim.modules['SymptomManager'].has_what(person_id, sim.modules['Alri']))
+    assert 0 == len(
+        sim.modules["SymptomManager"].has_what(
+            person_id=person_id, disease_module=sim.modules["Alri"]
+        )
+    )
 
     # check it's logged (one infection + one recovery)
     assert 1 == sim.modules['Alri'].logging_event.trackers['incident_cases'].report_current_total()
