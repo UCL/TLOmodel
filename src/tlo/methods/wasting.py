@@ -25,9 +25,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
 
 # ---------------------------------------------------------------------------
 #   MODULE DEFINITIONS
@@ -1002,7 +999,7 @@ class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEv
             logger.debug(key='debug', data="PkgCode1 is not available, so can't use it.")
 
     def did_not_run(self):
-        logger.debug("Undernutrition_Feeding_Supplementary: did not run")
+        logger.debug(key='debug', data='Undernutrition_Feeding_Supplementary: did not run')
         pass
 
 
@@ -1058,7 +1055,7 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
             logger.debug(key='debug', data="consumables not available, so can't use it.")
 
     def did_not_run(self):
-        logger.debug("HSI_Undernutrition_Feeding_Outpatient: did not run")
+        logger.debug(key='debug', data="HSI_Undernutrition_Feeding_Outpatient: did not run")
         pass
 
 
@@ -1109,7 +1106,7 @@ class HSI_Wasting_InpatientCareForComplicated_SAM(HSI_Event, IndividualScopeEven
             logger.debug(key='debug', data="consumables not available, so can't use it.")
 
     def did_not_run(self):
-        logger.debug("HSI_inpatient_care_for_complicated_SAM: did not run")
+        logger.debug(key='debug', data='HSI_inpatient_care_for_complicated_SAM: did not run')
         pass
 
 
