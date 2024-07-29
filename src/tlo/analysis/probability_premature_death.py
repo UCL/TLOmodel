@@ -15,7 +15,6 @@ from tlo.analysis.utils import get_scenario_info, summarize
 
 # Declare the age before which death is defined as premature
 AGE_BEFORE_WHICH_DEATH_IS_DEFINED_AS_PREMATURE = 70 # defined in Norheim et al (2015)
-# Reference: Add the reference to the paper that is cited in the issue here
 
 def _calculate_probability_of_premature_death(
     _person_years_at_risk: pd.Series,
