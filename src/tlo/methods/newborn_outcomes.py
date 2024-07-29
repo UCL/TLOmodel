@@ -1308,6 +1308,44 @@ class NewbornOutcomes(Module):
 
         return health_values_df
 
+    def report_prevalence(self):
+        """
+        This function reports the prevalence of conditions for this module generated in the previous month
+        :return: data frame containing the prevalence of each condition
+        """
+        df = self.sim.population.props
+
+        # Disability properties are mapped to DALY weights and stored for the health burden module
+        prevalence_1 = len(
+            df[(df['is_alive']) & (df['nb_retinopathy_prem'] != 0)]
+        ) / len(df[df['is_alive']])
+        prevalence_1.name = 'Retinopathy of Prematurity'
+        prevalence_1 = pd.to_numeric(prevalence_1)
+
+        prevalence_2 = len(
+            df[(df['is_alive']) & (df['nb_encephalopathy_disab'] != 0)]
+        ) / len(df[df['is_alive']])
+        prevalence_2.name = 'Neonatal Encephalopathy'
+        prevalence_2 = pd.to_numeric(prevalence_2)
+
+        prevalence_3 = len(
+            df[(df['is_alive']) & (df['nb_neonatal_sepsis_disab'] != 0)]
+        ) / len(df[df['is_alive']])
+        prevalence_3.name = 'Neonatal Sepsis Long term Disability'
+        prevalence_3 = pd.to_numeric(prevalence_3)
+
+        prevalence_4 = len(
+            df[(df['is_alive']) & (df['nb_preterm_birth_disab'] != 0)]
+        ) / len(df[df['is_alive']])
+        prevalence_4.name = 'Preterm Birth Disability'
+        prevalence_4 = pd.to_numeric(prevalence_4)
+
+
+        prevalence_df = pd.concat([prevalence_1.loc[df.is_alive], prevalence_2.loc[df.is_alive],
+                                      prevalence_3.loc[df.is_alive], prevalence_4.loc[df.is_alive]], axis=1)
+
+        return prevalence_df
+
     def run_if_care_of_the_receives_postnatal_check_cant_run(self, hsi_event):
         """
         This function is called by HSI_NewbornOutcomes_ReceivesPostnatalCheck if the HSI is unable to
