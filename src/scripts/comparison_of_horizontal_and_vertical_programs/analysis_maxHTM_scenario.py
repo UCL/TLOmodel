@@ -28,8 +28,8 @@ tlo scenario-run src/scripts/comparison_of_horizontal_and_vertical_programs/anal
 
 import datetime
 from pathlib import Path
-import pandas as pd
-import matplotlib.pyplot as plt
+# import pandas as pd
+# import matplotlib.pyplot as plt
 
 from tlo import Date, logging
 from tlo.methods import (
@@ -46,14 +46,6 @@ from tlo.methods import (
     tb,
 )
 from tlo.scenario import BaseScenario
-
-from tlo.analysis.utils import (
-    extract_params,
-    extract_results,
-    get_scenario_info,
-    get_scenario_outputs,
-    load_pickled_dataframes,
-)
 
 resourcefilepath = Path("./resources")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
