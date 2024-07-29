@@ -138,8 +138,6 @@ class Property(Specifiable):
         object: float("nan"),
         np.uint32: 0,
     }
-    # Any overwrite for the default value map above, if a specific property
-    # needs to instantiate at a different default value.
     _default_value: Any
 
     def __init__(
@@ -177,24 +175,32 @@ class Property(Specifiable):
 
         super().__init__(type_, description, categories)
         self.ordered = ordered
-
-        self._default_value = (
-            default_value
-            if default_value is not None
-            and (
-                (self.type_ is Types.CATEGORICAL and default_value in categories)
-                or isinstance(default_value, self.python_type)
-            )
-            else None
-        )
+        self.default_value = default_value
 
     @property
-    def _default_value(self) -> Type[Any]:
+    def default_value(self) -> Any:
+        """
+        Default value for this property.
+        """
         return (
             self.PANDAS_TYPE_DEFAULT_VALUE_MAP[self.pandas_type]
             if self._default_value is None
             else self._default_value
         )
+
+    @default_value.setter
+    def default_value(self, new_val: Any) -> None:
+        if new_val is not None:
+            if self.type_ is Types.CATEGORICAL and (new_val not in self.categories):
+                raise ValueError(
+                    f"Value {new_val} is not a valid category, so cannot be set as the default."
+                )
+            elif not isinstance(new_val, self.python_type):
+                raise ValueError(
+                    f"Trying to set a default value of type {type(new_val).__name__}, "
+                    f"which is different from Property's type of {type(self.python_type).__name__}."
+                )
+            self._default_value = new_val
 
     def create_series(self, name: str, size: int) -> pd.Series:
         """Create a Pandas Series for this property.
