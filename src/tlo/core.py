@@ -15,13 +15,12 @@ import pandas as pd
 
 if TYPE_CHECKING:
     from pathlib import Path
-
     from typing import Optional
 
-    from tlo.simulation import Simulation
-    from tlo.population import Population
     from tlo.methods import Metadata
     from tlo.methods.causes import Cause
+    from tlo.population import Population
+    from tlo.simulation import Simulation
 
 class Types(Enum):
     """Possible types for parameters and properties.
