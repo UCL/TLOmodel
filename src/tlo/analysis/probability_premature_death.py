@@ -4,7 +4,6 @@ generate life tables to estimate probability of premature death (defined as befo
 produce summary statistics
 """
 
-
 import datetime
 from pathlib import Path
 from typing import Dict, Tuple
@@ -14,16 +13,19 @@ import pandas as pd
 from tlo.analysis.life_expectancy import _aggregate_person_years_by_age, _num_deaths_by_age_group
 from tlo.analysis.utils import get_scenario_info, summarize
 
+# Declare the age before which death is defined as premature
+AGE_BEFORE_WHICH_DEATH_IS_DEFINED_AS_PREMATURE = 70 # defined in Norheim et al (2015)
+# Reference: Add the reference to the paper that is cited in the issue here
 
-def _calculate_probability_of_dying_before_70(
+def _calculate_probability_of_premature_death(
     _person_years_at_risk: pd.Series,
     _number_of_deaths_in_interval: pd.Series
 ) -> Dict[str, float]:
     """
-    For a single run, estimate the probability of dying before age 70 for males and females.
-    Returns: Dict (keys by "M" and "F" for the sex, values the estimated probability of dying before age 70).
+    For a single run, estimate the probability of dying before the defined premature age for males and females.
+    Returns: Dict (keys by "M" and "F" for the sex, values the estimated probability of dying before the defined premature age).
     """
-    probability_of_dying_before_70 = dict()
+    probability_of_premature_death = dict()
 
     age_group_labels = _person_years_at_risk.index.get_level_values('age_group').unique()
     interval_width = [
@@ -50,28 +52,28 @@ def _calculate_probability_of_dying_before_70(
             1 + interval_width * (1 - fraction_of_last_age_survived) * death_rate_in_interval)
         probability_of_dying_in_interval.at['90'] = 1
 
-        # Calculate cumulative probability of dying before age 70
+        # Calculate cumulative probability of dying before the defined premature age
         cumulative_probability_of_dying = 0
         number_alive_at_start_of_interval = 1.0
 
         for age_group, prob in probability_of_dying_in_interval.items():
-            if age_group in ['70-74', '75-79', '80-84', '85-89', '90']:
+            if int(age_group.split('-')[0]) >= AGE_BEFORE_WHICH_DEATH_IS_DEFINED_AS_PREMATURE:
                 break
             cumulative_probability_of_dying += number_alive_at_start_of_interval * prob
             number_alive_at_start_of_interval *= (1 - prob)
 
-        probability_of_dying_before_70[sex] = cumulative_probability_of_dying
+        probability_of_premature_death[sex] = cumulative_probability_of_dying
 
-    return probability_of_dying_before_70
+    return probability_of_premature_death
 
 
-def get_probability_of_dying_before_70(
+def get_probability_of_premature_death(
     results_folder: Path,
     target_period: Tuple[datetime.date, datetime.date],
     summary: bool = True
 ) -> pd.DataFrame:
     """
-    Produces sets of probability of dying before a specified age for each draw/run.
+    Produces sets of probability of premature death for each draw/run.
 
     Args:
     - results_folder (PosixPath): The path to the results folder containing log, `tlo.methods.demography`
@@ -91,7 +93,7 @@ def get_probability_of_dying_before_70(
 
     for draw in range(info['number_of_draws']):
         for run in range(info['runs_per_draw']):
-            prob_for_each_draw_and_run[(draw, run)] = _calculate_probability_of_dying_before_70(
+            prob_for_each_draw_and_run[(draw, run)] = _calculate_probability_of_premature_death(
                 _number_of_deaths_in_interval=deaths[(draw, run)],
                 _person_years_at_risk=person_years[(draw, run)]
             )
