@@ -17,10 +17,12 @@ class ScenarioDefinitions:
         """Year in which HIV, TB, Malaria scale-up changes are made."""
         return 2019
 
-    def _baseline(self) -> Dict:
+    def baseline(self) -> Dict:
         """Return the Dict with values for the parameter changes that define the baseline scenario. """
         return mix_scenarios(
-            get_parameters_for_status_quo(),
+            get_parameters_for_status_quo(),  # <-- Parameters that have been the calibration targets
+
+            # Set up the HealthSystem to transition from Mode 1 -> Mode 2, with rescaling when there are HSS changes
             {
                 "HealthSystem": {
                     "mode_appt_constraints": 1,  # <-- Mode 1 prior to change to preserve calibration
@@ -28,10 +30,6 @@ class ScenarioDefinitions:
                     "scale_to_effective_capabilities": True,
                     # <-- Transition into Mode2 with the effective capabilities in HRH 'revealed' in Mode 1
                     "year_mode_switch": self.YEAR_OF_CHANGE_FOR_HSS,
-
-                    # Baseline scenario is with absence of HCW
-                    'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE_FOR_HSS,
-                    'HR_scaling_by_level_and_officer_type_mode': 'default',
 
                     # Normalize the behaviour of Mode 2
                     "policy_name": "Naive",
@@ -41,24 +39,90 @@ class ScenarioDefinitions:
             },
         )
 
-    def _hss_package(self) -> Dict:
-        """The parameters for the Health System Strengthening Package"""
+    def double_capacity_at_primary_care(self) -> Dict:
         return {
-            'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
-                'max_healthsystem_function': [False, True],  # <-- switch from False to True mid-way
-                'max_healthcare_seeking': [False, True],  # <-- switch from False to True mid-way
-                'year_of_switch': self.YEAR_OF_CHANGE_FOR_HSS
-            },
             'HealthSystem': {
-                'year_cons_availability_switch': self.YEAR_OF_CHANGE_FOR_HSS,
-                'cons_availability_postSwitch': 'all',
-                'yearly_HR_scaling_mode': 'GDP_growth_fHE_case5',
                 'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE_FOR_HSS,
                 'HR_scaling_by_level_and_officer_type_mode': 'x2_fac0&1',
             }
         }
 
-    def _hiv_scaleup(self) -> Dict:
+    def hrh_at_pop_grwoth(self) -> Dict:
+        return {
+            'HealthSystem': {
+                'yearly_HR_scaling_mode': 'scaling_by_population_growth',
+                # This is in-line with population growth _after 2018_ (baseline year for HRH)
+            }
+        }
+
+    def hrh_at_gdp_growth(self) -> Dict:
+        return {
+            'HealthSystem': {
+                'yearly_HR_scaling_mode': 'GDP_growth',
+                # This is GDP growth after 2018 (baseline year for HRH)
+            }
+        }
+
+    def hrh_above_gdp_growth(self) -> Dict:
+        return {
+            'HealthSystem': {
+                'yearly_HR_scaling_mode': 'GDP_growth_fHE_case5',
+                # This is above-GDP growth after 2018 (baseline year for HRH)
+            }
+        }
+
+    def perfect_clinical_practices(self) -> Dict:
+        return {
+            'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
+                'max_healthsystem_function': [False, True],  # <-- switch from False to True mid-way
+                'year_of_switch': self.YEAR_OF_CHANGE_FOR_HSS,
+            }
+        }
+
+    def perfect_healthcare_seeking(self) -> Dict:
+        return {
+            'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
+                'max_healthcare_seeking': [False, True],  # <-- switch from False to True mid-way
+                'year_of_switch': self.YEAR_OF_CHANGE_FOR_HSS,
+            }
+        },
+
+    def vital_items_available(self) -> Dict:
+        return {
+            'HealthSystem': {
+                'year_cons_availability_switch': self.YEAR_OF_CHANGE_FOR_HSS,
+                'cons_availability_postSwitch': 'all_vital_available',
+            }
+        }
+
+    def medicines_available(self) -> Dict:
+        return {
+            'HealthSystem': {
+                'year_cons_availability_switch': self.YEAR_OF_CHANGE_FOR_HSS,
+                'cons_availability_postSwitch': 'all_medicines_available',
+            }
+        }
+
+    def all_consumables_available(self) -> Dict:
+        return {
+            'HealthSystem': {
+                'year_cons_availability_switch': self.YEAR_OF_CHANGE_FOR_HSS,
+                'cons_availability_postSwitch': 'all',
+            }
+        }
+
+    def hss_package(self) -> Dict:
+        """The parameters for the Health System Strengthening Package"""
+
+        return mix_scenarios(
+            self.double_capacity_at_primary_care(),
+            self.hrh_above_gdp_growth(),  # <-- todo check that these two do operate together and build on one another
+            self.perfect_clinical_practices(),
+            self.perfect_healthcare_seeking(),
+            self.all_consumables_available(),
+        )
+
+    def hiv_scaleup(self) -> Dict:
         """The parameters for the scale-up of the HIV program"""
         return {
             "Hiv": {
@@ -67,7 +131,7 @@ class ScenarioDefinitions:
             }
         }
 
-    def _tb_scaleup(self) -> Dict:
+    def tb_scaleup(self) -> Dict:
         """The parameters for the scale-up of the TB program"""
         return {
             "Tb": {
@@ -76,7 +140,7 @@ class ScenarioDefinitions:
             }
         }
 
-    def _malaria_scaleup(self) -> Dict:
+    def malaria_scaleup(self) -> Dict:
         """The parameters for the scale-up of the Malaria program"""
         return {
             'Malaria': {

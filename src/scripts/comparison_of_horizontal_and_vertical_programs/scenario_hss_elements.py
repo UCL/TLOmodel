@@ -11,11 +11,9 @@ tlo batch-submit
 from pathlib import Path
 from typing import Dict
 
-# from scripts.comparison_of_horizontal_and_vertical_programs.scenario_definitions import (
-#     ScenarioDefinitions,
-# )
+from scripts.comparison_of_horizontal_and_vertical_programs.scenario_definitions import ScenarioDefinitions
 from tlo import Date, logging
-from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios
+from tlo.analysis.utils import mix_scenarios
 from tlo.methods.fullmodel import fullmodel
 from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScenarioSwitcher
 from tlo.scenario import BaseScenario
@@ -58,16 +56,11 @@ class HSSElements(BaseScenario):
 
     def _get_scenarios(self) -> Dict[str, Dict]:
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
-        # todo - decide on final definition of scenarios and the scenario package
-        # todo - refactorize to use the ScenariosDefinitions helperclass, which will make sure that this script and
-        #  'scenario_vertical_programs)_with_and_without_hss.py' are synchronised (e.g. baseline and HSS pkg scenarios)
 
-        self.YEAR_OF_CHANGE = 2019
-        # <-- baseline year of Human Resources for Health is 2018, and this is consistent with calibration during
-        # 2015-2019 period.
+        scenario_definitions = ScenarioDefinitions()
 
         return {
-            "Baseline": self._baseline(),
+            "Baseline": scenario_definitions.baseline(),
 
             # ***************************
             # HEALTH SYSTEM STRENGTHENING
@@ -77,147 +70,70 @@ class HSSElements(BaseScenario):
 
             "Double Capacity at Primary Care":
                 mix_scenarios(
-                    self._baseline(),
-                    {
-                        'HealthSystem': {
-                            'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE,
-                            'HR_scaling_by_level_and_officer_type_mode': 'x2_fac0&1',
-                        }
-                    }
+                    scenario_definitions.baseline(),
+                    scenario_definitions.double_capacity_at_primary_care(),
                 ),
 
             "HRH Keeps Pace with Population Growth":
                 mix_scenarios(
-                    self._baseline(),
-                    {
-                        'HealthSystem': {
-                            'yearly_HR_scaling_mode': 'scaling_by_population_growth',
-                            # This is in-line with population growth _after 2018_ (baseline year for HRH)
-                        }
-                    }
+                    scenario_definitions.baseline(),
+                    scenario_definitions._hrh_at_pop_growth(),
                 ),
 
             "HRH Increases at GDP Growth":
                 mix_scenarios(
-                    self._baseline(),
-                    {
-                        'HealthSystem': {
-                            'yearly_HR_scaling_mode': 'GDP_growth',
-                            # This is GDP growth after 2018 (baseline year for HRH)
-                        }
-                    }
+                    scenario_definitions.baseline(),
+                    scenario_definitions._hrh_at_grp_growth(),
                 ),
 
             "HRH Increases above GDP Growth":
                 mix_scenarios(
-                    self._baseline(),
-                    {
-                        'HealthSystem': {
-                            'yearly_HR_scaling_mode': 'GDP_growth_fHE_case5',
-                            # This is above-GDP growth after 2018 (baseline year for HRH)
-                        }
-                    }
+                    scenario_definitions.baseline(),
+                    scenario_definitions.hrh_above_gdp_growth(),
                 ),
 
 
             # - - - Quality of Care - - -
             "Perfect Clinical Practice":
                 mix_scenarios(
-                    self._baseline(),
-                    {
-                        'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
-                            'max_healthsystem_function': [False, True],  # <-- switch from False to True mid-way
-                            'year_of_switch': self.YEAR_OF_CHANGE,
-                        }
-                    },
+                    scenario_definitions.baseline(),
+                    scenario_definitions._perfect_clinical_practice(),
                 ),
 
             "Perfect Healthcare Seeking":
                mix_scenarios(
-                   get_parameters_for_status_quo(),
-                   {
-                       'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
-                           'max_healthcare_seeking': [False, True],
-                           'year_of_switch': self.YEAR_OF_CHANGE,
-                       }
-                   },
+                   scenario_definitions.baseline(),
+                   scenario_definitions.perfect_healthcare_seeking(),
                ),
 
             # - - - Supply Chains - - -
             "Perfect Availability of Vital Items":
                 mix_scenarios(
-                    self._baseline(),
-                    {
-                        'HealthSystem': {
-                            'year_cons_availability_switch': self.YEAR_OF_CHANGE,
-                            'cons_availability_postSwitch': 'all_vital_available',
-                        }
-                    }
+                    scenario_definitions.baseline(),
+                    scenario_definitions.vital_items_available(),
                 ),
 
             "Perfect Availability of Medicines":
             mix_scenarios(
-                self._baseline(),
-                {
-                    'HealthSystem': {
-                        'year_cons_availability_switch': self.YEAR_OF_CHANGE,
-                        'cons_availability_postSwitch': 'all_medicines_available',
-                    }
-                }
+                scenario_definitions.baseline(),
+                scenario_definitions.medicines_available(),
+
             ),
 
             "Perfect Availability of All Consumables":
                 mix_scenarios(
-                    self._baseline(),
-                    {
-                        'HealthSystem': {
-                            'year_cons_availability_switch': self.YEAR_OF_CHANGE,
-                            'cons_availability_postSwitch': 'all',
-                        }
-                    }
+                    scenario_definitions.baseline(),
+                    scenario_definitions.all_consumables_available(),
                 ),
 
             # - - - FULL PACKAGE OF HEALTH SYSTEM STRENGTHENING - - -
             "FULL PACKAGE":
                 mix_scenarios(
-                    self._baseline(),
-                    {
-                        'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
-                            'max_healthsystem_function': [False, True],  # <-- switch from False to True mid-way
-                            'max_healthcare_seeking': [False, True],  # <-- switch from False to True mid-way
-                            'year_of_switch': self.YEAR_OF_CHANGE
-                        },
-                        'HealthSystem': {
-                            'year_cons_availability_switch': self.YEAR_OF_CHANGE,
-                            'cons_availability_postSwitch': 'all',
-                            'yearly_HR_scaling_mode': 'GDP_growth_fHE_case5',
-                            'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE,
-                            'HR_scaling_by_level_and_officer_type_mode': 'x2_fac0&1',
-                        }
-                    },
+                    scenario_definitions.baseline(),
+                    scenario_definitions.hss_package(),
                 ),
-
         }
 
-    def _baseline(self) -> Dict:
-        """Return the Dict with values for the parameter changes that define the baseline scenario. """
-        return mix_scenarios(
-            get_parameters_for_status_quo(),
-            {
-                "HealthSystem": {
-                    "mode_appt_constraints": 1,                 # <-- Mode 1 prior to change to preserve calibration
-                    "mode_appt_constraints_postSwitch": 2,      # <-- Mode 2 post-change to show effects of HRH
-                    "scale_to_effective_capabilities": True,    # <-- Transition into Mode2 with the effective
-                    #                                                 capabilities in HRH 'revealed' in Mode 1
-                    "year_mode_switch": self.YEAR_OF_CHANGE,
-
-                    # Normalize the behaviour of Mode 2
-                    "policy_name": "Naive",
-                    "tclose_overwrite": 1,
-                    "tclose_days_offset_overwrite": 7,
-                }
-            },
-        )
 
 if __name__ == '__main__':
     from tlo.cli import scenario_run
