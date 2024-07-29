@@ -90,10 +90,6 @@ class MiniRunHTMWithAndWithoutHSS(BaseScenario):
                     "scale_to_effective_capabilities": False,  # <-- irrelevant, as not changing mode
                     "year_mode_switch": 2100,  # <-- irrelevant as not changing modes
 
-                    # Baseline scenario is with absence of HCW
-                    'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE_FOR_HSS,
-                    'HR_scaling_by_level_and_officer_type_mode': 'with_absence',
-
                     # Normalize the behaviour of Mode 2 (irrelevant as in Mode 1)
                     "policy_name": "Naive",
                     "tclose_overwrite": 1,

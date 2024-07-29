@@ -33,9 +33,7 @@ class ScenarioDefinitions:
 
                     # Baseline scenario is with absence of HCW
                     'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE_FOR_HSS,
-                    'HR_scaling_by_level_and_officer_type_mode': 'with_absence',
-                    # todo <-- Do we want the first part of the run be with_abscence too...? (Although that will mean
-                    #          that there is actually greater capacity if we do the rescaling)
+                    'HR_scaling_by_level_and_officer_type_mode': 'default',
 
                     # Normalize the behaviour of Mode 2
                     "policy_name": "Naive",
@@ -58,7 +56,7 @@ class ScenarioDefinitions:
                 'cons_availability_postSwitch': 'all',
                 'yearly_HR_scaling_mode': 'GDP_growth_fHE_case5',
                 'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE_FOR_HSS,
-                'HR_scaling_by_level_and_officer_type_mode': 'no_absence_&_x2_fac0+1',
+                'HR_scaling_by_level_and_officer_type_mode': 'x2_fac0&1',
             }
         }
 
