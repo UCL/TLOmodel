@@ -136,9 +136,9 @@ class Property(Specifiable):
         object: float("nan"),
         np.uint32: 0,
     }
-    # Default value for categorical-properties, which needs to be set at instantiation
-    # for Properties defined by modules. Leave as None to be ignored.
-    _default_category_value: Any
+    # Any overwrite for the default value map above, if a specific property
+    # needs to instantiate at a different default value.
+    _default_value: Any
 
     def __init__(
         self,
@@ -147,7 +147,7 @@ class Property(Specifiable):
         categories: Set[Any] = None,
         *,
         ordered: bool = False,
-        default_category_value: Optional[Any] = None,
+        default_value: Optional[Any] = None,
     ) -> None:
         """Create a new property specification.
 
@@ -163,22 +163,26 @@ class Property(Specifiable):
         """
         if type_ in [Types.SERIES, Types.DATA_FRAME]:
             raise TypeError("Property cannot be of type SERIES or DATA_FRAME.")
-        
+
         super().__init__(type_, description, categories)
         self.ordered = ordered
 
-        if self.type_ is Types.CATEGORICAL:
-            assert default_category_value in categories
-            self._default_category_value = default_category_value
-        else:
-            self._default_category_value = None
+        self._default_value = (
+            default_value
+            if default_value is not None
+            and (
+                (self.type_ is Types.CATEGORICAL and default_value in categories)
+                or isinstance(default_value, self.python_type)
+            )
+            else None
+        )
 
     @property
     def _default_value(self) -> Type[Any]:
         return (
             self.PANDAS_TYPE_DEFAULT_VALUE_MAP[self.pandas_type]
-            if self._default_category_value is None
-            else self._default_category_value
+            if self._default_value is None
+            else self._default_value
         )
 
     def create_series(self, name: str, size: int) -> pd.Series:
