@@ -38,6 +38,10 @@ class BedOccupancy:
         Post-init checks for BedOccupancies:
         - start_date is not later than freed_date
         """
+        # Force casting to pd datatypes to avoid issues with mixing
+        # pd.timedelta and np.timedelta
+        self.start_date = Date(self.start_date)
+        self.freed_date = Date(self.freed_date)
         assert self.start_date <= self.freed_date, (
             f"BedOccupancy created which starts ({self.start_date.strftime('%Y-%m-%d')}) "
             f"later than it finishes ({self.freed_date.strftime('%Y-%m-%d')})!"
@@ -56,19 +60,21 @@ class BedDaysFootprint(dict):
     It is necessary for footprints to track 0-day bed requests so that when
     it comes to allocating bed days, higher-priority bed requests that
     cannot be fulfilled can be cascaded down to lower-priority bed requests.
-
-    NOTE: We encounter
-    https://github.com/pandas-dev/pandas/issues/8757#issuecomment-1479522330
-    in BedDays if we don't explicitly cast the n_days value to a native
-    Python type. For whatever reason, pd.DateOffset doesn't like numpy integers.
     """
+
+    @property
+    def total_days(self) -> int | float:
+        """
+        Total number of bed days that this footprint imposes.
+        """
+        return sum(self.values())
 
     def __bool__(self) -> bool:
         """
         Implicit boolean-ness equates to whether this footprint imposes any
         bed days or not.
         """
-        return bool(self.total_days())
+        return bool(self.total_days)
 
     def __init__(
         self, permitted_bed_types: Iterable[str], **initial_values: int | float
@@ -80,7 +86,12 @@ class BedDaysFootprint(dict):
             self[bed_type] = n_days
 
     def __setitem__(self, bed_type: str, n_days: int | float) -> None:
-        """ """
+        """
+        NOTE: We encounter
+        https://github.com/pandas-dev/pandas/issues/8757#issuecomment-1479522330
+        in BedDays if we don't explicitly cast the n_days value to a native
+        Python type. For whatever reason, pd.DateOffset doesn't like numpy integers.
+        """
         assert (
             bed_type in self.keys()
         ), f"{bed_type} is not a valid bed type for a bed occupancy footprint."
@@ -125,12 +136,6 @@ class BedDaysFootprint(dict):
             # Record the occupancy and move on to the next
             new_occupancies.append(new_occupancy)
         return new_occupancies
-
-    def total_days(self) -> int | float:
-        """
-        Total number of bed days that this footprint imposes.
-        """
-        return sum(self.values())
 
     def without_0s(self) -> Dict[str, int | float]:
         """
@@ -264,6 +269,8 @@ class BedDays:
         """Return an APPT_FOOTPRINT with the addition (if not already present)
         of the in-patient admission appointment and the in-patient day
         appointment type (for the first day of the in-patient stay).
+
+        TODO: Move somewhere else, HealthSystem most likely place since method is called via that...?
         """
         return {**appt_footprint, **IN_PATIENT_ADMISSION, **IN_PATIENT_DAY_FIRST_DAY}
 
@@ -824,7 +831,7 @@ class BedDays:
         # If footprint is empty, then the returned footprint is empty too.
         if not requested_footprint:
             return available_footprint
-        footprint_length = requested_footprint.total_days()
+        footprint_length = requested_footprint.total_days
 
         forecast_availability = self.forecast_availability(
             start_date=start_date,

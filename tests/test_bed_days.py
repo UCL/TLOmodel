@@ -38,6 +38,50 @@ def reindexed_table(bed_days_table: pd.DataFrame) -> pd.DataFrame:
 def BD(bed_days_table: pd.DataFrame) -> BedDays:
     return BedDays(bed_capacities=bed_days_table, capacity_scaling_factor='all')
 
+
+@pytest.mark.parametrize(
+    ["fill_values", "is_invalid"],
+    [
+        pytest.param({}, False, id="Blank footprint"),
+        pytest.param(
+            {"bed_1": 1, "bed_2": 2, "bed_3": 3, "non_bed_space": 0},
+            False,
+            id="Pre-filled values (valid)",
+        ),
+        pytest.param(
+            {"bed_1": 0, "bed_2": 0, "bed_3": 0, "non_bed_space": 1},
+            True,
+            id="Invalid footprint",
+        ),
+    ],
+)
+def test_footprint_methods(
+    BD: BedDays, fill_values: Dict[str, int], is_invalid: bool
+) -> None:
+    """
+    Test that the get_blank_footprint method correctly returns a footprint whose
+    keys are set according to the set bed-types.
+
+    Also check that the assert_valid_footprint method correctly flags footprints
+    with non-zero allocations to the non-bed-bed-type as invalid.
+    """
+    total_days = sum(fill_values.values())
+    
+    footprint = BD.get_blank_beddays_footprint(**fill_values)
+    assert len(footprint) == len(
+        BD.bed_types
+    ), "Bed types in blank footprint and in BedDays instance don't match."
+    if total_days == 0:
+        assert footprint.total_days == total_days, "Different total number of days allocated."
+    else:
+        assert footprint == fill_values, "Footprint was not created with correct attribute assignments."
+    if is_invalid:
+        with pytest.raises(AssertionError):
+            BD.assert_valid_footprint(footprint)
+    else:
+        BD.assert_valid_footprint(footprint)
+
+
 @pytest.fixture(scope="function")
 def BD_max_1_capacity(bed_days_table: pd.DataFrame) -> BedDays:
     """
@@ -216,7 +260,6 @@ def test_remove_patient_footprint(
 
     assert not BD.is_inpatient(person_id)
 
-
 @pytest.fixture
 def find_occupancies_list() -> List[BedOccupancy]:
     """
@@ -233,7 +276,6 @@ def find_occupancies_list() -> List[BedOccupancy]:
         BedOccupancy("bed_3", 1, Date("2010-02-02"), 1, Date("2010-02-01")),
         BedOccupancy("bed_2", 2, Date("2010-02-27"), 2, Date("2010-01-15")),
     ]
-
 
 @pytest.mark.parametrize(
     "args_to_fn, event_indices_that_should_be_found",
@@ -305,6 +347,24 @@ def test_find_occupancies(
     assert len(event_indices_that_should_be_found) == len(
         found_occupancies
     ), "Did not find the expected number of occupancies."
+
+
+def test_get_inpatient_appts(BD: BedDays, find_occupancies_list: List[BedOccupancy], simple_non_conflicting_occupancies: List[BedOccupancy]) -> None:
+    """
+    TODO: This method should move into the HealthSystem class maybe? It doesn't make use of the beds at all
+
+    NB: It shouldn't matter that some people are - with this combination of occupancies -
+    occupying multiple beds during this time. At least for the purposes of this test.
+    """
+    BD.schedule_occupancies(*find_occupancies_list)
+    BD.schedule_occupancies(*simple_non_conflicting_occupancies)
+
+    report_5th_jan = BD.get_inpatient_appts(date=Date("2010-01-05"))
+    assert report_5th_jan == {
+        0: {"InpatientDays": 2},
+        1: {"InpatientDays": 1},
+        2: {"InpatientDays": 1},
+    }
 
 
 @pytest.mark.parametrize(
@@ -655,14 +715,37 @@ def test_issue_bed_days_according_to_availability(
             )
 
 
-# TODO: Methods not covered by tests
-# [static] date_ranges_overlap
-# [static] add_first_day_inpatient_appts_to_footprint
-# [static] multiply_footprint
-# occupancies_to_footprint
-# combine_overlapping_occupancies
-# assert valid footprint - delegate to subclass?
-# get_blank_beddays_footprint - delegate to subclass?
-# get_inpatient_appts
-# on_end_of_day - pass as composed of calls to other methods and already tested units
-# on_end_of_year - pass as call to another object method
+@pytest.fixture
+def occupancies_to_convert() -> List[BedOccupancy]:
+    return [
+        BedOccupancy("bed_1", 0, Date("2010-01-02"), 0, Date("2010-01-01")),
+        BedOccupancy("bed_2", 0, Date("2010-01-07"), 0, Date("2010-01-03")),
+        BedOccupancy("bed_3", 0, Date("2010-01-10"), 0, Date("2010-01-08")),
+    ]
+
+
+@pytest.mark.parametrize(
+    ["current_date", "expected"],
+    [
+        pytest.param(None, {"bed_1": 2, "bed_2": 5, "bed_3": 3}, id="No current date"),
+        pytest.param(Date("2010-01-04"), {"bed_2": 4, "bed_3": 3}, id="Partial cut-off"),
+        pytest.param(Date("2010-02-01"), {}, id="Entirely cut-off")
+    ],
+)
+def test_occupancies_to_footprint(
+    BD_max_1_capacity: BedDays, occupancies_to_convert: List[BedOccupancy], current_date: Date, expected: BedDaysFootprint
+) -> None:
+    """
+    Test that a list of occupancies is correctly cast to a BedDaysFootprint.
+    Test cases include:
+
+    - Cast without a current date
+    - Cast with a current date (loosing part of the footprint)
+    - Cast with a current date (loosing the entire footprint)
+    """
+    expected = BD_max_1_capacity.get_blank_beddays_footprint(**expected)
+
+    result = BD_max_1_capacity.occupancies_to_footprint(
+        occupancies_to_convert, current_date=current_date
+    )
+    assert expected == result, "Allocations did not match."
