@@ -5,28 +5,38 @@ import numpy as np
 import pandas as pd
 import pytest
 from pytest import approx
+import pandas as pd
+import matplotlib.pyplot as plt
 
 from tlo import DAYS_IN_YEAR, Date, Module, Simulation, logging
 from tlo.analysis.utils import get_mappers_in_fullmodel, parse_log_file
 from tlo.events import Event, IndividualScopeEventMixin
 from tlo.methods import (
     care_of_women_during_pregnancy,
+    alri,
+    breast_cancer,
+    copd,
     demography,
     enhanced_lifestyle,
     epi,
+    epilepsy,
     healthseekingbehaviour,
     healthsystem,
     healthburden,
     hiv,
-    hsi_generic_first_appts,
-    labour,
+    malaria,
+    measles,
     newborn_outcomes,
-    postnatal_supervisor,
-    pregnancy_helper_functions,
+    oesophagealcancer,
+    other_adult_cancers,
     pregnancy_supervisor,
+    prostate_cancer,
+    schisto,
     simplified_births,
     symptommanager,
+    wasting,
     tb,
+    contraception
 )
 from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath, age_at_date
@@ -42,7 +52,7 @@ except NameError:
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
-popsize = 10000
+popsize = 1000
 
 
 def extract_mapper(key):
@@ -64,20 +74,9 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
     sim = Simulation(start_date=start_date, seed=seed, log_config={'filename': 'test_log', 'directory': tmpdir})
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           disable_and_reject_all=True),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 hiv.Hiv(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 epi.Epi(resourcefilepath=resourcefilepath),
-                 tb.Tb(resourcefilepath=resourcefilepath),
-                 # Disable check to avoid error due to lack of Contraception module
-                 check_all_dependencies=False,
-                 )
+    sim.register(*fullmodel(
+        resourcefilepath=resourcefilepath,
+        use_simplified_births=False,))
 
     # Run the simulation
     sim.make_initial_population(n=popsize)
