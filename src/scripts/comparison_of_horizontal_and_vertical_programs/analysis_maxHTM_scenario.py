@@ -207,7 +207,6 @@ num_deaths_by_cause_label = extract_results(
     )
 
 
-num_deaths_by_cause_label.to_csv("num_deaths_by_cause_label_max.csv")
 
 def summarise_deaths_for_one_cause(results_folder, label):
     """ returns mean deaths for each year of the simulation

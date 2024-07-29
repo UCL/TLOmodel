@@ -398,9 +398,9 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             " high-bound-exclusive]",
         ),
         # ------------------ scale-up parameters for scenario analysis ------------------ #
-        "do_scaleup": Parameter(
-            Types.BOOL,
-        "argument to determine whether scale-up of program will be implemented"
+        "type_of_scaleup": Parameter(
+            Types.CATEGORICAL, "argument to determine type scale-up of program which will be implemented",
+            categories=['none' 'target', 'max']
         ),
         "scaleup_start_year": Parameter(
             Types.INT,

@@ -190,9 +190,9 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
             'probability that treatment will clear malaria symptoms'
         ),
         # ------------------ scale-up parameters for scenario analysis ------------------ #
-        "do_scaleup": Parameter(
-            Types.BOOL,
-            "argument to determine whether scale-up of program will be implemented"
+        "type_of_scaleup": Parameter(
+            Types.CATEGORICAL, "argument to determine type scale-up of program which will be implemented",
+            categories=['none' 'target', 'max']
         ),
         "scaleup_start_year": Parameter(
             Types.INT,
@@ -1164,7 +1164,7 @@ class HSI_Malaria_rdt_community(HSI_Event, IndividualScopeEventMixin):
             facility_level=self.ACCEPTED_FACILITY_LEVEL,
             treatment_id=self.TREATMENT_ID,
         )
-        
+
         logger.info(key='rdt_log', data=person_details_for_test)
 
         # if positive, refer for a confirmatory test at level 1a
