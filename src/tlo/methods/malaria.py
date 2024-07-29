@@ -189,10 +189,9 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
             Types.REAL,
             'probability that treatment will clear malaria symptoms'
         ),
-        # ------------------ scale-up parameters for scenario analysis ------------------ #
         "type_of_scaleup": Parameter(
-            Types.CATEGORICAL, "argument to determine type scale-up of program which will be implemented",
-            categories=['none' 'target', 'max']
+            Types.STRING, "argument to determine type scale-up of program which will be implemented, "
+                          "can be 'none', 'target' or 'max'",
         ),
         "scaleup_start_year": Parameter(
             Types.INT,
@@ -261,7 +260,10 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         p['sev_inc'] = pd.read_csv(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria_SevInc_expanded.csv')
 
         # load parameters for scale-up projections
-        p["scaleup_parameters"] = workbook["scaleup_parameters"].set_index('parameter')['scaleup_value'].to_dict()
+        if p['type_of_scaleup'] == 'target':
+            p["scaleup_parameters"] = workbook["scaleup_parameters"].set_index('parameter')['target_value'].to_dict()
+        else:
+            p["scaleup_parameters"] = workbook["scaleup_parameters"].set_index('parameter')['max_value'].to_dict()
 
         # check itn projected values are <=0.7 and rounded to 1dp for matching to incidence tables
         p['itn'] = round(p['itn'], 1)
@@ -661,11 +663,7 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
     def update_parameters_for_program_scaleup(self):
         """ options for program scale-up are 'target' or 'max' """
         p = self.parameters
-
-        if p['type_of_scaleup'] == 'target':
-            scaled_params = p["target_value"]
-        else:
-            scaled_params = p["max_value"]
+        scaled_params = p["scaleup_parameters"]
 
         # scale-up malaria program
         # increase testing

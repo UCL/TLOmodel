@@ -378,8 +378,8 @@ class Tb(Module):
         ),
         # ------------------ scale-up parameters for scenario analysis ------------------ #
         "type_of_scaleup": Parameter(
-            Types.CATEGORICAL, "argument to determine type scale-up of program which will be implemented",
-            categories=['none' 'target', 'max']
+            Types.STRING, "argument to determine type scale-up of program which will be implemented, "
+                          "can be 'none', 'target' or 'max'",
         ),
         "scaleup_start_year": Parameter(
             Types.INT,
@@ -427,7 +427,10 @@ class Tb(Module):
         )
 
         # load parameters for scale-up projections
-        p["scaleup_parameters"] = workbook["scaleup_parameters"].set_index('parameter')['scaleup_value'].to_dict()
+        if p['type_of_scaleup'] == 'target':
+            p["scaleup_parameters"] = workbook["scaleup_parameters"].set_index('parameter')['target_value'].to_dict()
+        else:
+            p["scaleup_parameters"] = workbook["scaleup_parameters"].set_index('parameter')['max_value'].to_dict()
 
         # 2) Get the DALY weights
         if "HealthBurden" in self.sim.modules.keys():
@@ -891,11 +894,7 @@ class Tb(Module):
     def update_parameters_for_program_scaleup(self):
         """ options for program scale-up are 'target' or 'max' """
         p = self.parameters
-
-        if p['type_of_scaleup'] == 'target':
-            scaled_params = p["target_value"]
-        else:
-            scaled_params = p["max_value"]
+        scaled_params = p["scaleup_parameters"]
 
         # scale-up TB program
         # use NTP treatment rates

@@ -399,8 +399,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         ),
         # ------------------ scale-up parameters for scenario analysis ------------------ #
         "type_of_scaleup": Parameter(
-            Types.CATEGORICAL, "argument to determine type scale-up of program which will be implemented",
-            categories=['none' 'target', 'max']
+            Types.STRING, "argument to determine type scale-up of program which will be implemented, "
+                          "can be 'none', 'target' or 'max'",
         ),
         "scaleup_start_year": Parameter(
             Types.INT,
@@ -448,7 +448,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         p["treatment_cascade"] = workbook["spectrum_treatment_cascade"]
 
         # load parameters for scale-up projections
-        p["scaleup_parameters"] = workbook["scaleup_parameters"].set_index('parameter')['scaleup_value'].to_dict()
+        if p['type_of_scaleup'] == 'target':
+            p["scaleup_parameters"] = workbook["scaleup_parameters"].set_index('parameter')['target_value'].to_dict()
+        else:
+            p["scaleup_parameters"] = workbook["scaleup_parameters"].set_index('parameter')['max_value'].to_dict()
 
         # DALY weights
         # get the DALY weight that this module will use from the weight database (these codes are just random!)
@@ -1104,11 +1107,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
     def update_parameters_for_program_scaleup(self):
         """ options for program scale-up are 'target' or 'max' """
         p = self.parameters
-
-        if p['type_of_scaleup'] == 'target':
-            scaled_params = p["target_value"]
-        else:
-            scaled_params = p["max_value"]
+        scaled_params = p["scaleup_parameters"]
 
         # scale-up HIV program
         # reduce risk of HIV - applies to whole adult population
