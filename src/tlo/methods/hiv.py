@@ -914,7 +914,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(years=1))
 
         # Optional: Schedule the scale-up of programs
-        if self.parameters["do_scaleup"]:
+        if self.parameters["type_of_scaleup"] != 'none':
             scaleup_start_date = Date(self.parameters["scaleup_start_year"], 1, 1)
             assert scaleup_start_date >= self.sim.start_date, f"Date {scaleup_start_date} is before simulation starts."
             sim.schedule_event(HivScaleUpEvent(self), scaleup_start_date)
