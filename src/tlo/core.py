@@ -185,16 +185,20 @@ class Property(Specifiable):
     @_default_value.setter
     def _default_value(self, new_val: Any) -> None:
         if new_val is not None:
-            if self.type_ is Types.CATEGORICAL and (new_val not in self.categories):
-                raise ValueError(
-                    f"Value {new_val} is not a valid category, so cannot be set as the default."
-                )
+            # Check for valid category
+            if self.type_ is Types.CATEGORICAL:
+                if new_val not in self.categories:
+                    raise ValueError(
+                        f"Value {new_val} is not a valid category, so cannot be set as the default."
+                    )
+            # If not categorical, check for valid data type for default
             elif not isinstance(new_val, self.python_type):
                 raise ValueError(
                     f"Trying to set a default value of type {type(new_val).__name__}, "
                     f"which is different from Property's type of {type(self.python_type).__name__}."
                 )
-            self._default_value_override = new_val
+        # Outside block so that providing new_val = None reverts to Property-wide default.
+        self._default_value_override = new_val
 
     def create_series(self, name: str, size: int) -> pd.Series:
         """Create a Pandas Series for this property.
