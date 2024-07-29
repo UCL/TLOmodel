@@ -11,11 +11,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 from tlo import Date
-from tlo.analysis.utils import (
-    extract_results,
-    make_age_grp_lookup,
-    summarize,
-)
+from tlo.analysis.utils import extract_results, make_age_grp_lookup, summarize
 
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
@@ -37,8 +33,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     def get_parameter_names_from_scenario_file() -> Tuple[str]:
         """Get the tuple of names of the scenarios from `Scenario` class used to create the results."""
-        from scripts.comparison_of_horizontal_and_vertical_programs.scenario_vertical_programs_with_and_without_hss  \
-            import HTMWithAndWithoutHSS
+        from scripts.comparison_of_horizontal_and_vertical_programs.scenario_vertical_programs_with_and_without_hss import (
+            HTMWithAndWithoutHSS,
+        )
         e = HTMWithAndWithoutHSS()
         return tuple(e._scenarios.keys())
 

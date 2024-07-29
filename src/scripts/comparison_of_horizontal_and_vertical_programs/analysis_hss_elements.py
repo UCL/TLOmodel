@@ -11,11 +11,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 from tlo import Date
-from tlo.analysis.utils import (
-    extract_results,
-    make_age_grp_lookup,
-    summarize,
-)
+from tlo.analysis.utils import extract_results, make_age_grp_lookup, summarize
 
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
