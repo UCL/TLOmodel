@@ -366,7 +366,9 @@ class BedDays:
         final_priorities = np.minimum(fp1_priority, fp2_priority)
         # Final footprint is then formed by converting the priorities into blocks of days
         return {
-            bed_type: sum(final_priorities == priority)
+            # Cast to int here since pd.datetime.timedelta doesn't know what to do with
+            # np.int64 types
+            bed_type: int(sum(final_priorities == priority))
             for priority, bed_type in enumerate(self.bed_types)
         }
 
