@@ -85,7 +85,7 @@ class ScenarioDefinitions:
                 'max_healthcare_seeking': [False, True],  # <-- switch from False to True mid-way
                 'year_of_switch': self.YEAR_OF_CHANGE_FOR_HSS,
             }
-        },
+        }
 
     def vital_items_available(self) -> Dict:
         return {
@@ -113,10 +113,10 @@ class ScenarioDefinitions:
 
     def hss_package(self) -> Dict:
         """The parameters for the Health System Strengthening Package"""
-
         return mix_scenarios(
-            self.double_capacity_at_primary_care(),
-            self.hrh_above_gdp_growth(),  # <-- todo check that these two do operate together and build on one another
+            self.double_capacity_at_primary_care(),  #  }
+            self.hrh_above_gdp_growth(),             #  } <-- confirmed that these two do build on one another under
+            # mode 2 rescaling: see `test_scaling_up_HRH_using_yearly_scaling_and_scaling_by_level_together`.
             self.perfect_clinical_practices(),
             self.perfect_healthcare_seeking(),
             self.all_consumables_available(),
