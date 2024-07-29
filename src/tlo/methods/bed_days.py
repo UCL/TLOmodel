@@ -324,11 +324,31 @@ class BedDays:
         """
         Given two footprints that are due to start on the same day, combine the two footprints by
         overlaying the higher-priority bed over the lower-priority beds.
+
+        As an example, given the footprints,
+        fp1 = {"bedtype1": 2, "bedtype2": 0}
+        fp2 = {"bedtype1": 1, "bedtype2": 6}
+
+        where bedtype1 is higher priority than bedtype2, we expect the combined allocation to be
+        {"bedtype1": 2, "bedtype2": 5}.
+
+        This is because footprints are assumed to run in the order of the bedtypes priority; so
+        fp2's second day of being allocated to bedtype2 is overwritten by the higher-priority
+        allocation to bedtype1 from fp1. The remaining 5 days are allocated to bedtype2 since
+        fp1 does not require a bed after the first 2 days, but fp2 does.
+
+        :param fp1: Footprint, to be combined with the other argument.
+        :param pf2: Footprint, to be combined with the other argument.
         """
         fp1_length = sum(days for days in fp1.values())
         fp2_length = sum(days for days in fp2.values())
         max_length = max(fp1_length, fp2_length)
 
+        # np arrays where each entry is the priority of bed allocated by the footprint
+        # on that day. fp_priority[i] = priority of the bed allocated by the footprint on
+        # day i (where the current day is day 0).
+        # By default, fill with priority equal to the lowest bed priority; though all
+        # the values will have been explicitly overwritten after the next loop completes.
         fp1_priority = np.ones((max_length,), dtype=int) * (len(self.bed_types) - 1)
         fp2_priority = fp1_priority.copy()
 
