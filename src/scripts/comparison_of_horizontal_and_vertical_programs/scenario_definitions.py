@@ -15,7 +15,7 @@ class ScenarioDefinitions:
     @property
     def YEAR_OF_CHANGE_FOR_HTM(self) -> int:
         """Year in which HIV, TB, Malaria scale-up changes are made."""
-        return 2019
+        return 2015  # <-- todo changing this to 2015, to match Tara's run. Also note that it's not the same as the Year of change for the HSS
 
     def baseline(self) -> Dict:
         """Return the Dict with values for the parameter changes that define the baseline scenario. """
@@ -126,7 +126,7 @@ class ScenarioDefinitions:
         """The parameters for the scale-up of the HIV program"""
         return {
             "Hiv": {
-                'type_of_scaleup': 'max',  # <--- using MAXIMUM SCALE-UP as an experiment
+                'type_of_scaleup': 'max',  # <--- todo: using MAXIMUM SCALE-UP as an experiment
                 'scaleup_start_year': self.YEAR_OF_CHANGE_FOR_HTM,
             }
         }
@@ -135,7 +135,7 @@ class ScenarioDefinitions:
         """The parameters for the scale-up of the TB program"""
         return {
             "Tb": {
-                'type_of_scaleup': 'max',  # <--- using MAXIMUM SCALE-UP as an experiment
+                'type_of_scaleup': 'max',  # <--- todo: using MAXIMUM SCALE-UP as an experiment
                 'scaleup_start_year': self.YEAR_OF_CHANGE_FOR_HTM,
             }
         }
@@ -144,7 +144,7 @@ class ScenarioDefinitions:
         """The parameters for the scale-up of the Malaria program"""
         return {
             'Malaria': {
-                'type_of_scaleup': 'max',  # <--- using MAXIMUM SCALE-UP as an experiment
+                'type_of_scaleup': 'max',  # <--- todo: using MAXIMUM SCALE-UP as an experiment
                 'scaleup_start_year': self.YEAR_OF_CHANGE_FOR_HTM,
             }
         }
