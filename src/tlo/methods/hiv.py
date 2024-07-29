@@ -398,16 +398,16 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             " high-bound-exclusive]",
         ),
         # ------------------ scale-up parameters for scenario analysis ------------------ #
-        "do_scaleup": Parameter(
-            Types.BOOL,
-        "argument to determine whether scale-up of program will be implemented"
+        "type_of_scaleup": Parameter(
+            Types.STRING, "argument to determine type scale-up of program which will be implemented, "
+                          "can be 'none', 'target' or 'max'",
         ),
         "scaleup_start_year": Parameter(
             Types.INT,
             "the year when the scale-up starts (it will occur on 1st January of that year)"
         ),
         "scaleup_parameters": Parameter(
-            Types.DICT,
+            Types.DATA_FRAME,
             "the parameters and values changed in scenario analysis"
         ),
     }
@@ -448,7 +448,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         p["treatment_cascade"] = workbook["spectrum_treatment_cascade"]
 
         # load parameters for scale-up projections
-        p["scaleup_parameters"] = workbook["scaleup_parameters"].set_index('parameter')['scaleup_value'].to_dict()
+        p['scaleup_parameters'] = workbook["scaleup_parameters"]
 
         # DALY weights
         # get the DALY weight that this module will use from the weight database (these codes are just random!)
@@ -914,7 +914,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(years=1))
 
         # Optional: Schedule the scale-up of programs
-        if self.parameters["do_scaleup"]:
+        if self.parameters["type_of_scaleup"] != 'none':
             scaleup_start_date = Date(self.parameters["scaleup_start_year"], 1, 1)
             assert scaleup_start_date >= self.sim.start_date, f"Date {scaleup_start_date} is before simulation starts."
             sim.schedule_event(HivScaleUpEvent(self), scaleup_start_date)
@@ -1102,8 +1102,14 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         )
 
     def update_parameters_for_program_scaleup(self):
+        """ options for program scale-up are 'target' or 'max' """
         p = self.parameters
-        scaled_params = p["scaleup_parameters"]
+        scaled_params_workbook = p["scaleup_parameters"]
+
+        if p['type_of_scaleup'] == 'target':
+            scaled_params = scaled_params_workbook.set_index('parameter')['target_value'].to_dict()
+        else:
+            scaled_params = scaled_params_workbook.set_index('parameter')['max_value'].to_dict()
 
         # scale-up HIV program
         # reduce risk of HIV - applies to whole adult population

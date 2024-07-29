@@ -126,7 +126,7 @@ class ScenarioDefinitions:
         """The parameters for the scale-up of the HIV program"""
         return {
             "Hiv": {
-                'do_scaleup': True,
+                'type_of_scaleup': 'max',  # <--- using MAXIMUM SCALE-UP as an experiment
                 'scaleup_start_year': self.YEAR_OF_CHANGE_FOR_HTM,
             }
         }
@@ -135,7 +135,7 @@ class ScenarioDefinitions:
         """The parameters for the scale-up of the TB program"""
         return {
             "Tb": {
-                'do_scaleup': True,
+                'type_of_scaleup': 'max',  # <--- using MAXIMUM SCALE-UP as an experiment
                 'scaleup_start_year': self.YEAR_OF_CHANGE_FOR_HTM,
             }
         }
@@ -144,7 +144,7 @@ class ScenarioDefinitions:
         """The parameters for the scale-up of the Malaria program"""
         return {
             'Malaria': {
-                'do_scaleup': True,
+                'type_of_scaleup': 'max',  # <--- using MAXIMUM SCALE-UP as an experiment
                 'scaleup_start_year': self.YEAR_OF_CHANGE_FOR_HTM,
             }
         }
