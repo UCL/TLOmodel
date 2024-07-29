@@ -3,7 +3,7 @@ import pickle
 import statistics
 from pathlib import Path
 
-from tlo import Date, Module, Simulation, logging
+from tlo import Date, Simulation, logging
 from tlo.analysis.life_expectancy import get_probability_of_premature_death
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import demography
