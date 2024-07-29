@@ -61,6 +61,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 outputspath = Path("./outputs")
 scaleup_start_year = 2012
+end_date = Date(2015, 1, 1)
 
 
 class EffectOfProgrammes(BaseScenario):
@@ -68,9 +69,9 @@ class EffectOfProgrammes(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2015, 1, 1)
+        self.end_date = end_date
         self.pop_size = 1_000
-        self.number_of_draws = 10
+        self.number_of_draws = 5
         self.runs_per_draw = 1
 
     def log_configuration(self):
@@ -155,7 +156,7 @@ def get_num_deaths_by_cause_label(_df):
         .size()
 
 
-TARGET_PERIOD = (Date(scaleup_start_year, 1, 1), Date(2020, 1, 1))
+TARGET_PERIOD = (Date(scaleup_start_year, 1, 1), end_date)
 
 # produce df of total deaths over scale-up period
 num_deaths_by_cause_label = extract_results(
@@ -205,34 +206,30 @@ tb_deaths = summarise_deaths_for_one_cause(results_folder, 'TB (non-AIDS)')
 malaria_deaths = summarise_deaths_for_one_cause(results_folder, 'Malaria')
 
 
-draw_labels = ['No scale-up_mode1', 'HIV scale-up_mode1', 'TB scale-up_mode1', 'Malaria scale-up_mode1', 'HTM scale-up_mode1',
-               'No scale-up_mode2', 'HIV scale-up_mode2', 'TB scale-up_mode2', 'Malaria scale-up_mode2', 'HTM scale-up_mode2']
+draw_labels = ['No scale-up', 'HIV scale-up', 'TB scale-up', 'Malaria scale-up', 'HTM scale-up']
 colors = ['blue', 'green', 'red', 'purple', 'orange']
-line_styles = ['-', '--']
 
 # Create subplots
 fig, axs = plt.subplots(3, 1, figsize=(10, 10))
 # Plot for df1
 for i, col in enumerate(aids_deaths.columns):
     axs[0].plot(aids_deaths.index, aids_deaths[col], label=draw_labels[i],
-                color=colors[i % len(colors)], linestyle=line_styles[i // len(colors)])
+                color=colors[i % len(colors)])
 axs[0].set_title('HIV/AIDS')
 axs[0].legend(loc='center left', bbox_to_anchor=(1, 0.5))  # Legend to the right of the plot
-axs[0].axvline(x=2015, color='gray', linestyle='--')
+axs[0].axvline(x=scaleup_start_year, color='gray', linestyle='--')
 
 # Plot for df2
 for i, col in enumerate(tb_deaths.columns):
-    axs[1].plot(tb_deaths.index, tb_deaths[col], color=colors[i % len(colors)],
-                linestyle=line_styles[i // len(colors)])
+    axs[1].plot(tb_deaths.index, tb_deaths[col], color=colors[i % len(colors)])
 axs[1].set_title('TB')
-axs[1].axvline(x=2015, color='gray', linestyle='--')
+axs[1].axvline(x=scaleup_start_year, color='gray', linestyle='--')
 
 # Plot for df3
 for i, col in enumerate(malaria_deaths.columns):
-    axs[2].plot(malaria_deaths.index, malaria_deaths[col], color=colors[i % len(colors)],
-                linestyle=line_styles[i // len(colors)])
+    axs[2].plot(malaria_deaths.index, malaria_deaths[col], color=colors[i % len(colors)])
 axs[2].set_title('Malaria')
-axs[2].axvline(x=2015, color='gray', linestyle='--')
+axs[2].axvline(x=scaleup_start_year, color='gray', linestyle='--')
 
 for ax in axs:
     ax.set_xlabel('Years')
