@@ -123,10 +123,7 @@ class Parameter(Specifiable):
 
 
 class Property(Specifiable):
-    """
-    Used to specify properties of individuals.
-    
-    """
+    """Used to specify properties of individuals."""
 
     # Default values to use for Series of different Pandas dtypes
     PANDAS_TYPE_DEFAULT_VALUE_MAP = {
@@ -151,16 +148,6 @@ class Property(Specifiable):
     ) -> None:
         """Create a new property specification.
 
-        The ``default_value`` parameter can be used to specify the default value that this
-        property should take, which will be used to fill the respective columns of the
-        population dataframe, for example. If not provided, the property will fall back on
-        the ``PANDAS_TYPE_DEFAULT_TYPE_MAP``. If a value is provided, it must:
-        
-        - Be of the corresponding TYPE for the property.
-        - If ``type_`` is ``Types.CATEGORICAL``, it must also be a possible category.
-
-        Otherwise, the default value will be ignored and the default will be used.
-
         :param type_: An instance of ``Types`` giving the type of allowed values of this
             property.
         :param description: Textual description of what this property represents.
@@ -180,7 +167,14 @@ class Property(Specifiable):
     @property
     def default_value(self) -> Any:
         """
-        Default value for this property.
+        Default value for this property, which will be used to fill the respective columns
+        of the population dataframe, for example.
+        
+        If not explicitly set, it will fall back on the ``PANDAS_TYPE_DEFAULT_TYPE_MAP``.
+        If a value is provided, it must:
+
+        - Be of the corresponding TYPE for the property.
+        - If ``type_`` is ``Types.CATEGORICAL``, it must also be a possible category.
         """
         return (
             self.PANDAS_TYPE_DEFAULT_VALUE_MAP[self.pandas_type]
