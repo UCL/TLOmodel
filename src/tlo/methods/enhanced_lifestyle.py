@@ -661,13 +661,13 @@ class LifestyleModels:
         :param df: The population dataframe """
         # get months since last poll
         now = self.module.sim.date
-        months_since_last_poll = round((now - self.date_last_run) / np.timedelta64(1, "M"))
+        days_since_last_poll = round((now - self.date_last_run) / np.timedelta64(1, "D"))
         # loop through linear models dictionary and initialise each property in the population dataframe
         for _property_name, _model in self._models.items():
             if _model['update'] is not None:
                 df.loc[df.is_alive, _property_name] = _model['update'].predict(
                     df.loc[df.is_alive], rng=self.rng, other=self.module.sim.date,
-                    months_since_last_poll=months_since_last_poll)
+                    months_since_last_poll=days_since_last_poll / 30.5)
         # update date last event run
         self.date_last_run = now
 
