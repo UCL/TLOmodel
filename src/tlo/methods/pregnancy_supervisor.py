@@ -826,6 +826,40 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
 
         return daly_series
 
+    def report_prevalence(self):
+        """
+        This function reports the prevalence of conditions for this module generated in the previous month
+        :return: data frame containing the prevalence of each condition
+        """
+        df = self.sim.population.props
+
+        # Calculate prevalence for each condition
+        conditions = {
+            'Ectopic Pregnancy': df[(df['is_alive']) & (df['ps_ectopic_pregnancy'] != 'none')],
+            'Placenta Praevia': df[(df['is_alive']) & (df['ps_placenta_praevia'])],
+            'Syphilis': df[(df['is_alive']) & (df['ps_syphilis'])],
+            'Anaemia in Pregnancy': df[(df['is_alive']) & (df['ps_anaemia_in_pregnancy'] != 'none')],
+            'ANC4': df[(df['is_alive']) & (df['ps_anc4'])],
+            'Abortion Complications': df[(df['is_alive']) & (df['ps_abortion_complications'] != 0)],
+            'HTN Disorders': df[(df['is_alive']) & (df['ps_htn_disorders'] != 'none')],
+            'Gestational Diabetes': df[(df['is_alive']) & (df['ps_gest_diab'] != 'none')],
+            'Placental Abruption': df[(df['is_alive']) & (df['ps_placental_abruption'])],
+            'Antepartum Haemorrhage': df[(df['is_alive']) & (df['ps_antepartum_haemorrhage'] != 'none')],
+            'Premature Rupture of Membranes': df[(df['is_alive']) & (df['ps_premature_rupture_of_membranes'])],
+            'Chorioamnionitis': df[(df['is_alive']) & (df['ps_chorioamnionitis'])],
+            'Emergency Event': df[(df['is_alive']) & (df['ps_emergency_event'])]
+        }
+
+        prevalence_list = []
+
+        for condition, condition_df in conditions.items():
+            prevalence = len(condition_df) / len(df[df['is_alive']])
+            prevalence_list.append(pd.Series(prevalence, name=condition))
+
+        prevalence_df = pd.concat(prevalence_list, axis=1)
+
+        return prevalence_df
+
     def pregnancy_supervisor_property_reset(self, id_or_index):
         """
         This function is called when all properties housed in the PregnancySupervisorModule should be reset. For example
