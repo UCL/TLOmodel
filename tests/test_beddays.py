@@ -82,6 +82,28 @@ def test_beddays_in_isolation(tmpdir, seed):
     hs.bed_days.remove_beddays_footprint(2)
     assert ([cap_bedtype1] * days_sim == tracker.values).all()
 
+    # 4) check that combining footprints for a person returns the expected output
+    # Test uses example fail case given in https://github.com/UCL/TLOmodel/issues/1399
+    # Person p has: bedtyp1 for 2 days, bedtype2 for 0 days.
+    # Person p then assigned: bedtype1 for 1 days, bedtype2 for 6 days.
+    # EXPECT: p's footprints are combined into bedtype1 for 2 days, bedtype2 for 5 days.
+    existing_footprint = {"bedtype1": 2, "bedtype2": 0}
+    incoming_footprint = {"bedtype1": 1, "bedtype2": 6}
+    expected_resolution = {"bedtype1": 2, "bedtype2": 5}
+
+    allocated_footprint = hs.bed_days.combine_footprints_for_same_patient(
+        existing_footprint, incoming_footprint
+    )
+    assert len(allocated_footprint) == len(
+        expected_resolution
+    ), "Bed type footprints did not return same allocations."
+    for bed_type, expected_days in expected_resolution.items():
+        allocated_days = allocated_footprint[bed_type]
+        assert expected_days == allocated_days, (
+            f"Bed type {bed_type} was allocated {allocated_days} upon combining, "
+            f"but expected it to get {expected_days}."
+        )
+
 
 def check_dtypes(simulation):
     # check types of columns
