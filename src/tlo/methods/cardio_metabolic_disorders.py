@@ -21,7 +21,6 @@ import numpy as np
 import pandas as pd
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
-from tlo.core import IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -29,11 +28,13 @@ from tlo.methods import demography as de
 from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
+from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date
 
 if TYPE_CHECKING:
-    from tlo.population import PatientDetails
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
+    from tlo.population import IndividualProperties
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
@@ -42,7 +43,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-class CardioMetabolicDisorders(Module):
+class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
     """
     CardioMetabolicDisorders module covers a subset of cardio-metabolic conditions and events. Conditions are binary
     and individuals experience a risk of acquiring or losing a condition based on annual probability and
@@ -814,19 +815,20 @@ class CardioMetabolicDisorders(Module):
 
     def do_at_generic_first_appt(
         self,
-        patient_id: int,
-        patient_details: PatientDetails,
+        person_id: int,
+        individual_properties: IndividualProperties,
         symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
         **kwargs
-    ) -> IndividualPropertyUpdates:
+    ) -> None:
         # This is called by the HSI generic first appts module whenever a
         # person attends an appointment and determines if the person will
         # be tested for one or more conditions.
         # A maximum of one instance of `HSI_CardioMetabolicDisorders_Investigations`
         # is created for the person, during which multiple conditions can
         # be investigated.
-        if patient_details.age_years <= 5:
-            return {}
+        if individual_properties["age_years"] <= 5:
+            return
 
         # The list of conditions that will be investigated in follow-up HSI
         conditions_to_investigate = []
@@ -835,11 +837,11 @@ class CardioMetabolicDisorders(Module):
 
         # Determine if there are any conditions that should be investigated:
         for condition in self.conditions:
-            is_already_diagnosed = getattr(patient_details, f"nc_{condition}_ever_diagnosed")
+            is_already_diagnosed = individual_properties[
+                f"nc_{condition}_ever_diagnosed"
+            ]
             has_symptom = f"{condition}_symptoms" in symptoms
-            date_of_last_test = getattr(
-                patient_details, f"nc_{condition}_date_last_test"
-            )
+            date_of_last_test = individual_properties[f"nc_{condition}_date_last_test"]
             next_test_due = (
                 pd.isnull(date_of_last_test)
                 or (self.sim.date - date_of_last_test).days > DAYS_IN_YEAR / 2
@@ -867,34 +869,32 @@ class CardioMetabolicDisorders(Module):
         if conditions_to_investigate:
             event = HSI_CardioMetabolicDisorders_Investigations(
                 module=self,
-                person_id=patient_id,
+                person_id=person_id,
                 conditions_to_investigate=conditions_to_investigate,
                 has_any_cmd_symptom=has_any_cmd_symptom,
             )
-            self.healthsystem.schedule_hsi_event(event, topen=self.sim.date, priority=0)
+            schedule_hsi_event(event, topen=self.sim.date, priority=0)
 
     def do_at_generic_first_appt_emergency(
         self,
-        patient_id: int,
-        patient_details: PatientDetails = None,
-        symptoms: List[str] = None,
+        person_id: int,
+        individual_properties: IndividualProperties,
+        symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
         **kwargs,
-    ) -> IndividualPropertyUpdates:
-        # This is called by the HSI generic first appts module whenever
-        # a person attends an emergency appointment and determines if they
-        # will receive emergency care based on the duration of time since
-        # symptoms have appeared. A maximum of one instance of
-        # `HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment`
-        # is created for the person, during which multiple events can be
-        # investigated.
+    ) -> None:
+        # This is called by the HSI generic first appts module whenever a person attends
+        # an emergency appointment and determines if they will receive emergency care
+        # based on the duration of time since symptoms have appeared. A maximum of one
+        # instance of `HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment`
+        # is created for the person, during which multiple events can be investigated.
         ev_to_investigate = []
         for ev in self.events:
-            # If the person has symptoms of damage from within the last 3 days,
-            # schedule them for emergency care
+            # If the person has symptoms of damage from within the last 3 days, schedule
+            # them for emergency care
             if f"{ev}_damage" in symptoms and (
                 (
-                    self.sim.date
-                    - getattr(patient_details, f"nc_{ev}_date_last_event")
+                    self.sim.date - individual_properties[f"nc_{ev}_date_last_event"]
                 ).days
                 <= 3
             ):
@@ -903,10 +903,10 @@ class CardioMetabolicDisorders(Module):
         if ev_to_investigate:
             event = HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(
                 module=self,
-                person_id=patient_id,
+                person_id=person_id,
                 events_to_investigate=ev_to_investigate,
             )
-            self.healthsystem.schedule_hsi_event(event, topen=self.sim.date, priority=1)
+            schedule_hsi_event(event, topen=self.sim.date, priority=1)
 
 
 class Tracker:
@@ -1306,7 +1306,7 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
                         df.age_years >= 20)]) / len(df[df[f'nc_{condition}'] & df.is_alive & (df.age_years >= 20)])
                 }
             else:
-                diagnosed = {0.0}
+                diagnosed = {f'{condition}_diagnosis_prevalence': float("nan")}
 
             logger.info(
                 key=f'{condition}_diagnosis_prevalence',
@@ -1320,7 +1320,7 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
                         df.age_years >= 20)]) / len(df[df[f'nc_{condition}'] & df.is_alive & (df.age_years >= 20)])
                 }
             else:
-                on_medication = {0.0}
+                on_medication = {f'{condition}_medication_prevalence': float("nan")}
 
             logger.info(
                 key=f'{condition}_medication_prevalence',
@@ -1435,6 +1435,7 @@ class HSI_CardioMetabolicDisorders_CommunityTestingForHypertension(HSI_Event, In
             return hs.get_blank_appt_footprint()
 
         # Run a test to diagnose whether the person has condition:
+        self.add_equipment({'Blood pressure machine'})
         dx_result = hs.dx_manager.run_dx_test(
             dx_tests_to_run='assess_hypertension',
             hsi_event=self
@@ -1487,6 +1488,9 @@ class HSI_CardioMetabolicDisorders_Investigations(HSI_Event, IndividualScopeEven
         if df.at[person_id, f'nc_{_c}_ever_diagnosed']:
             return
 
+        if _c == 'chronic_ischemic_heart_disease':
+            self.add_equipment({'Electrocardiogram', 'Stethoscope'})
+
         # Run a test to diagnose whether the person has condition:
         dx_result = hs.dx_manager.run_dx_test(
             dx_tests_to_run=f'assess_{_c}',
@@ -1519,6 +1523,11 @@ class HSI_CardioMetabolicDisorders_Investigations(HSI_Event, IndividualScopeEven
             return hs.get_blank_appt_footprint()
 
         # Do test and trigger treatment (if necessary) for each condition:
+        if set(self.conditions_to_investigate).intersection(
+            ['diabetes', 'chronic_kidney_disease', 'chronic_ischemic_hd']
+        ):
+            self.add_equipment({'Analyser, Haematology', 'Analyser, Combined Chemistry and Electrolytes'})
+
         hsi_scheduled = [self.do_for_each_condition(_c) for _c in self.conditions_to_investigate]
 
         # If no follow-up treatment scheduled but the person has at least 2 risk factors, start weight loss treatment
@@ -1542,6 +1551,7 @@ class HSI_CardioMetabolicDisorders_Investigations(HSI_Event, IndividualScopeEven
             and (self.module.rng.rand() < self.module.parameters['hypertension_hsi']['pr_assessed_other_symptoms'])
         ):
             # Run a test to diagnose whether the person has condition:
+            self.add_equipment({'Blood pressure machine'})
             dx_result = hs.dx_manager.run_dx_test(
                 dx_tests_to_run='assess_hypertension',
                 hsi_event=self
@@ -1589,6 +1599,8 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
 
         # Don't advise those with CKD to lose weight, but do so for all other conditions if BMI is higher than normal
         if self.condition != 'chronic_kidney_disease' and (df.at[person_id, 'li_bmi'] > 2):
+            self.add_equipment({'Weighing scale'})
+
             self.sim.population.props.at[person_id, 'nc_ever_weight_loss_treatment'] = True
             # Schedule a post-weight loss event for individual to potentially lose weight in next 6-12 months:
             self.sim.schedule_event(CardioMetabolicDisordersWeightLossEvent(m, person_id),
@@ -1749,6 +1761,12 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
         df = self.sim.population.props
 
         # Run a test to diagnose whether the person has condition:
+        if _ev == 'ever_stroke':
+            self.add_equipment({'Computed Tomography (CT machine)', 'CT scanner accessories'})
+
+        if _ev == 'ever_heart_attack':
+            self.add_equipment({'Electrocardiogram'})
+
         dx_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
             dx_tests_to_run=f'assess_{_ev}',
             hsi_event=self
@@ -1808,6 +1826,7 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
             data=('This is HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment: '
                   f'The squeeze-factor is {squeeze_factor}.'),
         )
+        self.add_equipment(self.healthcare_system.equipment.from_pkg_names('ICU'))
 
         for _ev in self.events_to_investigate:
             self.do_for_each_event_to_be_investigated(_ev)

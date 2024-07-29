@@ -5,22 +5,27 @@ This module determines if care is sought once a symptom is developed.
 The write-up of these estimates is: Health-seeking behaviour estimates for adults and children.docx
 
 """
+from __future__ import annotations
+
 from pathlib import Path
-from typing import List
+from typing import TYPE_CHECKING, List
 
 import numpy as np
 import pandas as pd
 
 from tlo import Date, DateOffset, Module, Parameter, Types
-from tlo.core import IndividualPropertyUpdates
 from tlo.events import PopulationScopeEventMixin, Priority, RegularEvent
 from tlo.lm import LinearModel
 from tlo.methods import Metadata
 from tlo.methods.hsi_generic_first_appts import (
+    GenericFirstAppointmentsMixin,
     HSI_EmergencyCare_SpuriousSymptom,
     HSI_GenericEmergencyFirstAppt,
     HSI_GenericNonEmergencyFirstAppt,
 )
+
+if TYPE_CHECKING:
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
@@ -29,7 +34,7 @@ from tlo.methods.hsi_generic_first_appts import (
 HIGH_ODDS_RATIO = 1e5
 
 
-class HealthSeekingBehaviour(Module):
+class HealthSeekingBehaviour(Module, GenericFirstAppointmentsMixin):
     """
     This modules determines if the onset of symptoms will lead to that person presenting at the health
     facility for a HSI_GenericFirstAppointment.
@@ -255,16 +260,17 @@ class HealthSeekingBehaviour(Module):
 
     def do_at_generic_first_appt_emergency(
         self,
-        patient_id: int,
+        person_id: int,
         symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
         **kwargs,
-    ) -> IndividualPropertyUpdates:
+    ) -> None:
         if "spurious_emergency_symptom" in symptoms:
             event = HSI_EmergencyCare_SpuriousSymptom(
                 module=self.sim.modules["HealthSeekingBehaviour"],
-                person_id=patient_id,
+                person_id=person_id,
             )
-            self.healthsystem.schedule_hsi_event(event, priority=0, topen=self.sim.date)
+            schedule_hsi_event(event, priority=0, topen=self.sim.date)
 
 # ---------------------------------------------------------------------------------------------------------
 #   REGULAR POLLING EVENT

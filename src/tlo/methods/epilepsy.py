@@ -1,23 +1,28 @@
+from __future__ import annotations
+
 from pathlib import Path
-from typing import List, Union
+from typing import TYPE_CHECKING, List, Union
 
 import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.core import IndividualPropertyUpdates
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.hsi_event import HSI_Event
+from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
+
+if TYPE_CHECKING:
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class Epilepsy(Module):
+class Epilepsy(Module, GenericFirstAppointmentsMixin):
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
@@ -395,13 +400,14 @@ class Epilepsy(Module):
 
     def do_at_generic_first_appt_emergency(
         self,
-        patient_id: int,
+        person_id: int,
         symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
         **kwargs,
-    ) -> IndividualPropertyUpdates:
+    ) -> None:
         if "seizures" in symptoms:
-            event = HSI_Epilepsy_Start_Anti_Epileptic(person_id=patient_id, module=self)
-            self.healthsystem.schedule_hsi_event(event, priority=0, topen=self.sim.date)
+            event = HSI_Epilepsy_Start_Anti_Epileptic(person_id=person_id, module=self)
+            schedule_hsi_event(event, priority=0, topen=self.sim.date)
 
 
 class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
@@ -557,16 +563,16 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_seiz_stat_1_3 = sum(status_groups.iloc[1:].is_alive)
         n_seiz_stat_2_3 = sum(status_groups.iloc[2:].is_alive)
 
-        n_antiep = (df.is_alive & df.ep_antiep).sum()
+        n_antiep = int((df.is_alive & df.ep_antiep).sum())
 
-        n_epi_death = df.ep_epi_death.sum()
+        n_epi_death = int(df.ep_epi_death.sum())
 
         status_groups['prop_seiz_stats'] = status_groups.is_alive / sum(status_groups.is_alive)
 
         status_groups['prop_seiz_stat_on_anti_ep'] = status_groups['ep_antiep'] / status_groups.is_alive
         status_groups['prop_seiz_stat_on_anti_ep'] = status_groups['prop_seiz_stat_on_anti_ep'].fillna(0)
         epi_death_rate = \
-            (n_epi_death * 4 * 1000) / n_seiz_stat_2_3 if n_seiz_stat_2_3 > 0 else 0
+            (n_epi_death * 4 * 1000) / n_seiz_stat_2_3 if n_seiz_stat_2_3 > 0 else 0.0
 
         cum_deaths = (~df.is_alive).sum()
 

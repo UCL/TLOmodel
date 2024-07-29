@@ -12,6 +12,7 @@ from tlo import Date
 if TYPE_CHECKING:
     from tlo.logging.core import Logger
 
+
 @dataclass
 class BedOccupancy:
     """
@@ -287,7 +288,9 @@ class BedDays:
         summary_logger: Optional[Logger] = None,
     ) -> None:
         self._logger = logger
-        self._raw_max_capacities = bed_capacities.set_index("Facility_ID", inplace=False)
+        self._raw_max_capacities = bed_capacities.set_index(
+            "Facility_ID", inplace=False
+        )
         self.bed_types = tuple(x for x in bed_capacities.columns if x != "Facility_ID")
 
         # Note that the simulation may not have setup the initial population
@@ -327,7 +330,11 @@ class BedDays:
                 " Provide a numeric value, 'all' (1.0), or 'none' (0.0)."
             )
         # Update new effective bed capacities
-        self.max_capacities = (self._raw_max_capacities * capacity_scaling_factor).apply(np.ceil).astype(int)
+        self.max_capacities = (
+            (self._raw_max_capacities * capacity_scaling_factor)
+            .apply(np.ceil)
+            .astype(int)
+        )
 
     def is_inpatient(self, patient_id: int) -> List[BedOccupancy]:
         """
@@ -392,7 +399,7 @@ class BedDays:
         """
         Find all occupancies in the current list of occupancies that match the
         criteria given. Unspecified criteria are ignored.
-        
+
         Multiple criteria will be combined using logical AND. This behaviour can
         be toggled with the logical_or argument.
 
@@ -426,8 +433,10 @@ class BedDays:
                     [
                         patient_id is not None and o.patient_id in patient_id,
                         facility is not None and o.facility in facility,
-                        start_on_or_after is not None and o.start_date >= start_on_or_after,
-                        end_on_or_before is not None and o.freed_date <= end_on_or_before,
+                        start_on_or_after is not None
+                        and o.start_date >= start_on_or_after,
+                        end_on_or_before is not None
+                        and o.freed_date <= end_on_or_before,
                         on_date is not None and o.start_date <= on_date <= o.freed_date,
                         occurs_between_dates is not None
                         and self.date_ranges_overlap(
@@ -471,7 +480,7 @@ class BedDays:
         This is, in general, not a safe cast and should only be used to complement
         cases where the user is confident none of the "information loss" scenarios
         below may cause errors.
-        
+
         Note that casting from occupancies to a single footprint results in
         irrecoverable loss of information, including:
         - Loss of patient ID and facility. There is no check that all the
@@ -503,6 +512,32 @@ class BedDays:
             )
             footprint[o.bed_type] += bed_type_stay_length
         return footprint
+
+    def switch_beddays_availability(
+        self,
+        capacity_scaling_factor: Literal["all", "none"],
+        fallback_value: float = 1.0,
+    ) -> None:
+        """
+        Action to be taken if the beddays availability changes in the middle
+        of the simulation.
+
+        If bed capacities are reduced below the currently scheduled occupancy,
+        inpatients are not evicted from beds and are allowed to remain in the
+        bed until they are scheduled to leave. Obviously, no new patients will
+        be admitted if there is no room in the new capacities.
+
+        Switch takes place effective IMMEDIATELY upon calling this method. This
+        means that if this event is in the middle of a day, max bed capacities
+        will update in the middle of the day which might deny people treatment.
+
+        :param new_availability: The new bed availability. See __init__ for details.
+        :param model_to_data_popsize_ratio: As in initialise_population.
+        """
+        self.set_max_capacities(
+            capacity_scaling_factor=capacity_scaling_factor,
+            fallback_value=fallback_value,
+        )
 
     def forecast_availability(
         self,
@@ -820,8 +855,8 @@ class BedDays:
             )
             conflicting_occupancies = self.find_occupancies(
                 logical_or=True,
-                start_on_or_after=first_day, # Occupancies yet to happen
-                end_on_or_before=first_day, # Occupancies we are partway through
+                start_on_or_after=first_day,  # Occupancies yet to happen
+                end_on_or_before=first_day,  # Occupancies we are partway through
                 occupancies=is_inpatient,
             )
             # This person is already an inpatient, resolve occupancy conflicts.
@@ -968,6 +1003,7 @@ class BedDays:
         """
         self._summary_counter.write_to_log_and_reset_counters()
 
+
 class BedDaysSummaryCounter:
     """
     Helper class to keep running counts of bed-days used.
@@ -991,7 +1027,9 @@ class BedDaysSummaryCounter:
         self._bed_days_used = defaultdict(int)
         self._bed_days_available = defaultdict(int)
 
-    def record_usage_of_beds(self, bed_days_used: Dict[str, int], max_capacities: Dict[str, int]) -> None:
+    def record_usage_of_beds(
+        self, bed_days_used: Dict[str, int], max_capacities: Dict[str, int]
+    ) -> None:
         """
         Record the use of beds, provided as a dictionary.
 
