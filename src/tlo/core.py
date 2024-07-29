@@ -124,7 +124,10 @@ class Parameter(Specifiable):
 
 
 class Property(Specifiable):
-    """Used to specify properties of individuals."""
+    """
+    Used to specify properties of individuals.
+    
+    """
 
     # Default values to use for Series of different Pandas dtypes
     PANDAS_TYPE_DEFAULT_VALUE_MAP = {
@@ -151,6 +154,16 @@ class Property(Specifiable):
     ) -> None:
         """Create a new property specification.
 
+        The ``default_value`` parameter can be used to specify the default value that this
+        property should take, which will be used to fill the respective columns of the
+        population dataframe, for example. If not provided, the property will fall back on
+        the ``PANDAS_TYPE_DEFAULT_TYPE_MAP``. If a value is provided, it must:
+        
+        - Be of the corresponding TYPE for the property.
+        - If ``type_`` is ``Types.CATEGORICAL``, it must also be a possible category.
+
+        Otherwise, the default value will be ignored and the default will be used.
+
         :param type_: An instance of ``Types`` giving the type of allowed values of this
             property.
         :param description: Textual description of what this property represents.
@@ -158,8 +171,7 @@ class Property(Specifiable):
             ``Types.CATEGORICAL``.
         :param ordered: Whether categories are ordered  if ``type_`` is
             ``Types.CATEGORICAL``.
-        :param default_category_value: The default category in the set of categories to
-            assign on instantiation (if ``type_`` is ``Types.CATEGORICAL``).
+        :param default_value: The default value for the property.
         """
         if type_ in [Types.SERIES, Types.DATA_FRAME]:
             raise TypeError("Property cannot be of type SERIES or DATA_FRAME.")
@@ -366,7 +378,7 @@ class Module:
         'owned' by this module, i.e. those declared in its PROPERTIES dictionary.
 
         By default, all ``Property``s in ``self.PROPERTIES`` will have
-        their columns set to the default value for their dtype in the population dataframe.
+        their columns in the population dataframe set to the default value.
 
         TODO: We probably need to declare somehow which properties we 'read' here, so the
         simulation knows what order to initialise modules in!
