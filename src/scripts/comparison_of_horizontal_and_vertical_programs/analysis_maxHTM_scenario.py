@@ -1,0 +1,288 @@
+"""
+This scenario file sets up the scenarios for simulating the effects of scaling up programs
+
+The scenarios are:
+*0 baseline mode 1
+*1 scale-up HIV program
+*2 scale-up TB program
+*3 scale-up malaria program
+*4 scale-up HIV and Tb and malaria programs
+
+scale-up occurs on the default scale-up start date (01/01/2025: in parameters list of resourcefiles)
+
+For all scenarios, keep all default health system settings
+
+check the batch configuration gets generated without error:
+tlo scenario-run --draw-only src/scripts/htm_scenario_analyses/analysis_htm_scaleup.py
+
+Run on the batch system using:
+tlo batch-submit src/scripts/htm_scenario_analyses/analysis_htm_scaleup.py
+
+or locally using:
+tlo scenario-run src/scripts/htm_scenario_analyses/analysis_htm_scaleup.py
+
+or execute a single run:
+tlo scenario-run src/scripts/htm_scenario_analyses/analysis_htm_scaleup.py --draw 1 0
+
+"""
+
+from pathlib import Path
+import os
+import pandas as pd
+
+from tlo import Date, logging
+from tlo.methods import (
+    demography,
+    enhanced_lifestyle,
+    epi,
+    healthburden,
+    healthseekingbehaviour,
+    healthsystem,
+    hiv,
+    malaria,
+    simplified_births,
+    symptommanager,
+    tb,
+)
+from tlo.scenario import BaseScenario
+
+
+class EffectOfProgrammes(BaseScenario):
+    def __init__(self):
+        super().__init__()
+        self.seed = 0
+        self.start_date = Date(2010, 1, 1)
+        self.end_date = Date(2020, 1, 1)
+        self.pop_size = 25_000
+        self.number_of_draws = 10
+        self.runs_per_draw = 1
+
+        self.hiv_scale_up = pd.read_excel(
+            os.path.join(self.resources, "ResourceFile_HIV.xlsx"),
+            sheet_name="scaleup_parameters",
+        )
+        self.tb_scale_up = pd.read_excel(
+            os.path.join(self.resources, "ResourceFile_TB.xlsx"),
+            sheet_name="scaleup_parameters",
+        )
+        self.mal_scale_up = pd.read_excel(
+            os.path.join(self.resources, "malaria/ResourceFile_malaria.xlsx"),
+            sheet_name="scaleup_parameters",
+        )
+
+    def log_configuration(self):
+        return {
+            'filename': 'scaleup_tests_max',
+            'directory': Path('./outputs'),  # <- (specified only for local running)
+            'custom_levels': {
+                '*': logging.WARNING,
+                'tlo.methods.hiv': logging.INFO,
+                'tlo.methods.tb': logging.INFO,
+                'tlo.methods.malaria': logging.INFO,
+                'tlo.methods.demography': logging.INFO,
+            }
+        }
+
+    def modules(self):
+        return [
+            demography.Demography(resourcefilepath=self.resources),
+            simplified_births.SimplifiedBirths(resourcefilepath=self.resources),
+            enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
+            healthsystem.HealthSystem(resourcefilepath=self.resources),
+            symptommanager.SymptomManager(resourcefilepath=self.resources),
+            healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
+            healthburden.HealthBurden(resourcefilepath=self.resources),
+            epi.Epi(resourcefilepath=self.resources),
+            hiv.Hiv(resourcefilepath=self.resources),
+            tb.Tb(resourcefilepath=self.resources),
+            malaria.Malaria(resourcefilepath=self.resources),
+        ]
+
+    def draw_parameters(self, draw_number, rng):
+        scaleup_start_year = 2015
+
+        return {
+            'Hiv': {
+                'do_scaleup': [False, True, False, False, True, False, True, False, False, True][draw_number],
+                'scaleup_start_year': scaleup_start_year,
+                # 'scaleup_parameters': self.hiv_scale_up.set_index('parameter')['max_value'].to_dict(),
+            },
+            'Tb': {
+                'do_scaleup': [False, False, True, False, True, False, False, True, False, True][draw_number],
+                'scaleup_start_year': scaleup_start_year,
+                # 'scaleup_parameters': self.tb_scale_up.set_index('parameter')['max_value'].to_dict(),
+            },
+            'Malaria': {
+                'do_scaleup': [False, False, False, True, True, False, False, False, True, True][draw_number],
+                'scaleup_start_year': scaleup_start_year,
+                # 'scaleup_parameters': self.mal_scale_up.set_index('parameter')['max_value'].to_dict(),
+            },
+            'HealthSystem': {
+                'mode_appt_constraints': [1, 1, 1, 1, 1, 2, 2, 2, 2, 2][draw_number],
+            }
+
+        }
+
+
+if __name__ == '__main__':
+    from tlo.cli import scenario_run
+
+    scenario_run([__file__])
+
+
+
+
+""" this reads in the outputs generates through analysis_htm_scaleup.py
+and produces plots for HIV, TB and malaria incidence
+"""
+
+
+import datetime
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+
+from tlo import Date
+from tlo.analysis.utils import (
+    extract_params,
+    extract_results,
+    get_scenario_info,
+    get_scenario_outputs,
+    load_pickled_dataframes,
+)
+
+resourcefilepath = Path("./resources")
+datestamp = datetime.date.today().strftime("__%Y_%m_%d")
+
+outputspath = Path("./outputs")
+# outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
+
+
+# 0) Find results_folder associated with a given batch_file (and get most recent [-1])
+# results_folder = get_scenario_outputs("scaleup_tests_min", outputspath)[-1]
+results_folder = get_scenario_outputs("scaleup_tests_min-2024-07-26T170115Z", outputspath)[-1]
+
+results_folder = get_scenario_outputs("scaleup_tests_max-2024-07-26T170202Z", outputspath)[-1]
+
+# scaleup_tests_min-2024-07-26T170115Z
+# scaleup_tests_max-2024-07-26T170202Z
+
+# Declare path for output graphs from this script
+make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
+
+# look at one log (so can decide what to extract)
+log = load_pickled_dataframes(results_folder, draw=1)
+
+# get basic information about the results
+info = get_scenario_info(results_folder)
+
+# 1) Extract the parameters that have varied over the set of simulations
+params = extract_params(results_folder)
+
+
+# DEATHS
+
+
+def get_num_deaths_by_cause_label(_df):
+    """Return total number of Deaths by label within the TARGET_PERIOD
+    values are summed for all ages
+    df returned: rows=COD, columns=draw
+    """
+    return _df \
+        .loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)] \
+        .groupby(_df['label']) \
+        .size()
+
+
+TARGET_PERIOD = (Date(2015, 1, 1), Date(2020, 1, 1))
+
+num_deaths_by_cause_label = extract_results(
+        results_folder,
+        module='tlo.methods.demography',
+        key='death',
+        custom_generate_series=get_num_deaths_by_cause_label,
+        do_scaling=True
+    )
+
+
+num_deaths_by_cause_label.to_csv("num_deaths_by_cause_label_max.csv")
+
+def summarise_deaths_for_one_cause(results_folder, label):
+    """ returns mean deaths for each year of the simulation
+    values are aggregated across the runs of each draw
+    for the specified cause
+    """
+
+    results_deaths = extract_results(
+        results_folder,
+        module="tlo.methods.demography",
+        key="death",
+        custom_generate_series=(
+            lambda df: df.assign(year=df["date"].dt.year).groupby(
+                ["year", "label"])["person_id"].count()
+        ),
+        do_scaling=True,
+    )
+    # removes multi-index
+    results_deaths = results_deaths.reset_index()
+
+    # select only cause specified
+    tmp = results_deaths.loc[
+        (results_deaths.label == label)
+    ]
+
+    # group deaths by year
+    tmp = pd.DataFrame(tmp.groupby(["year"]).sum())
+
+    # get mean for each draw
+    mean_deaths = pd.concat({'mean': tmp.iloc[:, 1:].groupby(level=0, axis=1).mean()}, axis=1).swaplevel(axis=1)
+
+    return mean_deaths
+
+
+aids_deaths = summarise_deaths_for_one_cause(results_folder, 'AIDS')
+tb_deaths = summarise_deaths_for_one_cause(results_folder, 'TB (non-AIDS)')
+malaria_deaths = summarise_deaths_for_one_cause(results_folder, 'Malaria')
+
+draw_labels = ['No scale-up_mode1', 'HIV scale-up_mode1', 'TB scale-up_mode1', 'Malaria scale-up_mode1', 'HTM scale-up_mode1',
+               'No scale-up_mode2', 'HIV scale-up_mode2', 'TB scale-up_mode2', 'Malaria scale-up_mode2', 'HTM scale-up_mode2']
+
+colors = sns.color_palette("Set1", 10)  # Blue, Orange, Green, Red
+
+
+colors = ['blue', 'green', 'red', 'purple', 'orange']
+line_styles = ['-', '--']
+
+# Create subplots
+fig, axs = plt.subplots(3, 1, figsize=(10, 10))
+# Plot for df1
+for i, col in enumerate(aids_deaths.columns):
+    axs[0].plot(aids_deaths.index, aids_deaths[col], label=draw_labels[i],
+                color=colors[i % len(colors)], linestyle=line_styles[i // len(colors)])
+axs[0].set_title('HIV/AIDS')
+axs[0].legend(loc='center left', bbox_to_anchor=(1, 0.5))  # Legend to the right of the plot
+axs[0].axvline(x=2015, color='gray', linestyle='--')
+
+# Plot for df2
+for i, col in enumerate(tb_deaths.columns):
+    axs[1].plot(tb_deaths.index, tb_deaths[col], color=colors[i % len(colors)],
+                linestyle=line_styles[i // len(colors)])
+axs[1].set_title('TB')
+axs[1].axvline(x=2015, color='gray', linestyle='--')
+
+# Plot for df3
+for i, col in enumerate(malaria_deaths.columns):
+    axs[2].plot(malaria_deaths.index, malaria_deaths[col], color=colors[i % len(colors)],
+                linestyle=line_styles[i // len(colors)])
+axs[2].set_title('Malaria')
+axs[2].axvline(x=2015, color='gray', linestyle='--')
+
+for ax in axs:
+    ax.set_xlabel('Years')
+    ax.set_ylabel('Number deaths')
+
+plt.tight_layout(rect=[0, 0, 0.85, 1])  # Adjust layout to make space for legend
+plt.show()
+
