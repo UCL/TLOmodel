@@ -550,7 +550,7 @@ class Demography(Module):
                 # since dead persons do not have their hs_is_inpatient column
                 # updated at any point. This is consistent with the original
                 # behaviour.
-                self.healthsystem.bed_days.remove_patient_footprint(
+                self.sim.modules["HealthSystem"].bed_days.remove_patient_footprint(
                     patient_id=individual_id
                 )
 
