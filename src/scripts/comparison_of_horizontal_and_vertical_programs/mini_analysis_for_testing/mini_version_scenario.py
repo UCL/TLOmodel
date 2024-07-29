@@ -32,7 +32,7 @@ class MiniRunHTMWithAndWithoutHSS(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'htm_with_and_without_hss',
+            'filename': 'mini_htm_with_and_without_hss',
             'directory': Path('./outputs'),
             'custom_levels': {
                 '*': logging.WARNING,
