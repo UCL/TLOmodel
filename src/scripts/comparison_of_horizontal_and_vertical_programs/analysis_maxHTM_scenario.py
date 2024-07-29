@@ -28,8 +28,6 @@ tlo scenario-run src/scripts/comparison_of_horizontal_and_vertical_programs/anal
 
 import datetime
 from pathlib import Path
-# import pandas as pd
-# import matplotlib.pyplot as plt
 
 from tlo import Date, logging
 from tlo.methods import (
@@ -119,6 +117,9 @@ if __name__ == '__main__':
 
 
 # %% Produce some figures and summary info
+
+# import pandas as pd
+# import matplotlib.pyplot as plt
 
 # # Find results_folder associated with a given batch_file (and get most recent [-1])
 # results_folder = get_scenario_outputs("scaleup_tests-", outputspath)[-1]
