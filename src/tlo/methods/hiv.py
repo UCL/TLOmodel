@@ -1102,8 +1102,13 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         )
 
     def update_parameters_for_program_scaleup(self):
+        """ options for program scale-up are 'target' or 'max' """
         p = self.parameters
-        scaled_params = p["scaleup_parameters"]
+
+        if p['type_of_scaleup'] == 'target':
+            scaled_params = p["target_value"]
+        else:
+            scaled_params = p["max_value"]
 
         # scale-up HIV program
         # reduce risk of HIV - applies to whole adult population
