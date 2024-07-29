@@ -135,7 +135,7 @@ class Property(Specifiable):
         object: float("nan"),
         np.uint32: 0,
     }
-    _default_value: Any
+    _default_value_override: Any
 
     def __init__(
         self,
@@ -162,10 +162,10 @@ class Property(Specifiable):
 
         super().__init__(type_, description, categories)
         self.ordered = ordered
-        self.default_value = default_value
+        self._default_value = default_value
 
     @property
-    def default_value(self) -> Any:
+    def _default_value(self) -> Any:
         """
         Default value for this property, which will be used to fill the respective columns
         of the population dataframe, for example.
@@ -178,12 +178,12 @@ class Property(Specifiable):
         """
         return (
             self.PANDAS_TYPE_DEFAULT_VALUE_MAP[self.pandas_type]
-            if self._default_value is None
-            else self._default_value
+            if self._default_value_override is None
+            else self._default_value_override
         )
 
-    @default_value.setter
-    def default_value(self, new_val: Any) -> None:
+    @_default_value.setter
+    def _default_value(self, new_val: Any) -> None:
         if new_val is not None:
             if self.type_ is Types.CATEGORICAL and (new_val not in self.categories):
                 raise ValueError(
@@ -194,7 +194,7 @@ class Property(Specifiable):
                     f"Trying to set a default value of type {type(new_val).__name__}, "
                     f"which is different from Property's type of {type(self.python_type).__name__}."
                 )
-            self._default_value = new_val
+            self._default_value_override = new_val
 
     def create_series(self, name: str, size: int) -> pd.Series:
         """Create a Pandas Series for this property.
