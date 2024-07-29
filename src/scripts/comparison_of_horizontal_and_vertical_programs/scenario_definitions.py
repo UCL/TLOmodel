@@ -1,7 +1,7 @@
 """The file contains all the definitions of scenarios used the Horizontal and Vertical Program Impact Analyses"""
 from typing import Dict
 
-from tlo.analysis.utils import mix_scenarios, get_parameters_for_status_quo
+from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios
 
 
 class ScenarioDefinitions:

@@ -11,9 +11,11 @@ Changes to the main analysis:
 from pathlib import Path
 from typing import Dict
 
-from scripts.comparison_of_horizontal_and_vertical_programs.scenario_definitions import ScenarioDefinitions
+from scripts.comparison_of_horizontal_and_vertical_programs.scenario_definitions import (
+    ScenarioDefinitions,
+)
 from tlo import Date, logging
-from tlo.analysis.utils import mix_scenarios, get_parameters_for_status_quo
+from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios
 from tlo.methods.fullmodel import fullmodel
 from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScenarioSwitcher
 from tlo.scenario import BaseScenario
