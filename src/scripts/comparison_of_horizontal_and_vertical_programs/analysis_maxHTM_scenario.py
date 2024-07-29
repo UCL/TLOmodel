@@ -13,16 +13,16 @@ scale-up occurs on the default scale-up start date (01/01/2025: in parameters li
 For all scenarios, keep all default health system settings
 
 check the batch configuration gets generated without error:
-tlo scenario-run --draw-only src/scripts/htm_scenario_analyses/analysis_htm_scaleup.py
+tlo scenario-run --draw-only src/scripts/comparison_of_horizontal_and_vertical_programs/analysis_maxHTM_scenario.py
 
 Run on the batch system using:
-tlo batch-submit src/scripts/htm_scenario_analyses/analysis_htm_scaleup.py
+tlo batch-submit src/scripts/comparison_of_horizontal_and_vertical_programs/analysis_maxHTM_scenario.py
 
 or locally using:
-tlo scenario-run src/scripts/htm_scenario_analyses/analysis_htm_scaleup.py
+tlo scenario-run src/scripts/comparison_of_horizontal_and_vertical_programs/analysis_maxHTM_scenario.py
 
 or execute a single run:
-tlo scenario-run src/scripts/htm_scenario_analyses/analysis_htm_scaleup.py --draw 1 0
+tlo scenario-run src/scripts/comparison_of_horizontal_and_vertical_programs/analysis_maxHTM_scenario.py --draw 1 0
 
 """
 
@@ -47,7 +47,6 @@ from tlo.methods import (
 )
 from tlo.scenario import BaseScenario
 
-from tlo import Date
 from tlo.analysis.utils import (
     extract_params,
     extract_results,
@@ -207,27 +206,27 @@ malaria_deaths = summarise_deaths_for_one_cause(results_folder, 'Malaria')
 
 
 draw_labels = ['No scale-up', 'HIV scale-up', 'TB scale-up', 'Malaria scale-up', 'HTM scale-up']
-colors = ['blue', 'green', 'red', 'purple', 'orange']
+colours = ['blue', 'green', 'red', 'purple', 'orange']
 
 # Create subplots
 fig, axs = plt.subplots(3, 1, figsize=(10, 10))
 # Plot for df1
 for i, col in enumerate(aids_deaths.columns):
     axs[0].plot(aids_deaths.index, aids_deaths[col], label=draw_labels[i],
-                color=colors[i % len(colors)])
+                color=colours[i])
 axs[0].set_title('HIV/AIDS')
 axs[0].legend(loc='center left', bbox_to_anchor=(1, 0.5))  # Legend to the right of the plot
 axs[0].axvline(x=scaleup_start_year, color='gray', linestyle='--')
 
 # Plot for df2
 for i, col in enumerate(tb_deaths.columns):
-    axs[1].plot(tb_deaths.index, tb_deaths[col], color=colors[i % len(colors)])
+    axs[1].plot(tb_deaths.index, tb_deaths[col], color=colours[i])
 axs[1].set_title('TB')
 axs[1].axvline(x=scaleup_start_year, color='gray', linestyle='--')
 
 # Plot for df3
 for i, col in enumerate(malaria_deaths.columns):
-    axs[2].plot(malaria_deaths.index, malaria_deaths[col], color=colors[i % len(colors)])
+    axs[2].plot(malaria_deaths.index, malaria_deaths[col], color=colours[i])
 axs[2].set_title('Malaria')
 axs[2].axvline(x=scaleup_start_year, color='gray', linestyle='--')
 
