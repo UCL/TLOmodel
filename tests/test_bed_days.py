@@ -451,7 +451,12 @@ def test_forecast_availability(BD: BedDays, forecasting_data: Tuple[List[BedOccu
     assert (
         boolean_forecast.index[0] == 0 and boolean_forecast.index[-1] == 6
     ), "int_indexing option does not return integer-indexed forecast"
-    assert (boolean_forecast.dtypes == bool).all(), "as_bool argument does not return boolean occupancy table"
+    assert (
+        boolean_forecast.dtypes  # noqa: E721
+        == bool
+        # (we are actually doing an instance evaluation,
+        # as we want to know if every value in a series is THE TYPE bool)
+    ).all(), "as_bool argument does not return boolean occupancy table"
 
     # We now check the returned forecasts themselves
     assert forecast.equals(trusted_forecast), "Incorrect forecast returned"
@@ -479,7 +484,6 @@ def test_impose_beddays_footprint(
         facility=facility,
         first_day=Date("2010-01-01"),
         patient_id=person_id,
-        overlay_instead_of_combine=True,
     )
 
     # Should now be precisely 3 bed occupancies scheduled
@@ -508,7 +512,6 @@ def test_impose_beddays_footprint(
         facility=facility,
         first_day=Date("2010-01-04"),
         patient_id=person_id,
-        overlay_instead_of_combine=True,
     )
     assert len(BD.occupancies) == 5, "Not all expected occupancies were scheduled."
 
