@@ -275,8 +275,7 @@ def rename_items_to_address_inconsistentencies(_df, item_dict):
         # , i.e. not changed to 0, when the corresponding data for both item name variations are NaN, and when there
         # is a 0 or positive value for one or both item name variation, the sum is taken.
         elif x.name in columns_to_preserve:
-            return x.str.cat(
-                sep=', ')  # for the data_source column, this function concatenates the string values
+            return x.iloc[0]  # this function extracts the first value
 
     # Collapse dataframe
     _collapsed_df = _df.groupby(['item', 'district', 'fac_level', 'fac_owner', 'fac_name', 'year', 'month']).agg(
@@ -473,7 +472,6 @@ lmis_wide = lmis_wide.drop([('Unnamed: 0_level_0',         'year_month')], axis 
 unnamed_level1_columns = [(level0, '' if 'Unnamed' in level1 else level1) for level0, level1 in lmis_wide.columns]
 lmis_wide.columns = pd.MultiIndex.from_tuples(unnamed_level1_columns)
 '''
-#
 
 # Bar chart of number of months during which each consumable was reported before and after cleaning names
 
