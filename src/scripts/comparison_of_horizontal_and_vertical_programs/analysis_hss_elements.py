@@ -12,11 +12,8 @@ from matplotlib import pyplot as plt
 
 from tlo import Date
 from tlo.analysis.utils import (
-    CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP,
     extract_results,
-    get_color_cause_of_death_or_daly_label,
     make_age_grp_lookup,
-    order_of_cause_of_death_or_daly_label,
     summarize,
 )
 
@@ -101,7 +98,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         # Define colormap (used only with option `put_labels_in_legend=True`)
         cmap = plt.get_cmap("tab20")
-        rescale = lambda y: (y - np.min(y)) / (np.max(y) - np.min(y))
+        rescale = lambda y: (y - np.min(y)) / (np.max(y) - np.min(y))  # noqa: E731
         colors = list(map(cmap, rescale(np.array(list(xticks.keys()))))) if put_labels_in_legend else None
 
         fig, ax = plt.subplots(figsize=(10, 5))
@@ -125,7 +122,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             # Insert legend with updated labels that shows correspondence between substitute label and original label
             xtick_values = [letter for letter, label in zip(substitute_labels, xticks.values())]
             xtick_legend = [f'{letter}: {label}' for letter, label in zip(substitute_labels, xticks.values())]
-            h, l = ax.get_legend_handles_labels()
+            h, legs = ax.get_legend_handles_labels()
             ax.legend(h, xtick_legend, loc='center left', fontsize='small', bbox_to_anchor=(1, 0.5))
             ax.set_xticklabels(list(xtick_values))
         else:

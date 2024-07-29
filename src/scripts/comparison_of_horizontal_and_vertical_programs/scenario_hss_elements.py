@@ -11,9 +11,9 @@ tlo batch-submit
 from pathlib import Path
 from typing import Dict
 
-from scripts.comparison_of_horizontal_and_vertical_programs.scenario_definitions import (
-    ScenarioDefinitions,
-)
+# from scripts.comparison_of_horizontal_and_vertical_programs.scenario_definitions import (
+#     ScenarioDefinitions,
+# )
 from tlo import Date, logging
 from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios
 from tlo.methods.fullmodel import fullmodel
@@ -218,7 +218,8 @@ class HSSElements(BaseScenario):
                 "HealthSystem": {
                     "mode_appt_constraints": 1,                 # <-- Mode 1 prior to change to preserve calibration
                     "mode_appt_constraints_postSwitch": 2,      # <-- Mode 2 post-change to show effects of HRH
-                    "scale_to_effective_capabilities": True,    # <-- Transition into Mode2 with the effective capabilities in HRH 'revealed' in Mode 1
+                    "scale_to_effective_capabilities": True,    # <-- Transition into Mode2 with the effective
+                    #                                                 capabilities in HRH 'revealed' in Mode 1
                     "year_mode_switch": self.YEAR_OF_CHANGE,
 
                     # Baseline scenario is with absence of HCW
