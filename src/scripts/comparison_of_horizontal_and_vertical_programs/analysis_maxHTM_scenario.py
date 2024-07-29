@@ -26,9 +26,10 @@ tlo scenario-run src/scripts/htm_scenario_analyses/analysis_htm_scaleup.py --dra
 
 """
 
+import datetime
 from pathlib import Path
-import os
 import pandas as pd
+import matplotlib.pyplot as plt
 
 from tlo import Date, logging
 from tlo.methods import (
@@ -46,33 +47,35 @@ from tlo.methods import (
 )
 from tlo.scenario import BaseScenario
 
+from tlo import Date
+from tlo.analysis.utils import (
+    extract_params,
+    extract_results,
+    get_scenario_info,
+    get_scenario_outputs,
+    load_pickled_dataframes,
+)
+
+resourcefilepath = Path("./resources")
+datestamp = datetime.date.today().strftime("__%Y_%m_%d")
+
+outputspath = Path("./outputs")
+scaleup_start_year = 2012
+
 
 class EffectOfProgrammes(BaseScenario):
     def __init__(self):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2020, 1, 1)
-        self.pop_size = 25_000
+        self.end_date = Date(2015, 1, 1)
+        self.pop_size = 1_000
         self.number_of_draws = 10
         self.runs_per_draw = 1
 
-        self.hiv_scale_up = pd.read_excel(
-            os.path.join(self.resources, "ResourceFile_HIV.xlsx"),
-            sheet_name="scaleup_parameters",
-        )
-        self.tb_scale_up = pd.read_excel(
-            os.path.join(self.resources, "ResourceFile_TB.xlsx"),
-            sheet_name="scaleup_parameters",
-        )
-        self.mal_scale_up = pd.read_excel(
-            os.path.join(self.resources, "malaria/ResourceFile_malaria.xlsx"),
-            sheet_name="scaleup_parameters",
-        )
-
     def log_configuration(self):
         return {
-            'filename': 'scaleup_tests_max',
+            'filename': 'scaleup_tests',
             'directory': Path('./outputs'),  # <- (specified only for local running)
             'custom_levels': {
                 '*': logging.WARNING,
@@ -99,28 +102,20 @@ class EffectOfProgrammes(BaseScenario):
         ]
 
     def draw_parameters(self, draw_number, rng):
-        scaleup_start_year = 2015
 
         return {
             'Hiv': {
-                'do_scaleup': [False, True, False, False, True, False, True, False, False, True][draw_number],
+                'do_scaleup': ['none', 'max', 'none', 'none', 'max'][draw_number],
                 'scaleup_start_year': scaleup_start_year,
-                # 'scaleup_parameters': self.hiv_scale_up.set_index('parameter')['max_value'].to_dict(),
             },
             'Tb': {
-                'do_scaleup': [False, False, True, False, True, False, False, True, False, True][draw_number],
+                'do_scaleup': ['none', 'none', 'max', 'none', 'max'][draw_number],
                 'scaleup_start_year': scaleup_start_year,
-                # 'scaleup_parameters': self.tb_scale_up.set_index('parameter')['max_value'].to_dict(),
             },
             'Malaria': {
-                'do_scaleup': [False, False, False, True, True, False, False, False, True, True][draw_number],
+                'do_scaleup': ['none', 'none', 'none', 'max', 'max'][draw_number],
                 'scaleup_start_year': scaleup_start_year,
-                # 'scaleup_parameters': self.mal_scale_up.set_index('parameter')['max_value'].to_dict(),
             },
-            'HealthSystem': {
-                'mode_appt_constraints': [1, 1, 1, 1, 1, 2, 2, 2, 2, 2][draw_number],
-            }
-
         }
 
 
@@ -131,46 +126,10 @@ if __name__ == '__main__':
 
 
 
+# %% Produce some figures and summary info
 
-""" this reads in the outputs generates through analysis_htm_scaleup.py
-and produces plots for HIV, TB and malaria incidence
-"""
-
-
-import datetime
-from pathlib import Path
-
-import matplotlib.pyplot as plt
-import pandas as pd
-import seaborn as sns
-
-from tlo import Date
-from tlo.analysis.utils import (
-    extract_params,
-    extract_results,
-    get_scenario_info,
-    get_scenario_outputs,
-    load_pickled_dataframes,
-)
-
-resourcefilepath = Path("./resources")
-datestamp = datetime.date.today().strftime("__%Y_%m_%d")
-
-outputspath = Path("./outputs")
-# outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
-
-
-# 0) Find results_folder associated with a given batch_file (and get most recent [-1])
-# results_folder = get_scenario_outputs("scaleup_tests_min", outputspath)[-1]
-results_folder = get_scenario_outputs("scaleup_tests_min-2024-07-26T170115Z", outputspath)[-1]
-
-results_folder = get_scenario_outputs("scaleup_tests_max-2024-07-26T170202Z", outputspath)[-1]
-
-# scaleup_tests_min-2024-07-26T170115Z
-# scaleup_tests_max-2024-07-26T170202Z
-
-# Declare path for output graphs from this script
-make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
+# Find results_folder associated with a given batch_file (and get most recent [-1])
+results_folder = get_scenario_outputs("scaleup_tests", outputspath)[-1]
 
 # look at one log (so can decide what to extract)
 log = load_pickled_dataframes(results_folder, draw=1)
@@ -196,8 +155,9 @@ def get_num_deaths_by_cause_label(_df):
         .size()
 
 
-TARGET_PERIOD = (Date(2015, 1, 1), Date(2020, 1, 1))
+TARGET_PERIOD = (Date(scaleup_start_year, 1, 1), Date(2020, 1, 1))
 
+# produce df of total deaths over scale-up period
 num_deaths_by_cause_label = extract_results(
         results_folder,
         module='tlo.methods.demography',
@@ -205,7 +165,6 @@ num_deaths_by_cause_label = extract_results(
         custom_generate_series=get_num_deaths_by_cause_label,
         do_scaling=True
     )
-
 
 
 def summarise_deaths_for_one_cause(results_folder, label):
@@ -245,12 +204,9 @@ aids_deaths = summarise_deaths_for_one_cause(results_folder, 'AIDS')
 tb_deaths = summarise_deaths_for_one_cause(results_folder, 'TB (non-AIDS)')
 malaria_deaths = summarise_deaths_for_one_cause(results_folder, 'Malaria')
 
+
 draw_labels = ['No scale-up_mode1', 'HIV scale-up_mode1', 'TB scale-up_mode1', 'Malaria scale-up_mode1', 'HTM scale-up_mode1',
                'No scale-up_mode2', 'HIV scale-up_mode2', 'TB scale-up_mode2', 'Malaria scale-up_mode2', 'HTM scale-up_mode2']
-
-colors = sns.color_palette("Set1", 10)  # Blue, Orange, Green, Red
-
-
 colors = ['blue', 'green', 'red', 'purple', 'orange']
 line_styles = ['-', '--']
 
