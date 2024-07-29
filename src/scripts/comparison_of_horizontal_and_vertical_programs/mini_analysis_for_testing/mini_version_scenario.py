@@ -15,7 +15,7 @@ from scripts.comparison_of_horizontal_and_vertical_programs.scenario_definitions
     ScenarioDefinitions,
 )
 from tlo import Date, logging
-from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios
+from tlo.analysis.utils import mix_scenarios
 from tlo.methods.fullmodel import fullmodel
 from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScenarioSwitcher
 from tlo.scenario import BaseScenario
@@ -66,41 +66,17 @@ class MiniRunHTMWithAndWithoutHSS(BaseScenario):
 
         return {
             "Baseline":
-                self._baseline(),
+                scenario_definitions.baseline(),
 
             # - - - HIV & TB & MALARIA SCALE-UP WITHOUT HSS PACKAGE- - -
             "HIV/Tb/Malaria Programs Scale-up WITHOUT HSS PACKAGE":
                 mix_scenarios(
-                    scenario_definitions._baseline(),
-                    scenario_definitions._hiv_scaleup(),
-                    scenario_definitions._tb_scaleup(),
-                    scenario_definitions._malaria_scaleup(),
+                    scenario_definitions.baseline(),
+                    scenario_definitions.hiv_scaleup(),
+                    scenario_definitions.tb_scaleup(),
+                    scenario_definitions.malaria_scaleup(),
                 ),
         }
-
-    def _baseline(self):
-        self.YEAR_OF_CHANGE_FOR_HSS = 2019
-
-        return mix_scenarios(
-            get_parameters_for_status_quo(),
-            {
-                "HealthSystem": {
-                    "mode_appt_constraints": 1,  # <-- Mode 1 prior to change to preserve calibration
-                    "mode_appt_constraints_postSwitch": 1,  # <-- ***** NO CHANGE --- STAYING IN MODE 1
-                    "scale_to_effective_capabilities": False,  # <-- irrelevant, as not changing mode
-                    "year_mode_switch": 2100,  # <-- irrelevant as not changing modes
-
-                    # Baseline scenario is with absence of HCW
-                    'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE_FOR_HSS,
-                    'HR_scaling_by_level_and_officer_type_mode': 'with_absence',
-
-                    # Normalize the behaviour of Mode 2 (irrelevant as in Mode 1)
-                    "policy_name": "Naive",
-                    "tclose_overwrite": 1,
-                    "tclose_days_offset_overwrite": 7,
-                }
-            },
-        )
 
 
 if __name__ == '__main__':
