@@ -380,6 +380,18 @@ class Module:
         By default, all ``Property``s in ``self.PROPERTIES`` will have
         their columns in the population dataframe set to the default value.
 
+        Modules that wish to implement this behaviour do not need to implement this method,
+        it will be inherited automatically. Modules that wish to perform additional steps
+        during the initialise_population stage should reimplement this method and call 
+        
+        ```python
+        super().initialise_population(population=population)
+        ```
+
+        at the beginning of the method, then proceed with their additional steps. Modules that
+        do not wish to inherit this default behaviour should re-implement initialise_population
+        without the call to ``super()`` above.
+
         TODO: We probably need to declare somehow which properties we 'read' here, so the
         simulation knows what order to initialise modules in!
 
