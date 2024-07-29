@@ -46,7 +46,7 @@ resourcefilepath = Path("./resources")
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2025, 1, 1)
-popsize = 17000
+popsize = 170000
 
 def run_sim(service_availability):
     # Establish the simulation object and set the seed
@@ -120,6 +120,22 @@ plt.ylim(0, 10000)
 plt.show()
 
 
+# plot number of cervical cancer deaths in hivpos in past year
+out_df_9 = pd.read_csv(output_csv_file)
+out_df_9 = out_df_9[['n_deaths_cc_hivpos_past_year', 'rounded_decimal_year']].dropna()
+out_df_9 = out_df_9[out_df_9['rounded_decimal_year'] >= 2011]
+out_df_9['n_deaths_cc_hivpos_past_year'] = out_df_9['n_deaths_cc_hivpos_past_year'] * scale_factor
+print(out_df_9)
+plt.figure(figsize=(10, 6))
+plt.plot(out_df_9['rounded_decimal_year'], out_df_9['n_deaths_cc_hivpos_past_year'], marker='o')
+plt.title('Total deaths cervical cancer in hivpos by Year')
+plt.xlabel('Year')
+plt.ylabel('Total deaths cervical cancer in hivpos past year')
+plt.grid(True)
+plt.ylim(0, 10000)
+plt.show()
+
+
 # plot number of cc diagnoses in past year
 out_df_4 = pd.read_csv(output_csv_file)
 out_df_4 = out_df_4[['n_diagnosed_past_year', 'rounded_decimal_year']].dropna()
@@ -165,7 +181,7 @@ plt.xlabel('Year')
 plt.ylabel('Proportion')
 plt.grid(True)
 plt.legend(loc='upper right')
-plt.ylim(0, 0.10)
+plt.ylim(0, 0.30)
 plt.show()
 
 
@@ -237,11 +253,73 @@ plt.xlabel('Year')
 plt.ylabel('Proportion')
 plt.grid(True)
 plt.legend(loc='upper right')
-plt.ylim(0, 0.10)
+plt.ylim(0, 0.30)
 plt.show()
 
 
 
+# plot prevalence of each ce stage for hivpos
+out_df_8 = pd.read_csv(output_csv_file)
+columns_to_calculate = ['total_hivpos_none', 'total_hivpos_hpv', 'total_hivpos_cin1', 'total_hivpos_cin2', 'total_hivpos_cin3',
+                        'total_hivpos_stage1','total_hivpos_stage2a', 'total_hivpos_stage2b', 'total_hivpos_stage3', 'total_hivpos_stage4']
+for column in columns_to_calculate:
+    new_column_name = column.replace('total_hivpos_', '')
+    out_df_8[f'proportion_hivpos_{new_column_name}'] = out_df_8[column] / out_df_8[columns_to_calculate].sum(axis=1)
+print(out_df_8)
+columns_to_plot = ['proportion_hivpos_hpv', 'proportion_hivpos_cin1', 'proportion_hivpos_cin2', 'proportion_hivpos_cin3',
+                   'proportion_hivpos_stage1', 'proportion_hivpos_stage2a', 'proportion_hivpos_stage2b', 'proportion_hivpos_stage3',
+                   'proportion_hivpos_stage4']
+plt.figure(figsize=(10, 6))
+# Initialize the bottom of the stack
+bottom = 0
+for column in columns_to_plot:
+    plt.fill_between(out_df_8['rounded_decimal_year'],
+                     bottom,
+                     bottom + out_df_8[column],
+                     label=column,
+                     alpha=0.7)
+    bottom += out_df_8[column]
+plt.title('Proportion of hivpos women aged 15+ with HPV, CIN, cervical cancer')
+plt.xlabel('Year')
+plt.ylabel('Proportion')
+plt.grid(True)
+plt.legend(loc='upper right')
+plt.ylim(0, 0.30)
+plt.show()
+
+
+
+
+# plot number of hivneg in stage 4
+out_df_7 = pd.read_csv(output_csv_file)
+out_df_7 = out_df_7[['total_hivneg_stage4', 'rounded_decimal_year']].dropna()
+# out_df_7 = out_df_7[out_df_7['rounded_decimal_year'] >= 2011]
+# out_df_7['total_hivneg_stage4'] = out_df_7['total_hivneg_stage4'] * scale_factor
+print(out_df_7)
+plt.figure(figsize=(10, 6))
+plt.plot(out_df_7['rounded_decimal_year'], out_df_7['total_hivneg_stage4'], marker='o')
+plt.title('total_hivneg_stage4')
+plt.xlabel('Year')
+plt.ylabel('total_hivneg_stage4')
+plt.grid(True)
+plt.ylim(0,100)
+plt.show()
+
+
+# plot number of hivpos in stage 4
+out_df_11 = pd.read_csv(output_csv_file)
+out_df_11 = out_df_11[['total_hivpos_stage4', 'rounded_decimal_year']].dropna()
+# out_df_11 = out_df_11[out_df_11['rounded_decimal_year'] >= 2011]
+# out_df_11['total_hivpos_stage4'] = out_df_11['total_hivpos_stage4'] * scale_factor
+print(out_df_11)
+plt.figure(figsize=(10, 6))
+plt.plot(out_df_11['rounded_decimal_year'], out_df_11['total_hivpos_stage4'], marker='o')
+plt.title('total_hivpos_stage4')
+plt.xlabel('Year')
+plt.ylabel('total_hivpos_stage4')
+plt.grid(True)
+plt.ylim(0,100)
+plt.show()
 
 
 # ---------------------------------------------------------------------------
