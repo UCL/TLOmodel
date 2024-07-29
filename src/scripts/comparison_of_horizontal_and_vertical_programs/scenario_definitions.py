@@ -12,12 +12,10 @@ class ScenarioDefinitions:
         return 2019  # <-- baseline year of Human Resources for Health is 2018, and this is consistent with calibration
         #                  during 2015-2019 period.
 
-
     @property
     def YEAR_OF_CHANGE_FOR_HTM(self) -> int:
         """Year in which HIV, TB, Malaria scale-up changes are made."""
-        return 2019  # todo <-- what is the natural year of scale-up? Should this be the same as the when the HSS
-        #               changes happen?
+        return 2019
 
     def _baseline(self) -> Dict:
         """Return the Dict with values for the parameter changes that define the baseline scenario. """
