@@ -553,6 +553,115 @@ lmis['available_prob'] = 1 - lmis['stkout_prob']
 
 # 5. LOAD CLEANED MATCHED CONSUMABLE LIST FROM TLO MODEL AND MERGE WITH LMIS DATA ##
 ####################################################################################
+# Load and clean data
+# Import matched list of consumanbles
+tlo_lmis_mapping = pd.read_csv(path_for_new_resourcefiles / 'ResourceFile_consumables_matched.csv', low_memory=False,
+                             encoding="ISO-8859-1")
+cond_remove = tlo_lmis_mapping['matching_status'] == 'Remove'
+tlo_lmis_mapping = tlo_lmis_mapping[~cond]  # Remove items which were removed due to updates or the existence of duplicates
+
+# Keep only the correctly matched consumables for stockout analysis based on OpenLMIS
+cond1 = tlo_lmis_mapping['matching_status'] == 'Matched'
+cond2 = tlo_lmis_mapping['verified_by_DM_lead'] != 'Incorrect'
+tlo_lmis_mapping = tlo_lmis_mapping[cond1 & cond2]
+
+# Rename columns
+tlo_lmis_mapping.rename(columns = {'consumable_name_lmis': 'item'}, inplace = True)
+
+'''
+# Update matched consumable name where the name in the OpenLMIS data was updated in September
+def replace_old_item_names_in_lmis_data(_df, item_dict):
+    """Return a dataframe with old LMIS consumable names replaced with the new name"""
+    for item in item_dict:
+        cond_oldname = _df.item == item_dict[item]
+        _df.loc[cond_oldname, 'item'] = item
+    return _df
+
+
+matched_consumables = replace_old_item_names_in_lmis_data(matched_consumables, inconsistent_item_names_mapping)
+'''
+
+# Merge data with LMIS data
+tlo_cons_availability = pd.merge(lmis, tlo_lmis_mapping, how='inner', on='item')
+#tlo_cons_availability = tlo_cons_availability.sort_values('data_source')
+
+# Aggregate substitutes and complements
+def collapse_stockout_data(_df, groupby_list, var):
+    """Return a dataframe with rows for the same TLO model item code collapsed into 1"""
+    # Define column lists based on the aggregation function to be applied
+    columns_to_multiply = [var]
+    columns_to_sum = ['closing_bal', 'average_monthly_consumption', 'dispensed', 'qty_received']
+    columns_to_preserve = ['data_source']
+
+    # Define aggregation function to be applied to collapse data by item
+    def custom_agg_stkout(x):
+        if x.name in columns_to_multiply:
+            return x.prod(skipna=True) if np.any(
+                x.notnull() & (x >= 0)) else np.nan  # this ensures that the NaNs are retained
+        elif x.name in columns_to_sum:
+            return x.sum(skipna=True) if np.any(
+                x.notnull() & (x >= 0)) else np.nan  # this ensures that the NaNs are retained
+        # , i.e. not changed to 1, when the corresponding data for both item name variations are NaN, and when there
+        # is a 0 or positive value for one or both item name variation, the sum is taken.
+        elif x.name in columns_to_preserve:
+            return x.iloc[0]  # this function extracts the first value
+
+    # Collapse dataframe
+    _collapsed_df = _df.groupby(groupby_list).agg(
+        {col: custom_agg_stkout for col in columns_to_multiply + columns_to_sum + columns_to_preserve}
+    ).reset_index()
+
+    return _collapsed_df
+
+# 2.i. For substitable drugs (within drug category), collapse by taking the product of stkout_prop (OR condition)
+# This represents Pr(all substitutes with the item code are stocked out)
+groupby_list1 = ['module_name', 'district', 'fac_level', 'fac_name', 'year', 'month', 'item_code', 'consumable_name_tlo',
+                 'match_level1',
+                 'match_level2']
+tlo_cons_availability = collapse_stockout_data(tlo_cons_availability, groupby_list1, 'stkout_prob')
+
+# 2.ii. For complementary drugs, collapse by taking the product of (1-stkout_prob)
+# This represents Pr(All drugs within item code (in different match_group's) are available)
+tlo_cons_availability['available_prob'] = 1 - tlo_cons_availability['stkout_prob']
+groupby_list2 = ['module_name', 'district', 'fac_level', 'fac_name', 'year', 'month', 'item_code', 'consumable_name_tlo',
+                 'match_level2']
+tlo_cons_availability = collapse_stockout_data(tlo_cons_availability, groupby_list2, 'available_prob')
+
+# 2.iii. For substitutable drugs (within consumable_name_tlo), collapse by taking the product of stkout_prop (OR
+# condition).
+# This represents Pr(all substitutes with the item code are stocked out)
+tlo_cons_availability['stkout_prob'] = 1 - tlo_cons_availability['available_prob']
+groupby_list3 = ['module_name', 'district', 'fac_level', 'fac_name', 'year', 'month', 'item_code', 'consumable_name_tlo']
+tlo_cons_availability = collapse_stockout_data(tlo_cons_availability, groupby_list3, 'stkout_prob')
+
+# Update impossible stockout values (This happens due to some stockout days figures being higher than the number of
+#  days in the month)
+tlo_cons_availability.loc[tlo_cons_availability['stkout_prob'] < 0, 'stkout_prob'] = 0
+tlo_cons_availability.loc[tlo_cons_availability['stkout_prob'] > 1, 'stkout_prob'] = 1
+
+# Eliminate duplicates
+collapse_dict = {
+    'stkout_prob': 'mean', 'closing_bal': 'mean', 'average_monthly_consumption': 'mean', 'dispensed': 'mean', 'qty_received': 'mean',
+    'module_name': 'first', 'consumable_name_tlo': 'first', 'data_source': 'first'
+}
+tlo_cons_availability = tlo_cons_availability.groupby(['fac_level', 'fac_name', 'district', 'year', 'month', 'item_code'], as_index=False).agg(
+    collapse_dict).reset_index()
+
+tlo_cons_availability['available_prob'] = 1 - tlo_cons_availability['stkout_prob']
+
+'''
+# Some missing values change to 100% stockouts during the aggregation above. Fix this manually
+for var in ['stkout_prob', 'available_prob', 'closing_bal', 'average_monthly_consumption', 'dispensed', 'qty_received']:
+    cond = tlo_cons_availability['data_source'].isna()
+    tlo_cons_availability.loc[cond, var] = np.nan
+'''
+
+tlo_cons_availability = tlo_cons_availability.reset_index()
+tlo_cons_availability = tlo_cons_availability[
+    ['module_name', 'district', 'fac_level', 'fac_name', 'year', 'month', 'item_code', 'consumable_name_tlo',
+     'available_prob', 'closing_bal', 'average_monthly_consumption', 'dispensed', 'qty_received',
+     'data_source']]
+tlo_cons_availability.groupby(['year', 'module_name'])['available_prob'].mean()
 
 # 6. FILL GAPS USING HHFA SURVEY DATA OR ASSUMPTIONS ##
 #######################################################
