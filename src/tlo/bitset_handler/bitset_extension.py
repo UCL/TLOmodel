@@ -65,14 +65,14 @@ class BitsetDtype(ExtensionDtype):
         this method will return a BitsetDtype with elements e1, e2, e3, ... etc.
         """
         if not isinstance(string, str):
-            raise TypeError("'construct_from_string' expects a string, got <class 'int'>")
+            raise TypeError(f"'construct_from_string' expects a string, got {type(string)}")
 
         string_has_bitset_prefix = re.match("bitset\((\d+)\):", string)
         if string_has_bitset_prefix:
             string = string.removeprefix(string_has_bitset_prefix.group(0))
-        else:
+        if "," not in string:
             raise TypeError(
-                f"Cannot construct a '{cls.__name__}' from 'another_type'"
+                "Need at least 2 (comma-separated) elements in string to construct bitset."
             )
         return BitsetDtype(s.strip() for s in string.split(","))
 
@@ -107,14 +107,6 @@ class BitsetDtype(ExtensionDtype):
     def type(self) -> Type[np.bytes_]:
         return self.np_array_dtype.type
 
-    @property
-    def bin_format(self) -> str:
-        return f"{self.fixed_width}B" if self.fixed_width != 1 else "B"
-
-    @property
-    def str_format(self) -> str:
-        return f"{self.fixed_width}S" if self.fixed_width != 1 else "S"
-
     def __init__(self, elements: Iterable[NodeType]) -> None:
         # Take only unique elements.
         # Sort elements alphabetically for consistency when constructing Bitsets that
@@ -130,8 +122,8 @@ class BitsetDtype(ExtensionDtype):
             sorted(set(provided_elements), key=lambda x: provided_elements.index(x))
         )
 
-        if len(self._elements) == 0:
-            raise ValueError("Bitsets must have at least 1 possible element.")
+        if len(self._elements) <= 1:
+            raise ValueError("Bitsets must have at least 2 possible elements (use bool for 1-element sets).")
 
         # Setup the element map and its inverse, one-time initialisation cost.
         self._element_map = {
@@ -146,20 +138,11 @@ class BitsetDtype(ExtensionDtype):
     def __str__(self) -> str:
         return self.__repr__()
 
-    def as_bytes(self, collection: Iterable[NodeType]) -> str:
+    def as_bytes(self, collection: Iterable[NodeType]) -> np.bytes_:
         """
         Return the bytes representation of this set.
         """
-        output: np.ndarray[np.uint8] = self.type(self.fixed_width).view(self.bin_format)
-        if self.fixed_width == 1:
-            for element in collection:
-                _, bin_repr = self._element_map[element]
-                output |= bin_repr
-        else:
-            for element in collection:
-                char, bin_repr = self._element_map[element]
-                output[char] |= bin_repr
-        return output.tobytes()
+        return np.bytes_(self.as_uint8_array(collection))
 
     def as_set(self, binary_repr: np.bytes_) -> Set[NodeType]:
         """
@@ -174,6 +157,18 @@ class BitsetDtype(ExtensionDtype):
                 if bit == "1"
             }
         return elements_in_set
+
+    def as_uint8_array(self, collection: Iterable[NodeType]) -> np.ndarray[np.uint8]:
+        """
+        Return the collection of elements as a 1D array of ``self.fixed_width`` uint8s.
+        Each uint8 corresponds to the bitwise representation of a single character
+        in a character string.
+        """
+        output = np.zeros((self.fixed_width, 1), dtype=np.uint8)
+        for element in collection:
+            char, bin_repr = self._element_map[element]
+            output[char] |= bin_repr
+        return output.squeeze(axis=1)
 
     def element_loc(self, element: NodeType) -> Tuple[int, np.uint8]:
         """
@@ -199,6 +194,15 @@ class BitsetArray(ExtensionArray):
 
     _data: np.ndarray[BytesDType]
     _dtype: BitsetDtype
+
+    @staticmethod
+    def uint8s_to_byte_string(arr: np.ndarray[np.uint8]) -> np.ndarray[BytesDType]:
+        """
+        Returns a view of an array of ``np.uint8``s of shape ``(M, N)``
+        as an array of ``M`` fixed-width byte strings of size ``N``.
+        """
+        fixed_width = arr.shape[1]
+        return arr.view(f"{fixed_width}S").squeeze()
 
     @classmethod
     def _concat_same_type(cls, to_concat: Sequence[BitsetArray]) -> BitsetArray:
@@ -244,12 +248,9 @@ class BitsetArray(ExtensionArray):
 
         # With an appropriate dtype, we can construct the data array to pass to the constructor.
         # We will need to convert each of our scalars to their binary representations before passing though.
-        data = (
-            np.zeros((len(scalars), ), dtype=dtype.np_array_dtype)
-            if dtype.fixed_width != 1
-            else np.zeros((len(scalars), 1), dtype=dtype.np_array_dtype)
-        )
-        data_view = data.view(dtype.bin_format)
+        data = np.zeros((len(scalars),), dtype=dtype.np_array_dtype)
+        view_format = f"{dtype.fixed_width}B" if dtype.fixed_width != 1 else "(1,1)B"
+        data_view = data.view(view_format)
         for series_index, s in enumerate(scalars):
             for element in s:
                 char, u8_repr = dtype.element_loc(element=element)
@@ -261,8 +262,31 @@ class BitsetArray(ExtensionArray):
         return cls(uniques, original.dtype)
 
     @property
-    def _binary_data(self) -> np.ndarray[BytesDType]:
-        return self._data.view(self.dtype.bin_format)
+    def _uint8_view_format(self) -> str:
+        """
+        Format string to be applied to self._data, so that the output of
+
+        self._data.view(<this function>)
+
+        returns a numpy array of shape (len(self), self.dtype.fixed_width)
+        and dtype uint8.
+        """
+        return f"({self.dtype.fixed_width},)B"
+
+    @property
+    def _uint8_view(self) -> np.ndarray[BytesDType]:
+        """
+        Returns a view of the fixed-width byte strings stored in ``self._data``
+        as an array of ``numpy.uint8``s, with shape
+
+        ``(len(self._data), self.dtype.fixed_width)``.
+
+        Each row ``i`` of this view corresponds to a bitset stored in this array.
+        The value at index ``i, j`` in this view is the ``uint8`` that represents
+        character ``j`` in ``self._data[i]``, which can have bitwise operations
+        performed on it.  
+        """
+        return self._data.view(self._uint8_view_format)
 
     @property
     def dtype(self) -> BitsetDtype:
@@ -274,7 +298,7 @@ class BitsetArray(ExtensionArray):
 
     def __init__(
         self,
-        data: Iterable[BytesDType],
+        data: Iterable[BytesDType] | np.ndarray[BytesDType],
         dtype: BitsetDtype,
         copy: bool = False,
     ) -> None:
@@ -284,6 +308,29 @@ class BitsetArray(ExtensionArray):
 
         self._data = np.array(data, copy=copy, dtype=dtype.type)
         self._dtype = dtype
+
+    def __add__(
+        self, other: NodeType | Iterable[NodeType] | BitsetArray
+    ) -> BitsetArray:
+        """
+        Take union of two BitsetArrays of the same size, or element-wise union with a single set or element.
+
+        - If other is NodeType; take (series)-element-wise union with the singleton {other}.
+        - If other is Iterable[NodeType], take (series)-element-wise union with the set {other}.
+        - If other is BitsetArray of same shape, take element-wise union with the other series.
+        """
+        if isinstance(other, ALLOWABLE_ELEMENT_TYPES):
+            other = set(other)
+
+        if isinstance(other, BitsetArray):
+            if self.dtype != other.dtype:
+                raise TypeError("Cannot take union of different Bitsets.")
+            else:
+                bitwise_result = self._uint8_view | other._uint8_view
+        else: 
+            bitwise_result = self._uint8_view | self.dtype.as_uint8_array(other)
+        fixed_width_strs = self.uint8s_to_byte_string(bitwise_result)
+        return BitsetArray(fixed_width_strs, dtype=self.dtype)
 
     def __eq__(self, other) -> bool:
         if isinstance(other, (pd.Series, pd.DataFrame, pd.Index)):
@@ -360,4 +407,7 @@ if __name__ == "__main__":
 
     small_s == {"a"}
     big_s == {"4", "8"}
+
+    f = small_s + {"a"}
+    g = big_s + {"1"}
     pass
