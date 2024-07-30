@@ -23,6 +23,7 @@ resourcefilepath = Path("./resources")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 outputspath = Path("./outputs")
+# outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
 
 
 # 0) Find results_folder associated with a given batch_file (and get most recent [-1])
@@ -32,7 +33,7 @@ results_folder = get_scenario_outputs("scaleup_tests", outputspath)[-1]
 make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
 
 # look at one log (so can decide what to extract)
-log = load_pickled_dataframes(results_folder)
+log = load_pickled_dataframes(results_folder, draw=1)
 
 # get basic information about the results
 info = get_scenario_info(results_folder)
@@ -55,14 +56,14 @@ def get_num_deaths_by_cause_label(_df):
         .size()
 
 
-TARGET_PERIOD = (Date(2015, 1, 1), Date(2020, 1, 1))
+TARGET_PERIOD = (Date(2020, 1, 1), Date(2025, 1, 1))
 
 num_deaths_by_cause_label = extract_results(
         results_folder,
         module='tlo.methods.demography',
         key='death',
         custom_generate_series=get_num_deaths_by_cause_label,
-        do_scaling=True
+        do_scaling=False
     )
 
 
@@ -103,9 +104,9 @@ aids_deaths = summarise_deaths_for_one_cause(results_folder, 'AIDS')
 tb_deaths = summarise_deaths_for_one_cause(results_folder, 'TB (non-AIDS)')
 malaria_deaths = summarise_deaths_for_one_cause(results_folder, 'Malaria')
 
-draw_labels = ['No scale-up', 'HIV, scale-up', 'TB scale-up', 'Malaria scale-up']
+draw_labels = ['No scale-up', 'HIV, scale-up', 'TB scale-up', 'Malaria scale-up', 'HTM scale-up']
 
-colors = sns.color_palette("Set1", 4) # Blue, Orange, Green, Red
+colors = sns.color_palette("Set1", 5) # Blue, Orange, Green, Red
 
 
 # Create subplots
@@ -116,19 +117,19 @@ for i, col in enumerate(aids_deaths.columns):
     axs[0].plot(aids_deaths.index, aids_deaths[col], label=draw_labels[i], color=colors[i])
 axs[0].set_title('HIV/AIDS')
 axs[0].legend()
-axs[0].axvline(x=2015, color='gray', linestyle='--')
+axs[0].axvline(x=2019, color='gray', linestyle='--')
 
 # Plot for df2
 for i, col in enumerate(tb_deaths.columns):
     axs[1].plot(tb_deaths.index, tb_deaths[col], color=colors[i])
 axs[1].set_title('TB')
-axs[1].axvline(x=2015, color='gray', linestyle='--')
+axs[1].axvline(x=2019, color='gray', linestyle='--')
 
 # Plot for df3
 for i, col in enumerate(malaria_deaths.columns):
     axs[2].plot(malaria_deaths.index, malaria_deaths[col], color=colors[i])
 axs[2].set_title('Malaria')
-axs[2].axvline(x=2015, color='gray', linestyle='--')
+axs[2].axvline(x=2019, color='gray', linestyle='--')
 
 for ax in axs:
     ax.set_xlabel('Years')
