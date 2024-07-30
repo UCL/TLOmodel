@@ -257,6 +257,20 @@ print('Data import complete and ready for analysis; verified that data is comple
 #consumable_reporting_rate = consumable_reporting_rate.pivot( 'program_item', 'year_month', 'fac_name')
 #consumable_reporting_rate.to_csv(figurespath / 'consumable_reporting_rate.csv')
 
+
+## TEMPORARY CODE TO FACILITATE CLEANING
+# Select a subset of items and facilities for initial cleaning
+unique_items = lmis['item'].unique()
+unique_items_df = pd.DataFrame(unique_items, columns=['item'])
+sampled_items = unique_items_df.sample(frac=0.1, random_state=1)
+
+unique_facilities = lmis['fac_name'].unique()
+unique_facilities_df = pd.DataFrame(unique_facilities, columns=['fac_name'])
+sampled_facilities = unique_facilities_df.sample(frac=0.1, random_state=1)
+# Filter the original DataFrame to only include rows with sampled items
+lmis = lmis[lmis['item'].isin(sampled_items['item'])]
+lmis = lmis[lmis['fac_name'].isin(sampled_facilities['fac_name'])]
+
 # Import manually cleaned list of consumable names
 clean_consumables_names = pd.read_csv(path_to_files_in_the_tlo_dropbox / 'OpenLMIS/cleaned_consumable_names.csv', low_memory = False)[['Program', 'Consumable','Alternate consumable name',	'Substitute group']]
 # Create a dictionary of cleaned consumable name categories
