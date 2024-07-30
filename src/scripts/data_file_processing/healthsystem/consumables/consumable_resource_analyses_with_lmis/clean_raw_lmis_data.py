@@ -341,13 +341,13 @@ lmis = pd.concat([df_without_consistent_item_names_corrected, df_with_consistent
 # Interpolation to address missingness
 #-------------------------------------------
 # Ensure that the columns that should be numerical are numeric
-numeric_cols = ['average_monthly_consumption', 'stkout_days', 'qty_received', 'closing_bal', 'month_num']
+numeric_cols = ['average_monthly_consumption', 'stkout_days', 'qty_received', 'closing_bal', 'month']
 lmis[numeric_cols] = lmis[numeric_cols].applymap(clean_convert)
 lmis['data_source'] = 'open_lmis_data'
 
 # Prepare dataset for interpolation
 def create_full_dataset(_df):
-    _df.reset_index(inplace=True)
+    _df.reset_index(inplace=True, drop = True)
 
     # Preserve columns whose data needs to be duplicated into the new rows added
     facility_features_to_preserve = ['district', 'fac_level', 'fac_owner', 'fac_name']
@@ -355,7 +355,8 @@ def create_full_dataset(_df):
     facility_features = _df[facility_features_to_preserve]
     facility_features = facility_features[~facility_features.duplicated(keep='first')]
     consumable_features = _df[consumable_features_to_preserve]
-    consumable_features = consumable_features[~consumable_features.duplicated(keep='first')]
+    consumable_features = consumable_features[~consumable_features.item.duplicated(keep='first')]
+    _df = _df.drop(['district', 'fac_level', 'fac_owner', 'program'], axis = 1) # drop columns which will be preserved
 
     # create a concatenated version of year and month
     #_df['year_month'] = _df['year'].astype(str) + "_" +  _df['month'].astype(str) # concatenate month and year for plots
@@ -366,10 +367,10 @@ def create_full_dataset(_df):
     all_months = list(months_dict.keys())
     all_years = list(years_dict.values())
     # Create MultiIndex from product of unique facilities and all months
-    multi_index = pd.MultiIndex.from_product([unique_facilities, unique_items, all_years, all_months], names=['fac_name', 'item', 'year', 'month_num'])
+    multi_index = pd.MultiIndex.from_product([unique_facilities, unique_items, all_years, all_months], names=['fac_name', 'item', 'year', 'month'])
 
     # Reindex dataframe
-    _df.set_index(['fac_name', 'item', 'year', 'month_num'], inplace=True)
+    _df.set_index(['fac_name', 'item', 'year', 'month'], inplace=True)
     _df = _df[~_df.index.duplicated(keep='first')] # this has occured when an item was reported under 2 programs - A quick glance at the data suggested that all the data for these rows was duplicated
     _df = _df.reindex(multi_index)
     _df.reset_index(inplace=True)
@@ -379,12 +380,12 @@ def create_full_dataset(_df):
     _df = _df.merge(consumable_features, on='item', how='left', validate = "m:1")
 
     return _df
-# TODO the following columns should be retained even when LMIS data is missing  - district	fac_level	fac_owner	month	program
+
 # TODO some columns can be dropped fac_name	item	year	month_num	index	district	fac_level	fac_owner	month	program	closing_bal	dispensed	stkout_days	average_monthly_consumption	qty_received	fac_type	year_month	program_item	opening_bal
 
 def prepare_data_for_interpolation(_df):
     # Reset index as columns and sort values for interpolation
-    _df = _df.sort_values(by = ['fac_name', 'item', 'year', 'month_num'])
+    _df = _df.sort_values(by = ['fac_name', 'item', 'year', 'month'])
 
     # Create columns for opening_balance and the number of days in the month
     _df['opening_bal'] = _df['closing_bal'].shift(1) # closing balance of the previous month
@@ -392,8 +393,8 @@ def prepare_data_for_interpolation(_df):
     months_dict31 = [1, 3, 5, 7, 8, 10, 12]
     months_dict30 = [4, 6, 9, 11]
     _df['month_length'] = 31
-    cond_30 = _df['month_num'].isin(months_dict30)
-    cond_31 = _df['month_num'].isin(months_dict31)
+    cond_30 = _df['month'].isin(months_dict30)
+    cond_31 = _df['month'].isin(months_dict31)
     _df.loc[cond_30, 'month_length'] = 30
     _df.loc[~(cond_30 | cond_31), 'month_length'] = 28
 
@@ -406,8 +407,8 @@ def prepare_data_for_interpolation(_df):
 
     return _df
 
-lmis_with_updated_names = create_full_dataset(lmis_with_updated_names)
-lmis_with_updated_names = prepare_data_for_interpolation(lmis_with_updated_names)
+lmis = create_full_dataset(lmis)
+lmis = prepare_data_for_interpolation(lmis)
 
 # # RULE 1 --- If i) stockout is missing (or negative?), ii) closing_bal, amc and received are not missing , and iii) amc !=0 and,
 # #          then stkout_days[m] = (amc[m] - closing_bal[m-1] - received)/amc * number of days in the month ---
@@ -432,11 +433,11 @@ def correct_infeasible_stockout_days(_df):
     _df.loc[(_df['stkout_days'] > _df['month_length']), 'stkout_days'] = _df['month_length']
     return _df
 
-count_stkout_entries = lmis_with_updated_names['stkout_days'].notna().sum()
-print(f"{count_stkout_entries} ({round(count_stkout_entries/len(lmis_with_updated_names) * 100, 2) }%) stockout entries in original data") # TODO Add percentage of values missing
+count_stkout_entries = lmis['stkout_days'].notna().sum()
+print(f"{count_stkout_entries} ({round(count_stkout_entries/len(lmis) * 100, 2) }%) stockout entries in original data") # TODO Add percentage of values missing
 
-lmis_with_updated_names = interpolation1_using_other_cols(lmis_with_updated_names)
-lmis_with_updated_names = correct_infeasible_stockout_days(lmis_with_updated_names)
+lmis = interpolation1_using_other_cols(lmis)
+lmis = correct_infeasible_stockout_days(lmis)
 
 # RULE 2 --- If the consumable was previously reported and during a given month, if any consumable was reported, assume
 # 100% days of stckout ---
@@ -470,7 +471,7 @@ def interpolation2_using_reporting_omission(_df):
     _df['data_source'] = 'lmis_interpolation_rule_2'
     return _df
 
-lmis_with_updated_names = interpolation2_using_reporting_omission(lmis_with_updated_names)
+lmis = interpolation2_using_reporting_omission(lmis)
 
 # RULE 3 --- If a facility did not report data for a given month, assume same as the average of the three previous months
 # Calculate the average stockout days for the previous three months
@@ -491,11 +492,11 @@ def interpolation3_using_previous_months_data(_df):
     _df['data_source'] = 'lmis_interpolation_rule_3'
     return _df
 
-lmis_with_updated_names = interpolation3_using_previous_months_data(lmis_with_updated_names)
+lmis = interpolation3_using_previous_months_data(lmis)
 
 # 4. CALCULATE STOCK OUT RATES BY MONTH and FACILITY ##
 #########################################################################################
-lmis_with_updated_names['stkout_prob'] = lmis_with_updated_names['stkout_days']/lmis_with_updated_names['month_length']
+lmis['stkout_prob'] = lmis['stkout_days']/lmis['month_length']
 #lmis_with_updated_names.to_csv(figurespath / 'lmis_with_prob.csv')
 #lmis_with_updated_names = pd.read_csv(figurespath / 'lmis_with_prob.csv', low_memory = False)[1:300000]
 #lmis_with_updated_names = lmis_with_updated_names.drop('Unnamed: 0', axis = 1)
@@ -534,21 +535,21 @@ def update_availability_for_substitutable_consumables(_df, groupby_list):
 # Hold out the dataframe with no substitutes
 list_of_items_with_substitutes_zipped = set(zip(cons_substitutes_dict.keys(), cons_substitutes_dict.values()))
 list_of_items_with_substitutes = [item for sublist in list_of_items_with_substitutes_zipped for item in sublist]
-df_with_no_substitutes =  lmis_with_updated_names[~lmis_with_updated_names['item'].isin(list_of_items_with_substitutes)]
-df_with_substitutes = lmis_with_updated_names[lmis_with_updated_names['item'].isin(list_of_items_with_substitutes)]
+df_with_no_substitutes =  lmis[~lmis['item'].isin(list_of_items_with_substitutes)]
+df_with_substitutes = lmis[lmis['item'].isin(list_of_items_with_substitutes)]
 
 # Update the names of drugs with substitutes to a common name
 df_with_substitutes['substitute'] = df_with_substitutes['item'].replace(cons_substitutes_dict)
-groupby_list = ['district',	'fac_level', 'fac_owner', 'fac_name', 'substitute', 'year', 'month_num']
+groupby_list = ['district',	'fac_level', 'fac_owner', 'fac_name', 'substitute', 'year']
 df_with_substitutes_adjusted = update_availability_for_substitutable_consumables(df_with_substitutes, groupby_list)
 df_with_substitutes_adjusted = pd.merge(df_with_substitutes.drop(['stkout_prob', 'data_source'], axis = 1), df_with_substitutes_adjusted[groupby_list + ['stkout_prob', 'data_source']], on = groupby_list, validate = "m:1", how = 'left')
 
 # Append holdout and corrected dataframes
-lmis_with_updated_names = pd.concat([df_with_substitutes_adjusted, df_with_no_substitutes],
+lmis = pd.concat([df_with_substitutes_adjusted, df_with_no_substitutes],
                               ignore_index=True)
 
 # Calculate the probability of consumables being available (converse of stockout)
-lmis_with_updated_names['available_prob'] = 1 - lmis_with_updated_names['stkout_prob']
+lmis['available_prob'] = 1 - lmis['stkout_prob']
 
 # 5. LOAD CLEANED MATCHED CONSUMABLE LIST FROM TLO MODEL AND MERGE WITH LMIS DATA ##
 ####################################################################################
