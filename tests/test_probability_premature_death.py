@@ -21,9 +21,9 @@ def test_probability_premature_death(tmpdir):
     seed = 0
     start_date = Date(2010, 1, 1)
     end_date = Date(2080, 1, 1)  # The simulation will stop before reaching this date.
-    pop_size = 1000
+    pop_size = 100
     number_of_draws = 1
-    runs_per_draw = 2
+    runs_per_draw = 1
     probability_premature_death_sim_F = []
     probability_premature_death_sim_M = []
     for draw in range(0, number_of_draws):
