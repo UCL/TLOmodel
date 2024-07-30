@@ -251,7 +251,9 @@ print('Data import complete and ready for analysis; verified that data is comple
 clean_consumables_names = pd.read_csv(path_to_files_in_the_tlo_dropbox / 'OpenLMIS/cleaned_consumable_names.csv', low_memory = False)[['Program', 'Consumable','Alternate consumable name',	'Substitute group']]
 # Create a dictionary of cleaned consumable name categories
 cons_alternate_name_dict = clean_consumables_names[clean_consumables_names['Consumable'] != clean_consumables_names['Alternate consumable name']].set_index('Consumable')['Alternate consumable name'].to_dict()
-cons_substitutes_dict = clean_consumables_names[clean_consumables_names['Substitute group'].notna()][['Alternate consumable name', 'Substitute group']].to_dict()
+cond_substitute_available =  clean_consumables_names['Substitute group'].notna()
+cond_substitute_different_from_original =  clean_consumables_names['Consumable'] != clean_consumables_names['Substitute group']
+cons_substitutes_dict = clean_consumables_names[cond_substitute_available & cond_substitute_different_from_original].set_index('Consumable')['Substitute group'].to_dict()
 def rename_items_to_address_inconsistentencies(_df, item_dict):
     """Return a dataframe with rows for the same item with inconsistent names collapsed into one"""
     old_unique_item_count = _df.item.nunique()
@@ -461,9 +463,65 @@ lmis_with_updated_names = interpolation3_using_previous_months_data(lmis_with_up
 # 4. CALCULATE STOCK OUT RATES BY MONTH and FACILITY ##
 #########################################################################################
 lmis_with_updated_names['stkout_prob'] = lmis_with_updated_names['stkout_days']/lmis_with_updated_names['month_length']
-lmis_with_updated_names['available_prob'] = 1 - lmis_with_updated_names['stkout_prob']
+#lmis_with_updated_names.to_csv(figurespath / 'lmis_with_prob.csv')
+#lmis_with_updated_names = pd.read_csv(figurespath / 'lmis_with_prob.csv', low_memory = False)[1:300000]
+#lmis_with_updated_names = lmis_with_updated_names.drop('Unnamed: 0', axis = 1)
+
 
 # Update probability of stockout when there are substitutes
+def update_availability_for_substitutable_consumables(_df, groupby_list):
+    """Return a dataframe with 'avaiilable_prob' updated for substitutable consumables"""
+    # Define column lists based on the aggregation function to be applied
+    columns_to_multiply = ['stkout_prob'] # a consumable is stocked out if all its substitutes are also stocked out
+    columns_to_sum = ['closing_bal', 'average_monthly_consumption', 'dispensed', 'qty_received']
+    columns_to_preserve = []
+
+    # Define aggregation function to be applied to collapse data by item
+    def custom_agg_stkout(x):
+        if x.name in columns_to_multiply:
+            return x.prod(skipna=True) if np.any(
+                x.notnull() & (x >= 0)) else np.nan  # this ensures that the NaNs are retained
+        elif x.name in columns_to_sum:
+            return x.sum(skipna=True) if np.any(
+                x.notnull() & (x >= 0)) else np.nan  # this ensures that the NaNs are retained
+        # , i.e. not changed to 1, when the corresponding data for both item name variations are NaN, and when there
+        # is a 0 or positive value for one or both item name variation, the sum is taken.
+        elif x.name in columns_to_preserve:
+            return x.iloc[0]  # this function extracts the first value
+
+    # Collapse dataframe
+    _collapsed_df = _df.groupby(groupby_list).agg(
+        {col: custom_agg_stkout for col in columns_to_multiply + columns_to_sum + columns_to_preserve}
+    ).reset_index()
+
+    _collapsed_df['data_source'] = 'lmis_adjusted_for_substitutes'
+
+    return _collapsed_df
+
+# Hold out the dataframe with no substitutes
+list_of_items_with_substitutes_zipped = set(zip(cons_substitutes_dict.keys(), cons_substitutes_dict.values()))
+list_of_items_with_substitutes = [item for sublist in list_of_items_with_substitutes_zipped for item in sublist]
+df_with_no_substitutes =  lmis_with_updated_names[~lmis_with_updated_names['item'].isin(list_of_items_with_substitutes)]
+df_with_substitutes = lmis_with_updated_names[lmis_with_updated_names['item'].isin(list_of_items_with_substitutes)]
+
+# Update the names of drugs with substitutes to a common name
+df_with_substitutes['substitute'] = df_with_substitutes['item'].replace(cons_substitutes_dict)
+groupby_list = ['district',	'fac_level', 'fac_owner', 'fac_name', 'substitute', 'year', 'month_num']
+df_with_substitutes_adjusted = update_availability_for_substitutable_consumables(df_with_substitutes, groupby_list)
+df_with_substitutes_adjusted = pd.merge(df_with_substitutes.drop(['stkout_prob', 'data_source'], axis = 1), df_with_substitutes_adjusted[groupby_list + ['stkout_prob', 'data_source']], on = groupby_list, validate = "m:1", how = 'left')
+
+# Append holdout and corrected dataframes
+lmis_with_updated_names = pd.concat([df_with_substitutes_adjusted, df_with_no_substitutes],
+                              ignore_index=True)
+
+# Calculate the probability of consumables being available (converse of stockout)
+lmis_with_updated_names['available_prob'] = 1 - lmis_with_updated_names['stkout_prob']
+
+# 5. LOAD CLEANED MATCHED CONSUMABLE LIST FROM TLO MODEL AND MERGE WITH LMIS DATA ##
+####################################################################################
+
+# 6. FILL GAPS USING HHFA SURVEY DATA OR ASSUMPTIONS ##
+#######################################################
 
 '''
 # this section is added added to load data prepared upto this point because of the time taken by the above code to run
