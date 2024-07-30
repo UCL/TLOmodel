@@ -49,7 +49,10 @@ def get_sim_with_dummy_module_registered(tmpdir=None, run=True, data=None):
 
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=0, log_config=_log_config)
+    sim = Simulation(start_date=start_date, seed=0, log_config={
+            'filename': 'tmp',
+            'directory': tmpdir,
+        })
 
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
@@ -68,7 +71,7 @@ def get_sim_with_dummy_module_registered(tmpdir=None, run=True, data=None):
     return sim
 
 
-def get_dummy_hsi_event_instance(module, facility_id=None):
+def get_dummy_hsi_event_instance(module, facility_id=None, blank_footprint = None):
     """Make an HSI Event that runs for person_id=0 in a particular facility_id and requests consumables,
     and for which its parent is the identified module."""
 
@@ -152,7 +155,7 @@ def test_outputs_to_log_no_blank(tmpdir):
 
         # Schedule the HSI event with a blank footprint for person_id=0
         sim.modules['HealthSystem'].schedule_hsi_event(
-            hsi_event=get_dummy_hsi_event_instance(module=sim.modules['DummyModule'], facility_id=0, blank=blank_footprint),
+            hsi_event=get_dummy_hsi_event_instance(module=sim.modules['DummyModule'], facility_id=0, blank_footprint=blank_footprint),
             topen=sim.start_date,
             tclose=None,
             priority=0
