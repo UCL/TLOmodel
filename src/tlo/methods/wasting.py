@@ -338,46 +338,43 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
         # ----- MUAC distribution for severe wasting (WHZ < -3) ------
         if whz == 'WHZ<-3':
-            # apply probability of MUAC < 115 mm in severe wasting
-            low_muac_in_severe_wasting = self.rng.random_sample(size=len(idx)) < p['proportion_WHZ<-3_with_MUAC<115mm']
+            # for severe wasting assumed no MUAC >= 125mm
+            prop_severe_wasting_with_muac_between_115and125mm = 1 - p['proportion_WHZ<-3_with_MUAC<115mm']
 
-            df.loc[idx[low_muac_in_severe_wasting], 'un_am_MUAC_category'] = '<115mm'
-            # other with severe wasting will have MUAC within [115-125)mm
-            df.loc[idx[~low_muac_in_severe_wasting], 'un_am_MUAC_category'] = '[115-125)mm'
+            df.loc[idx, 'un_am_MUAC_category'] = df.loc[idx].apply(
+                lambda x: self.rng.choice(['<115mm', '[115-125)mm'],
+                                          p=[p['proportion_WHZ<-3_with_MUAC<115mm'],
+                                             prop_severe_wasting_with_muac_between_115and125mm])
+            )
 
         # ----- MUAC distribution for moderate wasting (-3 <= WHZ < -2) ------
         if whz == '-3<=WHZ<-2':
-            # apply probability of MUAC < 115 mm in moderate wasting
-            low_muac_in_moderate_wasting = self.rng.random_sample(size=len(idx)) < \
-                                           p['proportion_-3<=WHZ<-2_with_MUAC<115mm']
-            df.loc[idx[low_muac_in_moderate_wasting], 'un_am_MUAC_category'] = '<115mm'
+            prop_moderate_wasting_with_muac_over_125mm = \
+                1 - p['proportion_-3<=WHZ<-2_with_MUAC<115mm'] - p['proportion_-3<=WHZ<-2_with_MUAC_[115-125)mm']
 
-            # apply probability of MUAC within [115-125)mm in moderate wasting
-            moderate_low_muac_in_moderate_wasting = \
-                self.rng.random_sample(size=len(idx[~low_muac_in_moderate_wasting])) < \
-                p['proportion_-3<=WHZ<-2_with_MUAC_[115-125)mm']
-            df.loc[idx[~low_muac_in_moderate_wasting][moderate_low_muac_in_moderate_wasting], 'un_am_MUAC_category'] \
-                = '[115-125)mm'
-            # other with moderate wasting will have normal MUAC
-            df.loc[idx[~low_muac_in_moderate_wasting][~moderate_low_muac_in_moderate_wasting], 'un_am_MUAC_category'] \
-                = '>=125mm'
+            df.loc[idx, 'un_am_MUAC_category'] = df.loc[idx].apply(
+                lambda x: self.rng.choice(['<115mm', '[115-125)mm', '>=125mm'],
+                                          p=[p['proportion_-3<=WHZ<-2_with_MUAC<115mm'],
+                                             p['proportion_-3<=WHZ<-2_with_MUAC_[115-125)mm'],
+                                             prop_moderate_wasting_with_muac_over_125mm])
+            )
 
         # ----- MUAC distribution for WHZ >= -2 -----
         if whz == 'WHZ>=-2':
 
             muac_distribution_in_well_group = norm(loc=p['MUAC_distribution_WHZ>=-2'][0],
                                                    scale=p['MUAC_distribution_WHZ>=-2'][1])
-            # get probability of MUAC < 115 mm
+            # get probabilities of MUAC
             probability_over_or_equal_115 = muac_distribution_in_well_group.sf(11.5)
             probability_over_or_equal_125 = muac_distribution_in_well_group.sf(12.5)
 
             prob_less_than_115 = 1 - probability_over_or_equal_115
             pro_between_115_125 = probability_over_or_equal_115 - probability_over_or_equal_125
 
-            for pid in idx:
-                muac_cat = self.rng.choice(['<115mm', '[115-125)mm', '>=125mm'],
-                                           p=[prob_less_than_115, pro_between_115_125, probability_over_or_equal_125])
-                df.at[pid, 'un_am_MUAC_category'] = muac_cat
+            df.loc[idx, 'un_am_MUAC_category'] = df.loc[idx].apply(
+                lambda x: self.rng.choice(['<115mm', '[115-125)mm', '>=125mm'],
+                                          p=[prob_less_than_115, pro_between_115_125, probability_over_or_equal_125])
+            )
 
     def nutritional_oedema_present(self, idx):
         """
@@ -908,11 +905,16 @@ class UpdateToMAM(Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive']:
             return
 
+        # if not df.at[person_id, 'un_clinical_acute_malnutrition'] == 'MAM':
+        #     return
+        # # TODO: check if this is correct before added (maybe it should be == 'SAM'?
+
         # For cases with normal WHZ and other acute malnutrition signs:
         # oedema, or low muac - do not change the WHZ
         if df.at[person_id, 'un_WHZ_category'] == 'WHZ>=-2':
             # mam by muac only
             df.at[person_id, 'un_am_MUAC_category'] = '[115-125)mm'
+            # TODO: I think this changes the proportions below as some of the cases will be issued here
 
         else:
             # using the probability of mam classification by anthropometric
