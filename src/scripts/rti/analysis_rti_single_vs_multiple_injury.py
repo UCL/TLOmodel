@@ -34,7 +34,9 @@ log_config_single = {
     }
 }
 # The Resource files [NB. Working directory must be set to the root of TLO: TLOmodel]
-resourcefilepath = Path('./resources')
+# resourcefilepath = Path('./resources')
+resourcefilepath = './resources'
+
 # Establish the simulation object
 yearsrun = 10
 start_date = Date(year=2010, month=1, day=1)
@@ -44,18 +46,19 @@ pop_size = 10000
 seed = 100
 
 # Create the simulation object
-sim_single_injury = Simulation(start_date=start_date, seed=seed, log_config=log_config_single)
+sim_single_injury = Simulation(start_date=start_date, seed=seed, log_config=log_config_single,
+                               resourcefilepath=resourcefilepath)
 
 # Register the modules
 sim_single_injury.register(
-    demography.Demography(resourcefilepath=resourcefilepath),
-    enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-    healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
-    symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-    healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-    rti.RTI(resourcefilepath=resourcefilepath),
-    simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+    demography.Demography(),
+    enhanced_lifestyle.Lifestyle(),
+    healthsystem.HealthSystem(service_availability=['*']),
+    symptommanager.SymptomManager(),
+    healthseekingbehaviour.HealthSeekingBehaviour(),
+    healthburden.HealthBurden(),
+    rti.RTI(),
+    simplified_births.SimplifiedBirths(),
 )
 # Get the log file
 
@@ -93,17 +96,18 @@ log_config_multiple = {
         "tlo.methods.healthburden": logging.INFO
     }
 }
-sim_multiple_injury = Simulation(start_date=start_date, seed=seed, log_config=log_config_multiple)
+sim_multiple_injury = Simulation(start_date=start_date, seed=seed, log_config=log_config_multiple,
+                                 resourcefilepath=resourcefilepath)
 # Register the modules
 sim_multiple_injury.register(
-    demography.Demography(resourcefilepath=resourcefilepath),
-    enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-    healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
-    symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-    healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-    rti.RTI(resourcefilepath=resourcefilepath),
-    simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+    demography.Demography(),
+    enhanced_lifestyle.Lifestyle(),
+    healthsystem.HealthSystem(service_availability=['*']),
+    symptommanager.SymptomManager(),
+    healthseekingbehaviour.HealthSeekingBehaviour(),
+    healthburden.HealthBurden(),
+    rti.RTI(),
+    simplified_births.SimplifiedBirths(),
 )
 
 # create and run the simulation

@@ -42,12 +42,13 @@ start_date = Date(2010, 1, 1)
 end_date = Date(2012, 12, 31)
 pop_size = 3000
 
-# Creat simulations both with and without the health system
-sim_no_health_system = Simulation(start_date=start_date, seed=seed, log_config=log_config_no_hs)
-
 # Path to the resource files used by the disease and intervention methods
-# resources = "./resources"
-resourcefilepath = Path('./resources')
+# resourcefilepath = Path('./resources')
+resourcefilepath = './resources'
+
+# Creat simulations both with and without the health system
+sim_no_health_system = Simulation(start_date=start_date, seed=seed, log_config=log_config_no_hs,
+                                  resourcefilepath=resourcefilepath)
 
 # Used to configure health system behaviour
 service_availability_no_hs = []
@@ -56,33 +57,34 @@ service_availability_no_hs = []
 # able to handle dependencies if modules are registered together
 # Register modules used in each model run, specifying the availability of service from the hs
 sim_no_health_system.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability_no_hs),
-        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-        rti.RTI(resourcefilepath=resourcefilepath),
-        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath)
+        demography.Demography(),
+        enhanced_lifestyle.Lifestyle(),
+        healthsystem.HealthSystem(service_availability=service_availability_no_hs),
+        symptommanager.SymptomManager(),
+        healthseekingbehaviour.HealthSeekingBehaviour(),
+        healthburden.HealthBurden(),
+        rti.RTI(),
+        simplified_births.SimplifiedBirths()
         )
 
 # create and run each simulation
 sim_no_health_system.make_initial_population(n=pop_size)
 sim_no_health_system.simulate(end_date=end_date)
 
-sim_with_health_system = Simulation(start_date=start_date, seed=seed, log_config=log_config_with_hs)
+sim_with_health_system = Simulation(start_date=start_date, seed=seed, log_config=log_config_with_hs,
+                                    resourcefilepath=resourcefilepath)
 
 service_availability_with_hs = ['*']
 
 sim_with_health_system.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability_with_hs),
-        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-        rti.RTI(resourcefilepath=resourcefilepath),
-        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath)
+        demography.Demography(),
+        enhanced_lifestyle.Lifestyle(),
+        healthsystem.HealthSystem(service_availability=service_availability_with_hs),
+        symptommanager.SymptomManager(),
+        healthseekingbehaviour.HealthSeekingBehaviour(),
+        healthburden.HealthBurden(),
+        rti.RTI(),
+        simplified_births.SimplifiedBirths()
         )
 
 sim_with_health_system.make_initial_population(n=pop_size)

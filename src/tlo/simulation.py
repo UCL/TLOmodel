@@ -44,7 +44,7 @@ class Simulation:
     """
 
     def __init__(self, *, start_date: Date, seed: int = None, log_config: dict = None,
-                 show_progress_bar=False, resourcefilepath = None):
+                 show_progress_bar=False, resourcefilepath: str = None):
         """Create a new simulation.
 
         :param start_date: the date the simulation begins; must be given as

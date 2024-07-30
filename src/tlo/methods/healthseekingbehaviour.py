@@ -102,10 +102,8 @@ class HealthSeekingBehaviour(Module, GenericFirstAppointmentsMixin):
     # No properties to declare
     PROPERTIES = {}
 
-    def __init__(self, name=None, resourcefilepath=None, force_any_symptom_to_lead_to_healthcareseeking=None):
+    def __init__(self, name=None, force_any_symptom_to_lead_to_healthcareseeking=None):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
-
         self.odds_ratio_health_seeking_in_children = dict()
         self.odds_ratio_health_seeking_in_adults = dict()
         self.prob_seeks_emergency_appt_in_children = dict()
@@ -122,10 +120,10 @@ class HealthSeekingBehaviour(Module, GenericFirstAppointmentsMixin):
             assert isinstance(force_any_symptom_to_lead_to_healthcareseeking, bool)
         self.arg_force_any_symptom_to_lead_to_healthcareseeking = force_any_symptom_to_lead_to_healthcareseeking
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath = None):
         """Read in ResourceFile"""
         # Load parameters from resource file:
-        wb = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_HealthSeekingBehaviour.csv')
+        wb = pd.read_csv(Path(resourcefilepath) / 'ResourceFile_HealthSeekingBehaviour.csv')
         wb.loc[wb['parameter_name'] == 'force_any_symptom_to_lead_to_healthcareseeking', 'value'] = \
             wb.loc[wb['parameter_name'] == 'force_any_symptom_to_lead_to_healthcareseeking', 'value'].apply(pd.eval)
         # <-- Needed to prevent the contents being stored as strings
