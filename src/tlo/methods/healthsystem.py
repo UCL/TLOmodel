@@ -795,7 +795,6 @@ class HealthSystem(Module):
         if self._hsi_event_count_log_period == "simulation":
             self._write_hsi_event_counts_to_log_and_reset()
             self._write_never_ran_hsi_event_counts_to_log_and_reset()
-            self._write_hsi_event_no_blank_counts_to_log_and_reset()
         if self._hsi_event_count_log_period is not None:
             logger_summary.info(
                 key="hsi_event_details",
@@ -812,15 +811,6 @@ class HealthSystem(Module):
                 data={
                     "never_ran_hsi_event_key_to_event_details": {
                         k: d._asdict() for d, k in self._never_ran_hsi_event_details.items()
-                    }
-                }
-            )
-            logger_summary.info(
-                key="hsi_event_no_blank_footprint",
-                description="Map from integer keys to hsis that have no blank footprint event detail dictionaries",
-                data={
-                    "hsi_event_no_blank_key_to_event_details": {
-                        k: d._asdict() for d, k in self._hsi_event_no_blank_details.items()
                     }
                 }
             )
@@ -1720,13 +1710,7 @@ class HealthSystem(Module):
                 did_run=did_run,
                 priority=priority,
             )
-            self.write_to_hsi_no_blank_footprint_log(
-                event_details=hsi_event.as_namedtuple(actual_appt_footprint),
-                person_id=hsi_event.target,
-                facility_id=hsi_event.facility_info.id,
-                did_run=did_run,
-                priority=priority,
-                )
+
 
     def write_to_hsi_log(
         self,
@@ -1798,51 +1782,6 @@ class HealthSystem(Module):
                  priority=priority,
                  )
 
-    def write_to_hsi_no_blank_footprint_log(
-        self,
-        event_details: HSIEventDetails,
-        person_id: int,
-        facility_id: Optional[int],
-        did_run: bool,
-        priority: int,
-    ):
-        """Write the log `HSI_Event` and add to the summary counter only if the appointment footprint is not blank.
-               :param event_details: What event_details is responsible for
-               :param TREATMENT_ID: the treatment ID of the HSI that ran
-               :param Number_By_Appt_Type_Code: dictionary with number of HSIs types
-               :param Person_ID:  A sequence of person ID index values to use as the targets of the HSI events being scheduled
-               :param priority: The priority for the HSI events: 0 (highest), 1 or 2 (lowest). Either a single value for all events or an iterable of per-target values.
-               :param did_run: Boolean asserting if the HSI event did happen
-               :param Facility_Level: The level of the facility where the HSI ran. Can be 0, 1a, 1b, 2, 3, 4, or 5.
-               :param Facility_id: Facility where the HSI ran
-               :param Equipment: The set of equipment that is used in the HSI.
-               """
-        logger.debug(
-            key="HSI_Event_No_Blank_Footprint",
-            data={
-                'Event_Name': event_details.event_name,
-                'TREATMENT_ID': event_details.treatment_id,
-                'Number_By_Appt_Type_Code': dict(event_details.appt_footprint),
-                'Person_ID': person_id,
-                'priority': priority,
-                'did_run': did_run,
-                'Facility_Level': event_details.facility_level if event_details.facility_level is not None else -99,
-                'Facility_ID': facility_id if facility_id is not None else -99,
-                'Equipment': sorted(event_details.equipment),
-            },
-            description="record of each HSI event"
-        )
-        if did_run and len(event_details.appt_footprint) != 0 and not all(x == 0 for x in event_details.appt_footprint):
-            if self._hsi_event_count_log_period is not None:
-                event_details_key = self._hsi_event_no_blank_details.setdefault(event_details,
-                                                                            len(self._hsi_event_no_blank_details))
-                self._hsi_event_no_blank_counts_log_period[event_details_key] += 1
-                # Do logging for 'summary logger'
-            self._summary_counter.record_hsi_event_no_blank_appt_footprints(
-                        treatment_id=event_details.treatment_id,
-                        appt_footprint=event_details.appt_footprint,
-                        level=event_details.facility_level,
-                )
 
     def write_to_never_ran_hsi_log(
         self,
@@ -2001,23 +1940,7 @@ class HealthSystem(Module):
         self._never_ran_hsi_event_counts_cumulative += self._never_ran_hsi_event_counts_log_period
         self._never_ran_hsi_event_counts_log_period.clear()
 
-    def _write_hsi_event_no_blank_counts_to_log_and_reset(self):
-        """
-        Logs and resets the counts of HSI events with no blank footprint.
-        _hsi_event_no_blank_counts_log_period: Stores the number of HSI events with no blank footprint for the current logging period.
-        _hsi_event_no_blank_counts_cumulative: Stores the cumulative number of HSI events with no blank footprint across all periods.
-        """
-        logger_summary.info(
-            key="hsi_event_no_blank_counts",
-            description=(
-                f"Counts of the HSI events that have run and have no blank footprint in this "
-                f"{self._hsi_event_no_blank_counts_log_period} with keys corresponding to integer"
-                f" keys recorded in dictionary in hsi_event_details log entry."
-            ),
-            data={"hsi_event_no_blank_key_to_counts": dict(self._hsi_event_no_blank_counts_log_period)},
-            )
-        self._hsi_event_no_blank_counts_cumulative += self._hsi_event_no_blank_counts_log_period
-        self._hsi_event_no_blank_counts_log_period.clear()
+
 
     def on_end_of_day(self) -> None:
         """Do jobs to be done at the end of the day (after all HSI run)"""
@@ -2025,14 +1948,12 @@ class HealthSystem(Module):
         if self._hsi_event_count_log_period == "day":
             self._write_hsi_event_counts_to_log_and_reset()
             self._write_never_ran_hsi_event_counts_to_log_and_reset()
-            self._write_hsi_event_no_blank_counts_to_log_and_reset()
 
     def on_end_of_month(self) -> None:
         """Do jobs to be done at the end of the month (after all HSI run)"""
         if self._hsi_event_count_log_period == "month":
             self._write_hsi_event_counts_to_log_and_reset()
             self._write_never_ran_hsi_event_counts_to_log_and_reset()
-            self._write_hsi_event_no_blank_counts_to_log_and_reset()
 
     def on_end_of_year(self) -> None:
         """Write to log the current states of the summary counters and reset them."""
@@ -2050,7 +1971,6 @@ class HealthSystem(Module):
         if self._hsi_event_count_log_period == "year":
             self._write_hsi_event_counts_to_log_and_reset()
             self._write_never_ran_hsi_event_counts_to_log_and_reset()
-            self._write_hsi_event_no_blank_counts_to_log_and_reset()
 
     def run_population_level_events(self, _list_of_population_hsi_event_tuples: List[HSIEventQueueItem]) -> None:
         """Run a list of population level events."""
@@ -2715,22 +2635,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     priority=-1,
                     did_run=True,
                 )
-                if len(_inpatient_appts) != 0:
-                    self.module.write_to_hsi_no_blank_footprint_log(
-                        event_details=HSIEventDetails(
-                            event_name='Inpatient_Care',
-                            module_name='HealthSystem',
-                            treatment_id='Inpatient_Care',
-                            facility_level=self.module._facility_by_facility_id[_fac_id].level,
-                            appt_footprint=(),
-                            beddays_footprint=(),
-                            equipment=tuple(),  # Equipment is normally a set, but this has to be hashable.
-                        ),
-                        person_id=-1,
-                        facility_id=_fac_id,
-                        priority=-1,
-                        did_run=True,
-                    )
 
         # Restart the total footprint of all calls today, beginning with those due to existing in-patients.
         self.module.running_total_footprint = inpatient_footprints
@@ -2823,6 +2727,13 @@ class HealthSystemSummaryCounter:
             self._appts[appt_type] += number
             self._appts_by_level[level][appt_type] += number
 
+        # Count the blank appointment footprints
+        if len(appt_footprint) != 0 and not all(x == 0 for x in appt_footprint):
+            self._no_blank_appt_treatment_ids[treatment_id] += 1
+            for appt_type, number in appt_footprint:
+                self._no_blank_appt_appts[appt_type] += number
+                self._no_blank_appt_by_level[level][appt_type] += number
+
     def record_never_ran_hsi_event(self,
                                    treatment_id: str,
                                    hsi_event_name: str,
@@ -2839,24 +2750,6 @@ class HealthSystemSummaryCounter:
             self._never_ran_appts[appt_type] += number
             self._never_ran_appts_by_level[level][appt_type] += number
 
-    def record_hsi_event_no_blank_appt_footprints(self,
-                                                  treatment_id: str,
-                                                  appt_footprint: Counter,
-                                                  level: str
-                                                  ) -> None:
-        """Add information about a`HSI_Event` that has a non-blank appointment footprint to the running summaries.
-            :param treatment_id: the treatment ID of the HSI that ran
-            :param appt_footprint: the appointment footprint (mins) for the HSI
-            :param level: the facility level of the HSI
-        """
-
-        # Count the treatment_id:
-        self._no_blank_appt_treatment_ids[treatment_id] += 1
-
-        # Count each type of appointment:
-        for appt_type, number in appt_footprint:
-            self._no_blank_appt_appts[appt_type] += number
-            self._no_blank_appt_by_level[level][appt_type] += number
 
     def record_hs_status(
         self,
