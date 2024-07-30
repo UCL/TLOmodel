@@ -93,7 +93,7 @@ def clean_convert(x):
 
 # Define function to assign facilities to TLO model levels based on facility names
 # See link: https://docs.google.com/spreadsheets/d/1fcp2-smCwbo0xQDh7bRUnMunCKguBzOIZjPFZKlHh5Y/edit#gid=0
-def assign_facilty_level_based_on_facility_names(_df):
+def assign_facilty_level_based_on_facility_names_or_types(_df):
     cond_level_0 = (_df['fac_name'].str.replace(' ', '').str.lower().str.contains('healthpost'))
     cond_level_1a = (_df['fac_name'].str.replace(' ', '').str.lower().str.contains('clinic')) | \
                     (_df['fac_name'].str.replace(' ', '').str.replace('center','centre').str.lower().str.contains('healthcentre')) | \
@@ -170,9 +170,10 @@ def generate_summary_heatmap(_df,
 # %%
 # 1. DATA IMPORT AND CLEANING ##
 #########################################################################################
+number_of_months = 3 # 13
 for y in range(2,len(years_dict)+1): # the format of the 2018 dataset received was different from the other years so we start at 2 here
     print("processing year ", years_dict[y])
-    for m in range(1, 13):
+    for m in range(1, number_of_months):
         print("processing month ", months_dict[m])
         if ((m == 1) & (y == 2)):
             lmis = pd.read_excel(path_to_files_in_the_tlo_dropbox / f'OpenLMIS/{years_dict[y]}/{months_dict[m]}.xlsx')
@@ -194,26 +195,35 @@ col_list = ['year', 'month', 'district', 'fac_owner', 'fac_name', 'program', 'it
 lmis_2018 = pd.read_csv(path_to_files_in_the_tlo_dropbox / 'OpenLMIS/ResourceFile_LMIS_2018.csv', low_memory=False)
 rename_lmis_columns(lmis_2018)
 
-lmis['fac_type'] = np.nan
+lmis['fac_type'] = np.nan # create empty column to match with the col_list in the 2018 dataframe
 lmis = pd.concat([lmis[col_list], lmis_2018[col_list]], axis=0, ignore_index=True)
 
 # Drop empty rows
 lmis = lmis[lmis.fac_name.notna()]
 
 # Remove Private Health facilities from the data
-cond_pvt = lmis['fac_owner'] == 'Private'
+cond_pvt = (lmis['fac_owner'] == 'Private') | (lmis['fac_type'].str.contains("Private"))
 lmis = lmis[~cond_pvt]
-months_reversed_dict = {v: k for k, v in months_dict.items()}
-lmis['month_num'] = lmis['month'].map(months_reversed_dict)
-lmis['year_month'] = lmis['year'].astype(str) + "_" +  lmis['month_num'].astype(str) # concatenate month and year for plots
+
+# Clean ownership information
+lmis.loc[lmis.fac_type.isna(), 'fac_type'] = "Unknown"
+cond_cham = lmis['fac_type'].str.contains("CHAM")
+lmis.loc[cond_cham, 'fac_owner'] = "CHAM"
+cond_other = lmis.fac_owner.isna() # because private facilities are dropped and CHAM facilities are correctly categorised
+lmis.loc[cond_other, 'fac_owner'] = "Government of Malawi"
 
 # Clean facility types to match with types in the TLO model
-assign_facilty_level_based_on_facility_names(lmis)
+assign_facilty_level_based_on_facility_names_or_types(lmis)
+lmis = lmis.drop('fac_type', axis = 1) # redundant column
+
+# Update month coding to numeric
+months_reversed_dict = {v: k for k, v in months_dict.items()}
+lmis['month'] = lmis['month'].map(months_reversed_dict)
 
 # Check the number of facilities at higher levels matches actual for all years
 full_district_set = set(districts_dict.values())
 for y in range(1,len(years_dict)+1):
-    for m in range(1, 13):
+    for m in range(1, number_of_months):
         #print("Checking consistency in data for ", months_dict[m], ", ",  years_dict[y])
         monthly_lmis = lmis[(lmis.month == months_dict[m]) & (lmis.year == years_dict[y])]
         #assert(len(monthly_lmis[monthly_lmis.fac_level == '2']['fac_name'].unique()) == 28) # number of District hospitals
@@ -299,7 +309,7 @@ df_without_consistent_item_names = lmis[lmis['item'].isin(list_of_items_with_inc
 df_without_consistent_item_names_corrected = rename_items_to_address_inconsistentencies(
     df_without_consistent_item_names, cons_alternate_name_dict)
 # Append holdout and corrected dataframes
-lmis_with_updated_names = pd.concat([df_without_consistent_item_names_corrected, df_with_consistent_item_names],
+lmis = pd.concat([df_without_consistent_item_names_corrected, df_with_consistent_item_names],
                               ignore_index=True)
 
 #lmis_with_updated_names.to_csv(figurespath / 'lmis_with_updated_names.csv')
@@ -316,21 +326,25 @@ lmis_with_updated_names = pd.concat([df_without_consistent_item_names_corrected,
 
 # Interpolation to address missingness
 #-------------------------------------------
-#_df = lmis_with_updated_names
-
 # Ensure that the columns that should be numerical are numeric
 numeric_cols = ['average_monthly_consumption', 'stkout_days', 'qty_received', 'closing_bal', 'month_num']
-lmis_with_updated_names[numeric_cols] = lmis_with_updated_names[numeric_cols].applymap(clean_convert)
-lmis_with_updated_names['data_source'] = 'open_lmis_data'
+lmis[numeric_cols] = lmis[numeric_cols].applymap(clean_convert)
+lmis['data_source'] = 'open_lmis_data'
 
 # Prepare dataset for interpolation
 def create_full_dataset(_df):
     _df.reset_index(inplace=True)
 
-    # create numeric version of month
-    months_reversed_dict = {v: k for k, v in months_dict.items()}
-    _df['month_num'] = _df['month'].map(months_reversed_dict)
-    _df['year_month'] = _df['year'].astype(str) + "_" +  _df['month_num'].astype(str) # concatenate month and year for plots
+    # Preserve columns whose data needs to be duplicated into the new rows added
+    facility_features_to_preserve = ['district', 'fac_level', 'fac_owner', 'fac_name']
+    consumable_features_to_preserve = ['program', 'item']
+    facility_features = _df[facility_features_to_preserve]
+    facility_features = facility_features[~facility_features.duplicated(keep='first')]
+    consumable_features = _df[consumable_features_to_preserve]
+    consumable_features = consumable_features[~consumable_features.duplicated(keep='first')]
+
+    # create a concatenated version of year and month
+    #_df['year_month'] = _df['year'].astype(str) + "_" +  _df['month'].astype(str) # concatenate month and year for plots
 
     # Make sure that there is a row for every item, facility, year and month
     unique_facilities = _df['fac_name'].unique()
@@ -345,6 +359,11 @@ def create_full_dataset(_df):
     _df = _df[~_df.index.duplicated(keep='first')] # this has occured when an item was reported under 2 programs - A quick glance at the data suggested that all the data for these rows was duplicated
     _df = _df.reindex(multi_index)
     _df.reset_index(inplace=True)
+
+    # Add preserved columns
+    _df = _df.merge(facility_features, on='fac_name', how='left', validate = "m:1")
+    _df = _df.merge(consumable_features, on='item', how='left', validate = "m:1")
+
     return _df
 # TODO the following columns should be retained even when LMIS data is missing  - district	fac_level	fac_owner	month	program
 # TODO some columns can be dropped fac_name	item	year	month_num	index	district	fac_level	fac_owner	month	program	closing_bal	dispensed	stkout_days	average_monthly_consumption	qty_received	fac_type	year_month	program_item	opening_bal
