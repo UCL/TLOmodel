@@ -12,13 +12,6 @@ from tlo.methods import Metadata, demography, healthsystem
 from tlo.methods.consumables import create_dummy_data_for_cons_availability
 from tlo.methods.hsi_event import HSI_Event
 
-# Set up logging configuration
-log_file_path = 'simulation.log'
-logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s %(name)s %(levelname)s: %(message)s',
-                    filename=log_file_path,
-                    filemode='w')
-
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
 mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "ResourceFile_Master_Facilities_List.csv")
@@ -48,13 +41,12 @@ def get_sim_with_dummy_module_registered(tmpdir=None, run=True, data=None):
             pass
 
     # Create simulation with the HealthSystem and DummyModule
-    if tmpdir is not None:
+
         _log_config = {
             'filename': 'tmp',
             'directory': tmpdir,
         }
-    else:
-        _log_config = None
+
 
     start_date = Date(2010, 1, 1)
     sim = Simulation(start_date=start_date, seed=0, log_config=_log_config)
@@ -68,9 +60,6 @@ def get_sim_with_dummy_module_registered(tmpdir=None, run=True, data=None):
         check_all_dependencies=False
     )
 
-    if data is not None:
-        sim.modules['HealthSystem'].parameters['availability_estimates'] = data
-
     sim.make_initial_population(n=100)
 
     if run:
@@ -79,7 +68,7 @@ def get_sim_with_dummy_module_registered(tmpdir=None, run=True, data=None):
     return sim
 
 
-def get_dummy_hsi_event_instance(module, facility_id=None, blank = False):
+def get_dummy_hsi_event_instance(module, facility_id=None):
     """Make an HSI Event that runs for person_id=0 in a particular facility_id and requests consumables,
     and for which its parent is the identified module."""
 
@@ -144,7 +133,6 @@ def set_person_district_id(sim):
       return sim
 
 def test_outputs_to_log_no_blank(tmpdir):
-    """Check that logging from Consumables is as expected."""
     intrinsic_availability = {0: 1.0, 1: 0.0}
 
     sim = get_sim_with_dummy_module_registered(
@@ -176,7 +164,7 @@ def test_outputs_to_log_no_blank(tmpdir):
      # Simulate for one day
     sim.simulate(end_date=sim.start_date + pd.DateOffset(days=1))
 
-     # Check that log is created and the content is as expected.
+     # Check that footrpint does appear in key log of HSI event and does not appear in HSI_Event_non_blank_appt_footprint
     hsi_log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem.summary']['hsi_event_details']
     assert hsi_log.iloc[0, 1]['0']['appt_footprint'] == []
 
