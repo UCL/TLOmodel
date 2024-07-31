@@ -2316,15 +2316,20 @@ class RTI(Module, GenericFirstAppointmentsMixin):
                 get_item_codes('Blood, one unit'): 2,
                 get_item_codes("Oxygen, 1000 liters, primarily with oxygen cylinders"): 23_040
             }
-        self.cons_item_codes['fracture_treatment'] = {
-            get_item_codes('Plaster of Paris (POP) 10cm x 7.5cm slab_12_CMST'): 0,
+        self.cons_item_codes['fracture_treatment'] = lambda num_fractures: {
+            get_item_codes('Plaster of Paris (POP) 10cm x 7.5cm slab_12_CMST'): num_fractures,
             get_item_codes('Bandage, crepe 7.5cm x 1.4m long , when stretched'): 200,
+            # (The 200 is a standard assumption for the amount of bandage needed, irrespective of the number of
+            # fractures.)
         }
         self.cons_item_codes['open_fracture_treatment'] = {
                 get_item_codes('Ceftriaxone 1g, PFR_each_CMST'): 2000,
                 get_item_codes('Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST'): 500,
                 get_item_codes("Gauze, absorbent 90cm x 40m_each_CMST"): 100,
                 get_item_codes('Suture pack'): 1,
+            }
+        self.cons_item_codes["open_fracture_treatment_additional_if_contaminated"] = {
+                get_item_codes('Metronidazole, injection, 500 mg in 100 ml vial'): 1500
             }
         self.cons_item_codes['laceration_treatment'] = {
                 get_item_codes('Suture pack'): 0,
@@ -4020,7 +4025,6 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
         # Get the population and health system
         df = self.sim.population.props
         p = df.loc[person_id]
-        get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
         self._number_of_times_this_event_has_run += 1
 
         # if the person isn't alive return a blank footprint
@@ -4049,12 +4053,10 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
         # Check this injury assigned to be treated here is actually had by the person
         assert all(injuries in person_injuries.values for injuries in p['rt_injuries_to_cast'])
 
-        # If they have a fracture that needs a cast, ask for plaster of paris, update POP count
-        ind_cons_fracture_treatment = copy.deepcopy(self.module.cons_item_codes['fracture_treatment'])
-        ind_cons_fracture_treatment = ind_cons_fracture_treatment.update({
-            get_item_code('Plaster of Paris (POP) 10cm x 7.5cm slab_12_CMST'): fracturecastcounts})
+        # If they have a fracture that needs a cast, ask for plaster of paris (updating to match the number of
+        # fractures.)
+        is_cons_available = self.get_consumables(self.module.cons_item_codes['fracture_treatment'](fracturecastcounts))
 
-        is_cons_available = self.get_consumables(ind_cons_fracture_treatment)
         # if the consumables are available then the appointment can run
         if is_cons_available:
             logger.debug(key='rti_general_message',
@@ -4179,23 +4181,16 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
         assert df.loc[person_id, 'rt_med_int'], 'person sent here has not been treated'
 
         # If they have an open fracture, ask for consumables to treat fracture
-        if open_fracture_counts > 0:
-            self.module.cons_item_codes["open_fracture_treatment"]
-            ind_cons_open_fracture_treatment = copy.deepcopy(self.module.cons_item_codes["open_fracture_treatment"])
-
-            # If wound is "grossly contaminated" administer Metronidazole
-            # todo: parameterise the probability of wound contamination
-            p = self.module.parameters
-            prob_open_fracture_contaminated = p['prob_open_fracture_contaminated']
-            rand_for_contamination = self.module.rng.random_sample(size=1)
-            # NB: Dose used below from BNF is for surgical prophylaxsis
-            if rand_for_contamination < prob_open_fracture_contaminated:
-                ind_cons_open_fracture_treatment = ind_cons_open_fracture_treatment.update(
-                    {get_item_code('Metronidazole, injection, 500 mg in 100 ml vial'): 1500}
-                )
+        wound_contaminated =(
+            (open_fracture_counts > 0)
+            and (self.module.parameters['prob_open_fracture_contaminated'] > self.module.rng.random_sample())
+        )
 
         # Check that there are enough consumables to treat this person's fractures
-        is_cons_available = self.get_consumables(ind_cons_open_fracture_treatment)
+        is_cons_available = self.get_consumables(self.module.cons_item_codes["open_fracture_treatment"]) and (
+            # If wound is "grossly contaminated" administer Metronidazole, else ignore
+            self.get_consumables("open_fracture_treatment_additional_if_contaminated") if wound_contaminated else True
+        )
 
         if is_cons_available:
             logger.debug(key='rti_general_message',
