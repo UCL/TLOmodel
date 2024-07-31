@@ -138,9 +138,9 @@ class BitsetDtype(ExtensionDtype):
     def __str__(self) -> str:
         return self.__repr__()
 
-    def as_bytes(self, collection: Iterable[NodeType]) -> np.bytes_:
+    def as_bytes(self, collection: Iterable[NodeType] | NodeType) -> np.bytes_:
         """
-        Return the bytes representation of this set.
+        Return the bytes representation of this set or single element.
         """
         return np.bytes_(self.as_uint8_array(collection))
 
@@ -158,12 +158,17 @@ class BitsetDtype(ExtensionDtype):
             }
         return elements_in_set
 
-    def as_uint8_array(self, collection: Iterable[NodeType]) -> np.ndarray[np.uint8]:
+    def as_uint8_array(self, collection: Iterable[NodeType] | NodeType) -> np.ndarray[np.uint8]:
         """
         Return the collection of elements as a 1D array of ``self.fixed_width`` uint8s.
         Each uint8 corresponds to the bitwise representation of a single character
         in a character string.
+
+        A single element will be broadcast to a (1,) numpy array.
         """
+        if isinstance(collection, ALLOWABLE_ELEMENT_TYPES):
+            collection = set(collection)
+        
         output = np.zeros((self.fixed_width, 1), dtype=np.uint8)
         for element in collection:
             char, bin_repr = self._element_map[element]
@@ -313,11 +318,13 @@ class BitsetArray(ExtensionArray):
         self, other: NodeType | Iterable[NodeType] | BitsetArray
     ) -> BitsetArray:
         """
-        Take union of two BitsetArrays of the same size, or element-wise union with a single set or element.
+        Add elements to the Bitsets represented here.
+        - If other is NodeType, add the single element.
+        - If other is Iterable[NodeType], add all elements.
+        - If other is BitsetArray of compatible shape, take element-wise union.
+        - If other is numpy array of uint8s of compatible shape, take element-wise union.
 
-        - If other is NodeType; take (series)-element-wise union with the singleton {other}.
-        - If other is Iterable[NodeType], take (series)-element-wise union with the set {other}.
-        - If other is BitsetArray of same shape, take element-wise union with the other series.
+        Under the hood, this is bitwise OR with the other object passed.
         """
         if isinstance(other, ALLOWABLE_ELEMENT_TYPES):
             other = set(other)
@@ -327,6 +334,8 @@ class BitsetArray(ExtensionArray):
                 raise TypeError("Cannot take union of different Bitsets.")
             else:
                 bitwise_result = self._uint8_view | other._uint8_view
+        elif isinstance(other, np.ndarray) and other.dtype == np.uint8:
+            bitwise_result = self._uint8_view | other
         else: 
             bitwise_result = self._uint8_view | self.dtype.as_uint8_array(other)
         fixed_width_strs = self.uint8s_to_byte_string(bitwise_result)
@@ -347,6 +356,29 @@ class BitsetArray(ExtensionArray):
             if isinstance(item, int)
             else BitsetArray(self._data[item], dtype=self.dtype)
         )
+
+    def __setitem__(
+        self,
+        key: int | slice | np.ndarray,
+        value: (
+            np.bytes_
+            | NodeType
+            | Set[NodeType]
+            | Sequence[np.bytes_ | NodeType| Set[NodeType]]
+        ),
+    ) -> None:
+        if isinstance(value, ALLOWABLE_ELEMENT_TYPES + (set,)):
+            # Interpret this as a "scalar" set that we want to set all values to
+            value = self.dtype.as_bytes(value)
+        elif isinstance(value, np.bytes_):
+            # Value is a scalar that we don't need to convert
+            pass
+        else:
+            # Assume value is a sequence, and we will have to convert each value in turn
+            value = [
+                v if isinstance(v, np.bytes_) else self.dtype.as_bytes(v) for v in value
+            ]
+        self._data[key] = value
 
     def __len__(self) -> int:
         return self._data.shape[0]
@@ -410,4 +442,5 @@ if __name__ == "__main__":
 
     f = small_s + {"a"}
     g = big_s + {"1"}
+
     pass
