@@ -16,6 +16,7 @@ from typing import (
 
 import numpy as np
 from numpy.dtypes import BytesDType
+from numpy.typing import NDArray
 import pandas as pd
 from pandas._typing import type_t, TakeIndexer
 from pandas.core.arrays.base import ExtensionArray
@@ -29,7 +30,15 @@ if TYPE_CHECKING:
 # to pass type-metadata for the elements from inside the output of self.name, so that casting
 # was successful.
 ALLOWABLE_ELEMENT_TYPES = (str,)
+CastableForPandasOps: TypeAlias = (
+    "NodeType"
+    | Iterable["NodeType"]
+    | NDArray[np.uint8]
+    | NDArray[np.bytes_]
+    | "BitsetArray"
+)
 NodeType: TypeAlias = str
+
 
 class BitsetDtype(ExtensionDtype):
     """
@@ -158,7 +167,7 @@ class BitsetDtype(ExtensionDtype):
             }
         return elements_in_set
 
-    def as_uint8_array(self, collection: Iterable[NodeType] | NodeType) -> np.ndarray[np.uint8]:
+    def as_uint8_array(self, collection: Iterable[NodeType] | NodeType) -> NDArray[np.uint8]:
         """
         Return the collection of elements as a 1D array of ``self.fixed_width`` uint8s.
         Each uint8 corresponds to the bitwise representation of a single character
@@ -196,12 +205,15 @@ class BitsetDtype(ExtensionDtype):
 
 
 class BitsetArray(ExtensionArray):
+    """
+    Represents a series of Bitsets. Each element in the series is one instance of 
+    """
 
-    _data: np.ndarray[BytesDType]
+    _data: NDArray[np.bytes_]
     _dtype: BitsetDtype
 
     @staticmethod
-    def uint8s_to_byte_string(arr: np.ndarray[np.uint8]) -> np.ndarray[BytesDType]:
+    def uint8s_to_byte_string(arr: np.ndarray[np.uint8]) -> NDArray[np.bytes_]:
         """
         Returns a view of an array of ``np.uint8``s of shape ``(M, N)``
         as an array of ``M`` fixed-width byte strings of size ``N``.
@@ -279,7 +291,7 @@ class BitsetArray(ExtensionArray):
         return f"({self.dtype.fixed_width},)B"
 
     @property
-    def _uint8_view(self) -> np.ndarray[BytesDType]:
+    def _uint8_view(self) -> NDArray[np.bytes_]:
         """
         Returns a view of the fixed-width byte strings stored in ``self._data``
         as an array of ``numpy.uint8``s, with shape
@@ -315,31 +327,92 @@ class BitsetArray(ExtensionArray):
         self._dtype = dtype
 
     def __add__(
-        self, other: NodeType | Iterable[NodeType] | BitsetArray
+        self, other: CastableForPandasOps
     ) -> BitsetArray:
         """
         Add elements to the Bitsets represented here.
-        - If other is NodeType, add the single element.
-        - If other is Iterable[NodeType], add all elements.
-        - If other is BitsetArray of compatible shape, take element-wise union.
-        - If other is numpy array of uint8s of compatible shape, take element-wise union.
 
-        Under the hood, this is bitwise OR with the other object passed.
+        - If other is ``NodeType``, add the single element to every series entry.
+        - If other is ``Iterable[NodeType]``, add all elements to every series entry.
+        - If other is ``BitsetArray`` of compatible shape, take element-wise union of series entries.
+        - If other is compatible ``np.ndarray``, take element-wise union of series entries.
+
+        Under the hood this is bitwise OR with other; self OR other.
+        """
+        return BitsetArray(
+            self.__operate_bitwise(
+                lambda A, B: A | B, other, return_as_bytestring=True
+            ),
+            dtype=self.dtype,
+        )
+
+    def __cast_to_uint8(self, other: CastableForPandasOps) -> None:
+        """
+        Casts the passed object to a ``np.uint8`` array that is compatible with bitwise operations
+        on ``self._uint8_view``. See the docstring for behaviour in the various usage cases.
+
+        Scalar elements:
+            Cast to single-element sets, then treated as set.
+        
+        Sets:
+            Are converted to the (array of) uint8s that represents the set.
+        
+        ``np.ndarray``s of ``np.uint8``
+            Are returned if they have the same number of columns as ``self._uint8_view``.
+        
+        ``np.ndarray``s of ``np.dtype("Sx")``
+            If ``x`` corresponds to the same fixed-width as ``self.dtype.np_array_dtype``, are cast
+            to the corresponding ``np.uint8`` view, like ``self._uint8_view`` is from ``self._data``.
+        
+        BitsetArrays
+            Return their ``_uint8_view`` attribute.
         """
         if isinstance(other, ALLOWABLE_ELEMENT_TYPES):
+            # Treat single-elements as single-element sets
             other = set(other)
-
         if isinstance(other, BitsetArray):
             if self.dtype != other.dtype:
-                raise TypeError("Cannot take union of different Bitsets.")
+                raise TypeError("Cannot cast a different Bitset to this one!")
             else:
-                bitwise_result = self._uint8_view | other._uint8_view
-        elif isinstance(other, np.ndarray) and other.dtype == np.uint8:
-            bitwise_result = self._uint8_view | other
-        else: 
-            bitwise_result = self._uint8_view | self.dtype.as_uint8_array(other)
-        fixed_width_strs = self.uint8s_to_byte_string(bitwise_result)
-        return BitsetArray(fixed_width_strs, dtype=self.dtype)
+                cast = other._uint8_view
+        elif isinstance(other, np.ndarray):
+            if other.dtype == np.uint8 and other.shape[0] == self._uint8_view.shape[0]:
+                # Compatible uint8s, possibly a view of another fixed-width bytestring array
+                cast = other
+            elif other.dtype == self.dtype.np_array_dtype:
+                # An array of compatible fixed-width bytestrings
+                cast = other.view(self._uint8_view_format)
+        else:
+            # Must be a collection of elements (or will error), so cast.
+            cast = self.dtype.as_uint8_array(other)
+        return cast
+
+    def __operate_bitwise(
+        self,
+        op: Callable[[NDArray[np.uint8], NDArray[np.uint8]], NDArray[np.uint8]],
+        r_value: CastableForPandasOps,
+        l_value: Optional[CastableForPandasOps] = None,
+        return_as_bytestring: bool = False,
+    ) -> NDArray[np.bytes_] | NDArray[np.uint8]:
+        """
+        Perform a bitwise operation on two compatible ``np.ndarray``s of ``np.uint8``s.
+
+        By default, the left value passed to the operator is assumed to be ``self._uint8_data``.
+
+        Return value is the result of the bitwise operation, as an array of uint8s. If you wish
+        to have this converted to the corresponding bytestring(s) before returning, use the
+        return_as_bytestring argument.
+
+        :param op: Bitwise operation to perform on input values.
+        :param r_value: Right-value to pass to the operator.
+        :param l_value: Left-value to pass to the operator.
+        :param return_as_bytestring: Result will be returned as a fixed-width bytestring.
+        """
+        l_value = self._uint8_view if l_value is None else self.__cast_to_uint8(l_value)
+        op_result = op(l_value, self.__cast_to_uint8(r_value))
+        if return_as_bytestring:
+            op_result = self.uint8s_to_byte_string(op_result)
+        return op_result
 
     def __eq__(self, other) -> bool:
         if isinstance(other, (pd.Series, pd.DataFrame, pd.Index)):
@@ -350,16 +423,19 @@ class BitsetArray(ExtensionArray):
             ans = self._data = other
         return np.squeeze(ans)
 
-    def __getitem__(self, item: int | slice | np.ndarray) -> BitsetArray:
+    def __getitem__(self, item: int | slice | NDArray) -> BitsetArray:
         return (
             self._data[item]
             if isinstance(item, int)
             else BitsetArray(self._data[item], dtype=self.dtype)
         )
 
+    def __len__(self) -> int:
+        return self._data.shape[0]
+
     def __setitem__(
         self,
-        key: int | slice | np.ndarray,
+        key: int | slice | NDArray,
         value: (
             np.bytes_
             | NodeType
@@ -380,8 +456,25 @@ class BitsetArray(ExtensionArray):
             ]
         self._data[key] = value
 
-    def __len__(self) -> int:
-        return self._data.shape[0]
+    def __sub__(
+        self, other: CastableForPandasOps
+    ) -> BitsetArray:
+        """
+        Remove elements from the Bitsets represented here.
+
+        - If other is ``NodeType``, remove the single element from all series entries.
+        - If other is ``Iterable[NodeType]``, remove all elements from all series entries.
+        - If other is ``BitsetArray`` of compatible shape, take element-wise complements of series entries.
+        - If other is compatible ``np.ndarray``, take element-wise complements of series entries.
+
+        Under the hood this the bitwise operation self AND (NOT other).
+        """
+        return BitsetArray(
+            self.__operate_bitwise(
+                lambda A, B: A & (~B), other, return_as_bytestring=True
+            ),
+            dtype=self.dtype,
+        )
 
     def _formatter(self, boxed: bool = False) -> Callable[[BytesDType], str | None]:
         if boxed: # If rendering an individual data value
@@ -391,7 +484,7 @@ class BitsetArray(ExtensionArray):
     def copy(self) -> BitsetArray:
         return BitsetArray(self._data, self.dtype, copy=True)
 
-    def isna(self) -> np.ndarray:
+    def isna(self) -> NDArray:
         """
         TODO: This isn't a great way to express missing data, but equally a bitset doesn't really ever contain missing data...
         """
@@ -442,5 +535,11 @@ if __name__ == "__main__":
 
     f = small_s + {"a"}
     g = big_s + {"1"}
+
+    print(g)
+    g += {"1"}
+    print(g)
+    g -= {"1"}
+    print(g)
 
     pass
