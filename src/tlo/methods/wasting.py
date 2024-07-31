@@ -397,14 +397,12 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         # oedema among wasted children
         oedema_in_wasted_children = self.rng.random_sample(size=len(
             children_with_wasting)) < p['prevalence_nutritional_oedema'] * p['proportion_oedema_with_WHZ<-2']
-        df.loc[children_with_wasting[oedema_in_wasted_children], 'un_am_bilateral_oedema'] = True
-        df.loc[children_with_wasting[~oedema_in_wasted_children], 'un_am_bilateral_oedema'] = False
+        df.loc[children_with_wasting, 'un_am_bilateral_oedema'] = oedema_in_wasted_children
 
         # oedema among non-wasted children
         oedema_in_non_wasted = self.rng.random_sample(size=len(
             children_without_wasting)) < p['prevalence_nutritional_oedema'] * (1 - p['proportion_oedema_with_WHZ<-2'])
-        df.loc[children_without_wasting[oedema_in_non_wasted], 'un_am_bilateral_oedema'] = True
-        df.loc[children_without_wasting[~oedema_in_non_wasted], 'un_am_bilateral_oedema'] = False
+        df.loc[children_without_wasting, 'un_am_bilateral_oedema'] = oedema_in_non_wasted
 
     def clinical_acute_malnutrition_state(self, person_id, pop_dataframe):
         """
