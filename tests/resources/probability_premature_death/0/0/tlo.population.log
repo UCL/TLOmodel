@@ -1,0 +1,2 @@
+{"uuid": "dc8474b6b3", "type": "header", "module": "tlo.population", "key": "info", "level": "INFO", "columns": {"message": "str"}, "description": null}
+{"uuid": "dc8474b6b3", "date": "2010-01-01T00:00:00", "values": ["Dataframe capacity append size: 2"]}
