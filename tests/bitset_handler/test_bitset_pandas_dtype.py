@@ -2,11 +2,12 @@ import re
 from typing import Set
 
 import numpy as np
-from numpy.random import Generator, PCG64
 import pytest
+from numpy.dtypes import BytesDType
+from numpy.random import PCG64, Generator
 from pandas.tests.extension.base import BaseDtypeTests
 
-from tlo.bitset_handler.bitset_extension import BitsetDtype, BitsetArray, NodeType
+from tlo.bitset_handler.bitset_extension import BitsetArray, BitsetDtype, NodeType
 
 
 @pytest.fixture(scope="session")
@@ -51,7 +52,7 @@ def data_for_twos(dtype: BitsetDtype) -> None:
 
 
 @pytest.fixture
-def data_missing(dtype: BitsetDtype) -> np.ndarray[np.dtypes.BytesDType]:
+def data_missing(dtype: BitsetDtype) -> np.ndarray[BytesDType]:
     data = np.zeros((2,), dtype=dtype.np_array_dtype)
     data[0] = dtype.na_value
     data[1] = dtype.as_bytes({"a"})

@@ -10,18 +10,18 @@ from typing import (
     Iterable,
     List,
     Optional,
-    Set,
     Sequence,
+    Set,
     Tuple,
     Type,
     TypeAlias,
 )
 
 import numpy as np
+import pandas as pd
 from numpy.dtypes import BytesDType
 from numpy.typing import NDArray
-import pandas as pd
-from pandas._typing import type_t, TakeIndexer
+from pandas._typing import TakeIndexer, type_t
 from pandas.core.arrays.base import ExtensionArray
 from pandas.core.dtypes.base import ExtensionDtype
 
@@ -716,7 +716,7 @@ if __name__ == "__main__":
     # Examining debugger shows that | {"c", "b"} is actually passing in
     # np.array([{"c", "b"}, {"c", "b"}], dtype=object) is the r value for some reason!?
     f += {"c", "b"}
-    f or {"c"}
+    f | {"c"}
     f | {"c", "b"}
     print(f)
     # Same bug as above down here too - weird cast that happens when using and
