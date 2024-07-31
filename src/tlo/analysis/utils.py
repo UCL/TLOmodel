@@ -86,6 +86,33 @@ def parse_log_file(log_filepath, level: int = logging.INFO):
     return LogsDict({name: handle.name for name, handle in module_name_to_filehandle.items()}, level)
 
 
+def merge_log_files(log_path_1: Path, log_path_2: Path, output_path: Path) -> None:
+    """Merge two log files, skipping any repeated header lines.
+    
+    :param log_path_1: Path to first log file to merge. Records from this log file will
+        appear first in merged log file.
+    :param log_path_2: Path to second log file to merge. Records from this log file will
+        appear after those in log file at `log_path_1` and any header lines in this file
+        which are also present in log file at `log_path_1` will be skipped.
+    :param output_path: Path to write merged log file to. Can be one of `log_path_1` or
+        `log_path_2` as data is read from files before writing.
+    """
+    with log_path_1.open("r") as log_file_1:
+        log_lines_1 = log_file_1.readlines()
+    with log_path_2.open("r") as log_file_2:
+        log_lines_2 = log_file_2.readlines()
+    with output_path.open("w") as output_file:
+        output_file.writelines(log_lines_1)
+        for log_line in log_lines_2:
+            log_data = json.loads(log_line)
+            if not (
+                "type" in log_data
+                and log_data["type"] == "header"
+                and log_line in log_lines_1
+            ):
+                output_file.write(log_line)
+
+
 def write_log_to_excel(filename, log_dataframes):
     """Takes the output of parse_log_file() and creates an Excel file from dataframes"""
     metadata = list()
@@ -1129,7 +1156,7 @@ def get_parameters_for_status_quo() -> Dict:
             "equip_availability": "all",  # <--- NB. Existing calibration is assuming all equipment is available
         },
     }
-    
+
 def get_parameters_for_standard_mode2_runs() -> Dict:
     """
     Returns a dictionary of parameters and their updated values to indicate
