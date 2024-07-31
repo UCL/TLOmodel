@@ -206,7 +206,59 @@ class BitsetDtype(ExtensionDtype):
 
 class BitsetArray(ExtensionArray):
     """
-    Represents a series of Bitsets. Each element in the series is one instance of 
+    Represents a series of Bitsets; each element in the series is a fixed-width bytestring,
+    which represents some possible combination of elements of a bitset as defined by
+    ``self.dtype``.
+
+    Note on use of Operators
+    ------------------------
+
+    The series supports direct item assignment via ``.loc`` and ``.at``, however due to the
+    series using ``np.bytes_`` data types accessing a single value will return a bytestring
+    rather than a set-representation. This means that syntax such as
+
+    ```python
+    self.loc[0] = {"an_element"}
+    ```
+
+    will raise a ``TypeError`` since ``self.loc[0]`` is a ``np._bytes_`` object. To perform
+    actions like this, one has to write
+
+    ```python
+    self.loc[0] = self.dtype.as_bytes({"an_element"})
+    ```
+
+    IE cast the human-readable set to the appropriate bytestring. The same applies for
+    all single-element operations.
+
+    However, the series does support parsing of human-readable sets when operating on slices
+    of the series. For example,
+
+    ```python
+    self.loc[0:2] = {"an_element"}
+    ```
+
+    will convert {"an_element"} into the appropriate bytestring, and then set entries 0 and 1
+    in the series to this value. This means that one can get around the aforementioned
+    inconvenience by using single-element slices;
+
+    ```python
+    self.loc[0] = {"an_element"} # Will raise a TypeError, but...
+    self.loc[0:1] = {"an_element"} # Correctly sets entry 0 to the
+                                   # bytestring representing the set {"an_element"}
+    ```
+
+    Supported Operations
+    --------------------
+
+    = :
+        Directly assign the value on the right to the entry/entries on the left.
+    +, += :
+        Add the (elements in) the right to the entries on the left,
+        if they are not already present.
+    -, -= :
+        Remove the (elements in) the right from the entries on the left,
+        if they are present.
     """
 
     _data: NDArray[np.bytes_]
