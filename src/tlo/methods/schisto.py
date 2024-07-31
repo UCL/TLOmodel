@@ -88,9 +88,8 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
                                             'rounds, with the frequency given in months'),
     }
 
-    def __init__(self, name=None, resourcefilepath=None, mda_execute=True):
+    def __init__(self, name=None, mda_execute=True):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
         self.mda_execute = mda_execute
 
         # Create pointer that will be to dict of disability weights
@@ -119,11 +118,11 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
                 s.loc[(s.index >= low_limit) & (s.index <= high_limit)] = name
         self.age_group_mapper = s.to_dict()
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath=None):
         """Read parameters and register symptoms."""
 
         # Load parameters
-        workbook = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Schisto.xlsx', sheet_name=None)
+        workbook = pd.read_excel(Path(resourcefilepath) / 'ResourceFile_Schisto.xlsx', sheet_name=None)
         self.parameters = self._load_parameters_from_workbook(workbook)
         for _spec in self.species.values():
             self.parameters.update(_spec.load_parameters_from_workbook(workbook))
