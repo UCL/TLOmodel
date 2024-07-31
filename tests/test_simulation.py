@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 
 from tlo import Date, DateOffset, Module, Population, Simulation, logging
+from tlo.analysis.utils import merge_log_files, parse_log_file
 from tlo.methods.fullmodel import fullmodel
 from tlo.methods.healthsystem import HSI_Event, HSIEventQueueItem
 from tlo.simulation import (
@@ -169,7 +170,7 @@ def intermediate_date(start_date, end_date):
 
 @pytest.fixture(scope="module")
 def logging_custom_levels():
-    return {"*": logging.CRITICAL}
+    return {"*": logging.INFO}
 
 
 def _simulation_factory(
@@ -243,6 +244,26 @@ def test_save_load_pickle_after_simulating(tmp_path, simulated_simulation):
     _check_simulations_are_equal(simulated_simulation, loaded_simulation)
 
 
+def _check_parsed_logs_are_equal(
+    log_path_1: Path,
+    log_path_2: Path,
+    module_name_key_pairs_to_skip: set[tuple[str, str]],
+) -> None:
+    logs_dict_1 = parse_log_file(log_path_1)
+    logs_dict_2 = parse_log_file(log_path_2)
+    assert logs_dict_1.keys() == logs_dict_2.keys()
+    for module_name in logs_dict_1.keys():
+        module_logs_1 = logs_dict_1[module_name]
+        module_logs_2 = logs_dict_2[module_name]
+        assert module_logs_1.keys() == module_logs_2.keys()
+        for key in module_logs_1:
+            if key == "_metadata":
+                assert module_logs_1[key] == module_logs_2[key]
+            elif (module_name, key) not in module_name_key_pairs_to_skip:
+                assert module_logs_1[key].equals(module_logs_2[key])
+
+
+@pytest.mark.slow
 def test_continuous_and_interrupted_simulations_equal(
     tmp_path,
     simulation,
@@ -257,6 +278,7 @@ def test_continuous_and_interrupted_simulations_equal(
     simulation.run_simulation_to(to_date=intermediate_date)
     pickle_path = tmp_path / "simulation.pkl"
     simulation.save_to_pickle(pickle_path=pickle_path)
+    simulation.close_output_file()
     log_config = {
         "filename": "test_continued",
         "directory": tmp_path,
@@ -266,6 +288,13 @@ def test_continuous_and_interrupted_simulations_equal(
     interrupted_simulation.run_simulation_to(to_date=end_date)
     interrupted_simulation.finalise()
     _check_simulations_are_equal(simulated_simulation, interrupted_simulation)
+    merged_log_path = tmp_path / "concatenated.log"
+    merge_log_files(
+        simulation.log_filepath, interrupted_simulation.log_filepath, merged_log_path
+    )
+    _check_parsed_logs_are_equal(
+        simulated_simulation.log_filepath, merged_log_path, {("tlo.simulation", "info")}
+    )
 
 
 def test_run_simulation_to_past_end_date_raises(
