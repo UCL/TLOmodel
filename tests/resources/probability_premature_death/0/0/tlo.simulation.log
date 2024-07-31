@@ -1,6 +1,0 @@
-{"uuid": "b07716682c", "type": "header", "module": "tlo.simulation", "key": "info", "level": "INFO", "columns": {"message": "str"}, "description": null}
-{"uuid": "b07716682c", "date": "2010-01-01T00:00:00", "values": ["Log output: /Users/rem76/PycharmProjects/TLOmodel/outputs/probability_premature_death/0/0/dummy_simulation_prob_premature_death__2024-07-30T185659.log"]}
-{"uuid": "b07716682c", "date": "2010-01-01T00:00:00", "values": ["Simulation RNG user entropy = 0"]}
-{"uuid": "b07716682c", "date": "2010-01-01T00:00:00", "values": ["Demography RNG auto (entropy, spawn key) = (0, 0)"]}
-{"uuid": "b07716682c", "date": "2010-01-01T00:00:00", "values": ["make_initial_population() 0.015529155731201172 s"]}
-{"uuid": "b07716682c", "date": "2080-01-01T00:00:00", "values": ["simulate() 22.931555032730103 s"]}
