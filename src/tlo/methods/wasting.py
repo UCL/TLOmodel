@@ -205,7 +205,6 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         """
         :param data_folder: path of a folder supplied to the Simulation containing data files. Typically,
         modules would read a particular file within here.
-        :return:
         """
         # Read parameters from the resource file
         self.load_parameters_from_dataframe(
@@ -222,7 +221,6 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         of those properties 'owned' by this module, i.e. those declared in the PROPERTIES dictionary above.
 
         :param population:
-        :return:
         """
         df = population.props
 
@@ -383,7 +381,6 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         """
         This function applies the probability of bilateral oedema present in wasting and non-wasted cases
         :param idx: index of children under 5, or person_id
-        :return:
         """
         df = self.sim.population.props
         p = self.parameters
@@ -411,7 +408,6 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         complications, applicable to SAM cases only, requiring inpatient care.
         :param person_id: individual id
         :param pop_dataframe: population dataframe
-        :return:
         """
         df = pop_dataframe
         p = self.parameters
@@ -476,7 +472,6 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         medical complications) that determine the clinical state of acute malnutrition. This will include both wasted
         and non-wasted children with other signs of acute malnutrition.
         :param population: population dataframe
-        :return:
         """
         df = population
 
@@ -501,6 +496,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         experienced by persons in the previous month. Only rows for alive-persons must be returned. The names of the
         series of columns is taken to be the label of the cause of this disability. It will be recorded by the
         healthburden module as <ModuleName>_<Cause>.
+        :return:
         """
         # Dict to hold the DALY weights
         daly_wts = dict()
@@ -595,7 +591,6 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         This function will apply the linear model of recovery based on intervention given
         :param person_id:
         :param intervention:
-        :return:
         """
         df = self.sim.population.props
         # Log that the treatment is provided:
@@ -1151,8 +1146,9 @@ class WastingModels:
         self.wasting_incidence_lm = self.get_wasting_incidence()
 
     def get_wasting_incidence(self) -> LinearModel:
-        """ return a scaled wasting incidence linear model amongst young children
-        :params df: population dataframe """
+        """
+        :return: a scaled wasting incidence linear model amongst young children
+        """
         df = self.module.sim.population.props
 
         def unscaled_wasting_lm(intercept: Union[float, int] = 1.0) -> LinearModel:
@@ -1191,9 +1187,9 @@ class WastingModels:
         return scaled_wasting_incidence_lm
 
     def get_wasting_prevalence(self, agegp: str) -> LinearModel:
-        """ return a scaled wasting prevalence linear model amongst young children less than 5 years
-        :params df: population dataframe
+        """
         :param agegp: children's age group
+        :return: a scaled wasting prevalence linear model amongst young children less than 5 years
         """
         df = self.module.sim.population.props
 
