@@ -1,3 +1,8 @@
+"""
+Current limitations:
+
+- We can't do {"a"} in Series yet (need to find appropriate method overwrite)
+"""
 from __future__ import annotations
 
 import re
@@ -222,15 +227,19 @@ class BitsetArray(ExtensionArray):
     so that users can continue to pass ``set``s as scalar arguments on the left.
 
     Currently implemented methods are:
-    
+
     = :
         Directly assign the value on the right to the entry/entries on the left.
-    +, += :
-        Add the (elements in) the right to the entries on the left,
-        if they are not already present.
+    +, | :
+        Perform union of the values on the left with those on the right.
+    +=, |= :
+        In-place union; add values on the right to the sets on the left.
+    & :
+        Perform intersection of the values on the left with those on the right.
+    &= :
+        In-place intersection; retain only elements on the left that appear on the right.
     -, -= :
-        Remove the (elements in) the right from the entries on the left,
-        if they are present.
+        Remove the values on the right from the sets on the left.
     """
 
     _data: NDArray[np.bytes_]
@@ -354,18 +363,25 @@ class BitsetArray(ExtensionArray):
         self, other: CastableForPandasOps
     ) -> BitsetArray:
         """
-        Add elements to the Bitsets represented here.
+        Element-wise union, delegates to ``__or__``.
+        """
+        return self.__or__(other)
 
-        - If other is ``NodeType``, add the single element to every series entry.
-        - If other is ``Iterable[NodeType]``, add all elements to every series entry.
-        - If other is ``BitsetArray`` of compatible shape, take element-wise union of series entries.
-        - If other is compatible ``np.ndarray``, take element-wise union of series entries.
+    def __and__(self,other: CastableForPandasOps
+    ) -> BitsetArray:
+        """
+        Entry-wise intersection with other.
 
-        Under the hood this is bitwise OR with other; self OR other.
+        - If other is ``NodeType`` or ``Iterable[NodeType]``, perform entry-wise AND with the set
+        representing the passed element values.
+        - If other is ``BitsetArray`` of compatible shape, take entry-wise intersection.
+        - If other is compatible ``np.ndarray``, take entry-wise intersection.
+
+        Under the hood this is bitwise AND with other; self AND other.
         """
         return BitsetArray(
             self.__operate_bitwise(
-                lambda A, B: A | B, other, return_as_bytestring=True
+                lambda A, B: A & B, other, return_as_bytestring=True
             ),
             dtype=self.dtype,
         )
@@ -456,6 +472,26 @@ class BitsetArray(ExtensionArray):
 
     def __len__(self) -> int:
         return self._data.shape[0]
+
+    def __or__(
+        self, other: CastableForPandasOps
+    ) -> BitsetArray:
+        """
+        Entry-wise union with other.
+
+        - If other is ``NodeType`` or ``Iterable[NodeType]``, perform entry-wise OR with the set
+        representing the passed element values.
+        - If other is ``BitsetArray`` of compatible shape, take entry-wise union.
+        - If other is compatible ``np.ndarray``, take entry-wise union.
+
+        Under the hood this is bitwise OR with other; self OR other.
+        """
+        return BitsetArray(
+            self.__operate_bitwise(
+                lambda A, B: A | B, other, return_as_bytestring=True
+            ),
+            dtype=self.dtype,
+        )
 
     def __setitem__(
         self,
