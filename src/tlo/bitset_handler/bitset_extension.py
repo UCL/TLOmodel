@@ -11,6 +11,7 @@ from typing import (
     Callable,
     Dict,
     Iterable,
+    List,
     Optional,
     Set,
     Sequence,
@@ -35,6 +36,9 @@ if TYPE_CHECKING:
 # to pass type-metadata for the elements from inside the output of self.name, so that casting
 # was successful.
 ALLOWABLE_ELEMENT_TYPES = (str,)
+SingletonForPandasOps: TypeAlias = (
+    "NodeType" | Iterable["NodeType"] | NDArray[np.uint8] | np.bytes_
+)
 CastableForPandasOps: TypeAlias = (
     "NodeType"
     | Iterable["NodeType"]
@@ -339,6 +343,14 @@ class BitsetArray(ExtensionArray):
         return self._data.view(self._uint8_view_format)
 
     @property
+    def as_sets(self) -> List[Set[NodeType]]:
+        """
+        Return a list whose entry i is the set representation of the
+        bitset in entry i of this array.
+        """
+        return [self.dtype.as_set(x) for x in self._data]
+
+    @property
     def dtype(self) -> BitsetDtype:
         return self._dtype
 
@@ -427,6 +439,33 @@ class BitsetArray(ExtensionArray):
             cast = self.dtype.as_uint8_array(other)
         return cast
 
+    def __contains__(self, item: SingletonForPandasOps | np.bytes_) -> np.ndarray[bool] | bool:
+        if isinstance(item, ALLOWABLE_ELEMENT_TYPES):
+            item = set(item)
+        if isinstance(item, set):
+            return item in self.as_sets
+        else:
+            return super().__contains__(item)
+
+    def __eq__(self, other) -> bool:
+        if isinstance(other, (pd.Series, pd.DataFrame, pd.Index)):
+            return NotImplemented
+        elif isinstance(other, set):
+            ans = self._data == self.dtype.as_bytes(other)
+        else:
+            ans = self._data = other
+        return np.squeeze(ans)
+
+    def __getitem__(self, item: int | slice | NDArray) -> BitsetArray:
+        return (
+            self.dtype.as_set(self._data[item])
+            if isinstance(item, int)
+            else BitsetArray(self._data[item], dtype=self.dtype)
+        )
+
+    def __len__(self) -> int:
+        return self._data.shape[0]
+
     def __operate_bitwise(
         self,
         op: Callable[[NDArray[np.uint8], NDArray[np.uint8]], NDArray[np.uint8]],
@@ -453,25 +492,6 @@ class BitsetArray(ExtensionArray):
         if return_as_bytestring:
             op_result = self.uint8s_to_byte_string(op_result)
         return op_result
-
-    def __eq__(self, other) -> bool:
-        if isinstance(other, (pd.Series, pd.DataFrame, pd.Index)):
-            return NotImplemented
-        elif isinstance(other, set):
-            ans = self._data == self.dtype.as_bytes(other)
-        else:
-            ans = self._data = other
-        return np.squeeze(ans)
-
-    def __getitem__(self, item: int | slice | NDArray) -> BitsetArray:
-        return (
-            self.dtype.as_set(self._data[item])
-            if isinstance(item, int)
-            else BitsetArray(self._data[item], dtype=self.dtype)
-        )
-
-    def __len__(self) -> int:
-        return self._data.shape[0]
 
     def __or__(
         self, other: CastableForPandasOps
@@ -536,9 +556,9 @@ class BitsetArray(ExtensionArray):
             dtype=self.dtype,
         )
 
-    def _formatter(self, boxed: bool = False) -> Callable[[BytesDType], str | None]:
+    def _formatter(self, boxed: bool = False) -> Callable[[np.bytes_], str | None]:
         if boxed: # If rendering an individual data value
-            return lambda x: ",".join(x)
+            return lambda x: ",".join(x) if x else "{}"
         return repr # Render the table itself
 
     def copy(self) -> BitsetArray:
