@@ -52,8 +52,7 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
     output = parse_log_file(sim.log_filepath)
 
     prevalence = output['tlo.methods.healthburden']['prevalence_of_diseases']
-    prevalence_malaria_function = prevalence['Malaria']
-    prevalence_malaria_log_child = output['tlo.methods.malaria']["prevalence"]["child2_10_prev"]
-    prevalence_malaria_log_adult = output['tlo.methods.malaria']["prevalence"]["clinical_prev"]
+    prevalence_tb_function = prevalence['Tb']
+    prevalence_tb_log = output['tlo.methods.tb']["tb_prevalence"]["tbPrevActive"] + output['tlo.methods.tb']["tb_prevalence"]["tbPrevLatent"]
 
-    assert prevalence_malaria_function == 0
+    assert prevalence_tb_function ==  prevalence_tb_log
