@@ -228,6 +228,9 @@ class BitsetArray(ExtensionArray):
     of thumb, if a binary operator can be performed on ``set``s, it will also work identically,
     but entry-wise, on a bitset series.
 
+    ``NodeType`` instances will be cast to ``set``s if provided as singletons. Comparisons will be
+    performed entry-wise if a suitable vector of values is provided as the comparison target.
+
     Currently implemented methods are:
 
     = :
@@ -243,31 +246,15 @@ class BitsetArray(ExtensionArray):
     -, -= :
         Remove the values on the right from the sets on the left.
     <, <= :
-        Entry-wise subset (strict subset) with a single set on the right.
+        Entry-wise subset (strict subset) with the values on the right.
     >, >= :
-        Entry-wise superset (strict superset) with a single set on the right.
+        Entry-wise superset (strict superset) with the values on the right.
+        Note that the >= operation is the equivalent of entry-wise "if the values on the right
+        are contained in the bitsets on the left".
     """
 
     _data: NDArray[np.bytes_]
     _dtype: BitsetDtype
-
-    @staticmethod
-    def cast_before_comparison_op(value: SingletonForPandasOps) -> Set[NodeType]:
-        """
-        Common steps taken before employing comparison operations on this class.
-        
-        Converts the value passed (as safely as possible) to a set, which can then
-        be compared with the bitsets stored in the instance.
-        """
-        if isinstance(value, ALLOWABLE_ELEMENT_TYPES):
-            return set(value)
-        elif not isinstance(value, set):
-            value = set(value)
-
-        if all([isinstance(item, ALLOWABLE_ELEMENT_TYPES) for item in value]):
-            return value
-        else:
-            raise ValueError(f"Attempting to compare with non-element types: {value}")
 
     @staticmethod
     def uint8s_to_byte_string(arr: np.ndarray[np.uint8]) -> NDArray[np.bytes_]:
@@ -418,7 +405,40 @@ class BitsetArray(ExtensionArray):
             dtype=self.dtype,
         )
 
-    def __cast_to_uint8(self, other: CastableForPandasOps) -> None:
+    def __cast_before_comparison_op(
+        self, value: CastableForPandasOps
+    ) -> Set[NodeType] | bool:
+        """
+        Common steps taken before employing comparison operations on this class.
+
+        Converts the value passed (as safely as possible) to a set, which can then
+        be compared with the bitsets stored in the instance.
+
+        Return values are the converted value, and whether this value should be considered
+        a scalar-set (False) or a collection of sets (True).
+        """
+        if isinstance(value, ALLOWABLE_ELEMENT_TYPES):
+            return set(value), False
+        elif isinstance(value, set):
+            return value, False
+        elif isinstance(value, BitsetArray):
+            return value.as_sets, True
+        elif isinstance(value, np.ndarray):
+            return [
+                self.dtype.as_set(bytestr)
+                for bytestr in self.uint8s_to_byte_string(self.__cast_to_uint8(value))
+            ]
+        # Last ditch attempt - we might have been given a list of sets, for example...
+        try:
+            value = set(value)
+            if all([isinstance(item, ALLOWABLE_ELEMENT_TYPES) for item in value]):
+                return value, False
+            elif all([isinstance(item, set) for item in value]):
+                return value, True
+        except Exception as e:
+            raise ValueError(f"Cannot compare bitsets with: {value}") from e
+
+    def __cast_to_uint8(self, other: CastableForPandasOps) -> NDArray[np.uint8]:
         """
         Casts the passed object to a ``np.uint8`` array that is compatible with bitwise operations
         on ``self._uint8_view``. See the docstring for behaviour in the various usage cases.
@@ -454,6 +474,7 @@ class BitsetArray(ExtensionArray):
             elif other.dtype == self.dtype.np_array_dtype:
                 # An array of compatible fixed-width bytestrings
                 cast = other.view(self._uint8_view_format)
+            raise ValueError(f"Cannot convert {other} to an array of uint8s representing a bitset")
         else:
             # Must be a collection of elements (or will error), so cast.
             cast = self.dtype.as_uint8_array(other)
@@ -467,14 +488,23 @@ class BitsetArray(ExtensionArray):
         the single value to a bytestring and use numpy array comparison.
         
         For the other set comparison methods however, it's easier as a first implementation
-        for us to convert to sets and run the set operations. We could do bitwise <, > etc ops
-        on the byte arrays to be faster though, in theory.
+        for us to convert to sets and run the set operations.  If there was a Pythonic way
+        of doing "bitwise less than" and "bitwise greater than", we could instead take the
+        same approach as in __operate_bitwise:
+        - Convert the inputs to ``NDArray[np.bytes_]``.
+        - Compare using __operate_bitwise with self._data.
+
+        which would avoid us having to cast everything to a list and then do a list
+        comprehension (the numpy direct array comparison should be faster).
         """
         if isinstance(other, (pd.Series, pd.DataFrame, pd.Index)):
             return NotImplemented
-        other = self.cast_before_comparison_op(other)
+        other, is_vector = self.__cast_before_comparison_op(other)
 
-        return np.array([op(s, other) for s in self.as_sets], dtype=bool)
+        if is_vector:
+            return np.array([op(s, other[i]) for i, s in enumerate(self.as_sets)])
+        else:
+            return np.array([op(s, other) for s in self.as_sets], dtype=bool)
 
     def __contains__(self, item: SingletonForPandasOps | Any) -> BooleanArray | bool:
         if isinstance(item, ALLOWABLE_ELEMENT_TYPES):
@@ -493,7 +523,7 @@ class BitsetArray(ExtensionArray):
         if isinstance(other, set):
             ans = self._data == self.dtype.as_bytes(other)
         else:
-            ans = self._data = other
+            ans = self._data == other
         return np.squeeze(ans)
 
     def __getitem__(self, item: int | slice | NDArray) -> BitsetArray:
@@ -680,8 +710,21 @@ if __name__ == "__main__":
     f = small_s + {"a"}
     g = big_s + {"1"}
 
+    print(f)
+    # Bug the first - __or__ seems to undergo a cast before being passed in
+    # since += here works but |= (which should be equivalent) fails...
+    # Examining debugger shows that | {"c", "b"} is actually passing in
+    # np.array([{"c", "b"}, {"c", "b"}], dtype=object) is the r value for some reason!?
+    f += {"c", "b"}
+    f or {"c"}
+    f | {"c", "b"}
+    print(f)
+    # Same bug as above down here too - weird cast that happens when using and
+    f & {"a"}
+    f &= {"a", "d"}
+
     print(g)
     print(g <= {"8"})
     print(g > {"8"})
-
+    print(g < g)
     pass
