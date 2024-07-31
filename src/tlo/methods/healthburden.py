@@ -684,14 +684,12 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
         # 1) Ask each disease module to log the prevalence for the previous month
         prevalence_from_each_disease_module = list()
         for disease_module_name in self.module.recognised_modules_names:
-            #print(disease_module_name)
             disease_module = self.sim.modules[disease_module_name]
             prevalence_from_disease_module = disease_module.report_daly_values()
             # Check type is in acceptable form and make into dataframe if not already
             assert type(prevalence_from_disease_module) in (pd.Series, pd.DataFrame)
 
             prevalence_from_disease_module = pd.DataFrame(prevalence_from_disease_module)
-            #print(prevalence_from_disease_module)
             # Perform checks on what has been returned
             assert set(prevalence_from_disease_module.index) == set(idx_alive)
             assert not pd.isnull(prevalence_from_disease_module).any().any()
@@ -738,7 +736,6 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
         self.module.prevalence_of_diseases = \
             pd.DataFrame(index=self.module.multi_index_for_age_and_wealth_and_time)\
               .merge(combined, left_index=True, right_index=True, how='left')
-        print(self.module.prevalence_of_diseases)
 
         # Check multi-index is in check and that the addition of prevalence has worked
         assert self.module.prevalence_of_diseases.index.equals(self.module.multi_index_for_age_and_wealth_and_time)
