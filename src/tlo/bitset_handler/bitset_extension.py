@@ -1,13 +1,10 @@
-"""
-Current limitations:
-
-- We can't do {"a"} in Series yet (need to find appropriate method overwrite)
-"""
 from __future__ import annotations
 
+import operator
 import re
 from typing import (
     TYPE_CHECKING,
+    Any,
     Callable,
     Dict,
     Iterable,
@@ -36,9 +33,7 @@ if TYPE_CHECKING:
 # to pass type-metadata for the elements from inside the output of self.name, so that casting
 # was successful.
 ALLOWABLE_ELEMENT_TYPES = (str,)
-SingletonForPandasOps: TypeAlias = (
-    "NodeType" | Iterable["NodeType"] | NDArray[np.uint8] | np.bytes_
-)
+BooleanArray: TypeAlias = np.ndarray[bool]
 CastableForPandasOps: TypeAlias = (
     "NodeType"
     | Iterable["NodeType"]
@@ -46,6 +41,7 @@ CastableForPandasOps: TypeAlias = (
     | NDArray[np.bytes_]
     | "BitsetArray"
 )
+SingletonForPandasOps: TypeAlias = "NodeType" | Iterable["NodeType"]
 NodeType: TypeAlias = str
 
 
@@ -228,7 +224,9 @@ class BitsetArray(ExtensionArray):
     Supported Operations (slices)
     -----------------------------
     When operating on slices or masks of the series, we have to re-implement the desired operators
-    so that users can continue to pass ``set``s as scalar arguments on the left.
+    so that users can continue to pass ``set``s as scalar arguments on the left. As a general rule
+    of thumb, if a binary operator can be performed on ``set``s, it will also work identically,
+    but entry-wise, on a bitset series.
 
     Currently implemented methods are:
 
@@ -244,10 +242,32 @@ class BitsetArray(ExtensionArray):
         In-place intersection; retain only elements on the left that appear on the right.
     -, -= :
         Remove the values on the right from the sets on the left.
+    <, <= :
+        Entry-wise subset (strict subset) with a single set on the right.
+    >, >= :
+        Entry-wise superset (strict superset) with a single set on the right.
     """
 
     _data: NDArray[np.bytes_]
     _dtype: BitsetDtype
+
+    @staticmethod
+    def cast_before_comparison_op(value: SingletonForPandasOps) -> Set[NodeType]:
+        """
+        Common steps taken before employing comparison operations on this class.
+        
+        Converts the value passed (as safely as possible) to a set, which can then
+        be compared with the bitsets stored in the instance.
+        """
+        if isinstance(value, ALLOWABLE_ELEMENT_TYPES):
+            return set(value)
+        elif not isinstance(value, set):
+            value = set(value)
+
+        if all([isinstance(item, ALLOWABLE_ELEMENT_TYPES) for item in value]):
+            return value
+        else:
+            raise ValueError(f"Attempting to compare with non-element types: {value}")
 
     @staticmethod
     def uint8s_to_byte_string(arr: np.ndarray[np.uint8]) -> NDArray[np.bytes_]:
@@ -439,7 +459,24 @@ class BitsetArray(ExtensionArray):
             cast = self.dtype.as_uint8_array(other)
         return cast
 
-    def __contains__(self, item: SingletonForPandasOps | np.bytes_) -> np.ndarray[bool] | bool:
+    def __comparison_op(self, other: CastableForPandasOps, op: Callable[[Set[NodeType], Set[NodeType]], bool]) -> BooleanArray:
+        """
+        Abstract method for strict and non-strict comparison operations.
+
+        Notably, __eq__ does not redirect here since it is more efficient for us to convert
+        the single value to a bytestring and use numpy array comparison.
+        
+        For the other set comparison methods however, it's easier as a first implementation
+        for us to convert to sets and run the set operations. We could do bitwise <, > etc ops
+        on the byte arrays to be faster though, in theory.
+        """
+        if isinstance(other, (pd.Series, pd.DataFrame, pd.Index)):
+            return NotImplemented
+        other = self.cast_before_comparison_op(other)
+
+        return np.array([op(s, other) for s in self.as_sets], dtype=bool)
+
+    def __contains__(self, item: SingletonForPandasOps | Any) -> BooleanArray | bool:
         if isinstance(item, ALLOWABLE_ELEMENT_TYPES):
             item = set(item)
         if isinstance(item, set):
@@ -450,7 +487,10 @@ class BitsetArray(ExtensionArray):
     def __eq__(self, other) -> bool:
         if isinstance(other, (pd.Series, pd.DataFrame, pd.Index)):
             return NotImplemented
-        elif isinstance(other, set):
+        elif isinstance(other, ALLOWABLE_ELEMENT_TYPES):
+            other = set(other)
+
+        if isinstance(other, set):
             ans = self._data == self.dtype.as_bytes(other)
         else:
             ans = self._data = other
@@ -463,8 +503,32 @@ class BitsetArray(ExtensionArray):
             else BitsetArray(self._data[item], dtype=self.dtype)
         )
 
+    def __ge__(self, other: SingletonForPandasOps) -> BooleanArray:
+        """
+        Entry-wise non-strict superset: self >= other_set.
+        """
+        return self.__comparison_op(other, operator.ge)
+
+    def __gt__(self, other: SingletonForPandasOps) -> BooleanArray:
+        """
+        Entry-wise strict superset: self > other_set.
+        """
+        return self.__comparison_op(other, operator.gt)
+
     def __len__(self) -> int:
         return self._data.shape[0]
+
+    def __le__(self, other: SingletonForPandasOps) -> BooleanArray:
+        """
+        Entry-wise non-strict subset: self <= other_set.
+        """
+        return self.__comparison_op(other, operator.le)
+
+    def __lt__(self, other: SingletonForPandasOps) -> BooleanArray:
+        """
+        Entry-wise strict subset: self < other_set.
+        """
+        return self.__comparison_op(other, operator.lt)
 
     def __operate_bitwise(
         self,
@@ -617,9 +681,7 @@ if __name__ == "__main__":
     g = big_s + {"1"}
 
     print(g)
-    g += {"1"}
-    print(g)
-    g -= {"1"}
-    print(g)
+    print(g <= {"8"})
+    print(g > {"8"})
 
     pass
