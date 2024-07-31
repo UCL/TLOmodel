@@ -344,7 +344,8 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             df.loc[idx, 'un_am_MUAC_category'] = df.loc[idx].apply(
                 lambda x: self.rng.choice(['<115mm', '[115-125)mm'],
                                           p=[p['proportion_WHZ<-3_with_MUAC<115mm'],
-                                             prop_severe_wasting_with_muac_between_115and125mm])
+                                             prop_severe_wasting_with_muac_between_115and125mm]),
+                axis=1
             )
 
         # ----- MUAC distribution for moderate wasting (-3 <= WHZ < -2) ------
@@ -356,7 +357,8 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                 lambda x: self.rng.choice(['<115mm', '[115-125)mm', '>=125mm'],
                                           p=[p['proportion_-3<=WHZ<-2_with_MUAC<115mm'],
                                              p['proportion_-3<=WHZ<-2_with_MUAC_[115-125)mm'],
-                                             prop_moderate_wasting_with_muac_over_125mm])
+                                             prop_moderate_wasting_with_muac_over_125mm]),
+                axis=1
             )
 
         # ----- MUAC distribution for WHZ >= -2 -----
@@ -373,7 +375,8 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
             df.loc[idx, 'un_am_MUAC_category'] = df.loc[idx].apply(
                 lambda x: self.rng.choice(['<115mm', '[115-125)mm', '>=125mm'],
-                                          p=[prob_less_than_115, pro_between_115_125, probability_over_or_equal_125])
+                                          p=[prob_less_than_115, pro_between_115_125, probability_over_or_equal_125]),
+                axis=1
             )
 
     def nutritional_oedema_present(self, idx):
@@ -471,9 +474,9 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
     def population_poll_clinical_am(self, population):
         """
-        Update at the population level other anthropometric indices  and clinical signs (MUAC, oedema,
-        medical complications) that determine the clinical state of acute malnutrition This will include both wasted
-        and non-wasted children with other signs of acute malnutrition
+        Update at the population level other anthropometric indices and clinical signs (MUAC, oedema,
+        medical complications) that determine the clinical state of acute malnutrition. This will include both wasted
+        and non-wasted children with other signs of acute malnutrition.
         :param population: population dataframe
         :return:
         """
