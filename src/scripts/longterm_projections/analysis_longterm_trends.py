@@ -2,14 +2,6 @@
 """
 Plot to demonstrate correspondence between model and data outputs wrt births, population size and total deaths.
 
-This uses the results of the Scenario defined in:
-
-src/scripts/calibration_analyses/scenarios/long_run_no_diseases.py
-
-or
-
-src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py
-
 """
 import argparse
 from pathlib import Path
@@ -31,8 +23,9 @@ from tlo.analysis.utils import (
 )
 
 PREFIX_ON_FILENAME = '1'
-max_year = 2030
-years_of_interest = [2010, 2015, 2018, 2025, 2030, 2035, 2040]
+max_year = 2080
+min_year = 2010
+years_of_interest = list(range(min_year, max_year + 1, 5))
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
 
     # Declare path for output graphs from this script
