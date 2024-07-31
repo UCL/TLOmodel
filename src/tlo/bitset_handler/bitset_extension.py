@@ -210,47 +210,19 @@ class BitsetArray(ExtensionArray):
     which represents some possible combination of elements of a bitset as defined by
     ``self.dtype``.
 
-    Note on use of Operators
-    ------------------------
+    When extracting a single entry via ``.loc`` or ``.at``, the value returned is a ``set``.
+    This means that operations such as ``self.loc[0] |= {"1"}`` will behave as set operations
+    from base Python. This is achieved by setting the behaviour of the ``__setitem__`` method
+    to interpret ``set`` values as representations of the underlying bitset, thus causing them
+    to be cast to their bytestring representation being being assigned.
 
-    The series supports direct item assignment via ``.loc`` and ``.at``, however due to the
-    series using ``np.bytes_`` data types accessing a single value will return a bytestring
-    rather than a set-representation. This means that syntax such as
+    Supported Operations (slices)
+    -----------------------------
+    When operating on slices or masks of the series, we have to re-implement the desired operators
+    so that users can continue to pass ``set``s as scalar arguments on the left.
 
-    ```python
-    self.loc[0] = {"an_element"}
-    ```
-
-    will raise a ``TypeError`` since ``self.loc[0]`` is a ``np._bytes_`` object. To perform
-    actions like this, one has to write
-
-    ```python
-    self.loc[0] = self.dtype.as_bytes({"an_element"})
-    ```
-
-    IE cast the human-readable set to the appropriate bytestring. The same applies for
-    all single-element operations.
-
-    However, the series does support parsing of human-readable sets when operating on slices
-    of the series. For example,
-
-    ```python
-    self.loc[0:2] = {"an_element"}
-    ```
-
-    will convert {"an_element"} into the appropriate bytestring, and then set entries 0 and 1
-    in the series to this value. This means that one can get around the aforementioned
-    inconvenience by using single-element slices;
-
-    ```python
-    self.loc[0] = {"an_element"} # Will raise a TypeError, but...
-    self.loc[0:1] = {"an_element"} # Correctly sets entry 0 to the
-                                   # bytestring representing the set {"an_element"}
-    ```
-
-    Supported Operations
-    --------------------
-
+    Currently implemented methods are:
+    
     = :
         Directly assign the value on the right to the entry/entries on the left.
     +, += :
@@ -477,7 +449,7 @@ class BitsetArray(ExtensionArray):
 
     def __getitem__(self, item: int | slice | NDArray) -> BitsetArray:
         return (
-            self._data[item]
+            self.dtype.as_set(self._data[item])
             if isinstance(item, int)
             else BitsetArray(self._data[item], dtype=self.dtype)
         )
@@ -530,7 +502,7 @@ class BitsetArray(ExtensionArray):
 
     def _formatter(self, boxed: bool = False) -> Callable[[BytesDType], str | None]:
         if boxed: # If rendering an individual data value
-            return lambda x: ",".join(self.dtype.as_set(x))
+            return lambda x: ",".join(x)
         return repr # Render the table itself
 
     def copy(self) -> BitsetArray:
