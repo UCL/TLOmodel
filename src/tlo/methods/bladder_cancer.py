@@ -599,7 +599,7 @@ class BladderCancer(Module, GenericFirstAppointmentsMixin):
 
         df = self.sim.population.props
         total_prev = len(
-            df[df.bc_status != 'none' & df.is_alive]
+            df[(df.bc_status != 'none') & (df.is_alive)]
         ) / len(df[df.is_alive])
         return total_prev
 
