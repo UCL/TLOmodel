@@ -81,8 +81,6 @@ class Schisto(Module):
                                          'infection with improved WASH'),
         'calibration_scenario': Parameter(Types.REAL,
                                           'Scenario used to reset parameters to run calibration sims'),
-        'projection_scenario': Parameter(Types.REAL,
-                                         'Scenario used to set parameters for projections'),
         'urine_filtration_sensitivity_moderateWB': Parameter(Types.REAL,
                                                              'Sensitivity of UF in detecting moderate WB'),
         'urine_filtration_sensitivity_highWB': Parameter(Types.REAL,
@@ -95,6 +93,14 @@ class Schisto(Module):
                                                   'Boolean whether to scale-up WASH during simulation'),
         'scaleup_WASH_start_time': Parameter(Types.INT,
                                                   'Start date to scale-up WASH, years after sim start date'),
+        'mda_coverage': Parameter(Types.REAL,
+                                             'Coverage of future MDA activities, consistent across all'
+                                             'target groups'),
+        'mda_target_group': Parameter(Types.STRING,
+                                             'Target group for future MDA activities, '
+                                             'one of [PSAC, SAC, ALL]'),
+        'mda_frequency_months': Parameter(Types.INT,
+                                             'Number of months between MDA activities'),
         'MDA_coverage_historical': Parameter(Types.DATA_FRAME,
                                              'Probability of getting PZQ in the MDA for PSAC, SAC and Adults '
                                              'in historic rounds'),
@@ -292,13 +298,15 @@ class Schisto(Module):
                             'prob_sent_to_lab_test_adults',
                             'rr_WASH',
                             'calibration_scenario',
-                            'projection_scenario',
                             'urine_filtration_sensitivity_moderateWB',
                             'urine_filtration_sensitivity_highWB',
                             'kato_katz_sensitivity_moderateWB',
                             'kato_katz_sensitivity_highWB',
                             'scaleup_WASH',
-                            'scaleup_WASH_start_time'
+                            'scaleup_WASH_start_time',
+                            'mda_coverage',
+                            'mda_target_group',
+                            'mda_frequency_months'
                             ):
             parameters[_param_name] = float(param_list[_param_name])
 
