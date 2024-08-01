@@ -2407,8 +2407,6 @@ class RTI(Module, GenericFirstAppointmentsMixin):
             # request syringe
             get_item_codes("Syringe, Autodisable SoloShot IX "): 1
         }
-
-        # todo - put these somewhere else
         # Function to get the consumables for fracture treatment, which depends on the number of fractures:
         self.cons_item_codes['fracture_treatment'] = lambda num_fractures: {
             self.cons_item_codes['fracture_treatment_plaster']: num_fractures,
