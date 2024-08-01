@@ -383,6 +383,36 @@ class Demography(Module):
                   'mother_age_at_pregnancy': _mother_age_at_pregnancy}
         )
 
+    def report_prevalence(self):
+        """
+        This function reports the prevalence of maternal death and neonatal for this module generated in the previous month
+        Returns a dataframe with these
+        """
+        df = self.sim.population.props
+        newborn_deaths = len(df.loc[(df['age_days'] < 29)])/len(df[df['on_birth']]) * 1000
+        maternal_direct_deaths = len(df.loc[(df['death'] == 'Maternal Disorders')])
+        indirect_deaths_non_hiv = len(df.loc[
+                                          (df['is_pregnant'] | df['la_is_postpartum']) &
+                                          (df['cause_of_death'].str.contains(
+                                              'Malaria|Suicide|ever_stroke|diabetes|chronic_ischemic_hd|ever_heart_attack|chronic_kidney_disease') |
+                                           (df['cause_of_death'] == 'TB'))
+                                          ])
+
+        direct_deaths_non_hiv = len(df.loc[
+                                        (df['is_pregnant'] | df['la_is_postpartum']) &
+                                        df['cause_of_death'].str.contains('AIDS_non_TB|AIDS_TB')
+                                        ])
+        direct_deaths_non_hiv = direct_deaths_non_hiv*0.3 # https://www.who.int/publications/i/item/9789240068759
+        maternal_deaths = maternal_direct_deaths + indirect_deaths_non_hiv + direct_deaths_non_hiv
+
+        health_values_df = pd.DataFrame({
+            'newborn_deaths': [newborn_deaths],
+            'maternal_deaths': [maternal_direct_deaths]
+        })
+
+        return health_values_df
+
+
     def _edit_init_pop_to_prevent_persons_greater_than_max_age(self, df, max_age: int):
         """Return an edited version of the `pd.DataFrame` describing the probability of persons in the population being
         created with certain characteristics to reflect the constraint the persons aged greater than `max_age_initial`
