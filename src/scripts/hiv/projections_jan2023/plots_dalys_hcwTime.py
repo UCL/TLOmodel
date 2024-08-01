@@ -100,8 +100,8 @@ def return_daly_summary(results_folder):
     )
     dalys.columns = dalys.columns.get_level_values(0)
     # combine two labels for non-AIDS TB (this now fixed in latest code)
-    dalys.loc['TB (non-AIDS)'] = dalys.loc['TB (non-AIDS)'] + dalys.loc['non_AIDS_TB']
-    dalys.drop(['non_AIDS_TB'], inplace=True)
+    # dalys.loc['TB (non-AIDS)'] = dalys.loc['TB (non-AIDS)'] + dalys.loc['non_AIDS_TB']
+    # dalys.drop(['non_AIDS_TB'], inplace=True)
     out = pd.DataFrame()
     out['median'] = dalys.median(axis=1).round(decimals=-3).astype(int)
     out['lower'] = dalys.quantile(q=0.025, axis=1).round(decimals=-3).astype(int)
