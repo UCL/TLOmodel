@@ -7,17 +7,18 @@ import pandas as pd
 
 from tlo import Module, Parameter, Property, Types, logging
 from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
-from tlo.core import ConsumablesChecker, IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.hsi_event import HSI_Event
+from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date
 
 if TYPE_CHECKING:
-    from tlo.population import PatientDetails
+    from tlo.methods.hsi_generic_first_appts import ConsumablesChecker, HSIEventScheduler
+    from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -29,11 +30,11 @@ gbd_causes_of_copd_represented_in_this_module = {
 }
 
 
-class Copd(Module):
+class Copd(Module, GenericFirstAppointmentsMixin):
     """The module responsible for determining Chronic Obstructive Pulmonary Diseases (COPD) status and outcomes.
      and initialises parameters and properties associated with COPD plus functions and events related to COPD."""
 
-    INIT_DEPENDENCIES = {'SymptomManager', 'Lifestyle'}
+    INIT_DEPENDENCIES = {'SymptomManager', 'Lifestyle', 'HealthSystem'}
     ADDITIONAL_DEPENDENCIES = set()
 
     METADATA = {
@@ -190,14 +191,14 @@ class Copd(Module):
 
     def lookup_item_codes(self):
         """Look-up the item-codes for the consumables needed in the HSI Events for this module."""
-        # todo: Need to look-up these item-codes.
+        ic = self.sim.modules['HealthSystem'].get_item_code_from_item_name
+
         self.item_codes = {
-            'bronchodilater_inhaler': 293,
-            'steroid_inhaler': 294,
-            'oxygen': 127,
-            'aminophylline': 292,
-            'amoxycillin': 125,
-            'prednisolone': 291
+            'bronchodilater_inhaler': ic('Salbutamol Inhaler 100mcg/dose - 200 doses '),
+            'oxygen': ic('Oxygen, 1000 liters, primarily with oxygen cylinders'),
+            'aminophylline': ic('Aminophylline 100mg, tablets'),
+            'amoxycillin': ic('Amoxycillin 250mg_1000_CMST'),
+            'prednisolone': ic('Prednisolone 5mg_100_CMST'),
         }
 
     def do_logging(self):
@@ -212,9 +213,10 @@ class Copd(Module):
 
     def _common_first_appt(
         self,
-        patient_id: int,
-        patient_details: PatientDetails,
+        person_id: int,
+        individual_properties: IndividualProperties,
         symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
         consumables_checker: ConsumablesChecker,
     ):
         """What to do when a person presents at the generic first appt HSI
@@ -223,52 +225,53 @@ class Copd(Module):
         * Otherwise --> just give inhaler.
         """
         if ('breathless_moderate' in symptoms) or ('breathless_severe' in symptoms):
-            patient_details_updates = {}
             # Give inhaler if patient does not already have one
-            if not patient_details.ch_has_inhaler and consumables_checker(
-                self.item_codes["bronchodilater_inhaler"]
+            if not individual_properties["ch_has_inhaler"] and consumables_checker(
+                {self.item_codes["bronchodilater_inhaler"]: 1}
             ):
-                patient_details_updates["ch_has_inhaler"] = True
-
+                individual_properties["ch_has_inhaler"] = True
             if "breathless_severe" in symptoms:
                 event = HSI_Copd_TreatmentOnSevereExacerbation(
-                    module=self, person_id=patient_id
+                    module=self, person_id=person_id
                 )
-                self.healthsystem.schedule_hsi_event(
+                schedule_hsi_event(
                     event, topen=self.sim.date, priority=0
                 )
-            return patient_details_updates
 
     def do_at_generic_first_appt(
         self,
-        patient_id: int,
-        patient_details: PatientDetails,
+        person_id: int,
+        individual_properties: IndividualProperties,
         symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
         consumables_checker: ConsumablesChecker,
         **kwargs,
-    ) -> IndividualPropertyUpdates:
+    ) -> None:
         # Non-emergency appointments are only forwarded if
         # the patient is over 5 years old
-        if patient_details.age_years > 5:
+        if individual_properties["age_years"] > 5:
             return self._common_first_appt(
-                patient_id=patient_id,
-                patient_details=patient_details,
+                person_id=person_id,
+                individual_properties=individual_properties,
                 symptoms=symptoms,
+                schedule_hsi_event=schedule_hsi_event,
                 consumables_checker=consumables_checker,
             )
 
     def do_at_generic_first_appt_emergency(
         self,
-        patient_id: int,
-        patient_details: PatientDetails,
+        person_id: int,
+        individual_properties: IndividualProperties,
         symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
         consumables_checker: ConsumablesChecker,
         **kwargs,
-    ) -> IndividualPropertyUpdates:
+    ) -> None:
         return self._common_first_appt(
-            patient_id=patient_id,
-            patient_details=patient_details,
+            person_id=person_id,
+            individual_properties=individual_properties,
             symptoms=symptoms,
+            schedule_hsi_event=schedule_hsi_event,
             consumables_checker=consumables_checker,
         )
 
@@ -571,7 +574,8 @@ class HSI_Copd_TreatmentOnSevereExacerbation(HSI_Event, IndividualScopeEventMixi
          * Provide treatment: whatever is available at this facility at this time (no referral).
         """
         df = self.sim.population.props
-        if not self.get_consumables(self.module.item_codes['oxygen']):
+        # Assume average 8L O2 for 2 days inpatient care
+        if not self.get_consumables({self.module.item_codes['oxygen']: 23_040}):
             # refer to the next higher facility if the current facility has no oxygen
             self.facility_levels_index += 1
             if self.facility_levels_index >= len(self.all_facility_levels):
@@ -581,11 +585,13 @@ class HSI_Copd_TreatmentOnSevereExacerbation(HSI_Event, IndividualScopeEventMixi
 
         else:
             # Give oxygen and AminoPhylline, if possible, ... and cancel death if the treatment is successful.
+            # Aminophylline dose = 100mg 8hrly, assuming 600mg in 48 hours
             prob_treatment_success = self.module.models.prob_livesaved_given_treatment(
                 df=df.iloc[[person_id]],
-                oxygen=self.get_consumables(self.module.item_codes['oxygen']),
-                aminophylline=self.get_consumables(self.module.item_codes['aminophylline'])
+                oxygen=self.get_consumables({self.module.item_codes['oxygen']: 23_040}),
+                aminophylline=self.get_consumables({self.module.item_codes['aminophylline']: 600})
             )
+            self.add_equipment({'Oxygen cylinder, with regulator', 'Nasal Prongs', 'Drip stand', 'Infusion pump'})
 
             if prob_treatment_success:
                 df.at[person_id, 'ch_will_die_this_episode'] = False

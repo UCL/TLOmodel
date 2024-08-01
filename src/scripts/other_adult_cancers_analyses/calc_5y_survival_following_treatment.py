@@ -41,8 +41,20 @@ start_date = Date(2010, 1, 1)
 end_date = Date(2080, 1, 1)
 popsize = 1000
 
+# Establish the logger and look at only demography
+log_config = {
+    'filename': 'LogFile',
+    'directory': outputpath,
+    'custom_levels': {
+        '*': logging.WARNING,  # <--
+        'tlo.methods.demography': logging.INFO,
+        'tlo.methods.other_adult_cancers': logging.INFO,
+        'tlo.methods.healthsystem': logging.INFO,
+                 }
+}
+
 # Establish the simulation object and set the seed
-sim = Simulation(start_date=start_date, seed=0)
+sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -66,21 +78,12 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
 # sim.modules['OtherAdultCancer'].parameters["init_prop_treatment_status_other_adult_cancer"] = [0.0] * 3
 # sim.modules['OtherAdultCancer'].parameters["init_prob_palliative_care"] = 0.0
 
-# Establish the logger and look at only demography
-custom_levels = {"*": logging.WARNING,  # <--
-                 "tlo.methods.demography": logging.INFO,
-                 "tlo.methods.other_adult_cancers": logging.INFO,
-                 'tlo.methods.healthsystem': logging.INFO,
-                 }
-logfile = sim.configure_logging(filename="LogFile", custom_levels=custom_levels)
-
-
 # Run the simulation
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 
 # Read the output:
-output = parse_log_file(logfile)
+output = parse_log_file(sim.log_filepath)
 
 # %% Analyse the output:
 

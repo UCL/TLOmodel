@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from pandas import DateOffset
 
-from tlo import Population
+from tlo import Population, Property, Types
 
 # Default mother_id value, assigned to individuals initialised as adults at the start of the simulation.
 DEFAULT_MOTHER_ID = -1e7
@@ -118,11 +118,14 @@ def sample_outcome(probs: pd.DataFrame, rng: np.random.RandomState):
     return outcome.loc[outcome != '_'].to_dict()
 
 
+BitsetDType = Property.PANDAS_TYPE_MAP[Types.BITSET]
+
+
 class BitsetHandler:
     """Provides methods to operate on int column(s) in the population dataframe as a bitset"""
 
     def __init__(self, population: Population, column: Optional[str], elements: List[str]):
-        """""
+        """
         :param population: The TLO Population object (not the props dataframe).
         :param column: The integer property column that will be used as a bitset. If
             set to ``None`` then the optional `columns` argument to methods which act
@@ -133,7 +136,10 @@ class BitsetHandler:
         assert isinstance(population, Population), (
             'First argument is the population object (not the `props` dataframe)'
         )
-        assert len(elements) <= 64, 'A maximum of 64 elements are supported'
+        dtype_bitwidth = BitsetDType(0).nbytes * 8
+        assert len(elements) <= dtype_bitwidth, (
+            f"A maximum of {dtype_bitwidth} elements are supported"
+        )
         self._elements = elements
         self._element_to_int_map = {el: 2 ** i for i, el in enumerate(elements)}
         self._population = population
@@ -141,8 +147,8 @@ class BitsetHandler:
             assert column in population.props.columns, (
                 'Column not found in population dataframe'
             )
-            assert population.props[column].dtype == np.int64, (
-                'Column must be of int64 type'
+            assert population.props[column].dtype == BitsetDType, (
+                f'Column must be of {BitsetDType} type'
             )
         self._column = column
 
@@ -150,11 +156,11 @@ class BitsetHandler:
     def df(self) -> pd.DataFrame:
         return self._population.props
 
-    def element_repr(self, *elements: str) -> np.int64:
+    def element_repr(self, *elements: str) -> BitsetDType:
         """Returns integer representation of the specified element(s)"""
-        return np.int64(sum(self._element_to_int_map[el] for el in elements))
+        return BitsetDType(sum(self._element_to_int_map[el] for el in elements))
 
-    def to_strings(self, integer: np.int64) -> Set[str]:
+    def to_strings(self, integer: BitsetDType) -> Set[str]:
         """Given an integer value, returns the corresponding set of strings.
 
         :param integer: The integer value for the bitset.
@@ -399,6 +405,11 @@ def random_date(start, end, rng):
     if start >= end:
         raise ValueError("End date equal to or earlier than start date")
     return start + DateOffset(days=rng.randint(0, (end - start).days))
+
+
+def str_to_pandas_date(date_string):
+    """Convert a string with the format YYYY-MM-DD to a pandas Timestamp (aka TLO Date) object."""
+    return pd.to_datetime(date_string, format="%Y-%m-%d")
 
 
 def hash_dataframe(dataframe: pd.DataFrame):

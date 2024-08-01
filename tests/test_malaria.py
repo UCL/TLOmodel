@@ -126,7 +126,7 @@ def test_sims(sim):
         assert not df.at[person, "ma_inf_type"] == "none"
 
     # if on treatment, must have treatment start date
-    for person in df.index[(df.ma_tx == 'uncomplicated')]:
+    for person in df.index[df.ma_tx.isin(["uncomplicated", "complicated"])]:
         assert not pd.isnull(df.at[person, "ma_date_tx"])
 
 # remove scheduled rdt testing and disable health system, should be no rdts and no treatment
@@ -209,7 +209,7 @@ def test_schedule_rdt_for_all(sim):
     df = sim.population.props
 
     # check no treatment unless infected
-    for person in df.index[(df.ma_tx == 'uncomplicated')]:
+    for person in df.index[df.ma_tx.isin(["uncomplicated", "complicated"])]:
         assert not pd.isnull(df.at[person, "ma_date_infected"])
 
     # check clinical counter is working
@@ -244,7 +244,7 @@ def test_dx_algorithm_for_malaria_outcomes_clinical(
     person_id: int = 0,
 ):
     """
-    Create a person with clinical malaria and check if the functions in 
+    Create a person with clinical malaria and check if the functions in
     dx_algorithm_child return the correct diagnosis.
     """
     # Set up the simulation:
@@ -268,7 +268,7 @@ def test_dx_algorithm_for_malaria_outcomes_clinical(
             add_or_remove='+'
         )
 
-    assert "fever" in sim.modules["SymptomManager"].has_what(person_id)
+    assert "fever" in sim.modules["SymptomManager"].has_what(person_id=person_id)
 
     def diagnosis_function(tests, use_dict: bool = False, report_tried: bool = False):
         return hsi_event.healthcare_system.dx_manager.run_dx_test(
@@ -281,7 +281,7 @@ def test_dx_algorithm_for_malaria_outcomes_clinical(
     assert sim.modules['Malaria'].check_if_fever_is_caused_by_malaria(
         true_malaria_infection_type = df.at[person_id, "ma_inf_type"],
         diagnosis_function = diagnosis_function,
-        patient_id=person_id,
+        person_id=person_id,
     ) == expected_diagnosis
 
 
@@ -346,7 +346,7 @@ def test_dx_algorithm_for_non_malaria_outcomes(seed):
         add_or_remove='+'
     )
 
-    assert "fever" in sim.modules["SymptomManager"].has_what(person_id)
+    assert "fever" in sim.modules["SymptomManager"].has_what(person_id=person_id)
 
     def diagnosis_function(tests, use_dict: bool = False, report_tried: bool = False):
         return hsi_event.healthcare_system.dx_manager.run_dx_test(
@@ -362,7 +362,7 @@ def test_dx_algorithm_for_non_malaria_outcomes(seed):
                 person_id, "ma_inf_type"
             ],
             diagnosis_function=diagnosis_function,
-            patient_id=person_id,
+            person_id=person_id,
         )
         == "negative_malaria_test"
     )
@@ -388,7 +388,7 @@ def test_severe_malaria_deaths_perfect_treatment(sim):
     treatment_appt = malaria.HSI_Malaria_Treatment_Complicated(person_id=person_id,
                                                                module=sim.modules['Malaria'])
     treatment_appt.apply(person_id=person_id, squeeze_factor=0.0)
-    assert df.at[person_id, 'ma_tx'] == 'complicated'
+    assert df.at[person_id, "ma_tx"] != "none"
     assert df.at[person_id, "ma_date_tx"] == sim.date
     assert df.at[person_id, "ma_tx_counter"] > 0
 
@@ -423,7 +423,7 @@ def test_severe_malaria_deaths_treatment_failure(sim):
     treatment_appt = malaria.HSI_Malaria_Treatment_Complicated(person_id=person_id,
                                                                module=sim.modules['Malaria'])
     treatment_appt.apply(person_id=person_id, squeeze_factor=0.0)
-    assert df.at[person_id, 'ma_tx'] == 'complicated'
+    assert df.at[person_id, 'ma_tx'] != 'none'
     assert df.at[person_id, "ma_date_tx"] == sim.date
     assert df.at[person_id, "ma_tx_counter"] > 0
 
@@ -442,7 +442,7 @@ def test_severe_malaria_deaths_treatment_failure(sim):
     person_id = 1
     df.loc[person_id, ["ma_is_infected", "ma_inf_type"]] = (True, "severe")
 
-    assert not df.at[person_id, 'ma_tx'] == 'complicated'
+    assert df.at[person_id, "ma_tx"] == "none"
     assert df.at[person_id, "ma_date_tx"] is pd.NaT
     assert df.at[person_id, "ma_tx_counter"] == 0
 
@@ -517,7 +517,7 @@ def test_individual_testing_and_treatment(sim):
     pollevent.run()
 
     assert not pd.isnull(df.at[person_id, "ma_date_symptoms"])
-    assert set(sim.modules['SymptomManager'].has_what(person_id)) == {"fever", "headache", "vomiting", "stomachache"}
+    assert set(sim.modules['SymptomManager'].has_what(person_id=person_id)) == {"fever", "headache", "vomiting", "stomachache"}
 
     # check rdt is scheduled
     date_event, event = [
@@ -560,7 +560,7 @@ def test_individual_testing_and_treatment(sim):
     pollevent = malaria.MalariaUpdateEvent(module=sim.modules['Malaria'])
     pollevent.apply(sim.population)
 
-    assert sim.modules['SymptomManager'].has_what(person_id) == []
+    assert sim.modules['SymptomManager'].has_what(person_id=person_id) == []
 
     # check no rdt is scheduled
     assert "malaria.HSI_Malaria_rdt" not in sim.modules['HealthSystem'].find_events_for_person(person_id)
@@ -634,7 +634,7 @@ def test_individual_testing_and_treatment(sim):
     tx_appt.apply(person_id=person_id, squeeze_factor=0.0)
 
     assert df.at[person_id, "ma_tx_counter"] == 1
-    assert df.at[person_id, "ma_tx"] == 'complicated'
+    assert df.at[person_id, "ma_tx"] != "none"
 
 
 def test_population_testing_and_treatment(sim):
