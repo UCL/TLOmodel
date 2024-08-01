@@ -378,7 +378,7 @@ class Demography(Module):
         Returns a dataframe with these
         """
         df = self.sim.population.props
-        newborn_deaths = len(df.loc[(df['age_days'] < 29)])/len(df[df['on_birth']]) * 1000
+        neonatal_deaths = len(df.loc[(df['age_days'] < 29)])/len(df[df['on_birth']]) * 1000
         maternal_direct_deaths = len(df.loc[(df['death'] == 'Maternal Disorders')])
         indirect_deaths_non_hiv = len(df.loc[
                                           (df['is_pregnant'] | df['la_is_postpartum']) &
@@ -395,8 +395,8 @@ class Demography(Module):
         maternal_deaths = maternal_direct_deaths + indirect_deaths_non_hiv + direct_deaths_non_hiv
 
         health_values_df = pd.DataFrame({
-            'newborn_deaths': [newborn_deaths],
-            'maternal_deaths': [maternal_direct_deaths]
+            'newborn_deaths': [neonatal_deaths],
+            'maternal_deaths': [maternal_deaths]
         })
 
         return health_values_df
