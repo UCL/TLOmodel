@@ -21,10 +21,13 @@ import random
 
 from tlo import Date, logging
 from tlo.methods import (
+    bladder_cancer,
     demography,
+    diarrhoea,
     enhanced_lifestyle,
     healthsystem,
     healthseekingbehaviour,
+    hiv,
     schisto,
     simplified_births,
     symptommanager,
@@ -52,6 +55,9 @@ class TestScenario(BaseScenario):
             'directory': './outputs',
             'custom_levels': {
                 '*': logging.WARNING,
+                "tlo.methods.hiv": logging.INFO,
+                "tlo.methods.bladder_cancer": logging.INFO,
+                "tlo.methods.diarrhoea": logging.INFO,
                 "tlo.methods.schisto": logging.INFO,
                 "tlo.methods.healthsystem.summary": logging.INFO,
             }
@@ -68,15 +74,37 @@ class TestScenario(BaseScenario):
             ),
             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
             symptommanager.SymptomManager(resourcefilepath=self.resources),
+            # diseases
+            bladder_cancer.BladderCancer(resourcefilepath=self.resources),
+            diarrhoea.Diarrhoea(resourcefilepath=self.resources),
+            hiv.Hiv(resourcefilepath=self.resources),
             schisto.Schisto(resourcefilepath=self.resources, mda_execute=True),
         ]
 
     def draw_parameters(self, draw_number, rng):
+        coverage_options = [0.6, 0.7, 0.8]
+        target_group_options = ['SAC', 'PSAC', 'All']
+        wash_options = [True, False]
+
+        # Calculate the total number of combinations
+        total_combinations = len(coverage_options) * len(target_group_options) * len(wash_options)
+
+        # Ensure the draw_number is within the range of total combinations
+        if draw_number >= total_combinations:
+            raise ValueError("draw_number exceeds the total number of combinations.")
+
+        # Determine indices for each parameter
+        coverage_index = draw_number % len(coverage_options)
+        target_group_index = (draw_number // len(coverage_options)) % len(target_group_options)
+        wash_index = (draw_number // (len(coverage_options) * len(target_group_options))) % len(wash_options)
+
         return {
             'Schisto': {
-                'scaleup_WASH': [False, True][draw_number],
-                'scaleup_WASH_start_year': 2015,
-                'projection_scenario': [0, 1][draw_number],
+                'mda_coverage': coverage_options[coverage_index],
+                'mda_target_group': target_group_options[target_group_index],
+                'mda_frequency': 6,
+                'scaleup_WASH': wash_options[wash_index],
+                'scaleup_WASH_start_year': 2024,
             },
         }
 
