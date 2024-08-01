@@ -134,6 +134,9 @@ class Schisto(Module):
 
         self.districts = None
 
+        # create future mda strategy
+        self.prognosed_mda = None
+
         # Age-group mapper
         s = pd.Series(index=range(1 + 120), data='object')
         for name, (low_limit, high_limit) in _AGE_GROUPS.items():
@@ -149,7 +152,7 @@ class Schisto(Module):
         self.parameters = self._load_parameters_from_workbook(workbook)
 
         # update mda strategy from default values
-        self.parameters['MDA_coverage_prognosed'] = self._create_mda_strategy(self.parameters['MDA_coverage_prognosed'])
+        self.prognosed_mda = self._create_mda_strategy(workbook)
 
         # load species-specific parameters
         for _spec in self.species.values():
@@ -326,19 +329,29 @@ class Schisto(Module):
         # clip upper limit of MDA coverage at 99%
         parameters['MDA_coverage_historical'] = parameters['MDA_coverage_historical'].clip(upper=0.99)
 
-        # MDA coverage - prognosed - default values
-        prognosed_mda = workbook['MDA_prognosed_Coverage'].set_index(['District', 'Frequency'])[
-            ['Cov_PSAC', 'Cov_SAC', 'Cov_Adults']]
-        prognosed_mda.columns = prognosed_mda.columns.str.replace('Cov_', '')
-        parameters['MDA_coverage_prognosed'] = prognosed_mda.astype(float)
+        # # MDA coverage - prognosed - default values
+        # prognosed_mda = workbook['MDA_prognosed_Coverage'].set_index(['District', 'Frequency'])[
+        #     ['Cov_PSAC', 'Cov_SAC', 'Cov_Adults']]
+        # prognosed_mda.columns = prognosed_mda.columns.str.replace('Cov_', '')
+        # parameters['MDA_coverage_prognosed'] = prognosed_mda.astype(float)
 
         return parameters
 
-    def _create_mda_strategy(self, prognosed_mda) -> pd.DataFrame:
+    def _create_mda_strategy(self, workbook) -> pd.DataFrame:
 
         params = self.parameters
         coverage = params['mda_coverage']
         target = params['mda_target_group']
+        districts = self.districts
+
+        # Create a new DataFrame with the districts and initialize columns
+        prognosed_mda = pd.DataFrame(index=districts)
+        prognosed_mda = prognosed_mda.reindex(
+            pd.MultiIndex.from_product([districts, [None]], names=['District', 'Frequency'])
+        )
+
+        # Initialize columns with default values
+        prognosed_mda[['Cov_PSAC', 'Cov_SAC', 'Cov_Adults']] = 0
 
         # Define default values for each column
         default_values = {
@@ -371,7 +384,6 @@ class Schisto(Module):
             prognosed_mda.update(pd.DataFrame([updates[target]], index=prognosed_mda.index))
 
         return prognosed_mda
-
 
     def _register_symptoms(self, symptoms: dict) -> None:
         """Register the symptoms with the `SymptomManager`.
