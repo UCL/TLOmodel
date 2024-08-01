@@ -695,7 +695,9 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
             assert not pd.isnull(prevalence_from_disease_module).any().any()
             # Prefix column names with the disease module name
             prevalence_from_disease_module.columns = [
-                f"{disease_module_name}" for col in prevalence_from_disease_module.columns]
+                "Intrapartum stillbirth" if disease_module_name == "Labour" else f"{disease_module_name}" for col in
+                prevalence_from_disease_module.columns
+            ]
 
             # Append to list of dalys reported by each module
             prevalence_from_each_disease_module.append(prevalence_from_disease_module)
