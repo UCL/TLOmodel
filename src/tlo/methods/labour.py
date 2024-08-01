@@ -1081,6 +1081,20 @@ class Labour(Module, GenericFirstAppointmentsMixin):
 
         return daly_series
 
+
+    def report_prevalence(self):
+        """
+        This function reports the prevalence of conditions for this module generated in the previous month
+        :return: data frame containing the prevalence of each condition
+        """
+        df = self.sim.population.props
+
+        # Disability properties are mapped to DALY weights and stored for the health burden module
+        total_prev_intrapartum_stillbirth = len(
+            (df['la_intrapartum_still_birth'] != 0)
+        ) / len( df[(df['la_intrapartum_still_birth'] != 0) & (df['la_intrapartum_still_birth'] == 0)])
+
+        return total_prev_intrapartum_stillbirth
     # ===================================== HELPER AND TESTING FUNCTIONS ==============================================
     def set_date_of_labour(self, individual_id):
         """
