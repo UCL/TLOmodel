@@ -685,7 +685,7 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
         prevalence_from_each_disease_module = list()
         for disease_module_name in self.module.recognised_modules_names:
             disease_module = self.sim.modules[disease_module_name]
-            prevalence_from_disease_module = disease_module.report_prevalence_values()
+            prevalence_from_disease_module = disease_module.report_prevalence()
             # Check type is in acceptable form and make into dataframe if not already
             assert type(prevalence_from_disease_module) in (pd.Series, pd.DataFrame)
 
