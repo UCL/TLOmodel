@@ -217,7 +217,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         # This returns dataframe that reports on the prevalence of schisto for all individuals
         df = self.sim.population.props
         total_prev = len(
-            df[(df['is_alive']) & (df[prop('infection_status')] != 'Non-infected')]
+            self.sim.modules['SymptomManager'].caused_by(self) # number of people who have symptons caused by schisto
         ) / len(df[df['is_alive']])
 
         return total_prev
