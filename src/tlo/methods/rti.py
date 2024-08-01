@@ -4315,8 +4315,6 @@ class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
         # Check that the person sent here has an injury that is treated by this HSI event
         assert lacerationcounts > 0
         if lacerationcounts > 0:
-            self.module.cons_item_codes['laceration_treatment'].update({
-                get_item_code('Suture pack'): lacerationcounts})
 
             # check the number of suture kits required and request them
             is_cons_available = self.get_consumables(
