@@ -2409,12 +2409,12 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         }
         # Function to get the consumables for fracture treatment, which depends on the number of fractures:
         self.cons_item_codes['fracture_treatment'] = lambda num_fractures: {
-            self.cons_item_codes['fracture_treatment_plaster']: num_fractures,
+            **{item: num_fractures for item in self.cons_item_codes['fracture_treatment_plaster']},
             **self.cons_item_codes['fracture_treatment_bandage']
         }
-        # Function to get the consumables for laceration treatment, which depends on the number of lacertations:
-        self.cons_item_codes['laceration_treamtment'] = lambda num_laceration: {
-            self.cons_item_codes['laceration_treatment_suture_pack']: num_laceration,
+        # Function to get the consumables for laceration treatment, which depends on the number of lacerations:
+        self.cons_item_codes['laceration_treatment'] = lambda num_laceration: {
+            **{item: num_laceration for item in self.cons_item_codes['laceration_treatment_suture_pack']},
             **self.cons_item_codes['laceration_treatment_cetrimide_chlorhexidine']
         }
         self.cons_item_codes['burn_treatment'] = lambda num_burns: {
@@ -4078,7 +4078,8 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
         # If they have a fracture that needs a cast, ask for consumables, updating to match the number of
         # fractures).
         is_cons_available = self.get_consumables(
-            self.module.cons_item_codes['fracture_treatment_bandage'](fracturecastcounts))
+            self.module.cons_item_codes['fracture_treatment'](fracturecastcounts)
+        )
 
         # if the consumables are available then the appointment can run
         if is_cons_available:
