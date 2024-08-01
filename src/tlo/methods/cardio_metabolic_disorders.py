@@ -807,7 +807,7 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
 
         return dw
 
-    def report_daly_values(self):
+    def report_prevalence(self):
         """Report prevalence of disease to the HealthBurden module"""
         df = self.sim.population.props
         prevalence_dict = {}
