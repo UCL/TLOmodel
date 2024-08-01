@@ -67,10 +67,10 @@ class Schisto(Module):
 
     PARAMETERS = {
         # these values do not vary between species
-        'prob_sent_to_lab_test_children': Parameter(Types.REAL,
-                                                    'Probability that infected child gets sent to lab test'),
-        'prob_sent_to_lab_test_adults': Parameter(Types.REAL,
-                                                  'Probability that an infected adults gets sent to lab test'),
+        # 'prob_sent_to_lab_test_children': Parameter(Types.REAL,
+        #                                             'Probability that infected child gets sent to lab test'),
+        # 'prob_sent_to_lab_test_adults': Parameter(Types.REAL,
+        #                                           'Probability that an infected adults gets sent to lab test'),
         'delay_till_hsi_a_repeated': Parameter(Types.REAL,
                                                'Time till seeking healthcare again after not being sent to '
                                                'schisto test: start'),
@@ -81,6 +81,8 @@ class Schisto(Module):
                                          'infection with improved WASH'),
         'calibration_scenario': Parameter(Types.REAL,
                                           'Scenario used to reset parameters to run calibration sims'),
+        'urine_filtration_sensitivity_lowWB': Parameter(Types.REAL,
+                                                             'Sensitivity of UF in detecting low WB'),
         'urine_filtration_sensitivity_moderateWB': Parameter(Types.REAL,
                                                              'Sensitivity of UF in detecting moderate WB'),
         'urine_filtration_sensitivity_highWB': Parameter(Types.REAL,
@@ -104,10 +106,6 @@ class Schisto(Module):
         'MDA_coverage_historical': Parameter(Types.DATA_FRAME,
                                              'Probability of getting PZQ in the MDA for PSAC, SAC and Adults '
                                              'in historic rounds'),
-        'MDA_coverage_prognosed': Parameter(Types.DATA_FRAME,
-                                            'Probability of getting PZQ in the MDA for PSAC, SAC and Adults '
-                                            'in future rounds, with the frequency given in months'),
-        # NOTE add these also to _load_parameters_from_workbook
     }
 
     def __init__(self, name=None, resourcefilepath=None, mda_execute=True):
@@ -147,12 +145,15 @@ class Schisto(Module):
     def read_parameters(self, data_folder):
         """Read parameters and register symptoms."""
 
+        # Define districts that this module will operate in:
+        self.districts = self.sim.modules['Demography'].districts  # <- all districts
+
         # Load parameters
         workbook = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Schisto.xlsx', sheet_name=None)
         self.parameters = self._load_parameters_from_workbook(workbook)
 
         # update mda strategy from default values
-        self.prognosed_mda = self._create_mda_strategy(workbook)
+        self.prognosed_mda = self._create_mda_strategy()
 
         # load species-specific parameters
         for _spec in self.species.values():
@@ -164,9 +165,6 @@ class Schisto(Module):
 
     def pre_initialise_population(self):
         """Do things before generating the population (but after read_parameters and any parameter updating)."""
-
-        # Define districts that this module will operate in:
-        self.districts = self.sim.modules['Demography'].districts  # <- all districts
 
         # Call `pre_initialise_population` for each `SchistoSpecies` helper module.
         for _spec in self.species.values():
@@ -302,10 +300,9 @@ class Schisto(Module):
         param_list = workbook['Parameters'].set_index("Parameter")['Value']
         for _param_name in ('delay_till_hsi_a_repeated',
                             'delay_till_hsi_b_repeated',
-                            'prob_sent_to_lab_test_children',
-                            'prob_sent_to_lab_test_adults',
                             'rr_WASH',
                             'calibration_scenario',
+                            'urine_filtration_sensitivity_lowWB'
                             'urine_filtration_sensitivity_moderateWB',
                             'urine_filtration_sensitivity_highWB',
                             'kato_katz_sensitivity_moderateWB',
@@ -337,45 +334,44 @@ class Schisto(Module):
 
         return parameters
 
-    def _create_mda_strategy(self, workbook) -> pd.DataFrame:
+    def _create_mda_strategy(self) -> pd.DataFrame:
 
         params = self.parameters
         coverage = params['mda_coverage']
         target = params['mda_target_group']
+        frequency = params['mda_frequency_months']
         districts = self.districts
 
-        # Create a new DataFrame with the districts and initialize columns
-        prognosed_mda = pd.DataFrame(index=districts)
-        prognosed_mda = prognosed_mda.reindex(
-            pd.MultiIndex.from_product([districts, [None]], names=['District', 'Frequency'])
-        )
+        # Create a new DataFrame with districts and schedule
+        prognosed_mda = pd.DataFrame(
+            index=pd.MultiIndex.from_product([districts, [frequency]], names=['District', 'Frequency_months']))
 
-        # Initialize columns with default values
-        prognosed_mda[['Cov_PSAC', 'Cov_SAC', 'Cov_Adults']] = 0
+        # Initialise columns with default values
+        prognosed_mda[['PSAC', 'SAC', 'Adults']] = 0
 
         # Define default values for each column
         default_values = {
-            'Cov_PSAC': 0,
-            'Cov_SAC': 0,
-            'Cov_Adults': 0
+            'PSAC': 0,
+            'SAC': 0,
+            'Adults': 0
         }
 
         # Define the updates based on the target
         updates = {
             'PSAC_SAC': {
-                'Cov_PSAC': coverage,
-                'Cov_SAC': coverage,
-                'Cov_Adults': default_values['Cov_Adults']
+                'PSAC': coverage,
+                'SAC': coverage,
+                'Adults': default_values['Adults']
             },
             'SAC': {
-                'Cov_SAC': coverage,
-                'Cov_PSAC': default_values['Cov_PSAC'],
-                'Cov_Adults': default_values['Cov_Adults']
+                'SAC': coverage,
+                'PSAC': default_values['PSAC'],
+                'Adults': default_values['Adults']
             },
             'ALL': {
-                'Cov_PSAC': coverage,
-                'Cov_SAC': coverage,
-                'Cov_Adults': coverage
+                'PSAC': coverage,
+                'SAC': coverage,
+                'Adults': coverage
             }
         }
 
@@ -500,11 +496,24 @@ class Schisto(Module):
 
         # URINE FILTRATION
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            UF_schisto_test_lowWB=DxTest(
+            UF_schisto_test_noWB=DxTest(
                 property='ss_sh_infection_status',
-                target_categories=["Non-infected", "Low-infection"],
+                target_categories=["Non-infected"],
                 sensitivity=0.0,
                 specificity=0.0,
+                item_codes=self.item_codes_for_consumables_required['microscope_slide'],
+                optional_item_codes=[
+                    self.item_codes_for_consumables_required['filter_paper'],
+                    self.item_codes_for_consumables_required['iodine_stain']]
+
+            )
+        )
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            UF_schisto_test_lowWB=DxTest(
+                property='ss_sh_infection_status',
+                target_categories=["Low-infection"],
+                sensitivity=p["urine_filtration_sensitivity_lowWB"],
+                specificity=1.0,
                 item_codes=self.item_codes_for_consumables_required['microscope_slide'],
                 optional_item_codes=[
                     self.item_codes_for_consumables_required['filter_paper'],
@@ -558,7 +567,7 @@ class Schisto(Module):
         year_last_historical_mda = self.parameters['MDA_coverage_historical'].reset_index().Year.max()
         year_first_simulated_mda = year_last_historical_mda + 1
 
-        for (district, frequency_in_months), cov in self.parameters['MDA_coverage_prognosed'].iterrows():
+        for (district, frequency_in_months), cov in self.prognosed_mda.iterrows():
             assert district in self.sim.modules['Demography'].districts, f'District {district} is not recognised.'
             self.sim.schedule_event(
                 SchistoMDAEvent(self,
@@ -1242,6 +1251,8 @@ class SchistoMDAEvent(Event, PopulationScopeEventMixin):
          * Schedules the MDA HSI for each person that is reached in the MDA.
          * Schedules the recurrence of this event, if the MDA is to be repeated in the future."""
 
+        print(f'mda in {self.sim.date.year}')
+
         # Determine who receives the MDA
         idx_to_receive_mda = []
         for age_group, cov in self.coverage.items():
@@ -1375,20 +1386,28 @@ class HSI_Schisto_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin)
         if test == 'urine_filtration_test':
 
             # sensitivity of test depends worm burden
-            if df.at[person_id, 'ss_sh_infection_status'] in ['Non-infected', 'Low-infection']:
-
+            if df.at[person_id, 'ss_sh_infection_status'] == 'Non-infected':
                 test_result = self.sim.modules[
                     "HealthSystem"
                 ].dx_manager.run_dx_test(
-                    dx_tests_to_run="UF_schisto_test_lowWB",
+                    dx_tests_to_run="UF_schisto_test_noWB",
                     hsi_event=self
                 )
+
+            elif df.at[person_id, 'ss_sh_infection_status'] == 'Low-infection':
+                test_result = self.sim.modules[
+                    "HealthSystem"
+                ].dx_manager.run_dx_test(
+                    dx_tests_to_run="UF_schisto_test_lowWB", hsi_event=self
+                )
+
             elif df.at[person_id, 'ss_sh_infection_status'] == 'Moderate-infection':
                 test_result = self.sim.modules[
                     "HealthSystem"
                 ].dx_manager.run_dx_test(
                     dx_tests_to_run="UF_schisto_test_moderateWB", hsi_event=self
                 )
+
             else:
                 test_result = self.sim.modules[
                     "HealthSystem"
