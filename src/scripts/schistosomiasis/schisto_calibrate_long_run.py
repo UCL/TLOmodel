@@ -51,7 +51,7 @@ def run_simulation(popsize,
                    equal_allocation_by_district,
                    hs_disable_and_reject_all,
                    mda_execute,
-                   scaleup_WASH):
+                   single_district):
 
     start_date = Date(2010, 1, 1)
     end_date = Date(2025, 12, 31)
@@ -60,6 +60,7 @@ def run_simulation(popsize,
     custom_levels = {
         "*": logging.WARNING,
         "tlo.methods.schisto": logging.INFO,
+        "tlo.methods.healthsystem.summary": logging.INFO,
         # "tlo.methods.healthburden": logging.INFO
     }
 
@@ -82,10 +83,12 @@ def run_simulation(popsize,
                      ]
                  ),
 
-                 schisto.Schisto(resourcefilepath=resourcefilepath, mda_execute=mda_execute),
+                 schisto.Schisto(resourcefilepath=resourcefilepath,
+                                 mda_execute=mda_execute,
+                                 single_district=single_district),
                  )
 
-    sim.modules["Schisto"].parameters["calibration_scenario"] = 0
+    # sim.modules["Schisto"].parameters["calibration_scenario"] = 0
 
     # initialise the population
     sim.make_initial_population(n=popsize)
@@ -103,7 +106,7 @@ sim, output = run_simulation(popsize=1_000,
                              equal_allocation_by_district=True,
                              hs_disable_and_reject_all=False,  # if True, no HSIs run
                              mda_execute=True,
-                             scaleup_WASH=False)
+                             single_district=True)
 
 
 # %% Extract and process the `pd.DataFrame`s needed

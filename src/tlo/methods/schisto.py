@@ -67,10 +67,6 @@ class Schisto(Module):
 
     PARAMETERS = {
         # these values do not vary between species
-        # 'prob_sent_to_lab_test_children': Parameter(Types.REAL,
-        #                                             'Probability that infected child gets sent to lab test'),
-        # 'prob_sent_to_lab_test_adults': Parameter(Types.REAL,
-        #                                           'Probability that an infected adults gets sent to lab test'),
         'delay_till_hsi_a_repeated': Parameter(Types.REAL,
                                                'Time till seeking healthcare again after not being sent to '
                                                'schisto test: start'),
@@ -108,10 +104,11 @@ class Schisto(Module):
                                              'in historic rounds'),
     }
 
-    def __init__(self, name=None, resourcefilepath=None, mda_execute=True):
+    def __init__(self, name=None, resourcefilepath=None, mda_execute=True, single_district=False):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
         self.mda_execute = mda_execute
+        self.single_district = single_district
 
         # Create pointer that will be to dict of disability weights
         self.disability_weights = None
@@ -178,13 +175,9 @@ class Schisto(Module):
         df.loc[df.is_alive, f'{self.module_prefix}_last_PZQ_date'] = pd.NaT
 
         # reset all to one district if doing calibration runs
-        if p['calibration_scenario'] > 0:
-            df['district_num_of_residence'] = df['district_num_of_residence'][0]
-
-            # replacement_value = df['district_of_residence'].cat.categories[0]
-            replacement_value = 'Likoma'  # chosen as both species have high harbouring rate
-            # Assign the replacement value to the entire column while preserving categorical dtype
-            df['district_of_residence'] = pd.Categorical([replacement_value] * len(df),
+        if self.single_district:
+            df['district_num_of_residence'] = 0
+            df['district_of_residence'] = pd.Categorical(['Chitipa'] * len(df),
                                                          categories=df['district_of_residence'].cat.categories)
 
         for _spec in self.species.values():
@@ -302,7 +295,7 @@ class Schisto(Module):
                             'delay_till_hsi_b_repeated',
                             'rr_WASH',
                             'calibration_scenario',
-                            'urine_filtration_sensitivity_lowWB'
+                            'urine_filtration_sensitivity_lowWB',
                             'urine_filtration_sensitivity_moderateWB',
                             'urine_filtration_sensitivity_highWB',
                             'kato_katz_sensitivity_moderateWB',
@@ -1251,8 +1244,6 @@ class SchistoMDAEvent(Event, PopulationScopeEventMixin):
          * Schedules the MDA HSI for each person that is reached in the MDA.
          * Schedules the recurrence of this event, if the MDA is to be repeated in the future."""
 
-        print(f'mda in {self.sim.date.year}')
-
         # Determine who receives the MDA
         idx_to_receive_mda = []
         for age_group, cov in self.coverage.items():
@@ -1335,20 +1326,6 @@ class SchistoWashScaleUp(RegularEvent, PopulationScopeEventMixin):
         # allow those currently infected to be selected, their exposure now reduces
         # alternative method, if any susceptibility to either species then eligible for reduction
         # if selected for reduced susceptibility, apply to both species
-
-        # susceptible_haem = df.loc[df.is_alive & (df.ss_sh_susceptibility == 1)].index
-        # reduce_susceptibility = (
-        #     self.module.rng.random_sample(len(susceptible_haem))
-        #     < p["rr_WASH"]
-        # )
-        # df.loc[reduce_susceptibility, 'ss_sh_susceptibility'] = 0
-        #
-        # susceptible_mansoni = df.loc[df.is_alive & (df.ss_sm_susceptibility == 1)].index
-        # reduce_susceptibility = (
-        #     self.module.rng.random_sample(len(susceptible_mansoni))
-        #     < p["rr_WASH"]
-        # )
-        # df.loc[reduce_susceptibility, 'ss_sm_susceptibility'] = 0
 
         susceptible_haem = df.loc[df.is_alive & ((df.ss_sh_susceptibility == 1) | (df.ss_sm_susceptibility == 1))].index
         reduce_susceptibility = (
@@ -1502,8 +1479,10 @@ class HSI_Schisto_MDA(HSI_Event, IndividualScopeEventMixin):
         self.beneficiaries_ids = beneficiaries_ids
 
         self.TREATMENT_ID = 'Schisto_MDA'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
-            'EPI': len(beneficiaries_ids) if beneficiaries_ids else 1})
+
+        # self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
+        #     'EPI': len(beneficiaries_ids) if beneficiaries_ids else 1})
+        # self.ACCEPTED_FACILITY_LEVEL = '1a'
         # The `EPI` appointment is appropriate because it's a very small appointment, and we note that this is used in
         # the coding for 'de-worming'-type activities in the DHIS2 data. We show that expect there will be one of these
         # appointments for each of the beneficiaries, whereas, in fact, it may be more realistic to consider that the
@@ -1511,8 +1490,11 @@ class HSI_Schisto_MDA(HSI_Event, IndividualScopeEventMixin):
         # This class is created when running `tlo_hsi_event.py`, which doesn't provide the argument `beneficiaries_ids`
         # but does require that `self.EXPECTED_APPT_FOOTPRINT` is valid. So, in this case, we let
         # `self.EXPECTED_APPT_FOOTPRINT` show that this requires 1 * that appointment type.
+        # EPI footprint at level 1a = Clinical 0.06, Nursing_and_Midwifery 4.0, Pharmacy 1.68
 
-        self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
+            'ConWithDCSA': len(beneficiaries_ids)*0.5 if beneficiaries_ids else 0.5})
+        self.ACCEPTED_FACILITY_LEVEL = '0'
 
     def apply(self, person_id, squeeze_factor):
         """Provide the treatment to the beneficiaries of this HSI."""
@@ -1531,7 +1513,7 @@ class HSI_Schisto_MDA(HSI_Event, IndividualScopeEventMixin):
             self.module.do_effect_of_treatment(person_id=beneficiaries_still_alive)
 
         # Return the update appointment that reflects the actual number of beneficiaries.
-        return self.make_appt_footprint({'EPI': len(beneficiaries_still_alive)})
+        return self.make_appt_footprint({'ConWithDCSA': len(beneficiaries_still_alive)*0.5})
 
 
 class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
