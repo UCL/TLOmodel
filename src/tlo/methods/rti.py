@@ -2314,9 +2314,9 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         disability_series_for_alive_persons = df.loc[df.is_alive, "rt_disability"]
         return disability_series_for_alive_persons
 
-    def report_prevalence(self, population):
+    def report_prevalence(self):
         # This returns dataframe that reports on the prevalence of RTIs for all individuals
-        df = population.props
+        df = self.sim.population.props
         total_prev = len(
             df[(df['is_alive']) & (df['rt_inj_severity'] != 'none')]
         ) / len(df[df['is_alive']])

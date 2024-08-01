@@ -999,10 +999,10 @@ class Tb(Module):
 
         return health_values.loc[df.is_alive]
 
-    def report_prevalence(self, population):
+    def report_prevalence(self):
         # This returns dataframe that reports on the prevalence of malaria for all individuals
 
-        df = population.props
+        df = self.sim.population.props
         total_prev = len(
             df[((df.tb_inf == "active") | (df.tb_inf == "latent")) & df.is_alive]
         ) / len(df[df.is_alive])

@@ -197,9 +197,9 @@ class Measles(Module, GenericFirstAppointmentsMixin):
 
         return health_values
 
-    def report_prevalence(self, population):
+    def report_prevalence(self):
         # This returns dataframe that reports on the prevalence of measles for all individuals
-        df = population.props
+        df = self.sim.population.props
         total_prev = len(
             df[df.is_alive & df.me_has_measles]
         ) / len(df[df.is_alive])

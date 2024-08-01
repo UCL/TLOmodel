@@ -1286,13 +1286,13 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         return dalys
 
     def report_prevalence(self):
-        # This returns dataframe that reports on the prevalence of HIV for all individuals
+        # This reports on the prevalence of HIV for all individuals
 
         df = self.sim.population.props
         total_prev = len(
             df[df.hv_inf & df.is_alive]
         ) / len(df[df.is_alive])
-
+        print(total_prev)
         return total_prev
 
     def mtct_during_breastfeeding(self, mother_id, child_id):

@@ -213,9 +213,9 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         df = self.sim.population.props
         return pd.Series(index=df.index[df.is_alive], data=0.0).add(disability_weights_for_each_person_with_symptoms,
                                                                     fill_value=0.0)
-    def report_prevalence(self, population):
+    def report_prevalence(self):
         # This returns dataframe that reports on the prevalence of schisto for all individuals
-        df = population.props
+        df = self.sim.population.props
         total_prev = len(
             df[(df['is_alive']) & (df[prop('infection_status')] != 'Non-infected')]
         ) / len(df[df['is_alive']])

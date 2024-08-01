@@ -574,9 +574,9 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
             ] = self.daly_wts['metastatic_palliative_care']
 
         return disability_series_for_alive_persons
-    def report_prevalence(self, population):
+    def report_prevalence(self):
         # This returns dataframe that reports on the prevalence of other adult cancer for all individuals
-        df = population.props
+        df = self.sim.population.props
         total_prev = len(
             df[(df['is_alive']) & (df['oac_status'] != 'none')]
         ) / len(df[df['is_alive']])
