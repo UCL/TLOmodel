@@ -696,7 +696,7 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
             # Prefix column names with the disease module name
             prevalence_from_disease_module.columns = [
                 "Intrapartum stillbirth" if disease_module_name == "Labour" else
-                "Antenatal stillbirth" if disease_module_name == "pregnancy_supervisor" else
+                "Antenatal stillbirth" if disease_module_name == "PregnancySupervisor" else
                 f"{disease_module_name}" for col in prevalence_from_disease_module.columns
             ]
 
