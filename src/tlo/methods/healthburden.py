@@ -685,7 +685,7 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
         prevalence_from_each_disease_module = list()
         for disease_module_name in self.module.recognised_modules_names:
             disease_module = self.sim.modules[disease_module_name]
-            prevalence_from_disease_module = disease_module.report_daly_values()
+            prevalence_from_disease_module = disease_module.report_prevalence_values()
             # Check type is in acceptable form and make into dataframe if not already
             assert type(prevalence_from_disease_module) in (pd.Series, pd.DataFrame)
 
@@ -700,7 +700,7 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
                 f"{disease_module_name}" for col in prevalence_from_disease_module.columns
             ]
 
-            # Append to list of dalys reported by each module
+            # Append to list of prevalences reported by each module
             prevalence_from_each_disease_module.append(prevalence_from_disease_module)
 
         # 2) Combine into a single dataframe (each column of this dataframe gives the reports from each module), and
@@ -714,7 +714,7 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
         disease_specific_prevalence_values_this_month = disease_specific_prevalence_values_this_month.merge(
             df.loc[idx_alive, ['sex', 'li_wealth', 'age_range']], left_index=True, right_index=True, how='left')
 
-        # - sum of daly_weight, by sex/age/wealth
+        # - sum of disease_specific_prevalence_values_this_month, by sex/age/wealth
         prevalence_monthly_summary = pd.DataFrame(
             disease_specific_prevalence_values_this_month.groupby(['sex', 'age_range', 'li_wealth']).sum().fillna(0))
 
@@ -724,7 +724,7 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
         prevalence_monthly_summary = prevalence_monthly_summary.reorder_levels(
             ['sex', 'age_range', 'li_wealth', 'year'])
 
-        # 4) Add the monthly summary to the overall dataframe for YearsLivedWithDisability
+        # 4) Add the monthly summary to the overall dataframe
         prevalence_to_add = prevalence_monthly_summary.sum().sum()     # for checking
         prevalence_current = self.module.prevalence_of_diseases.sum().sum()  # for checking
 
@@ -735,7 +735,7 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
             func=np.add,
             overwrite=False)
 
-        # Merge into a dataframe with the correct multi-index (the multi-index from combine is subtly different)
+        # Merge into a dataframe with the correct multi-index
         self.module.prevalence_of_diseases = \
             pd.DataFrame(index=self.module.multi_index_for_age_and_wealth_and_time)\
               .merge(combined, left_index=True, right_index=True, how='left')
