@@ -1084,8 +1084,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
 
     def report_prevalence(self):
         """
-        This function reports the prevalence of conditions for this module generated in the previous month
-        :return: data frame containing the prevalence of each condition
+        This function reports the prevalence of intrapartum stillbirth for this module generated in the previous month
         """
         df = self.sim.population.props
 
