@@ -98,7 +98,7 @@ class Schisto(Module):
                                              'target groups'),
         'mda_target_group': Parameter(Types.STRING,
                                              'Target group for future MDA activities, '
-                                             'one of [PSAC, SAC, ALL]'),
+                                             'one of [PSAC_SAC, SAC, ALL]'),
         'mda_frequency_months': Parameter(Types.INT,
                                              'Number of months between MDA activities'),
         'MDA_coverage_historical': Parameter(Types.DATA_FRAME,
@@ -147,6 +147,11 @@ class Schisto(Module):
         # Load parameters
         workbook = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Schisto.xlsx', sheet_name=None)
         self.parameters = self._load_parameters_from_workbook(workbook)
+
+        # update mda strategy from default values
+        self.parameters['MDA_coverage_prognosed'] = self._create_mda_strategy(self.parameters['MDA_coverage_prognosed'])
+
+        # load species-specific parameters
         for _spec in self.species.values():
             self.parameters.update(_spec.load_parameters_from_workbook(workbook))
 
@@ -308,7 +313,8 @@ class Schisto(Module):
                             'mda_target_group',
                             'mda_frequency_months'
                             ):
-            parameters[_param_name] = float(param_list[_param_name])
+            # parameters[_param_name] = float(param_list[_param_name])
+            parameters[_param_name] = param_list[_param_name]
 
         # MDA coverage - historic
         # todo this is updated now with the EPSEN data
@@ -320,13 +326,52 @@ class Schisto(Module):
         # clip upper limit of MDA coverage at 99%
         parameters['MDA_coverage_historical'] = parameters['MDA_coverage_historical'].clip(upper=0.99)
 
-        # MDA coverage - prognosed
+        # MDA coverage - prognosed - default values
         prognosed_mda = workbook['MDA_prognosed_Coverage'].set_index(['District', 'Frequency'])[
             ['Cov_PSAC', 'Cov_SAC', 'Cov_Adults']]
         prognosed_mda.columns = prognosed_mda.columns.str.replace('Cov_', '')
         parameters['MDA_coverage_prognosed'] = prognosed_mda.astype(float)
 
         return parameters
+
+    def _create_mda_strategy(self, prognosed_mda) -> pd.DataFrame:
+
+        params = self.parameters
+        coverage = params['mda_coverage']
+        target = params['mda_target_group']
+
+        # Define default values for each column
+        default_values = {
+            'Cov_PSAC': 0,
+            'Cov_SAC': 0,
+            'Cov_Adults': 0
+        }
+
+        # Define the updates based on the target
+        updates = {
+            'PSAC_SAC': {
+                'Cov_PSAC': coverage,
+                'Cov_SAC': coverage,
+                'Cov_Adults': default_values['Cov_Adults']
+            },
+            'SAC': {
+                'Cov_SAC': coverage,
+                'Cov_PSAC': default_values['Cov_PSAC'],
+                'Cov_Adults': default_values['Cov_Adults']
+            },
+            'ALL': {
+                'Cov_PSAC': coverage,
+                'Cov_SAC': coverage,
+                'Cov_Adults': coverage
+            }
+        }
+
+        # Get the appropriate update based on the target
+        if target in updates:
+            prognosed_mda.update(pd.DataFrame([updates[target]], index=prognosed_mda.index))
+
+        return prognosed_mda
+
 
     def _register_symptoms(self, symptoms: dict) -> None:
         """Register the symptoms with the `SymptomManager`.
