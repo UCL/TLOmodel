@@ -206,7 +206,7 @@
   affiliation: University College London
   website: "https://profiles.ucl.ac.uk/954"
   contributions:
-    - Clinical consultant 
+    - Clinical consultant
 - given-names: Paul
   family-names: Revill
   orcid: "https://orcid.org/0000-0001-8632-0600"
@@ -237,7 +237,7 @@
   website: "https://www.york.ac.uk/che/staff/students/newton-chagoma/"
   github-username: nchagoma503
   contributions:
-    - Health economics  
+    - Health economics
 - given-names: Martin
   family-names: Chalkley
   orcid: "https://orcid.org/0000-0002-1091-8259"
@@ -273,3 +273,11 @@
   family-names: Uwais
   website: "https://uk.linkedin.com/in/leila-uwais-597705142"
   github-username: Leila-Uwais
+- given-names: Dominic
+  family-names: Nkhoma
+  affiliation: "Kamuzu University of Health Sciences"
+  orcid: "https://orcid.org/0000-0001-6125-6630"
+  contributions:
+      - Policy translation
+  website: https://mw.linkedin.com/in/dominicnkhoma1978
+
