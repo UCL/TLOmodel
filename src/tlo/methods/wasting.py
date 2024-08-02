@@ -439,31 +439,33 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         assert not (df.at[person_id, 'un_clinical_acute_malnutrition'] == 'MAM') & \
                    (df.at[person_id, 'un_sam_with_complications'])
 
-    def date_of_outcome_for_untreated_am(self, person_id, duration_am):
+    def date_of_outcome_for_untreated_wasting(self, person_id):
         """
-        helper function to get the duration, the wasting episode and date of outcome (recovery, progression, or death)
+        Helper function to use the duration of the wasting episode to get date of outcome (recovery, progression,
+        or death)
         :param person_id:
-        :param duration_am:
-        :return:
+        :return: date of outcome, which can be recovery to no wasting or progression to severe wasting from moderate
+        wasting; or recovery to moderate wasting or death due to severe wasting
         """
         df = self.sim.population.props
         p = self.parameters
+        whz_category = df.at[person_id, 'un_WHZ_category']
 
-        # moderate wasting (for progression to severe, or recovery from MAM) -----
-        if duration_am == 'MAM':
+        # moderate wasting (for progression to severe, or recovery to no wasting) -----
+        if whz_category == '-3<=WHZ<-2':
             # Allocate the duration of the moderate wasting episode
-            duration_mam = int(max(p['min_days_duration_of_wasting'], p['average_duration_of_untreated_MAM']))
+            duration_mod_wasting = int(max(p['min_days_duration_of_wasting'], p['average_duration_of_untreated_MAM']))
             # Allocate a date of outcome (progression, recovery or death)
-            date_of_outcome = df.at[person_id, 'un_last_wasting_date_of_onset'] + DateOffset(days=duration_mam)
+            date_of_outcome = df.at[person_id, 'un_last_wasting_date_of_onset'] + DateOffset(days=duration_mod_wasting)
             return date_of_outcome
 
         # severe wasting (for death, or recovery to moderate wasting) -----
-        if duration_am == 'SAM':
+        if whz_category == 'WHZ<-3':
             # determine the duration of SAM episode
-            duration_sam = int(max(p['min_days_duration_of_wasting'], p['average_duration_of_untreated_MAM']
-                                   + p['average_duration_of_untreated_SAM']))
+            duration_sev_wasting = int(max(p['min_days_duration_of_wasting'], p['average_duration_of_untreated_MAM']
+                                           + p['average_duration_of_untreated_SAM']))
             # Allocate a date of outcome (progression, recovery or death)
-            date_of_outcome = df.at[person_id, 'un_last_wasting_date_of_onset'] + DateOffset(days=duration_sam)
+            date_of_outcome = df.at[person_id, 'un_last_wasting_date_of_onset'] + DateOffset(days=duration_sev_wasting)
             return date_of_outcome
 
     def population_poll_clinical_am(self, population):
@@ -683,22 +685,22 @@ class WastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # # # INCIDENCE OF WASTING # # # # # # # # # # # # # # # # # # # # #
         # Determine who will be onset with wasting among those who are not currently wasted -------------
-        inc_wasting = df.loc[df.is_alive & (df.age_exact_years < 5) & (
-                df.un_WHZ_category == 'WHZ>=-2')]
-        incidence_of_wasting = self.module.wasting_models.wasting_incidence_lm.predict(inc_wasting,
+        not_wasted = df.loc[df.is_alive & (df.age_exact_years < 5) & (
+            df.un_WHZ_category == 'WHZ>=-2')]
+        incidence_of_wasting = self.module.wasting_models.wasting_incidence_lm.predict(not_wasted,
                                                                                        rng=rng
                                                                                        )
-        wasting_idx = inc_wasting.index
+        not_wasted_idx = not_wasted.index
         # update the properties for wasted children
-        df.loc[wasting_idx[incidence_of_wasting], 'un_ever_wasted'] = True
-        df.loc[wasting_idx[incidence_of_wasting], 'un_last_wasting_date_of_onset'] = self.sim.date
+        df.loc[not_wasted_idx[incidence_of_wasting], 'un_ever_wasted'] = True
+        df.loc[not_wasted_idx[incidence_of_wasting], 'un_last_wasting_date_of_onset'] = self.sim.date
         # start as moderate wasting
-        df.loc[wasting_idx[incidence_of_wasting], 'un_WHZ_category'] = '-3<=WHZ<-2'
+        df.loc[not_wasted_idx[incidence_of_wasting], 'un_WHZ_category'] = '-3<=WHZ<-2'
         # start without treatment
-        df.loc[wasting_idx[incidence_of_wasting], 'un_am_treatment_type'] = 'none'
+        df.loc[not_wasted_idx[incidence_of_wasting], 'un_am_treatment_type'] = 'none'
         # --------------------------------------------------------------------
         # Add these incident cases to the tracker
-        for person in wasting_idx:
+        for person in not_wasted_idx:
             wasting_severity = df.at[person, 'un_WHZ_category']
             age_group = WastingPollingEvent.AGE_GROUPS.get(df.loc[person].age_years, '5+y')
             # if wasting_severity != 'WHZ>=-2':
@@ -708,14 +710,14 @@ class WastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # # # PROGRESS TO SEVERE WASTING # # # # # # # # # # # # # # # # # #
         # Determine those that will progress to severe wasting (WHZ < -3) and schedule progression event ---------
-        progression_sev_wasting = df.loc[df.is_alive & (df.age_exact_years < 5) &
-                                         (df.un_WHZ_category == '-3<=WHZ<-2')]
+        mod_wasting = df.loc[df.is_alive & (df.age_exact_years < 5) &
+                             (df.un_WHZ_category == '-3<=WHZ<-2')]
         progression_severe_wasting = self.module.wasting_models.severe_wasting_progression_lm.predict(
-            progression_sev_wasting, rng=rng, squeeze_single_row_output=False)
+            mod_wasting, rng=rng, squeeze_single_row_output=False)
 
         # determine those individuals who will progress to severe wasting and time of progression
-        for person in progression_sev_wasting.index[progression_severe_wasting]:
-            outcome_date = self.module.date_of_outcome_for_untreated_am(person_id=person, duration_am='MAM')
+        for person in mod_wasting.index[progression_severe_wasting]:
+            outcome_date = self.module.date_of_outcome_for_untreated_wasting(person_id=person)
             # schedule severe wasting WHZ < -3 onset
             if outcome_date <= self.sim.date:
                 # schedule severe wasting (WHZ < -3) onset today
@@ -729,8 +731,8 @@ class WastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # # # MODERATE WASTING NATURAL RECOVERY # # # # # # # # # # # # # #
         # Schedule recovery from moderate wasting for those not progressing to severe wasting ---------
-        for person in progression_sev_wasting.index[~progression_severe_wasting]:
-            outcome_date = self.module.date_of_outcome_for_untreated_am(person_id=person, duration_am='MAM')
+        for person in mod_wasting.index[~progression_severe_wasting]:
+            outcome_date = self.module.date_of_outcome_for_untreated_wasting(person_id=person)
             if outcome_date <= self.sim.date:
                 # schedule recovery for today
                 self.sim.schedule_event(event=WastingNaturalRecoveryEvent(
