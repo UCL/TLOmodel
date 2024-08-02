@@ -39,6 +39,11 @@ class ScenarioDefinitions:
             },
         )
 
+    def baseline_mode1(self) -> Dict:
+        """Return the Dict with values for the parameter changes that define the baseline scenario when using Mode 1.
+        """
+        return get_parameters_for_status_quo()  # <-- Parameters that have been the calibration targets
+
     def double_capacity_at_primary_care(self) -> Dict:
         return {
             'HealthSystem': {

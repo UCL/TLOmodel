@@ -66,12 +66,12 @@ class MiniRunHTMWithAndWithoutHSS(BaseScenario):
 
         return {
             "Baseline":
-                scenario_definitions.baseline(),
+                scenario_definitions.baseline_mode1(),
 
             # - - - HIV & TB & MALARIA SCALE-UP WITHOUT HSS PACKAGE- - -
             "HIV/Tb/Malaria Programs Scale-up WITHOUT HSS PACKAGE":
                 mix_scenarios(
-                    scenario_definitions.baseline(),
+                    scenario_definitions.baseline_mode1(),
                     scenario_definitions.hiv_scaleup(),
                     scenario_definitions.tb_scaleup(),
                     scenario_definitions.malaria_scaleup(),
