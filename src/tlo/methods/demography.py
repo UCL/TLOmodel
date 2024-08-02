@@ -378,8 +378,12 @@ class Demography(Module):
         Returns a dataframe with these
         """
         df = self.sim.population.props
-        neonatal_deaths = len(df.loc[(df['age_days'] < 29)])/len(df[df['on_birth']]) * 1000
-        maternal_direct_deaths = len(df.loc[(df['death'] == 'Maternal Disorders')])
+        print(df[df['age_days'] < 29])
+        if len(df[df['age_days'] < 29]) == 0:
+            neonatal_deaths = 0
+        else:
+            neonatal_deaths = len(df[(df['age_days'] < 29) & (~df['is_alive'])]) / len(df[df['age_days'] < 29]) * 1000
+        maternal_direct_deaths = len(df.loc[(df['cause_of_death'] == 'Maternal Disorders')])
         indirect_deaths_non_hiv = len(df.loc[
                                           (df['is_pregnant'] | df['la_is_postpartum']) &
                                           (df['cause_of_death'].str.contains(
