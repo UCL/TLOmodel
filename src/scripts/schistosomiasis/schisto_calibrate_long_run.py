@@ -54,7 +54,7 @@ def run_simulation(popsize,
                    single_district):
 
     start_date = Date(2010, 1, 1)
-    end_date = Date(2025, 12, 31)
+    end_date = Date(2015, 12, 31)
 
     # For logging
     custom_levels = {
@@ -89,6 +89,8 @@ def run_simulation(popsize,
                  )
 
     # sim.modules["Schisto"].parameters["calibration_scenario"] = 0
+    sim.modules["Schisto"].parameters["scaleup_WASH"] = True
+    sim.modules["Schisto"].parameters["scaleup_WASH_start_year"] = 2011
 
     # initialise the population
     sim.make_initial_population(n=popsize)

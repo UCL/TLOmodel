@@ -21,17 +21,22 @@ import random
 
 from tlo import Date, logging
 from tlo.methods import (
+    alri,
     bladder_cancer,
     demography,
     diarrhoea,
     enhanced_lifestyle,
+    epi,
     healthburden,
     healthsystem,
     healthseekingbehaviour,
     hiv,
     schisto,
     simplified_births,
+    stunting,
     symptommanager,
+    tb,
+    wasting,
 )
 from tlo.scenario import BaseScenario
 
@@ -50,9 +55,9 @@ class TestScenario(BaseScenario):
 
         # self.coverage_options = [0.6, 0.7, 0.8]
         # self.target_group_options = ['SAC', 'PSAC', 'All']
-        self.coverage_options = [0, 0.8]
+        self.coverage_options = [0.0, 0.8]
         self.target_group_options = ['All']
-        self.wash_options = [True, False]
+        self.wash_options = [0, 1]  # although this is BOOL, python changes type when reading in from Excel
 
         self.mda_execute = True
         self.single_district = True
@@ -81,6 +86,7 @@ class TestScenario(BaseScenario):
                                   equal_allocation_by_district=self.equal_allocation_by_district),
             simplified_births.SimplifiedBirths(resourcefilepath=self.resources),
             enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
+            epi.Epi(resourcefilepath=self.resources),
             healthburden.HealthBurden(resourcefilepath=self.resources),
             healthsystem.HealthSystem(
                 resourcefilepath=self.resources,
@@ -89,12 +95,16 @@ class TestScenario(BaseScenario):
             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
             symptommanager.SymptomManager(resourcefilepath=self.resources),
             # diseases
+            alri.Alri(resourcefilepath=self.resources),
             bladder_cancer.BladderCancer(resourcefilepath=self.resources),
             diarrhoea.Diarrhoea(resourcefilepath=self.resources),
             hiv.Hiv(resourcefilepath=self.resources),
             schisto.Schisto(resourcefilepath=self.resources,
                             mda_execute=self.mda_execute,
                             single_district=self.single_district),
+            stunting.Stunting(resourcefilepath=self.resources),
+            tb.Tb(resourcefilepath=self.resources),
+            wasting.Wasting(resourcefilepath=self.resources),
         ]
 
     def draw_parameters(self, draw_number, rng):
@@ -108,7 +118,7 @@ class TestScenario(BaseScenario):
             'Schisto': {
                 'mda_coverage': self.coverage_options[coverage_index],
                 'mda_target_group': self.target_group_options[target_group_index],
-                'mda_frequency': 6,
+                'mda_frequency_months': 6,
                 'scaleup_WASH': self.wash_options[wash_index],
                 'scaleup_WASH_start_year': 2024,
             },

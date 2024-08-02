@@ -78,7 +78,7 @@ class Schisto(Module):
         'calibration_scenario': Parameter(Types.REAL,
                                           'Scenario used to reset parameters to run calibration sims'),
         'urine_filtration_sensitivity_lowWB': Parameter(Types.REAL,
-                                                             'Sensitivity of UF in detecting low WB'),
+                                                        'Sensitivity of UF in detecting low WB'),
         'urine_filtration_sensitivity_moderateWB': Parameter(Types.REAL,
                                                              'Sensitivity of UF in detecting moderate WB'),
         'urine_filtration_sensitivity_highWB': Parameter(Types.REAL,
@@ -88,17 +88,17 @@ class Schisto(Module):
         'kato_katz_sensitivity_highWB': Parameter(Types.REAL,
                                                   'Sensitivity of KK in detecting high WB'),
         'scaleup_WASH': Parameter(Types.BOOL,
-                                                  'Boolean whether to scale-up WASH during simulation'),
-        'scaleup_WASH_start_time': Parameter(Types.INT,
-                                                  'Start date to scale-up WASH, years after sim start date'),
+                                  'Boolean whether to scale-up WASH during simulation'),
+        'scaleup_WASH_start_year': Parameter(Types.INT,
+                                             'Start date to scale-up WASH, years after sim start date'),
         'mda_coverage': Parameter(Types.REAL,
-                                             'Coverage of future MDA activities, consistent across all'
-                                             'target groups'),
+                                  'Coverage of future MDA activities, consistent across all'
+                                  'target groups'),
         'mda_target_group': Parameter(Types.STRING,
-                                             'Target group for future MDA activities, '
-                                             'one of [PSAC_SAC, SAC, ALL]'),
+                                      'Target group for future MDA activities, '
+                                      'one of [PSAC_SAC, SAC, ALL]'),
         'mda_frequency_months': Parameter(Types.INT,
-                                             'Number of months between MDA activities'),
+                                          'Number of months between MDA activities'),
         'MDA_coverage_historical': Parameter(Types.DATA_FRAME,
                                              'Probability of getting PZQ in the MDA for PSAC, SAC and Adults '
                                              'in historic rounds'),
@@ -138,6 +138,10 @@ class Schisto(Module):
             if name != 'All':
                 s.loc[(s.index >= low_limit) & (s.index <= high_limit)] = name
         self.age_group_mapper = s.to_dict()
+
+        # create container for logging person-days infected
+        self.log_person_days_any_infection = 0
+        self.log_person_days_high_infection = 0
 
     def read_parameters(self, data_folder):
         """Read parameters and register symptoms."""
@@ -202,6 +206,7 @@ class Schisto(Module):
 
         # Schedule the logging event
         sim.schedule_event(SchistoLoggingEvent(self), sim.date)  # monthly, by district, age-group
+        sim.schedule_event(SchistoPersonDaysLoggingEvent(self), sim.date)
 
         # Schedule MDA events
         if self.mda_execute:
@@ -300,7 +305,7 @@ class Schisto(Module):
                             'kato_katz_sensitivity_moderateWB',
                             'kato_katz_sensitivity_highWB',
                             'scaleup_WASH',
-                            'scaleup_WASH_start_time',
+                            'scaleup_WASH_start_year',
                             'mda_coverage',
                             'mda_target_group',
                             'mda_frequency_months'
@@ -1331,8 +1336,9 @@ class SchistoWashScaleUp(RegularEvent, PopulationScopeEventMixin):
             self.module.rng.random_sample(len(susceptible_haem))
             < p["rr_WASH"]
         )
-        df.loc[reduce_susceptibility, 'ss_sh_susceptibility'] = 0
-        df.loc[reduce_susceptibility, 'ss_sm_susceptibility'] = 0
+        change_susceptibility = susceptible_haem[reduce_susceptibility]
+        df.loc[change_susceptibility, 'ss_sh_susceptibility'] = 0
+        df.loc[change_susceptibility, 'ss_sm_susceptibility'] = 0
 
 
 class HSI_Schisto_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin):
@@ -1492,7 +1498,7 @@ class HSI_Schisto_MDA(HSI_Event, IndividualScopeEventMixin):
         # EPI footprint at level 1a = Clinical 0.06, Nursing_and_Midwifery 4.0, Pharmacy 1.68
 
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
-            'ConWithDCSA': len(beneficiaries_ids)*0.5 if beneficiaries_ids else 0.5})
+            'ConWithDCSA': len(beneficiaries_ids) * 0.5 if beneficiaries_ids else 0.5})
         self.ACCEPTED_FACILITY_LEVEL = '0'
 
     def apply(self, person_id, squeeze_factor):
@@ -1512,13 +1518,40 @@ class HSI_Schisto_MDA(HSI_Event, IndividualScopeEventMixin):
             self.module.do_effect_of_treatment(person_id=beneficiaries_still_alive)
 
         # Return the update appointment that reflects the actual number of beneficiaries.
-        return self.make_appt_footprint({'ConWithDCSA': len(beneficiaries_still_alive)*0.5})
+        return self.make_appt_footprint({'ConWithDCSA': len(beneficiaries_still_alive) * 0.5})
+
+
+class SchistoPersonDaysLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+    def __init__(self, module):
+        """This is a regular event (every day) that logs the person-days infected """
+        super().__init__(module, frequency=DateOffset(days=1))
+        assert isinstance(module, Schisto)
+
+    def apply(self, population):
+        """
+        Log the numbers of people infected with any species of schisto and high-burden infections
+        sum these in SchistoLoggingEvent each year to get person-years infected
+        """
+        df = self.sim.population.props
+
+        # each day this runs, sum the number of people with each type of infection and add to logger
+        # Count rows where person has either mansoni or haematobium infection, any infection intensity
+        count_any_infection = df[~((df['ss_sh_infection_status'] == 'Non-infected') &
+                                   (df['ss_sm_infection_status'] == 'Non-infected'))].shape[0]
+
+        count_high_infection = df[((df['ss_sh_infection_status'] == 'High-infection') |
+                                   (df['ss_sm_infection_status'] == 'High-infection'))].shape[0]
+
+        self.module.log_person_days_any_infection += count_any_infection
+        self.module.log_person_days_high_infection += count_high_infection
 
 
 class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
+
         """This is a regular event (every month) that causes the logging for each species."""
-        super().__init__(module, frequency=DateOffset(months=1))
+        self.repeat = 1
+        super().__init__(module, frequency=DateOffset(months=self.repeat))
         assert isinstance(module, Schisto)
 
     def apply(self, population):
@@ -1528,3 +1561,31 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         for _spec in self.module.species.values():
             _spec.log_infection_status()
             _spec.log_mean_worm_burden()
+
+        # treatment episodes
+        df = population.props
+        now = self.sim.date
+        new_tx = len(
+            df[
+                (df.ss_last_PZQ_date >= (now - DateOffset(months=self.repeat)))
+                & (df.ss_last_PZQ_date >= (now - DateOffset(months=self.repeat)))
+                ]
+        )
+
+        # treatment and person-days infected
+        tx_coverage = {
+            'person_days_any_infection': self.module.log_person_days_any_infection,
+            'person_days_high_infection': self.module.log_person_days_high_infection,
+            'treatment_episodes': new_tx,
+        }
+
+        logger.info(
+            key='Schisto_person_days_infected',
+            data=tx_coverage,
+            description='Counts of treatment and person-days infected by any species'
+        )
+
+        # clear the logger ready for the next year
+        self.log_person_days_any_infection = 0
+        self.log_person_days_high_infection = 0
+
