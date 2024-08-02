@@ -684,20 +684,22 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
         # 1) Ask each disease module to log the prevalence for the previous month
         prevalence_from_each_disease_module = list()
         for disease_module_name in self.module.recognised_modules_names:
-            if disease_module_name == 'CardioMetabolicDisorders' or disease_module_name == 'NewbornOutcomes' or disease_module_name =='Diarrhoea' or disease_module_name == 'PostnatalSupervisor' or disease_module_name == 'BladderCancer':
+            if disease_module_name == 'NewbornOutcomes' or disease_module_name == 'PostnatalSupervisor':
                 continue
             disease_module = self.sim.modules[disease_module_name]
             prevalence_from_disease_module = disease_module.report_prevalence()
             print(prevalence_from_disease_module)
-            # Check type is in acceptable form and make into dataframe if not already
-            prevalence_from_disease_module = pd.DataFrame([[prevalence_from_disease_module]])
+            if disease_module_name == "CardioMetabolicDisorders":
+                prevalence_from_disease_module = pd.DataFrame(prevalence_from_disease_module)
+            else:
+                prevalence_from_disease_module = pd.DataFrame([[prevalence_from_disease_module]])
             # Prefix column names with the disease module name
             prevalence_from_disease_module.columns = [
                 "Intrapartum stillbirth" if disease_module_name == "Labour" else
                 "Antenatal stillbirth" if disease_module_name == "PregnancySupervisor" else
                 f"{disease_module_name}" for col in prevalence_from_disease_module.columns
             ]
-
+            print(prevalence_from_disease_module.columns)
             # Append to list of prevalences reported by each module
             prevalence_from_each_disease_module.append(prevalence_from_disease_module)
 
