@@ -245,7 +245,7 @@ class Epilepsy(Module, GenericFirstAppointmentsMixin):
         # This returns dataframe that reports on the prevalence of epilepsy for all individuals
         df = self.sim.population.props
         total_prev = len(
-            df[(df['is_alive']) & (df['ep_seiz_stat'] != 0)]
+            df[(df['is_alive']) & (df['ep_seiz_stat'] != '0')]
         ) / len(df[df['is_alive']])
 
         return total_prev
