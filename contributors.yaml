@@ -211,8 +211,7 @@
   affiliation: University of York
   website: "https://www.york.ac.uk/che/staff/research/paul-revill/"
   github-username: paulrevill
-  contributions:
-    - Health economics
+  role: "Lead Health-Economics"
 - given-names: Wiktoria
   family-names: Tafesse
   orcid: "https://orcid.org/0000-0002-0076-8285"
