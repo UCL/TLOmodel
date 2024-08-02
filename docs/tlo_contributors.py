@@ -101,8 +101,8 @@ if __name__ == "__main__":
         "Policy translation",
         "Epidemiology and modelling",
         "Health economics",
+        "Clinical Process Modelling",
         "Software development",
-        "Clinical consultant",
         "Project management",
     )
     category_predicates = {

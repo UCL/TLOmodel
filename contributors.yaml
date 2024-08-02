@@ -4,7 +4,7 @@
   affiliation: "Imperial College London"
   website: "https://www.imperial.ac.uk/people/timothy.hallett"
   github-username: tbhallett
-  role: Joint lead epidemiology
+  role: Project Lead
   contributions:
     - Epidemiology and modelling
     - Software development
@@ -14,7 +14,7 @@
   affiliation: "University College London"
   website: "https://profiles.ucl.ac.uk/5430"
   github-username: andrew-phillips-1
-  role: Joint lead epidemiology
+  role: Lead Epidemiology
   contributions:
     - Epidemiology and modelling
     - Software development
@@ -204,7 +204,7 @@
   affiliation: University College London
   website: "https://profiles.ucl.ac.uk/954"
   contributions:
-    - Clinical consultant
+    - Clinical Process Modelling
 - given-names: Paul
   family-names: Revill
   orcid: "https://orcid.org/0000-0001-8632-0600"
@@ -297,5 +297,4 @@
   affiliation: "Kamuzu University of Health Sciences"
   website: "https://www.kuhes.ac.mw/prof-victor-mwapasa/"
   contributions:
-    - Clinical consultant
-    - Epidemiology and modelling
+    - Clinical Process Modelling
