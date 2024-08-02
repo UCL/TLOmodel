@@ -286,3 +286,11 @@
   orcid: "https://orcid.org/0000-0002-3501-8601"
   contributions:
       - Policy translation
+- given-names: Rachel
+  family-names: Murray-Watson
+  affiliation: ""Imperial College London""
+  orcid: https://orcid.org/0000-0001-9079-5975
+  github-username: RachelMurray-Watson
+  contributions:
+    - Epidemiology and modelling
+    - Software development
