@@ -124,6 +124,8 @@ def assign_facilty_level_based_on_facility_names_or_types(_df):
     print("The following facilities have been assumed to be level 1a \n", _df[_df.fac_level == '']['fac_name'].unique())
     _df.loc[_df.fac_level == '', 'fac_level'] = '1a'
 
+    return _df
+
 def generate_summary_heatmap(_df,
                              x_var,
                              y_var,
@@ -152,7 +154,7 @@ def generate_summary_heatmap(_df,
     # Generate the heatmap
     sns.set(font_scale=0.9)
     plt.figure(figsize=(15, 10))
-    sns.heatmap(heatmap_df, annot=True, cmap='RdYlGn', fmt='.1f',
+    sns.heatmap(heatmap_df, annot=True, cmap='RdYlGn', fmt='.2f',
                 cbar_kws={'label': value_label})
 
     # Customize the plot
@@ -167,10 +169,14 @@ def generate_summary_heatmap(_df,
     plt.show()
     plt.close()
 
+sample_run = 1
 # %%
 # 1. DATA IMPORT AND CLEANING ##
 #########################################################################################
-number_of_months = 3 # 13
+if sample_run == 1:
+    number_of_months = 3 # 13
+else:
+    number_of_months = 13
 for y in range(2,len(years_dict)+1): # the format of the 2018 dataset received was different from the other years so we start at 2 here
     print("processing year ", years_dict[y])
     for m in range(1, number_of_months):
@@ -195,11 +201,18 @@ col_list = ['year', 'month', 'district', 'fac_owner', 'fac_name', 'program', 'it
 lmis_2018 = pd.read_csv(path_to_files_in_the_tlo_dropbox / 'OpenLMIS/ResourceFile_LMIS_2018.csv', low_memory=False)
 rename_lmis_columns(lmis_2018)
 
+if sample_run == 1:
+    lmis_2018 = lmis_2018[lmis_2018.month.isin(['January', 'February'])]
+else:
+    pass
+
 lmis['fac_type'] = np.nan # create empty column to match with the col_list in the 2018 dataframe
 lmis = pd.concat([lmis[col_list], lmis_2018[col_list]], axis=0, ignore_index=True)
 
-# Drop empty rows
+# Drop empty rows and duplicated rows
 lmis = lmis[lmis.fac_name.notna()]
+unique_openlmis_columns = ['fac_name', 'item', 'year', 'month']
+lmis = lmis[~lmis[unique_openlmis_columns].duplicated(keep='first')] # this happens when the same consumable is entered under multiple programs
 
 # Remove Private Health facilities from the data
 cond_pvt = (lmis['fac_owner'] == 'Private') | (lmis['fac_type'].str.contains("Private"))
@@ -213,23 +226,21 @@ cond_other = lmis.fac_owner.isna() # because private facilities are dropped and 
 lmis.loc[cond_other, 'fac_owner'] = "Government of Malawi"
 
 # Clean facility types to match with types in the TLO model
-assign_facilty_level_based_on_facility_names_or_types(lmis)
+lmis = assign_facilty_level_based_on_facility_names_or_types(lmis)
 lmis = lmis.drop('fac_type', axis = 1) # redundant column
+
+# Remove level 0 facilities
+lmis = lmis[~(lmis.fac_level == '0')]
 
 # Update month coding to numeric
 months_reversed_dict = {v: k for k, v in months_dict.items()}
 lmis['month'] = lmis['month'].map(months_reversed_dict)
 
-# Check the number of facilities at higher levels matches actual for all years
+# Understand the distribution of facilities which don't report data
 full_district_set = set(districts_dict.values())
 for y in range(1,len(years_dict)+1):
     for m in range(1, number_of_months):
-        #print("Checking consistency in data for ", months_dict[m], ", ",  years_dict[y])
-        monthly_lmis = lmis[(lmis.month == months_dict[m]) & (lmis.year == years_dict[y])]
-        #assert(len(monthly_lmis[monthly_lmis.fac_level == '2']['fac_name'].unique()) == 28) # number of District hospitals
-        #assert (len(monthly_lmis[monthly_lmis.fac_level == '3']['fac_name'].unique()) == 4)  # number of Central hospitals
-        #assert (len(monthly_lmis[monthly_lmis.fac_level == '4']['fac_name'].unique()) == 1)  # Zomba Mental Hospital
-        #assert (len(monthly_lmis[monthly_lmis.stkout_days.notna()]) != 0)  # non-empty data
+        monthly_lmis = lmis[(lmis.month == m) & (lmis.year == years_dict[y])]
         districts_in_data = set(monthly_lmis[monthly_lmis.fac_level == '2']['district'].unique())
         if (districts_in_data != full_district_set):
             print(years_dict[y], months_dict[m], ": Districts not in data", full_district_set.difference(districts_in_data))
@@ -241,35 +252,41 @@ for y in range(1,len(years_dict)+1):
             print(years_dict[y], months_dict[m], ": mental hospitals included - ", mental_hospitals)
 
         # There is data from levels 0, 1a, and 1b from all districts
-        for level in ['0', '1a', '1b']:
+        for level in ['1a', '1b']:
             if (len(monthly_lmis[monthly_lmis.fac_level == level]) == 0):
                 print(years_dict[y], months_dict[m], ": No facilities reporting at level ", level)
-            #assert(len(monthly_lmis[monthly_lmis.fac_level == level]) != 0)
 
 print('Data import complete and ready for analysis; verified that data is complete')
 # TODO extract the above missing data as a summary table
 
 # Clean inconsistent names of consumables across years
 #--------------------------------------------------------
+'''
 # Extract a list of consumables along with the year_month during which they were reported
-#lmis['program_item'] = lmis['program'].astype(str) + "---" +  lmis['item'].astype(str)
-#consumable_reporting_rate = lmis.groupby(['program_item', 'year_month'])['fac_name'].nunique().reset_index()
-#consumable_reporting_rate = consumable_reporting_rate.pivot( 'program_item', 'year_month', 'fac_name')
-#consumable_reporting_rate.to_csv(figurespath / 'consumable_reporting_rate.csv')
+lmis['program_item'] = lmis['program'].astype(str) + "---" +  lmis['item'].astype(str)
+consumable_reporting_rate = lmis.groupby(['program_item', 'year_month'])['fac_name'].nunique().reset_index()
+consumable_reporting_rate = consumable_reporting_rate.pivot( 'program_item', 'year_month', 'fac_name')
+consumable_reporting_rate.to_csv(figurespath / 'consumable_reporting_rate.csv')
+'''
 
+if sample_run == 1:
+    print("Create a 10% random sample")
+    ## TEMPORARY CODE TO FACILITATE CLEANING
+    # Select a subset of items and facilities to test run the code for cleaning
+    unique_items = lmis['item'].unique()
+    unique_items_df = pd.DataFrame(unique_items, columns=['item'])
+    sampled_items = unique_items_df.sample(frac=0.1, random_state=1)
 
-## TEMPORARY CODE TO FACILITATE CLEANING
-# Select a subset of items and facilities for initial cleaning
-unique_items = lmis['item'].unique()
-unique_items_df = pd.DataFrame(unique_items, columns=['item'])
-sampled_items = unique_items_df.sample(frac=0.1, random_state=1)
+    unique_facilities = lmis['fac_name'].unique()
+    unique_facilities_df = pd.DataFrame(unique_facilities, columns=['fac_name'])
+    sampled_facilities = unique_facilities_df.sample(frac=0.1, random_state=1)
 
-unique_facilities = lmis['fac_name'].unique()
-unique_facilities_df = pd.DataFrame(unique_facilities, columns=['fac_name'])
-sampled_facilities = unique_facilities_df.sample(frac=0.1, random_state=1)
-# Filter the original DataFrame to only include rows with sampled items
-lmis = lmis[lmis['item'].isin(sampled_items['item'])]
-lmis = lmis[lmis['fac_name'].isin(sampled_facilities['fac_name'])]
+    # Filter the original DataFrame to only include rows with sampled items
+    lmis = lmis[lmis['item'].isin(sampled_items['item'])]
+    lmis = lmis[lmis['fac_name'].isin(sampled_facilities['fac_name'])]
+else:
+    pass
+
 
 # Import manually cleaned list of consumable names
 clean_consumables_names = pd.read_csv(path_to_files_in_the_tlo_dropbox / 'OpenLMIS/cleaned_consumable_names.csv', low_memory = False)[['Program', 'Consumable','Alternate consumable name',	'Substitute group']]
@@ -347,13 +364,14 @@ lmis['data_source'] = 'open_lmis_data'
 
 # Prepare dataset for interpolation
 def create_full_dataset(_df):
+    print("creating full dataset")
     _df.reset_index(inplace=True, drop = True)
 
     # Preserve columns whose data needs to be duplicated into the new rows added
     facility_features_to_preserve = ['district', 'fac_level', 'fac_owner', 'fac_name']
     consumable_features_to_preserve = ['program', 'item']
     facility_features = _df[facility_features_to_preserve]
-    facility_features = facility_features[~facility_features.duplicated(keep='first')]
+    facility_features = facility_features[~facility_features.fac_name.duplicated(keep='first')] #TODO 20 duplicated facilities
     consumable_features = _df[consumable_features_to_preserve]
     consumable_features = consumable_features[~consumable_features.item.duplicated(keep='first')]
     _df = _df.drop(['district', 'fac_level', 'fac_owner', 'program'], axis = 1) # drop columns which will be preserved
@@ -379,6 +397,7 @@ def create_full_dataset(_df):
     _df = _df.merge(facility_features, on='fac_name', how='left', validate = "m:1")
     _df = _df.merge(consumable_features, on='item', how='left', validate = "m:1")
 
+    print("feature merge complete")
     return _df
 
 # TODO some columns can be dropped fac_name	item	year	month_num	index	district	fac_level	fac_owner	month	program	closing_bal	dispensed	stkout_days	average_monthly_consumption	qty_received	fac_type	year_month	program_item	opening_bal
@@ -417,6 +436,7 @@ lmis = prepare_data_for_interpolation(lmis)
 # If any stockout_days < 0 after the above interpolation, update to stockout_days = 0; if stkout_days > month_length, update to month_length ---
 # If closing balance[previous month] - dispensed[this month] + received[this month] > 0, stockout == 0
 def interpolation1_using_other_cols(_df):
+    print("Running interpolation 1")
     cond_stkout_missing = _df['stkout_days'].isna()
     cond_otherdata_available = _df['closing_bal'].notna() & _df['average_monthly_consumption'].notna() & _df['qty_received'].notna()
     cond_interpolation_1 = cond_stkout_missing & cond_otherdata_available
@@ -445,6 +465,7 @@ lmis = correct_infeasible_stockout_days(lmis)
 # days = number of days of the month
 
 def interpolation2_using_reporting_omission(_df):
+    print("Running interpolation 2")
     # A. We need one column providing the number of times a consumable has been reported by a facility during a given year
     annual_reporting_frequency_of_cons_by_fac = _df.groupby(['item', 'fac_name', 'year']).apply(lambda x: (x['closing_bal'] >= 0).sum())
     annual_reporting_frequency_of_cons_by_fac = annual_reporting_frequency_of_cons_by_fac.reset_index().rename(columns ={0: 'annual_reporting_frequency_of_cons_by_fac'})
@@ -476,6 +497,7 @@ lmis = interpolation2_using_reporting_omission(lmis)
 # RULE 3 --- If a facility did not report data for a given month, assume same as the average of the three previous months
 # Calculate the average stockout days for the previous three months
 def interpolation3_using_previous_months_data(_df):
+    print("Running interpolation 3")
     _df['stkout_days_t-1'] = _df['stkout_days'].shift(1) / _df['month_length'].shift(1)
     _df['stkout_days_t-2'] = _df['stkout_days'].shift(2) / _df['month_length'].shift(2)
     _df['stkout_days_t-3'] = _df['stkout_days'].shift(3) / _df['month_length'].shift(3)
@@ -497,7 +519,7 @@ lmis = interpolation3_using_previous_months_data(lmis)
 # 4. CALCULATE STOCK OUT RATES BY MONTH and FACILITY ##
 #########################################################################################
 lmis['stkout_prob'] = lmis['stkout_days']/lmis['month_length']
-#lmis_with_updated_names.to_csv(figurespath / 'lmis_with_prob.csv')
+#lmis.to_csv(figurespath / 'lmis_with_prob.csv')
 #lmis_with_updated_names = pd.read_csv(figurespath / 'lmis_with_prob.csv', low_memory = False)[1:300000]
 #lmis_with_updated_names = lmis_with_updated_names.drop('Unnamed: 0', axis = 1)
 
@@ -580,6 +602,7 @@ def replace_old_item_names_in_lmis_data(_df, item_dict):
 
 matched_consumables = replace_old_item_names_in_lmis_data(matched_consumables, inconsistent_item_names_mapping)
 '''
+lmis.to_pickle(figurespath / "lmis.pkl")
 
 # Merge data with LMIS data
 tlo_cons_availability = pd.merge(lmis, tlo_lmis_mapping, how='inner', on='item')
@@ -662,6 +685,18 @@ tlo_cons_availability = tlo_cons_availability[
      'available_prob', 'closing_bal', 'average_monthly_consumption', 'dispensed', 'qty_received',
      'data_source']]
 tlo_cons_availability.groupby(['year', 'module_name'])['available_prob'].mean()
+#tlo_cons_availability.to_csv(figurespath / 'availability_df.csv')
+# Save the DataFrame to a pickle file
+tlo_cons_availability.to_pickle(figurespath / "tlo_cons_availability.pkl")
+#tlo_cons_availability = pd.read_pickle(figurespath / "tlo_cons_availability.pkl")
+
+availability_summary = tlo_cons_availability.groupby(['year', 'month', 'district', 'fac_level', 'module_name', 'consumable_name_tlo']).agg({
+    'available_prob': 'mean',  # Mean of available_prop
+    'closing_bal': 'sum',      # Sum of closing_bal
+    'average_monthly_consumption': 'sum'  # Sum of average_monthly_consumption
+}).reset_index()
+availability_summary.to_csv(figurespath / 'availability_summary.csv')
+
 
 # 6. FILL GAPS USING HHFA SURVEY DATA OR ASSUMPTIONS ##
 #######################################################
@@ -688,7 +723,26 @@ lmis_wide.columns = pd.MultiIndex.from_tuples(unnamed_level1_columns)
 
 # Average heatmaps by program and level (how has availability change across years)
 
+generate_summary_heatmap(_df = tlo_cons_availability,
+                         x_var = 'fac_level',
+                         y_var = 'year',
+                         value_var = 'available_prob',
+                         value_label = 'Average Pr(availability)',
+                         summary_func='mean')
 
+generate_summary_heatmap(_df = tlo_cons_availability,
+                         x_var = 'module_name',
+                         y_var = 'year',
+                         value_var = 'available_prob',
+                         value_label = 'Average Pr(availability)',
+                         summary_func='mean')
+
+generate_summary_heatmap(_df = tlo_cons_availability,
+                         x_var = 'district',
+                         y_var = 'year',
+                         value_var = 'available_prob',
+                         value_label = 'Average Pr(availability)',
+                         summary_func='mean')
 
 # Descriptive analysis
 # Number of facilities reporting by level
