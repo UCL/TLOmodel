@@ -42,16 +42,24 @@ class TestScenario(BaseScenario):
         super().__init__()
         self.seed = random.randint(0, 50000)
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2025, 12, 31)  # todo reset
-        self.pop_size = 64_000  # todo reset, 64,000=2k per district
-        self.runs_per_draw = 1  # todo reset
 
-        coverage_options = [0.6, 0.7, 0.8]
-        target_group_options = ['SAC', 'PSAC', 'All']
-        wash_options = [True, False]
+        # todo reset
+        self.end_date = Date(2040, 12, 31)
+        self.pop_size = 15_000  # todo if equal_allocation_by_district, 64,000=2k per district
+        self.runs_per_draw = 1
+
+        # self.coverage_options = [0.6, 0.7, 0.8]
+        # self.target_group_options = ['SAC', 'PSAC', 'All']
+        self.coverage_options = [0, 0.8]
+        self.target_group_options = ['All']
+        self.wash_options = [True, False]
+
+        self.mda_execute = True
+        self.single_district = True
+        self.equal_allocation_by_district = True
 
         # Calculate the total number of combinations
-        self.number_of_draws = len(coverage_options) * len(target_group_options) * len(wash_options)
+        self.number_of_draws = len(self.coverage_options) * len(self.target_group_options) * len(self.wash_options)
 
     def log_configuration(self):
         return {
@@ -69,7 +77,8 @@ class TestScenario(BaseScenario):
 
     def modules(self):
         return [
-            demography.Demography(resourcefilepath=self.resources, equal_allocation_by_district=True),
+            demography.Demography(resourcefilepath=self.resources,
+                                  equal_allocation_by_district=self.equal_allocation_by_district),
             simplified_births.SimplifiedBirths(resourcefilepath=self.resources),
             enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
             healthburden.HealthBurden(resourcefilepath=self.resources),
@@ -83,22 +92,24 @@ class TestScenario(BaseScenario):
             bladder_cancer.BladderCancer(resourcefilepath=self.resources),
             diarrhoea.Diarrhoea(resourcefilepath=self.resources),
             hiv.Hiv(resourcefilepath=self.resources),
-            schisto.Schisto(resourcefilepath=self.resources, mda_execute=True, single_district=False),
+            schisto.Schisto(resourcefilepath=self.resources,
+                            mda_execute=self.mda_execute,
+                            single_district=self.single_district),
         ]
 
-    def draw_parameters(self, draw_number, coverage_options, target_group_options, wash_options, rng):
+    def draw_parameters(self, draw_number, rng):
 
         # Determine indices for each parameter
-        coverage_index = draw_number % len(coverage_options)
-        target_group_index = (draw_number // len(coverage_options)) % len(target_group_options)
-        wash_index = (draw_number // (len(coverage_options) * len(target_group_options))) % len(wash_options)
+        coverage_index = draw_number % len(self.coverage_options)
+        target_group_index = (draw_number // len(self.coverage_options)) % len(self.target_group_options)
+        wash_index = (draw_number // (len(self.coverage_options) * len(self.target_group_options))) % len(self.wash_options)
 
         return {
             'Schisto': {
-                'mda_coverage': coverage_options[coverage_index],
-                'mda_target_group': target_group_options[target_group_index],
+                'mda_coverage': self.coverage_options[coverage_index],
+                'mda_target_group': self.target_group_options[target_group_index],
                 'mda_frequency': 6,
-                'scaleup_WASH': wash_options[wash_index],
+                'scaleup_WASH': self.wash_options[wash_index],
                 'scaleup_WASH_start_year': 2024,
             },
         }

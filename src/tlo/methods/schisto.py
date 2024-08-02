@@ -170,11 +170,10 @@ class Schisto(Module):
     def initialise_population(self, population):
         """Set the property values for the initial population."""
 
-        p = self.parameters
         df = population.props
         df.loc[df.is_alive, f'{self.module_prefix}_last_PZQ_date'] = pd.NaT
 
-        # reset all to one district if doing calibration runs
+        # reset all to one district if doing calibration or test runs
         if self.single_district:
             df['district_num_of_residence'] = 0
             df['district_of_residence'] = pd.Categorical(['Chitipa'] * len(df),
