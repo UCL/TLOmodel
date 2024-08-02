@@ -98,12 +98,12 @@ if __name__ == "__main__":
     with open(args.contributors_file_path, "r") as f:
         contributors = yaml.safe_load(f)
     contribution_categories = (
-        "Policy translation",
+        "Clinical process modelling",
         "Epidemiology and modelling",
         "Health economics",
-        "Clinical Process Modelling",
-        "Software development",
+        "Policy translation",
         "Project management",
+        "Software development",
     )
     category_predicates = {
         "Scientific leads": lambda c: "lead" in c.get("role", "").lower(),
