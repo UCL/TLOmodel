@@ -23,29 +23,33 @@ If PrEP is not available due to limitations in the HealthSystem, the person defa
     * Cotrimoxazole is not included - either in effect of consumption of the drug (because the effect is not known).
     * Calibration has not been done: most things look OK - except HIV-AIDS deaths
 """
+from __future__ import annotations
 
 import os
-from typing import List
+from typing import TYPE_CHECKING, List
 
 import numpy as np
 import pandas as pd
 
-from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
-from tlo.core import IndividualPropertyUpdates
+from tlo import DAYS_IN_YEAR, Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, demography, tb
 from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
+from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
 from tlo.util import create_age_range_lookup
+
+if TYPE_CHECKING:
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class Hiv(Module):
+class Hiv(Module, GenericFirstAppointmentsMixin):
     """
     The HIV Disease Module
     """
@@ -393,6 +397,19 @@ class Hiv(Module):
             "length in days of inpatient stay for end-of-life HIV patients: list has two elements [low-bound-inclusive,"
             " high-bound-exclusive]",
         ),
+        # ------------------ scale-up parameters for scenario analysis ------------------ #
+        "type_of_scaleup": Parameter(
+            Types.STRING, "argument to determine type scale-up of program which will be implemented, "
+                          "can be 'none', 'target' or 'max'",
+        ),
+        "scaleup_start_year": Parameter(
+            Types.INT,
+            "the year when the scale-up starts (it will occur on 1st January of that year)"
+        ),
+        "scaleup_parameters": Parameter(
+            Types.DATA_FRAME,
+            "the parameters and values changed in scenario analysis"
+        ),
     }
 
     def read_parameters(self, data_folder):
@@ -430,6 +447,9 @@ class Hiv(Module):
         # Load spectrum estimates of treatment cascade
         p["treatment_cascade"] = workbook["spectrum_treatment_cascade"]
 
+        # load parameters for scale-up projections
+        p['scaleup_parameters'] = workbook["scaleup_parameters"]
+
         # DALY weights
         # get the DALY weight that this module will use from the weight database (these codes are just random!)
         if "HealthBurden" in self.sim.modules.keys():
@@ -452,10 +472,13 @@ class Hiv(Module):
         )
 
     def pre_initialise_population(self):
-        """
-        * Establish the Linear Models
-        *
-        """
+        """Do things required before the population is created
+        * Build the LinearModels"""
+        self._build_linear_models()
+
+    def _build_linear_models(self):
+        """Establish the Linear Models"""
+
         p = self.parameters
 
         # ---- LINEAR MODELS -----
@@ -890,6 +913,12 @@ class Hiv(Module):
         # 2) Schedule the Logging Event
         sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(years=1))
 
+        # Optional: Schedule the scale-up of programs
+        if self.parameters["type_of_scaleup"] != 'none':
+            scaleup_start_date = Date(self.parameters["scaleup_start_year"], 1, 1)
+            assert scaleup_start_date >= self.sim.start_date, f"Date {scaleup_start_date} is before simulation starts."
+            sim.schedule_event(HivScaleUpEvent(self), scaleup_start_date)
+
         # 3) Determine who has AIDS and impose the Symptoms 'aids_symptoms'
 
         # Those on ART currently (will not get any further events scheduled):
@@ -1013,31 +1042,37 @@ class Hiv(Module):
         self.item_codes_for_consumables_required['circ'] = \
             hs.get_item_codes_from_package_name("Male circumcision ")
 
-        self.item_codes_for_consumables_required['prep'] = {
-            hs.get_item_code_from_item_name("Tenofovir (TDF)/Emtricitabine (FTC), tablet, 300/200 mg"): 1}
+        # adult prep: 1 tablet daily
+        self.item_codes_for_consumables_required['prep'] = \
+            hs.get_item_code_from_item_name("Tenofovir (TDF)/Emtricitabine (FTC), tablet, 300/200 mg")
 
-        # infant NVP given in 3-monthly dosages
-        self.item_codes_for_consumables_required['infant_prep'] = {
-            hs.get_item_code_from_item_name("Nevirapine, oral solution, 10 mg/ml"): 1}
+        # infant NVP 1.5mg daily for birth weight 2500g or above, for 6 weeks
+        self.item_codes_for_consumables_required['infant_prep'] = \
+            hs.get_item_code_from_item_name("Nevirapine, oral solution, 10 mg/ml")
 
         # First - line ART for adults(age > "ART_age_cutoff_older_child")
-        self.item_codes_for_consumables_required['First-line ART regimen: adult'] = {
-            hs.get_item_code_from_item_name("First-line ART regimen: adult"): 1}
-        self.item_codes_for_consumables_required['First-line ART regimen: adult: cotrimoxazole'] = {
-            hs.get_item_code_from_item_name("Cotrimoxizole, 960mg pppy"): 1}
+        # TDF/3TC/DTG 120/60/50mg, 1 tablet per day
+        # cotrim adult tablet, 1 tablet per day, units specified in mg * dispensation days
+        self.item_codes_for_consumables_required['First-line ART regimen: adult'] = \
+            hs.get_item_code_from_item_name("First-line ART regimen: adult")
+        self.item_codes_for_consumables_required['First-line ART regimen: adult: cotrimoxazole'] = \
+            hs.get_item_code_from_item_name("Cotrimoxizole, 960mg pppy")
 
         # ART for older children aged ("ART_age_cutoff_younger_child" < age <= "ART_age_cutoff_older_child"):
-        # cotrim is separate item - optional in get_cons call
-        self.item_codes_for_consumables_required['First line ART regimen: older child'] = {
-            hs.get_item_code_from_item_name("First line ART regimen: older child"): 1}
-        self.item_codes_for_consumables_required['First line ART regimen: older child: cotrimoxazole'] = {
-            hs.get_item_code_from_item_name("Sulfamethoxazole + trimethropin, tablet 400 mg + 80 mg"): 1}
+        # ABC/3TC/DTG 120/60/50mg, 3 tablets per day
+        # cotrim paediatric tablet, 4 tablets per day, units specified in mg * dispensation days
+        self.item_codes_for_consumables_required['First line ART regimen: older child'] = \
+            hs.get_item_code_from_item_name("First line ART regimen: older child")
+        self.item_codes_for_consumables_required['First line ART regimen: older child: cotrimoxazole'] = \
+            hs.get_item_code_from_item_name("Cotrimoxazole 120mg_1000_CMST")
 
         # ART for younger children aged (age < "ART_age_cutoff_younger_child"):
-        self.item_codes_for_consumables_required['First line ART regimen: young child'] = {
-            hs.get_item_code_from_item_name("First line ART regimen: young child"): 1}
-        self.item_codes_for_consumables_required['First line ART regimen: young child: cotrimoxazole'] = {
-            hs.get_item_code_from_item_name("Sulfamethoxazole + trimethropin, oral suspension, 240 mg, 100 ml"): 1}
+        # ABC/3TC/DTG 120/60/10mg, 2 tablets per day
+        # cotrim paediatric tablet, 2 tablets per day, units specified in mg * dispensation days
+        self.item_codes_for_consumables_required['First line ART regimen: young child'] = \
+            hs.get_item_code_from_item_name("First line ART regimen: young child")
+        self.item_codes_for_consumables_required['First line ART regimen: young child: cotrimoxazole'] = \
+            hs.get_item_code_from_item_name("Cotrimoxazole 120mg_1000_CMST")
 
         # 7) Define the DxTests
         # HIV Rapid Diagnostic Test:
@@ -1065,6 +1100,49 @@ class Hiv(Module):
                     self.item_codes_for_consumables_required['gloves']]
             )
         )
+
+    def update_parameters_for_program_scaleup(self):
+        """ options for program scale-up are 'target' or 'max' """
+        p = self.parameters
+        scaled_params_workbook = p["scaleup_parameters"]
+
+        if p['type_of_scaleup'] == 'target':
+            scaled_params = scaled_params_workbook.set_index('parameter')['target_value'].to_dict()
+        else:
+            scaled_params = scaled_params_workbook.set_index('parameter')['max_value'].to_dict()
+
+        # scale-up HIV program
+        # reduce risk of HIV - applies to whole adult population
+        p["beta"] = p["beta"] * scaled_params["reduction_in_hiv_beta"]
+
+        # increase PrEP coverage for FSW after HIV test
+        p["prob_prep_for_fsw_after_hiv_test"] = scaled_params["prob_prep_for_fsw_after_hiv_test"]
+
+        # prep poll for AGYW - target to the highest risk
+        # increase retention to 75% for FSW and AGYW
+        p["prob_prep_for_agyw"] = scaled_params["prob_prep_for_agyw"]
+        p["probability_of_being_retained_on_prep_every_3_months"] = scaled_params["probability_of_being_retained_on_prep_every_3_months"]
+
+        # perfect retention on ART
+        p["probability_of_being_retained_on_art_every_3_months"] = scaled_params["probability_of_being_retained_on_art_every_3_months"]
+
+        # increase probability of VMMC after hiv test
+        p["prob_circ_after_hiv_test"] = scaled_params["prob_circ_after_hiv_test"]
+
+        # increase testing/diagnosis rates, default 2020 0.03/0.25 -> 93% dx
+        p["hiv_testing_rates"]["annual_testing_rate_adults"] = scaled_params["annual_testing_rate_adults"]
+
+        # ANC testing - value for mothers and infants testing
+        p["prob_hiv_test_at_anc_or_delivery"] = scaled_params["prob_hiv_test_at_anc_or_delivery"]
+        p["prob_hiv_test_for_newborn_infant"] = scaled_params["prob_hiv_test_for_newborn_infant"]
+
+        # viral suppression rates
+        # adults already at 95% by 2020
+        # change all column values
+        p["prob_start_art_or_vs"]["virally_suppressed_on_art"] = scaled_params["virally_suppressed_on_art"]
+
+        # update exising linear models to use new scaled-up paramters
+        self._build_linear_models()
 
     def on_birth(self, mother_id, child_id):
         """
@@ -1562,22 +1640,23 @@ class Hiv(Module):
 
     def do_at_generic_first_appt(
         self,
-        patient_id: int,
+        person_id: int,
         symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
         **kwargs,
-    ) -> IndividualPropertyUpdates:
+    ) -> None:
         # 'Automatic' testing for HIV for everyone attending care with AIDS symptoms:
         #  - suppress the footprint (as it done as part of another appointment)
         #  - do not do referrals if the person is HIV negative (assumed not time for counselling etc).
         if "aids_symptoms" in symptoms:
             event = HSI_Hiv_TestAndRefer(
-                person_id=patient_id,
+                person_id=person_id,
                 module=self,
                 referred_from="hsi_generic_first_appt",
                 suppress_footprint=True,
                 do_not_refer_if_neg=True,
             )
-            self.healthsystem.schedule_hsi_event(event, priority=0, topen=self.sim.date)
+            schedule_hsi_event(event, priority=0, topen=self.sim.date)
 
 # ---------------------------------------------------------------------------
 #   Main Polling Event
@@ -2203,6 +2282,20 @@ class Hiv_DecisionToContinueTreatment(Event, IndividualScopeEventMixin):
             )
 
 
+class HivScaleUpEvent(Event, PopulationScopeEventMixin):
+    """ This event exists to change parameters or functions
+    depending on the scenario for projections which has been set
+    It only occurs once on date: scaleup_start_date,
+    called by initialise_simulation
+    """
+
+    def __init__(self, module):
+        super().__init__(module)
+
+    def apply(self, population):
+        self.module.update_parameters_for_program_scaleup()
+
+
 # ---------------------------------------------------------------------------
 #   Health System Interactions (HSI)
 # ---------------------------------------------------------------------------
@@ -2408,6 +2501,10 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
                 # Update circumcision state
                 df.at[person_id, "li_is_circ"] = True
 
+                # Add used equipment
+                self.add_equipment({'Drip stand', 'Stool, adjustable height', 'Autoclave',
+                                       'Bipolar Diathermy Machine', 'Bed, adult', 'Trolley, patient'})
+
                 # Schedule follow-up appts
                 # schedule first follow-up appt, 3 days from procedure;
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -2467,7 +2564,9 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         # Check that infant prophylaxis is available and if it is, initiate:
-        if self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['infant_prep']):
+        if self.get_consumables(
+            item_codes={self.module.item_codes_for_consumables_required['infant_prep']: 63}
+        ):
             df.at[person_id, "hv_is_on_prep"] = True
 
             # Schedule follow-up visit for 3 months time
@@ -2551,7 +2650,10 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
             return self.make_appt_footprint({"Over5OPD": 1, "VCTPositive": 1})
 
         # Check that PrEP is available and if it is, initiate or continue  PrEP:
-        if self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['prep']):
+        quantity_required = self.module.parameters['dispensation_period_months'] * 30
+        if self.get_consumables(
+            item_codes={self.module.item_codes_for_consumables_required['prep']: quantity_required}
+        ):
             df.at[person_id, "hv_is_on_prep"] = True
 
             # Schedule 'decision about whether to continue on PrEP' for 3 months time
@@ -2792,29 +2894,33 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         whether individual drugs were available"""
 
         p = self.module.parameters
+        dispensation_days = 30 * self.module.parameters['dispensation_period_months']
 
         if age_of_person < p["ART_age_cutoff_young_child"]:
             # Formulation for young children
             drugs_available = self.get_consumables(
-                item_codes=self.module.item_codes_for_consumables_required['First line ART regimen: young child'],
-                optional_item_codes=self.module.item_codes_for_consumables_required[
-                    'First line ART regimen: young child: cotrimoxazole'],
+                item_codes={self.module.item_codes_for_consumables_required[
+                                'First line ART regimen: young child']: dispensation_days * 2},
+                optional_item_codes={self.module.item_codes_for_consumables_required[
+                                         'First line ART regimen: young child: cotrimoxazole']: dispensation_days * 240},
                 return_individual_results=True)
 
         elif age_of_person <= p["ART_age_cutoff_older_child"]:
             # Formulation for older children
             drugs_available = self.get_consumables(
-                item_codes=self.module.item_codes_for_consumables_required['First line ART regimen: older child'],
-                optional_item_codes=self.module.item_codes_for_consumables_required[
-                    'First line ART regimen: older child: cotrimoxazole'],
+                item_codes={self.module.item_codes_for_consumables_required[
+                                'First line ART regimen: older child']: dispensation_days * 3},
+                optional_item_codes={self.module.item_codes_for_consumables_required[
+                    'First line ART regimen: older child: cotrimoxazole']: dispensation_days * 480},
                 return_individual_results=True)
 
         else:
             # Formulation for adults
             drugs_available = self.get_consumables(
-                item_codes=self.module.item_codes_for_consumables_required['First-line ART regimen: adult'],
-                optional_item_codes=self.module.item_codes_for_consumables_required[
-                    'First-line ART regimen: adult: cotrimoxazole'],
+                item_codes={self.module.item_codes_for_consumables_required[
+                                'First-line ART regimen: adult']: dispensation_days},
+                optional_item_codes={self.module.item_codes_for_consumables_required[
+                    'First-line ART regimen: adult: cotrimoxazole']: dispensation_days * 960},
                 return_individual_results=True)
 
         # add drug names to dict
@@ -3241,15 +3347,15 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             count = sum(subset)
             # proportion of subset living with HIV that are diagnosed:
             proportion_diagnosed = (
-                sum(subset & df.hv_diagnosed) / count if count > 0 else 0
+                sum(subset & df.hv_diagnosed) / count if count > 0 else 0.0
             )
             # proportions of subset living with HIV on treatment:
             art = sum(subset & (df.hv_art != "not"))
-            art_cov = art / count if count > 0 else 0
+            art_cov = art / count if count > 0 else 0.0
 
             # proportion of subset on treatment that have good VL suppression
             art_vs = sum(subset & (df.hv_art == "on_VL_suppressed"))
-            art_cov_vs = art_vs / art if art > 0 else 0
+            art_cov_vs = art_vs / art if art > 0 else 0.0
             return proportion_diagnosed, art_cov, art_cov_vs
 
         alive_infected = df.is_alive & df.hv_inf

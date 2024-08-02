@@ -1347,6 +1347,7 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
         'cons_availability': 'all',
         'beds_availability': 'default',
         'equip_availability': 'default',
+        'use_funded_or_actual_staffing': 'funded_plus',
     }
     new_parameters = {
         'mode_appt_constraints': 2,
@@ -1355,6 +1356,7 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
         'cons_availability': 'none',
         'beds_availability': 'none',
         'equip_availability': 'all',
+        'use_funded_or_actual_staffing': 'actual',
     }
 
     class CheckHealthSystemParameters(RegularEvent, PopulationScopeEventMixin):
@@ -1371,6 +1373,7 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
             _params['cons_availability'] = hs.consumables.availability
             _params['beds_availability'] = hs.bed_days.availability
             _params['equip_availability'] = hs.equipment.availability
+            _params['use_funded_or_actual_staffing'] = hs.use_funded_or_actual_staffing
 
             logger = logging.getLogger('tlo.methods.healthsystem')
             logger.info(key='CheckHealthSystemParameters', data=_params)
@@ -2514,3 +2517,56 @@ def test_dynamic_HR_scaling_multiple_changes(seed, tmpdir):
     ratio_in_sim = caps / initial_caps
 
     assert np.allclose(ratio_in_sim, expected_overall_scaling)
+
+
+def test_scaling_up_HRH_using_yearly_scaling_and_scaling_by_level_together(seed):
+    """We want the behaviour of HRH 'yearly scaling' and 'scaling_by_level' to operate together, so that, for instance,
+    the total capabilities is greater when scaling up by level _and_ by yearly-scaling than by using either
+    independently."""
+
+    def get_capabilities(yearly_scaling: bool, scaling_by_level: bool, rescaling: bool) -> float:
+        """Return total capabilities of HRH when optionally using 'yearly scaling' and/or 'scaling_by_level'"""
+        sim = Simulation(start_date=start_date, seed=seed)
+        sim.register(
+            demography.Demography(resourcefilepath=resourcefilepath),
+            healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+            simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+        )
+        params = sim.modules['HealthSystem'].parameters
+
+        # In Mode 1, from the beginning.
+        params["mode_appt_constraints"] = 1
+
+        if yearly_scaling:
+            params['yearly_HR_scaling_mode'] = 'GDP_growth_fHE_case5'
+            # This is above-GDP growth after 2018 (baseline year for HRH)
+
+        if scaling_by_level:
+            params['year_HR_scaling_by_level_and_officer_type'] = 2018  # <--  same time as yearly-scaling
+            params['HR_scaling_by_level_and_officer_type_mode'] = 'x2_fac0&1'
+
+        if rescaling:
+            # Switch to Mode 2, with the rescaling, at the same time as the other changes occur
+            params["mode_appt_constraints_postSwitch"] = 2
+            params["scale_to_effective_capabilities"] = True
+            params["year_mode_switch"] = 2018
+
+        popsize = 100
+        sim.make_initial_population(n=popsize)
+        sim.simulate(end_date=sim.date + pd.DateOffset(years=10, days=1))  # run simulation until at least past 2018
+
+        return sim.modules['HealthSystem'].capabilities_today.sum()
+
+    # - When running without any rescaling
+    caps_only_scaling_by_level = get_capabilities(yearly_scaling=False, scaling_by_level=True, rescaling=False)
+    caps_only_scaling_by_year = get_capabilities(yearly_scaling=True, scaling_by_level=False, rescaling=False)
+    caps_scaling_by_both = get_capabilities(yearly_scaling=True, scaling_by_level=True, rescaling=False)
+    assert caps_scaling_by_both > caps_only_scaling_by_level
+    assert caps_scaling_by_both > caps_only_scaling_by_year
+
+    # - When there is also rescaling as we go from Mode 2 into Mode 1
+    caps_only_scaling_by_level_with_rescaling = get_capabilities(yearly_scaling=False, scaling_by_level=True, rescaling=True)
+    caps_only_scaling_by_year_with_rescaling = get_capabilities(yearly_scaling=True, scaling_by_level=False, rescaling=True)
+    caps_scaling_by_both_with_rescaling = get_capabilities(yearly_scaling=True, scaling_by_level=True, rescaling=True)
+    assert caps_scaling_by_both_with_rescaling > caps_only_scaling_by_level_with_rescaling
+    assert caps_scaling_by_both_with_rescaling > caps_only_scaling_by_year_with_rescaling
