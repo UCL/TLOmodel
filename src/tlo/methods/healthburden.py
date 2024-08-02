@@ -688,7 +688,6 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
                 continue
             disease_module = self.sim.modules[disease_module_name]
             prevalence_from_disease_module = disease_module.report_prevalence()
-            print(prevalence_from_disease_module)
             if disease_module_name == "CardioMetabolicDisorders":
                 prevalence_from_disease_module = pd.DataFrame(prevalence_from_disease_module)
             else:
@@ -699,7 +698,6 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
                 "Antenatal stillbirth" if disease_module_name == "PregnancySupervisor" else
                 f"{disease_module_name}" for col in prevalence_from_disease_module.columns
             ]
-            print(prevalence_from_disease_module.columns)
             # Append to list of prevalences reported by each module
             prevalence_from_each_disease_module.append(prevalence_from_disease_module)
 
