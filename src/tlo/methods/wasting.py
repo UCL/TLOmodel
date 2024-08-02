@@ -102,10 +102,10 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         # progression
         'min_days_duration_of_wasting': Parameter(
             Types.REAL, 'minimum duration in days of wasting (MAM and SAM)'),
-        'average_duration_of_untreated_MAM': Parameter(
-            Types.REAL, 'average duration of untreated MAM'),
-        'average_duration_of_untreated_SAM': Parameter(
-            Types.REAL, 'average duration of untreated SAM'),
+        'duration_of_untreated_mod_wasting': Parameter(
+            Types.REAL, 'duration of untreated moderate wasting (days)'),
+        'duration_of_untreated_sev_wasting': Parameter(
+            Types.REAL, 'duration of untreated severe wasting (days)'),
         'progression_severe_wasting_by_agegp': Parameter(
             Types.LIST, 'List with progression rates to severe wasting by age group'),
         'prob_complications_in_SAM': Parameter(
@@ -454,16 +454,16 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         # moderate wasting (for progression to severe, or recovery to no wasting) -----
         if whz_category == '-3<=WHZ<-2':
             # Allocate the duration of the moderate wasting episode
-            duration_mod_wasting = int(max(p['min_days_duration_of_wasting'], p['average_duration_of_untreated_MAM']))
-            # Allocate a date of outcome (progression, recovery or death)
+            duration_mod_wasting = int(max(p['min_days_duration_of_wasting'], p['duration_of_untreated_mod_wasting']))
+            # Allocate a date of outcome (progression, or recovery)
             date_of_outcome = df.at[person_id, 'un_last_wasting_date_of_onset'] + DateOffset(days=duration_mod_wasting)
             return date_of_outcome
 
         # severe wasting (for death, or recovery to moderate wasting) -----
         if whz_category == 'WHZ<-3':
             # determine the duration of SAM episode
-            duration_sev_wasting = int(max(p['min_days_duration_of_wasting'], p['average_duration_of_untreated_MAM']
-                                           + p['average_duration_of_untreated_SAM']))
+            duration_sev_wasting = int(max(p['min_days_duration_of_wasting'], p['duration_of_untreated_mod_wasting']
+                                           + p['duration_of_untreated_sev_wasting']))
             # Allocate a date of outcome (progression, recovery or death)
             date_of_outcome = df.at[person_id, 'un_last_wasting_date_of_onset'] + DateOffset(days=duration_sev_wasting)
             return date_of_outcome
