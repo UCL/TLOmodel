@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.analysis.utils module &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
+  <title>tlo.analysis.utils module &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -17,7 +17,7 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../_static/documentation_options.js?v=f3d69a25"></script>
         <script src="../_static/doctools.js?v=9a2dae69"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -478,6 +478,29 @@ e.g. {</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="tlo.analysis.utils.get_parameters_for_standard_mode2_runs">
+<span class="sig-name descname"><span class="pre">get_parameters_for_standard_mode2_runs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span></span></span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#get_parameters_for_standard_mode2_runs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.get_parameters_for_standard_mode2_runs" title="Link to this definition"></a></dt>
+<dd><p>Returns a dictionary of parameters and their updated values to indicate
+the “standard mode 2” scenario.</p>
+<p>The return dict is in the form:
+e.g. {</p>
+<blockquote>
+<div><blockquote>
+<div><dl class="simple">
+<dt>‘Depression’: {</dt><dd><p>‘pr_assessed_for_depression_for_perinatal_female’: 1.0,
+‘pr_assessed_for_depression_in_generic_appt_level1’: 1.0,
+},</p>
+</dd>
+<dt>‘Hiv’: {</dt><dd><p>‘prob_start_art_or_vs’: 1.0,
+}</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>}</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="tlo.analysis.utils.get_parameters_for_improved_healthsystem_and_healthcare_seeking">
 <span class="sig-name descname"><span class="pre">get_parameters_for_improved_healthsystem_and_healthcare_seeking</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_healthsystem_function</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_healthcare_seeking</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span></span></span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#get_parameters_for_improved_healthsystem_and_healthcare_seeking"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.get_parameters_for_improved_healthsystem_and_healthcare_seeking" title="Link to this definition"></a></dt>
 <dd><p>Returns a dictionary of parameters and their updated values to indicate
@@ -528,7 +551,7 @@ e.g. {</p>
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on May 27, 2024.
+      <span class="lastupdated">Last updated on Aug 02, 2024.
       </span></p>
   </div>
 

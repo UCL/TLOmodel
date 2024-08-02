@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.healthsystem module &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
+  <title>tlo.methods.healthsystem module &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -17,7 +17,7 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../_static/documentation_options.js?v=f3d69a25"></script>
         <script src="../_static/doctools.js?v=9a2dae69"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -153,61 +153,69 @@ The execution of all health systems interactions are controlled through this mod
 <td><p>DATA_FRAME</p></td>
 <td><p>Data imported from the OneHealth Tool on consumable items, packages and costs.</p></td>
 </tr>
-<tr class="row-even"><td><p>availability_estimates</p></td>
+<tr class="row-even"><td><p>consumables_item_designations</p></td>
+<td><p>DATA_FRAME</p></td>
+<td><p>Look-up table for the designations of consumables (whether diagnostic, medicine, or other</p></td>
+</tr>
+<tr class="row-odd"><td><p>availability_estimates</p></td>
 <td><p>DATA_FRAME</p></td>
 <td><p>Estimated availability of consumables in the LMIS dataset.</p></td>
 </tr>
-<tr class="row-odd"><td><p>cons_availability</p></td>
+<tr class="row-even"><td><p>cons_availability</p></td>
 <td><p>STRING</p></td>
-<td><p>Availability of consumables. If ‘default’ then use the availability specified in the ResourceFile; if ‘none’, then let no consumable be  ever be available; if ‘all’, then all consumables are always available. When using ‘all’ or ‘none’, requests for consumables are not logged. NB. This parameter is over-riddenif an argument is provided to the module initialiser.</p></td>
+<td><p>Availability of consumables. If ‘default’ then use the availability specified in the ResourceFile; if ‘none’, then let no consumable be  ever be available; if ‘all’, then all consumables are always available. When using ‘all’ or ‘none’, requests for consumables are not logged. NB. This parameter is over-riddenif an argument is provided to the module initialiser.Note that other options are also available: see the <cite>Consumables</cite> class.</p></td>
 </tr>
-<tr class="row-even"><td><p>BedCapacity</p></td>
+<tr class="row-odd"><td><p>BedCapacity</p></td>
 <td><p>DATA_FRAME</p></td>
 <td><p>Data on the number of beds available of each type by facility_id</p></td>
 </tr>
-<tr class="row-odd"><td><p>beds_availability</p></td>
+<tr class="row-even"><td><p>beds_availability</p></td>
 <td><p>STRING</p></td>
 <td><p>Availability of beds. If ‘default’ then use the availability specified in the ResourceFile; if ‘none’, then let no beds be  ever be available; if ‘all’, then all beds are always available. NB. This parameter is over-ridden if an argument is provided to the module initialiser.</p></td>
 </tr>
-<tr class="row-even"><td><p>EquipmentCatalogue</p></td>
+<tr class="row-odd"><td><p>EquipmentCatalogue</p></td>
 <td><p>DATA_FRAME</p></td>
 <td><p>Data on equipment items and packages.</p></td>
 </tr>
-<tr class="row-odd"><td><p>equipment_availability_estimates</p></td>
+<tr class="row-even"><td><p>equipment_availability_estimates</p></td>
 <td><p>DATA_FRAME</p></td>
 <td><p>Data on the availability of equipment items and packages.</p></td>
 </tr>
-<tr class="row-even"><td><p>equip_availability</p></td>
+<tr class="row-odd"><td><p>equip_availability</p></td>
 <td><p>STRING</p></td>
 <td><p>What to assume about the availability of equipment. If ‘default’ then use the availability specified in the ResourceFile; if ‘none’, then let no equipment ever be available; if ‘all’, then all equipment is always available. NB. This parameter is over-ridden if an argument is provided to the module initialiser.</p></td>
 </tr>
-<tr class="row-odd"><td><p>equip_availability_postSwitch</p></td>
+<tr class="row-even"><td><p>equip_availability_postSwitch</p></td>
 <td><p>STRING</p></td>
 <td><p>What to assume about the availability of equipment after the switch (see <cite>year_equip_availability_switch</cite>). The options for this are the same as <cite>equip_availability</cite>.</p></td>
 </tr>
-<tr class="row-even"><td><p>year_equip_availability_switch</p></td>
+<tr class="row-odd"><td><p>year_equip_availability_switch</p></td>
 <td><p>INT</p></td>
 <td><p>Year in which the assumption for <cite>equip_availability</cite> changes (The change happens on 1st January of that year.)</p></td>
 </tr>
-<tr class="row-odd"><td><p>Service_Availability</p></td>
+<tr class="row-even"><td><p>Service_Availability</p></td>
 <td><p>LIST</p></td>
 <td><p>List of services to be available. NB. This parameter is over-ridden if an argument is provided to the module initialiser.</p></td>
 </tr>
-<tr class="row-even"><td><p>policy_name</p></td>
+<tr class="row-odd"><td><p>policy_name</p></td>
 <td><p>STRING</p></td>
 <td><p>Name of priority policy adopted</p></td>
 </tr>
-<tr class="row-odd"><td><p>year_mode_switch</p></td>
+<tr class="row-even"><td><p>year_mode_switch</p></td>
 <td><p>INT</p></td>
 <td><p>Year in which mode switch is enforced</p></td>
 </tr>
-<tr class="row-even"><td><p>scale_to_effective_capabilities</p></td>
+<tr class="row-odd"><td><p>scale_to_effective_capabilities</p></td>
 <td><p>BOOL</p></td>
 <td><p>In year in which mode switch takes place, will rescale available capabilities to match thosethat were effectively used (on average) in the past year if this is set to True. This way,we can approximate overtime and rushing of appts even in mode 2.</p></td>
 </tr>
-<tr class="row-odd"><td><p>year_cons_availability_switch</p></td>
+<tr class="row-even"><td><p>year_cons_availability_switch</p></td>
 <td><p>INT</p></td>
 <td><p>Year in which consumable availability switch is enforced. The change happenson 1st January of that year.)</p></td>
+</tr>
+<tr class="row-odd"><td><p>year_use_funded_or_actual_staffing_switch</p></td>
+<td><p>INT</p></td>
+<td><p>Year in which switch for <cite>use_funded_or_actual_staffing</cite> is enforced. (The change happenson 1st January of that year.)</p></td>
 </tr>
 <tr class="row-even"><td><p>priority_rank</p></td>
 <td><p>DICT</p></td>
@@ -265,6 +273,10 @@ The execution of all health systems interactions are controlled through this mod
 <td><p>STRING</p></td>
 <td><p>Consumables availability after switch in <cite>year_cons_availability_switch</cite>. Acceptable valuesare the same as those for Parameter <cite>cons_availability</cite>.</p></td>
 </tr>
+<tr class="row-even"><td><p>use_funded_or_actual_staffing_postSwitch</p></td>
+<td><p>STRING</p></td>
+<td><p>Staffing availability after switch in <cite>year_use_funded_or_actual_staffing_switch</cite>. Acceptable values are the same as those for Parameter <cite>use_funded_or_actual_staffing</cite>.</p></td>
+</tr>
 </tbody>
 </table>
 <p><strong>PROPERTIES:</strong></p>
@@ -289,9 +301,10 @@ The execution of all health systems interactions are controlled through this mod
 </table>
 <p><strong>Class attributes:</strong></p>
 <p>INIT_DEPENDENCIES : {‘Demography’}</p>
-<p>capabilities_today : &lt;property object at 0x11ca3b510&gt;</p>
-<p>hsi_event_counts : &lt;property object at 0x11ca3b6a0&gt;</p>
-<p>never_ran_hsi_event_counts : &lt;property object at 0x11ca3b6f0&gt;</p>
+<p>capabilities_today : &lt;property object at 0x118f00680&gt;</p>
+<p>hsi_event_counts : &lt;property object at 0x118f008b0&gt;</p>
+<p>never_ran_hsi_event_counts : &lt;property object at 0x118f00900&gt;</p>
+<p>use_funded_or_actual_staffing : &lt;property object at 0x118f00770&gt;</p>
 <p><strong>Functions (defined or overridden in class HealthSystem):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.__init__">
@@ -425,9 +438,25 @@ It is a good place to add initial events to the event queue.</p>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.process_human_resources_files">
-<span class="sig-name descname"><span class="pre">process_human_resources_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">use_funded_or_actual_staffing</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.process_human_resources_files"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.process_human_resources_files" title="Link to this definition"></a></dt>
-<dd><p>Create the data-structures needed from the information read into the parameters.</p>
+<dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.process_healthsystem_organisation_files">
+<span class="sig-name descname"><span class="pre">process_healthsystem_organisation_files</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.process_healthsystem_organisation_files"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.process_healthsystem_organisation_files" title="Link to this definition"></a></dt>
+<dd><p>Create the data-structures needed from the information read into the parameters:
+* self._facility_levels
+* self._appointment_types
+* self._appt_times
+* self._appt_type_by_facLevel
+* self._facility_by_facility_id
+* self._facilities_for_each_district</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.setup_daily_capabilities">
+<span class="sig-name descname"><span class="pre">setup_daily_capabilities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">use_funded_or_actual_staffing</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.setup_daily_capabilities"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.setup_daily_capabilities" title="Link to this definition"></a></dt>
+<dd><p>Set up <cite>self._daily_capabilities</cite> and <cite>self._officers_with_availability</cite>.
+This is called when the value for <cite>use_funded_or_actual_staffing</cite> is set - at the beginning of the simulation</p>
+<blockquote>
+<div><p>and when the assumption when the underlying assumption for <cite>use_funded_or_actual_staffing</cite> is updated</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py method">
@@ -492,14 +521,6 @@ compatibility/debugging.)</p>
 <span class="sig-name descname"><span class="pre">get_mode_appt_constraints</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.get_mode_appt_constraints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.get_mode_appt_constraints" title="Link to this definition"></a></dt>
 <dd><p>Returns <cite>mode_appt_constraints</cite>. (Should be equal to what is specified by the parameter, but overwrite with
 what was provided in argument if an argument was specified – provided for backward compatibility/debugging.)</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.get_use_funded_or_actual_staffing">
-<span class="sig-name descname"><span class="pre">get_use_funded_or_actual_staffing</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.get_use_funded_or_actual_staffing"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.get_use_funded_or_actual_staffing" title="Link to this definition"></a></dt>
-<dd><p>Returns <cite>use_funded_or_actual_staffing</cite>. (Should be equal to what is specified by the parameter, but
-overwrite with what was provided in argument if an argument was specified – provided for backward
-compatibility/debugging.)</p>
 </dd></dl>
 
 <dl class="py method">
@@ -741,6 +762,8 @@ a given package name.</p>
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.override_availability_of_consumables">
 <span class="sig-name descname"><span class="pre">override_availability_of_consumables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">item_codes</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.override_availability_of_consumables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.override_availability_of_consumables" title="Link to this definition"></a></dt>
 <dd><p>Over-ride the availability (for all months and all facilities) of certain consumables item_codes.
+Note that these changes will <em>not</em> persist following a change of the overall modulator of consumables
+availability, <cite>Consumables.availability</cite>.
 :param item_codes: Dictionary of the form {&lt;item_code&gt;: probability_that_item_is_available}
 :return: None</p>
 </dd></dl>
@@ -889,6 +912,7 @@ lists:</p>
 <li><p><cite>cons_availability</cite></p></li>
 <li><p><cite>beds_availability</cite></p></li>
 <li><p><cite>equip_availability</cite></p></li>
+<li><p><cite>use_funded_or_actual_staffing</cite></p></li>
 </ul>
 </dd>
 </dl>
@@ -936,7 +960,7 @@ constructor, but may also take further keyword arguments.</p></li>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
 <p>__annotations__ : {}</p>
-<p>current_pop_size : &lt;property object at 0x11ca3b9c0&gt;</p>
+<p>current_pop_size : &lt;property object at 0x118f00bd0&gt;</p>
 <p><strong>Functions (defined or overridden in class DynamicRescalingHRCapabilities):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.DynamicRescalingHRCapabilities.__init__">
@@ -1099,7 +1123,7 @@ HealthSystem at a given year.</p>
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on May 27, 2024.
+      <span class="lastupdated">Last updated on Aug 02, 2024.
       </span></p>
   </div>
 

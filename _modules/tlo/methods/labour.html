@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.labour &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
+  <title>tlo.methods.labour &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
@@ -16,7 +16,7 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../../../_static/documentation_options.js?v=f3d69a25"></script>
         <script src="../../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -97,20 +97,20 @@
 <span class="kn">import</span> <span class="nn">scipy.stats</span>
 
 <span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">Date</span><span class="p">,</span> <span class="n">DateOffset</span><span class="p">,</span> <span class="n">Module</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">Property</span><span class="p">,</span> <span class="n">Types</span><span class="p">,</span> <span class="n">logging</span>
-<span class="kn">from</span> <span class="nn">tlo.core</span> <span class="kn">import</span> <span class="n">IndividualPropertyUpdates</span>
 <span class="kn">from</span> <span class="nn">tlo.events</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">,</span> <span class="n">RegularEvent</span>
 <span class="kn">from</span> <span class="nn">tlo.lm</span> <span class="kn">import</span> <span class="n">LinearModel</span><span class="p">,</span> <span class="n">LinearModelType</span>
+<span class="kn">from</span> <span class="nn">tlo.logging.helpers</span> <span class="kn">import</span> <span class="n">get_dataframe_row_as_dict_for_logging</span>
 <span class="kn">from</span> <span class="nn">tlo.methods</span> <span class="kn">import</span> <span class="n">Metadata</span><span class="p">,</span> <span class="n">labour_lm</span><span class="p">,</span> <span class="n">pregnancy_helper_functions</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.causes</span> <span class="kn">import</span> <span class="n">Cause</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.dxmanager</span> <span class="kn">import</span> <span class="n">DxTest</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.hsi_event</span> <span class="kn">import</span> <span class="n">HSI_Event</span>
+<span class="kn">from</span> <span class="nn">tlo.methods.hsi_generic_first_appts</span> <span class="kn">import</span> <span class="n">GenericFirstAppointmentsMixin</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.postnatal_supervisor</span> <span class="kn">import</span> <span class="n">PostnatalWeekOneMaternalEvent</span>
 <span class="kn">from</span> <span class="nn">tlo.util</span> <span class="kn">import</span> <span class="n">BitsetHandler</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">numpy.random</span> <span class="kn">import</span> <span class="n">RandomState</span>
-
-    <span class="kn">from</span> <span class="nn">tlo.population</span> <span class="kn">import</span> <span class="n">PatientDetails</span>
+    <span class="kn">from</span> <span class="nn">tlo.methods.hsi_generic_first_appts</span> <span class="kn">import</span> <span class="n">HSIEventScheduler</span>
+    <span class="kn">from</span> <span class="nn">tlo.population</span> <span class="kn">import</span> <span class="n">IndividualProperties</span>
 
 
 <span class="c1"># Standard logger</span>
@@ -128,7 +128,7 @@
 
 <div class="viewcode-block" id="Labour">
 <a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.Labour">[docs]</a>
-<span class="k">class</span> <span class="nc">Labour</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">Labour</span><span class="p">(</span><span class="n">Module</span><span class="p">,</span> <span class="n">GenericFirstAppointmentsMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;This is module is responsible for the process of labour, birth and the immediate postnatal period (up until</span>
 <span class="sd">    48hrs post birth). This model has a number of core functions including; initiating the onset of labour for women on</span>
 <span class="sd">    their pre-determined due date (or prior to this for preterm labour/admission for delivery), applying the incidence</span>
@@ -793,174 +793,180 @@
 <span class="sd">        This function defines the required consumables for each intervention delivered during this module and stores</span>
 <span class="sd">        them in a module level dictionary called within HSIs</span>
 <span class="sd">         &quot;&quot;&quot;</span>
-        <span class="n">get_item_code_from_pkg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_item_codes_from_package_name</span>
-
-        <span class="n">get_list_of_items</span> <span class="o">=</span> <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">get_list_of_items</span>
-
-        <span class="c1"># ---------------------------------- IV DRUG ADMIN EQUIPMENT  -------------------------------------------------</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;iv_drug_equipment&#39;</span><span class="p">]</span> <span class="o">=</span> \
-            <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Cannula iv  (winged with injection pot) 18_each_CMST&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Giving set iv administration + needle 15 drops/ml_each_CMST&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Disposables gloves, powder free, 100 pieces per box&#39;</span><span class="p">])</span>
+        <span class="n">ic</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span>
 
         <span class="c1"># ---------------------------------- BLOOD TEST EQUIPMENT ---------------------------------------------------</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;blood_test_equipment&#39;</span><span class="p">]</span> <span class="o">=</span> \
-            <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Blood collecting tube, 5 ml&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Cannula iv  (winged with injection pot) 18_each_CMST&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Disposables gloves, powder free, 100 pieces per box&#39;</span><span class="p">])</span>
+            <span class="p">{</span><span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Blood collecting tube, 5 ml&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Cannula iv  (winged with injection pot) 18_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Disposables gloves, powder free, 100 pieces per box&#39;</span><span class="p">):</span> <span class="mi">1</span>
+             <span class="p">}</span>
+        <span class="c1"># ---------------------------------- IV DRUG ADMIN EQUIPMENT  -------------------------------------------------</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;iv_drug_equipment&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="p">{</span><span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Giving set iv administration + needle 15 drops/ml_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Cannula iv  (winged with injection pot) 18_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Disposables gloves, powder free, 100 pieces per box&#39;</span><span class="p">):</span> <span class="mi">1</span>
+             <span class="p">}</span>
 
         <span class="c1"># ------------------------------------------ FULL BLOOD COUNT -------------------------------------------------</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;full_blood_count&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Complete blood count&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;full_blood_count&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Complete blood count&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">}</span>
 
         <span class="c1"># -------------------------------------------- DELIVERY ------------------------------------------------------</span>
         <span class="c1"># assuming CDK has blade, soap, cord tie</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;delivery_core&#39;</span><span class="p">]</span> <span class="o">=</span> \
-            <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Clean delivery kit&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Chlorhexidine 1.5</span><span class="si">% s</span><span class="s1">olution_5_CMST&#39;</span><span class="p">])</span>
+            <span class="p">{</span><span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Clean delivery kit&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Chlorhexidine 1.5</span><span class="si">% s</span><span class="s1">olution_5_CMST&#39;</span><span class="p">):</span> <span class="mi">20</span><span class="p">,</span>
+             <span class="p">}</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;delivery_optional&#39;</span><span class="p">]</span> <span class="o">=</span> \
-            <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Cannula iv  (winged with injection pot) 18_each_CMST&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Disposables gloves, powder free, 100 pieces per box&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Gauze, absorbent 90cm x 40m_each_CMST&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Paracetamol, tablet, 500 mg&#39;</span><span class="p">])</span>
+            <span class="p">{</span><span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Gauze, absorbent 90cm x 40m_each_CMST&#39;</span><span class="p">):</span> <span class="mi">30</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Cannula iv  (winged with injection pot) 18_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Disposables gloves, powder free, 100 pieces per box&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Paracetamol, tablet, 500 mg&#39;</span><span class="p">):</span> <span class="mi">8000</span>
+             <span class="p">}</span>
 
         <span class="c1"># -------------------------------------------- CAESAREAN DELIVERY ------------------------------------------</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;caesarean_delivery_core&#39;</span><span class="p">]</span> <span class="o">=</span> \
-            <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Halothane (fluothane)_250ml_CMST&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Ceftriaxone 1g, PFR_each_CMST&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Metronidazole 200mg_1000_CMST&#39;</span><span class="p">])</span>
+            <span class="p">{</span><span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Halothane (fluothane)_250ml_CMST&#39;</span><span class="p">):</span> <span class="mi">100</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Ceftriaxone 1g, PFR_each_CMST&#39;</span><span class="p">):</span> <span class="mi">2</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Metronidazole 200mg_1000_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>  <span class="c1"># todo: replace</span>
+             <span class="p">}</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;caesarean_delivery_optional&#39;</span><span class="p">]</span> <span class="o">=</span> \
-            <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Scalpel blade size 22 (individually wrapped)_100_CMST&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Cannula iv  (winged with injection pot) 18_each_CMST&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Paracetamol, tablet, 500 mg&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Declofenac injection_each_CMST&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Pethidine, 50 mg/ml, 2 ml ampoule&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Foley catheter&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Bag, urine, collecting, 2000 ml&#39;</span><span class="p">,</span>
-                                     <span class="s2">&quot;ringer&#39;s lactate (Hartmann&#39;s solution), 1000 ml_12_IDA&quot;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Sodium chloride, injectable solution, 0,9 %, 500 ml&#39;</span><span class="p">,</span>
-                                     <span class="s2">&quot;Giving set iv administration + needle 15 drops/ml_each_CMST&quot;</span><span class="p">,</span>
-                                     <span class="s2">&quot;Chlorhexidine 1.5</span><span class="si">% s</span><span class="s2">olution_5_CMST&quot;</span><span class="p">])</span>
+            <span class="p">{</span><span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Scalpel blade size 22 (individually wrapped)_100_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Cannula iv  (winged with injection pot) 18_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Sodium chloride, injectable solution, 0,9 %, 500 ml&#39;</span><span class="p">):</span> <span class="mi">2000</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Giving set iv administration + needle 15 drops/ml_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Disposables gloves, powder free, 100 pieces per box&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Foley catheter&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Bag, urine, collecting, 2000 ml&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Paracetamol, tablet, 500 mg&#39;</span><span class="p">):</span> <span class="mi">8000</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Declofenac injection_each_CMST&#39;</span><span class="p">):</span> <span class="mi">2</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s2">&quot;ringer&#39;s lactate (Hartmann&#39;s solution), 1000 ml_12_IDA&quot;</span><span class="p">):</span> <span class="mi">2000</span><span class="p">,</span>
+             <span class="p">}</span>
 
         <span class="c1"># -------------------------------------------- OBSTETRIC SURGERY ----------------------------------------------</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;obstetric_surgery_core&#39;</span><span class="p">]</span> <span class="o">=</span> \
-            <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Halothane (fluothane)_250ml_CMST&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Ceftriaxone 1g, PFR_each_CMST&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Metronidazole 200mg_1000_CMST&#39;</span><span class="p">])</span>
+            <span class="p">{</span><span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Halothane (fluothane)_250ml_CMST&#39;</span><span class="p">):</span> <span class="mi">100</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Ceftriaxone 1g, PFR_each_CMST&#39;</span><span class="p">):</span> <span class="mi">2</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Metronidazole 200mg_1000_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>  <span class="c1"># todo: replace</span>
+             <span class="p">}</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;obstetric_surgery_optional&#39;</span><span class="p">]</span> <span class="o">=</span> \
-            <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Scalpel blade size 22 (individually wrapped)_100_CMST&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Cannula iv  (winged with injection pot) 18_each_CMST&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Paracetamol, tablet, 500 mg&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Declofenac injection_each_CMST&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Pethidine, 50 mg/ml, 2 ml ampoule&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Foley catheter&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Bag, urine, collecting, 2000 ml&#39;</span><span class="p">,</span>
-                                     <span class="s2">&quot;ringer&#39;s lactate (Hartmann&#39;s solution), 1000 ml_12_IDA&quot;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Sodium chloride, injectable solution, 0,9 %, 500 ml&#39;</span><span class="p">,</span>
-                                     <span class="s2">&quot;Giving set iv administration + needle 15 drops/ml_each_CMST&quot;</span><span class="p">])</span>
+            <span class="p">{</span><span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Scalpel blade size 22 (individually wrapped)_100_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Cannula iv  (winged with injection pot) 18_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Sodium chloride, injectable solution, 0,9 %, 500 ml&#39;</span><span class="p">):</span> <span class="mi">2000</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Giving set iv administration + needle 15 drops/ml_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Disposables gloves, powder free, 100 pieces per box&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Foley catheter&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Bag, urine, collecting, 2000 ml&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Paracetamol, tablet, 500 mg&#39;</span><span class="p">):</span> <span class="mi">8000</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Declofenac injection_each_CMST&#39;</span><span class="p">):</span> <span class="mi">2</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s2">&quot;ringer&#39;s lactate (Hartmann&#39;s solution), 1000 ml_12_IDA&quot;</span><span class="p">):</span> <span class="mi">2000</span><span class="p">,</span>
+             <span class="p">}</span>
 
         <span class="c1"># -------------------------------------------- ABX FOR PROM -------------------------------------------------</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;abx_for_prom&#39;</span><span class="p">]</span> <span class="o">=</span> \
-            <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Benzathine benzylpenicillin, powder for injection, 2.4 million IU&#39;</span><span class="p">])</span>
+            <span class="p">{</span><span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Benzathine benzylpenicillin, powder for injection, 2.4 million IU&#39;</span><span class="p">):</span> <span class="mi">8</span><span class="p">}</span>
 
         <span class="c1"># -------------------------------------------- ANTENATAL STEROIDS ---------------------------------------------</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;antenatal_steroids&#39;</span><span class="p">]</span> <span class="o">=</span> \
-            <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Dexamethasone 5mg/ml, 5ml_each_CMST&#39;</span><span class="p">])</span>
+            <span class="p">{</span><span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Dexamethasone 5mg/ml, 5ml_each_CMST&#39;</span><span class="p">):</span> <span class="mi">12</span><span class="p">}</span>
 
         <span class="c1"># -------------------------------------  INTRAVENOUS ANTIHYPERTENSIVES ---------------------------------------</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;iv_antihypertensives&#39;</span><span class="p">]</span> <span class="o">=</span> \
-            <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Hydralazine, powder for injection, 20 mg ampoule&#39;</span><span class="p">])</span>
+            <span class="p">{</span><span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Hydralazine, powder for injection, 20 mg ampoule&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">}</span>
 
         <span class="c1"># --------------------------------------- ORAL ANTIHYPERTENSIVES ---------------------------------------------</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;oral_antihypertensives&#39;</span><span class="p">]</span> <span class="o">=</span> \
-            <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Methyldopa 250mg_1000_CMST&#39;</span><span class="p">])</span>
+            <span class="p">{</span><span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Methyldopa 250mg_1000_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">}</span>
 
         <span class="c1"># ----------------------------------  SEVERE PRE-ECLAMPSIA/ECLAMPSIA  -----------------------------------------</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;magnesium_sulfate&#39;</span><span class="p">]</span> <span class="o">=</span> \
-            <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Magnesium sulfate, injection, 500 mg/ml in 10-ml ampoule&#39;</span><span class="p">])</span>
+            <span class="p">{</span><span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Magnesium sulfate, injection, 500 mg/ml in 10-ml ampoule&#39;</span><span class="p">):</span> <span class="mi">2</span><span class="p">}</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;eclampsia_management_optional&#39;</span><span class="p">]</span> <span class="o">=</span> \
-            <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Misoprostol, tablet, 200 mcg&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Oxytocin, injection, 10 IU in 1 ml ampoule&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Sodium chloride, injectable solution, 0,9 %, 500 ml&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Cannula iv  (winged with injection pot) 18_each_CMST&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Giving set iv administration + needle 15 drops/ml_each_CMST&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Disposables gloves, powder free, 100 pieces per box&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Oxygen, 1000 liters, primarily with oxygen cylinders&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Complete blood count&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Foley catheter&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Bag, urine, collecting, 2000 ml&#39;</span><span class="p">])</span>
-
+            <span class="p">{</span><span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Sodium chloride, injectable solution, 0,9 %, 500 ml&#39;</span><span class="p">):</span> <span class="mi">2000</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Cannula iv  (winged with injection pot) 18_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Giving set iv administration + needle 15 drops/ml_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Disposables gloves, powder free, 100 pieces per box&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Oxygen, 1000 liters, primarily with oxygen cylinders&#39;</span><span class="p">):</span> <span class="mi">23_040</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Complete blood count&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Blood collecting tube, 5 ml&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Foley catheter&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Bag, urine, collecting, 2000 ml&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="p">}</span>
         <span class="c1"># -------------------------------------  OBSTRUCTED LABOUR  ---------------------------------------------------</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;obstructed_labour&#39;</span><span class="p">]</span> <span class="o">=</span> \
-            <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Benzylpenicillin 3g (5MU), PFR_each_CMST&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Gentamycin, injection, 40 mg/ml in 2 ml vial&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Sodium chloride, injectable solution, 0,9 %, 500 ml&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Cannula iv  (winged with injection pot) 18_each_CMST&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Giving set iv administration + needle 15 drops/ml_each_CMST&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Disposables gloves, powder free, 100 pieces per box&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Complete blood count&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Foley catheter&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Bag, urine, collecting, 2000 ml&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Paracetamol, tablet, 500 mg&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Pethidine, 50 mg/ml, 2 ml ampoule&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Gauze, absorbent 90cm x 40m_each_CMST&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Suture pack&#39;</span><span class="p">])</span>
-
+            <span class="p">{</span><span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Benzathine benzylpenicillin, powder for injection, 2.4 million IU&#39;</span><span class="p">):</span> <span class="mi">8</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Gentamycin, injection, 40 mg/ml in 2 ml vial&#39;</span><span class="p">):</span> <span class="mi">6</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Sodium chloride, injectable solution, 0,9 %, 500 ml&#39;</span><span class="p">):</span> <span class="mi">2000</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Cannula iv  (winged with injection pot) 18_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Giving set iv administration + needle 15 drops/ml_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Disposables gloves, powder free, 100 pieces per box&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Complete blood count&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Blood collecting tube, 5 ml&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Foley catheter&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Bag, urine, collecting, 2000 ml&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Paracetamol, tablet, 500 mg&#39;</span><span class="p">):</span> <span class="mi">8000</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Pethidine, 50 mg/ml, 2 ml ampoule&#39;</span><span class="p">):</span> <span class="mi">6</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Gauze, absorbent 90cm x 40m_each_CMST&#39;</span><span class="p">):</span> <span class="mi">30</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Suture pack&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="p">}</span>
         <span class="c1"># -------------------------------------  OBSTETRIC VACUUM   ---------------------------------------------------</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;vacuum&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Vacuum, obstetric&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;vacuum&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Vacuum, obstetric&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">}</span>
 
         <span class="c1"># -------------------------------------  MATERNAL SEPSIS  -----------------------------------------------------</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;maternal_sepsis_core&#39;</span><span class="p">]</span> <span class="o">=</span> \
-            <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Benzylpenicillin 3g (5MU), PFR_each_CMST&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Gentamycin, injection, 40 mg/ml in 2 ml vial&#39;</span><span class="p">])</span>
-        <span class="c1"># &#39;Metronidazole, injection, 500 mg in 100 ml vial&#39;])</span>
+            <span class="p">{</span><span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Benzylpenicillin 3g (5MU), PFR_each_CMST&#39;</span><span class="p">):</span> <span class="mi">8</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Gentamycin, injection, 40 mg/ml in 2 ml vial&#39;</span><span class="p">):</span> <span class="mi">6</span><span class="p">,</span>
+             <span class="p">}</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;maternal_sepsis_optional&#39;</span><span class="p">]</span> <span class="o">=</span> \
-            <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Cannula iv  (winged with injection pot) 18_each_CMST&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Oxygen, 1000 liters, primarily with oxygen cylinders&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Paracetamol, tablet, 500 mg&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Giving set iv administration + needle 15 drops/ml_each_CMST&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Foley catheter&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Bag, urine, collecting, 2000 ml&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Disposables gloves, powder free, 100 pieces per box&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Complete blood count&#39;</span><span class="p">])</span>
-
+            <span class="p">{</span><span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Cannula iv  (winged with injection pot) 18_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Oxygen, 1000 liters, primarily with oxygen cylinders&#39;</span><span class="p">):</span> <span class="mi">23_040</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Paracetamol, tablet, 500 mg&#39;</span><span class="p">):</span> <span class="mi">8000</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Giving set iv administration + needle 15 drops/ml_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Foley catheter&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Bag, urine, collecting, 2000 ml&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Disposables gloves, powder free, 100 pieces per box&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Complete blood count&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="p">}</span>
         <span class="c1"># -------------------------------------  ACTIVE MANAGEMENT THIRD STAGE  ---------------------------------------</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;amtsl&#39;</span><span class="p">]</span> <span class="o">=</span> \
-            <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Oxytocin, injection, 10 IU in 1 ml ampoule&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;amtsl&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Oxytocin, injection, 10 IU in 1 ml ampoule&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">}</span>
 
         <span class="c1"># -------------------------------------  POSTPARTUM HAEMORRHAGE  ---------------------------------------</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;pph_core&#39;</span><span class="p">]</span> <span class="o">=</span> \
-            <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Oxytocin, injection, 10 IU in 1 ml ampoule&#39;</span><span class="p">])</span>
+            <span class="p">{</span><span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Oxytocin, injection, 10 IU in 1 ml ampoule&#39;</span><span class="p">):</span> <span class="mi">5</span><span class="p">}</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;pph_optional&#39;</span><span class="p">]</span> <span class="o">=</span> \
-            <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Misoprostol, tablet, 200 mcg&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Pethidine, 50 mg/ml, 2 ml ampoule&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Oxygen, 1000 liters, primarily with oxygen cylinders&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Cannula iv  (winged with injection pot) 18_each_CMST&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Bag, urine, collecting, 2000 ml&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Foley catheter&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Giving set iv administration + needle 15 drops/ml_each_CMST&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Disposables gloves, powder free, 100 pieces per box&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Complete blood count&#39;</span><span class="p">])</span>
+            <span class="p">{</span><span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Misoprostol, tablet, 200 mcg&#39;</span><span class="p">):</span> <span class="mi">600</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Pethidine, 50 mg/ml, 2 ml ampoule&#39;</span><span class="p">):</span> <span class="mi">6</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Oxygen, 1000 liters, primarily with oxygen cylinders&#39;</span><span class="p">):</span> <span class="mi">23_040</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Giving set iv administration + needle 15 drops/ml_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Cannula iv  (winged with injection pot) 18_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Foley catheter&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Bag, urine, collecting, 2000 ml&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Disposables gloves, powder free, 100 pieces per box&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Complete blood count&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="p">}</span>
 
         <span class="c1"># -------------------------------------  BLOOD TRANSFUSION  ---------------------------------------</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;blood_transfusion&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Blood, one unit&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;blood_transfusion&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Blood, one unit&#39;</span><span class="p">):</span> <span class="mi">2</span><span class="p">}</span>
 
         <span class="c1"># ------------------------------------------ FULL BLOOD COUNT -------------------------------------------------</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;hb_test&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Haemoglobin test (HB)&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;hb_test&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Haemoglobin test (HB)&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">}</span>
 
         <span class="c1"># ---------------------------------- IRON AND FOLIC ACID ------------------------------------------------------</span>
+        <span class="c1"># Dose changes at run time</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;iron_folic_acid&#39;</span><span class="p">]</span> <span class="o">=</span> \
-            <span class="n">get_item_code_from_pkg</span><span class="p">(</span><span class="s1">&#39;Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg&#39;</span><span class="p">)</span>
+            <span class="p">{</span><span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">}</span>
 
         <span class="c1"># -------------------------------------------- RESUSCITATION ------------------------------------------</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;resuscitation&#39;</span><span class="p">]</span> <span class="o">=</span> \
-            <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Infant resuscitator, clear plastic + mask + bag_each_CMST&#39;</span><span class="p">])</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;resuscitation&#39;</span><span class="p">]</span> <span class="o">=</span>\
+            <span class="p">{</span><span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Infant resuscitator, clear plastic + mask + bag_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">}</span></div>
 
 
 <div class="viewcode-block" id="Labour.initialise_simulation">
@@ -1162,7 +1168,7 @@
 
         <span class="c1"># log delivery setting</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;delivery_setting_and_mode&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;mother&#39;</span><span class="p">:</span> <span class="n">mother_id</span><span class="p">,</span>
-                                                           <span class="s1">&#39;facility_type&#39;</span><span class="p">:</span> <span class="n">mni</span><span class="p">[</span><span class="n">mother_id</span><span class="p">][</span><span class="s1">&#39;delivery_setting&#39;</span><span class="p">],</span>
+                                                           <span class="s1">&#39;facility_type&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">mni</span><span class="p">[</span><span class="n">mother_id</span><span class="p">][</span><span class="s1">&#39;delivery_setting&#39;</span><span class="p">]),</span>
                                                            <span class="s1">&#39;mode&#39;</span><span class="p">:</span> <span class="n">mni</span><span class="p">[</span><span class="n">mother_id</span><span class="p">][</span><span class="s1">&#39;mode_of_delivery&#39;</span><span class="p">]})</span>
 
         <span class="c1"># Store only live births to a mother parity</span>
@@ -1818,7 +1824,9 @@
 
                 <span class="c1"># If she has not already receive antibiotics, we check for consumables</span>
                 <span class="n">avail</span> <span class="o">=</span> <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">return_cons_avail</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">,</span> <span class="n">core</span><span class="o">=</span><span class="s1">&#39;abx_for_prom&#39;</span><span class="p">,</span> <span class="n">optional</span><span class="o">=</span><span class="s1">&#39;iv_drug_equipment&#39;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span>
+                    <span class="n">cons</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;abx_for_prom&#39;</span><span class="p">],</span>
+                    <span class="n">opt_cons</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;iv_drug_equipment&#39;</span><span class="p">])</span>
 
                 <span class="c1"># Then query if these consumables are available during this HSI And provide if available.</span>
                 <span class="c1"># Antibiotics for from reduce risk of newborn sepsis within the first</span>
@@ -1832,8 +1840,9 @@
            <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;labour_state&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;late_preterm_labour&#39;</span><span class="p">:</span>
 
             <span class="n">avail</span> <span class="o">=</span> <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">return_cons_avail</span><span class="p">(</span>
-                <span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">,</span> <span class="n">core</span><span class="o">=</span><span class="s1">&#39;antenatal_steroids&#39;</span><span class="p">,</span>
-                <span class="n">optional</span><span class="o">=</span><span class="s1">&#39;iv_drug_equipment&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span>
+                <span class="n">cons</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;antenatal_steroids&#39;</span><span class="p">],</span>
+                <span class="n">opt_cons</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;iv_drug_equipment&#39;</span><span class="p">])</span>
 
             <span class="c1"># If available they are given. Antenatal steroids reduce a preterm newborns chance of developing</span>
             <span class="c1"># respiratory distress syndrome and of death associated with prematurity</span>
@@ -1901,8 +1910,9 @@
 
             <span class="c1"># Define and check for the required consumables</span>
             <span class="n">avail</span> <span class="o">=</span> <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">return_cons_avail</span><span class="p">(</span>
-                <span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">,</span> <span class="n">core</span><span class="o">=</span><span class="s1">&#39;magnesium_sulfate&#39;</span><span class="p">,</span>
-                <span class="n">optional</span><span class="o">=</span><span class="s1">&#39;eclampsia_management_optional&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span>
+                <span class="n">cons</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;magnesium_sulfate&#39;</span><span class="p">],</span>
+                <span class="n">opt_cons</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;eclampsia_management_optional&#39;</span><span class="p">])</span>
 
             <span class="c1"># If the consumables are available - the intervention is delivered. IV magnesium reduces the</span>
             <span class="c1"># probability that a woman with severe pre-eclampsia will experience eclampsia in labour</span>
@@ -1933,8 +1943,9 @@
 
             <span class="c1"># Then query if these consumables are available during this HSI</span>
             <span class="n">avail</span> <span class="o">=</span> <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">return_cons_avail</span><span class="p">(</span>
-                <span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">,</span> <span class="n">core</span><span class="o">=</span><span class="s1">&#39;iv_antihypertensives&#39;</span><span class="p">,</span>
-                <span class="n">optional</span><span class="o">=</span><span class="s1">&#39;iv_drug_equipment&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span>
+                <span class="n">cons</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;iv_antihypertensives&#39;</span><span class="p">],</span>
+                <span class="n">opt_cons</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;iv_drug_equipment&#39;</span><span class="p">])</span>
 
             <span class="c1"># If they are available then the woman is started on treatment. Intravenous antihypertensive reduce a</span>
             <span class="c1"># womans risk of progression from mild to severe gestational hypertension ANd reduce risk of death for</span>
@@ -1948,8 +1959,9 @@
                 <span class="k">elif</span> <span class="p">(</span><span class="n">labour_stage</span> <span class="o">==</span> <span class="s1">&#39;pp&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;pn_htn_disorders&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;severe_gest_htn&#39;</span><span class="p">):</span>
                     <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;pn_htn_disorders&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;gest_htn&#39;</span>
 
-                <span class="n">avail</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
-                    <span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;oral_antihypertensives&#39;</span><span class="p">])</span>
+                <span class="n">dose</span> <span class="o">=</span> <span class="p">(</span><span class="mi">7</span> <span class="o">*</span> <span class="mi">4</span><span class="p">)</span> <span class="o">*</span> <span class="mi">6</span> <span class="c1"># approximating 4 tablets a day, for 6 weeks</span>
+                <span class="n">cons</span> <span class="o">=</span> <span class="p">{</span><span class="n">_i</span><span class="p">:</span> <span class="n">dose</span> <span class="k">for</span> <span class="n">_i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;oral_antihypertensives&#39;</span><span class="p">]}</span>
+                <span class="n">avail</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="o">=</span><span class="n">cons</span><span class="p">)</span>
 
                 <span class="k">if</span> <span class="n">avail</span><span class="p">:</span>
                     <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;la_gest_htn_on_treatment&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span></div>
@@ -1983,8 +1995,9 @@
 
             <span class="c1"># define and check required consumables</span>
             <span class="n">avail</span> <span class="o">=</span> <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">return_cons_avail</span><span class="p">(</span>
-                <span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">,</span> <span class="n">core</span><span class="o">=</span><span class="s1">&#39;magnesium_sulfate&#39;</span><span class="p">,</span>
-                <span class="n">optional</span><span class="o">=</span><span class="s1">&#39;eclampsia_management_optional&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span>
+                <span class="n">cons</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;magnesium_sulfate&#39;</span><span class="p">],</span>
+                <span class="n">opt_cons</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;eclampsia_management_optional&#39;</span><span class="p">])</span>
 
             <span class="k">if</span> <span class="p">(</span><span class="n">labour_stage</span> <span class="o">==</span> <span class="s1">&#39;ip&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ac_admitted_for_immediate_delivery&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;none&#39;</span><span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">determine_delivery_mode_in_spe_or_ec</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span> <span class="s1">&#39;ec&#39;</span><span class="p">)</span>
@@ -2033,14 +2046,18 @@
                 <span class="c1"># If the general package is available AND the facility has the correct tools to carry out the</span>
                 <span class="c1"># delivery then it can occur</span>
                 <span class="n">avail</span> <span class="o">=</span> <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">return_cons_avail</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">,</span> <span class="n">core</span><span class="o">=</span><span class="s1">&#39;vacuum&#39;</span><span class="p">,</span>
-                    <span class="n">optional</span><span class="o">=</span><span class="s1">&#39;obstructed_labour&#39;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span>
+                    <span class="n">cons</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;vacuum&#39;</span><span class="p">],</span>
+                    <span class="n">opt_cons</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;obstructed_labour&#39;</span><span class="p">])</span>
 
                 <span class="c1"># run HCW check</span>
                 <span class="n">sf_check</span> <span class="o">=</span> <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">check_emonc_signal_function_will_run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sf</span><span class="o">=</span><span class="s1">&#39;avd&#39;</span><span class="p">,</span>
                                                                                            <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">)</span>
 
                 <span class="k">if</span> <span class="n">avail</span> <span class="ow">and</span> <span class="n">sf_check</span><span class="p">:</span>
+                    <span class="c1"># Add used equipment</span>
+                    <span class="n">hsi_event</span><span class="o">.</span><span class="n">add_equipment</span><span class="p">({</span><span class="s1">&#39;Delivery Forceps&#39;</span><span class="p">,</span> <span class="s1">&#39;Vacuum extractor&#39;</span><span class="p">})</span>
+
                     <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">log_met_need</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;avd_</span><span class="si">{</span><span class="n">indication</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">)</span>
 
                     <span class="c1"># If AVD was successful then we record the mode of delivery. We use this variable to reduce</span>
@@ -2089,8 +2106,9 @@
 
             <span class="c1"># Define and check available consumables</span>
             <span class="n">avail</span> <span class="o">=</span> <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">return_cons_avail</span><span class="p">(</span>
-                <span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">,</span> <span class="n">core</span><span class="o">=</span><span class="s1">&#39;maternal_sepsis_core&#39;</span><span class="p">,</span>
-                <span class="n">optional</span><span class="o">=</span><span class="s1">&#39;maternal_sepsis_optional&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span>
+                <span class="n">cons</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;maternal_sepsis_core&#39;</span><span class="p">],</span>
+                <span class="n">opt_cons</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;maternal_sepsis_optional&#39;</span><span class="p">])</span>
 
             <span class="c1"># If delivered this intervention reduces a womans risk of dying from sepsis</span>
             <span class="k">if</span> <span class="n">avail</span> <span class="ow">and</span> <span class="n">sf_check</span><span class="p">:</span>
@@ -2177,7 +2195,9 @@
 
         <span class="c1"># Define and check available consumables</span>
         <span class="n">avail</span> <span class="o">=</span> <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">return_cons_avail</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">,</span> <span class="n">core</span><span class="o">=</span><span class="s1">&#39;amtsl&#39;</span><span class="p">,</span> <span class="n">optional</span><span class="o">=</span><span class="s1">&#39;iv_drug_equipment&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span>
+            <span class="n">cons</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;amtsl&#39;</span><span class="p">],</span>
+            <span class="n">opt_cons</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;iv_drug_equipment&#39;</span><span class="p">])</span>
 
         <span class="c1"># run HCW check</span>
         <span class="n">sf_check</span> <span class="o">=</span> <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">check_emonc_signal_function_will_run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sf</span><span class="o">=</span><span class="s1">&#39;uterotonic&#39;</span><span class="p">,</span>
@@ -2211,7 +2231,9 @@
 
             <span class="c1"># Define and check available consumables</span>
             <span class="n">avail</span> <span class="o">=</span> <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">return_cons_avail</span><span class="p">(</span>
-                <span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">,</span> <span class="n">core</span><span class="o">=</span><span class="s1">&#39;pph_core&#39;</span><span class="p">,</span> <span class="n">optional</span><span class="o">=</span><span class="s1">&#39;pph_optional&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span>
+                <span class="n">cons</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;pph_core&#39;</span><span class="p">],</span>
+                <span class="n">opt_cons</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;pph_optional&#39;</span><span class="p">])</span>
 
             <span class="c1"># run HCW check</span>
             <span class="n">sf_check</span> <span class="o">=</span> <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">check_emonc_signal_function_will_run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sf</span><span class="o">=</span><span class="s1">&#39;uterotonic&#39;</span><span class="p">,</span>
@@ -2300,23 +2322,28 @@
         <span class="c1"># We log the required consumables and condition the surgery happening on the availability of the</span>
         <span class="c1"># first consumable in this package, the anaesthetic required for the surgery</span>
         <span class="n">avail</span> <span class="o">=</span> <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">return_cons_avail</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">,</span> <span class="n">core</span><span class="o">=</span><span class="s1">&#39;obstetric_surgery_core&#39;</span><span class="p">,</span>
-            <span class="n">optional</span><span class="o">=</span><span class="s1">&#39;obstetric_surgery_optional&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span>
+            <span class="n">cons</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;obstetric_surgery_core&#39;</span><span class="p">],</span>
+            <span class="n">opt_cons</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;obstetric_surgery_optional&#39;</span><span class="p">])</span>
 
         <span class="c1"># run HCW check</span>
         <span class="n">sf_check</span> <span class="o">=</span> <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">check_emonc_signal_function_will_run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sf</span><span class="o">=</span><span class="s1">&#39;surg&#39;</span><span class="p">,</span>
                                                                                    <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">)</span>
 
-        <span class="c1"># determine if uterine preserving surgery will be successful</span>
-        <span class="n">treatment_success_pph</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;success_rate_pph_surgery&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">avail</span> <span class="ow">and</span> <span class="n">sf_check</span><span class="p">:</span>
+            <span class="c1"># Add used equipment</span>
+            <span class="n">hsi_event</span><span class="o">.</span><span class="n">add_equipment</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">healthcare_system</span><span class="o">.</span><span class="n">equipment</span><span class="o">.</span><span class="n">from_pkg_names</span><span class="p">(</span><span class="s1">&#39;Major Surgery&#39;</span><span class="p">))</span>
 
-        <span class="c1"># If resources are available and the surgery is a success then a hysterectomy does not occur</span>
-        <span class="k">if</span> <span class="n">treatment_success_pph</span> <span class="ow">and</span> <span class="n">avail</span> <span class="ow">and</span> <span class="n">sf_check</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">pph_treatment</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;surgery&#39;</span><span class="p">)</span>
+            <span class="c1"># determine if uterine preserving surgery will be successful</span>
+            <span class="n">treatment_success_pph</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;success_rate_pph_surgery&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span>
 
-        <span class="k">elif</span> <span class="ow">not</span> <span class="n">treatment_success_pph</span> <span class="ow">and</span> <span class="n">avail</span> <span class="ow">and</span> <span class="n">sf_check</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">pph_treatment</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;hysterectomy&#39;</span><span class="p">)</span>
-            <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;la_has_had_hysterectomy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">if</span> <span class="n">treatment_success_pph</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">pph_treatment</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;surgery&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># If the treatment is unsuccessful then women will require a hysterectomy to stop the bleeding</span>
+                <span class="n">hsi_event</span><span class="o">.</span><span class="n">add_equipment</span><span class="p">({</span><span class="s1">&#39;Hysterectomy set&#39;</span><span class="p">})</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">pph_treatment</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;hysterectomy&#39;</span><span class="p">)</span>
+                <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;la_has_had_hysterectomy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
         <span class="c1"># log intervention delivery</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pph_treatment</span><span class="o">.</span><span class="n">has_all</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;surgery&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;la_has_had_hysterectomy&#39;</span><span class="p">]:</span>
@@ -2339,14 +2366,17 @@
 
         <span class="c1"># Check consumables</span>
         <span class="n">avail</span> <span class="o">=</span> <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">return_cons_avail</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">,</span> <span class="n">core</span><span class="o">=</span><span class="s1">&#39;blood_transfusion&#39;</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
-            <span class="n">optional</span><span class="o">=</span><span class="s1">&#39;iv_drug_equipment&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span>
+            <span class="n">cons</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;blood_transfusion&#39;</span><span class="p">],</span>
+            <span class="n">opt_cons</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;iv_drug_equipment&#39;</span><span class="p">])</span>
 
         <span class="c1"># check HCW</span>
         <span class="n">sf_check</span> <span class="o">=</span> <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">check_emonc_signal_function_will_run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sf</span><span class="o">=</span><span class="s1">&#39;blood_tran&#39;</span><span class="p">,</span>
                                                                                    <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">avail</span> <span class="ow">and</span> <span class="n">sf_check</span><span class="p">:</span>
+            <span class="n">hsi_event</span><span class="o">.</span><span class="n">add_equipment</span><span class="p">({</span><span class="s1">&#39;Drip stand&#39;</span><span class="p">,</span> <span class="s1">&#39;Infusion pump&#39;</span><span class="p">})</span>
+
             <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;received_blood_transfusion&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">log_met_need</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;blood_tran&#39;</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">)</span>
 
@@ -2372,6 +2402,9 @@
         <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_parameters</span>
         <span class="n">mother</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">]</span>
         <span class="n">mni</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;PregnancySupervisor&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mother_and_newborn_info</span>
+
+        <span class="c1"># Add used equipment</span>
+        <span class="n">hsi_event</span><span class="o">.</span><span class="n">add_equipment</span><span class="p">({</span><span class="s1">&#39;Analyser, Haematology&#39;</span><span class="p">})</span>
 
         <span class="c1"># Use dx_test function to assess anaemia status</span>
         <span class="n">test_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dx_manager</span><span class="o">.</span><span class="n">run_dx_test</span><span class="p">(</span>
@@ -2512,28 +2545,27 @@
 <a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.Labour.do_at_generic_first_appt_emergency">[docs]</a>
     <span class="k">def</span> <span class="nf">do_at_generic_first_appt_emergency</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">patient_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-        <span class="n">patient_details</span><span class="p">:</span> <span class="n">PatientDetails</span><span class="p">,</span>
-        <span class="n">random_state</span><span class="p">:</span> <span class="n">RandomState</span><span class="p">,</span>
+        <span class="n">person_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">individual_properties</span><span class="p">:</span> <span class="n">IndividualProperties</span><span class="p">,</span>
+        <span class="n">schedule_hsi_event</span><span class="p">:</span> <span class="n">HSIEventScheduler</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">IndividualPropertyUpdates</span><span class="p">:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">mni</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;PregnancySupervisor&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">mother_and_newborn_info</span>
         <span class="n">labour_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;Labour&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">women_in_labour</span>
 
-        <span class="k">if</span> <span class="n">patient_id</span> <span class="ow">in</span> <span class="n">labour_list</span><span class="p">:</span>
-            <span class="n">la_currently_in_labour</span> <span class="o">=</span> <span class="n">patient_details</span><span class="o">.</span><span class="n">la_currently_in_labour</span>
+        <span class="k">if</span> <span class="n">person_id</span> <span class="ow">in</span> <span class="n">labour_list</span><span class="p">:</span>
+            <span class="n">la_currently_in_labour</span> <span class="o">=</span> <span class="n">individual_properties</span><span class="p">[</span><span class="s2">&quot;la_currently_in_labour&quot;</span><span class="p">]</span>
             <span class="k">if</span> <span class="p">(</span>
                 <span class="n">la_currently_in_labour</span>
-                <span class="o">&amp;</span> <span class="n">mni</span><span class="p">[</span><span class="n">patient_id</span><span class="p">][</span><span class="s2">&quot;sought_care_for_complication&quot;</span><span class="p">]</span>
-                <span class="o">&amp;</span> <span class="p">(</span><span class="n">mni</span><span class="p">[</span><span class="n">patient_id</span><span class="p">][</span><span class="s2">&quot;sought_care_labour_phase&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;intrapartum&quot;</span><span class="p">)</span>
+                <span class="o">&amp;</span> <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s2">&quot;sought_care_for_complication&quot;</span><span class="p">]</span>
+                <span class="o">&amp;</span> <span class="p">(</span><span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s2">&quot;sought_care_labour_phase&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;intrapartum&quot;</span><span class="p">)</span>
             <span class="p">):</span>
                 <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour</span><span class="p">(</span>
                     <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
-                    <span class="n">person_id</span><span class="o">=</span><span class="n">patient_id</span><span class="p">,</span>
-                    <span class="c1"># facility_level_of_this_hsi=random_state.choice([&quot;1a&quot;, &quot;1b&quot;]),</span>
+                    <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
                     <span class="n">facility_level_of_this_hsi</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="s2">&quot;1a&quot;</span><span class="p">,</span> <span class="s2">&quot;1b&quot;</span><span class="p">]),</span>
                 <span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">healthsystem</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
+                <span class="n">schedule_hsi_event</span><span class="p">(</span>
                     <span class="n">event</span><span class="p">,</span>
                     <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                     <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
@@ -2808,7 +2840,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">set_intrapartum_complications</span><span class="p">(</span><span class="n">individual_id</span><span class="p">,</span> <span class="n">complication</span><span class="o">=</span><span class="n">complication</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">individual_id</span><span class="p">,</span> <span class="s1">&#39;la_obstructed_labour&#39;</span><span class="p">]:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;maternal_complication&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;mother&#39;</span><span class="p">:</span> <span class="n">individual_id</span><span class="p">,</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;maternal_complication&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;person&#39;</span><span class="p">:</span> <span class="n">individual_id</span><span class="p">,</span>
                                                            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;obstructed_labour&#39;</span><span class="p">,</span>
                                                            <span class="s1">&#39;timing&#39;</span><span class="p">:</span> <span class="s1">&#39;intrapartum&#39;</span><span class="p">})</span>
 
@@ -3159,8 +3191,14 @@
         <span class="c1"># LOG CONSUMABLES FOR DELIVERY...</span>
         <span class="c1"># We assume all deliveries require this basic package of consumables</span>
         <span class="n">avail</span> <span class="o">=</span> <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">return_cons_avail</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">,</span> <span class="n">core</span><span class="o">=</span><span class="s1">&#39;delivery_core&#39;</span><span class="p">,</span>
-            <span class="n">optional</span><span class="o">=</span><span class="s1">&#39;delivery_optional&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span>
+            <span class="n">cons</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;delivery_core&#39;</span><span class="p">],</span>
+            <span class="n">opt_cons</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;delivery_optional&#39;</span><span class="p">])</span>
+
+        <span class="c1"># Add used equipment</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_equipment</span><span class="p">({</span><span class="s1">&#39;Delivery set&#39;</span><span class="p">,</span> <span class="s1">&#39;Weighing scale&#39;</span><span class="p">,</span> <span class="s1">&#39;Stethoscope, foetal, monaural, Pinard, plastic&#39;</span><span class="p">,</span>
+                               <span class="s1">&#39;Resuscitaire&#39;</span><span class="p">,</span> <span class="s1">&#39;Sphygmomanometer&#39;</span><span class="p">,</span> <span class="s1">&#39;Tray, emergency&#39;</span><span class="p">,</span> <span class="s1">&#39;Suction machine&#39;</span><span class="p">,</span>
+                               <span class="s1">&#39;Thermometer&#39;</span><span class="p">,</span> <span class="s1">&#39;Drip stand&#39;</span><span class="p">,</span> <span class="s1">&#39;Infusion pump&#39;</span><span class="p">})</span>
 
         <span class="c1"># If the clean delivery kit consumable is available, we assume women benefit from clean delivery</span>
         <span class="k">if</span> <span class="n">avail</span><span class="p">:</span>
@@ -3194,7 +3232,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">progression_of_hypertensive_disorders</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="n">property_prefix</span><span class="o">=</span><span class="s1">&#39;ps&#39;</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;la_obstructed_labour&#39;</span><span class="p">]:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;maternal_complication&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;mother&#39;</span><span class="p">:</span> <span class="n">person_id</span><span class="p">,</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;maternal_complication&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;person&#39;</span><span class="p">:</span> <span class="n">person_id</span><span class="p">,</span>
                                                                <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;obstructed_labour&#39;</span><span class="p">,</span>
                                                                <span class="s1">&#39;timing&#39;</span><span class="p">:</span> <span class="s1">&#39;intrapartum&#39;</span><span class="p">})</span>
 
@@ -3236,7 +3274,7 @@
             <span class="c1"># TODO: potential issue is that this consumable is being logged now for every birth as opposed to</span>
             <span class="c1">#  for each birth where resuscitation of the newborn is required</span>
             <span class="n">avail</span> <span class="o">=</span> <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">return_cons_avail</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">,</span> <span class="n">core</span><span class="o">=</span><span class="s1">&#39;resuscitation&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">cons</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;resuscitation&#39;</span><span class="p">],</span> <span class="n">opt_cons</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 
             <span class="c1"># Run HCW check</span>
             <span class="n">sf_check</span> <span class="o">=</span> <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">check_emonc_signal_function_will_run</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span>
@@ -3353,7 +3391,7 @@
 
         <span class="c1"># log the PNC visit</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;postnatal_check&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;person_id&#39;</span><span class="p">:</span> <span class="n">person_id</span><span class="p">,</span>
-                                                 <span class="s1">&#39;delivery_setting&#39;</span><span class="p">:</span> <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;delivery_setting&#39;</span><span class="p">],</span>
+                                                 <span class="s1">&#39;delivery_setting&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;delivery_setting&#39;</span><span class="p">]),</span>
                                                  <span class="s1">&#39;visit_number&#39;</span><span class="p">:</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;la_pn_checks_maternal&#39;</span><span class="p">],</span>
                                                  <span class="s1">&#39;timing&#39;</span><span class="p">:</span> <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;will_receive_pnc&#39;</span><span class="p">]})</span>
 
@@ -3494,8 +3532,9 @@
             <span class="c1"># We log the required consumables and condition the caesarean happening on the availability of the</span>
             <span class="c1"># first consumable in this package, the anaesthetic required for the surgery</span>
             <span class="n">avail</span> <span class="o">=</span> <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">return_cons_avail</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">,</span> <span class="n">core</span><span class="o">=</span><span class="s1">&#39;caesarean_delivery_core&#39;</span><span class="p">,</span>
-                <span class="n">optional</span><span class="o">=</span><span class="s1">&#39;caesarean_delivery_optional&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span>
+                <span class="n">cons</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;caesarean_delivery_core&#39;</span><span class="p">],</span>
+                <span class="n">opt_cons</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;caesarean_delivery_optional&#39;</span><span class="p">])</span>
 
             <span class="c1"># We check that the HCW will deliver the intervention</span>
             <span class="n">sf_check</span> <span class="o">=</span> <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">check_emonc_signal_function_will_run</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span> <span class="n">sf</span><span class="o">=</span><span class="s1">&#39;surg&#39;</span><span class="p">,</span>
@@ -3506,8 +3545,13 @@
                 <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s2">&quot;cs delivery blocked for this analysis&quot;</span><span class="p">)</span>
 
             <span class="k">elif</span> <span class="p">(</span><span class="n">avail</span> <span class="ow">and</span> <span class="n">sf_check</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;cs_indication&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;other&#39;</span><span class="p">):</span>
-                <span class="n">person</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">]</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;caesarean_delivery&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">person</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span>
+                <span class="c1"># If intervention is delivered - add used equipment</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">add_equipment</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">healthcare_system</span><span class="o">.</span><span class="n">equipment</span><span class="o">.</span><span class="n">from_pkg_names</span><span class="p">(</span><span class="s1">&#39;Major Surgery&#39;</span><span class="p">))</span>
+
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="n">key</span><span class="o">=</span><span class="s1">&#39;caesarean_delivery&#39;</span><span class="p">,</span>
+                    <span class="n">data</span><span class="o">=</span><span class="n">get_dataframe_row_as_dict_for_logging</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">person_id</span><span class="p">),</span>
+                <span class="p">)</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;cs_indications&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">person_id</span><span class="p">,</span>
                                                         <span class="s1">&#39;indication&#39;</span><span class="p">:</span> <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;cs_indication&#39;</span><span class="p">]})</span>
 
@@ -3539,6 +3583,7 @@
                 <span class="c1"># Unsuccessful repair will lead to this woman requiring a hysterectomy. Hysterectomy will also reduce</span>
                 <span class="c1"># risk of death from uterine rupture but leads to permanent infertility in the simulation</span>
                 <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">add_equipment</span><span class="p">({</span><span class="s1">&#39;Hysterectomy set&#39;</span><span class="p">})</span>
                     <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;la_has_had_hysterectomy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
         <span class="c1"># ============================= SURGICAL MANAGEMENT OF POSTPARTUM HAEMORRHAGE==================================</span>
@@ -3786,7 +3831,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on May 27, 2024.
+      <span class="lastupdated">Last updated on Aug 02, 2024.
       </span></p>
   </div>
 

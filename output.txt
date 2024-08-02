@@ -1,12 +1,12 @@
-_data_sources.rst:901: [redirected with Found] http://apps.who.int/gho/data/node.main.MHSUICIDE5YEARAGEGROUPS?lang=en to https://apps.who.int/gho/data/node.main.MHSUICIDE5YEARAGEGROUPS?lang=en
 _data_sources.rst:430: [redirected with Found] http://aidsinfo.unaids.org/ to https://aidsinfo.unaids.org/
-_data_sources.rst:72: [redirected with Found] http://documents.worldbank.org/curated/en/482201611638301118/Closing-the-Gap-Why-Achieving-Universal-Health-Coverage-in-Malawi-Now-Requires-Targeted-Investment-in-Underperforming-and-Underserved-Districts to https://www.worldbank.org/404_response.htm
-_data_sources.rst:62: [redirected with Found] http://documents.worldbank.org/curated/en/417871611550272923/Main-Report to https://www.worldbank.org/404_response.htm
 _data_sources.rst:74: [redirected with Found] http://documents.worldbank.org/curated/en/108221611566167934/Harnessing-Momentum-Priority-Areas-of-Intervention-to-Further-Strengthen-Malawi-s-Health-Sector to https://www.worldbank.org/404_response.htm
-_data_sources.rst:68: [redirected permanently] http://documents.worldbank.org/curated/en/521421611550618689/Short-Report to https://documents.worldbank.org/en/publication/documents-reports/documentdetail/521421611550618689/short-report
-_data_sources.rst:70: [redirected permanently] http://documents.worldbank.org/curated/en/496011611551081262/Malawi-Master-Health-Facility-List to https://documents.worldbank.org/en/publication/documents-reports/documentdetail/496011611551081262/malawi-master-health-facility-list
-_data_sources.rst:908: [broken] http://dx.doi: HTTPConnectionPool(host='dx.doi', port=80): Max retries exceeded with url: / (Caused by NameResolutionError("<urllib3.connection.HTTPConnection object at 0x13553c690>: Failed to resolve 'dx.doi' ([Errno 8] nodename nor servname provided, or not known)"))
+_data_sources.rst:62: [redirected with Found] http://documents.worldbank.org/curated/en/417871611550272923/Main-Report to https://www.worldbank.org/404_response.htm
+_data_sources.rst:72: [redirected with Found] http://documents.worldbank.org/curated/en/482201611638301118/Closing-the-Gap-Why-Achieving-Universal-Health-Coverage-in-Malawi-Now-Requires-Targeted-Investment-in-Underperforming-and-Underserved-Districts to https://www.worldbank.org/404_response.htm
+_data_sources.rst:901: [redirected with Found] http://apps.who.int/gho/data/node.main.MHSUICIDE5YEARAGEGROUPS?lang=en to https://apps.who.int/gho/data/node.main.MHSUICIDE5YEARAGEGROUPS?lang=en
+_data_sources.rst:68: [redirected with Found] http://documents.worldbank.org/curated/en/521421611550618689/Short-Report to https://www.worldbank.org/404_response.htm
+_data_sources.rst:908: [broken] http://dx.doi: HTTPConnectionPool(host='dx.doi', port=80): Max retries exceeded with url: / (Caused by NameResolutionError("<urllib3.connection.HTTPConnection object at 0x13550f650>: Failed to resolve 'dx.doi' ([Errno 8] nodename nor servname provided, or not known)"))
 _data_sources.rst:66: [redirected with Found] http://documents.worldbank.org/curated/en/552991611645542004/Malawi-Harmonized-Health-Facility-Assessment-HHFA-2018-2019-District-Profiles to https://www.worldbank.org/404_response.htm
+_data_sources.rst:70: [redirected with Found] http://documents.worldbank.org/curated/en/496011611551081262/Malawi-Master-Health-Facility-List to https://www.worldbank.org/404_response.htm
 _data_sources.rst:233: [broken] http://doi.wiley.com/10.1016/j.ijgo.2014.08.022: 403 Client Error: Forbidden for url: https://onlinelibrary.wiley.com/resolve/doi?DOI=10.1016/j.ijgo.2014.08.022
 _data_sources.rst:173: [redirected permanently] http://dx.doi.org/10.1136/archdischild-2020-320217 to https://adc.bmj.com/content/106/8/745
 _data_sources.rst:589: [redirected permanently] http://europepmc.org/article/med/26597127 to https://europepmc.org/article/med/26597127
@@ -14,229 +14,240 @@ _data_sources.rst:297: [redirected permanently] http://dx.doi.org/10.1136/bmjgh-
 _data_sources.rst:723: [redirected permanently] http://dx.doi.org/10.1136/heartjnl-2017-312814 to https://heart.bmj.com/content/104/12/966
 _data_sources.rst:773: [redirected with Found] http://gco.iarc.fr/today/data/factsheets/populations/454-malawi-fact-sheets.pdf to https://gco.iarc.fr/today/data/factsheets/populations/454-malawi-fact-sheets.pdf
 _data_sources.rst:277: [redirected permanently] http://dx.doi.org/10.1136/bmj.i1753 to https://www.bmj.com/content/353/bmj.i1753
-_data_sources.rst:771: [broken] http://malawicancerconsortium.web.unc.edu/: 404 Client Error: Not Found for url: https://web.unc.edu/create/?new=malawicancerconsortium
+_data_sources.rst:86: [broken] http://lifesavingcommodities.org/wp-content/uploads/2015/03/Malawi-2014_Malawi-Obstetric-and-Gynaecology-Protocols_Guidelines.pdf: HTTPConnectionPool(host='lifesavingcommodities.org', port=80): Max retries exceeded with url: /wp-content/uploads/2015/03/Malawi-2014_Malawi-Obstetric-and-Gynaecology-Protocols_Guidelines.pdf (Caused by NameResolutionError("<urllib3.connection.HTTPConnection object at 0x1357e66d0>: Failed to resolve 'lifesavingcommodities.org' ([Errno 8] nodename nor servname provided, or not known)"))
+_data_sources.rst:108: [redirected with Found] http://doi.wiley.com/10.1002/14651858.CD002252.pub4 to https://www.cochranelibrary.com/cdsr/doi/10.1002/14651858.CD002252.pub4/full
 _data_sources.rst:249: [redirected permanently] http://pophealthmetrics.biomedcentral.com/articles/10.1186/s12963-017-0128-2 to https://pophealthmetrics.biomedcentral.com/articles/10.1186/s12963-017-0128-2
-_data_sources.rst:21: [redirected permanently] http://ghdx.healthdata.org/gbd-results-tool to https://vizhub.healthdata.org/gbd-results/
-_data_sources.rst:169: [redirected permanently] http://fn.bmj.com/lookup/doi/10.1136/archdischild-2014-307636 to https://fn.bmj.com/content/100/5/F439
+_data_sources.rst:771: [broken] http://malawicancerconsortium.web.unc.edu/: 404 Client Error: Not Found for url: https://web.unc.edu/create/?new=malawicancerconsortium
 _data_sources.rst:129: [redirected permanently] http://www.guttmacher.org/report/contraceptive-failure-rates-in-developing-world to https://www.guttmacher.org/report/contraceptive-failure-rates-in-developing-world
 _data_sources.rst:809: [redirected permanently] http://www.infectagentscancer.com/content/8/1/19 to https://infectagentscancer.biomedcentral.com/articles/10.1186/1750-9378-8-19
+_data_sources.rst:169: [redirected permanently] http://fn.bmj.com/lookup/doi/10.1136/archdischild-2014-307636 to https://fn.bmj.com/content/100/5/F439
 _data_sources.rst:257: [redirected permanently] http://gh.bmj.com/lookup/doi/10.1136/bmjgh-2017-000692 to https://gh.bmj.com/content/3/3/e000692
+_data_sources.rst:21: [redirected permanently] http://ghdx.healthdata.org/gbd-results-tool to https://vizhub.healthdata.org/gbd-results/
 _data_sources.rst:181: [redirected with Found] http://www.nature.com/articles/pr2013206 to https://www.nature.com/articles/pr2013206
 _data_sources.rst:1012: [redirected permanently] http://www.ncbi.nlm.nih.gov/pubmed/25452986 to https://pubmed.ncbi.nlm.nih.gov/25452986/
-_data_sources.rst:108: [redirected with Found] http://doi.wiley.com/10.1002/14651858.CD002252.pub4 to https://www.cochranelibrary.com/cdsr/doi/10.1002/14651858.CD002252.pub4/full
 _data_sources.rst:1046: [redirected permanently] http://www.ncbi.nlm.nih.gov/pubmed/26591295 to https://pubmed.ncbi.nlm.nih.gov/26591295/
 _data_sources.rst:635: [broken] http://www.sciencedirect.com/science/article/pii/S0140673606685073: 403 Client Error: Forbidden for url: https://www.sciencedirect.com/science/article/pii/S0140673606685073
 _data_sources.rst:509: [broken] http://www.sciencedirect.com/science/article/pii/S2214109X14702566: 403 Client Error: Forbidden for url: https://www.sciencedirect.com/science/article/pii/S2214109X14702566
 _data_sources.rst:507: [broken] http://www.sciencedirect.com/science/article/pii/S2214109X16300730: 403 Client Error: Forbidden for url: https://www.sciencedirect.com/science/article/pii/S2214109X16300730
-_data_sources.rst:167: [broken] http://www.tandfonline.com/doi/full/10.1080/03014460500228675: 403 Client Error: Forbidden for url: https://www.tandfonline.com/doi/full/10.1080/03014460500228675
-_data_sources.rst:43: [broken] http://www.who.int/substance_abuse/publications/global_alcohol_report/msb_gsr_2014_2.pdf?ua=1: 404 Client Error: not found for url: https://www.who.int/substance_abuse/publications/global_alcohol_report/msb_gsr_2014_2.pdf?ua=1
 _data_sources.rst:218: [redirected permanently] http://www.scirp.org/journal/ojn/ to https://www.scirp.org/journal/ojn/
+_data_sources.rst:167: [broken] http://www.tandfonline.com/doi/full/10.1080/03014460500228675: 403 Client Error: Forbidden for url: https://www.tandfonline.com/doi/full/10.1080/03014460500228675
+_data_sources.rst:440: [broken] http://www.nsomalawi.mw/images/stories/data_on_line/demography/bbss/BBSS%202013-2014%20Report.pdf: 404 Client Error: Not Found for url: https://www.nsomalawi.mw/images/stories/data_on_line/demography/bbss/BBSS%202013-2014%20Report.pdf
+_data_sources.rst:43: [broken] http://www.who.int/substance_abuse/publications/global_alcohol_report/msb_gsr_2014_2.pdf?ua=1: 404 Client Error: not found for url: https://www.who.int/substance_abuse/publications/global_alcohol_report/msb_gsr_2014_2.pdf?ua=1
+_data_sources.rst:13: [broken] http://www.nsomalawi.mw/images/stories/data_on_line/demography/census_2018/2018%20Malawi%20Population%20and%20Housing%20Census%20Main%20Report.pdf: 404 Client Error: Not Found for url: https://www.nsomalawi.mw/images/stories/data_on_line/demography/census_2018/2018%20Malawi%20Population%20and%20Housing%20Census%20Main%20Report.pdf
 _data_sources.rst:98: [broken] https://academic.oup.com/cdn/article/3/12/nzz120/5601697: 403 Client Error: Forbidden for url: https://cdn.nutrition.org/
-_data_sources.rst:651: [redirected with Found] https://apps.who.int/iris/bitstream/handle/10665/311389/9789241550529-eng.pdf to https://iris.who.int/bitstream/handle/10665/311389/9789241550529-eng.pdf
+_data_sources.rst:17: [broken] http://www.nsomalawi.mw/index.php?option=com_content&view=article&id=226&Itemid=: 404 Client Error: Not Found for url: https://www.nsomalawi.mw/index.php?option=com_content&view=article&id=226&Itemid=
 reference/tlo.methods.diarrhoea.rst:12: [redirected with Found] https://apps.who.int/iris/bitstream/handle/10665/104772/9789241506823_Chartbook_eng.pdf to https://iris.who.int/bitstream/handle/10665/104772/9789241506823_Chartbook_eng.pdf
+_data_sources.rst:651: [redirected with Found] https://apps.who.int/iris/bitstream/handle/10665/311389/9789241550529-eng.pdf to https://iris.who.int/bitstream/handle/10665/311389/9789241550529-eng.pdf
 _data_sources.rst:986: [redirected with Found] https://apps.who.int/iris/handle/10665/189242 to https://iris.who.int/handle/10665/189242
-_data_sources.rst:477: [redirected with Found] https://academic.oup.com/cid/article/55/8/1144/339459 to https://academic.oup.com/crawlprevention/governor?content=%2fcid%2farticle%2f55%2f8%2f1144%2f339459
+resources/costing/ResourceFile_Costing.xlsx.rst:412: [broken] http://www.cmst.mw/local/extract/live_catalogue_list.php: HTTPConnectionPool(host='www.cmst.mw', port=80): Read timed out. (read timeout=10)
 _data_sources.rst:569: [redirected with Found] https://academic.oup.com/cid/article/33/10/1762/393933 to https://academic.oup.com/crawlprevention/governor?content=%2fcid%2farticle%2f33%2f10%2f1762%2f393933
+_data_sources.rst:477: [redirected with Found] https://academic.oup.com/cid/article/55/8/1144/339459 to https://academic.oup.com/crawlprevention/governor?content=%2fcid%2farticle%2f55%2f8%2f1144%2f339459
+resources/costing/ResourceFile_Costing.xlsx.rst:8331: [redirected with Found] https://academic.oup.com/cid/article/62/suppl_2/S220/2478850 to https://academic.oup.com/crawlprevention/governor?content=%2fcid%2farticle%2f62%2fsuppl_2%2fS220%2f2478850
 _data_sources.rst:1004: [broken] https://d1wqtxts1xzle7.cloudfront.net/37861235/Injury_Pattern_among_Patients_with_Road_Traffic_Crash_WITH_RANTI.pdf?1433825858=&response-content-disposition=inline%3B+filename%3DInjury_Pattern_among_Patients_with_Road.pdf&Expires=1625501051&Signature=W1mrL2g7DeT8GDzHoXodB82loqKDIKjiqyKF3BMq-UTzoQfo33awfsqxmd3lxE1dLiKPmZTXyOXhuePIJ9MFSWcx3AeKVW-znsFn3QIsG8CUZXUI1Wg4TE9zFSN7f6Vcm7wgC~LsKptGOEMpD7gDbSOk6uSiShEdpH2Be7LxJvFQb8uOR68bwCSNN9bPD-81F3W8wcL1WYjWaCky7fa3SHCT4rtkaDN032NHez7IG1~T~K9uSmjIZuU8-uucS-0Oax39l1V2yELNMkdhv0Wy2QRgN9lWjUqJchtB5vF53wq3rxO0xP2STQNmSR580W8F92abRpePFSbniJsZsoumIA__&Key-Pair-Id=APKAJLOHF5GGSLRBV4ZA: 403 Client Error: Forbidden for url: https://d1wqtxts1xzle7.cloudfront.net/37861235/Injury_Pattern_among_Patients_with_Road_Traffic_Crash_WITH_RANTI.pdf?1433825858=&response-content-disposition=inline%3B+filename%3DInjury_Pattern_among_Patients_with_Road.pdf&Expires=1625501051&Signature=W1mrL2g7DeT8GDzHoXodB82loqKDIKjiqyKF3BMq-UTzoQfo33awfsqxmd3lxE1dLiKPmZTXyOXhuePIJ9MFSWcx3AeKVW-znsFn3QIsG8CUZXUI1Wg4TE9zFSN7f6Vcm7wgC~LsKptGOEMpD7gDbSOk6uSiShEdpH2Be7LxJvFQb8uOR68bwCSNN9bPD-81F3W8wcL1WYjWaCky7fa3SHCT4rtkaDN032NHez7IG1~T~K9uSmjIZuU8-uucS-0Oax39l1V2yELNMkdhv0Wy2QRgN9lWjUqJchtB5vF53wq3rxO0xP2STQNmSR580W8F92abRpePFSbniJsZsoumIA__&Key-Pair-Id=APKAJLOHF5GGSLRBV4ZA
-azure_batch.rst:12: [redirected permanently] https://docs.microsoft.com/en-us/cli/azure/install-azure-cli to https://learn.microsoft.com/en-us/cli/azure/install-azure-cli
 _data_sources.rst:76: [redirected with Found] https://dhis2.health.gov.mw/ to https://dhis2.health.gov.mw/dhis-web-commons/security/login.action
-_data_sources.rst:563: [redirected permanently] https://doi.org/10.1001/archinte.163.9.1009 to https://jamanetwork.com/journals/jamainternalmedicine/fullarticle/215525
+azure_batch.rst:12: [redirected permanently] https://docs.microsoft.com/en-us/cli/azure/install-azure-cli to https://learn.microsoft.com/en-us/cli/azure/install-azure-cli
 _data_sources.rst:617: [redirected permanently] https://doi.org/10.1001/jamanetworkopen.2018.7617 to https://jamanetwork.com/journals/jamanetworkopen/fullarticle/2723637
-_data_sources.rst:526: [redirected with Found] https://doi.org/10.1002/14651858.CD001477.pub4 to https://www.cochranelibrary.com/cdsr/doi/10.1002/14651858.CD001477.pub4/full
 _data_sources.rst:542: [redirected with Found] https://doi.org/10.1002/14651858.CD003700.pub2 to https://www.cochranelibrary.com/cdsr/doi/10.1002/14651858.CD003700.pub2/full
+_data_sources.rst:563: [redirected permanently] https://doi.org/10.1001/archinte.163.9.1009 to https://jamanetwork.com/journals/jamainternalmedicine/fullarticle/215525
+_data_sources.rst:526: [redirected with Found] https://doi.org/10.1002/14651858.CD001477.pub4 to https://www.cochranelibrary.com/cdsr/doi/10.1002/14651858.CD001477.pub4/full
 _data_sources.rst:299: [broken] https://doi.org/10.1002/ppul.24020: 403 Client Error: Forbidden for url: https://onlinelibrary.wiley.com/doi/10.1002/ppul.24020
 _data_sources.rst:783: [redirected with Found] https://doi.org/10.1007/s10552-020-01282-4 to https://link.springer.com/article/10.1007/s10552-020-01282-4
 _data_sources.rst:336: [redirected with Found] https://doi.org/10.1002/14651858.CD005436.pub5 to https://www.cochranelibrary.com/cdsr/doi/10.1002/14651858.CD005436.pub5/full
 _data_sources.rst:944: [redirected with Found] https://doi.org/10.1016/S0020-1383(03)00290-0 to https://linkinghub.elsevier.com/retrieve/pii/S0020138303002900
 _data_sources.rst:316: [redirected with Found] https://doi.org/10.1016/S0140-6736(07)61690-0 to https://linkinghub.elsevier.com/retrieve/pii/S0140673607616900
+_data_sources.rst:964: [redirected permanently] https://doi.org/10.1007/s11999-008-0366-5 to https://journals.lww.com/clinorthop/abstract/2008/10000/orthopaedic_clinical_officer_program_in_malawi__a.12.aspx
 _data_sources.rst:373: [redirected with Found] https://doi.org/10.1016/S0140-6736(07)61693-6 to https://linkinghub.elsevier.com/retrieve/pii/S0140673607616936
-_data_sources.rst:1018: [redirected with Found] https://doi.org/10.1016/S0140-6736(12)61728-0 to https://linkinghub.elsevier.com/retrieve/pii/S0140673612617280
 _data_sources.rst:303: [redirected with Found] https://doi.org/10.1016/S0140-6736(13)60222-6 to https://linkinghub.elsevier.com/retrieve/pii/S0140673613602226
-_data_sources.rst:988: [redirected with Found] https://doi.org/10.1016/S0140-6736(15)60692-4 to https://linkinghub.elsevier.com/retrieve/pii/S0140673615606924
-_data_sources.rst:577: [redirected with Found] https://doi.org/10.1002/14651858.CD009593.pub4 to https://www.cochranelibrary.com/cdsr/doi/10.1002/14651858.CD009593.pub4/full
-_data_sources.rst:332: [redirected with Found] https://doi.org/10.1016/S0140-6736(16)31529-X to https://linkinghub.elsevier.com/retrieve/pii/S014067361631529X
-_data_sources.rst:998: [redirected with Found] https://doi.org/10.1016/S2214-109X(15)00069-8 to https://linkinghub.elsevier.com/retrieve/pii/S2214109X15000698
-_data_sources.rst:293: [redirected with Found] https://doi.org/10.1016/S2214-109X(15)00215-6 to https://linkinghub.elsevier.com/retrieve/pii/S2214109X15002156
-_data_sources.rst:301: [redirected with Found] https://doi.org/10.1016/S0140-6736(19)30721-4 to https://linkinghub.elsevier.com/retrieve/pii/S0140673619307214
-_data_sources.rst:324: [redirected with Found] https://doi.org/10.1016/S2214-109X(17)30392-3 to https://linkinghub.elsevier.com/retrieve/pii/S2214109X17303923
-_data_sources.rst:455: [redirected with Found] https://doi.org/10.1002/14651858.CD008122.pub2 to https://www.cochranelibrary.com/cdsr/doi/10.1002/14651858.CD008122.pub2/full
-_data_sources.rst:334: [redirected with Found] https://doi.org/10.1016/S2214-109X(19)30076-2 to https://linkinghub.elsevier.com/retrieve/pii/S2214109X19300762
-_data_sources.rst:330: [redirected with Found] https://doi.org/10.1016/S2214-109X(18)30349-8 to https://linkinghub.elsevier.com/retrieve/pii/S2214109X18303498
 _data_sources.rst:320: [redirected with Found] https://doi.org/10.1002/14651858.CD008521.pub4 to https://www.cochranelibrary.com/cdsr/doi/10.1002/14651858.CD008521.pub4/full
-_data_sources.rst:745: [redirected with Found] https://doi.org/10.1016/j.amjmed.2009.05.028 to https://linkinghub.elsevier.com/retrieve/pii/S000293430900713X
-_data_sources.rst:751: [redirected with Found] https://doi.org/10.1016/j.clineuro.2020.105725 to https://linkinghub.elsevier.com/retrieve/pii/S0303846720300688
+_data_sources.rst:1018: [redirected with Found] https://doi.org/10.1016/S0140-6736(12)61728-0 to https://linkinghub.elsevier.com/retrieve/pii/S0140673612617280
+_data_sources.rst:988: [redirected with Found] https://doi.org/10.1016/S0140-6736(15)60692-4 to https://linkinghub.elsevier.com/retrieve/pii/S0140673615606924
+_data_sources.rst:455: [redirected with Found] https://doi.org/10.1002/14651858.CD008122.pub2 to https://www.cochranelibrary.com/cdsr/doi/10.1002/14651858.CD008122.pub2/full
+_data_sources.rst:301: [redirected with Found] https://doi.org/10.1016/S0140-6736(19)30721-4 to https://linkinghub.elsevier.com/retrieve/pii/S0140673619307214
+_data_sources.rst:998: [redirected with Found] https://doi.org/10.1016/S2214-109X(15)00069-8 to https://linkinghub.elsevier.com/retrieve/pii/S2214109X15000698
+_data_sources.rst:332: [redirected with Found] https://doi.org/10.1016/S0140-6736(16)31529-X to https://linkinghub.elsevier.com/retrieve/pii/S014067361631529X
+_data_sources.rst:324: [redirected with Found] https://doi.org/10.1016/S2214-109X(17)30392-3 to https://linkinghub.elsevier.com/retrieve/pii/S2214109X17303923
+_data_sources.rst:330: [redirected with Found] https://doi.org/10.1016/S2214-109X(18)30349-8 to https://linkinghub.elsevier.com/retrieve/pii/S2214109X18303498
+_data_sources.rst:334: [redirected with Found] https://doi.org/10.1016/S2214-109X(19)30076-2 to https://linkinghub.elsevier.com/retrieve/pii/S2214109X19300762
+_data_sources.rst:577: [redirected with Found] https://doi.org/10.1002/14651858.CD009593.pub4 to https://www.cochranelibrary.com/cdsr/doi/10.1002/14651858.CD009593.pub4/full
 _data_sources.rst:322: [redirected with Found] https://doi.org/10.1016/S2214-109X(19)30541-8 to https://linkinghub.elsevier.com/retrieve/pii/S2214109X19305418
+_data_sources.rst:745: [redirected with Found] https://doi.org/10.1016/j.amjmed.2009.05.028 to https://linkinghub.elsevier.com/retrieve/pii/S000293430900713X
+_data_sources.rst:293: [redirected with Found] https://doi.org/10.1016/S2214-109X(15)00215-6 to https://linkinghub.elsevier.com/retrieve/pii/S2214109X15002156
+_data_sources.rst:751: [redirected with Found] https://doi.org/10.1016/j.clineuro.2020.105725 to https://linkinghub.elsevier.com/retrieve/pii/S0303846720300688
 _data_sources.rst:318: [redirected with Found] https://doi.org/10.1016/j.ijid.2018.05.012 to https://linkinghub.elsevier.com/retrieve/pii/S1201971218344229
 _data_sources.rst:715: [redirected with Found] https://doi.org/10.1016/j.ejim.2014.09.016 to https://linkinghub.elsevier.com/retrieve/pii/S0953620514002611
-_data_sources.rst:879: [redirected with Found] https://doi.org/10.1016/j.ebiom.2017.09.031 to https://linkinghub.elsevier.com/retrieve/pii/S2352396417303857
 _data_sources.rst:948: [redirected with Found] https://doi.org/10.1016/j.ijsu.2017.01.047 to https://linkinghub.elsevier.com/retrieve/pii/S174391911730050X
 _data_sources.rst:984: [redirected with Found] https://doi.org/10.1016/j.ijsu.2018.02.034 to https://linkinghub.elsevier.com/retrieve/pii/S1743919118305648
-_data_sources.rst:1008: [redirected with Found] https://doi.org/10.1016/j.injury.2004.03.013 to https://linkinghub.elsevier.com/retrieve/pii/S0020138304000956
+_data_sources.rst:879: [redirected with Found] https://doi.org/10.1016/j.ebiom.2017.09.031 to https://linkinghub.elsevier.com/retrieve/pii/S2352396417303857
 _data_sources.rst:1032: [redirected with Found] https://doi.org/10.1016/j.injury.2006.07.009 to https://linkinghub.elsevier.com/retrieve/pii/S0020138306004190
-_data_sources.rst:1038: [redirected with Found] https://doi.org/10.1016/j.injury.2011.12.007 to https://linkinghub.elsevier.com/retrieve/pii/S002013831100578X
-_data_sources.rst:1006: [redirected with Found] https://doi.org/10.1016/j.jss.2019.03.023 to https://linkinghub.elsevier.com/retrieve/pii/S0022480419301404
+_data_sources.rst:1008: [redirected with Found] https://doi.org/10.1016/j.injury.2004.03.013 to https://linkinghub.elsevier.com/retrieve/pii/S0020138304000956
 _data_sources.rst:954: [redirected with Found] https://doi.org/10.1016/j.injury.2019.07.004 to https://linkinghub.elsevier.com/retrieve/pii/S0020138319304036
-_data_sources.rst:946: [redirected permanently] https://doi.org/10.1016/j.ijso.2017.11.004 to https://journals.lww.com/ijsopen/fulltext/2018/10000/the_rise_in_road_traffic_injuries_in_lilongwe,.10.aspx
+_data_sources.rst:1006: [redirected with Found] https://doi.org/10.1016/j.jss.2019.03.023 to https://linkinghub.elsevier.com/retrieve/pii/S0022480419301404
+_data_sources.rst:1038: [redirected with Found] https://doi.org/10.1016/j.injury.2011.12.007 to https://linkinghub.elsevier.com/retrieve/pii/S002013831100578X
 _data_sources.rst:980: [redirected with Found] https://doi.org/10.1016/j.jsurg.2014.09.010 to https://linkinghub.elsevier.com/retrieve/pii/S193172041400261X
-_data_sources.rst:345: [redirected with Found] https://doi.org/10.1016/j.pedneo.2017.11.019 to https://linkinghub.elsevier.com/retrieve/pii/S1875957216303977
+_data_sources.rst:946: [redirected permanently] https://doi.org/10.1016/j.ijso.2017.11.004 to https://journals.lww.com/ijsopen/fulltext/2018/10000/the_rise_in_road_traffic_injuries_in_lilongwe,.10.aspx
 _data_sources.rst:992: [redirected with Found] https://doi.org/10.1016/j.spinee.2015.04.041 to https://linkinghub.elsevier.com/retrieve/pii/S1529943015004234
 _data_sources.rst:996: [redirected with Found] https://doi.org/10.1016/j.puhe.2008.06.009 to https://linkinghub.elsevier.com/retrieve/pii/S0033350608001753
-_data_sources.rst:540: [redirected with Found] https://doi.org/10.1016/j.vaccine.2017.07.066 to https://linkinghub.elsevier.com/retrieve/pii/S0264410X1730974X
 _data_sources.rst:950: [redirected with Found] https://doi.org/10.1016/j.wneu.2017.09.084 to https://linkinghub.elsevier.com/retrieve/pii/S1878875017315917
-_data_sources.rst:524: [redirected with Found] https://doi.org/10.1038/nature06509 to https://www.nature.com/articles/nature06509
-_data_sources.rst:505: [redirected with Found] https://doi.org/10.1038/ncomms2605 to https://www.nature.com/articles/ncomms2605
+_data_sources.rst:345: [redirected with Found] https://doi.org/10.1016/j.pedneo.2017.11.019 to https://linkinghub.elsevier.com/retrieve/pii/S1875957216303977
+_data_sources.rst:540: [redirected with Found] https://doi.org/10.1016/j.vaccine.2017.07.066 to https://linkinghub.elsevier.com/retrieve/pii/S0264410X1730974X
 _data_sources.rst:528: [redirected with Found] https://doi.org/10.1038/nrmicro1550 to https://www.nature.com/articles/nrmicro1550
 _data_sources.rst:347: [broken] https://doi.org/10.1046/j.1365-3016.2003.00519.x: 403 Client Error: Forbidden for url: https://onlinelibrary.wiley.com/doi/10.1046/j.1365-3016.2003.00519.x
-_data_sources.rst:1028: [redirected with Found] https://doi.org/10.1017/S1049023X17006410 to https://www.cambridge.org/core/journals/prehospital-and-disaster-medicine/article/abs/road-traffic-injury-in-lagos-nigeria-assessing-prehospital-care/0CF8E081A7C07E072A96966B61FCDDE1
+_data_sources.rst:524: [redirected with Found] https://doi.org/10.1038/nature06509 to https://www.nature.com/articles/nature06509
+_data_sources.rst:505: [redirected with Found] https://doi.org/10.1038/ncomms2605 to https://www.nature.com/articles/ncomms2605
 _data_sources.rst:978: [broken] https://doi.org/10.1080/15389588.2020.1819990: 403 Client Error: Forbidden for url: https://www.tandfonline.com/doi/full/10.1080/15389588.2020.1819990
 _data_sources.rst:1024: [broken] https://doi.org/10.1080/15389580309878: 403 Client Error: Forbidden for url: https://www.tandfonline.com/doi/abs/10.1080/15389580309878
-_data_sources.rst:964: [broken] https://doi.org/10.1007/s11999-008-0366-5: HTTPSConnectionPool(host='journals.lww.com', port=443): Read timed out. (read timeout=10)
-_data_sources.rst:365: [broken] https://doi.org/10.1093/aje/kwq436: 429 Client Error: Too Many Requests for url: https://academic.oup.com/crawlprevention/governor?content=%2fCustomError%3fstatusCode%3d404%26404%3bhttp%3a%2f%2facademic.oup.com%3a80%2fcrawlprevention%2fgovernor%3fcontent%3d%252FCustomError%253FstatusCode%253D404%2526404%253Bhttp%253A%252F%252Facademic.oup.com%253A80%252Fcrawlprevention%252Fgovernor%253Fcontent%253D%25252FCustomError%25253FstatusCode%25253D404%252526404%25253Bhttp%25253A%25252F%25252Facademic.oup.com%25253A80%25252Fcrawlprevention%25252Fgovernor%25253Fcontent%25253D%2525252FCustomError%2525253FstatusCode%2525253D404%25252526404%2525253Bhttp%2525253A%2525252F%2525252Facademic.oup.com%2525253A80%2525252Fcrawlprevention%2525252Fgovernor%2525253Fcontent%2525253D%252525252FCustomError%252525253FstatusCode%252525253D404%2525252526404%252525253Bhttp%252525253A%252525252F%252525252Facademic.oup.com%252525253A80%252525252Fcrawlprevention%252525252Fgovernor%252525253Fcontent%252525253D%25252525252FCustomError%25252525253FstatusCode%25252525253D404%252525252526404%25252525253Bhttp%25252525253A%25252525252F%25252525252Facademic.oup.com%25252525253A80%25252525252Fcrawlprevention%25252525252Fgovernor%25252525253Fcontent%25252525253D%2525252525252FCustomError%2525252525253FstatusCode%2525252525253D404%25252525252526404%2525252525253Bhttp%2525252525253A%2525252525252F%2525252525252Facademic.oup.com%2525252525253A80%2525252525252Fcrawlprevention%2525252525252Fgovernor%2525252525253Fcontent%2525252525253D%252525252525252Faje%252525252525252Farticle-lookup%252525252525252Fdoi%252525252525252F10.1093%252525252525252Faje%252525252525252Fkwq436
-_data_sources.rst:538: [broken] https://doi.org/10.1093/ije/dyn224: 429 Client Error: Too Many Requests for url: https://academic.oup.com/ije/article-lookup/doi/10.1093/ije/dyn224
-_data_sources.rst:375: [broken] https://doi.org/10.1093/ije/dyt109: 429 Client Error: Too Many Requests for url: https://academic.oup.com/ije/article-lookup/doi/10.1093/ije/dyt109
+_data_sources.rst:1028: [redirected with Found] https://doi.org/10.1017/S1049023X17006410 to https://www.cambridge.org/core/journals/prehospital-and-disaster-medicine/article/abs/road-traffic-injury-in-lagos-nigeria-assessing-prehospital-care/0CF8E081A7C07E072A96966B61FCDDE1
 _data_sources.rst:363: [redirected with Found] https://doi.org/10.1093/jn/nxab054 to https://linkinghub.elsevier.com/retrieve/pii/S0022316622002449
-_data_sources.rst:705: [broken] https://doi.org/10.1093/ndt/gfr466: 429 Client Error: Too Many Requests for url: https://academic.oup.com/ndt/article-lookup/doi/10.1093/ndt/gfr466
+_data_sources.rst:538: [broken] https://doi.org/10.1093/ije/dyn224: 429 Client Error: Too Many Requests for url: https://academic.oup.com/ije/article-lookup/doi/10.1093/ije/dyn224
+_data_sources.rst:532: [broken] https://doi.org/10.1086/377712: 429 Client Error: Too Many Requests for url: https://academic.oup.com/crawlprevention/governor?content=%2fCustomError%3fstatusCode%3d404%26404%3bhttp%3a%2f%2facademic.oup.com%3a80%2fcrawlprevention%2fgovernor%3fcontent%3d%252FCustomError%253FstatusCode%253D404%2526404%253Bhttp%253A%252F%252Facademic.oup.com%253A80%252Fcrawlprevention%252Fgovernor%253Fcontent%253D%25252FCustomError%25253FstatusCode%25253D404%252526404%25253Bhttp%25253A%25252F%25252Facademic.oup.com%25253A80%25252Fcrawlprevention%25252Fgovernor%25253Fcontent%25253D%2525252FCustomError%2525253FstatusCode%2525253D404%25252526404%2525253Bhttp%2525253A%2525252F%2525252Facademic.oup.com%2525253A80%2525252Fcrawlprevention%2525252Fgovernor%2525253Fcontent%2525253D%252525252Fjid%252525252Farticle%252525252F189%252525252FSupplement_1%252525252FS4%252525252F823958
+_data_sources.rst:375: [broken] https://doi.org/10.1093/ije/dyt109: 429 Client Error: Too Many Requests for url: https://academic.oup.com/ije/article-lookup/doi/10.1093/ije/dyt109
 _data_sources.rst:717: [broken] https://doi.org/10.1093/ndt/18.1.82: 429 Client Error: Too Many Requests for url: https://academic.oup.com/ndt/article-lookup/doi/10.1093/ndt/18.1.82
-_data_sources.rst:707: [broken] https://doi.org/10.1093/ndt/gfz059: 429 Client Error: Too Many Requests for url: https://academic.oup.com/ndt/article/35/9/1562/5471128
+_data_sources.rst:705: [broken] https://doi.org/10.1093/ndt/gfr466: 429 Client Error: Too Many Requests for url: https://academic.oup.com/ndt/article-lookup/doi/10.1093/ndt/gfr466
 _data_sources.rst:741: [broken] https://doi.org/10.1093/rheumatology/ker175: 429 Client Error: Too Many Requests for url: https://academic.oup.com/rheumatology/article-lookup/doi/10.1093/rheumatology/ker175
+_data_sources.rst:707: [broken] https://doi.org/10.1093/ndt/gfz059: 429 Client Error: Too Many Requests for url: https://academic.oup.com/ndt/article/35/9/1562/5471128
 _data_sources.rst:312: [broken] https://doi.org/10.1111/tmi.13051: 403 Client Error: Forbidden for url: https://onlinelibrary.wiley.com/doi/10.1111/tmi.13051
 _data_sources.rst:966: [broken] https://doi.org/10.1111/tmi.13499: 403 Client Error: Forbidden for url: https://onlinelibrary.wiley.com/doi/10.1111/tmi.13499
-_data_sources.rst:743: [redirected permanently] https://doi.org/10.1097/BRS.0b013e3182647af2 to https://journals.lww.com/spinejournal/abstract/2013/01150/body_mass_index_as_a_risk_factor_for_developing.6.aspx
 _data_sources.rst:1050: [redirected permanently] https://doi.org/10.1097/00005373-197403000-00001 to https://journals.lww.com/jtrauma/citation/1974/03000/the_injury_severity_score__a_method_for_describing.1.aspx
 _data_sources.rst:1042: [redirected permanently] https://doi.org/10.1097/TA.0b013e3181d86a0d to https://journals.lww.com/jtrauma/abstract/2010/05000/improved_characterization_of_combat_injury.19.aspx
+_data_sources.rst:743: [redirected permanently] https://doi.org/10.1097/BRS.0b013e3182647af2 to https://journals.lww.com/spinejournal/abstract/2013/01150/body_mass_index_as_a_risk_factor_for_developing.6.aspx
 _data_sources.rst:307: [redirected permanently] https://doi.org/10.1136/bmj.38915.673322.80 to https://www.bmj.com/content/333/7569/629
 _data_sources.rst:729: [redirected permanently] https://doi.org/10.1136/bmj.b4567 to https://www.bmj.com/content/339/bmj.b4567
+_data_sources.rst:1036: [redirected permanently] https://doi.org/10.1136/injuryprev-2013-040936 to https://injuryprevention.bmj.com/content/20/3/e4
 _data_sources.rst:725: [broken] https://doi.org/10.1161/01.cir.93.7.1372: 403 Client Error: Forbidden for url: https://www.ahajournals.org/doi/10.1161/01.CIR.93.7.1372
 _data_sources.rst:737: [redirected permanently] https://doi.org/10.1136/bmj.c4986 to https://www.bmj.com/content/341/bmj.c4986
-_data_sources.rst:1036: [redirected permanently] https://doi.org/10.1136/injuryprev-2013-040936 to https://injuryprevention.bmj.com/content/20/3/e4
-_data_sources.rst:976: [broken] https://doi.org/10.1177/0049475518790893: 403 Client Error: Forbidden for url: https://journals.sagepub.com/doi/10.1177/0049475518790893
 _data_sources.rst:952: [broken] https://doi.org/10.1177/0049475518808969: 403 Client Error: Forbidden for url: https://journals.sagepub.com/doi/10.1177/0049475518808969
-_data_sources.rst:355: [broken] https://doi.org/10.1177/15648265140352S105: 403 Client Error: Forbidden for url: https://journals.sagepub.com/doi/10.1177/15648265140352S105
+_data_sources.rst:976: [broken] https://doi.org/10.1177/0049475518790893: 403 Client Error: Forbidden for url: https://journals.sagepub.com/doi/10.1177/0049475518790893
 _data_sources.rst:314: [redirected with Found] https://doi.org/10.1186/1471-2458-11-S3-S15 to https://bmcpublichealth.biomedcentral.com/articles/10.1186/1471-2458-11-S3-S15
-_data_sources.rst:557: [redirected permanently] https://doi.org/10.1136/bmj.k2738 to https://www.bmj.com/content/362/bmj.k2738
-_data_sources.rst:359: [broken] https://doi.org/10.1179/146532810X12703901870651: 403 Client Error: Forbidden for url: https://www.tandfonline.com/doi/full/10.1179/146532810X12703901870651
-_data_sources.rst:982: [redirected with Found] https://doi.org/10.1186/1478-4491-5-10 to https://human-resources-health.biomedcentral.com/articles/10.1186/1478-4491-5-10
-_data_sources.rst:463: [redirected with Found] https://doi.org/10.1186/1475-2875-9-209 to https://malariajournal.biomedcentral.com/articles/10.1186/1475-2875-9-209
-_data_sources.rst:1030: [redirected permanently] https://doi.org/10.1136/injuryprev-2015-041616 to https://injuryprevention.bmj.com/content/22/1/3
-_data_sources.rst:1054: [redirected with Found] https://doi.org/10.1186/1749-7922-6-18 to https://wjes.biomedcentral.com/articles/10.1186/1749-7922-6-18
+_data_sources.rst:355: [broken] https://doi.org/10.1177/15648265140352S105: 403 Client Error: Forbidden for url: https://journals.sagepub.com/doi/10.1177/15648265140352S105
 _data_sources.rst:483: [redirected with Found] https://doi.org/10.1186/1475-2875-10-321 to https://malariajournal.biomedcentral.com/articles/10.1186/1475-2875-10-321
+_data_sources.rst:359: [broken] https://doi.org/10.1179/146532810X12703901870651: 403 Client Error: Forbidden for url: https://www.tandfonline.com/doi/full/10.1179/146532810X12703901870651
+_data_sources.rst:463: [redirected with Found] https://doi.org/10.1186/1475-2875-9-209 to https://malariajournal.biomedcentral.com/articles/10.1186/1475-2875-9-209
+_data_sources.rst:1054: [redirected with Found] https://doi.org/10.1186/1749-7922-6-18 to https://wjes.biomedcentral.com/articles/10.1186/1749-7922-6-18
 _data_sources.rst:1000: [redirected permanently] https://doi.org/10.1186/1752-2897-8-4 to https://traumamanagement.biomedcentral.com/articles/10.1186/1752-2897-8-4
-_data_sources.rst:261: [redirected with Found] https://doi.org/10.1186/s12884-020-02911-1 to https://bmcpregnancychildbirth.biomedcentral.com/articles/10.1186/s12884-020-02911-1
+_data_sources.rst:557: [redirected permanently] https://doi.org/10.1136/bmj.k2738 to https://www.bmj.com/content/362/bmj.k2738
+_data_sources.rst:982: [redirected with Found] https://doi.org/10.1186/1478-4491-5-10 to https://human-resources-health.biomedcentral.com/articles/10.1186/1478-4491-5-10
 _data_sources.rst:116: [redirected with Found] https://doi.org/10.1186/s12872-020-01736-2 to https://bmccardiovascdisord.biomedcentral.com/articles/10.1186/s12872-020-01736-2
-_data_sources.rst:187: [redirected with Found] https://doi.org/10.1186/s12887-020-1949-x to https://bmcpediatr.biomedcentral.com/articles/10.1186/s12887-020-1949-x
+_data_sources.rst:261: [redirected with Found] https://doi.org/10.1186/s12884-020-02911-1 to https://bmcpregnancychildbirth.biomedcentral.com/articles/10.1186/s12884-020-02911-1
 _data_sources.rst:326: [redirected with Found] https://doi.org/10.1186/s12879-019-3948-9 to https://bmcinfectdis.biomedcentral.com/articles/10.1186/s12879-019-3948-9
 _data_sources.rst:994: [redirected with Found] https://doi.org/10.1186/s12889-018-5144-z to https://bmcpublichealth.biomedcentral.com/articles/10.1186/s12889-018-5144-z
+_data_sources.rst:187: [redirected with Found] https://doi.org/10.1186/s12887-020-1949-x to https://bmcpediatr.biomedcentral.com/articles/10.1186/s12887-020-1949-x
+_data_sources.rst:171: [redirected with Found] https://doi.org/10.1186/s12913-020-5065-2 to https://bmchealthservres.biomedcentral.com/articles/10.1186/s12913-020-5065-2
+_data_sources.rst:361: [redirected with Found] https://doi.org/10.1186/s12937-018-0384-4 to https://nutritionj.biomedcentral.com/articles/10.1186/s12937-018-0384-4
+_data_sources.rst:349: [redirected with Found] https://doi.org/10.1186/s13690-018-0290-4 to https://archpublichealth.biomedcentral.com/articles/10.1186/s13690-018-0290-4
 _data_sources.rst:827: [redirected with Found] https://doi.org/10.1186/s13058-019-1174-4 to https://breast-cancer-research.biomedcentral.com/articles/10.1186/s13058-019-1174-4
 _data_sources.rst:279: [redirected with Found] https://doi.org/10.1186/s13052-020-0772-1 to https://ijponline.biomedcentral.com/articles/10.1186/s13052-020-0772-1
-_data_sources.rst:171: [redirected with Found] https://doi.org/10.1186/s12913-020-5065-2 to https://bmchealthservres.biomedcentral.com/articles/10.1186/s12913-020-5065-2
-_data_sources.rst:349: [redirected with Found] https://doi.org/10.1186/s13690-018-0290-4 to https://archpublichealth.biomedcentral.com/articles/10.1186/s13690-018-0290-4
-_data_sources.rst:990: [broken] https://doi.org/10.1186/s41038-018-0118-z: 429 Client Error: Too Many Requests for url: https://academic.oup.com/burnstrauma/article/doi/10.1186/s41038-018-0118-z/5680406
-_data_sources.rst:361: [redirected with Found] https://doi.org/10.1186/s12937-018-0384-4 to https://nutritionj.biomedcentral.com/articles/10.1186/s12937-018-0384-4
-_data_sources.rst:962: [broken] https://doi.org/10.1308/003588407X209329: 403 Client Error: Forbidden for url: https://publishing.rcseng.ac.uk/doi/10.1308/003588407X209329
+_data_sources.rst:1030: [redirected permanently] https://doi.org/10.1136/injuryprev-2015-041616 to https://injuryprevention.bmj.com/content/22/1/3
 _data_sources.rst:353: [redirected permanently] https://doi.org/10.1186/s40795-016-0049-7 to https://bmcnutr.biomedcentral.com/articles/10.1186/s40795-016-0049-7
-_data_sources.rst:1014: [redirected permanently] https://doi.org/10.1371/journal.pmed.0030442 to https://journals.plos.org/plosmedicine/article?id=10.1371/journal.pmed.0030442
+_data_sources.rst:962: [broken] https://doi.org/10.1308/003588407X209329: 403 Client Error: Forbidden for url: https://publishing.rcseng.ac.uk/doi/10.1308/003588407X209329
+_data_sources.rst:990: [broken] https://doi.org/10.1186/s41038-018-0118-z: 429 Client Error: Too Many Requests for url: https://academic.oup.com/burnstrauma/article/doi/10.1186/s41038-018-0118-z/5680406
 _data_sources.rst:469: [redirected permanently] https://doi.org/10.1371/journal.pcbi.0030255 to https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.0030255
 _data_sources.rst:513: [redirected permanently] https://doi.org/10.1371/journal.pmed.0020003 to https://journals.plos.org/plosmedicine/article?id=10.1371/journal.pmed.0020003
-_data_sources.rst:1022: [redirected permanently] https://doi.org/10.1371/journal.pmed.0040170 to https://journals.plos.org/plosmedicine/article?id=10.1371/journal.pmed.0040170
+_data_sources.rst:1014: [redirected permanently] https://doi.org/10.1371/journal.pmed.0030442 to https://journals.plos.org/plosmedicine/article?id=10.1371/journal.pmed.0030442
 _data_sources.rst:475: [redirected permanently] https://doi.org/10.1371/journal.pmed.1000324 to https://journals.plos.org/plosmedicine/article?id=10.1371/journal.pmed.1000324
 _data_sources.rst:970: [redirected permanently] https://doi.org/10.1371/journal.pone.0031091 to https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0031091
-_data_sources.rst:485: [redirected permanently] https://doi.org/10.1371/journal.pone.0056916 to https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0056916
 _data_sources.rst:721: [redirected permanently] https://doi.org/10.1371/journal.pone.0048407 to https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0048407
-_data_sources.rst:291: [redirected permanently] https://doi.org/10.1371/journal.pone.0168209 to https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0168209
+_data_sources.rst:1022: [redirected permanently] https://doi.org/10.1371/journal.pmed.0040170 to https://journals.plos.org/plosmedicine/article?id=10.1371/journal.pmed.0040170
 _data_sources.rst:749: [redirected permanently] https://doi.org/10.1371/journal.pone.0138790 to https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0138790
+_data_sources.rst:485: [redirected permanently] https://doi.org/10.1371/journal.pone.0056916 to https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0056916
+_data_sources.rst:291: [redirected permanently] https://doi.org/10.1371/journal.pone.0168209 to https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0168209
 _data_sources.rst:709: [redirected permanently] https://doi.org/10.1371/journal.pone.0173515 to https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0173515
-_data_sources.rst:960: [redirected permanently] https://doi.org/10.1371/journal.pone.0212125 to https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0212125
 _data_sources.rst:689: [redirected permanently] https://doi.org/10.1371/journal.pone.0194127 to https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0194127
+_data_sources.rst:367: [redirected with Found] https://doi.org/10.1596/978-1-4648-0348-2_ch11 to https://documents.worldbank.org/en/publication/documents-reports/documentdetail/848181468195567572
 _data_sources.rst:747: [redirected permanently] https://doi.org/10.1371/journal.pone.0212030 to https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0212030
+_data_sources.rst:960: [redirected permanently] https://doi.org/10.1371/journal.pone.0212125 to https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0212125
 _data_sources.rst:371: [redirected permanently] https://doi.org/10.1371/journal.pone.0229698 to https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0229698
-_data_sources.rst:367: [broken] https://doi.org/10.1596/978-1-4648-0348-2_ch11: 403 Client Error: Forbidden for url: https://elibrary.worldbank.org/doi/10.1596/978-1-4648-0348-2_ch11
 _data_sources.rst:1052: [redirected with Found] https://doi.org/10.2471/BLT.15.163121 to https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4933140/pdf/BLT.15.163121.pdf/
 _data_sources.rst:1034: [redirected with Found] https://doi.org/10.2471/BLT.16.172155 to https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5096353/pdf/BLT.16.172155.pdf/
-_data_sources.rst:735: [redirected with Found] https://doi.org/10.2337/diacare.26.2.360 to https://diabetesjournals.org/care/article/26/2/360/23171/The-Effects-of-Diabetes-on-the-Risks-of-Major
 _data_sources.rst:275: [redirected permanently] https://doi.org/10.1371/journal.pone.0237600 to https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0237600
+_data_sources.rst:735: [redirected with Found] https://doi.org/10.2337/diacare.26.2.360 to https://diabetesjournals.org/care/article/26/2/360/23171/The-Effects-of-Diabetes-on-the-Risks-of-Major
 _data_sources.rst:351: [redirected with Found] https://doi.org/10.3945/ajcn.115.108282 to https://linkinghub.elsevier.com/retrieve/pii/S0002916522065315
-_data_sources.rst:974: [redirected with Found] https://doi.org/10.4314/mmj.v29i4.4 to https://www.ajol.info/index.php/mmj/article/view/164874
+_data_sources.rst:305: [redirected with Found] https://doi.org/10.3325/cmj.2013.54.110 to https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3641871/
 _data_sources.rst:357: [redirected with Found] https://doi.org/10.3945/ajcn.115.124636 to https://linkinghub.elsevier.com/retrieve/pii/S0002916522065807
+_data_sources.rst:974: [redirected with Found] https://doi.org/10.4314/mmj.v29i4.4 to https://www.ajol.info/index.php/mmj/article/view/164874
+_data_sources.rst:972: [redirected with Found] https://doi.org/10.4314/mmj.v32i3.2 to https://www.ajol.info/index.php/mmj/article/view/201109
 _data_sources.rst:958: [redirected with Found] https://doi.org/10.4314/mmj.v30i2.5 to https://www.ajol.info/index.php/mmj/article/view/174378
 _data_sources.rst:956: [redirected with Found] https://doi.org/10.4314/mmj.v31i4.5 to https://www.ajol.info/index.php/mmj/article/view/192595
-_data_sources.rst:305: [redirected with Found] https://doi.org/10.3325/cmj.2013.54.110 to https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3641871/
-_data_sources.rst:972: [redirected with Found] https://doi.org/10.4314/mmj.v32i3.2 to https://www.ajol.info/index.php/mmj/article/view/201109
-_data_sources.rst:471: [redirected with Found] https://doi.org/https://doi.org/10.1016/S1473-3099(11)70031-7 to https://linkinghub.elsevier.com/retrieve/pii/S1473309911700317
+_data_sources.rst:403: [redirected with Found] https://doi.org/https://doi.org/10.1016/j.metabol.2020.154262 to https://linkinghub.elsevier.com/retrieve/pii/S0026049520301268
 _data_sources.rst:295: [redirected permanently] https://doi.org/10.7189/jogh.07.020408 to https://jogh.org/documents/issue201702/jogh-07-020408.pdf
 _data_sources.rst:547: [redirected with Found] https://doi.org/https://doi.org/10.1111/j.1469-0691.2004.00758.x to https://linkinghub.elsevier.com/retrieve/pii/S1198743X1462824X
 _data_sources.rst:687: [broken] https://dom-pubs.onlinelibrary.wiley.com/doi/10.1111/dom.12123: 403 Client Error: Forbidden for url: https://dom-pubs.onlinelibrary.wiley.com/doi/10.1111/dom.12123
+_data_sources.rst:471: [redirected with Found] https://doi.org/https://doi.org/10.1016/S1473-3099(11)70031-7 to https://linkinghub.elsevier.com/retrieve/pii/S1473309911700317
 _data_sources.rst:639: [redirected with Found] https://doi.org/https://doi.org/10.1016/S2214-109X(19)30037-3 to https://linkinghub.elsevier.com/retrieve/pii/S2214109X19300373
-_data_sources.rst:403: [redirected with Found] https://doi.org/https://doi.org/10.1016/j.metabol.2020.154262 to https://linkinghub.elsevier.com/retrieve/pii/S0026049520301268
 _data_sources.rst:237: [redirected permanently] https://dx.plos.org/10.1371/journal.pone.0090128 to https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0090128
-_data_sources.rst:231: [redirected permanently] https://dx.plos.org/10.1371/journal.pone.0173639 to https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0173639
-_data_sources.rst:691: [broken] https://fingertips.phe.org.uk/documents/Hypertension-model-2016-Technical-Document-v2.5: 404 Client Error: Not Found for url: https://fingertips.phe.org.uk/documents/Hypertension-model-2016-Technical-Document-v2.5
-_data_sources.rst:671: [redirected with Found] https://ete-online.biomedcentral.com/articles/10.1186/s12982-015-0039-2 to https://link.springer.com/article/10.1186/s12982-015-0039-2
-getting_started.rst:8: [redirected permanently] https://git-lfs.github.com/ to https://git-lfs.com/
 _data_sources.rst:719: [redirected permanently] https://dx.doi.org/10.2215%2FCJN.03840510 to https://journals.lww.com/cjasn/fulltext/2011/04000/longitudinal_association_of_depressive_symptoms.22.aspx
+_data_sources.rst:231: [redirected permanently] https://dx.plos.org/10.1371/journal.pone.0173639 to https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0173639
+_data_sources.rst:671: [redirected with Found] https://ete-online.biomedcentral.com/articles/10.1186/s12982-015-0039-2 to https://link.springer.com/article/10.1186/s12982-015-0039-2
+_data_sources.rst:691: [broken] https://fingertips.phe.org.uk/documents/Hypertension-model-2016-Technical-Document-v2.5: 404 Client Error: Not Found for url: https://fingertips.phe.org.uk/documents/Hypertension-model-2016-Technical-Document-v2.5
+getting_started.rst:8: [redirected permanently] https://git-lfs.github.com/ to https://git-lfs.com/
 reference/tlo.analysis.utils.rst:5: [redirected with Found] https://i.stack.imgur.com/lFZum.png to https://i.sstatic.net/lFZum.png
 _data_sources.rst:1020: [redirected with Found] https://doi.org/10.5535/arm.2016.40.2.288 to https://www.e-arm.org/journal/view.php?doi=10.5535/arm.2016.40.2.288
+_data_sources.rst:140: [redirected permanently] https://journals.lww.com/00006250-201108000-00010 to https://journals.lww.com/greenjournal/abstract/2011/08000/peripartum_infections_and_associated_maternal.10.aspx
 _data_sources.rst:459: [redirected permanently] https://journals.lww.com/aidsonline/Fulltext/1995/07000/Maternal_HIV_infection_and_infant_mortality_in.9.aspx to https://journals.lww.com/aidsonline/abstract/1995/07000/maternal_hiv_infection_and_infant_mortality_in.9.aspx
 _data_sources.rst:683: [redirected with Found] https://heart.bmj.com/content/heartjnl/99/17/1230.full.pdf to https://heart.bmj.com/content/99/17/1230
-_data_sources.rst:140: [redirected permanently] https://journals.lww.com/00006250-201108000-00010 to https://journals.lww.com/greenjournal/abstract/2011/08000/peripartum_infections_and_associated_maternal.10.aspx
 reference/tlo.methods.rti.rst:59: [broken] https://journals.sagepub.com/doi/pdf/10.1177/0049475518808969: 403 Client Error: Forbidden for url: https://journals.sagepub.com/doi/pdf/10.1177/0049475518808969
 _data_sources.rst:457: [broken] https://journals.sagepub.com/doi/pdf/10.1177/156482650602700101: 403 Client Error: Forbidden for url: https://journals.sagepub.com/doi/pdf/10.1177/156482650602700101
 reference/tlo.methods.rti.rst:10: [redirected with Found] https://link.springer.com/article/10.1007%2Fs11999-008-0366-5 to https://link.springer.com/article/10.1007/s11999-008-0366-5
 _data_sources.rst:271: [broken] https://obgyn.onlinelibrary.wiley.com/doi/full/10.1111/1471-0528.15661: 403 Client Error: Forbidden for url: https://obgyn.onlinelibrary.wiley.com/doi/full/10.1111/1471-0528.15661
 publications.rst:20: [broken] https://onlinelibrary.wiley.com/doi/10.1111/sifp.12255: 403 Client Error: Forbidden for url: https://onlinelibrary.wiley.com/doi/10.1111/sifp.12255
 _data_sources.rst:259: [broken] https://onlinelibrary.wiley.com/doi/abs/10.1111/jch.13514: 403 Client Error: Forbidden for url: https://onlinelibrary.wiley.com/doi/abs/10.1111/jch.13514
-_data_sources.rst:28: [broken] https://onlinelibrary.wiley.com/doi/abs/10.1111/tmi.13499: 403 Client Error: Forbidden for url: https://onlinelibrary.wiley.com/doi/abs/10.1111/tmi.13499
 _data_sources.rst:517: [broken] https://onlinelibrary.wiley.com/doi/abs/10.1111/tmi.12313_2: 403 Client Error: Forbidden for url: https://onlinelibrary.wiley.com/doi/abs/10.1111/tmi.12313_2
+_data_sources.rst:28: [broken] https://onlinelibrary.wiley.com/doi/abs/10.1111/tmi.13499: 403 Client Error: Forbidden for url: https://onlinelibrary.wiley.com/doi/abs/10.1111/tmi.13499
 _data_sources.rst:269: [broken] https://onlinelibrary.wiley.com/doi/full/10.1111/j.1365-3156.2011.02883.x: 403 Client Error: Forbidden for url: https://onlinelibrary.wiley.com/doi/full/10.1111/j.1365-3156.2011.02883.x
 _data_sources.rst:497: [broken] https://onlinelibrary.wiley.com/doi/pdf/10.1111/j.1365-3156.2007.01960.x: 403 Client Error: Forbidden for url: https://onlinelibrary.wiley.com/doi/pdf/10.1111/j.1365-3156.2007.01960.x
+resources/costing/ResourceFile_Costing.xlsx.rst:9763: [broken] https://onlinelibrary.wiley.com/doi/pdf/10.1002/jia2.25255: 403 Client Error: Forbidden for url: https://onlinelibrary.wiley.com/doi/pdf/10.1002/jia2.25255
 _data_sources.rst:19: [broken] https://population.un.org/wpp/Download/Standard/Population/: HTTPSConnectionPool(host='population.un.org', port=443): Max retries exceeded with url: /wpp/Download/Standard/Population/ (Caused by SSLError(SSLError(1, '[SSL: UNSAFE_LEGACY_RENEGOTIATION_DISABLED] unsafe legacy renegotiation disabled (_ssl.c:1006)')))
 _data_sources.rst:131: [broken] https://population.un.org/wpp/: HTTPSConnectionPool(host='population.un.org', port=443): Max retries exceeded with url: /wpp/ (Caused by SSLError(SSLError(1, '[SSL: UNSAFE_LEGACY_RENEGOTIATION_DISABLED] unsafe legacy renegotiation disabled (_ssl.c:1006)')))
-_data_sources.rst:920: [redirected with Found] https://researchonline.lshtm.ac.uk/682448/1/558374.pdf to https://researchonline.lshtm.ac.uk/id/eprint/682448/1/558374.pdf
 _data_sources.rst:385: [broken] https://storage.googleapis.com/stateless-bhekisisa-website/wordpress-uploads/2020/06/df4fcf94-covid_update_bhekisisa_wc_3.pdf: 404 Client Error: Not Found for url: https://storage.googleapis.com/stateless-bhekisisa-website/wordpress-uploads/2020/06/df4fcf94-covid_update_bhekisisa_wc_3.pdf
+_data_sources.rst:920: [redirected with Found] https://researchonline.lshtm.ac.uk/682448/1/558374.pdf to https://researchonline.lshtm.ac.uk/id/eprint/682448/1/558374.pdf
+contributing.rst:35: [broken] https://tox.readthedocs.io/en/latest/install.html: 404 Client Error: Not Found for url: https://tox.wiki/en/latest/install.html
 _data_sources.rst:399: [broken] https://www.acpjournals.org/doi/full/10.7326/M20-0504: 403 Client Error: Forbidden for url: https://www.acpjournals.org/doi/full/10.7326/M20-0504
 _data_sources.rst:703: [broken] https://www.ahajournals.org/doi/10.1161/JAHA.116.003917: 403 Client Error: Forbidden for url: https://www.ahajournals.org/doi/10.1161/JAHA.116.003917
-contributing.rst:35: [broken] https://tox.readthedocs.io/en/latest/install.html: 404 Client Error: Not Found for url: https://tox.wiki/en/latest/install.html
 learning.rst:26: [broken] https://www.annualreviews.org/doi/10.1146/annurev-publhealth-040617-014317: 403 Client Error: Forbidden for url: https://www.annualreviews.org/doi/10.1146/annurev-publhealth-040617-014317
-_data_sources.rst:503: [redirected permanently] https://www.ajtmh.org/content/journals/10.4269/ajtmh.2004.71.41 to https://www.ajtmh.org/view/journals/tpmd/71/2_suppl/article-p41.xml
-_data_sources.rst:420: [redirected with Found] https://www.hivsharespace.net/sites/default/files/resources/6.%202011%20Final%20Malawi%20Sex%20Work%20Report%20FPAM.pdf to http://ww16.hivsharespace.net/sites/default/files/resources/6.%202011%20Final%20Malawi%20Sex%20Work%20Report%20FPAM.pdf?sub1=20240527-1829-3657-b141-f23932bcd767
+_data_sources.rst:522: [broken] https://www.cdc.gov/vaccines/pubs/pinkbook/meas.html: 404 Client Error: Not Found for url: https://www.cdc.gov/vaccines/pubs/pinkbook/meas.html
+resources/costing/ResourceFile_Costing.xlsx.rst:245: [broken] https://supply.unicef.org/s359500.html: HTTPSConnectionPool(host='supply.unicef.org', port=443): Read timed out. (read timeout=10)
+resources/costing/ResourceFile_Costing.xlsx.rst:12513: [broken] https://www.exchangerates.org.uk/USD-MWK-spot-exchange-rates-history-2024.html: 403 Client Error: Forbidden for url: https://www.exchangerates.org.uk/USD-MWK-spot-exchange-rates-history-2024.html
+_data_sources.rst:420: [redirected with Found] https://www.hivsharespace.net/sites/default/files/resources/6.%202011%20Final%20Malawi%20Sex%20Work%20Report%20FPAM.pdf to http://ww16.hivsharespace.net/sites/default/files/resources/6.%202011%20Final%20Malawi%20Sex%20Work%20Report%20FPAM.pdf?sub1=20240803-0144-5870-a956-baf7f3a295e1
 _data_sources.rst:229: [broken] https://www.jstor.org/stable/41959960: 403 Client Error: Forbidden for url: https://www.jstor.org/stable/41959960
 _data_sources.rst:727: [broken] https://www.nejm.org/doi/10.1056/NEJM199302253280803: 403 Client Error: Forbidden for url: https://www.nejm.org/doi/10.1056/NEJM199302253280803
 _data_sources.rst:559: [broken] https://www.nejm.org/doi/full/10.1056/NEJMoa1214289: 403 Client Error: Forbidden for url: https://www.nejm.org/doi/full/10.1056/NEJMoa1214289
-_data_sources.rst:619: [redirected permanently] https://www.ncbi.nlm.nih.gov/pubmed/24835842 to https://pubmed.ncbi.nlm.nih.gov/24835842/
 _data_sources.rst:625: [broken] https://www.nejm.org/doi/full/10.1056/NEJMoa1604544: 403 Client Error: Forbidden for url: https://www.nejm.org/doi/full/10.1056/NEJMoa1604544
-_data_sources.rst:803: [redirected permanently] https://www.nccn.org/harmonized/ to https://www.nccn.org/global/what-we-do/harmonized-guidelines
+index.rst:9: [broken] https://www.newton-gcrf.org: HTTPSConnectionPool(host='www.newton-gcrf.org', port=443): Max retries exceeded with url: / (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x135e45050>: Failed to resolve 'www.newton-gcrf.org' ([Errno 8] nodename nor servname provided, or not known)"))
+_data_sources.rst:619: [redirected permanently] https://www.ncbi.nlm.nih.gov/pubmed/24835842 to https://pubmed.ncbi.nlm.nih.gov/24835842/
 _data_sources.rst:393: [broken] https://www.nejm.org/doi/full/10.1056/NEJMoa2002032: 403 Client Error: Forbidden for url: https://www.nejm.org/doi/full/10.1056/NEJMoa2002032
-index.rst:9: [broken] https://www.newton-gcrf.org: 403 Client Error: Forbidden for url: https://www.newton-gcrf.org/
+_data_sources.rst:803: [redirected permanently] https://www.nccn.org/harmonized/ to https://www.nccn.org/global/what-we-do/harmonized-guidelines
 _data_sources.rst:597: [broken] https://www.pnas.org/content/106/34/14711.short: 403 Client Error: Forbidden for url: https://www.pnas.org/content/106/34/14711.short
 _data_sources.rst:643: [broken] https://www.pnas.org/content/107/45/19485: 403 Client Error: Forbidden for url: https://www.pnas.org/content/107/45/19485
 _data_sources.rst:579: [broken] https://www.pnas.org/content/111/14/5325: 403 Client Error: Forbidden for url: https://www.pnas.org/content/111/14/5325
-_data_sources.rst:442: [redirected permanently] https://www.pepfar.gov/documents/organization/272017.pdf to https://www.state.gov/pepfar/
-reference/tlo.methods.rti.rst:15: [broken] https://www.sciencedirect.com/science/article/abs/pii/S0020138303002900: 403 Client Error: Forbidden for url: https://www.sciencedirect.com/science/article/abs/pii/S0020138303002900
-_data_sources.rst:210: [broken] https://www.sciencedirect.com/science/article/abs/pii/S0020729210000536: 403 Client Error: Forbidden for url: https://www.sciencedirect.com/science/article/abs/pii/S0020729210000536
 _data_sources.rst:491: [broken] https://www.sciencedirect.com/science/article/abs/pii/S0140673604172255: 403 Client Error: Forbidden for url: https://www.sciencedirect.com/science/article/abs/pii/S0140673604172255
+_data_sources.rst:210: [broken] https://www.sciencedirect.com/science/article/abs/pii/S0020729210000536: 403 Client Error: Forbidden for url: https://www.sciencedirect.com/science/article/abs/pii/S0020729210000536
+reference/tlo.methods.rti.rst:15: [broken] https://www.sciencedirect.com/science/article/abs/pii/S0020138303002900: 403 Client Error: Forbidden for url: https://www.sciencedirect.com/science/article/abs/pii/S0020138303002900
 _data_sources.rst:489: [broken] https://www.sciencedirect.com/science/article/abs/pii/S0140673606685413: 403 Client Error: Forbidden for url: https://www.sciencedirect.com/science/article/abs/pii/S0140673606685413
-learning.rst:24: [broken] https://www.sciencedirect.com/science/article/pii/S014067361061505X?via%3Dihub: 403 Client Error: Forbidden for url: https://www.sciencedirect.com/science/article/pii/S014067361061505X?via%3Dihub
+_data_sources.rst:442: [redirected permanently] https://www.pepfar.gov/documents/organization/272017.pdf to https://www.state.gov/pepfar/
 _data_sources.rst:673: [broken] https://www.sciencedirect.com/science/article/abs/pii/S2211816019300766: 403 Client Error: Forbidden for url: https://www.sciencedirect.com/science/article/abs/pii/S2211816019300766
+learning.rst:24: [broken] https://www.sciencedirect.com/science/article/pii/S014067361061505X?via%3Dihub: 403 Client Error: Forbidden for url: https://www.sciencedirect.com/science/article/pii/S014067361061505X?via%3Dihub
 _data_sources.rst:623: [broken] https://www.sciencedirect.com/science/article/pii/S0140673611602043: 403 Client Error: Forbidden for url: https://www.sciencedirect.com/science/article/pii/S0140673611602043
-_data_sources.rst:383: [broken] https://www.sciencedirect.com/science/article/pii/S0140673620302117?casa_token=PTj6RW8wVCkAAAAA:mXBklBWP_EV63dzx029jBHLPsxbfpsgeBewuoy99CDTC9wStktoOnXx3k5ry6uqga5-7WqKThrg: 403 Client Error: Forbidden for url: https://www.sciencedirect.com/science/article/pii/S0140673620302117?casa_token=PTj6RW8wVCkAAAAA:mXBklBWP_EV63dzx029jBHLPsxbfpsgeBewuoy99CDTC9wStktoOnXx3k5ry6uqga5-7WqKThrg
 _data_sources.rst:571: [broken] https://www.sciencedirect.com/science/article/pii/S0140673698031997: 403 Client Error: Forbidden for url: https://www.sciencedirect.com/science/article/pii/S0140673698031997
+_data_sources.rst:383: [broken] https://www.sciencedirect.com/science/article/pii/S0140673620302117?casa_token=PTj6RW8wVCkAAAAA:mXBklBWP_EV63dzx029jBHLPsxbfpsgeBewuoy99CDTC9wStktoOnXx3k5ry6uqga5-7WqKThrg: 403 Client Error: Forbidden for url: https://www.sciencedirect.com/science/article/pii/S0140673620302117?casa_token=PTj6RW8wVCkAAAAA:mXBklBWP_EV63dzx029jBHLPsxbfpsgeBewuoy99CDTC9wStktoOnXx3k5ry6uqga5-7WqKThrg
 learning.rst:36: [broken] https://www.sciencedirect.com/science/article/pii/S0304380006002043: 403 Client Error: Forbidden for url: https://www.sciencedirect.com/science/article/pii/S0304380006002043
-learning.rst:40: [broken] https://www.sciencedirect.com/science/article/pii/S109830151201652X: 403 Client Error: Forbidden for url: https://www.sciencedirect.com/science/article/pii/S109830151201652X
 _data_sources.rst:450: [broken] https://www.sciencedirect.com/science/article/pii/S0749379704000480: 403 Client Error: Forbidden for url: https://www.sciencedirect.com/science/article/pii/S0749379704000480
-learning.rst:38: [broken] https://www.sciencedirect.com/science/article/pii/S1353829218301047: 403 Client Error: Forbidden for url: https://www.sciencedirect.com/science/article/pii/S1353829218301047
-learning.rst:46: [broken] https://www.sciencedirect.com/science/article/pii/S1364815216306041: 403 Client Error: Forbidden for url: https://www.sciencedirect.com/science/article/pii/S1364815216306041
 _data_sources.rst:473: [broken] https://www.sciencedirect.com/science/article/pii/S1473309915004235: 403 Client Error: Forbidden for url: https://www.sciencedirect.com/science/article/pii/S1473309915004235
+learning.rst:40: [broken] https://www.sciencedirect.com/science/article/pii/S109830151201652X: 403 Client Error: Forbidden for url: https://www.sciencedirect.com/science/article/pii/S109830151201652X
+learning.rst:46: [broken] https://www.sciencedirect.com/science/article/pii/S1364815216306041: 403 Client Error: Forbidden for url: https://www.sciencedirect.com/science/article/pii/S1364815216306041
+learning.rst:38: [broken] https://www.sciencedirect.com/science/article/pii/S1353829218301047: 403 Client Error: Forbidden for url: https://www.sciencedirect.com/science/article/pii/S1353829218301047
 _data_sources.rst:669: [broken] https://www.sciencedirect.com/science/article/pii/S2213858717304321: 403 Client Error: Forbidden for url: https://www.sciencedirect.com/science/article/pii/S2213858717304321
 _data_sources.rst:493: [broken] https://www.sciencedirect.com/science/article/pii/S2214109X17303406: 403 Client Error: Forbidden for url: https://www.sciencedirect.com/science/article/pii/S2214109X17303406
 publications.rst:22: [broken] https://www.sciencedirect.com/science/article/pii/S2214109X24000950: 403 Client Error: Forbidden for url: https://www.sciencedirect.com/science/article/pii/S2214109X24000950
+resources/costing/ResourceFile_Costing.xlsx.rst:254: [broken] https://www.stoptb.org/sites/default/files/gdf_diagnostics_medical_devices_other_health_products_catalog_0.pdf: 404 Client Error: Not Found for url: https://www.stoptb.org/sites/default/files/gdf_diagnostics_medical_devices_other_health_products_catalog_0.pdf
 resources/ResourceFile_LabourSkilledBirthAttendance.xlsx.rst:82: [broken] https://www.tandfonline.com/doi/full/10.1080/14767058.2020.1852206: 403 Client Error: Forbidden for url: https://www.tandfonline.com/doi/full/10.1080/14767058.2020.1852206
-_data_sources.rst:177: [broken] https://www.thelancet.com/journals/langlo/article/PIIS2214-109X(19)30220-7/fulltext#:~:text=The%20main%20primary%20causes%20of,asphyxia%20(151%20%5B14%25%5D: 403 Client Error: Forbidden for url: https://www.thelancet.com/journals/langlo/article/PIIS2214-109X(19)30220-7/fulltext
 _data_sources.rst:675: [broken] https://www.tandfonline.com/doi/full/10.1080/17441692.2020.1805784: 403 Client Error: Forbidden for url: https://www.tandfonline.com/doi/full/10.1080/17441692.2020.1805784
-_data_sources.rst:647: [redirected permanently] https://www.who.int/tb/country/data/profiles/en/ to https://www.who.int/teams/global-tuberculosis-programme/data
+_data_sources.rst:177: [broken] https://www.thelancet.com/journals/langlo/article/PIIS2214-109X(19)30220-7/fulltext#:~:text=The%20main%20primary%20causes%20of,asphyxia%20(151%20%5B14%25%5D: 403 Client Error: Forbidden for url: https://www.thelancet.com/journals/langlo/article/PIIS2214-109X(19)30220-7/fulltext
+resources/costing/ResourceFile_Costing.xlsx.rst:9737: [broken] https://www.thelancet.com/journals/langlo/article/PIIS2214-109X(20)30240-0/fulltext: 403 Client Error: Forbidden for url: https://www.thelancet.com/journals/langlo/article/PIIS2214-109X(20)30240-0/fulltext
 _data_sources.rst:645: [redirected permanently] https://www.who.int/tb/country/data/download/en/ to https://www.who.int/teams/global-tuberculosis-programme/data
+_data_sources.rst:647: [redirected permanently] https://www.who.int/tb/country/data/profiles/en/ to https://www.who.int/teams/global-tuberculosis-programme/data
 learning.rst:22: [redirected with See Other] https://youtu.be/Qwkcut56kro to https://www.youtube.com/watch?v=Qwkcut56kro&feature=youtu.be
-ibm_course.rst:24: [redirected with See Other] https://youtu.be/VPl2emXVJ1M to https://www.youtube.com/watch?v=VPl2emXVJ1M&feature=youtu.be
 _data_sources.rst:92: [redirected with unknown code] https://www.unaids.org/sites/default/files/country/documents/ce_MW_Narrative_Report[1].pdf to https://www.unaids.org/sites/default/files/country/documents/ce_MW_Narrative_Report%5B1%5D.pdf
-_data_sources.rst:733: [redirected with Found] https://doi.org/10.1093/ije/30.5.1119 to https://academic.oup.com/crawlprevention/governor?content=%2fije%2farticle-lookup%2fdoi%2f10.1093%2fije%2f30.5.1119
-_data_sources.rst:532: [redirected with Found] https://doi.org/10.1086/377712 to https://academic.oup.com/crawlprevention/governor?content=%2fjid%2farticle%2f189%2fSupplement_1%2fS4%2f823958
-_data_sources.rst:411: [redirected with Found] https://doi.org/10.1093/cid/ciaa1330 to https://academic.oup.com/crawlprevention/governor?content=%2fcid%2farticle%2f73%2f2%2f354%2f5901661
-_data_sources.rst:731: [redirected with Found] https://doi.org/10.1093/aje/kwi111 to https://academic.oup.com/crawlprevention/governor?content=%2faje%2farticle%2f161%2f9%2f856%2f79922%2fAlcohol-Intake-in-Middle-Age-and-Risk-of
+ibm_course.rst:24: [redirected with See Other] https://youtu.be/VPl2emXVJ1M to https://www.youtube.com/watch?v=VPl2emXVJ1M&feature=youtu.be
+_data_sources.rst:411: [redirected with Found] https://doi.org/10.1093/cid/ciaa1330 to https://academic.oup.com/cid/article/73/2/354/5901661
+_data_sources.rst:731: [redirected permanently] https://doi.org/10.1093/aje/kwi111 to https://academic.oup.com/aje/article/161/9/856/79922
+_data_sources.rst:365: [redirected with Found] https://doi.org/10.1093/aje/kwq436 to https://academic.oup.com/crawlprevention/governor?content=%2faje%2farticle-lookup%2fdoi%2f10.1093%2faje%2fkwq436
+_data_sources.rst:733: [redirected permanently] https://doi.org/10.1093/ije/30.5.1119 to https://academic.oup.com/ije/article/30/5/1119/724190

@@ -6,7 +6,7 @@ tlo.methods.hiv module
 
 .. autoclass:: Hiv
 
-     Bases: :class:`tlo.core.Module`
+     Bases: :class:`tlo.core.Module`, :class:`tlo.methods.hsi_generic_first_appts.GenericFirstAppointmentsMixin`
 
 
      **PARAMETERS:**
@@ -81,6 +81,9 @@ tlo.methods.hiv module
         * - rr_edlevel_higher
           - REAL
           - Relative risk of HIV with higher education
+        * - rr_schisto
+          - REAL
+          - Relative risk of HIV with high intensity S. haematobium infection
         * - rr_behaviour_change
           - REAL
           - Relative risk of HIV with behaviour modification
@@ -219,9 +222,24 @@ tlo.methods.hiv module
         * - aids_tb_treatment_adjustment
           - REAL
           - probability of death if aids and tb, person on treatment for tb
+        * - hiv_healthseekingbehaviour_cap
+          - INT
+          - number of repeat visits assumed for healthcare services
         * - dispensation_period_months
           - REAL
           - length of prescription for ARVs in months, same for all PLHIV
+        * - length_of_inpatient_stay_if_terminal
+          - LIST
+          - length in days of inpatient stay for end-of-life HIV patients: list has two elements [low-bound-inclusive, high-bound-exclusive]
+        * - type_of_scaleup
+          - STRING
+          - argument to determine type scale-up of program which will be implemented, can be 'none', 'target' or 'max'
+        * - scaleup_start_year
+          - INT
+          - the year when the scale-up starts (it will occur on 1st January of that year)
+        * - scaleup_parameters
+          - DATA_FRAME
+          - the parameters and values changed in scenario analysis
 
 
      **PROPERTIES:**
@@ -273,13 +291,13 @@ tlo.methods.hiv module
 
      ADDITIONAL_DEPENDENCIES : {'NewbornOutcomes', 'Tb'}
 
-     CAUSES_OF_DEATH : {'AIDS_non_TB': <tlo.methods.causes.Cause object at 0x11cd8cc10>, 'AIDS_TB': <tlo.methods.causes.Cause object at 0x11cd8ea10>}
+     CAUSES_OF_DEATH : {'AIDS_non_TB': <tlo.methods.causes.Cause object at 0x11903b550>, 'AIDS_TB': <tlo.methods.causes.Cause object at 0x119039210>}
 
-     CAUSES_OF_DISABILITY : {'HIV': <tlo.methods.causes.Cause object at 0x11cd8d650>}
+     CAUSES_OF_DISABILITY : {'HIV': <tlo.methods.causes.Cause object at 0x11903b1d0>}
 
-     INIT_DEPENDENCIES : {'Demography', 'HealthSystem', 'Lifestyle', 'SymptomManager'}
+     INIT_DEPENDENCIES : {'Demography', 'HealthSystem', 'SymptomManager', 'Lifestyle'}
 
-     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 
@@ -291,6 +309,8 @@ tlo.methods.hiv module
 
      .. automethod:: pre_initialise_population
 
+     .. automethod:: _build_linear_models
+
      .. automethod:: initialise_population
 
      .. automethod:: initialise_baseline_prevalence
@@ -300,6 +320,8 @@ tlo.methods.hiv module
      .. automethod:: initialise_baseline_tested
 
      .. automethod:: initialise_simulation
+
+     .. automethod:: update_parameters_for_program_scaleup
 
      .. automethod:: on_birth
 
@@ -489,6 +511,29 @@ tlo.methods.hiv module
 
 
 
+.. autoclass:: HivScaleUpEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
+     **Functions (defined or overridden in class HivScaleUpEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
 .. autoclass:: HSI_Hiv_TestAndRefer
 
      Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
@@ -593,7 +638,7 @@ tlo.methods.hiv module
 
      **Class attributes:**
 
-     EXPECTED_APPT_FOOTPRINT : <property object at 0x11cb5e1b0>
+     EXPECTED_APPT_FOOTPRINT : <property object at 0x119207a10>
 
      __annotations__ : {}
 
@@ -614,6 +659,29 @@ tlo.methods.hiv module
      .. automethod:: consider_tb
 
      .. automethod:: never_ran
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Hiv_EndOfLifeCare
+
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
+     **Functions (defined or overridden in class HSI_Hiv_EndOfLifeCare):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
 
 
 

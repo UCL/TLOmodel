@@ -6,7 +6,7 @@ tlo.methods.bladder_cancer module
 
 .. autoclass:: BladderCancer
 
-     Bases: :class:`tlo.core.Module`
+     Bases: :class:`tlo.core.Module`, :class:`tlo.methods.hsi_generic_first_appts.GenericFirstAppointmentsMixin`
 
 
      **PARAMETERS:**
@@ -148,15 +148,15 @@ tlo.methods.bladder_cancer module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'BladderCancer': <tlo.methods.causes.Cause object at 0x12e1e8590>}
+     CAUSES_OF_DEATH : {'BladderCancer': <tlo.methods.causes.Cause object at 0x12a51bb90>}
 
-     CAUSES_OF_DISABILITY : {'BladderCancer': <tlo.methods.causes.Cause object at 0x12e1eac50>}
+     CAUSES_OF_DISABILITY : {'BladderCancer': <tlo.methods.causes.Cause object at 0x12a518cd0>}
 
-     INIT_DEPENDENCIES : {'Demography', 'HealthSystem', 'Lifestyle', 'SymptomManager'}
+     INIT_DEPENDENCIES : {'Demography', 'HealthSystem', 'SymptomManager', 'Lifestyle'}
 
-     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>}
 
-     OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
+     OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden', 'Schisto'}
 
      **Functions (defined or overridden in class BladderCancer):**
 

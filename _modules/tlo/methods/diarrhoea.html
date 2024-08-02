@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.diarrhoea &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
+  <title>tlo.methods.diarrhoea &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
@@ -16,7 +16,7 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../../../_static/documentation_options.js?v=f3d69a25"></script>
         <script src="../../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -102,30 +102,30 @@
 
 <span class="sd"> Outstanding Issues</span>
 <span class="sd"> * To include rotavirus vaccine</span>
-<span class="sd"> * See todo</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Iterable</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">List</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
 <span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">DAYS_IN_YEAR</span><span class="p">,</span> <span class="n">DateOffset</span><span class="p">,</span> <span class="n">Module</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">Property</span><span class="p">,</span> <span class="n">Types</span><span class="p">,</span> <span class="n">logging</span>
-<span class="kn">from</span> <span class="nn">tlo.core</span> <span class="kn">import</span> <span class="n">DiagnosisFunction</span><span class="p">,</span> <span class="n">IndividualPropertyUpdates</span>
 <span class="kn">from</span> <span class="nn">tlo.events</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">,</span> <span class="n">RegularEvent</span>
 <span class="kn">from</span> <span class="nn">tlo.lm</span> <span class="kn">import</span> <span class="n">LinearModel</span><span class="p">,</span> <span class="n">LinearModelType</span><span class="p">,</span> <span class="n">Predictor</span>
 <span class="kn">from</span> <span class="nn">tlo.methods</span> <span class="kn">import</span> <span class="n">Metadata</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.causes</span> <span class="kn">import</span> <span class="n">Cause</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.dxmanager</span> <span class="kn">import</span> <span class="n">DxTest</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.hsi_event</span> <span class="kn">import</span> <span class="n">HSI_Event</span>
+<span class="kn">from</span> <span class="nn">tlo.methods.hsi_generic_first_appts</span> <span class="kn">import</span> <span class="n">GenericFirstAppointmentsMixin</span>
 <span class="kn">from</span> <span class="nn">tlo.util</span> <span class="kn">import</span> <span class="n">random_date</span><span class="p">,</span> <span class="n">sample_outcome</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">tlo.population</span> <span class="kn">import</span> <span class="n">PatientDetails</span>
+    <span class="kn">from</span> <span class="nn">tlo.methods.hsi_generic_first_appts</span> <span class="kn">import</span> <span class="n">DiagnosisFunction</span><span class="p">,</span> <span class="n">HSIEventScheduler</span>
+    <span class="kn">from</span> <span class="nn">tlo.population</span> <span class="kn">import</span> <span class="n">IndividualProperties</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
@@ -137,7 +137,7 @@
 
 <div class="viewcode-block" id="Diarrhoea">
 <a class="viewcode-back" href="../../../reference/tlo.methods.diarrhoea.html#tlo.methods.diarrhoea.Diarrhoea">[docs]</a>
-<span class="k">class</span> <span class="nc">Diarrhoea</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">Diarrhoea</span><span class="p">(</span><span class="n">Module</span><span class="p">,</span> <span class="n">GenericFirstAppointmentsMixin</span><span class="p">):</span>
     <span class="c1"># Declare the pathogens that this module will simulate:</span>
     <span class="n">pathogens</span> <span class="o">=</span> <span class="p">[</span>
         <span class="s1">&#39;rotavirus&#39;</span><span class="p">,</span>
@@ -765,18 +765,23 @@
 <a class="viewcode-back" href="../../../reference/tlo.methods.diarrhoea.html#tlo.methods.diarrhoea.Diarrhoea.look_up_consumables">[docs]</a>
     <span class="k">def</span> <span class="nf">look_up_consumables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Look up and store the consumables item codes used in each of the HSI.&quot;&quot;&quot;</span>
-        <span class="n">get_item_codes_from_package_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_item_codes_from_package_name</span>
+        <span class="n">ic</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">consumables_used_in_hsi</span><span class="p">[</span><span class="s1">&#39;ORS&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_item_codes_from_package_name</span><span class="p">(</span>
-            <span class="n">package</span><span class="o">=</span><span class="s1">&#39;ORS&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">consumables_used_in_hsi</span><span class="p">[</span><span class="s1">&#39;Treatment_Severe_Dehydration&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_item_codes_from_package_name</span><span class="p">(</span>
-            <span class="n">package</span><span class="o">=</span><span class="s1">&#39;Treatment of severe diarrhea&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">consumables_used_in_hsi</span><span class="p">[</span><span class="s1">&#39;Zinc_Under6mo&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_item_codes_from_package_name</span><span class="p">(</span>
-            <span class="n">package</span><span class="o">=</span><span class="s1">&#39;Zinc for Children 0-6 months&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">consumables_used_in_hsi</span><span class="p">[</span><span class="s1">&#39;Zinc_Over6mo&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_item_codes_from_package_name</span><span class="p">(</span>
-            <span class="n">package</span><span class="o">=</span><span class="s1">&#39;Zinc for Children 6-59 months&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">consumables_used_in_hsi</span><span class="p">[</span><span class="s1">&#39;Antibiotics_for_Dysentery&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_item_codes_from_package_name</span><span class="p">(</span>
-            <span class="n">package</span><span class="o">=</span><span class="s1">&#39;Antibiotics for treatment of dysentery&#39;</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">consumables_used_in_hsi</span><span class="p">[</span><span class="s1">&#39;ORS&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">ic</span><span class="p">(</span><span class="s1">&#39;ORS, sachet&#39;</span><span class="p">):</span> <span class="mi">2</span><span class="p">}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">consumables_used_in_hsi</span><span class="p">[</span><span class="s1">&#39;Treatment_Severe_Dehydration&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="p">{</span><span class="n">ic</span><span class="p">(</span><span class="s1">&#39;ORS, sachet&#39;</span><span class="p">):</span> <span class="mi">2</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Giving set iv administration + needle 15 drops/ml_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s2">&quot;ringer&#39;s lactate (Hartmann&#39;s solution), 1000 ml_12_IDA&quot;</span><span class="p">):</span> <span class="mi">1000</span><span class="p">}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">consumables_used_in_hsi</span><span class="p">[</span><span class="s1">&#39;Zinc&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Zinc, tablet, 20 mg&#39;</span><span class="p">)</span>
+
+        <span class="c1"># For weight based treatment for children under five, we&#39;ve averaged the median weight for each for years</span>
+        <span class="c1"># 0-5 as 12kg.</span>
+        <span class="c1"># So for cipro/para - 10mg/kg 12 hrly for 7 days = ((10*12)*2) * 7 (same dose in mg reccomended)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">consumables_used_in_hsi</span><span class="p">[</span><span class="s1">&#39;Antibiotics_for_Dysentery&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="p">{</span><span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Ciprofloxacin 250mg_100_CMST&#39;</span><span class="p">):</span> <span class="mi">1680</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s2">&quot;Paracetamol syrup 120mg/5ml_0.0119047619047619_CMST&quot;</span><span class="p">):</span> <span class="mi">70</span><span class="p">}</span>  <span class="c1"># 24mg/ml so 1680/24 = 70ml per dose</span></div>
 
 
 <div class="viewcode-block" id="Diarrhoea.do_treatment">
@@ -823,9 +828,10 @@
 
         <span class="c1"># ** Implement the procedure for treatment **</span>
         <span class="c1"># STEP ZERO: Get the Zinc consumable (happens irrespective of whether child will die or not)</span>
+        <span class="c1"># Dose is 10mg 24hrly for 10 days &lt;6months or 20m for &gt;6mnths</span>
+        <span class="n">dose</span> <span class="o">=</span> <span class="mi">100</span> <span class="k">if</span> <span class="n">person</span><span class="o">.</span><span class="n">age_exact_years</span> <span class="o">&lt;</span> <span class="mf">0.5</span> <span class="k">else</span> <span class="mi">200</span>
         <span class="n">gets_zinc</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
-            <span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">consumables_used_in_hsi</span><span class="p">[</span>
-                <span class="s1">&#39;Zinc_Under6mo&#39;</span> <span class="k">if</span> <span class="n">person</span><span class="o">.</span><span class="n">age_exact_years</span> <span class="o">&lt;</span> <span class="mf">0.5</span> <span class="k">else</span> <span class="s1">&#39;Zinc_Over6mo&#39;</span><span class="p">]</span>
+            <span class="n">item_codes</span><span class="o">=</span><span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">consumables_used_in_hsi</span><span class="p">[</span><span class="s1">&#39;Zinc&#39;</span><span class="p">]:</span> <span class="n">dose</span><span class="p">}</span>
         <span class="p">)</span>
 
         <span class="c1"># STEP ONE: Aim to alleviate dehydration:</span>
@@ -1071,16 +1077,18 @@
 <a class="viewcode-back" href="../../../reference/tlo.methods.diarrhoea.html#tlo.methods.diarrhoea.Diarrhoea.do_at_generic_first_appt">[docs]</a>
     <span class="k">def</span> <span class="nf">do_at_generic_first_appt</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">patient_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-        <span class="n">patient_details</span><span class="p">:</span> <span class="n">PatientDetails</span><span class="p">,</span>
+        <span class="n">person_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">individual_properties</span><span class="p">:</span> <span class="n">IndividualProperties</span><span class="p">,</span>
+        <span class="n">schedule_hsi_event</span><span class="p">:</span> <span class="n">HSIEventScheduler</span><span class="p">,</span>
+        <span class="n">symptoms</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
         <span class="n">diagnosis_function</span><span class="p">:</span> <span class="n">DiagnosisFunction</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">IndividualPropertyUpdates</span><span class="p">:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># This routine is called when Diarrhoea is a symptom for a child</span>
         <span class="c1"># attending a Generic HSI Appointment. It checks for danger signs</span>
         <span class="c1"># and schedules HSI Events appropriately.</span>
-        <span class="k">if</span> <span class="n">patient_details</span><span class="o">.</span><span class="n">age_years</span> <span class="o">&gt;</span> <span class="mi">5</span><span class="p">:</span>
-            <span class="k">return</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">individual_properties</span><span class="p">[</span><span class="s2">&quot;age_years&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">5</span>  <span class="ow">or</span> <span class="s2">&quot;diarrhoea&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">:</span>
+            <span class="k">return</span>
 
         <span class="c1"># 1) Assessment of danger signs</span>
         <span class="n">danger_signs</span> <span class="o">=</span> <span class="n">diagnosis_function</span><span class="p">(</span>
@@ -1093,11 +1101,11 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;prob_hospitalization_on_danger_signs&quot;</span><span class="p">]</span>
         <span class="p">)</span>
         <span class="n">hsi_event_class</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">HSI_Diarrhoea_Treatment_Inpatient</span> <span class="k">if</span> <span class="n">is_inpatient</span> <span class="k">else</span> 
+            <span class="n">HSI_Diarrhoea_Treatment_Inpatient</span> <span class="k">if</span> <span class="n">is_inpatient</span> <span class="k">else</span>
             <span class="n">HSI_Diarrhoea_Treatment_Outpatient</span>
         <span class="p">)</span>
-        <span class="n">event</span> <span class="o">=</span> <span class="n">hsi_event_class</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">patient_id</span><span class="p">,</span> <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">healthsystem</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span></div>
+        <span class="n">event</span> <span class="o">=</span> <span class="n">hsi_event_class</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">schedule_hsi_event</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span></div>
 </div>
 
 
@@ -1758,6 +1766,8 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;is_alive&#39;</span><span class="p">]:</span>
             <span class="k">return</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_equipment</span><span class="p">({</span><span class="s1">&#39;Infusion pump&#39;</span><span class="p">,</span> <span class="s1">&#39;Drip stand&#39;</span><span class="p">})</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">do_treatment</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span></div>
 </div>
 
@@ -1922,7 +1932,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on May 27, 2024.
+      <span class="lastupdated">Last updated on Aug 02, 2024.
       </span></p>
   </div>
 

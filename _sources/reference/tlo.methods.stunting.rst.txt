@@ -6,7 +6,7 @@ tlo.methods.stunting module
 
 .. autoclass:: Stunting
 
-     Bases: :class:`tlo.core.Module`
+     Bases: :class:`tlo.core.Module`, :class:`tlo.methods.hsi_generic_first_appts.GenericFirstAppointmentsMixin`
 
 
      **PARAMETERS:**
@@ -130,7 +130,7 @@ tlo.methods.stunting module
 
      **Class attributes:**
 
-     INIT_DEPENDENCIES : {'Diarrhoea', 'NewbornOutcomes', 'Wasting', 'Hiv', 'Demography'}
+     INIT_DEPENDENCIES : {'Wasting', 'Hiv', 'Demography', 'NewbornOutcomes', 'Diarrhoea'}
 
      METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>}
 
@@ -282,7 +282,7 @@ tlo.methods.stunting module
 
      **Class attributes:**
 
-     ALTERNATIVE_TO : {'Diarrhoea', 'Hiv', 'Wasting'}
+     ALTERNATIVE_TO : {'Diarrhoea', 'Wasting', 'Hiv'}
 
      INIT_DEPENDENCIES : {'Demography'}
 

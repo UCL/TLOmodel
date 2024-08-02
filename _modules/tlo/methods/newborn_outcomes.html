@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.newborn_outcomes &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
+  <title>tlo.methods.newborn_outcomes &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
@@ -16,7 +16,7 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../../../_static/documentation_options.js?v=f3d69a25"></script>
         <script src="../../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -479,43 +479,53 @@
 <span class="sd">        This function defines the required consumables for each intervention delivered during this module and stores</span>
 <span class="sd">        them in a module level dictionary called within HSIs</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">get_list_of_items</span> <span class="o">=</span> <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">get_list_of_items</span>
+        <span class="n">ic</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span>
 
-        <span class="c1"># ---------------------------------- IV DRUG ADMIN EQUIPMENT  -------------------------------------------------</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_nb_consumables</span><span class="p">[</span><span class="s1">&#39;iv_drug_equipment&#39;</span><span class="p">]</span> <span class="o">=</span> \
-            <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Cannula iv  (winged with injection pot) 18_each_CMST&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Giving set iv administration + needle 15 drops/ml_each_CMST&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Disposables gloves, powder free, 100 pieces per box&#39;</span><span class="p">])</span>
-
+        <span class="c1"># First we store the item codes for the consumables for which their quantity varies for individuals based on</span>
+        <span class="c1"># length of pregnancy</span>
         <span class="c1"># ---------------------------------- BLOOD TEST EQUIPMENT ---------------------------------------------------</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_nb_consumables</span><span class="p">[</span><span class="s1">&#39;blood_test_equipment&#39;</span><span class="p">]</span> <span class="o">=</span> \
-            <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Disposables gloves, powder free, 100 pieces per box&#39;</span><span class="p">])</span>
+            <span class="p">{</span><span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Blood collecting tube, 5 ml&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Cannula iv  (winged with injection pot) 18_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Disposables gloves, powder free, 100 pieces per box&#39;</span><span class="p">):</span> <span class="mi">1</span>
+             <span class="p">}</span>
+        <span class="c1"># ---------------------------------- IV DRUG ADMIN EQUIPMENT  -------------------------------------------------</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_nb_consumables</span><span class="p">[</span><span class="s1">&#39;iv_drug_equipment&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="p">{</span><span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Giving set iv administration + needle 15 drops/ml_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Cannula iv  (winged with injection pot) 18_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Disposables gloves, powder free, 100 pieces per box&#39;</span><span class="p">):</span> <span class="mi">1</span>
+             <span class="p">}</span>
 
         <span class="c1"># -------------------------------------------- VITAMIN K ------------------------------------------</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_nb_consumables</span><span class="p">[</span><span class="s1">&#39;vitamin_k&#39;</span><span class="p">]</span> <span class="o">=</span> \
-            <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;vitamin K1  (phytomenadione) 1 mg/ml, 1 ml, inj._100_IDA&#39;</span><span class="p">])</span>
+            <span class="p">{</span><span class="n">ic</span><span class="p">(</span><span class="s1">&#39;vitamin K1  (phytomenadione) 1 mg/ml, 1 ml, inj._100_IDA&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">}</span>
 
         <span class="c1"># -------------------------------------------- EYE CARE  ------------------------------------------</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_nb_consumables</span><span class="p">[</span><span class="s1">&#39;eye_care&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_list_of_items</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Tetracycline eye ointment, 1 %, tube 5 mg&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_nb_consumables</span><span class="p">[</span><span class="s1">&#39;eye_care&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="p">{</span><span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Tetracycline eye ointment, 1 %, tube 5 mg&#39;</span><span class="p">):</span> <span class="mi">5</span><span class="p">}</span>
 
         <span class="c1"># ------------------------------------- SEPSIS - FULL SUPPORTIVE CARE ---------------------------------------</span>
+        <span class="c1"># Whilst abx for newborns are weight based the maximum dose does not exceed the minimum unit for the costing</span>
+        <span class="c1"># model</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_nb_consumables</span><span class="p">[</span><span class="s1">&#39;sepsis_supportive_care_core&#39;</span><span class="p">]</span> <span class="o">=</span> \
-            <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Benzylpenicillin 1g (1MU), PFR_Each_CMST&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Gentamicin 40mg/ml, 2ml_each_CMST&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Oxygen, 1000 liters, primarily with oxygen cylinders&#39;</span><span class="p">])</span>
+            <span class="p">{</span><span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Benzylpenicillin 1g (1MU), PFR_Each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Gentamicin 40mg/ml, 2ml_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Oxygen, 1000 liters, primarily with oxygen cylinders&#39;</span><span class="p">):</span> <span class="mi">5760</span>  <span class="c1">#</span>
+             <span class="p">}</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_nb_consumables</span><span class="p">[</span><span class="s1">&#39;sepsis_supportive_care_optional&#39;</span><span class="p">]</span> <span class="o">=</span> \
-            <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Dextrose (glucose) 5%, 1000ml_each_CMST&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Tube, feeding CH 8_each_CMST&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Cannula iv  (winged with injection pot) 18_each_CMST&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Giving set iv administration + needle 15 drops/ml_each_CMST&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Disposables gloves, powder free, 100 pieces per box&#39;</span><span class="p">])</span>
+            <span class="p">{</span><span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Dextrose (glucose) 5%, 1000ml_each_CMST&#39;</span><span class="p">):</span> <span class="mi">500</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Tube, feeding CH 8_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Cannula iv  (winged with injection pot) 18_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Giving set iv administration + needle 15 drops/ml_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Disposables gloves, powder free, 100 pieces per box&#39;</span><span class="p">):</span> <span class="mi">1</span>
+             <span class="p">}</span>
 
         <span class="c1"># ---------------------------------------- SEPSIS - ANTIBIOTICS ---------------------------------------------</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_nb_consumables</span><span class="p">[</span><span class="s1">&#39;sepsis_abx&#39;</span><span class="p">]</span> <span class="o">=</span>\
-            <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Benzylpenicillin 1g (1MU), PFR_Each_CMST&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Gentamicin 40mg/ml, 2ml_each_CMST&#39;</span><span class="p">])</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_nb_consumables</span><span class="p">[</span><span class="s1">&#39;sepsis_abx&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="p">{</span><span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Benzylpenicillin 1g (1MU), PFR_Each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Gentamicin 40mg/ml, 2ml_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="p">}</span></div>
 
 
 <div class="viewcode-block" id="NewbornOutcomes.initialise_simulation">
@@ -1119,23 +1129,27 @@
 
                 <span class="c1"># check consumables</span>
                 <span class="n">avail</span> <span class="o">=</span> <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">return_cons_avail</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_nb_consumables</span><span class="p">,</span> <span class="n">core</span><span class="o">=</span><span class="s1">&#39;sepsis_supportive_care_core&#39;</span><span class="p">,</span>
-                    <span class="n">optional</span><span class="o">=</span><span class="s1">&#39;sepsis_supportive_care_optional&#39;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span>
+                    <span class="n">cons</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_codes_nb_consumables</span><span class="p">[</span><span class="s1">&#39;sepsis_supportive_care_core&#39;</span><span class="p">],</span>
+                    <span class="n">opt_cons</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_codes_nb_consumables</span><span class="p">[</span><span class="s1">&#39;sepsis_supportive_care_optional&#39;</span><span class="p">])</span>
 
                 <span class="c1"># Then, if the consumables are available, treatment for sepsis is delivered</span>
                 <span class="k">if</span> <span class="n">avail</span> <span class="ow">and</span> <span class="n">sf_check</span><span class="p">:</span>
                     <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;nb_supp_care_neonatal_sepsis&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
                     <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">log_met_need</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;neo_sep_supportive_care&#39;</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">)</span>
+                    <span class="n">hsi_event</span><span class="o">.</span><span class="n">add_equipment</span><span class="p">({</span><span class="s1">&#39;Drip stand&#39;</span><span class="p">,</span> <span class="s1">&#39;Infusion pump&#39;</span><span class="p">})</span>
 
             <span class="c1"># The same pattern is then followed for health centre care</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">avail</span> <span class="o">=</span> <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">return_cons_avail</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_nb_consumables</span><span class="p">,</span> <span class="n">core</span><span class="o">=</span><span class="s1">&#39;sepsis_abx&#39;</span><span class="p">,</span>
-                    <span class="n">optional</span><span class="o">=</span><span class="s1">&#39;iv_drug_equipment&#39;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span>
+                    <span class="n">cons</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_codes_nb_consumables</span><span class="p">[</span><span class="s1">&#39;sepsis_abx&#39;</span><span class="p">],</span>
+                    <span class="n">opt_cons</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_codes_nb_consumables</span><span class="p">[</span><span class="s1">&#39;iv_drug_equipment&#39;</span><span class="p">])</span>
 
                 <span class="k">if</span> <span class="n">avail</span> <span class="ow">and</span> <span class="n">sf_check</span><span class="p">:</span>
                     <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;nb_inj_abx_neonatal_sepsis&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-                    <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">log_met_need</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;neo_sep_abx&#39;</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">)</span></div>
+                    <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">log_met_need</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;neo_sep_abx&#39;</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">)</span>
+                    <span class="n">hsi_event</span><span class="o">.</span><span class="n">add_equipment</span><span class="p">({</span><span class="s1">&#39;Drip stand&#39;</span><span class="p">,</span> <span class="s1">&#39;Infusion pump&#39;</span><span class="p">,</span> <span class="s1">&#39;Oxygen cylinder, with regulator&#39;</span><span class="p">})</span></div>
 
 
 <div class="viewcode-block" id="NewbornOutcomes.link_twins">
@@ -1526,7 +1540,7 @@
 
         <span class="c1"># Log the PNC check</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;postnatal_check&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;person_id&#39;</span><span class="p">:</span> <span class="n">person_id</span><span class="p">,</span>
-                                                 <span class="s1">&#39;delivery_setting&#39;</span><span class="p">:</span> <span class="n">nci</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;delivery_setting&#39;</span><span class="p">],</span>
+                                                 <span class="s1">&#39;delivery_setting&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">nci</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;delivery_setting&#39;</span><span class="p">]),</span>
                                                  <span class="s1">&#39;visit_number&#39;</span><span class="p">:</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;nb_pnc_check&#39;</span><span class="p">],</span>
                                                  <span class="s1">&#39;timing&#39;</span><span class="p">:</span> <span class="n">nci</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;will_receive_pnc&#39;</span><span class="p">]})</span>
 
@@ -1715,7 +1729,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on May 27, 2024.
+      <span class="lastupdated">Last updated on Aug 02, 2024.
       </span></p>
   </div>
 

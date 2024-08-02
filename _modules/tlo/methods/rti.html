@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.rti &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
+  <title>tlo.methods.rti &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
@@ -16,7 +16,7 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../../../_static/documentation_options.js?v=f3d69a25"></script>
         <script src="../../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -100,16 +100,17 @@
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
 <span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">DateOffset</span><span class="p">,</span> <span class="n">Module</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">Property</span><span class="p">,</span> <span class="n">Types</span><span class="p">,</span> <span class="n">logging</span>
-<span class="kn">from</span> <span class="nn">tlo.core</span> <span class="kn">import</span> <span class="n">IndividualPropertyUpdates</span>
 <span class="kn">from</span> <span class="nn">tlo.events</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">,</span> <span class="n">RegularEvent</span>
 <span class="kn">from</span> <span class="nn">tlo.lm</span> <span class="kn">import</span> <span class="n">LinearModel</span><span class="p">,</span> <span class="n">LinearModelType</span><span class="p">,</span> <span class="n">Predictor</span>
 <span class="kn">from</span> <span class="nn">tlo.methods</span> <span class="kn">import</span> <span class="n">Metadata</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.causes</span> <span class="kn">import</span> <span class="n">Cause</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.hsi_event</span> <span class="kn">import</span> <span class="n">HSI_Event</span>
+<span class="kn">from</span> <span class="nn">tlo.methods.hsi_generic_first_appts</span> <span class="kn">import</span> <span class="n">GenericFirstAppointmentsMixin</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.symptommanager</span> <span class="kn">import</span> <span class="n">Symptom</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">tlo.population</span> <span class="kn">import</span> <span class="n">PatientDetails</span>
+    <span class="kn">from</span> <span class="nn">tlo.methods.hsi_generic_first_appts</span> <span class="kn">import</span> <span class="n">HSIEventScheduler</span>
+    <span class="kn">from</span> <span class="nn">tlo.population</span> <span class="kn">import</span> <span class="n">IndividualProperties</span>
 
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
 <span class="c1">#   MODULE DEFINITIONS</span>
@@ -121,7 +122,7 @@
 
 <div class="viewcode-block" id="RTI">
 <a class="viewcode-back" href="../../../reference/tlo.methods.rti.html#tlo.methods.rti.RTI">[docs]</a>
-<span class="k">class</span> <span class="nc">RTI</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">RTI</span><span class="p">(</span><span class="n">Module</span><span class="p">,</span> <span class="n">GenericFirstAppointmentsMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    The road traffic injuries module for the TLO model, handling all injuries related to road traffic accidents.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -1109,6 +1110,10 @@
             <span class="n">Types</span><span class="o">.</span><span class="n">INT</span><span class="p">,</span>
             <span class="s2">&quot;A cut-off score above which an injuries will be considered severe enough to cause mortality in those who&quot;</span>
             <span class="s2">&quot;have not sought care.&quot;</span>
+        <span class="p">),</span>
+        <span class="s1">&#39;maximum_number_of_times_HSI_events_should_run&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">INT</span><span class="p">,</span>
+            <span class="s2">&quot;limit on the number of times an HSI event can run&quot;</span>
         <span class="p">)</span>
 
     <span class="p">}</span>
@@ -2616,7 +2621,7 @@
         <span class="n">inc_other</span> <span class="o">=</span> <span class="n">other_counts</span> <span class="o">/</span> <span class="p">((</span><span class="n">n_alive</span> <span class="o">-</span> <span class="n">other_counts</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1</span> <span class="o">/</span> <span class="mi">12</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100000</span>
         <span class="n">tot_inc_all_inj</span> <span class="o">=</span> <span class="n">inc_amputations</span> <span class="o">+</span> <span class="n">inc_burns</span> <span class="o">+</span> <span class="n">inc_fractures</span> <span class="o">+</span> <span class="n">inc_tbi</span> <span class="o">+</span> <span class="n">inc_sci</span> <span class="o">+</span> <span class="n">inc_minor</span> <span class="o">+</span> <span class="n">inc_other</span>
         <span class="k">if</span> <span class="n">number</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">number_of_injuries</span> <span class="o">=</span> <span class="n">inj_df</span><span class="p">[</span><span class="s1">&#39;Number_of_injuries&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            <span class="n">number_of_injuries</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">inj_df</span><span class="p">[</span><span class="s1">&#39;Number_of_injuries&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">number_of_injuries</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">dict_to_output</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;inc_amputations&#39;</span><span class="p">:</span> <span class="n">inc_amputations</span><span class="p">,</span>
@@ -2658,7 +2663,7 @@
         <span class="k">if</span> <span class="n">n_lx_fracs</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">proportion_lx_fracture_open</span> <span class="o">=</span> <span class="n">n_open_lx_fracs</span> <span class="o">/</span> <span class="n">n_lx_fracs</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">proportion_lx_fracture_open</span> <span class="o">=</span> <span class="s1">&#39;no_lx_fractures&#39;</span>
+            <span class="n">proportion_lx_fracture_open</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">)</span>
         <span class="n">injury_info</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Proportion_lx_fracture_open&#39;</span><span class="p">:</span> <span class="n">proportion_lx_fracture_open</span><span class="p">}</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;Open_fracture_information&#39;</span><span class="p">,</span>
                     <span class="n">data</span><span class="o">=</span><span class="n">injury_info</span><span class="p">,</span>
@@ -2671,33 +2676,33 @@
 <a class="viewcode-back" href="../../../reference/tlo.methods.rti.html#tlo.methods.rti.RTI._common_first_appt_steps">[docs]</a>
     <span class="k">def</span> <span class="nf">_common_first_appt_steps</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">patient_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-        <span class="n">patient_details</span><span class="p">:</span> <span class="n">PatientDetails</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">IndividualPropertyUpdates</span><span class="p">:</span>
+        <span class="n">person_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">individual_properties</span><span class="p">:</span> <span class="n">IndividualProperties</span><span class="p">,</span>
+        <span class="n">schedule_hsi_event</span><span class="p">:</span> <span class="n">HSIEventScheduler</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Shared logic steps that are used by the RTI module when a generic HSI</span>
 <span class="sd">        event is to be scheduled.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">patient_details_updates</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="c1"># Things to do upon a person presenting at a Non-Emergency Generic</span>
         <span class="c1"># HSI if they have an injury.</span>
         <span class="n">persons_injuries</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="nb">getattr</span><span class="p">(</span><span class="n">patient_details</span><span class="p">,</span> <span class="n">injury</span><span class="p">)</span> <span class="k">for</span> <span class="n">injury</span> <span class="ow">in</span> <span class="n">RTI</span><span class="o">.</span><span class="n">INJURY_COLUMNS</span>
+            <span class="n">individual_properties</span><span class="p">[</span><span class="n">injury</span><span class="p">]</span> <span class="k">for</span> <span class="n">injury</span> <span class="ow">in</span> <span class="n">RTI</span><span class="o">.</span><span class="n">INJURY_COLUMNS</span>
         <span class="p">]</span>
         <span class="k">if</span> <span class="p">(</span>
-            <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">patient_details</span><span class="o">.</span><span class="n">cause_of_death</span><span class="p">)</span>
-            <span class="ow">and</span> <span class="ow">not</span> <span class="n">patient_details</span><span class="o">.</span><span class="n">rt_diagnosed</span>
+            <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">individual_properties</span><span class="p">[</span><span class="s2">&quot;cause_of_death&quot;</span><span class="p">])</span>
+            <span class="ow">and</span> <span class="ow">not</span> <span class="n">individual_properties</span><span class="p">[</span><span class="s2">&quot;rt_diagnosed&quot;</span><span class="p">]</span>
         <span class="p">):</span>
             <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">RTI</span><span class="o">.</span><span class="n">INJURIES_REQ_IMAGING</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">persons_injuries</span><span class="p">)):</span>
-                <span class="k">if</span> <span class="n">patient_details</span><span class="o">.</span><span class="n">is_alive</span><span class="p">:</span>
-                    <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_RTI_Imaging_Event</span><span class="p">(</span><span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">patient_id</span><span class="p">)</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">healthsystem</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
+                <span class="k">if</span> <span class="n">individual_properties</span><span class="p">[</span><span class="s2">&quot;is_alive&quot;</span><span class="p">]:</span>
+                    <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_RTI_Imaging_Event</span><span class="p">(</span><span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
+                    <span class="n">schedule_hsi_event</span><span class="p">(</span>
                         <span class="n">event</span><span class="p">,</span>
                         <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                         <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
                         <span class="n">tclose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">15</span><span class="p">),</span>
                     <span class="p">)</span>
-            <span class="n">patient_details_updates</span><span class="p">[</span><span class="s2">&quot;rt_diagnosed&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">individual_properties</span><span class="p">[</span><span class="s2">&quot;rt_diagnosed&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
             <span class="c1"># The injured person has been diagnosed in A&amp;E and needs to progress further</span>
             <span class="c1"># through the health system.</span>
@@ -2723,35 +2728,42 @@
             <span class="c1"># If they meet the requirements, send them to HSI_RTI_MedicalIntervention for further treatment</span>
             <span class="c1"># Using counts condition to stop spurious symptoms progressing people through the model</span>
             <span class="k">if</span> <span class="n">counts</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_RTI_Medical_Intervention</span><span class="p">(</span><span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">patient_id</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">healthsystem</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
-                    <span class="n">event</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
+                <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_RTI_Medical_Intervention</span><span class="p">(</span><span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
+                <span class="n">schedule_hsi_event</span><span class="p">(</span>
+                    <span class="n">event</span><span class="p">,</span>
+                    <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                    <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
                 <span class="p">)</span>
 
             <span class="c1"># We now check if they need shock treatment</span>
-            <span class="k">if</span> <span class="n">patient_details</span><span class="o">.</span><span class="n">rt_in_shock</span> <span class="ow">and</span> <span class="n">patient_details</span><span class="o">.</span><span class="n">is_alive</span><span class="p">:</span>
-                <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_RTI_Shock_Treatment</span><span class="p">(</span><span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">patient_id</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">healthsystem</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="n">individual_properties</span><span class="p">[</span><span class="s2">&quot;rt_in_shock&quot;</span><span class="p">]</span>
+                <span class="ow">and</span> <span class="n">individual_properties</span><span class="p">[</span><span class="s2">&quot;is_alive&quot;</span><span class="p">]</span>
+            <span class="p">):</span>
+                <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_RTI_Shock_Treatment</span><span class="p">(</span><span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
+                <span class="n">schedule_hsi_event</span><span class="p">(</span>
                     <span class="n">event</span><span class="p">,</span>
                     <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                     <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
                     <span class="n">tclose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">15</span><span class="p">),</span>
-                <span class="p">)</span>
-        <span class="k">return</span> <span class="n">patient_details_updates</span></div>
+                <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="RTI.do_at_generic_first_appt">
 <a class="viewcode-back" href="../../../reference/tlo.methods.rti.html#tlo.methods.rti.RTI.do_at_generic_first_appt">[docs]</a>
     <span class="k">def</span> <span class="nf">do_at_generic_first_appt</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">patient_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-        <span class="n">patient_details</span><span class="p">:</span> <span class="n">PatientDetails</span><span class="p">,</span>
+        <span class="n">person_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">individual_properties</span><span class="p">:</span> <span class="n">IndividualProperties</span><span class="p">,</span>
         <span class="n">symptoms</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">schedule_hsi_event</span><span class="p">:</span> <span class="n">HSIEventScheduler</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">IndividualPropertyUpdates</span><span class="p">:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="s2">&quot;injury&quot;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_common_first_appt_steps</span><span class="p">(</span>
-                <span class="n">patient_id</span><span class="o">=</span><span class="n">patient_id</span><span class="p">,</span> <span class="n">patient_details</span><span class="o">=</span><span class="n">patient_details</span>
+                <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
+                <span class="n">individual_properties</span><span class="o">=</span><span class="n">individual_properties</span><span class="p">,</span>
+                <span class="n">schedule_hsi_event</span><span class="o">=</span><span class="n">schedule_hsi_event</span><span class="p">,</span>
             <span class="p">)</span></div>
 
 
@@ -2759,17 +2771,19 @@
 <a class="viewcode-back" href="../../../reference/tlo.methods.rti.html#tlo.methods.rti.RTI.do_at_generic_first_appt_emergency">[docs]</a>
     <span class="k">def</span> <span class="nf">do_at_generic_first_appt_emergency</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">patient_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-        <span class="n">patient_details</span><span class="p">:</span> <span class="n">PatientDetails</span><span class="p">,</span>
+        <span class="n">person_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">individual_properties</span><span class="p">:</span> <span class="n">IndividualProperties</span><span class="p">,</span>
         <span class="n">symptoms</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">schedule_hsi_event</span><span class="p">:</span> <span class="n">HSIEventScheduler</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">IndividualPropertyUpdates</span><span class="p">:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># Same process is followed for emergency and non emergency appointments, except the</span>
         <span class="c1"># initial symptom check</span>
         <span class="k">if</span> <span class="s2">&quot;severe_trauma&quot;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_common_first_appt_steps</span><span class="p">(</span>
-                <span class="n">patient_id</span><span class="o">=</span><span class="n">patient_id</span><span class="p">,</span>
-                <span class="n">patient_details</span><span class="o">=</span><span class="n">patient_details</span>
+                <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
+                <span class="n">individual_properties</span><span class="o">=</span><span class="n">individual_properties</span><span class="p">,</span>
+                <span class="n">schedule_hsi_event</span><span class="o">=</span><span class="n">schedule_hsi_event</span><span class="p">,</span>
             <span class="p">)</span></div>
 </div>
 
@@ -2992,7 +3006,7 @@
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">shock_index</span><span class="p">,</span> <span class="s1">&#39;rt_in_shock&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="c1"># log the percentage of those with RTIs in shock</span>
         <span class="n">percent_in_shock</span> <span class="o">=</span> \
-            <span class="nb">len</span><span class="p">(</span><span class="n">shock_index</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">selected_for_rti_inj</span><span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">selected_for_rti_inj</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="s1">&#39;none_injured&#39;</span>
+            <span class="nb">len</span><span class="p">(</span><span class="n">shock_index</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">selected_for_rti_inj</span><span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">selected_for_rti_inj</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">)</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;Percent_of_shock_in_rti&#39;</span><span class="p">,</span>
                     <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Percent_of_shock_in_rti&#39;</span><span class="p">:</span> <span class="n">percent_in_shock</span><span class="p">},</span>
                     <span class="n">description</span><span class="o">=</span><span class="s1">&#39;The percentage of those assigned injuries who were also assign the shock property&#39;</span><span class="p">)</span>
@@ -3422,8 +3436,13 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_diagnosed&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="n">road_traffic_injuries</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;RTI&#39;</span><span class="p">]</span>
         <span class="n">road_traffic_injuries</span><span class="o">.</span><span class="n">rti_injury_diagnosis</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span><span class="p">)</span>
-        <span class="k">if</span> <span class="s1">&#39;Tomography&#39;</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;3&#39;</span></div>
+
+        <span class="k">if</span> <span class="s1">&#39;DiagRadio&#39;</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_equipment</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">healthcare_system</span><span class="o">.</span><span class="n">equipment</span><span class="o">.</span><span class="n">from_pkg_names</span><span class="p">(</span><span class="s1">&#39;X-ray&#39;</span><span class="p">))</span>
+
+        <span class="k">elif</span> <span class="s1">&#39;Tomography&#39;</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;3&#39;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_equipment</span><span class="p">({</span><span class="s1">&#39;Computed Tomography (CT machine)&#39;</span><span class="p">,</span> <span class="s1">&#39;CT scanner accessories&#39;</span><span class="p">})</span></div>
 
 
 <div class="viewcode-block" id="HSI_RTI_Imaging_Event.did_not_run">
@@ -3737,6 +3756,9 @@
         <span class="c1"># determine the number of ICU days used to treat patient</span>
 
         <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_ISS_score&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">hdu_cut_off_iss_score</span><span class="p">:</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_equipment</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">healthcare_system</span><span class="o">.</span><span class="n">equipment</span><span class="o">.</span><span class="n">from_pkg_names</span><span class="p">(</span><span class="s1">&#39;ICU&#39;</span><span class="p">))</span>
+
             <span class="n">mean_icu_days</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;mean_icu_days&#39;</span><span class="p">]</span>
             <span class="n">sd_icu_days</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;sd_icu_days&#39;</span><span class="p">]</span>
             <span class="n">mean_tbi_icu_days</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;mean_tbi_icu_days&#39;</span><span class="p">]</span>
@@ -4036,8 +4058,6 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This HSI event handles the process of treating hypovolemic shock, as recommended by the pediatric</span>
 <span class="sd">    handbook for Malawi and (TODO: FIND ADULT REFERENCE)</span>
-<span class="sd">    Currently this HSI_Event is described only and not used, as I still need to work out how to model the occurrence</span>
-<span class="sd">    of shock</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="HSI_RTI_Shock_Treatment.__init__">
@@ -4048,13 +4068,16 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s1">&#39;Rti_ShockTreatment&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s1">&#39;AccidentsandEmerg&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1b&#39;</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1b&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_number_of_times_this_event_has_run</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_maximum_number_times_event_should_run</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;maximum_number_of_times_HSI_events_should_run&#39;</span><span class="p">]</span></div>
 
 
 <div class="viewcode-block" id="HSI_RTI_Shock_Treatment.apply">
 <a class="viewcode-back" href="../../../reference/tlo.methods.rti.html#tlo.methods.rti.HSI_RTI_Shock_Treatment.apply">[docs]</a>
     <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_number_of_times_this_event_has_run</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="c1"># determine if this is a child</span>
         <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;age_years&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">15</span><span class="p">:</span>
             <span class="n">is_child</span> <span class="o">=</span> <span class="kc">True</span>
@@ -4066,21 +4089,21 @@
         <span class="c1"># TODO: find a more complete list of required consumables for adults</span>
         <span class="k">if</span> <span class="n">is_child</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;shock_treatment_child&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;ringer&#39;s lactate (Hartmann&#39;s solution), 1000 ml_12_IDA&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
-                <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Dextrose (glucose) 5%, 1000ml_each_CMST&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;ringer&#39;s lactate (Hartmann&#39;s solution), 1000 ml_12_IDA&quot;</span><span class="p">):</span> <span class="mi">500</span><span class="p">,</span>
+                <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Dextrose (glucose) 5%, 1000ml_each_CMST&quot;</span><span class="p">):</span> <span class="mi">500</span><span class="p">,</span>
                 <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Cannula iv  (winged with injection pot) 18_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
-                <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Blood, one unit&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
-                <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Oxygen, 1000 liters, primarily with oxygen cylinders&quot;</span><span class="p">):</span> <span class="mi">1</span>
+                <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Blood, one unit&#39;</span><span class="p">):</span> <span class="mi">2</span><span class="p">,</span>
+                <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Oxygen, 1000 liters, primarily with oxygen cylinders&quot;</span><span class="p">):</span> <span class="mi">23_040</span>
             <span class="p">}</span>
             <span class="n">is_cons_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;shock_treatment_child&#39;</span><span class="p">]</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;shock_treatment_adult&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;ringer&#39;s lactate (Hartmann&#39;s solution), 1000 ml_12_IDA&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;ringer&#39;s lactate (Hartmann&#39;s solution), 1000 ml_12_IDA&quot;</span><span class="p">):</span> <span class="mi">2000</span><span class="p">,</span>
                 <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Cannula iv  (winged with injection pot) 18_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
-                <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Blood, one unit&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
-                <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Oxygen, 1000 liters, primarily with oxygen cylinders&quot;</span><span class="p">):</span> <span class="mi">1</span>
+                <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Blood, one unit&#39;</span><span class="p">):</span> <span class="mi">2</span><span class="p">,</span>
+                <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Oxygen, 1000 liters, primarily with oxygen cylinders&quot;</span><span class="p">):</span> <span class="mi">23_040</span>
             <span class="p">}</span>
             <span class="n">is_cons_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;shock_treatment_adult&#39;</span><span class="p">]</span>
@@ -4090,8 +4113,10 @@
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;rti_general_message&#39;</span><span class="p">,</span>
                          <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Hypovolemic shock treatment available for person </span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_in_shock&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_equipment</span><span class="p">({</span><span class="s1">&#39;Infusion pump&#39;</span><span class="p">,</span> <span class="s1">&#39;Drip stand&#39;</span><span class="p">,</span> <span class="s1">&#39;Oxygen cylinder, with regulator&#39;</span><span class="p">,</span> <span class="s1">&#39;Nasal Prongs&#39;</span><span class="p">})</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;RTI&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event_for_tomorrow</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_number_of_times_this_event_has_run</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_maximum_number_times_event_should_run</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;RTI&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event_for_tomorrow</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({})</span></div>
 
 
@@ -4152,7 +4177,10 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s1">&#39;Rti_FractureCast&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s1">&#39;AccidentsandEmerg&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1b&#39;</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1b&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_number_of_times_this_event_has_run</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_maximum_number_times_event_should_run</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span>
+            <span class="s1">&#39;maximum_number_of_times_HSI_events_should_run&#39;</span><span class="p">]</span></div>
 
 
 <div class="viewcode-block" id="HSI_RTI_Fracture_Cast.apply">
@@ -4161,6 +4189,7 @@
         <span class="c1"># Get the population and health system</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">p</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_number_of_times_this_event_has_run</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="c1"># if the person isn&#39;t alive return a blank footprint</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;is_alive&#39;</span><span class="p">]:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({})</span>
@@ -4190,7 +4219,7 @@
         <span class="c1"># If they have a fracture that needs a cast, ask for plaster of paris</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;fracture_treatment&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
             <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Plaster of Paris (POP) 10cm x 7.5cm slab_12_CMST&#39;</span><span class="p">):</span> <span class="n">fracturecastcounts</span><span class="p">,</span>
-            <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Bandage, crepe 7.5cm x 1.4m long , when stretched&#39;</span><span class="p">):</span> <span class="n">slingcounts</span><span class="p">,</span>
+            <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Bandage, crepe 7.5cm x 1.4m long , when stretched&#39;</span><span class="p">):</span> <span class="mi">200</span><span class="p">,</span>
         <span class="p">}</span>
         <span class="n">is_cons_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;fracture_treatment&#39;</span><span class="p">]</span>
@@ -4201,6 +4230,9 @@
                          <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Fracture casts available for person %d&#39;s </span><span class="si">{</span><span class="n">fracturecastcounts</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">slingcounts</span><span class="si">}</span><span class="s2"> fractures, &quot;</span>
                               <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s2">&quot;</span>
                          <span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_equipment</span><span class="p">({</span><span class="s1">&#39;Casting platform&#39;</span><span class="p">,</span> <span class="s1">&#39;Casting chairs&#39;</span><span class="p">,</span> <span class="s1">&#39;Bucket, 10L&#39;</span><span class="p">})</span>
+
             <span class="c1"># update the property rt_med_int to indicate they are recieving treatment</span>
             <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_med_int&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="c1"># Find the persons injuries</span>
@@ -4252,7 +4284,8 @@
             <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_injuries_to_cast&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
             <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_date_death_no_med&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;RTI&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event_for_tomorrow</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_number_of_times_this_event_has_run</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_maximum_number_times_event_should_run</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;RTI&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event_for_tomorrow</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_date_death_no_med&#39;</span><span class="p">]):</span>
                 <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_date_death_no_med&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;rti_general_message&#39;</span><span class="p">,</span>
@@ -4300,13 +4333,17 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s1">&#39;Rti_OpenFractureTreatment&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s1">&#39;MinorSurg&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1b&#39;</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1b&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_number_of_times_this_event_has_run</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_maximum_number_times_event_should_run</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span>
+            <span class="s1">&#39;maximum_number_of_times_HSI_events_should_run&#39;</span><span class="p">]</span></div>
 
 
 <div class="viewcode-block" id="HSI_RTI_Open_Fracture_Treatment.apply">
 <a class="viewcode-back" href="../../../reference/tlo.methods.rti.html#tlo.methods.rti.HSI_RTI_Open_Fracture_Treatment.apply">[docs]</a>
     <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_number_of_times_this_event_has_run</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;is_alive&#39;</span><span class="p">]:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({})</span>
         <span class="n">road_traffic_injuries</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;RTI&#39;</span><span class="p">]</span>
@@ -4325,9 +4362,9 @@
         <span class="c1"># If they have an open fracture, ask for consumables to treat fracture</span>
         <span class="k">if</span> <span class="n">open_fracture_counts</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;open_fracture_treatment&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Ceftriaxone 1g, PFR_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
-                <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Cetrimide 15</span><span class="si">% + c</span><span class="s1">hlorhexidine 1.5</span><span class="si">% s</span><span class="s1">olution.for dilution _5_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
-                <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Gauze, absorbent 90cm x 40m_each_CMST&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Ceftriaxone 1g, PFR_each_CMST&#39;</span><span class="p">):</span> <span class="mi">2000</span><span class="p">,</span>
+                <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Cetrimide 15</span><span class="si">% + c</span><span class="s1">hlorhexidine 1.5</span><span class="si">% s</span><span class="s1">olution.for dilution _5_CMST&#39;</span><span class="p">):</span> <span class="mi">500</span><span class="p">,</span>
+                <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Gauze, absorbent 90cm x 40m_each_CMST&quot;</span><span class="p">):</span> <span class="mi">100</span><span class="p">,</span>
                 <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Suture pack&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
             <span class="p">}</span>
             <span class="c1"># If wound is &quot;grossly contaminated&quot; administer Metronidazole</span>
@@ -4335,9 +4372,10 @@
             <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span>
             <span class="n">prob_open_fracture_contaminated</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;prob_open_fracture_contaminated&#39;</span><span class="p">]</span>
             <span class="n">rand_for_contamination</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="c1"># NB: Dose used below from BNF is for surgical prophylaxsis</span>
             <span class="k">if</span> <span class="n">rand_for_contamination</span> <span class="o">&lt;</span> <span class="n">prob_open_fracture_contaminated</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;open_fracture_treatment&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
-                    <span class="p">{</span><span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Metronidazole, injection, 500 mg in 100 ml vial&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">}</span>
+                    <span class="p">{</span><span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Metronidazole, injection, 500 mg in 100 ml vial&#39;</span><span class="p">):</span> <span class="mi">1500</span><span class="p">}</span>
                 <span class="p">)</span>
         <span class="c1"># Check that there are enough consumables to treat this person&#39;s fractures</span>
         <span class="n">is_cons_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
@@ -4348,6 +4386,9 @@
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;rti_general_message&#39;</span><span class="p">,</span>
                          <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Fracture casts available for person </span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">open_fracture_counts</span><span class="si">}</span><span class="s2"> open fractures&quot;</span>
                          <span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_equipment</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">healthcare_system</span><span class="o">.</span><span class="n">equipment</span><span class="o">.</span><span class="n">from_pkg_names</span><span class="p">(</span><span class="s1">&#39;Major Surgery&#39;</span><span class="p">))</span>
+
             <span class="n">person</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">]</span>
             <span class="c1"># update the dataframe to show this person is recieving treatment</span>
             <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_med_int&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
@@ -4374,7 +4415,8 @@
             <span class="k">if</span> <span class="n">code</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_injuries_for_open_fracture_treatment&#39;</span><span class="p">]:</span>
                 <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_injuries_for_open_fracture_treatment&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">code</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;RTI&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event_for_tomorrow</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_number_of_times_this_event_has_run</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_maximum_number_times_event_should_run</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;RTI&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event_for_tomorrow</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_date_death_no_med&#39;</span><span class="p">]):</span>
                 <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_date_death_no_med&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;rti_general_message&#39;</span><span class="p">,</span>
@@ -4425,7 +4467,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s1">&#39;Rti_Suture&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span>
             <span class="p">(</span><span class="s1">&#39;Under5OPD&#39;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;age_years&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">5</span> <span class="k">else</span> <span class="s1">&#39;Over5OPD&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">})</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1b&#39;</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1b&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_number_of_times_this_event_has_run</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_maximum_number_times_event_should_run</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span>
+            <span class="s1">&#39;maximum_number_of_times_HSI_events_should_run&#39;</span><span class="p">]</span></div>
 
 
 <div class="viewcode-block" id="HSI_RTI_Suture.apply">
@@ -4433,6 +4478,8 @@
     <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
         <span class="n">get_item_code</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_number_of_times_this_event_has_run</span> <span class="o">+=</span> <span class="mi">1</span>
+
         <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;is_alive&#39;</span><span class="p">]:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({})</span>
         <span class="n">road_traffic_injuries</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;RTI&#39;</span><span class="p">]</span>
@@ -4448,7 +4495,7 @@
         <span class="k">if</span> <span class="n">lacerationcounts</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;laceration_treatment&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Suture pack&#39;</span><span class="p">):</span> <span class="n">lacerationcounts</span><span class="p">,</span>
-                <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Cetrimide 15</span><span class="si">% + c</span><span class="s1">hlorhexidine 1.5</span><span class="si">% s</span><span class="s1">olution.for dilution _5_CMST&#39;</span><span class="p">):</span> <span class="n">lacerationcounts</span><span class="p">,</span>
+                <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Cetrimide 15</span><span class="si">% + c</span><span class="s1">hlorhexidine 1.5</span><span class="si">% s</span><span class="s1">olution.for dilution _5_CMST&#39;</span><span class="p">):</span> <span class="mi">500</span><span class="p">,</span>
 
             <span class="p">}</span>
             <span class="c1"># check the number of suture kits required and request them</span>
@@ -4477,7 +4524,8 @@
                     <span class="k">assert</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="n">date_to_remove_daly_column</span><span class="p">]</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
                 <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_date_death_no_med&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;RTI&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event_for_tomorrow</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_number_of_times_this_event_has_run</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_maximum_number_times_event_should_run</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;RTI&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event_for_tomorrow</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_date_death_no_med&#39;</span><span class="p">]):</span>
                     <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_date_death_no_med&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;rti_general_message&#39;</span><span class="p">,</span>
@@ -4532,7 +4580,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">BEDDAYS_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_beddays_footprint</span><span class="p">({</span><span class="s1">&#39;general_bed&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
 
         <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">prob_mild_burns</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;prob_mild_burns&#39;</span><span class="p">]</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prob_mild_burns</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;prob_mild_burns&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_number_of_times_this_event_has_run</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_maximum_number_times_event_should_run</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;maximum_number_of_times_HSI_events_should_run&#39;</span><span class="p">]</span></div>
+
 
 
 <div class="viewcode-block" id="HSI_RTI_Burn_Management.apply">
@@ -4540,6 +4591,8 @@
     <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
         <span class="n">get_item_code</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_number_of_times_this_event_has_run</span> <span class="o">+=</span> <span class="mi">1</span>
+
         <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;is_alive&#39;</span><span class="p">]:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({})</span>
         <span class="n">road_traffic_injuries</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;RTI&#39;</span><span class="p">]</span>
@@ -4568,7 +4621,7 @@
                 <span class="c1"># check if they have multiple burns, which implies a higher burned total body surface area (TBSA) which</span>
                 <span class="c1"># will alter the treatment plan</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;burn_treatment&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
-                    <span class="p">{</span><span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;ringer&#39;s lactate (Hartmann&#39;s solution), 1000 ml_12_IDA&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">}</span>
+                    <span class="p">{</span><span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;ringer&#39;s lactate (Hartmann&#39;s solution), 1000 ml_12_IDA&quot;</span><span class="p">):</span> <span class="mi">4000</span><span class="p">}</span>
                 <span class="p">)</span>
 
             <span class="n">is_cons_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
@@ -4612,7 +4665,8 @@
                 <span class="p">)</span>
                 <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_date_death_no_med&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;RTI&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event_for_tomorrow</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_number_of_times_this_event_has_run</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_maximum_number_times_event_should_run</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;RTI&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event_for_tomorrow</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_date_death_no_med&#39;</span><span class="p">]):</span>
                     <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_date_death_no_med&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;rti_general_message&#39;</span><span class="p">,</span>
@@ -4647,13 +4701,18 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s1">&#39;Rti_TetanusVaccine&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s1">&#39;EPI&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1b&#39;</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1b&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_number_of_times_this_event_has_run</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_maximum_number_times_event_should_run</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span>
+            <span class="s1">&#39;maximum_number_of_times_HSI_events_should_run&#39;</span><span class="p">]</span></div>
 
 
 <div class="viewcode-block" id="HSI_RTI_Tetanus_Vaccine.apply">
 <a class="viewcode-back" href="../../../reference/tlo.methods.rti.html#tlo.methods.rti.HSI_RTI_Tetanus_Vaccine.apply">[docs]</a>
     <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_number_of_times_this_event_has_run</span> <span class="o">+=</span> <span class="mi">1</span>
+
         <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;is_alive&#39;</span><span class="p">]:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({})</span>
         <span class="n">person_injuries</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[[</span><span class="n">person_id</span><span class="p">],</span> <span class="n">RTI</span><span class="o">.</span><span class="n">INJURY_COLUMNS</span><span class="p">]</span>
@@ -4682,7 +4741,8 @@
                 <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;rti_general_message&#39;</span><span class="p">,</span>
                              <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Tetanus vaccine requested for person </span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s2"> and given&quot;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;RTI&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event_for_tomorrow</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_number_of_times_this_event_has_run</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_maximum_number_times_event_should_run</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;RTI&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event_for_tomorrow</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;rti_general_message&#39;</span><span class="p">,</span>
                              <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Tetanus vaccine requested for person </span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s2">, not given&quot;</span><span class="p">)</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({})</span></div>
@@ -4720,13 +4780,18 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s1">&#39;Rti_AcutePainManagement&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span>
             <span class="p">(</span><span class="s1">&#39;Under5OPD&#39;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;age_years&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">5</span> <span class="k">else</span> <span class="s1">&#39;Over5OPD&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">})</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1b&#39;</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1b&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_number_of_times_this_event_has_run</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_maximum_number_times_event_should_run</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span>
+            <span class="s1">&#39;maximum_number_of_times_HSI_events_should_run&#39;</span><span class="p">]</span></div>
 
 
 <div class="viewcode-block" id="HSI_RTI_Acute_Pain_Management.apply">
 <a class="viewcode-back" href="../../../reference/tlo.methods.rti.html#tlo.methods.rti.HSI_RTI_Acute_Pain_Management.apply">[docs]</a>
     <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_number_of_times_this_event_has_run</span> <span class="o">+=</span> <span class="mi">1</span>
+
         <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;is_alive&#39;</span><span class="p">]:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({})</span>
         <span class="c1"># Check that the person sent here is alive, has been through A&amp;E and RTI_Med_int</span>
@@ -4778,20 +4843,20 @@
                         <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Summary of the pain medicine requested by each person&#39;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;age_years&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">16</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;pain_management&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                    <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Paracetamol 500mg_1000_CMST&quot;</span><span class="p">):</span> <span class="mi">1</span>
+                    <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Paracetamol 500mg_1000_CMST&quot;</span><span class="p">):</span> <span class="mi">8000</span>
                 <span class="p">}</span>
                 <span class="n">cond</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;pain_management&#39;</span><span class="p">]</span>
                 <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;pain_management&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                    <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;diclofenac sodium 25 mg, enteric coated_1000_IDA&quot;</span><span class="p">):</span> <span class="mi">1</span>
+                    <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;diclofenac sodium 25 mg, enteric coated_1000_IDA&quot;</span><span class="p">):</span> <span class="mi">300</span>
                 <span class="p">}</span>
                 <span class="n">cond1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;pain_management&#39;</span><span class="p">]</span>
                 <span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;pain_management&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                    <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Paracetamol 500mg_1000_CMST&quot;</span><span class="p">):</span> <span class="mi">1</span>
+                    <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Paracetamol 500mg_1000_CMST&quot;</span><span class="p">):</span> <span class="mi">8000</span>
                 <span class="p">}</span>
                 <span class="n">cond2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;pain_management&#39;</span><span class="p">]</span>
@@ -4835,7 +4900,8 @@
                             <span class="n">data</span><span class="o">=</span><span class="n">dict_to_output</span><span class="p">,</span>
                             <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Pain medicine successfully provided to the person&#39;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;RTI&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event_for_tomorrow</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_number_of_times_this_event_has_run</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_maximum_number_times_event_should_run</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;RTI&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event_for_tomorrow</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;rti_general_message&#39;</span><span class="p">,</span>
                              <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;This facility has no pain management available for their mild pain, person &quot;</span>
                                   <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
@@ -4848,7 +4914,7 @@
                         <span class="n">data</span><span class="o">=</span><span class="n">dict_to_output</span><span class="p">,</span>
                         <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Summary of the pain medicine requested by each person&#39;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;pain_management&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;tramadol HCl 100 mg/2 ml, for injection_100_IDA&quot;</span><span class="p">):</span> <span class="mi">1</span>
+                <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;tramadol HCl 100 mg/2 ml, for injection_100_IDA&quot;</span><span class="p">):</span> <span class="mi">300</span>
             <span class="p">}</span>
             <span class="n">is_cons_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;pain_management&#39;</span><span class="p">]</span>
@@ -4866,7 +4932,8 @@
                             <span class="n">data</span><span class="o">=</span><span class="n">dict_to_output</span><span class="p">,</span>
                             <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Pain medicine successfully provided to the person&#39;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;RTI&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event_for_tomorrow</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_number_of_times_this_event_has_run</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_maximum_number_times_event_should_run</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;RTI&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event_for_tomorrow</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;rti_general_message&#39;</span><span class="p">,</span>
                              <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;This facility has no pain management available for moderate pain for person &quot;</span>
                                   <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
@@ -4880,7 +4947,7 @@
                         <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Summary of the pain medicine requested by each person&#39;</span><span class="p">)</span>
             <span class="c1"># give morphine</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;pain_management&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;morphine sulphate 10 mg/ml, 1 ml, injection (nt)_10_IDA&quot;</span><span class="p">):</span> <span class="mi">1</span>
+                <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;morphine sulphate 10 mg/ml, 1 ml, injection (nt)_10_IDA&quot;</span><span class="p">):</span> <span class="mi">120</span>
             <span class="p">}</span>
             <span class="n">is_cons_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;pain_management&#39;</span><span class="p">]</span>
@@ -4898,7 +4965,8 @@
                             <span class="n">data</span><span class="o">=</span><span class="n">dict_to_output</span><span class="p">,</span>
                             <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Pain medicine successfully provided to the person&#39;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;RTI&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event_for_tomorrow</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_number_of_times_this_event_has_run</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_maximum_number_times_event_should_run</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;RTI&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event_for_tomorrow</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;rti_general_message&#39;</span><span class="p">,</span>
                              <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;This facility has no pain management available for severe pain for person &quot;</span>
                                   <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
@@ -5035,6 +5103,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s1">&#39;MajorSurg&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1b&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">BEDDAYS_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_beddays_footprint</span><span class="p">({})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_number_of_times_this_event_has_run</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_maximum_number_times_event_should_run</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;maximum_number_of_times_HSI_events_should_run&#39;</span><span class="p">]</span>
 
         <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">prob_perm_disability_with_treatment_severe_TBI</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;prob_perm_disability_with_treatment_severe_TBI&#39;</span><span class="p">]</span>
@@ -5045,6 +5115,7 @@
 <div class="viewcode-block" id="HSI_RTI_Major_Surgeries.apply">
 <a class="viewcode-back" href="../../../reference/tlo.methods.rti.html#tlo.methods.rti.HSI_RTI_Major_Surgeries.apply">[docs]</a>
     <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_number_of_times_this_event_has_run</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">rng</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span>
         <span class="n">road_traffic_injuries</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;RTI&#39;</span><span class="p">]</span>
@@ -5052,22 +5123,22 @@
         <span class="c1"># Request first draft of consumables used in major surgery</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;major_surgery&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
             <span class="c1"># request a general anaesthetic</span>
-            <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Halothane (fluothane)_250ml_CMST&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Halothane (fluothane)_250ml_CMST&quot;</span><span class="p">):</span> <span class="mi">100</span><span class="p">,</span>
             <span class="c1"># clean the site of the surgery</span>
-            <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Chlorhexidine 1.5</span><span class="si">% s</span><span class="s2">olution_5_CMST&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Chlorhexidine 1.5</span><span class="si">% s</span><span class="s2">olution_5_CMST&quot;</span><span class="p">):</span> <span class="mi">500</span><span class="p">,</span>
             <span class="c1"># tools to begin surgery</span>
             <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Scalpel blade size 22 (individually wrapped)_100_CMST&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
             <span class="c1"># administer an IV</span>
             <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Cannula iv  (winged with injection pot) 18_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
             <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Giving set iv administration + needle 15 drops/ml_each_CMST&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
-            <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;ringer&#39;s lactate (Hartmann&#39;s solution), 1000 ml_12_IDA&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;ringer&#39;s lactate (Hartmann&#39;s solution), 1000 ml_12_IDA&quot;</span><span class="p">):</span> <span class="mi">2000</span><span class="p">,</span>
             <span class="c1"># repair incision made</span>
             <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Suture pack&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
-            <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Gauze, absorbent 90cm x 40m_each_CMST&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Gauze, absorbent 90cm x 40m_each_CMST&quot;</span><span class="p">):</span> <span class="mi">100</span><span class="p">,</span>
             <span class="c1"># administer pain killer</span>
-            <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Pethidine, 50 mg/ml, 2 ml ampoule&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Pethidine, 50 mg/ml, 2 ml ampoule&#39;</span><span class="p">):</span> <span class="mi">6</span><span class="p">,</span>
             <span class="c1"># administer antibiotic</span>
-            <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Ampicillin injection 500mg, PFR_each_CMST&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Ampicillin injection 500mg, PFR_each_CMST&quot;</span><span class="p">):</span> <span class="mi">1000</span><span class="p">,</span>
             <span class="c1"># equipment used by surgeon, gloves and facemask</span>
             <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Disposables gloves, powder free, 100 pieces per box&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
             <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;surgical face mask, disp., with metal nose piece_50_IDA&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
@@ -5126,6 +5197,9 @@
             <span class="c1"># RTI_Med</span>
             <span class="k">assert</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_diagnosed&#39;</span><span class="p">],</span> <span class="s1">&#39;This person has not been through a and e&#39;</span>
             <span class="k">assert</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_med_int&#39;</span><span class="p">],</span> <span class="s1">&#39;This person has not been through rti med int&#39;</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_equipment</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">healthcare_system</span><span class="o">.</span><span class="n">equipment</span><span class="o">.</span><span class="n">from_pkg_names</span><span class="p">(</span><span class="s1">&#39;Major Surgery&#39;</span><span class="p">))</span>
+
             <span class="c1"># ------------------------ Track permanent disabilities with treatment -------------------------------------</span>
             <span class="c1"># --------------------------------- Perm disability from TBI -----------------------------------------------</span>
             <span class="n">codes</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;133&#39;</span><span class="p">,</span> <span class="s1">&#39;133a&#39;</span><span class="p">,</span> <span class="s1">&#39;133b&#39;</span><span class="p">,</span> <span class="s1">&#39;133c&#39;</span><span class="p">,</span> <span class="s1">&#39;133d&#39;</span><span class="p">,</span> <span class="s1">&#39;134&#39;</span><span class="p">,</span> <span class="s1">&#39;134a&#39;</span><span class="p">,</span> <span class="s1">&#39;134b&#39;</span><span class="p">,</span> <span class="s1">&#39;135&#39;</span><span class="p">]</span>
@@ -5314,7 +5388,8 @@
                 <span class="p">[</span><span class="s1">&#39;Treated injury code not removed&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">treated_code</span><span class="p">]</span>
             <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_date_death_no_med&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;RTI&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event_for_tomorrow</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_number_of_times_this_event_has_run</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_maximum_number_times_event_should_run</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;RTI&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event_for_tomorrow</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_date_death_no_med&#39;</span><span class="p">]):</span>
                 <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_date_death_no_med&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({})</span></div>
@@ -5387,12 +5462,17 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s1">&#39;Rti_MinorSurgeries&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s1">&#39;MinorSurg&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1b&#39;</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1b&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_number_of_times_this_event_has_run</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_maximum_number_times_event_should_run</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span>
+            <span class="s1">&#39;maximum_number_of_times_HSI_events_should_run&#39;</span><span class="p">]</span></div>
 
 
 <div class="viewcode-block" id="HSI_RTI_Minor_Surgeries.apply">
 <a class="viewcode-back" href="../../../reference/tlo.methods.rti.html#tlo.methods.rti.HSI_RTI_Minor_Surgeries.apply">[docs]</a>
     <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_number_of_times_this_event_has_run</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;is_alive&#39;</span><span class="p">]:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({})</span>
@@ -5400,22 +5480,22 @@
         <span class="c1"># Request first draft of consumables used in major surgery</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;minor_surgery&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
             <span class="c1"># request a local anaesthetic</span>
-            <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Halothane (fluothane)_250ml_CMST&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Halothane (fluothane)_250ml_CMST&quot;</span><span class="p">):</span> <span class="mi">100</span><span class="p">,</span>
             <span class="c1"># clean the site of the surgery</span>
-            <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Chlorhexidine 1.5</span><span class="si">% s</span><span class="s2">olution_5_CMST&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Chlorhexidine 1.5</span><span class="si">% s</span><span class="s2">olution_5_CMST&quot;</span><span class="p">):</span> <span class="mi">500</span><span class="p">,</span>
             <span class="c1"># tools to begin surgery</span>
             <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Scalpel blade size 22 (individually wrapped)_100_CMST&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
             <span class="c1"># administer an IV</span>
             <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Cannula iv  (winged with injection pot) 18_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
             <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Giving set iv administration + needle 15 drops/ml_each_CMST&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
-            <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;ringer&#39;s lactate (Hartmann&#39;s solution), 1000 ml_12_IDA&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;ringer&#39;s lactate (Hartmann&#39;s solution), 1000 ml_12_IDA&quot;</span><span class="p">):</span> <span class="mi">2000</span><span class="p">,</span>
             <span class="c1"># repair incision made</span>
             <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Suture pack&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
-            <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Gauze, absorbent 90cm x 40m_each_CMST&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Gauze, absorbent 90cm x 40m_each_CMST&quot;</span><span class="p">):</span> <span class="mi">100</span><span class="p">,</span>
             <span class="c1"># administer pain killer</span>
-            <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Pethidine, 50 mg/ml, 2 ml ampoule&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Pethidine, 50 mg/ml, 2 ml ampoule&#39;</span><span class="p">):</span> <span class="mi">6</span><span class="p">,</span>
             <span class="c1"># administer antibiotic</span>
-            <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Ampicillin injection 500mg, PFR_each_CMST&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Ampicillin injection 500mg, PFR_each_CMST&quot;</span><span class="p">):</span> <span class="mi">1000</span><span class="p">,</span>
             <span class="c1"># equipment used by surgeon, gloves and facemask</span>
             <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Disposables gloves, powder free, 100 pieces per box&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
             <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;surgical face mask, disp., with metal nose piece_50_IDA&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
@@ -5453,6 +5533,8 @@
         <span class="c1"># todo: think about consequences of certain consumables not being available for minor surgery and model health</span>
         <span class="c1">#  outcomes</span>
         <span class="k">if</span> <span class="n">request_outcome</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_equipment</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">healthcare_system</span><span class="o">.</span><span class="n">equipment</span><span class="o">.</span><span class="n">from_pkg_names</span><span class="p">(</span><span class="s1">&#39;Major Surgery&#39;</span><span class="p">))</span>
+
             <span class="c1"># create a dictionary to store the recovery times for each injury in days</span>
             <span class="n">minor_surg_recov_time_days</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s1">&#39;322&#39;</span><span class="p">:</span> <span class="mi">180</span><span class="p">,</span>
@@ -5511,7 +5593,8 @@
                 <span class="p">[</span><span class="s1">&#39;Injury treated not removed&#39;</span><span class="p">,</span> <span class="n">treated_code</span><span class="p">]</span>
             <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_date_death_no_med&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;RTI&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event_for_tomorrow</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_number_of_times_this_event_has_run</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_maximum_number_times_event_should_run</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;RTI&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event_for_tomorrow</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_date_death_no_med&#39;</span><span class="p">]):</span>
                 <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_date_death_no_med&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;rti_general_message&#39;</span><span class="p">,</span>
@@ -5858,7 +5941,7 @@
             <span class="n">label</span><span class="p">:</span> <span class="p">(</span>
                 <span class="nb">len</span><span class="p">(</span><span class="n">pop_subset</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">pop_subset</span><span class="p">[</span><span class="s1">&#39;rt_inj_severity&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;severe&#39;</span><span class="p">])</span>
                 <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">pop_subset</span><span class="p">)</span>
-            <span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">pop_subset</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot;none_injured&quot;</span>
+            <span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">pop_subset</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">label</span><span class="p">,</span> <span class="n">pop_subset</span> <span class="ow">in</span> <span class="n">population_subsets_with_injuries</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
         <span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">totmild</span> <span class="o">+=</span> <span class="p">(</span><span class="n">population_with_injuries</span><span class="o">.</span><span class="n">rt_inj_severity</span> <span class="o">==</span> <span class="s2">&quot;mild&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
@@ -5874,25 +5957,25 @@
                     <span class="n">description</span><span class="o">=</span><span class="s1">&#39;severity of injuries in simulation&#39;</span><span class="p">)</span>
         <span class="c1"># ==================================== Incidence ==============================================================</span>
         <span class="c1"># How many were involved in a RTI</span>
-        <span class="n">n_in_RTI</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">rt_road_traffic_inc</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">n_in_RTI</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">rt_road_traffic_inc</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
         <span class="n">children_in_RTI</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">rt_road_traffic_inc</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;age_years&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">19</span><span class="p">)])</span>
         <span class="n">children_alive</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;age_years&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">19</span><span class="p">])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">numerator</span> <span class="o">+=</span> <span class="n">n_in_RTI</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">totinjured</span> <span class="o">+=</span> <span class="n">n_in_RTI</span>
         <span class="c1"># How many were disabled</span>
-        <span class="n">n_perm_disabled</span> <span class="o">=</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">rt_perm_disability</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">n_perm_disabled</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">rt_perm_disability</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
         <span class="c1"># self.permdis += n_perm_disabled</span>
-        <span class="n">n_alive</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">n_alive</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">denominator</span> <span class="o">+=</span> <span class="p">(</span><span class="n">n_alive</span> <span class="o">-</span> <span class="n">n_in_RTI</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">12</span><span class="p">)</span>
-        <span class="n">n_immediate_death</span> <span class="o">=</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">rt_road_traffic_inc</span> <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">rt_imm_death</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">n_immediate_death</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">df</span><span class="o">.</span><span class="n">rt_road_traffic_inc</span> <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">rt_imm_death</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">deathonscene</span> <span class="o">+=</span> <span class="n">n_immediate_death</span>
         <span class="n">diedfromrtiidx</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">rt_imm_death</span> <span class="o">|</span> <span class="n">df</span><span class="o">.</span><span class="n">rt_post_med_death</span> <span class="o">|</span> <span class="n">df</span><span class="o">.</span><span class="n">rt_no_med_death</span> <span class="o">|</span> <span class="n">df</span><span class="o">.</span><span class="n">rt_death_from_shock</span> <span class="o">|</span>
                                   <span class="n">df</span><span class="o">.</span><span class="n">rt_unavailable_med_death</span><span class="p">]</span>
-        <span class="n">n_sought_care</span> <span class="o">=</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">rt_road_traffic_inc</span> <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">rt_med_int</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">n_sought_care</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">df</span><span class="o">.</span><span class="n">rt_road_traffic_inc</span> <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">rt_med_int</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">soughtmedcare</span> <span class="o">+=</span> <span class="n">n_sought_care</span>
-        <span class="n">n_death_post_med</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">rt_post_med_death</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">n_death_post_med</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">rt_post_med_death</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">deathaftermed</span> <span class="o">+=</span> <span class="n">n_death_post_med</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">deathwithoutmed</span> <span class="o">+=</span> <span class="n">df</span><span class="o">.</span><span class="n">rt_no_med_death</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">deathwithoutmed</span> <span class="o">+=</span> <span class="nb">int</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">rt_no_med_death</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">death_inc_numerator</span> <span class="o">+=</span> <span class="n">n_immediate_death</span> <span class="o">+</span> <span class="n">n_death_post_med</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">rt_no_med_death</span><span class="p">])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">death_in_denominator</span> <span class="o">+=</span> <span class="p">(</span><span class="n">n_alive</span> <span class="o">-</span> <span class="p">(</span><span class="n">n_immediate_death</span> <span class="o">+</span> <span class="n">n_death_post_med</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">rt_no_med_death</span><span class="p">])</span>
                                                  <span class="p">))</span> <span class="o">*</span> \
@@ -5901,7 +5984,7 @@
             <span class="n">percent_accidents_result_in_death</span> <span class="o">=</span> \
                 <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">deathonscene</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">deathaftermed</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">deathwithoutmed</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">numerator</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">percent_accidents_result_in_death</span> <span class="o">=</span> <span class="s1">&#39;none injured&#39;</span>
+            <span class="n">percent_accidents_result_in_death</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">)</span>
         <span class="n">maleinrti</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">rt_road_traffic_inc</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;sex&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;M&#39;</span><span class="p">)])</span>
         <span class="n">femaleinrti</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">rt_road_traffic_inc</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;sex&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;F&#39;</span><span class="p">)])</span>
 
@@ -5910,35 +5993,35 @@
             <span class="n">maleinrti</span> <span class="o">=</span> <span class="n">maleinrti</span> <span class="o">/</span> <span class="n">divider</span>
             <span class="n">femaleinrti</span> <span class="o">=</span> <span class="n">femaleinrti</span> <span class="o">/</span> <span class="n">divider</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">maleinrti</span> <span class="o">=</span> <span class="mi">1</span>
-            <span class="n">femaleinrti</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">maleinrti</span> <span class="o">=</span> <span class="mf">1.0</span>
+            <span class="n">femaleinrti</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="n">mfratio</span> <span class="o">=</span> <span class="p">[</span><span class="n">maleinrti</span><span class="p">,</span> <span class="n">femaleinrti</span><span class="p">]</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">n_in_RTI</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">rt_imm_death</span><span class="p">]))</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">percent_sought_care</span> <span class="o">=</span> <span class="n">n_sought_care</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_in_RTI</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">rt_imm_death</span><span class="p">]))</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">percent_sought_care</span> <span class="o">=</span> <span class="s1">&#39;none_injured&#39;</span>
+            <span class="n">percent_sought_care</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">n_sought_care</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">percent_died_post_care</span> <span class="o">=</span> <span class="n">n_death_post_med</span> <span class="o">/</span> <span class="n">n_sought_care</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">percent_died_post_care</span> <span class="o">=</span> <span class="s1">&#39;none_injured&#39;</span>
+            <span class="n">percent_died_post_care</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">n_sought_care</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">percentage_admitted_to_ICU_or_HDU</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">rt_med_int</span> <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">rt_in_icu_or_hdu</span><span class="p">])</span> <span class="o">/</span> <span class="n">n_sought_care</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">percentage_admitted_to_ICU_or_HDU</span> <span class="o">=</span> <span class="s1">&#39;none_injured&#39;</span>
+            <span class="n">percentage_admitted_to_ICU_or_HDU</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">n_alive</span> <span class="o">-</span> <span class="n">n_in_RTI</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">inc_rti</span> <span class="o">=</span> <span class="p">(</span><span class="n">n_in_RTI</span> <span class="o">/</span> <span class="p">((</span><span class="n">n_alive</span> <span class="o">-</span> <span class="n">n_in_RTI</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">12</span><span class="p">)))</span> <span class="o">*</span> <span class="mi">100000</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">inc_rti</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">inc_rti</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">children_alive</span> <span class="o">-</span> <span class="n">children_in_RTI</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">inc_rti_in_children</span> <span class="o">=</span> <span class="p">(</span><span class="n">children_in_RTI</span> <span class="o">/</span> <span class="p">((</span><span class="n">children_alive</span> <span class="o">-</span> <span class="n">children_in_RTI</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">12</span><span class="p">)))</span> <span class="o">*</span> <span class="mi">100000</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">inc_rti_in_children</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">inc_rti_in_children</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">n_alive</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">diedfromrtiidx</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">inc_rti_death</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">diedfromrtiidx</span><span class="p">)</span> <span class="o">/</span> <span class="p">((</span><span class="n">n_alive</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">diedfromrtiidx</span><span class="p">))</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">12</span><span class="p">)))</span> <span class="o">*</span> <span class="mi">100000</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">inc_rti_death</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">inc_rti_death</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">n_alive</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">rt_post_med_death</span><span class="p">]))</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">inc_post_med_death</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">rt_post_med_death</span><span class="p">])</span> <span class="o">/</span> <span class="p">((</span><span class="n">n_alive</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">rt_post_med_death</span><span class="p">]))</span> <span class="o">*</span>
                                                                        <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">12</span><span class="p">)))</span> <span class="o">*</span> <span class="mi">100000</span>
@@ -5948,21 +6031,21 @@
             <span class="n">inc_imm_death</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">rt_imm_death</span><span class="p">])</span> <span class="o">/</span> <span class="p">((</span><span class="n">n_alive</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">rt_imm_death</span><span class="p">]))</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">12</span><span class="p">)))</span> <span class="o">*</span> \
                             <span class="mi">100000</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">inc_imm_death</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">inc_imm_death</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">n_alive</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">rt_no_med_death</span><span class="p">]))</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">inc_death_no_med</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">rt_no_med_death</span><span class="p">])</span> <span class="o">/</span>
                                 <span class="p">((</span><span class="n">n_alive</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">rt_no_med_death</span><span class="p">]))</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">12</span><span class="p">)))</span> <span class="o">*</span> <span class="mi">100000</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">inc_death_no_med</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">inc_death_no_med</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">n_alive</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">rt_unavailable_med_death</span><span class="p">]))</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">inc_death_unavailable_med</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">rt_unavailable_med_death</span><span class="p">])</span> <span class="o">/</span>
                                          <span class="p">((</span><span class="n">n_alive</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">rt_unavailable_med_death</span><span class="p">]))</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">12</span><span class="p">)))</span> <span class="o">*</span> <span class="mi">100000</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">inc_death_unavailable_med</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">inc_death_unavailable_med</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fracdenominator</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">frac_incidence</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">totfracnumber</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">fracdenominator</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100000</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">frac_incidence</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">frac_incidence</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="c1"># calculate case fatality ratio for those injured who don&#39;t seek healthcare</span>
         <span class="n">did_not_seek_healthcare</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">rt_road_traffic_inc</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">rt_med_int</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">rt_diagnosed</span><span class="p">])</span>
         <span class="n">died_no_healthcare</span> <span class="o">=</span> \
@@ -5970,12 +6053,12 @@
         <span class="k">if</span> <span class="n">did_not_seek_healthcare</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">cfr_no_med</span> <span class="o">=</span> <span class="n">died_no_healthcare</span> <span class="o">/</span> <span class="n">did_not_seek_healthcare</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">cfr_no_med</span> <span class="o">=</span> <span class="s1">&#39;all_sought_care&#39;</span>
+            <span class="n">cfr_no_med</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">)</span>
         <span class="c1"># calculate incidence rate per 100,000 of deaths on scene</span>
         <span class="k">if</span> <span class="n">n_alive</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">inc_death_on_scene</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">rt_imm_death</span><span class="p">])</span> <span class="o">/</span> <span class="n">n_alive</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100000</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">12</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">inc_death_on_scene</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">inc_death_on_scene</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="n">dict_to_output</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s1">&#39;number involved in a rti&#39;</span><span class="p">:</span> <span class="n">n_in_RTI</span><span class="p">,</span>
             <span class="s1">&#39;incidence of rti per 100,000&#39;</span><span class="p">:</span> <span class="n">inc_rti</span><span class="p">,</span>
@@ -6013,7 +6096,7 @@
             <span class="n">percent_related_to_alcohol</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">injuredDemographics</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">injuredDemographics</span><span class="o">.</span><span class="n">li_ex_alc</span><span class="p">])</span> <span class="o">/</span> \
                                          <span class="nb">len</span><span class="p">(</span><span class="n">injuredDemographics</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">ZeroDivisionError</span><span class="p">:</span>
-            <span class="n">percent_related_to_alcohol</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">percent_related_to_alcohol</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="n">injured_demography_summary</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s1">&#39;males_in_rti&#39;</span><span class="p">:</span> <span class="n">injuredDemographics</span><span class="p">[</span><span class="s1">&#39;sex&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()[</span><span class="s1">&#39;M&#39;</span><span class="p">],</span>
             <span class="s1">&#39;females_in_rti&#39;</span><span class="p">:</span> <span class="n">injuredDemographics</span><span class="p">[</span><span class="s1">&#39;sex&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()[</span><span class="s1">&#39;F&#39;</span><span class="p">],</span>
@@ -6047,7 +6130,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on May 27, 2024.
+      <span class="lastupdated">Last updated on Aug 02, 2024.
       </span></p>
   </div>
 

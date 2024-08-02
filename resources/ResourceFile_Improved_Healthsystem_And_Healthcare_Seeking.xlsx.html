@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Improved Healthsystem And Healthcare Seeking (.xlsx) &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
+  <title>Improved Healthsystem And Healthcare Seeking (.xlsx) &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -17,7 +17,7 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../_static/documentation_options.js?v=f3d69a25"></script>
         <script src="../_static/doctools.js?v=9a2dae69"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -60,6 +60,7 @@
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">Resource files</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="cmd/index.html">cmd</a></li>
 <li class="toctree-l2"><a class="reference internal" href="contraception/index.html">contraception</a></li>
+<li class="toctree-l2"><a class="reference internal" href="costing/index.html">costing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="demography/index.html">demography</a></li>
 <li class="toctree-l2"><a class="reference internal" href="epilepsy/index.html">epilepsy</a></li>
 <li class="toctree-l2"><a class="reference internal" href="gbd/index.html">gbd</a></li>
@@ -1022,14 +1023,14 @@
 <td><p>Schisto</p></td>
 <td><p>delay_till_hsi_a_repeated</p></td>
 <td></td>
-<td><p>0.9999</p></td>
+<td><p>1.0000001</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>122</p></td>
 <td><p>Schisto</p></td>
 <td><p>delay_till_hsi_b_repeated</p></td>
 <td></td>
-<td><p>0.9999</p></td>
+<td><p>1.0000001</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>123</p></td>
@@ -1096,13 +1097,6 @@
 <td></td>
 </tr>
 <tr class="row-even"><td><p>132</p></td>
-<td><p>Tb</p></td>
-<td><p>rate_testing_general_pop</p></td>
-<td><p>0.9999</p></td>
-<td><p>0.9999</p></td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><p>133</p></td>
 <td><p>Tb</p></td>
 <td><p>prob_retained_ipt_6_months</p></td>
 <td></td>
@@ -1610,38 +1604,42 @@
 <td><p>1</p></td>
 </tr>
 <tr class="row-odd"><td><p>57</p></td>
-<td><p>rr_ever_stroke</p></td>
+<td><p>rr_hiv</p></td>
 <td><p>1</p></td>
 </tr>
 <tr class="row-even"><td><p>58</p></td>
-<td><p>rr_ever_heart_attack</p></td>
+<td><p>rr_ever_stroke</p></td>
 <td><p>1</p></td>
 </tr>
 <tr class="row-odd"><td><p>59</p></td>
-<td><p>rr_diabetes_on_medication</p></td>
+<td><p>rr_ever_heart_attack</p></td>
 <td><p>1</p></td>
 </tr>
 <tr class="row-even"><td><p>60</p></td>
-<td><p>rr_hypertension_on_medication</p></td>
+<td><p>rr_diabetes_on_medication</p></td>
 <td><p>1</p></td>
 </tr>
 <tr class="row-odd"><td><p>61</p></td>
-<td><p>rr_chronic_kidney_disease_on_medication</p></td>
+<td><p>rr_hypertension_on_medication</p></td>
 <td><p>1</p></td>
 </tr>
 <tr class="row-even"><td><p>62</p></td>
-<td><p>rr_chronic_lower_back_pain_on_medication</p></td>
+<td><p>rr_chronic_kidney_disease_on_medication</p></td>
 <td><p>1</p></td>
 </tr>
 <tr class="row-odd"><td><p>63</p></td>
-<td><p>rr_chronic_ischemic_heart_disease_on_medication</p></td>
+<td><p>rr_chronic_lower_back_pain_on_medication</p></td>
 <td><p>1</p></td>
 </tr>
 <tr class="row-even"><td><p>64</p></td>
-<td><p>rr_stroke_on_medication</p></td>
+<td><p>rr_chronic_ischemic_heart_disease_on_medication</p></td>
 <td><p>1</p></td>
 </tr>
 <tr class="row-odd"><td><p>65</p></td>
+<td><p>rr_stroke_on_medication</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>66</p></td>
 <td><p>rr_heart_attack_on_medication</p></td>
 <td><p>1</p></td>
 </tr>
@@ -3964,6 +3962,30 @@
 <td></td>
 <td><p>57.0001</p></td>
 </tr>
+<tr class="row-even"><td><p>10</p></td>
+<td><p>2020</p></td>
+<td><p>76</p></td>
+<td><p>99.9999</p></td>
+<td><p>89</p></td>
+<td><p>8</p></td>
+<td><p>45</p></td>
+<td><p>97</p></td>
+<td><p>76</p></td>
+<td></td>
+<td><p>48</p></td>
+</tr>
+<tr class="row-odd"><td><p>11</p></td>
+<td><p>2021</p></td>
+<td></td>
+<td><p>99.9999</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td><p>41</p></td>
+</tr>
 </tbody>
 </table>
 </section>
@@ -4182,7 +4204,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on May 27, 2024.
+      <span class="lastupdated">Last updated on Aug 02, 2024.
       </span></p>
   </div>
 

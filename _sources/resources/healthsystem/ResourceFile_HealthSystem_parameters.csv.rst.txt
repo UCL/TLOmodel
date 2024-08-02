@@ -27,4 +27,6 @@ HealthSystem parameters (.csv)
   18  yearly\_HR\_scaling\_mode                         no\_scaling
   19  year\_cons\_availability\_switch                  2100
   20  cons\_availability\_postSwitch                    default
+  21  use\_funded\_or\_actual\_staffing\_postSwitch     funded\_plus
+  22  year\_use\_funded\_or\_actual\_staffing\_switch   2100
 ====  ================================================  ============

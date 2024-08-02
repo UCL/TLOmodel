@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.cardio_metabolic_disorders &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
+  <title>tlo.methods.cardio_metabolic_disorders &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
@@ -16,7 +16,7 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../../../_static/documentation_options.js?v=f3d69a25"></script>
         <script src="../../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -110,7 +110,6 @@
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
 <span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">DAYS_IN_YEAR</span><span class="p">,</span> <span class="n">DateOffset</span><span class="p">,</span> <span class="n">Module</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">Property</span><span class="p">,</span> <span class="n">Types</span><span class="p">,</span> <span class="n">logging</span>
-<span class="kn">from</span> <span class="nn">tlo.core</span> <span class="kn">import</span> <span class="n">IndividualPropertyUpdates</span>
 <span class="kn">from</span> <span class="nn">tlo.events</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">,</span> <span class="n">RegularEvent</span>
 <span class="kn">from</span> <span class="nn">tlo.lm</span> <span class="kn">import</span> <span class="n">LinearModel</span><span class="p">,</span> <span class="n">LinearModelType</span><span class="p">,</span> <span class="n">Predictor</span>
 <span class="kn">from</span> <span class="nn">tlo.methods</span> <span class="kn">import</span> <span class="n">Metadata</span>
@@ -118,11 +117,13 @@
 <span class="kn">from</span> <span class="nn">tlo.methods.causes</span> <span class="kn">import</span> <span class="n">Cause</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.dxmanager</span> <span class="kn">import</span> <span class="n">DxTest</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.hsi_event</span> <span class="kn">import</span> <span class="n">HSI_Event</span>
+<span class="kn">from</span> <span class="nn">tlo.methods.hsi_generic_first_appts</span> <span class="kn">import</span> <span class="n">GenericFirstAppointmentsMixin</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.symptommanager</span> <span class="kn">import</span> <span class="n">Symptom</span>
 <span class="kn">from</span> <span class="nn">tlo.util</span> <span class="kn">import</span> <span class="n">random_date</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">tlo.population</span> <span class="kn">import</span> <span class="n">PatientDetails</span>
+    <span class="kn">from</span> <span class="nn">tlo.methods.hsi_generic_first_appts</span> <span class="kn">import</span> <span class="n">HSIEventScheduler</span>
+    <span class="kn">from</span> <span class="nn">tlo.population</span> <span class="kn">import</span> <span class="n">IndividualProperties</span>
 
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
 <span class="c1">#   MODULE DEFINITIONS</span>
@@ -133,7 +134,7 @@
 
 <div class="viewcode-block" id="CardioMetabolicDisorders">
 <a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders">[docs]</a>
-<span class="k">class</span> <span class="nc">CardioMetabolicDisorders</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">CardioMetabolicDisorders</span><span class="p">(</span><span class="n">Module</span><span class="p">,</span> <span class="n">GenericFirstAppointmentsMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    CardioMetabolicDisorders module covers a subset of cardio-metabolic conditions and events. Conditions are binary</span>
 <span class="sd">    and individuals experience a risk of acquiring or losing a condition based on annual probability and</span>
@@ -152,7 +153,7 @@
 
     <span class="n">INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Demography&#39;</span><span class="p">,</span> <span class="s1">&#39;Lifestyle&#39;</span><span class="p">,</span> <span class="s1">&#39;HealthSystem&#39;</span><span class="p">,</span> <span class="s1">&#39;SymptomManager&#39;</span><span class="p">}</span>
 
-    <span class="n">OPTIONAL_INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;HealthBurden&#39;</span><span class="p">}</span>
+    <span class="n">OPTIONAL_INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;HealthBurden&#39;</span><span class="p">,</span> <span class="s1">&#39;Hiv&#39;</span><span class="p">}</span>
 
     <span class="n">ADDITIONAL_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Depression&#39;</span><span class="p">}</span>
 
@@ -703,9 +704,7 @@
         <span class="c1"># LinearModel expects native python types - if it&#39;s numpy type, convert it</span>
         <span class="n">baseline_annual_probability</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">baseline_annual_probability</span><span class="p">)</span>
 
-        <span class="n">linearmodel</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="p">(</span>
-            <span class="n">LinearModelType</span><span class="o">.</span><span class="n">MULTIPLICATIVE</span><span class="p">,</span>
-            <span class="n">baseline_annual_probability</span><span class="p">,</span>
+        <span class="n">predictors</span> <span class="o">=</span> <span class="p">[</span>
             <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;sex&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;M&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_male&#39;</span><span class="p">]),</span>
             <span class="n">Predictor</span><span class="p">(</span>
                 <span class="s1">&#39;age_years&#39;</span><span class="p">,</span>
@@ -798,6 +797,17 @@
                 <span class="s1">&#39;rr_chronic_ischemic_heart_disease_on_medication&#39;</span><span class="p">]),</span>
             <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;nc_ever_stroke_on_medication&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_stroke_on_medication&#39;</span><span class="p">]),</span>
             <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;nc_ever_heart_attack_on_medication&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_heart_attack_on_medication&#39;</span><span class="p">])</span>
+        <span class="p">]</span>
+
+        <span class="n">conditional_predictors</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">Predictor</span><span class="p">()</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;hv_inf &amp; &#39;</span>
+                             <span class="s1">&#39;(hv_art != &quot;on_VL_suppressed&quot;)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_hiv&#39;</span><span class="p">]),</span>
+        <span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;Hiv&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span> <span class="k">else</span> <span class="p">[]</span>
+
+        <span class="n">linearmodel</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="p">(</span>
+            <span class="n">LinearModelType</span><span class="o">.</span><span class="n">MULTIPLICATIVE</span><span class="p">,</span>
+            <span class="n">baseline_annual_probability</span><span class="p">,</span>
+            <span class="o">*</span><span class="p">(</span><span class="n">predictors</span> <span class="o">+</span> <span class="n">conditional_predictors</span><span class="p">)</span>
         <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">linearmodel</span></div>
@@ -928,19 +938,20 @@
 <a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders.do_at_generic_first_appt">[docs]</a>
     <span class="k">def</span> <span class="nf">do_at_generic_first_appt</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">patient_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-        <span class="n">patient_details</span><span class="p">:</span> <span class="n">PatientDetails</span><span class="p">,</span>
+        <span class="n">person_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">individual_properties</span><span class="p">:</span> <span class="n">IndividualProperties</span><span class="p">,</span>
         <span class="n">symptoms</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">schedule_hsi_event</span><span class="p">:</span> <span class="n">HSIEventScheduler</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">IndividualPropertyUpdates</span><span class="p">:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># This is called by the HSI generic first appts module whenever a</span>
         <span class="c1"># person attends an appointment and determines if the person will</span>
         <span class="c1"># be tested for one or more conditions.</span>
         <span class="c1"># A maximum of one instance of `HSI_CardioMetabolicDisorders_Investigations`</span>
         <span class="c1"># is created for the person, during which multiple conditions can</span>
         <span class="c1"># be investigated.</span>
-        <span class="k">if</span> <span class="n">patient_details</span><span class="o">.</span><span class="n">age_years</span> <span class="o">&lt;=</span> <span class="mi">5</span><span class="p">:</span>
-            <span class="k">return</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">individual_properties</span><span class="p">[</span><span class="s2">&quot;age_years&quot;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">5</span><span class="p">:</span>
+            <span class="k">return</span>
 
         <span class="c1"># The list of conditions that will be investigated in follow-up HSI</span>
         <span class="n">conditions_to_investigate</span> <span class="o">=</span> <span class="p">[]</span>
@@ -949,11 +960,11 @@
 
         <span class="c1"># Determine if there are any conditions that should be investigated:</span>
         <span class="k">for</span> <span class="n">condition</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">conditions</span><span class="p">:</span>
-            <span class="n">is_already_diagnosed</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">patient_details</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;nc_</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s2">_ever_diagnosed&quot;</span><span class="p">)</span>
+            <span class="n">is_already_diagnosed</span> <span class="o">=</span> <span class="n">individual_properties</span><span class="p">[</span>
+                <span class="sa">f</span><span class="s2">&quot;nc_</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s2">_ever_diagnosed&quot;</span>
+            <span class="p">]</span>
             <span class="n">has_symptom</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s2">_symptoms&quot;</span> <span class="ow">in</span> <span class="n">symptoms</span>
-            <span class="n">date_of_last_test</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span>
-                <span class="n">patient_details</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;nc_</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s2">_date_last_test&quot;</span>
-            <span class="p">)</span>
+            <span class="n">date_of_last_test</span> <span class="o">=</span> <span class="n">individual_properties</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;nc_</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s2">_date_last_test&quot;</span><span class="p">]</span>
             <span class="n">next_test_due</span> <span class="o">=</span> <span class="p">(</span>
                 <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">date_of_last_test</span><span class="p">)</span>
                 <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">-</span> <span class="n">date_of_last_test</span><span class="p">)</span><span class="o">.</span><span class="n">days</span> <span class="o">&gt;</span> <span class="n">DAYS_IN_YEAR</span> <span class="o">/</span> <span class="mi">2</span>
@@ -981,37 +992,35 @@
         <span class="k">if</span> <span class="n">conditions_to_investigate</span><span class="p">:</span>
             <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_CardioMetabolicDisorders_Investigations</span><span class="p">(</span>
                 <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
-                <span class="n">person_id</span><span class="o">=</span><span class="n">patient_id</span><span class="p">,</span>
+                <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
                 <span class="n">conditions_to_investigate</span><span class="o">=</span><span class="n">conditions_to_investigate</span><span class="p">,</span>
                 <span class="n">has_any_cmd_symptom</span><span class="o">=</span><span class="n">has_any_cmd_symptom</span><span class="p">,</span>
             <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">healthsystem</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></div>
+            <span class="n">schedule_hsi_event</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="CardioMetabolicDisorders.do_at_generic_first_appt_emergency">
 <a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders.do_at_generic_first_appt_emergency">[docs]</a>
     <span class="k">def</span> <span class="nf">do_at_generic_first_appt_emergency</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">patient_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-        <span class="n">patient_details</span><span class="p">:</span> <span class="n">PatientDetails</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">symptoms</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">person_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">individual_properties</span><span class="p">:</span> <span class="n">IndividualProperties</span><span class="p">,</span>
+        <span class="n">symptoms</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">schedule_hsi_event</span><span class="p">:</span> <span class="n">HSIEventScheduler</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">IndividualPropertyUpdates</span><span class="p">:</span>
-        <span class="c1"># This is called by the HSI generic first appts module whenever</span>
-        <span class="c1"># a person attends an emergency appointment and determines if they</span>
-        <span class="c1"># will receive emergency care based on the duration of time since</span>
-        <span class="c1"># symptoms have appeared. A maximum of one instance of</span>
-        <span class="c1"># `HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment`</span>
-        <span class="c1"># is created for the person, during which multiple events can be</span>
-        <span class="c1"># investigated.</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># This is called by the HSI generic first appts module whenever a person attends</span>
+        <span class="c1"># an emergency appointment and determines if they will receive emergency care</span>
+        <span class="c1"># based on the duration of time since symptoms have appeared. A maximum of one</span>
+        <span class="c1"># instance of `HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment`</span>
+        <span class="c1"># is created for the person, during which multiple events can be investigated.</span>
         <span class="n">ev_to_investigate</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">ev</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">events</span><span class="p">:</span>
-            <span class="c1"># If the person has symptoms of damage from within the last 3 days,</span>
-            <span class="c1"># schedule them for emergency care</span>
+            <span class="c1"># If the person has symptoms of damage from within the last 3 days, schedule</span>
+            <span class="c1"># them for emergency care</span>
             <span class="k">if</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ev</span><span class="si">}</span><span class="s2">_damage&quot;</span> <span class="ow">in</span> <span class="n">symptoms</span> <span class="ow">and</span> <span class="p">(</span>
                 <span class="p">(</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
-                    <span class="o">-</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">patient_details</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;nc_</span><span class="si">{</span><span class="n">ev</span><span class="si">}</span><span class="s2">_date_last_event&quot;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">-</span> <span class="n">individual_properties</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;nc_</span><span class="si">{</span><span class="n">ev</span><span class="si">}</span><span class="s2">_date_last_event&quot;</span><span class="p">]</span>
                 <span class="p">)</span><span class="o">.</span><span class="n">days</span>
                 <span class="o">&lt;=</span> <span class="mi">3</span>
             <span class="p">):</span>
@@ -1020,10 +1029,10 @@
         <span class="k">if</span> <span class="n">ev_to_investigate</span><span class="p">:</span>
             <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment</span><span class="p">(</span>
                 <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
-                <span class="n">person_id</span><span class="o">=</span><span class="n">patient_id</span><span class="p">,</span>
+                <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
                 <span class="n">events_to_investigate</span><span class="o">=</span><span class="n">ev_to_investigate</span><span class="p">,</span>
             <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">healthsystem</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
+            <span class="n">schedule_hsi_event</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
 </div>
 
 
@@ -1471,7 +1480,7 @@
                         <span class="n">df</span><span class="o">.</span><span class="n">age_years</span> <span class="o">&gt;=</span> <span class="mi">20</span><span class="p">)])</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;nc_</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">age_years</span> <span class="o">&gt;=</span> <span class="mi">20</span><span class="p">)])</span>
                 <span class="p">}</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">diagnosed</span> <span class="o">=</span> <span class="p">{</span><span class="mf">0.0</span><span class="p">}</span>
+                <span class="n">diagnosed</span> <span class="o">=</span> <span class="p">{</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s1">_diagnosis_prevalence&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">)}</span>
 
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                 <span class="n">key</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s1">_diagnosis_prevalence&#39;</span><span class="p">,</span>
@@ -1485,7 +1494,7 @@
                         <span class="n">df</span><span class="o">.</span><span class="n">age_years</span> <span class="o">&gt;=</span> <span class="mi">20</span><span class="p">)])</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;nc_</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">age_years</span> <span class="o">&gt;=</span> <span class="mi">20</span><span class="p">)])</span>
                 <span class="p">}</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">on_medication</span> <span class="o">=</span> <span class="p">{</span><span class="mf">0.0</span><span class="p">}</span>
+                <span class="n">on_medication</span> <span class="o">=</span> <span class="p">{</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s1">_medication_prevalence&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">)}</span>
 
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                 <span class="n">key</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s1">_medication_prevalence&#39;</span><span class="p">,</span>
@@ -1609,6 +1618,7 @@
             <span class="k">return</span> <span class="n">hs</span><span class="o">.</span><span class="n">get_blank_appt_footprint</span><span class="p">()</span>
 
         <span class="c1"># Run a test to diagnose whether the person has condition:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_equipment</span><span class="p">({</span><span class="s1">&#39;Blood pressure machine&#39;</span><span class="p">})</span>
         <span class="n">dx_result</span> <span class="o">=</span> <span class="n">hs</span><span class="o">.</span><span class="n">dx_manager</span><span class="o">.</span><span class="n">run_dx_test</span><span class="p">(</span>
             <span class="n">dx_tests_to_run</span><span class="o">=</span><span class="s1">&#39;assess_hypertension&#39;</span><span class="p">,</span>
             <span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span>
@@ -1670,6 +1680,9 @@
         <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;nc_</span><span class="si">{</span><span class="n">_c</span><span class="si">}</span><span class="s1">_ever_diagnosed&#39;</span><span class="p">]:</span>
             <span class="k">return</span>
 
+        <span class="k">if</span> <span class="n">_c</span> <span class="o">==</span> <span class="s1">&#39;chronic_ischemic_heart_disease&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_equipment</span><span class="p">({</span><span class="s1">&#39;Electrocardiogram&#39;</span><span class="p">,</span> <span class="s1">&#39;Stethoscope&#39;</span><span class="p">})</span>
+
         <span class="c1"># Run a test to diagnose whether the person has condition:</span>
         <span class="n">dx_result</span> <span class="o">=</span> <span class="n">hs</span><span class="o">.</span><span class="n">dx_manager</span><span class="o">.</span><span class="n">run_dx_test</span><span class="p">(</span>
             <span class="n">dx_tests_to_run</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;assess_</span><span class="si">{</span><span class="n">_c</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
@@ -1705,6 +1718,11 @@
             <span class="k">return</span> <span class="n">hs</span><span class="o">.</span><span class="n">get_blank_appt_footprint</span><span class="p">()</span>
 
         <span class="c1"># Do test and trigger treatment (if necessary) for each condition:</span>
+        <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conditions_to_investigate</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span>
+            <span class="p">[</span><span class="s1">&#39;diabetes&#39;</span><span class="p">,</span> <span class="s1">&#39;chronic_kidney_disease&#39;</span><span class="p">,</span> <span class="s1">&#39;chronic_ischemic_hd&#39;</span><span class="p">]</span>
+        <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_equipment</span><span class="p">({</span><span class="s1">&#39;Analyser, Haematology&#39;</span><span class="p">,</span> <span class="s1">&#39;Analyser, Combined Chemistry and Electrolytes&#39;</span><span class="p">})</span>
+
         <span class="n">hsi_scheduled</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">do_for_each_condition</span><span class="p">(</span><span class="n">_c</span><span class="p">)</span> <span class="k">for</span> <span class="n">_c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">conditions_to_investigate</span><span class="p">]</span>
 
         <span class="c1"># If no follow-up treatment scheduled but the person has at least 2 risk factors, start weight loss treatment</span>
@@ -1728,6 +1746,7 @@
             <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;hypertension_hsi&#39;</span><span class="p">][</span><span class="s1">&#39;pr_assessed_other_symptoms&#39;</span><span class="p">])</span>
         <span class="p">):</span>
             <span class="c1"># Run a test to diagnose whether the person has condition:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_equipment</span><span class="p">({</span><span class="s1">&#39;Blood pressure machine&#39;</span><span class="p">})</span>
             <span class="n">dx_result</span> <span class="o">=</span> <span class="n">hs</span><span class="o">.</span><span class="n">dx_manager</span><span class="o">.</span><span class="n">run_dx_test</span><span class="p">(</span>
                 <span class="n">dx_tests_to_run</span><span class="o">=</span><span class="s1">&#39;assess_hypertension&#39;</span><span class="p">,</span>
                 <span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span>
@@ -1784,6 +1803,8 @@
 
         <span class="c1"># Don&#39;t advise those with CKD to lose weight, but do so for all other conditions if BMI is higher than normal</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">condition</span> <span class="o">!=</span> <span class="s1">&#39;chronic_kidney_disease&#39;</span> <span class="ow">and</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;li_bmi&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_equipment</span><span class="p">({</span><span class="s1">&#39;Weighing scale&#39;</span><span class="p">})</span>
+
             <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;nc_ever_weight_loss_treatment&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="c1"># Schedule a post-weight loss event for individual to potentially lose weight in next 6-12 months:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">CardioMetabolicDisordersWeightLossEvent</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">person_id</span><span class="p">),</span>
@@ -1795,10 +1816,23 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_blank_appt_footprint</span><span class="p">()</span>
         <span class="k">assert</span> <span class="n">person</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;nc_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">condition</span><span class="si">}</span><span class="s1">_ever_diagnosed&#39;</span><span class="p">],</span> <span class="s2">&quot;The person is not diagnosed and so should not be &quot;</span> \
                                                               <span class="s2">&quot;receiving an HSI.&quot;</span>
+
+        <span class="c1"># Monthly doses of medications as follows. Diabetes - 1000mg metformin daily (1000*30.5),</span>
+        <span class="c1"># hypertension - 25mg hydrochlorothiazide daily (25*30.5), CKD 1 dialysis bag (estimate),</span>
+        <span class="c1"># lower back pain - 2400mg aspirin daily  (2400*30.5), CIHD - 75mg aspirin daily (75*30.5)</span>
+        <span class="n">dose</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;diabetes&#39;</span><span class="p">:</span> <span class="mi">30_500</span><span class="p">,</span>
+                <span class="s1">&#39;hypertension&#39;</span><span class="p">:</span> <span class="mi">610</span><span class="p">,</span>
+                <span class="s1">&#39;chronic_kidney_disease&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s1">&#39;chronic_lower_back_pain&#39;</span><span class="p">:</span> <span class="mi">73_200</span><span class="p">,</span>
+                <span class="s1">&#39;chronic_ischemic_hd&#39;</span><span class="p">:</span> <span class="mi">2288</span><span class="p">,</span>
+                <span class="s1">&#39;ever_stroke&#39;</span><span class="p">:</span> <span class="mi">2288</span><span class="p">,</span>
+                <span class="s1">&#39;ever_heart_attack&#39;</span><span class="p">:</span> <span class="mi">2288</span><span class="p">}</span>
+
         <span class="c1"># Check availability of medication for condition</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
-            <span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">condition</span><span class="si">}</span><span class="s1">_hsi&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;medication_item_code&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
-        <span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="o">=</span>
+                                <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">condition</span><span class="si">}</span><span class="s1">_hsi&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                                    <span class="s1">&#39;medication_item_code&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">):</span> <span class="n">dose</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">condition</span><span class="p">]}):</span>
+
             <span class="c1"># If medication is available, flag as being on medication</span>
             <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;nc_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">condition</span><span class="si">}</span><span class="s1">_on_medication&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="c1"># Determine if the medication will work to prevent death</span>
@@ -1873,10 +1907,21 @@
             <span class="c1"># Return the blank_appt_footprint() so that this HSI does not occupy any time resources</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_blank_appt_footprint</span><span class="p">()</span>
 
+        <span class="c1"># Monthly doses of medications as follows. Diabetes - 1000mg metformin daily (1000*30.5),</span>
+        <span class="c1"># hypertension - 25mg hydrochlorothiazide daily (25*30.5), CKD 1 dialysis bag (estimate),</span>
+        <span class="c1"># lower back pain - 2400mg aspirin daily  (2400*30.5), CIHD - 75mg aspirin daily (75*30.5)</span>
+        <span class="n">dose</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;diabetes&#39;</span><span class="p">:</span> <span class="mi">30_500</span><span class="p">,</span>
+                <span class="s1">&#39;hypertension&#39;</span><span class="p">:</span> <span class="mi">610</span><span class="p">,</span>
+                <span class="s1">&#39;chronic_kidney_disease&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s1">&#39;chronic_lower_back_pain&#39;</span><span class="p">:</span> <span class="mi">73_200</span><span class="p">,</span>
+                <span class="s1">&#39;chronic_ischemic_hd&#39;</span><span class="p">:</span> <span class="mi">2288</span><span class="p">,</span>
+                <span class="s1">&#39;ever_stroke&#39;</span><span class="p">:</span> <span class="mi">2288</span><span class="p">,</span>
+                <span class="s1">&#39;ever_heart_attack&#39;</span><span class="p">:</span> <span class="mi">2288</span><span class="p">}</span>
+
         <span class="c1"># Check availability of medication for condition</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
-            <span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">condition</span><span class="si">}</span><span class="s1">_hsi&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;medication_item_code&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
-        <span class="p">):</span>
+            <span class="n">item_codes</span><span class="o">=</span><span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">condition</span><span class="si">}</span><span class="s1">_hsi&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;medication_item_code&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+                        <span class="p">:</span> <span class="n">dose</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">condition</span><span class="p">]}):</span>
             <span class="c1"># Schedule their next HSI for a refill of medication, one month from now</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
                 <span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
@@ -1941,6 +1986,12 @@
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
 
         <span class="c1"># Run a test to diagnose whether the person has condition:</span>
+        <span class="k">if</span> <span class="n">_ev</span> <span class="o">==</span> <span class="s1">&#39;ever_stroke&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_equipment</span><span class="p">({</span><span class="s1">&#39;Computed Tomography (CT machine)&#39;</span><span class="p">,</span> <span class="s1">&#39;CT scanner accessories&#39;</span><span class="p">})</span>
+
+        <span class="k">if</span> <span class="n">_ev</span> <span class="o">==</span> <span class="s1">&#39;ever_heart_attack&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_equipment</span><span class="p">({</span><span class="s1">&#39;Electrocardiogram&#39;</span><span class="p">})</span>
+
         <span class="n">dx_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dx_manager</span><span class="o">.</span><span class="n">run_dx_test</span><span class="p">(</span>
             <span class="n">dx_tests_to_run</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;assess_</span><span class="si">{</span><span class="n">_ev</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
             <span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span>
@@ -1950,10 +2001,13 @@
             <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;nc_</span><span class="si">{</span><span class="n">_ev</span><span class="si">}</span><span class="s1">_date_diagnosis&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
             <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;nc_</span><span class="si">{</span><span class="n">_ev</span><span class="si">}</span><span class="s1">_ever_diagnosed&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;prob_care_provided_given_seek_emergency_care&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">():</span>
+
                 <span class="c1"># If care is provided....</span>
+                <span class="n">dose</span> <span class="o">=</span> <span class="mi">20</span> <span class="k">if</span> <span class="n">_ev</span> <span class="o">==</span> <span class="s1">&#39;ever_stroke&#39;</span> <span class="k">else</span> <span class="mi">40</span>
+
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
-                    <span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">_ev</span><span class="si">}</span><span class="s1">_hsi&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
-                        <span class="s1">&#39;emergency_medication_item_code&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+                    <span class="n">item_codes</span><span class="o">=</span><span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">_ev</span><span class="si">}</span><span class="s1">_hsi&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                        <span class="s1">&#39;emergency_medication_item_code&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">):</span> <span class="n">dose</span><span class="p">}</span>
                 <span class="p">):</span>
                     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;debug&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;Treatment will be provided.&#39;</span><span class="p">)</span>
                     <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;nc_</span><span class="si">{</span><span class="n">_ev</span><span class="si">}</span><span class="s1">_on_medication&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
@@ -2000,6 +2054,7 @@
             <span class="n">data</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;This is HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment: &#39;</span>
                   <span class="sa">f</span><span class="s1">&#39;The squeeze-factor is </span><span class="si">{</span><span class="n">squeeze_factor</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">),</span>
         <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_equipment</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">healthcare_system</span><span class="o">.</span><span class="n">equipment</span><span class="o">.</span><span class="n">from_pkg_names</span><span class="p">(</span><span class="s1">&#39;ICU&#39;</span><span class="p">))</span>
 
         <span class="k">for</span> <span class="n">_ev</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">events_to_investigate</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">do_for_each_event_to_be_investigated</span><span class="p">(</span><span class="n">_ev</span><span class="p">)</span>
@@ -2046,7 +2101,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on May 27, 2024.
+      <span class="lastupdated">Last updated on Aug 02, 2024.
       </span></p>
   </div>
 

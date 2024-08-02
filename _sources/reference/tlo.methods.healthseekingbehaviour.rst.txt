@@ -6,7 +6,7 @@ tlo.methods.healthseekingbehaviour module
 
 .. autoclass:: HealthSeekingBehaviour
 
-     Bases: :class:`tlo.core.Module`
+     Bases: :class:`tlo.core.Module`, :class:`tlo.methods.hsi_generic_first_appts.GenericFirstAppointmentsMixin`
 
 
      **PARAMETERS:**
@@ -79,11 +79,11 @@ tlo.methods.healthseekingbehaviour module
 
      ADDITIONAL_DEPENDENCIES : {'Lifestyle'}
 
-     INIT_DEPENDENCIES : {'HealthSystem', 'Demography', 'SymptomManager'}
+     INIT_DEPENDENCIES : {'Demography', 'HealthSystem', 'SymptomManager'}
 
      METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>}
 
-     force_any_symptom_to_lead_to_healthcareseeking : <property object at 0x11cb50b30>
+     force_any_symptom_to_lead_to_healthcareseeking : <property object at 0x1191c2750>
 
      **Functions (defined or overridden in class HealthSeekingBehaviour):**
 

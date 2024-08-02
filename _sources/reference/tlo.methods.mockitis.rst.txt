@@ -6,7 +6,7 @@ tlo.methods.mockitis module
 
 .. autoclass:: Mockitis
 
-     Bases: :class:`tlo.core.Module`
+     Bases: :class:`tlo.core.Module`, :class:`tlo.methods.hsi_generic_first_appts.GenericFirstAppointmentsMixin`
 
 
      **PARAMETERS:**
@@ -64,13 +64,13 @@ tlo.methods.mockitis module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'Mockitis': <tlo.methods.causes.Cause object at 0x11d0236d0>}
+     CAUSES_OF_DEATH : {'Mockitis': <tlo.methods.causes.Cause object at 0x119333510>}
 
-     CAUSES_OF_DISABILITY : {'Mockitis': <tlo.methods.causes.Cause object at 0x11d0235d0>}
+     CAUSES_OF_DISABILITY : {'Mockitis': <tlo.methods.causes.Cause object at 0x119332ad0>}
 
      INIT_DEPENDENCIES : {'Demography', 'SymptomManager'}
 
-     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 

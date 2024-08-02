@@ -68,12 +68,12 @@ tlo.methods.demography module
         * - mother_id
           - INT
           - Unique identifier of mother of this individual
-        * - district_num_of_residence
-          - INT
-          - The district number in which the person is resident
         * - cause_of_death
           - CATEGORICAL
           - The cause of death of this individual (the tlo_cause defined by the module).  Possible values are: [SET_AT_RUNTIME, ]
+        * - district_num_of_residence
+          - CATEGORICAL
+          - The district number in which the person is resident.  Possible values are: [SET_AT_RUNTIME, ]
         * - district_of_residence
           - CATEGORICAL
           - The district (name) of residence (mapped from district_num_of_residence)..  Possible values are: [SET_AT_RUNTIME, ]

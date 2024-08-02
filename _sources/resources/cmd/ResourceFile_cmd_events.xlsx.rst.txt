@@ -79,15 +79,16 @@ ever_stroke
   54  rr\_chronic\_lower\_back\_pain                           1
   55  rr\_chronic\_ischemic\_heart\_disease                    2.38
   56  rr\_cancers                                              1
-  57  rr\_ever\_stroke                                       180
-  58  rr\_ever\_heart\_attack                                  1
-  59  rr\_diabetes\_on\_medication                             0.59    UK Prospective Diabetes Study (UKPDS) Group, Effect of intensive blood-glucose control with metformin on complications in overweight patients with type 2 diabetes (UKPDS 34), The Lancet 1998
-  60  rr\_hypertension\_on\_medication                         0.66    Neal et al., Effects of ACE inhibitors, calcium antagonists, and other blood- pressure-lowering drugs: results of prospectively designed overviews of randomised trials. Blood Pressure Lowering Treatment Trialists' Collaboration, The Lancet 2000
-  61  rr\_chronic\_kidney\_disease\_on\_medication             1
-  62  rr\_chronic\_lower\_back\_pain\_on\_medication           1
-  63  rr\_chronic\_ischemic\_heart\_disease\_on\_medication    0.9     Gelbenegger et al., Aspirin for primary prevention of cardiovascular disease, BMC Medicine 2019
-  64  rr\_stroke\_on\_medication                               1
-  65  rr\_heart\_attack\_on\_medication                        1
+  57  rr\_hiv                                                  1
+  58  rr\_ever\_stroke                                       180
+  59  rr\_ever\_heart\_attack                                  1
+  60  rr\_diabetes\_on\_medication                             0.59    UK Prospective Diabetes Study (UKPDS) Group, Effect of intensive blood-glucose control with metformin on complications in overweight patients with type 2 diabetes (UKPDS 34), The Lancet 1998
+  61  rr\_hypertension\_on\_medication                         0.66    Neal et al., Effects of ACE inhibitors, calcium antagonists, and other blood- pressure-lowering drugs: results of prospectively designed overviews of randomised trials. Blood Pressure Lowering Treatment Trialists' Collaboration, The Lancet 2000
+  62  rr\_chronic\_kidney\_disease\_on\_medication             1
+  63  rr\_chronic\_lower\_back\_pain\_on\_medication           1
+  64  rr\_chronic\_ischemic\_heart\_disease\_on\_medication    0.9     Gelbenegger et al., Aspirin for primary prevention of cardiovascular disease, BMC Medicine 2019
+  65  rr\_stroke\_on\_medication                               1
+  66  rr\_heart\_attack\_on\_medication                        1
 ====  =====================================================  ========  ====================================================================================================================================================================================================================================================
 
 ever_heart_attack
@@ -153,14 +154,15 @@ ever_heart_attack
   54  rr\_chronic\_lower\_back\_pain                          1
   55  rr\_chronic\_ischemic\_heart\_disease                   3
   56  rr\_cancers                                             1
-  57  rr\_ever\_stroke                                        1
-  58  rr\_ever\_heart\_attack                                 1
-  59  rr\_diabetes\_on\_medication                            0.61    UK Prospective Diabetes Study (UKPDS) Group, Effect of intensive blood-glucose control with metformin on complications in overweight patients with type 2 diabetes (UKPDS 34), The Lancet 1998
-  60  rr\_hypertension\_on\_medication                        1
-  61  rr\_chronic\_kidney\_disease\_on\_medication            1
-  62  rr\_chronic\_lower\_back\_pain\_on\_medication          1
-  63  rr\_chronic\_ischemic\_heart\_disease\_on\_medication   0.86    Gelbenegger et al., Aspirin for primary prevention of cardiovascular disease, BMC Medicine 2019
-  64  rr\_stroke\_on\_medication                              1
-  65  rr\_heart\_attack\_on\_medication                       1
+  57  rr\_hiv                                                 1
+  58  rr\_ever\_stroke                                        1
+  59  rr\_ever\_heart\_attack                                 1
+  60  rr\_diabetes\_on\_medication                            0.61    UK Prospective Diabetes Study (UKPDS) Group, Effect of intensive blood-glucose control with metformin on complications in overweight patients with type 2 diabetes (UKPDS 34), The Lancet 1998
+  61  rr\_hypertension\_on\_medication                        1
+  62  rr\_chronic\_kidney\_disease\_on\_medication            1
+  63  rr\_chronic\_lower\_back\_pain\_on\_medication          1
+  64  rr\_chronic\_ischemic\_heart\_disease\_on\_medication   0.86    Gelbenegger et al., Aspirin for primary prevention of cardiovascular disease, BMC Medicine 2019
+  65  rr\_stroke\_on\_medication                              1
+  66  rr\_heart\_attack\_on\_medication                       1
 ====  =====================================================  =======  ==============================================================================================================================================================================================
 

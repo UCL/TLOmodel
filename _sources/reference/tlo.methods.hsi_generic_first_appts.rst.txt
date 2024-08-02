@@ -4,7 +4,7 @@ tlo.methods.hsi_generic_first_appts module
 .. automodule:: tlo.methods.hsi_generic_first_appts
 
 
-.. autoclass:: HSI_BaseGenericFirstAppt
+.. autoclass:: _BaseHSIGenericFirstAppt
 
      Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
@@ -12,15 +12,15 @@ tlo.methods.hsi_generic_first_appts module
 
      **Class attributes:**
 
-     __annotations__ : {'MODULE_METHOD_ON_APPLY': "Literal['do_at_generic_first_appt', 'do_at_generic_first_appt_emergency']"}
+     __annotations__ : {}
 
-     **Functions (defined or overridden in class HSI_BaseGenericFirstAppt):**
+     **Functions (defined or overridden in class _BaseHSIGenericFirstAppt):**
 
      .. automethod:: __init__
 
      .. automethod:: _diagnosis_function
 
-     .. automethod:: _do_on_generic_first_appt
+     .. automethod:: _do_at_generic_first_appt_for_module
 
      .. automethod:: apply
 
@@ -33,19 +33,19 @@ tlo.methods.hsi_generic_first_appts module
 
 .. autoclass:: HSI_GenericNonEmergencyFirstAppt
 
-     Bases: :class:`tlo.methods.hsi_generic_first_appts.HSI_BaseGenericFirstAppt`, :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_generic_first_appts._BaseHSIGenericFirstAppt`, :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
 
 
      **Class attributes:**
-
-     MODULE_METHOD_ON_APPLY : do_at_generic_first_appt
 
      __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_GenericNonEmergencyFirstAppt):**
 
      .. automethod:: __init__
+
+     .. automethod:: _do_at_generic_first_appt_for_module
 
 
 
@@ -56,19 +56,19 @@ tlo.methods.hsi_generic_first_appts module
 
 .. autoclass:: HSI_GenericEmergencyFirstAppt
 
-     Bases: :class:`tlo.methods.hsi_generic_first_appts.HSI_BaseGenericFirstAppt`, :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.methods.hsi_generic_first_appts._BaseHSIGenericFirstAppt`, :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
 
 
      **Class attributes:**
-
-     MODULE_METHOD_ON_APPLY : do_at_generic_first_appt_emergency
 
      __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_GenericEmergencyFirstAppt):**
 
      .. automethod:: __init__
+
+     .. automethod:: _do_at_generic_first_appt_for_module
 
 
 

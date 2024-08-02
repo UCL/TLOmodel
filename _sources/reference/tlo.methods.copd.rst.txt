@@ -6,7 +6,7 @@ tlo.methods.copd module
 
 .. autoclass:: Copd
 
-     Bases: :class:`tlo.core.Module`
+     Bases: :class:`tlo.core.Module`, :class:`tlo.methods.hsi_generic_first_appts.GenericFirstAppointmentsMixin`
 
 
      **PARAMETERS:**
@@ -105,13 +105,13 @@ tlo.methods.copd module
 
      ADDITIONAL_DEPENDENCIES : set()
 
-     CAUSES_OF_DEATH : {'COPD_cat0': <tlo.methods.causes.Cause object at 0x12e0aced0>, 'COPD_cat1': <tlo.methods.causes.Cause object at 0x12e0ace90>, 'COPD_cat2': <tlo.methods.causes.Cause object at 0x12e0ace50>, 'COPD_cat3': <tlo.methods.causes.Cause object at 0x12e0ace10>, 'COPD_cat4': <tlo.methods.causes.Cause object at 0x12e0acf10>, 'COPD_cat5': <tlo.methods.causes.Cause object at 0x12e0ac450>, 'COPD_cat6': <tlo.methods.causes.Cause object at 0x12e0ac710>}
+     CAUSES_OF_DEATH : {'COPD_cat0': <tlo.methods.causes.Cause object at 0x12a543510>, 'COPD_cat1': <tlo.methods.causes.Cause object at 0x12a542950>, 'COPD_cat2': <tlo.methods.causes.Cause object at 0x12a542990>, 'COPD_cat3': <tlo.methods.causes.Cause object at 0x12a542a50>, 'COPD_cat4': <tlo.methods.causes.Cause object at 0x12a540e10>, 'COPD_cat5': <tlo.methods.causes.Cause object at 0x12a542390>, 'COPD_cat6': <tlo.methods.causes.Cause object at 0x12a543990>}
 
-     CAUSES_OF_DISABILITY : {'COPD': <tlo.methods.causes.Cause object at 0x12e0ac3d0>}
+     CAUSES_OF_DISABILITY : {'COPD': <tlo.methods.causes.Cause object at 0x12a542ad0>}
 
-     INIT_DEPENDENCIES : {'Lifestyle', 'SymptomManager'}
+     INIT_DEPENDENCIES : {'HealthSystem', 'SymptomManager', 'Lifestyle'}
 
-     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>}
 
      **Functions (defined or overridden in class Copd):**
 

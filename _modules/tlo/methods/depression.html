@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.depression &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
+  <title>tlo.methods.depression &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
@@ -16,7 +16,7 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../../../_static/documentation_options.js?v=f3d69a25"></script>
         <script src="../../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -93,23 +93,24 @@
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
 <span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">DateOffset</span><span class="p">,</span> <span class="n">Module</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">Property</span><span class="p">,</span> <span class="n">Types</span><span class="p">,</span> <span class="n">logging</span>
-<span class="kn">from</span> <span class="nn">tlo.core</span> <span class="kn">import</span> <span class="n">DiagnosisFunction</span><span class="p">,</span> <span class="n">IndividualPropertyUpdates</span>
 <span class="kn">from</span> <span class="nn">tlo.events</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">,</span> <span class="n">RegularEvent</span>
 <span class="kn">from</span> <span class="nn">tlo.lm</span> <span class="kn">import</span> <span class="n">LinearModel</span><span class="p">,</span> <span class="n">LinearModelType</span><span class="p">,</span> <span class="n">Predictor</span>
 <span class="kn">from</span> <span class="nn">tlo.methods</span> <span class="kn">import</span> <span class="n">Metadata</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.causes</span> <span class="kn">import</span> <span class="n">Cause</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.dxmanager</span> <span class="kn">import</span> <span class="n">DxTest</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.hsi_event</span> <span class="kn">import</span> <span class="n">HSI_Event</span>
+<span class="kn">from</span> <span class="nn">tlo.methods.hsi_generic_first_appts</span> <span class="kn">import</span> <span class="n">GenericFirstAppointmentsMixin</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.symptommanager</span> <span class="kn">import</span> <span class="n">Symptom</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">tlo.population</span> <span class="kn">import</span> <span class="n">PatientDetails</span>
+    <span class="kn">from</span> <span class="nn">tlo.methods.hsi_generic_first_appts</span> <span class="kn">import</span> <span class="n">DiagnosisFunction</span><span class="p">,</span> <span class="n">HSIEventScheduler</span>
+    <span class="kn">from</span> <span class="nn">tlo.population</span> <span class="kn">import</span> <span class="n">IndividualProperties</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
@@ -121,7 +122,7 @@
 
 <div class="viewcode-block" id="Depression">
 <a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.Depression">[docs]</a>
-<span class="k">class</span> <span class="nc">Depression</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">Depression</span><span class="p">(</span><span class="n">Module</span><span class="p">,</span> <span class="n">GenericFirstAppointmentsMixin</span><span class="p">):</span>
 <div class="viewcode-block" id="Depression.__init__">
 <a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.Depression.__init__">[docs]</a>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -133,7 +134,7 @@
         <span class="s1">&#39;Demography&#39;</span><span class="p">,</span> <span class="s1">&#39;Contraception&#39;</span><span class="p">,</span> <span class="s1">&#39;HealthSystem&#39;</span><span class="p">,</span> <span class="s1">&#39;Lifestyle&#39;</span><span class="p">,</span> <span class="s1">&#39;SymptomManager&#39;</span>
     <span class="p">}</span>
 
-    <span class="n">OPTIONAL_INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;HealthBurden&#39;</span><span class="p">}</span>
+    <span class="n">OPTIONAL_INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;HealthBurden&#39;</span><span class="p">,</span> <span class="s1">&#39;Hiv&#39;</span><span class="p">}</span>
 
     <span class="c1"># Declare Metadata</span>
     <span class="n">METADATA</span> <span class="o">=</span> <span class="p">{</span>
@@ -239,6 +240,8 @@
 
         <span class="s1">&#39;rr_depr_agege60&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span> <span class="s1">&#39;Relative rate of depression associated with age &gt; 60&#39;</span><span class="p">),</span>
 
+        <span class="s1">&#39;rr_depr_hiv&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span> <span class="s1">&#39;Relative rate of depression associated with HIV infection&#39;</span><span class="p">),</span>
+
         <span class="s1">&#39;depr_resolution_rates&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
             <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span>
             <span class="s1">&#39;Risk of depression resolving in 3 months if no chronic conditions and no treatments.&#39;</span>
@@ -323,11 +326,13 @@
         <span class="p">)</span>
         <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
 
-        <span class="c1"># Build the Linear Models:</span>
+        <span class="c1"># Build the Linear Models</span>
+
+        <span class="c1"># ----- Initialisation of population -----</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">linearModels</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">linearModels</span><span class="p">[</span><span class="s1">&#39;Depression_At_Population_Initialisation&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="p">(</span>
-            <span class="n">LinearModelType</span><span class="o">.</span><span class="n">MULTIPLICATIVE</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;init_pr_depr_m_age1519_no_cc_wealth123&#39;</span><span class="p">],</span>
+
+        <span class="c1"># risk of depression in initial population</span>
+        <span class="n">predictors</span> <span class="o">=</span> <span class="p">[</span>
             <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;de_cc&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_rp_depr_cc&#39;</span><span class="p">]),</span>
             <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;li_wealth&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.isin([4,5])&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_rp_depr_wealth45&#39;</span><span class="p">]),</span>
             <span class="n">Predictor</span><span class="p">()</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;(sex==&quot;F&quot;) &amp; de_recently_pregnant&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_rp_depr_f_rec_preg&#39;</span><span class="p">]),</span>
@@ -340,44 +345,63 @@
             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(0, 14)&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(15, 19)&#39;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(20, 59)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_rp_depr_age2059&#39;</span><span class="p">])</span>
-            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;&gt;= 60&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_rp_depr_agege60&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;&gt;= 60&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_rp_depr_agege60&#39;</span><span class="p">]),</span>
+        <span class="p">]</span>
+
+        <span class="n">conditional_predictors</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">Predictor</span><span class="p">()</span><span class="o">.</span><span class="n">when</span><span class="p">(</span>
+                <span class="s1">&#39;hv_inf &amp; hv_diagnosed&#39;</span><span class="p">,</span>
+                <span class="n">p</span><span class="p">[</span><span class="s2">&quot;rr_depr_hiv&quot;</span><span class="p">]),</span>
+        <span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;Hiv&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span> <span class="k">else</span> <span class="p">[]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">linearModels</span><span class="p">[</span><span class="s2">&quot;Depression_At_Population_Initialisation&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="p">(</span>
+            <span class="n">LinearModelType</span><span class="o">.</span><span class="n">MULTIPLICATIVE</span><span class="p">,</span>
+            <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_pr_depr_m_age1519_no_cc_wealth123&#39;</span><span class="p">],</span>
+            <span class="o">*</span><span class="p">(</span><span class="n">predictors</span> <span class="o">+</span> <span class="n">conditional_predictors</span><span class="p">)</span>
         <span class="p">)</span>
 
+        <span class="c1"># risk of ever having depression in initial population</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">linearModels</span><span class="p">[</span><span class="s1">&#39;Depression_Ever_At_Population_Initialisation_Males&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="o">.</span><span class="n">multiplicative</span><span class="p">(</span>
             <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;age_years&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
                 <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span><span class="n">x</span> <span class="k">if</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="mi">15</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;init_rp_ever_depr_per_year_older_m&#39;</span><span class="p">]</span>
             <span class="p">)</span>
         <span class="p">)</span>
 
+        <span class="c1"># risk of ever having depression in initial population (female)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">linearModels</span><span class="p">[</span><span class="s1">&#39;Depression_Ever_At_Population_Initialisation_Females&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="o">.</span><span class="n">multiplicative</span><span class="p">(</span>
             <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;age_years&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span><span class="n">x</span> <span class="k">if</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="mi">15</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_rp_ever_depr_per_year_older_f&#39;</span><span class="p">])</span>
         <span class="p">)</span>
 
+        <span class="c1"># risk of ever having diagnosed depression in initial population</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">linearModels</span><span class="p">[</span><span class="s1">&#39;Depression_Ever_Diagnosed_At_Population_Initialisation&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="o">.</span><span class="n">multiplicative</span><span class="p">(</span>
             <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;de_ever_depr&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_pr_ever_diagnosed_depression&#39;</span><span class="p">])</span>
                                      <span class="o">.</span><span class="n">otherwise</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
         <span class="p">)</span>
 
+        <span class="c1"># risk of currently using anti-depressants in initial population</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">linearModels</span><span class="p">[</span><span class="s1">&#39;Using_AntiDepressants_Initialisation&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="o">.</span><span class="n">multiplicative</span><span class="p">(</span>
             <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;de_depr&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_pr_antidepr_curr_depr&#39;</span><span class="p">]),</span>
             <span class="n">Predictor</span><span class="p">()</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;~de_depr &amp; de_ever_diagnosed_depression&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_rp_antidepr_ever_depr_not_curr&#39;</span><span class="p">])</span>
         <span class="p">)</span>
 
+        <span class="c1"># risk of ever having talking therapy in initial population</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">linearModels</span><span class="p">[</span><span class="s1">&#39;Ever_Talking_Therapy_Initialisation&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="p">(</span>
             <span class="n">LinearModelType</span><span class="o">.</span><span class="n">MULTIPLICATIVE</span><span class="p">,</span>
             <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_pr_ever_talking_therapy_if_diagnosed&#39;</span><span class="p">],</span>
             <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;de_ever_diagnosed_depression&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
         <span class="p">)</span>
 
+        <span class="c1"># risk of ever having self-harmed in initial population</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">linearModels</span><span class="p">[</span><span class="s1">&#39;Ever_Self_Harmed_Initialisation&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="p">(</span>
             <span class="n">LinearModelType</span><span class="o">.</span><span class="n">MULTIPLICATIVE</span><span class="p">,</span>
             <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_pr_ever_self_harmed_if_ever_depr&#39;</span><span class="p">],</span>
             <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;de_ever_depr&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
         <span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">linearModels</span><span class="p">[</span><span class="s1">&#39;Risk_of_Depression_Onset_per3mo&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="p">(</span>
-            <span class="n">LinearModelType</span><span class="o">.</span><span class="n">MULTIPLICATIVE</span><span class="p">,</span>
-            <span class="n">p</span><span class="p">[</span><span class="s1">&#39;base_3m_prob_depr&#39;</span><span class="p">],</span>
+        <span class="c1"># ----- Recurring events -----</span>
+
+        <span class="c1"># risk of depression every 3 months</span>
+        <span class="n">predictors</span> <span class="o">=</span> <span class="p">[</span>
             <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;de_cc&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_depr_cc&#39;</span><span class="p">]),</span>
             <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;age_years&#39;</span><span class="p">,</span> <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(0, 14)&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
@@ -387,9 +411,22 @@
             <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;sex&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;F&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_depr_female&#39;</span><span class="p">]),</span>
             <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;de_recently_pregnant&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_depr_pregnancy&#39;</span><span class="p">]),</span>
             <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;de_ever_depr&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_depr_prev_epis&#39;</span><span class="p">]),</span>
-            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;de_on_antidepr&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_depr_on_antidepr&#39;</span><span class="p">])</span>
+            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;de_on_antidepr&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_depr_on_antidepr&#39;</span><span class="p">]),</span>
+        <span class="p">]</span>
+
+        <span class="n">conditional_predictors</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">Predictor</span><span class="p">()</span><span class="o">.</span><span class="n">when</span><span class="p">(</span>
+                <span class="s1">&#39;hv_inf &amp; hv_diagnosed&#39;</span><span class="p">,</span>
+                <span class="n">p</span><span class="p">[</span><span class="s2">&quot;rr_depr_hiv&quot;</span><span class="p">]),</span>
+        <span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;Hiv&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span> <span class="k">else</span> <span class="p">[]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">linearModels</span><span class="p">[</span><span class="s2">&quot;Risk_of_Depression_Onset_per3mo&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="p">(</span>
+            <span class="n">LinearModelType</span><span class="o">.</span><span class="n">MULTIPLICATIVE</span><span class="p">,</span>
+            <span class="n">p</span><span class="p">[</span><span class="s1">&#39;base_3m_prob_depr&#39;</span><span class="p">],</span>
+            <span class="o">*</span><span class="p">(</span><span class="n">predictors</span> <span class="o">+</span> <span class="n">conditional_predictors</span><span class="p">)</span>
         <span class="p">)</span>
 
+        <span class="c1"># risk of depression resolution every 3 months</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">linearModels</span><span class="p">[</span><span class="s1">&#39;Risk_of_Depression_Resolution_per3mo&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="o">.</span><span class="n">multiplicative</span><span class="p">(</span>
             <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;de_intrinsic_3mo_risk_of_depr_resolution&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">),</span>
             <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;de_cc&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_resol_depr_cc&#39;</span><span class="p">]),</span>
@@ -397,16 +434,19 @@
             <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;de_ever_talk_ther&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_resol_depr_current_talk_ther&#39;</span><span class="p">])</span>
         <span class="p">)</span>
 
+        <span class="c1"># risk of stopping anti-depressants every 3 months</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">linearModels</span><span class="p">[</span><span class="s1">&#39;Risk_of_Stopping_Antidepressants_per3mo&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="o">.</span><span class="n">multiplicative</span><span class="p">(</span>
             <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;de_depr&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;prob_3m_default_antidepr&#39;</span><span class="p">])</span>
                                 <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;prob_3m_stop_antidepr&#39;</span><span class="p">])</span>
         <span class="p">)</span>
 
+        <span class="c1"># risk of self-harm every 3 months</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">linearModels</span><span class="p">[</span><span class="s1">&#39;Risk_of_SelfHarm_per3mo&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="p">(</span>
             <span class="n">LinearModelType</span><span class="o">.</span><span class="n">MULTIPLICATIVE</span><span class="p">,</span>
             <span class="n">p</span><span class="p">[</span><span class="s1">&#39;prob_3m_selfharm_depr&#39;</span><span class="p">]</span>
         <span class="p">)</span>
 
+        <span class="c1"># risk of suicide every 3 months</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">linearModels</span><span class="p">[</span><span class="s1">&#39;Risk_of_Suicide_per3mo&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="p">(</span>
             <span class="n">LinearModelType</span><span class="o">.</span><span class="n">MULTIPLICATIVE</span><span class="p">,</span>
             <span class="n">p</span><span class="p">[</span><span class="s1">&#39;prob_3m_suicide_depr_m&#39;</span><span class="p">],</span>
@@ -636,7 +676,7 @@
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns True if any signs of depression are present, otherwise False.</span>
-<span class="sd">        </span>
+
 <span class="sd">        Raises an error if the treatment type cannot be identified.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">treatment_id</span> <span class="o">==</span> <span class="s2">&quot;FirstAttendance_NonEmergency&quot;</span><span class="p">:</span>
@@ -673,15 +713,19 @@
 <span class="sd">        and there may need to be screening for depression.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_for_suspected_depression</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;SymptomManager&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">has_what</span><span class="p">(</span><span class="n">person_id</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;SymptomManager&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">has_what</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">),</span>
             <span class="n">hsi_event</span><span class="o">.</span><span class="n">TREATMENT_ID</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;de_ever_diagnosed_depression&quot;</span><span class="p">],</span>
         <span class="p">):</span>
-            <span class="n">patient_details_updates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_when_suspected_depression</span><span class="p">(</span>
-                <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span>
+            <span class="n">individual_properties</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">do_when_suspected_depression</span><span class="p">(</span>
+                <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
+                <span class="n">individual_properties</span><span class="o">=</span><span class="n">individual_properties</span><span class="p">,</span>
+                <span class="n">schedule_hsi_event</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">,</span>
+                <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span>
             <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="n">patient_details_updates</span><span class="o">.</span><span class="n">keys</span><span class="p">()]</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">patient_details_updates</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="n">individual_properties</span><span class="o">.</span><span class="n">keys</span><span class="p">()]</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">individual_properties</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
             <span class="p">)</span>
         <span class="k">return</span></div>
 
@@ -691,13 +735,15 @@
     <span class="k">def</span> <span class="nf">do_when_suspected_depression</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">person_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">individual_properties</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="n">IndividualProperties</span><span class="p">],</span>
+        <span class="n">schedule_hsi_event</span><span class="p">:</span> <span class="n">HSIEventScheduler</span><span class="p">,</span>
         <span class="n">diagnosis_function</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DiagnosisFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">hsi_event</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">HSI_Event</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">IndividualPropertyUpdates</span><span class="p">:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is called by any HSI event when depression is suspected or otherwise investigated.</span>
 
-<span class="sd">        At least one of the diagnosis_function or hsi_event arguments must be provided; if both </span>
+<span class="sd">        At least one of the diagnosis_function or hsi_event arguments must be provided; if both</span>
 <span class="sd">        are provided, the hsi_event argument is ignored.</span>
 <span class="sd">        - If the hsi_event argument is provided, that event is used to access the diagnosis</span>
 <span class="sd">        manager and run diagnosis tests.</span>
@@ -705,12 +751,11 @@
 <span class="sd">        runs diagnosis tests.</span>
 
 <span class="sd">        :param person_id: Patient&#39;s row index in the population DataFrame.</span>
+<span class="sd">        :param individual_properties: Indexable object to write individual property updates to.</span>
+<span class="sd">        :param schedule_hsi_event: Function to schedule subsequent HSI events.</span>
 <span class="sd">        :param diagnosis_function: A function capable of running diagnosis checks on the population.</span>
 <span class="sd">        :param hsi_event: The HSI_Event that triggered this call.</span>
-<span class="sd">        :returns: Values as per the output of do_at_generic_first_appt().</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">patient_details_updates</span> <span class="o">=</span> <span class="p">{}</span>
-
         <span class="k">if</span> <span class="n">diagnosis_function</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span>
                 <span class="n">hsi_event</span><span class="p">,</span> <span class="n">HSI_Event</span>
@@ -727,34 +772,31 @@
         <span class="c1"># Assess for depression and initiate treatments for depression if positive diagnosis</span>
         <span class="k">if</span> <span class="n">diagnosis_function</span><span class="p">(</span><span class="s1">&#39;assess_depression&#39;</span><span class="p">):</span>
             <span class="c1"># If depressed: diagnose the person with depression</span>
-            <span class="n">patient_details_updates</span><span class="p">[</span><span class="s1">&#39;de_ever_diagnosed_depression&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">individual_properties</span><span class="p">[</span><span class="s1">&#39;de_ever_diagnosed_depression&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
             <span class="n">scheduling_options</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;priority&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;topen&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">}</span>
             <span class="c1"># Provide talking therapy</span>
             <span class="c1"># (this can occur even if the person has already had talking therapy before)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">healthsystem</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
+            <span class="n">schedule_hsi_event</span><span class="p">(</span>
                 <span class="n">HSI_Depression_TalkingTherapy</span><span class="p">(</span><span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">),</span>
                 <span class="o">**</span><span class="n">scheduling_options</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="c1"># Initiate person on anti-depressants</span>
             <span class="c1"># (at the same facility level as the HSI event that is calling)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">healthsystem</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
+            <span class="n">schedule_hsi_event</span><span class="p">(</span>
                 <span class="n">HSI_Depression_Start_Antidepressant</span><span class="p">(</span><span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">),</span>
                 <span class="o">**</span><span class="n">scheduling_options</span><span class="p">,</span>
-            <span class="p">)</span>
-        <span class="k">return</span> <span class="n">patient_details_updates</span></div>
+            <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Depression.do_at_generic_first_appt">
 <a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.Depression.do_at_generic_first_appt">[docs]</a>
     <span class="k">def</span> <span class="nf">do_at_generic_first_appt</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">patient_details</span><span class="p">:</span> <span class="n">PatientDetails</span><span class="p">,</span>
-        <span class="o">**</span><span class="n">kwargs</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">IndividualPropertyUpdates</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">patient_details</span><span class="o">.</span><span class="n">age_years</span> <span class="o">&gt;</span> <span class="mi">5</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_at_generic_first_appt_emergency</span><span class="p">(</span>
-                <span class="n">patient_details</span><span class="o">=</span><span class="n">patient_details</span><span class="p">,</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">individual_properties</span><span class="p">:</span> <span class="n">IndividualProperties</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">individual_properties</span><span class="p">[</span><span class="s2">&quot;age_years&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">5</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">do_at_generic_first_appt_emergency</span><span class="p">(</span>
+                <span class="n">individual_properties</span><span class="o">=</span><span class="n">individual_properties</span><span class="p">,</span>
                 <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
             <span class="p">)</span></div>
 
@@ -763,19 +805,24 @@
 <a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.Depression.do_at_generic_first_appt_emergency">[docs]</a>
     <span class="k">def</span> <span class="nf">do_at_generic_first_appt_emergency</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">patient_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-        <span class="n">patient_details</span><span class="p">:</span> <span class="n">PatientDetails</span><span class="p">,</span>
+        <span class="n">person_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">individual_properties</span><span class="p">:</span> <span class="n">IndividualProperties</span><span class="p">,</span>
         <span class="n">symptoms</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">schedule_hsi_event</span><span class="p">:</span> <span class="n">HSIEventScheduler</span><span class="p">,</span>
         <span class="n">diagnosis_function</span><span class="p">:</span> <span class="n">DiagnosisFunction</span><span class="p">,</span>
         <span class="n">treatment_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">IndividualPropertyUpdates</span><span class="p">:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_for_suspected_depression</span><span class="p">(</span>
-            <span class="n">symptoms</span><span class="p">,</span> <span class="n">treatment_id</span><span class="p">,</span> <span class="n">patient_details</span><span class="o">.</span><span class="n">de_ever_diagnosed_depression</span>
+            <span class="n">symptoms</span><span class="p">,</span>
+            <span class="n">treatment_id</span><span class="p">,</span>
+            <span class="n">individual_properties</span><span class="p">[</span><span class="s2">&quot;de_ever_diagnosed_depression&quot;</span><span class="p">],</span>
         <span class="p">):</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_when_suspected_depression</span><span class="p">(</span>
-                <span class="n">person_id</span><span class="o">=</span><span class="n">patient_id</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">do_when_suspected_depression</span><span class="p">(</span>
+                <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
+                <span class="n">individual_properties</span><span class="o">=</span><span class="n">individual_properties</span><span class="p">,</span>
                 <span class="n">diagnosis_function</span><span class="o">=</span><span class="n">diagnosis_function</span><span class="p">,</span>
+                <span class="n">schedule_hsi_event</span><span class="o">=</span><span class="n">schedule_hsi_event</span><span class="p">,</span>
             <span class="p">)</span></div>
 </div>
 
@@ -987,10 +1034,10 @@
         <span class="n">n_ever_talk_ther</span> <span class="o">=</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">de_ever_talk_ther</span> <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">de_depr</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
 
         <span class="k">def</span> <span class="nf">zero_out_nan</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">x</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="k">return</span> <span class="n">x</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">else</span> <span class="mf">0.0</span>
 
         <span class="k">def</span> <span class="nf">safe_divide</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">x</span> <span class="o">/</span> <span class="n">y</span> <span class="k">if</span> <span class="n">y</span> <span class="o">&gt;</span> <span class="mf">0.0</span> <span class="k">else</span> <span class="mf">0.0</span>
+            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">x</span> <span class="o">/</span> <span class="n">y</span><span class="p">)</span> <span class="k">if</span> <span class="n">y</span> <span class="o">&gt;</span> <span class="mf">0.0</span> <span class="k">else</span> <span class="mf">0.0</span>
 
         <span class="n">dict_for_output</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s1">&#39;prop_ge15_depr&#39;</span><span class="p">:</span> <span class="n">zero_out_nan</span><span class="p">(</span><span class="n">safe_divide</span><span class="p">(</span><span class="n">n_ge15_depr</span><span class="p">,</span> <span class="n">n_ge15</span><span class="p">)),</span>
@@ -1097,9 +1144,10 @@
                                                                  <span class="s2">&quot;receiving an HSI. &quot;</span>
 
         <span class="c1"># Check availability of antidepressant medication</span>
-        <span class="n">item_code</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;anti_depressant_medication_item_code&#39;</span><span class="p">]</span>
+        <span class="c1"># Dose is 25mg daily, patient provided with month supply - 25mg x 30.437 (days) = 761mg per month</span>
+        <span class="n">item_code_with_dose</span> <span class="o">=</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;anti_depressant_medication_item_code&#39;</span><span class="p">]:</span> <span class="mi">761</span><span class="p">}</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="o">=</span><span class="n">item_code</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="o">=</span><span class="n">item_code_with_dose</span><span class="p">):</span>
             <span class="c1"># If medication is available, flag as being on antidepressants</span>
             <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;de_on_antidepr&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
@@ -1149,7 +1197,10 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_blank_appt_footprint</span><span class="p">()</span>
 
         <span class="c1"># Check availability of antidepressant medication</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;anti_depressant_medication_item_code&#39;</span><span class="p">]):</span>
+        <span class="c1"># Dose is 25mg daily, patient provided with month supply - 25mg x 30.437 (days) = 761mg per month</span>
+        <span class="n">item_code_with_dose</span> <span class="o">=</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;anti_depressant_medication_item_code&#39;</span><span class="p">]:</span> <span class="mi">761</span><span class="p">}</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="o">=</span><span class="n">item_code_with_dose</span><span class="p">):</span>
             <span class="c1"># Schedule their next HSI for a refill of medication, one month from now</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
                 <span class="n">hsi_event</span><span class="o">=</span><span class="n">HSI_Depression_Refill_Antidepressant</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">),</span>
@@ -1263,7 +1314,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on May 27, 2024.
+      <span class="lastupdated">Last updated on Aug 02, 2024.
       </span></p>
   </div>
 

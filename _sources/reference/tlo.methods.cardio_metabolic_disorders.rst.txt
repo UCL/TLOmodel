@@ -6,7 +6,7 @@ tlo.methods.cardio_metabolic_disorders module
 
 .. autoclass:: CardioMetabolicDisorders
 
-     Bases: :class:`tlo.core.Module`
+     Bases: :class:`tlo.core.Module`, :class:`tlo.methods.hsi_generic_first_appts.GenericFirstAppointmentsMixin`
 
 
      **PARAMETERS:**
@@ -279,15 +279,15 @@ tlo.methods.cardio_metabolic_disorders module
 
      ADDITIONAL_DEPENDENCIES : {'Depression'}
 
-     CAUSES_OF_DEATH : {'diabetes': <tlo.methods.causes.Cause object at 0x12e270b90>, 'chronic_ischemic_hd': <tlo.methods.causes.Cause object at 0x12e271150>, 'ever_heart_attack': <tlo.methods.causes.Cause object at 0x12e270e90>, 'ever_stroke': <tlo.methods.causes.Cause object at 0x12e271410>, 'chronic_kidney_disease': <tlo.methods.causes.Cause object at 0x12e273c50>}
+     CAUSES_OF_DEATH : {'diabetes': <tlo.methods.causes.Cause object at 0x12a684e10>, 'chronic_ischemic_hd': <tlo.methods.causes.Cause object at 0x12a6878d0>, 'ever_heart_attack': <tlo.methods.causes.Cause object at 0x12a687a50>, 'ever_stroke': <tlo.methods.causes.Cause object at 0x12a687d90>, 'chronic_kidney_disease': <tlo.methods.causes.Cause object at 0x12a684210>}
 
-     CAUSES_OF_DISABILITY : {'diabetes': <tlo.methods.causes.Cause object at 0x12e2727d0>, 'chronic_ischemic_hd': <tlo.methods.causes.Cause object at 0x12e271f50>, 'heart_attack': <tlo.methods.causes.Cause object at 0x12e272990>, 'stroke': <tlo.methods.causes.Cause object at 0x12e270750>, 'chronic_kidney_disease': <tlo.methods.causes.Cause object at 0x12e2700d0>, 'lower_back_pain': <tlo.methods.causes.Cause object at 0x12e2733d0>}
+     CAUSES_OF_DISABILITY : {'diabetes': <tlo.methods.causes.Cause object at 0x12a686fd0>, 'chronic_ischemic_hd': <tlo.methods.causes.Cause object at 0x12a685210>, 'heart_attack': <tlo.methods.causes.Cause object at 0x12a685750>, 'stroke': <tlo.methods.causes.Cause object at 0x12a686d90>, 'chronic_kidney_disease': <tlo.methods.causes.Cause object at 0x12a686b90>, 'lower_back_pain': <tlo.methods.causes.Cause object at 0x12a687c90>}
 
-     INIT_DEPENDENCIES : {'Demography', 'HealthSystem', 'Lifestyle', 'SymptomManager'}
+     INIT_DEPENDENCIES : {'Demography', 'HealthSystem', 'SymptomManager', 'Lifestyle'}
 
-     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>}
 
-     OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
+     OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden', 'Hiv'}
 
      condition_date_diagnosis_list : {'nc_diabetes_date_diagnosis': DATE === When someone has been diagnosed with diabetes, 'nc_hypertension_date_diagnosis': DATE === When someone has been diagnosed with hypertension, 'nc_chronic_kidney_disease_date_diagnosis': DATE === When someone has been diagnosed with chronic_kidney_disease, 'nc_chronic_lower_back_pain_date_diagnosis': DATE === When someone has been diagnosed with chronic_lower_back_pain, 'nc_chronic_ischemic_hd_date_diagnosis': DATE === When someone has been diagnosed with chronic_ischemic_hd}
 

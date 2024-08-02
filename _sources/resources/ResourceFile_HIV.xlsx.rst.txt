@@ -8,73 +8,96 @@ HIV (.xlsx)
 parameters
 ----------
 
-====  ====================================================================================  ==========  ===============================================================================================================================================================================================================================  =================
-  ..  parameter\_name                                                                            value  Source                                                                                                                                                                                                                           Unnamed: 3
-====  ====================================================================================  ==========  ===============================================================================================================================================================================================================================  =================
-   0  beta                                                                                     0.14379  calibrated                                                                                                                                                                                                                       previously\_0.115
-   1  unaids\_prevalence\_adjustment\_factor                                                   1.1
-   2  prob\_mtct\_untreated                                                                    0.22     rollins
-   3  prob\_mtct\_treated                                                                      0        rollins
-   4  prob\_mtct\_incident\_preg                                                               0.3      rollins
-   5  monthly\_prob\_mtct\_bf\_untreated                                                       0.01     rollins
-   6  monthly\_prob\_mtct\_bf\_treated                                                         0        rollins
-   7  rr\_fsw                                                                                 25
-   8  rr\_circumcision                                                                         0.4      hallett2008
-   9  rr\_rural                                                                                0.52     wingston\_dhs\_analysis
-  10  rr\_windex\_poorer                                                                       0.96     wingston\_dhs\_analysis
-  11  rr\_windex\_middle                                                                       1.18     wingston\_dhs\_analysis
-  12  rr\_windex\_richer                                                                       1.19     wingston\_dhs\_analysis
-  13  rr\_windex\_richest                                                                      1.56     wingston\_dhs\_analysis
-  14  rr\_sex\_f                                                                               1.43     wingston\_dhs\_analysis
-  15  rr\_edlevel\_primary                                                                     1.18     wingston\_dhs\_analysis
-  16  rr\_edlevel\_secondary                                                                   1.15     wingston\_dhs\_analysis
-  17  rr\_edlevel\_higher                                                                      1        wingston\_dhs\_analysis
-  18  rr\_behaviour\_change                                                                    0.75
-  19  proportion\_reduction\_in\_risk\_of\_hiv\_aq\_if\_on\_prep                               0.9
-  20  mean\_months\_between\_aids\_and\_death                                                 18        Assumption
-  21  mean\_months\_between\_aids\_and\_death\_infant                                          6        Assumption
-  22  infection\_to\_death\_weibull\_shape\_1519                                               2        Todd et al. 2007 & Hallett et al 2008 PLoS Med
-  23  infection\_to\_death\_weibull\_shape\_2024                                               2
-  24  infection\_to\_death\_weibull\_shape\_2529                                               2
-  25  infection\_to\_death\_weibull\_shape\_3034                                               2
-  26  infection\_to\_death\_weibull\_shape\_3539                                               2
-  27  infection\_to\_death\_weibull\_shape\_4044                                               2
-  28  infection\_to\_death\_weibull\_shape\_4549                                               2
-  29  infection\_to\_death\_weibull\_scale\_1519                                              16
-  30  infection\_to\_death\_weibull\_scale\_2024                                              15.4
-  31  infection\_to\_death\_weibull\_scale\_2529                                              14.1
-  32  infection\_to\_death\_weibull\_scale\_3034                                              12.1
-  33  infection\_to\_death\_weibull\_scale\_3539                                              11
-  34  infection\_to\_death\_weibull\_scale\_4044                                              10.01
-  35  infection\_to\_death\_weibull\_scale\_4549                                               7.9
-  36  art\_default\_to\_aids\_mean\_years                                                      5
-  37  prop\_delayed\_aids\_onset                                                               0.3
-  38  mean\_survival\_for\_infants\_infected\_prior\_to\_birth                                 1.08     ferrand
-  39  infection\_to\_death\_infant\_infection\_after\_birth\_weibull\_scale                   16        ferrand
-  40  infection\_to\_death\_infant\_infection\_after\_birth\_weibull\_shape                    2.7      ferrand
-  41  rr\_test\_hiv\_positive                                                                  1.1
-  42  hiv\_testing\_rate\_adjustment                                                           0.75
-  43  treatment\_initiation\_adjustment                                                        1
-  44  vs\_adjustment                                                                           1
-  45  prob\_hiv\_test\_at\_anc\_or\_delivery                                                   0.95
-  46  prob\_hiv\_test\_for\_newborn\_infant                                                    0.95
-  47  prob\_behav\_chg\_after\_hiv\_test                                                       0.5
-  48  prob\_prep\_for\_fsw\_after\_hiv\_test                                                   0.05
-  49  prob\_prep\_for\_agyw                                                                    0
-  50  prob\_circ\_after\_hiv\_test                                                             0.05
-  51  probability\_of\_being\_retained\_on\_prep\_every\_3\_months                             0.5
-  52  probability\_of\_being\_retained\_on\_art\_every\_3\_months                              0.95
-  53  probability\_of\_seeking\_further\_art\_appointment\_if\_drug\_not\_available            0.9
-  54  probability\_of\_seeking\_further\_art\_appointment\_if\_appointment\_not\_available     0.9
-  55  prep\_start\_year                                                                     2018
-  56  ART\_age\_cutoff\_young\_child                                                           1
-  57  ART\_age\_cutoff\_older\_child                                                          10
-  58  rel\_probability\_art\_baseline\_aids                                                   10
-  59  aids\_tb\_treatment\_adjustment                                                          0.5
-  60  prob\_circ\_for\_child\_before\_2020                                                     0.0128   This is estimated using DHIS2 vmmc cases and world bank population data 2015-2019.
-  61  prob\_circ\_for\_child\_from\_2020                                                       0.0008   From 2020 on, as indicated by DHIS2 data and PEPFAR 2020 Country Operational Plan, the <15 yrs circ cases should decline dramatically. The probability derived from 2020-2022 data is 0.0008, using the same estimation method.
-  62  dispensation\_period\_months                                                             3
-====  ====================================================================================  ==========  ===============================================================================================================================================================================================================================  =================
+====  ====================================================================================  =======  ===============================================================================================================================================================================================================================  =================
+  ..  parameter\_name                                                                       value    Source                                                                                                                                                                                                                           Unnamed: 3
+====  ====================================================================================  =======  ===============================================================================================================================================================================================================================  =================
+   0  beta                                                                                  0.14379  calibrated                                                                                                                                                                                                                       previously\_0.115
+   1  unaids\_prevalence\_adjustment\_factor                                                1.1
+   2  prob\_mtct\_untreated                                                                 0.22     rollins
+   3  prob\_mtct\_treated                                                                   0        rollins
+   4  prob\_mtct\_incident\_preg                                                            0.3      rollins
+   5  monthly\_prob\_mtct\_bf\_untreated                                                    0.01     rollins
+   6  monthly\_prob\_mtct\_bf\_treated                                                      0        rollins
+   7  rr\_fsw                                                                               25
+   8  rr\_circumcision                                                                      0.4      hallett2008
+   9  rr\_rural                                                                             0.52     wingston\_dhs\_analysis
+  10  rr\_windex\_poorer                                                                    0.96     wingston\_dhs\_analysis
+  11  rr\_windex\_middle                                                                    1.18     wingston\_dhs\_analysis
+  12  rr\_windex\_richer                                                                    1.19     wingston\_dhs\_analysis
+  13  rr\_windex\_richest                                                                   1.56     wingston\_dhs\_analysis
+  14  rr\_sex\_f                                                                            1.43     wingston\_dhs\_analysis
+  15  rr\_edlevel\_primary                                                                  1.18     wingston\_dhs\_analysis
+  16  rr\_edlevel\_secondary                                                                1.15     wingston\_dhs\_analysis
+  17  rr\_edlevel\_higher                                                                   1        wingston\_dhs\_analysis
+  18  rr\_schisto                                                                           2.3      Patel et al 2021
+  19  rr\_behaviour\_change                                                                 0.75
+  20  proportion\_reduction\_in\_risk\_of\_hiv\_aq\_if\_on\_prep                            0.9
+  21  mean\_months\_between\_aids\_and\_death                                               18       Assumption
+  22  mean\_months\_between\_aids\_and\_death\_infant                                       6        Assumption
+  23  infection\_to\_death\_weibull\_shape\_1519                                            2        Todd et al. 2007 & Hallett et al 2008 PLoS Med
+  24  infection\_to\_death\_weibull\_shape\_2024                                            2
+  25  infection\_to\_death\_weibull\_shape\_2529                                            2
+  26  infection\_to\_death\_weibull\_shape\_3034                                            2
+  27  infection\_to\_death\_weibull\_shape\_3539                                            2
+  28  infection\_to\_death\_weibull\_shape\_4044                                            2
+  29  infection\_to\_death\_weibull\_shape\_4549                                            2
+  30  infection\_to\_death\_weibull\_scale\_1519                                            16
+  31  infection\_to\_death\_weibull\_scale\_2024                                            15.4
+  32  infection\_to\_death\_weibull\_scale\_2529                                            14.1
+  33  infection\_to\_death\_weibull\_scale\_3034                                            12.1
+  34  infection\_to\_death\_weibull\_scale\_3539                                            11
+  35  infection\_to\_death\_weibull\_scale\_4044                                            10.01
+  36  infection\_to\_death\_weibull\_scale\_4549                                            7.9
+  37  art\_default\_to\_aids\_mean\_years                                                   5
+  38  prop\_delayed\_aids\_onset                                                            0.3
+  39  mean\_survival\_for\_infants\_infected\_prior\_to\_birth                              1.08     ferrand
+  40  infection\_to\_death\_infant\_infection\_after\_birth\_weibull\_scale                 16       ferrand
+  41  infection\_to\_death\_infant\_infection\_after\_birth\_weibull\_shape                 2.7      ferrand
+  42  rr\_test\_hiv\_positive                                                               1.1
+  43  hiv\_testing\_rate\_adjustment                                                        0.75
+  44  treatment\_initiation\_adjustment                                                     1
+  45  vs\_adjustment                                                                        1
+  46  prob\_hiv\_test\_at\_anc\_or\_delivery                                                0.95
+  47  prob\_hiv\_test\_for\_newborn\_infant                                                 0.95
+  48  prob\_behav\_chg\_after\_hiv\_test                                                    0.5
+  49  prob\_prep\_for\_fsw\_after\_hiv\_test                                                0.05
+  50  prob\_prep\_for\_agyw                                                                 0
+  51  prob\_circ\_after\_hiv\_test                                                          0.05
+  52  probability\_of\_being\_retained\_on\_prep\_every\_3\_months                          0.5
+  53  probability\_of\_being\_retained\_on\_art\_every\_3\_months                           0.95
+  54  probability\_of\_seeking\_further\_art\_appointment\_if\_drug\_not\_available         0.9
+  55  probability\_of\_seeking\_further\_art\_appointment\_if\_appointment\_not\_available  0.9
+  56  prep\_start\_year                                                                     2018
+  57  ART\_age\_cutoff\_young\_child                                                        1
+  58  ART\_age\_cutoff\_older\_child                                                        10
+  59  rel\_probability\_art\_baseline\_aids                                                 10
+  60  aids\_tb\_treatment\_adjustment                                                       0.5
+  61  prob\_circ\_for\_child\_before\_2020                                                  0.0128   This is estimated using DHIS2 vmmc cases and world bank population data 2015-2019.
+  62  prob\_circ\_for\_child\_from\_2020                                                    0.0008   From 2020 on, as indicated by DHIS2 data and PEPFAR 2020 Country Operational Plan, the <15 yrs circ cases should decline dramatically. The probability derived from 2020-2022 data is 0.0008, using the same estimation method.
+  63  hiv\_healthseekingbehaviour\_cap                                                      5
+  64  dispensation\_period\_months                                                          3
+  65  length\_of\_inpatient\_stay\_if\_terminal                                             [14,20]
+  66  type\_of\_scaleup                                                                     none
+  67  scaleup\_start\_year                                                                  2025
+====  ====================================================================================  =======  ===============================================================================================================================================================================================================================  =================
+
+scaleup_parameters
+------------------
+
+====  ============================================================  ===============  ============  ============
+  ..  parameter                                                       target\_value    min\_value    max\_value
+====  ============================================================  ===============  ============  ============
+   0  reduction\_in\_hiv\_beta                                                 0.9              1             0
+   1  prob\_prep\_for\_fsw\_after\_hiv\_test                                   0.5              0             1
+   2  prob\_prep\_for\_agyw                                                    0.1              0             1
+   3  probability\_of\_being\_retained\_on\_prep\_every\_3\_months             0.75             0             1
+   4  probability\_of\_being\_retained\_on\_art\_every\_3\_months              1                0             1
+   5  prob\_circ\_after\_hiv\_test                                             0.25             0             1
+   6  annual\_testing\_rate\_adults                                            0.4              0             1
+   7  prob\_hiv\_test\_at\_anc\_or\_delivery                                   0.95             0             1
+   8  prob\_hiv\_test\_for\_newborn\_infant                                    0.95             0             1
+   9  virally\_suppressed\_on\_art                                            95                0           100
+====  ============================================================  ===============  ============  ============
 
 LHC_samples
 -----------
@@ -2161,6 +2184,8 @@ unaids_program_perf
    3    2018                       88                              83                              95                                93                                       88                                       95                                90                                       85                                       95
    4    2019                       90                              85                              95                                93                                       87                                       95                                92                                       86                                       95
    5    2020                       91                              86                              95                                94                                       89                                       95                                94                                       88                                       95
+   6    2021                       92                              88                              98                                96                                       91                                       98                                93                                       89                                       98
+   7    2022                       94                              89                              98                                98                                       93                                       98                                94                                       89                                       98
 ====  ======  =======================  ==============================  ==============================  ================================  =======================================  =======================================  ================================  =======================================  =======================================
 
 DHS_prevalence
@@ -2174,7 +2199,7 @@ DHS_prevalence
    2    2015                                10.8                                       9.6                                      11.9                         7.1                               6.2                               8                                 6.4                                     5.6                                     7.3                                              8.8                                                    7.9                                                    9.6
 ====  ======  ==================================  ========================================  ========================================  ==========================  ================================  ================================  ================================  ======================================  ======================================  ===============================================  =====================================================  =====================================================
 
-MPHIA_prevalence_art2015
+MPHIA_prevalence_art2020
 ------------------------
 
 ====  ======  ============  ============================  ===========================  ==============================  =============================  ============================  ===========================  ========================================  ==========================================
@@ -2205,7 +2230,7 @@ MPHIA_prevalence_art2015
   22          15-100        7.1                                                        10.5                                                           8.9
 ====  ======  ============  ============================  ===========================  ==============================  =============================  ============================  ===========================  ========================================  ==========================================
 
-MPHIA_incidence2015
+MPHIA_incidence2020
 -------------------
 
 ====  ======  ======  ================================  ======================================  ======================================  ==================================  ========================================  ========================================  ===================================  ==========================================  ==========================================
@@ -2220,7 +2245,7 @@ MPHIA_incidence2015
    6    2020  15-100                              0.12                                    0                                       0.27                                0.29                                      0.12                                      0.45                                 0.21                                        0.1                                         0.32
 ====  ======  ======  ================================  ======================================  ======================================  ==================================  ========================================  ========================================  ===================================  ==========================================  ==========================================
 
-MoH_CPT_IPT2018
+MoH_CPT_IPT2020
 ---------------
 
 ====  ======  =========  =================  =======  ===============  ===================  ===============  ===================

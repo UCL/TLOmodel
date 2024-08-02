@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.healthsystem &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
+  <title>tlo.methods.healthsystem &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
@@ -16,7 +16,7 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../../../_static/documentation_options.js?v=f3d69a25"></script>
         <script src="../../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -268,6 +268,9 @@
         <span class="c1"># Consumables</span>
         <span class="s1">&#39;item_and_package_code_lookups&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
             <span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">,</span> <span class="s1">&#39;Data imported from the OneHealth Tool on consumable items, packages and costs.&#39;</span><span class="p">),</span>
+        <span class="s1">&#39;consumables_item_designations&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">,</span> <span class="s1">&#39;Look-up table for the designations of consumables (whether diagnostic, medicine, or &#39;</span>
+                              <span class="s1">&#39;other&#39;</span><span class="p">),</span>
         <span class="s1">&#39;availability_estimates&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
             <span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">,</span> <span class="s1">&#39;Estimated availability of consumables in the LMIS dataset.&#39;</span><span class="p">),</span>
         <span class="s1">&#39;cons_availability&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
@@ -275,7 +278,8 @@
             <span class="s2">&quot;Availability of consumables. If &#39;default&#39; then use the availability specified in the ResourceFile; if &quot;</span>
             <span class="s2">&quot;&#39;none&#39;, then let no consumable be  ever be available; if &#39;all&#39;, then all consumables are always available.&quot;</span>
             <span class="s2">&quot; When using &#39;all&#39; or &#39;none&#39;, requests for consumables are not logged. NB. This parameter is over-ridden&quot;</span>
-            <span class="s2">&quot;if an argument is provided to the module initialiser.&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;if an argument is provided to the module initialiser.&quot;</span>
+            <span class="s2">&quot;Note that other options are also available: see the `Consumables` class.&quot;</span><span class="p">),</span>
 
         <span class="c1"># Infrastructure and Equipment</span>
         <span class="s1">&#39;BedCapacity&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
@@ -322,6 +326,9 @@
                         <span class="s2">&quot;we can approximate overtime and rushing of appts even in mode 2.&quot;</span><span class="p">),</span>
         <span class="s1">&#39;year_cons_availability_switch&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
             <span class="n">Types</span><span class="o">.</span><span class="n">INT</span><span class="p">,</span> <span class="s2">&quot;Year in which consumable availability switch is enforced. The change happens&quot;</span>
+                       <span class="s2">&quot;on 1st January of that year.)&quot;</span><span class="p">),</span>
+        <span class="s1">&#39;year_use_funded_or_actual_staffing_switch&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">INT</span><span class="p">,</span> <span class="s2">&quot;Year in which switch for `use_funded_or_actual_staffing` is enforced. (The change happens&quot;</span>
                        <span class="s2">&quot;on 1st January of that year.)&quot;</span><span class="p">),</span>
         <span class="s1">&#39;priority_rank&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
             <span class="n">Types</span><span class="o">.</span><span class="n">DICT</span><span class="p">,</span> <span class="s2">&quot;Data on the priority ranking of each of the Treatment_IDs to be adopted by &quot;</span>
@@ -410,7 +417,10 @@
             <span class="n">Types</span><span class="o">.</span><span class="n">INT</span><span class="p">,</span> <span class="s1">&#39;Mode considered after a mode switch in year_mode_switch.&#39;</span><span class="p">),</span>
         <span class="s1">&#39;cons_availability_postSwitch&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
             <span class="n">Types</span><span class="o">.</span><span class="n">STRING</span><span class="p">,</span> <span class="s1">&#39;Consumables availability after switch in `year_cons_availability_switch`. Acceptable values&#39;</span>
-                          <span class="s1">&#39;are the same as those for Parameter `cons_availability`.&#39;</span><span class="p">)</span>
+                          <span class="s1">&#39;are the same as those for Parameter `cons_availability`.&#39;</span><span class="p">),</span>
+        <span class="s1">&#39;use_funded_or_actual_staffing_postSwitch&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">STRING</span><span class="p">,</span> <span class="s1">&#39;Staffing availability after switch in `year_use_funded_or_actual_staffing_switch`. &#39;</span>
+                          <span class="s1">&#39;Acceptable values are the same as those for Parameter `use_funded_or_actual_staffing`.&#39;</span><span class="p">),</span>
     <span class="p">}</span>
 
     <span class="n">PROPERTIES</span> <span class="o">=</span> <span class="p">{</span>
@@ -536,10 +546,9 @@
             <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">capabilities_coefficient</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">capabilities_coefficient</span> <span class="o">=</span> <span class="n">capabilities_coefficient</span>
 
-        <span class="c1"># Find which set of assumptions to use - those for the actual staff available or the funded staff available</span>
-        <span class="k">if</span> <span class="n">use_funded_or_actual_staffing</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="n">use_funded_or_actual_staffing</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;actual&#39;</span><span class="p">,</span> <span class="s1">&#39;funded&#39;</span><span class="p">,</span> <span class="s1">&#39;funded_plus&#39;</span><span class="p">]</span>
+        <span class="c1"># Save argument for assumptions to use for &#39;use_funded_or_actual_staffing`</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">arg_use_funded_or_actual_staffing</span> <span class="o">=</span> <span class="n">use_funded_or_actual_staffing</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_use_funded_or_actual_staffing</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># &lt;-- this is the private internal store of the value that is used.</span>
 
         <span class="c1"># Define (empty) list of registered disease modules (filled in at `initialise_simulation`)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">recognised_modules_names</span> <span class="o">=</span> <span class="p">[]</span>
@@ -645,6 +654,10 @@
         <span class="c1"># Read in ResourceFile_Consumables</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;item_and_package_code_lookups&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
             <span class="n">path_to_resourcefiles_for_healthsystem</span> <span class="o">/</span> <span class="s1">&#39;consumables&#39;</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_Consumables_Items_and_Packages.csv&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;consumables_item_designations&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
+            <span class="n">path_to_resourcefiles_for_healthsystem</span> <span class="o">/</span> <span class="s2">&quot;consumables&quot;</span> <span class="o">/</span> <span class="s2">&quot;ResourceFile_Consumables_Item_Designations.csv&quot;</span><span class="p">,</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s1">&#39;is_diagnostic&#39;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s1">&#39;is_medicine&#39;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s1">&#39;is_other&#39;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">}</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;Item_Code&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;availability_estimates&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
             <span class="n">path_to_resourcefiles_for_healthsystem</span> <span class="o">/</span> <span class="s1">&#39;consumables&#39;</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_Consumables_availability_small.csv&#39;</span><span class="p">)</span>
 
@@ -728,9 +741,15 @@
         <span class="c1"># Determine service_availability</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">service_availability</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_service_availability</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">process_human_resources_files</span><span class="p">(</span>
-            <span class="n">use_funded_or_actual_staffing</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">get_use_funded_or_actual_staffing</span><span class="p">()</span>
-        <span class="p">)</span>
+        <span class="c1"># Process health system organisation files (Facilities, Appointment Types, Time Taken etc.)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">process_healthsystem_organisation_files</span><span class="p">()</span>
+
+        <span class="c1"># Set value for `use_funded_or_actual_staffing` and process Human Resources Files</span>
+        <span class="c1"># (Initially set value should be equal to what is specified by the parameter, but overwritten with what was</span>
+        <span class="c1"># provided in argument if an argument was specified -- provided for backward compatibility/debugging.)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_funded_or_actual_staffing</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;use_funded_or_actual_staffing&#39;</span><span class="p">]</span> \
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">arg_use_funded_or_actual_staffing</span> <span class="ow">is</span> <span class="kc">None</span> \
+            <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">arg_use_funded_or_actual_staffing</span>
 
         <span class="c1"># Initialise the BedDays class</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bed_days</span> <span class="o">=</span> <span class="n">BedDays</span><span class="p">(</span><span class="n">hs_module</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
@@ -739,8 +758,9 @@
 
         <span class="c1"># Initialise the Consumables class</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">consumables</span> <span class="o">=</span> <span class="n">Consumables</span><span class="p">(</span>
-            <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">update_consumables_availability_to_represent_merging_of_levels_1b_and_2</span><span class="p">(</span>
+            <span class="n">availability_data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">update_consumables_availability_to_represent_merging_of_levels_1b_and_2</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;availability_estimates&#39;</span><span class="p">]),</span>
+            <span class="n">item_code_designations</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;consumables_item_designations&#39;</span><span class="p">],</span>
             <span class="n">rng</span><span class="o">=</span><span class="n">rng_for_consumables</span><span class="p">,</span>
             <span class="n">availability</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">get_cons_availability</span><span class="p">()</span>
         <span class="p">)</span>
@@ -834,6 +854,16 @@
             <span class="n">Date</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;year_equip_availability_switch&quot;</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
         <span class="p">)</span>
 
+        <span class="c1"># Schedule an equipment availability switch</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span>
+            <span class="n">HealthSystemChangeParameters</span><span class="p">(</span>
+                <span class="bp">self</span><span class="p">,</span>
+                <span class="n">parameters</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s1">&#39;use_funded_or_actual_staffing&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;use_funded_or_actual_staffing_postSwitch&#39;</span><span class="p">]</span>
+                <span class="p">}</span>
+            <span class="p">),</span>
+            <span class="n">Date</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;year_use_funded_or_actual_staffing_switch&quot;</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="p">)</span>
 
         <span class="c1"># Schedule a one-off rescaling of _daily_capabilities broken down by officer type and level.</span>
         <span class="c1"># This occurs on 1st January of the year specified in the parameters.</span>
@@ -915,10 +945,17 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">list_fasttrack</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;tb_diagnosed&#39;</span><span class="p">,</span> <span class="s1">&#39;FT_if_tbdiagnosed&#39;</span><span class="p">))</span></div>
 
 
-<div class="viewcode-block" id="HealthSystem.process_human_resources_files">
-<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.process_human_resources_files">[docs]</a>
-    <span class="k">def</span> <span class="nf">process_human_resources_files</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">use_funded_or_actual_staffing</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create the data-structures needed from the information read into the parameters.&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="HealthSystem.process_healthsystem_organisation_files">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.process_healthsystem_organisation_files">[docs]</a>
+    <span class="k">def</span> <span class="nf">process_healthsystem_organisation_files</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create the data-structures needed from the information read into the parameters:</span>
+<span class="sd">         * self._facility_levels</span>
+<span class="sd">         * self._appointment_types</span>
+<span class="sd">         * self._appt_times</span>
+<span class="sd">         * self._appt_type_by_facLevel</span>
+<span class="sd">         * self._facility_by_facility_id</span>
+<span class="sd">         * self._facilities_for_each_district</span>
+<span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># * Define Facility Levels</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_facility_levels</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Master_Facilities_List&#39;</span><span class="p">][</span><span class="s1">&#39;Facility_Level&#39;</span><span class="p">])</span> <span class="o">-</span> <span class="p">{</span><span class="s1">&#39;5&#39;</span><span class="p">}</span>
@@ -1009,8 +1046,15 @@
         <span class="p">),</span> <span class="s2">&quot;There is not one of each facility type available to each district.&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_facility_by_facility_id</span> <span class="o">=</span> <span class="n">facilities_by_facility_id</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_facilities_for_each_district</span> <span class="o">=</span> <span class="n">facilities_per_level_and_district</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_facilities_for_each_district</span> <span class="o">=</span> <span class="n">facilities_per_level_and_district</span></div>
 
+
+<div class="viewcode-block" id="HealthSystem.setup_daily_capabilities">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.setup_daily_capabilities">[docs]</a>
+    <span class="k">def</span> <span class="nf">setup_daily_capabilities</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">use_funded_or_actual_staffing</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set up `self._daily_capabilities` and `self._officers_with_availability`.</span>
+<span class="sd">        This is called when the value for `use_funded_or_actual_staffing` is set - at the beginning of the simulation</span>
+<span class="sd">         and when the assumption when the underlying assumption for `use_funded_or_actual_staffing` is updated&quot;&quot;&quot;</span>
         <span class="c1"># * Store &#39;DailyCapabilities&#39; in correct format and using the specified underlying assumptions</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_daily_capabilities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">format_daily_capabilities</span><span class="p">(</span><span class="n">use_funded_or_actual_staffing</span><span class="p">)</span>
 
@@ -1278,16 +1322,17 @@
             <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">arg_mode_appt_constraints</span></div>
 
 
-<div class="viewcode-block" id="HealthSystem.get_use_funded_or_actual_staffing">
-<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_use_funded_or_actual_staffing">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_use_funded_or_actual_staffing</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns `use_funded_or_actual_staffing`. (Should be equal to what is specified by the parameter, but</span>
-<span class="sd">        overwrite with what was provided in argument if an argument was specified -- provided for backward</span>
-<span class="sd">        compatibility/debugging.)&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;use_funded_or_actual_staffing&#39;</span><span class="p">]</span> \
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">arg_use_funded_or_actual_staffing</span> <span class="ow">is</span> <span class="kc">None</span> \
-            <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">arg_use_funded_or_actual_staffing</span></div>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">use_funded_or_actual_staffing</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns value for `use_funded_or_actual_staffing`.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_funded_or_actual_staffing</span>
 
+    <span class="nd">@use_funded_or_actual_staffing</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">use_funded_or_actual_staffing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">use_funded_or_actual_staffing</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set value for `use_funded_or_actual_staffing` and update the daily_capabilities accordingly. &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="n">use_funded_or_actual_staffing</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;actual&#39;</span><span class="p">,</span> <span class="s1">&#39;funded&#39;</span><span class="p">,</span> <span class="s1">&#39;funded_plus&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_use_funded_or_actual_staffing</span> <span class="o">=</span> <span class="n">use_funded_or_actual_staffing</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_daily_capabilities</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_use_funded_or_actual_staffing</span><span class="p">)</span>
 
 <div class="viewcode-block" id="HealthSystem.get_priority_policy_initial">
 <a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_priority_policy_initial">[docs]</a>
@@ -1316,8 +1361,13 @@
             <span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
             <span class="c1"># Convert policy dataframe into dictionary to speed-up look-up process.</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">priority_rank_dict</span> <span class="o">=</span> \
-                <span class="n">Policy_df</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">&quot;Treatment&quot;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">orient</span><span class="o">=</span><span class="s2">&quot;index&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">priority_rank_dict</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">Policy_df</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">&quot;Treatment&quot;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="c1"># Standardize dtypes to ensure any integers represented as floats are</span>
+                <span class="c1"># converted to integer dtypes</span>
+                <span class="o">.</span><span class="n">convert_dtypes</span><span class="p">()</span>
+                <span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">orient</span><span class="o">=</span><span class="s2">&quot;index&quot;</span><span class="p">)</span>
+            <span class="p">)</span>
             <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">priority_rank_dict</span><span class="p">[</span><span class="s2">&quot;lowest_priority_considered&quot;</span><span class="p">]</span></div>
 
 
@@ -1936,7 +1986,7 @@
                 <span class="s1">&#39;Number_By_Appt_Type_Code&#39;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">event_details</span><span class="o">.</span><span class="n">appt_footprint</span><span class="p">),</span>
                 <span class="s1">&#39;Person_ID&#39;</span><span class="p">:</span> <span class="n">person_id</span><span class="p">,</span>
                 <span class="s1">&#39;priority&#39;</span><span class="p">:</span> <span class="n">priority</span><span class="p">,</span>
-                <span class="s1">&#39;Facility_Level&#39;</span><span class="p">:</span> <span class="n">event_details</span><span class="o">.</span><span class="n">facility_level</span> <span class="k">if</span> <span class="n">event_details</span><span class="o">.</span><span class="n">facility_level</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="o">-</span><span class="mi">99</span><span class="p">,</span>
+                <span class="s1">&#39;Facility_Level&#39;</span><span class="p">:</span> <span class="n">event_details</span><span class="o">.</span><span class="n">facility_level</span> <span class="k">if</span> <span class="n">event_details</span><span class="o">.</span><span class="n">facility_level</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;-99&quot;</span><span class="p">,</span>
                 <span class="s1">&#39;Facility_ID&#39;</span><span class="p">:</span> <span class="n">facility_id</span> <span class="k">if</span> <span class="n">facility_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="o">-</span><span class="mi">99</span><span class="p">,</span>
             <span class="p">},</span>
             <span class="n">description</span><span class="o">=</span><span class="s2">&quot;record of each HSI event that never ran&quot;</span>
@@ -2065,6 +2115,8 @@
 <a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.override_availability_of_consumables">[docs]</a>
     <span class="k">def</span> <span class="nf">override_availability_of_consumables</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_codes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Over-ride the availability (for all months and all facilities) of certain consumables item_codes.</span>
+<span class="sd">        Note that these changes will *not* persist following a change of the overall modulator of consumables</span>
+<span class="sd">        availability, `Consumables.availability`.</span>
 <span class="sd">        :param item_codes: Dictionary of the form {&lt;item_code&gt;: probability_that_item_is_available}</span>
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -2675,8 +2727,7 @@
                                         <span class="p">)</span>
 
                             <span class="c1"># Update today&#39;s footprint based on actual call and squeeze factor</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">running_total_footprint</span> <span class="o">-=</span> <span class="n">original_call</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">running_total_footprint</span> <span class="o">+=</span> <span class="n">updated_call</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">running_total_footprint</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">updated_call</span><span class="p">)</span>
 
                             <span class="c1"># Write to the log</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">record_hsi_event</span><span class="p">(</span>
@@ -3020,6 +3071,7 @@
 <span class="sd">        * `cons_availability`</span>
 <span class="sd">        * `beds_availability`</span>
 <span class="sd">        * `equip_availability`</span>
+<span class="sd">        * `use_funded_or_actual_staffing`</span>
 <span class="sd">    Note that no checking is done here on the suitability of values of each parameter.&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="HealthSystemChangeParameters.__init__">
@@ -3043,18 +3095,21 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">capabilities_coefficient</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span><span class="p">[</span><span class="s1">&#39;capabilities_coefficient&#39;</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="s1">&#39;cons_availability&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">consumables</span> <span class="o">=</span> <span class="n">Consumables</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;availability_estimates&#39;</span><span class="p">],</span>
-                                                  <span class="n">rng</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="p">,</span>
-                                                  <span class="n">availability</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span><span class="p">[</span><span class="s1">&#39;cons_availability&#39;</span><span class="p">])</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">consumables</span><span class="o">.</span><span class="n">on_start_of_day</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">consumables</span><span class="o">.</span><span class="n">availability</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span><span class="p">[</span><span class="s1">&#39;cons_availability&#39;</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="s1">&#39;beds_availability&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">bed_days</span><span class="o">.</span><span class="n">availability</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span><span class="p">[</span><span class="s1">&#39;beds_availability&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">bed_days</span><span class="o">.</span><span class="n">switch_beddays_availability</span><span class="p">(</span>
+                <span class="n">new_availability</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span><span class="p">[</span><span class="s2">&quot;beds_availability&quot;</span><span class="p">],</span>
+                <span class="n">effective_on_and_from</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
+                <span class="n">model_to_data_popsize_ratio</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;Demography&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">initial_model_to_data_popsize_ratio</span>
+            <span class="p">)</span>
 
         <span class="k">if</span> <span class="s1">&#39;equip_availability&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">equipment</span><span class="o">.</span><span class="n">availability</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span><span class="p">[</span><span class="s1">&#39;equip_availability&#39;</span><span class="p">]</span></div>
-</div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">equipment</span><span class="o">.</span><span class="n">availability</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span><span class="p">[</span><span class="s1">&#39;equip_availability&#39;</span><span class="p">]</span>
 
+        <span class="k">if</span> <span class="s1">&#39;use_funded_or_actual_staffing&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">use_funded_or_actual_staffing</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span><span class="p">[</span><span class="s1">&#39;use_funded_or_actual_staffing&#39;</span><span class="p">]</span></div>
+</div>
 
 
 <div class="viewcode-block" id="DynamicRescalingHRCapabilities">
@@ -3217,7 +3272,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on May 27, 2024.
+      <span class="lastupdated">Last updated on Aug 02, 2024.
       </span></p>
   </div>
 

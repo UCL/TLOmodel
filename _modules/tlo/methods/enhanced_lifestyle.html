@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.enhanced_lifestyle &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
+  <title>tlo.methods.enhanced_lifestyle &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
@@ -16,7 +16,7 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../../../_static/documentation_options.js?v=f3d69a25"></script>
         <script src="../../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -101,6 +101,7 @@
 <span class="kn">from</span> <span class="nn">tlo.analysis.utils</span> <span class="kn">import</span> <span class="n">flatten_multi_index_series_into_dict_for_logging</span>
 <span class="kn">from</span> <span class="nn">tlo.events</span> <span class="kn">import</span> <span class="n">PopulationScopeEventMixin</span><span class="p">,</span> <span class="n">RegularEvent</span>
 <span class="kn">from</span> <span class="nn">tlo.lm</span> <span class="kn">import</span> <span class="n">LinearModel</span><span class="p">,</span> <span class="n">LinearModelType</span><span class="p">,</span> <span class="n">Predictor</span>
+<span class="kn">from</span> <span class="nn">tlo.logging.helpers</span> <span class="kn">import</span> <span class="n">grouped_counts_with_all_combinations</span>
 <span class="kn">from</span> <span class="nn">tlo.util</span> <span class="kn">import</span> <span class="n">get_person_id_to_inherit_from</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
@@ -2065,33 +2066,42 @@
         <span class="k">for</span> <span class="n">_property</span> <span class="ow">in</span> <span class="n">all_lm_keys</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">_property</span> <span class="ow">in</span> <span class="n">log_by_age_15up</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">_property</span> <span class="ow">in</span> <span class="n">cat_by_rural_urban_props</span><span class="p">:</span>
-                    <span class="n">data</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">age_years</span> <span class="o">&gt;=</span> <span class="mi">15</span><span class="p">)]</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="p">[</span>
-                        <span class="s1">&#39;li_urban&#39;</span><span class="p">,</span> <span class="s1">&#39;sex&#39;</span><span class="p">,</span> <span class="n">_property</span><span class="p">,</span> <span class="s1">&#39;age_range&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+                    <span class="n">data</span> <span class="o">=</span> <span class="n">grouped_counts_with_all_combinations</span><span class="p">(</span>
+                        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">age_years</span> <span class="o">&gt;=</span> <span class="mi">15</span><span class="p">)],</span>
+                        <span class="p">[</span><span class="s2">&quot;li_urban&quot;</span><span class="p">,</span> <span class="s2">&quot;sex&quot;</span><span class="p">,</span> <span class="n">_property</span><span class="p">,</span> <span class="s2">&quot;age_range&quot;</span><span class="p">]</span>
+                    <span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">data</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">age_years</span> <span class="o">&gt;=</span> <span class="mi">15</span><span class="p">)]</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="p">[</span>
-                        <span class="s1">&#39;sex&#39;</span><span class="p">,</span> <span class="n">_property</span><span class="p">,</span> <span class="s1">&#39;age_range&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
-
+                    <span class="n">data</span> <span class="o">=</span> <span class="n">grouped_counts_with_all_combinations</span><span class="p">(</span>
+                        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">age_years</span> <span class="o">&gt;=</span> <span class="mi">15</span><span class="p">)],</span>
+                        <span class="p">[</span><span class="s2">&quot;sex&quot;</span><span class="p">,</span> <span class="n">_property</span><span class="p">,</span> <span class="s2">&quot;age_range&quot;</span><span class="p">]</span>
+                    <span class="p">)</span>
             <span class="k">elif</span> <span class="n">_property</span> <span class="o">==</span> <span class="s1">&#39;li_in_ed&#39;</span><span class="p">:</span>
-                <span class="n">data</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">age_years</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">19</span><span class="p">)]</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="p">[</span>
-                    <span class="s1">&#39;sex&#39;</span><span class="p">,</span> <span class="s1">&#39;li_wealth&#39;</span><span class="p">,</span> <span class="n">_property</span><span class="p">,</span> <span class="s1">&#39;age_years&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
-
+                <span class="n">data</span> <span class="o">=</span> <span class="n">grouped_counts_with_all_combinations</span><span class="p">(</span>
+                    <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">age_years</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">19</span><span class="p">)],</span>
+                    <span class="p">[</span><span class="s2">&quot;sex&quot;</span><span class="p">,</span> <span class="s2">&quot;li_wealth&quot;</span><span class="p">,</span> <span class="s2">&quot;li_in_ed&quot;</span><span class="p">,</span> <span class="s2">&quot;age_years&quot;</span><span class="p">],</span>
+                    <span class="p">{</span><span class="s2">&quot;age_years&quot;</span><span class="p">:</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">20</span><span class="p">)}</span>
+                <span class="p">)</span>
             <span class="k">elif</span> <span class="n">_property</span> <span class="o">==</span> <span class="s1">&#39;li_ed_lev&#39;</span><span class="p">:</span>
-                <span class="n">data</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">age_years</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">49</span><span class="p">)]</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="p">[</span>
-                    <span class="s1">&#39;sex&#39;</span><span class="p">,</span> <span class="s1">&#39;li_wealth&#39;</span><span class="p">,</span> <span class="n">_property</span><span class="p">,</span> <span class="s1">&#39;age_years&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
-
+                <span class="n">data</span> <span class="o">=</span> <span class="n">grouped_counts_with_all_combinations</span><span class="p">(</span>
+                    <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">age_years</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">49</span><span class="p">)],</span>
+                    <span class="p">[</span><span class="s2">&quot;sex&quot;</span><span class="p">,</span> <span class="s2">&quot;li_wealth&quot;</span><span class="p">,</span> <span class="s2">&quot;li_ed_lev&quot;</span><span class="p">,</span> <span class="s2">&quot;age_years&quot;</span><span class="p">],</span>
+                    <span class="p">{</span><span class="s2">&quot;age_years&quot;</span><span class="p">:</span> <span class="nb">range</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">50</span><span class="p">)}</span>
+                <span class="p">)</span>
             <span class="k">elif</span> <span class="n">_property</span> <span class="o">==</span> <span class="s1">&#39;li_is_sexworker&#39;</span><span class="p">:</span>
-                <span class="n">data</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">age_years</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">49</span><span class="p">))]</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="p">[</span>
-                    <span class="s1">&#39;sex&#39;</span><span class="p">,</span> <span class="n">_property</span><span class="p">,</span> <span class="s1">&#39;age_range&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
-
+                <span class="n">data</span> <span class="o">=</span> <span class="n">grouped_counts_with_all_combinations</span><span class="p">(</span>
+                    <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">age_years</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">49</span><span class="p">))],</span>
+                    <span class="p">[</span><span class="s2">&quot;sex&quot;</span><span class="p">,</span> <span class="s2">&quot;li_is_sexworker&quot;</span><span class="p">,</span> <span class="s2">&quot;age_range&quot;</span><span class="p">],</span>
+                <span class="p">)</span>
             <span class="k">elif</span> <span class="n">_property</span> <span class="ow">in</span> <span class="n">cat_by_rural_urban_props</span><span class="p">:</span>
                 <span class="c1"># log all properties that are also categorised by rural or urban in addition to ex and age groups</span>
-                <span class="n">data</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">]</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="p">[</span>
-                    <span class="s1">&#39;li_urban&#39;</span><span class="p">,</span> <span class="s1">&#39;sex&#39;</span><span class="p">,</span> <span class="n">_property</span><span class="p">,</span> <span class="s1">&#39;age_range&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
-
+                <span class="n">data</span> <span class="o">=</span> <span class="n">grouped_counts_with_all_combinations</span><span class="p">(</span>
+                    <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;li_urban&quot;</span><span class="p">,</span> <span class="s2">&quot;sex&quot;</span><span class="p">,</span> <span class="n">_property</span><span class="p">,</span> <span class="s2">&quot;age_range&quot;</span><span class="p">]</span>
+                <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># log all other remaining properties</span>
-                <span class="n">data</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">]</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;sex&#39;</span><span class="p">,</span> <span class="n">_property</span><span class="p">,</span> <span class="s1">&#39;age_range&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
-
+                <span class="n">data</span> <span class="o">=</span> <span class="n">grouped_counts_with_all_combinations</span><span class="p">(</span>
+                    <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;sex&quot;</span><span class="p">,</span> <span class="n">_property</span><span class="p">,</span> <span class="s2">&quot;age_range&quot;</span><span class="p">]</span>
+                <span class="p">)</span>
             <span class="c1"># log data</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                 <span class="n">key</span><span class="o">=</span><span class="n">_property</span><span class="p">,</span>
@@ -2109,7 +2119,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on May 27, 2024.
+      <span class="lastupdated">Last updated on Aug 02, 2024.
       </span></p>
   </div>
 

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>malaria (.xlsx) &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
+  <title>malaria (.xlsx) &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../_static/theme_overrides.css?v=6ea10ece" />
@@ -17,7 +17,7 @@
   
         <script src="../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../../_static/documentation_options.js?v=f3d69a25"></script>
         <script src="../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -60,6 +60,7 @@
 <li class="toctree-l1 current"><a class="reference internal" href="../index.html">Resource files</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../cmd/index.html">cmd</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../contraception/index.html">contraception</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../costing/index.html">costing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../demography/index.html">demography</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../epilepsy/index.html">epilepsy</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../gbd/index.html">gbd</a></li>
@@ -157,13 +158,15 @@
 <li><p><a class="reference internal" href="#map-commoditiesdata2023" id="id8">MAP_CommoditiesData2023</a></p></li>
 <li><p><a class="reference internal" href="#map-infectiondata2023" id="id9">MAP_InfectionData2023</a></p></li>
 <li><p><a class="reference internal" href="#parameters" id="id10">parameters</a></p></li>
-<li><p><a class="reference internal" href="#nmcp" id="id11">NMCP</a></p></li>
-<li><p><a class="reference internal" href="#map-itnrates" id="id12">MAP_ITNrates</a></p></li>
-<li><p><a class="reference internal" href="#map-irsrates" id="id13">MAP_IRSrates</a></p></li>
-<li><p><a class="reference internal" href="#severe-symptoms" id="id14">severe_symptoms</a></p></li>
-<li><p><a class="reference internal" href="#who-malreport" id="id15">WHO_MalReport</a></p></li>
-<li><p><a class="reference internal" href="#whocommodities" id="id16">WHOcommodities</a></p></li>
-<li><p><a class="reference internal" href="#interventions" id="id17">interventions</a></p></li>
+<li><p><a class="reference internal" href="#scaleup-parameters" id="id11">scaleup_parameters</a></p></li>
+<li><p><a class="reference internal" href="#highrisk-districts" id="id12">highrisk_districts</a></p></li>
+<li><p><a class="reference internal" href="#nmcp" id="id13">NMCP</a></p></li>
+<li><p><a class="reference internal" href="#map-itnrates" id="id14">MAP_ITNrates</a></p></li>
+<li><p><a class="reference internal" href="#map-irsrates" id="id15">MAP_IRSrates</a></p></li>
+<li><p><a class="reference internal" href="#severe-symptoms" id="id16">severe_symptoms</a></p></li>
+<li><p><a class="reference internal" href="#who-malreport" id="id17">WHO_MalReport</a></p></li>
+<li><p><a class="reference internal" href="#whocommodities" id="id18">WHOcommodities</a></p></li>
+<li><p><a class="reference internal" href="#interventions" id="id19">interventions</a></p></li>
 </ul>
 </li>
 </ul>
@@ -2192,11 +2195,99 @@
 <td><p>prob_of_treatment_success</p></td>
 <td><p>1</p></td>
 </tr>
+<tr class="row-odd"><td><p>27</p></td>
+<td><p>type_of_scaleup</p></td>
+<td><p>none</p></td>
+</tr>
+<tr class="row-even"><td><p>28</p></td>
+<td><p>scaleup_start_year</p></td>
+<td><p>2025</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="scaleup-parameters">
+<h2><a class="toc-backref" href="#id11" role="doc-backlink">scaleup_parameters</a><a class="headerlink" href="#scaleup-parameters" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"></th>
+<th class="head"><p>parameter</p></th>
+<th class="head"><p>target_value</p></th>
+<th class="head"><p>min_value</p></th>
+<th class="head"><p>max_value</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0</p></td>
+<td><p>prob_malaria_case_tests</p></td>
+<td><p>1</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>1</p></td>
+<td><p>rdt_testing_rates</p></td>
+<td><p>0.8</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>2</p></td>
+<td><p>prob_of_treatment_success</p></td>
+<td><p>1</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>3</p></td>
+<td><p>irs_district</p></td>
+<td><p>0.8</p></td>
+<td><p>0</p></td>
+<td><p>0.8</p></td>
+</tr>
+<tr class="row-even"><td><p>4</p></td>
+<td><p>itn_district</p></td>
+<td><p>0.7</p></td>
+<td><p>0</p></td>
+<td><p>0.7</p></td>
+</tr>
+<tr class="row-odd"><td><p>5</p></td>
+<td><p>itn</p></td>
+<td><p>0.7</p></td>
+<td><p>0</p></td>
+<td><p>0.7</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="highrisk-districts">
+<h2><a class="toc-backref" href="#id12" role="doc-backlink">highrisk_districts</a><a class="headerlink" href="#highrisk-districts" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"></th>
+<th class="head"><p>district</p></th>
+<th class="head"><p>district_num</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0</p></td>
+<td><p>Nkhotakota</p></td>
+<td><p>8</p></td>
+</tr>
+<tr class="row-odd"><td><p>1</p></td>
+<td><p>Balaka</p></td>
+<td><p>28</p></td>
+</tr>
+<tr class="row-even"><td><p>2</p></td>
+<td><p>Mangochi</p></td>
+<td><p>17</p></td>
+</tr>
+<tr class="row-odd"><td><p>3</p></td>
+<td><p>Nkhata Bay</p></td>
+<td><p>2</p></td>
+</tr>
 </tbody>
 </table>
 </section>
 <section id="nmcp">
-<h2><a class="toc-backref" href="#id11" role="doc-backlink">NMCP</a><a class="headerlink" href="#nmcp" title="Link to this heading"></a></h2>
+<h2><a class="toc-backref" href="#id13" role="doc-backlink">NMCP</a><a class="headerlink" href="#nmcp" title="Link to this heading"></a></h2>
 <table class="docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"></th>
@@ -2385,7 +2476,7 @@
 </table>
 </section>
 <section id="map-itnrates">
-<h2><a class="toc-backref" href="#id12" role="doc-backlink">MAP_ITNrates</a><a class="headerlink" href="#map-itnrates" title="Link to this heading"></a></h2>
+<h2><a class="toc-backref" href="#id14" role="doc-backlink">MAP_ITNrates</a><a class="headerlink" href="#map-itnrates" title="Link to this heading"></a></h2>
 <table class="docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"></th>
@@ -3839,7 +3930,7 @@
 </table>
 </section>
 <section id="map-irsrates">
-<h2><a class="toc-backref" href="#id13" role="doc-backlink">MAP_IRSrates</a><a class="headerlink" href="#map-irsrates" title="Link to this heading"></a></h2>
+<h2><a class="toc-backref" href="#id15" role="doc-backlink">MAP_IRSrates</a><a class="headerlink" href="#map-irsrates" title="Link to this heading"></a></h2>
 <table class="docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"></th>
@@ -5582,7 +5673,7 @@
 </table>
 </section>
 <section id="severe-symptoms">
-<h2><a class="toc-backref" href="#id14" role="doc-backlink">severe_symptoms</a><a class="headerlink" href="#severe-symptoms" title="Link to this heading"></a></h2>
+<h2><a class="toc-backref" href="#id16" role="doc-backlink">severe_symptoms</a><a class="headerlink" href="#severe-symptoms" title="Link to this heading"></a></h2>
 <table class="docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"></th>
@@ -5669,7 +5760,7 @@
 </table>
 </section>
 <section id="who-malreport">
-<h2><a class="toc-backref" href="#id15" role="doc-backlink">WHO_MalReport</a><a class="headerlink" href="#who-malreport" title="Link to this heading"></a></h2>
+<h2><a class="toc-backref" href="#id17" role="doc-backlink">WHO_MalReport</a><a class="headerlink" href="#who-malreport" title="Link to this heading"></a></h2>
 <table class="docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"></th>
@@ -5831,7 +5922,7 @@
 </table>
 </section>
 <section id="whocommodities">
-<h2><a class="toc-backref" href="#id16" role="doc-backlink">WHOcommodities</a><a class="headerlink" href="#whocommodities" title="Link to this heading"></a></h2>
+<h2><a class="toc-backref" href="#id18" role="doc-backlink">WHOcommodities</a><a class="headerlink" href="#whocommodities" title="Link to this heading"></a></h2>
 <table class="docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"></th>
@@ -5898,7 +5989,7 @@
 </table>
 </section>
 <section id="interventions">
-<h2><a class="toc-backref" href="#id17" role="doc-backlink">interventions</a><a class="headerlink" href="#interventions" title="Link to this heading"></a></h2>
+<h2><a class="toc-backref" href="#id19" role="doc-backlink">interventions</a><a class="headerlink" href="#interventions" title="Link to this heading"></a></h2>
 <table class="docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"></th>
@@ -6190,7 +6281,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on May 27, 2024.
+      <span class="lastupdated">Last updated on Aug 02, 2024.
       </span></p>
   </div>
 

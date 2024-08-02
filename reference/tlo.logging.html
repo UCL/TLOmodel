@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.logging package &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
+  <title>tlo.logging package &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -17,7 +17,7 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../_static/documentation_options.js?v=f3d69a25"></script>
         <script src="../_static/doctools.js?v=9a2dae69"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -97,6 +97,10 @@
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="tlo.logging.core.html">tlo.logging.core module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tlo.logging.core.html#tlo.logging.core.InconsistentLoggedColumnsWarning"><code class="docutils literal notranslate"><span class="pre">InconsistentLoggedColumnsWarning</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.logging.core.html#tlo.logging.core.initialise"><code class="docutils literal notranslate"><span class="pre">initialise()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.logging.core.html#tlo.logging.core.reset"><code class="docutils literal notranslate"><span class="pre">reset()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.logging.core.html#tlo.logging.core.set_output_file"><code class="docutils literal notranslate"><span class="pre">set_output_file()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="tlo.logging.core.html#tlo.logging.core.disable"><code class="docutils literal notranslate"><span class="pre">disable()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="tlo.logging.core.html#tlo.logging.core.getLogger"><code class="docutils literal notranslate"><span class="pre">getLogger()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="tlo.logging.core.html#tlo.logging.core.Logger"><code class="docutils literal notranslate"><span class="pre">Logger</span></code></a><ul>
@@ -107,6 +111,7 @@
 <li class="toctree-l3"><a class="reference internal" href="tlo.logging.core.html#tlo.logging.core.Logger.isEnabledFor"><code class="docutils literal notranslate"><span class="pre">Logger.isEnabledFor()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.logging.core.html#tlo.logging.core.Logger.reset_attributes"><code class="docutils literal notranslate"><span class="pre">Logger.reset_attributes()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.logging.core.html#tlo.logging.core.Logger.setLevel"><code class="docutils literal notranslate"><span class="pre">Logger.setLevel()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tlo.logging.core.html#tlo.logging.core.Logger.log"><code class="docutils literal notranslate"><span class="pre">Logger.log()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.logging.core.html#tlo.logging.core.Logger.critical"><code class="docutils literal notranslate"><span class="pre">Logger.critical()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.logging.core.html#tlo.logging.core.Logger.debug"><code class="docutils literal notranslate"><span class="pre">Logger.debug()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.logging.core.html#tlo.logging.core.Logger.info"><code class="docutils literal notranslate"><span class="pre">Logger.info()</span></code></a></li>
@@ -123,10 +128,9 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="tlo.logging.helpers.html">tlo.logging.helpers module</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="tlo.logging.helpers.html#tlo.logging.helpers.set_output_file"><code class="docutils literal notranslate"><span class="pre">set_output_file()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="tlo.logging.helpers.html#tlo.logging.helpers.set_logging_levels"><code class="docutils literal notranslate"><span class="pre">set_logging_levels()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="tlo.logging.helpers.html#tlo.logging.helpers.init_logging"><code class="docutils literal notranslate"><span class="pre">init_logging()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="tlo.logging.helpers.html#tlo.logging.helpers.set_simulation"><code class="docutils literal notranslate"><span class="pre">set_simulation()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.logging.helpers.html#tlo.logging.helpers.get_dataframe_row_as_dict_for_logging"><code class="docutils literal notranslate"><span class="pre">get_dataframe_row_as_dict_for_logging()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.logging.helpers.html#tlo.logging.helpers.grouped_counts_with_all_combinations"><code class="docutils literal notranslate"><span class="pre">grouped_counts_with_all_combinations()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="tlo.logging.reader.html">tlo.logging.reader module</a><ul>
@@ -145,46 +149,57 @@
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-tlo.logging" title="Link to this heading"></a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.logging.disable">
-<span class="sig-name descname"><span class="pre">disable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">level</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/logging/core.html#disable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.logging.disable" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">disable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/tlo/logging/core.html#disable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.logging.disable" title="Link to this definition"></a></dt>
+<dd><p>Disable all logging calls of specified level and below.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.logging.getLogger">
-<span class="sig-name descname"><span class="pre">getLogger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'tlo'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/logging/core.html#getLogger"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.logging.getLogger" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">getLogger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'tlo'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="tlo.logging.core.html#tlo.logging.core.Logger" title="tlo.logging.core.Logger"><span class="pre">Logger</span></a></span></span><a class="reference internal" href="../_modules/tlo/logging/core.html#getLogger"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.logging.getLogger" title="Link to this definition"></a></dt>
 <dd><p>Returns a TLO logger of the specified name</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="tlo.logging.set_output_file">
-<span class="sig-name descname"><span class="pre">set_output_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">log_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">FileHandler</span></span></span><a class="reference internal" href="../_modules/tlo/logging/helpers.html#set_output_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.logging.set_output_file" title="Link to this definition"></a></dt>
-<dd><p>Add filehandler to logger</p>
+<dt class="sig sig-object py" id="tlo.logging.initialise">
+<span class="sig-name descname"><span class="pre">initialise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">add_stdout_handler:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">simulation_date_getter:</span> <span class="pre">~typing.Callable[[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">str]</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">_mock_simulation_date_getter&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">root_level:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">30</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stdout_handler_level:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">formatter:</span> <span class="pre">~logging.Formatter</span> <span class="pre">=</span> <span class="pre">&lt;logging.Formatter</span> <span class="pre">object&gt;</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/tlo/logging/core.html#initialise"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.logging.initialise" title="Link to this definition"></a></dt>
+<dd><p>Initialise logging system and set up root <cite>tlo</cite> logger.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>log_path</strong> – path for file</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>filehandler object</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>add_stdout_handler</strong> – Whether to add a handler to output log entries to stdout.</p></li>
+<li><p><strong>simulation_date_getter</strong> – Zero-argument function returning simulation date as
+string in ISO format to use in log entries. Defaults to function returning a
+a fixed dummy date for use before a simulation has been initialised.</p></li>
+<li><p><strong>root_level</strong> – Logging level for root <cite>tlo</cite> logger.</p></li>
+<li><p><strong>formatter</strong> – Formatter to use for logging to stdout.</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="tlo.logging.init_logging">
-<span class="sig-name descname"><span class="pre">init_logging</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">add_stdout_handler</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/logging/helpers.html#init_logging"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.logging.init_logging" title="Link to this definition"></a></dt>
-<dd><p>Initialise default logging with stdout stream</p>
+<dt class="sig sig-object py" id="tlo.logging.reset">
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/logging/core.html#reset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.logging.reset" title="Link to this definition"></a></dt>
+<dd><p>Reset global logging state to values at initial import.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="tlo.logging.set_simulation">
-<span class="sig-name descname"><span class="pre">set_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">simulation</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/logging/helpers.html#set_simulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.logging.set_simulation" title="Link to this definition"></a></dt>
-<dd><p>Inject simulation into logger for structured logging, called by the simulation
-:param simulation:
-:return:</p>
+<dt class="sig sig-object py" id="tlo.logging.set_output_file">
+<span class="sig-name descname"><span class="pre">set_output_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">log_path:</span> <span class="pre">~pathlib.Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">formatter:</span> <span class="pre">~logging.Formatter</span> <span class="pre">=</span> <span class="pre">&lt;logging.Formatter</span> <span class="pre">object&gt;</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">FileHandler</span></span></span><a class="reference internal" href="../_modules/tlo/logging/core.html#set_output_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.logging.set_output_file" title="Link to this definition"></a></dt>
+<dd><p>Add file handler to logger.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>log_path</strong> – Path for file.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>File handler object.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.logging.set_logging_levels">
-<span class="sig-name descname"><span class="pre">set_logging_levels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">custom_levels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/logging/helpers.html#set_logging_levels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.logging.set_logging_levels" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">set_logging_levels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">custom_levels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/tlo/logging/helpers.html#set_logging_levels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.logging.set_logging_levels" title="Link to this definition"></a></dt>
 <dd><p>Set custom logging levels for disease modules</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -208,7 +223,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on May 27, 2024.
+      <span class="lastupdated">Last updated on Aug 02, 2024.
       </span></p>
   </div>
 

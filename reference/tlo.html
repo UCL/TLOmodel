@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo package &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
+  <title>tlo package &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -17,7 +17,7 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../_static/documentation_options.js?v=f3d69a25"></script>
         <script src="../_static/doctools.js?v=9a2dae69"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -152,6 +152,7 @@
 <li class="toctree-l4"><a class="reference internal" href="tlo.analysis.utils.html#tlo.analysis.utils.plot_clustered_stacked"><code class="docutils literal notranslate"><span class="pre">plot_clustered_stacked()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.analysis.utils.html#tlo.analysis.utils.get_mappers_in_fullmodel"><code class="docutils literal notranslate"><span class="pre">get_mappers_in_fullmodel()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.analysis.utils.html#tlo.analysis.utils.get_parameters_for_status_quo"><code class="docutils literal notranslate"><span class="pre">get_parameters_for_status_quo()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="tlo.analysis.utils.html#tlo.analysis.utils.get_parameters_for_standard_mode2_runs"><code class="docutils literal notranslate"><span class="pre">get_parameters_for_standard_mode2_runs()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.analysis.utils.html#tlo.analysis.utils.get_parameters_for_improved_healthsystem_and_healthcare_seeking"><code class="docutils literal notranslate"><span class="pre">get_parameters_for_improved_healthsystem_and_healthcare_seeking()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.analysis.utils.html#tlo.analysis.utils.mix_scenarios"><code class="docutils literal notranslate"><span class="pre">mix_scenarios()</span></code></a></li>
 </ul>
@@ -164,6 +165,10 @@
 <li class="toctree-l1"><a class="reference internal" href="tlo.logging.html">tlo.logging package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="tlo.logging.html#submodules">Submodules</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="tlo.logging.core.html">tlo.logging.core module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="tlo.logging.core.html#tlo.logging.core.InconsistentLoggedColumnsWarning"><code class="docutils literal notranslate"><span class="pre">InconsistentLoggedColumnsWarning</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="tlo.logging.core.html#tlo.logging.core.initialise"><code class="docutils literal notranslate"><span class="pre">initialise()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="tlo.logging.core.html#tlo.logging.core.reset"><code class="docutils literal notranslate"><span class="pre">reset()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="tlo.logging.core.html#tlo.logging.core.set_output_file"><code class="docutils literal notranslate"><span class="pre">set_output_file()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.logging.core.html#tlo.logging.core.disable"><code class="docutils literal notranslate"><span class="pre">disable()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.logging.core.html#tlo.logging.core.getLogger"><code class="docutils literal notranslate"><span class="pre">getLogger()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.logging.core.html#tlo.logging.core.Logger"><code class="docutils literal notranslate"><span class="pre">Logger</span></code></a></li>
@@ -174,10 +179,9 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.logging.helpers.html">tlo.logging.helpers module</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="tlo.logging.helpers.html#tlo.logging.helpers.set_output_file"><code class="docutils literal notranslate"><span class="pre">set_output_file()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.logging.helpers.html#tlo.logging.helpers.set_logging_levels"><code class="docutils literal notranslate"><span class="pre">set_logging_levels()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="tlo.logging.helpers.html#tlo.logging.helpers.init_logging"><code class="docutils literal notranslate"><span class="pre">init_logging()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="tlo.logging.helpers.html#tlo.logging.helpers.set_simulation"><code class="docutils literal notranslate"><span class="pre">set_simulation()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="tlo.logging.helpers.html#tlo.logging.helpers.get_dataframe_row_as_dict_for_logging"><code class="docutils literal notranslate"><span class="pre">get_dataframe_row_as_dict_for_logging()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="tlo.logging.helpers.html#tlo.logging.helpers.grouped_counts_with_all_combinations"><code class="docutils literal notranslate"><span class="pre">grouped_counts_with_all_combinations()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.logging.reader.html">tlo.logging.reader module</a><ul>
@@ -189,9 +193,9 @@
 <li class="toctree-l2"><a class="reference internal" href="tlo.logging.html#module-tlo.logging">Module contents</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="tlo.logging.html#tlo.logging.disable"><code class="docutils literal notranslate"><span class="pre">disable()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.logging.html#tlo.logging.getLogger"><code class="docutils literal notranslate"><span class="pre">getLogger()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tlo.logging.html#tlo.logging.initialise"><code class="docutils literal notranslate"><span class="pre">initialise()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tlo.logging.html#tlo.logging.reset"><code class="docutils literal notranslate"><span class="pre">reset()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.logging.html#tlo.logging.set_output_file"><code class="docutils literal notranslate"><span class="pre">set_output_file()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="tlo.logging.html#tlo.logging.init_logging"><code class="docutils literal notranslate"><span class="pre">init_logging()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="tlo.logging.html#tlo.logging.set_simulation"><code class="docutils literal notranslate"><span class="pre">set_simulation()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.logging.html#tlo.logging.set_logging_levels"><code class="docutils literal notranslate"><span class="pre">set_logging_levels()</span></code></a></li>
 </ul>
 </li>
@@ -401,11 +405,13 @@
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.hiv.html#tlo.methods.hiv.HivAidsTbDeathEvent"><code class="docutils literal notranslate"><span class="pre">HivAidsTbDeathEvent</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.hiv.html#tlo.methods.hiv.Hiv_DecisionToContinueOnPrEP"><code class="docutils literal notranslate"><span class="pre">Hiv_DecisionToContinueOnPrEP</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.hiv.html#tlo.methods.hiv.Hiv_DecisionToContinueTreatment"><code class="docutils literal notranslate"><span class="pre">Hiv_DecisionToContinueTreatment</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="tlo.methods.hiv.html#tlo.methods.hiv.HivScaleUpEvent"><code class="docutils literal notranslate"><span class="pre">HivScaleUpEvent</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.hiv.html#tlo.methods.hiv.HSI_Hiv_TestAndRefer"><code class="docutils literal notranslate"><span class="pre">HSI_Hiv_TestAndRefer</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.hiv.html#tlo.methods.hiv.HSI_Hiv_Circ"><code class="docutils literal notranslate"><span class="pre">HSI_Hiv_Circ</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.hiv.html#tlo.methods.hiv.HSI_Hiv_StartInfantProphylaxis"><code class="docutils literal notranslate"><span class="pre">HSI_Hiv_StartInfantProphylaxis</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.hiv.html#tlo.methods.hiv.HSI_Hiv_StartOrContinueOnPrep"><code class="docutils literal notranslate"><span class="pre">HSI_Hiv_StartOrContinueOnPrep</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.hiv.html#tlo.methods.hiv.HSI_Hiv_StartOrContinueTreatment"><code class="docutils literal notranslate"><span class="pre">HSI_Hiv_StartOrContinueTreatment</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="tlo.methods.hiv.html#tlo.methods.hiv.HSI_Hiv_EndOfLifeCare"><code class="docutils literal notranslate"><span class="pre">HSI_Hiv_EndOfLifeCare</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.hiv.html#tlo.methods.hiv.HivLoggingEvent"><code class="docutils literal notranslate"><span class="pre">HivLoggingEvent</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.hiv.html#tlo.methods.hiv.HivCheckPropertiesEvent"><code class="docutils literal notranslate"><span class="pre">HivCheckPropertiesEvent</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.hiv.html#tlo.methods.hiv.DummyHivModule"><code class="docutils literal notranslate"><span class="pre">DummyHivModule</span></code></a></li>
@@ -421,7 +427,7 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.hsi_generic_first_appts.html">tlo.methods.hsi_generic_first_appts module</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="tlo.methods.hsi_generic_first_appts.html#tlo.methods.hsi_generic_first_appts.HSI_BaseGenericFirstAppt"><code class="docutils literal notranslate"><span class="pre">HSI_BaseGenericFirstAppt</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="tlo.methods.hsi_generic_first_appts.html#tlo.methods.hsi_generic_first_appts._BaseHSIGenericFirstAppt"><code class="docutils literal notranslate"><span class="pre">_BaseHSIGenericFirstAppt</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.hsi_generic_first_appts.html#tlo.methods.hsi_generic_first_appts.HSI_GenericNonEmergencyFirstAppt"><code class="docutils literal notranslate"><span class="pre">HSI_GenericNonEmergencyFirstAppt</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.hsi_generic_first_appts.html#tlo.methods.hsi_generic_first_appts.HSI_GenericEmergencyFirstAppt"><code class="docutils literal notranslate"><span class="pre">HSI_GenericEmergencyFirstAppt</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.hsi_generic_first_appts.html#tlo.methods.hsi_generic_first_appts.HSI_EmergencyCare_SpuriousSymptom"><code class="docutils literal notranslate"><span class="pre">HSI_EmergencyCare_SpuriousSymptom</span></code></a></li>
@@ -445,6 +451,7 @@
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.malaria.html">tlo.methods.malaria module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.malaria.html#tlo.methods.malaria.Malaria"><code class="docutils literal notranslate"><span class="pre">Malaria</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.malaria.html#tlo.methods.malaria.MalariaPollingEventDistrict"><code class="docutils literal notranslate"><span class="pre">MalariaPollingEventDistrict</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="tlo.methods.malaria.html#tlo.methods.malaria.MalariaScaleUpEvent"><code class="docutils literal notranslate"><span class="pre">MalariaScaleUpEvent</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.malaria.html#tlo.methods.malaria.MalariaIPTp"><code class="docutils literal notranslate"><span class="pre">MalariaIPTp</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.malaria.html#tlo.methods.malaria.MalariaEndIPTpProtection"><code class="docutils literal notranslate"><span class="pre">MalariaEndIPTpProtection</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.malaria.html#tlo.methods.malaria.MalariaDeathEvent"><code class="docutils literal notranslate"><span class="pre">MalariaDeathEvent</span></code></a></li>
@@ -616,9 +623,9 @@
 </li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.tb.html">tlo.methods.tb module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.tb.html#tlo.methods.tb.Tb"><code class="docutils literal notranslate"><span class="pre">Tb</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="tlo.methods.tb.html#tlo.methods.tb.ScenarioSetupEvent"><code class="docutils literal notranslate"><span class="pre">ScenarioSetupEvent</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.tb.html#tlo.methods.tb.TbActiveCasePoll"><code class="docutils literal notranslate"><span class="pre">TbActiveCasePoll</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="tlo.methods.tb.html#tlo.methods.tb.TbTreatmentAndRelapseEvents"><code class="docutils literal notranslate"><span class="pre">TbTreatmentAndRelapseEvents</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="tlo.methods.tb.html#tlo.methods.tb.TbRegularEvents"><code class="docutils literal notranslate"><span class="pre">TbRegularEvents</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="tlo.methods.tb.html#tlo.methods.tb.TbScaleUpEvent"><code class="docutils literal notranslate"><span class="pre">TbScaleUpEvent</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.tb.html#tlo.methods.tb.TbActiveEvent"><code class="docutils literal notranslate"><span class="pre">TbActiveEvent</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.tb.html#tlo.methods.tb.TbSelfCureEvent"><code class="docutils literal notranslate"><span class="pre">TbSelfCureEvent</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.tb.html#tlo.methods.tb.HSI_Tb_ScreeningAndRefer"><code class="docutils literal notranslate"><span class="pre">HSI_Tb_ScreeningAndRefer</span></code></a></li>
@@ -628,7 +635,9 @@
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.tb.html#tlo.methods.tb.HSI_Tb_StartTreatment"><code class="docutils literal notranslate"><span class="pre">HSI_Tb_StartTreatment</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.tb.html#tlo.methods.tb.HSI_Tb_FollowUp"><code class="docutils literal notranslate"><span class="pre">HSI_Tb_FollowUp</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.tb.html#tlo.methods.tb.HSI_Tb_Start_or_Continue_Ipt"><code class="docutils literal notranslate"><span class="pre">HSI_Tb_Start_or_Continue_Ipt</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="tlo.methods.tb.html#tlo.methods.tb.HSI_Tb_EndOfLifeCare"><code class="docutils literal notranslate"><span class="pre">HSI_Tb_EndOfLifeCare</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.tb.html#tlo.methods.tb.Tb_DecisionToContinueIPT"><code class="docutils literal notranslate"><span class="pre">Tb_DecisionToContinueIPT</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="tlo.methods.tb.html#tlo.methods.tb.TbDecideDeathEvent"><code class="docutils literal notranslate"><span class="pre">TbDecideDeathEvent</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.tb.html#tlo.methods.tb.TbDeathEvent"><code class="docutils literal notranslate"><span class="pre">TbDeathEvent</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.tb.html#tlo.methods.tb.TbLoggingEvent"><code class="docutils literal notranslate"><span class="pre">TbLoggingEvent</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.tb.html#tlo.methods.tb.TbCheckPropertiesEvent"><code class="docutils literal notranslate"><span class="pre">TbCheckPropertiesEvent</span></code></a></li>
@@ -731,7 +740,6 @@
 <li class="toctree-l3"><a class="reference internal" href="tlo.core.html#tlo.core.Module.CAUSES_OF_DISABILITY"><code class="docutils literal notranslate"><span class="pre">Module.CAUSES_OF_DISABILITY</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.core.html#tlo.core.Module.PARAMETERS"><code class="docutils literal notranslate"><span class="pre">Module.PARAMETERS</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.core.html#tlo.core.Module.PROPERTIES"><code class="docutils literal notranslate"><span class="pre">Module.PROPERTIES</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="tlo.core.html#tlo.core.Module.healthsystem"><code class="docutils literal notranslate"><span class="pre">Module.healthsystem</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.core.html#tlo.core.Module.parameters"><code class="docutils literal notranslate"><span class="pre">Module.parameters</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.core.html#tlo.core.Module.load_parameters_from_dataframe"><code class="docutils literal notranslate"><span class="pre">Module.load_parameters_from_dataframe()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.core.html#tlo.core.Module.read_parameters"><code class="docutils literal notranslate"><span class="pre">Module.read_parameters()</span></code></a></li>
@@ -740,8 +748,6 @@
 <li class="toctree-l3"><a class="reference internal" href="tlo.core.html#tlo.core.Module.pre_initialise_population"><code class="docutils literal notranslate"><span class="pre">Module.pre_initialise_population()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.core.html#tlo.core.Module.on_birth"><code class="docutils literal notranslate"><span class="pre">Module.on_birth()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.core.html#tlo.core.Module.on_simulation_end"><code class="docutils literal notranslate"><span class="pre">Module.on_simulation_end()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="tlo.core.html#tlo.core.Module.do_at_generic_first_appt"><code class="docutils literal notranslate"><span class="pre">Module.do_at_generic_first_appt()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="tlo.core.html#tlo.core.Module.do_at_generic_first_appt_emergency"><code class="docutils literal notranslate"><span class="pre">Module.do_at_generic_first_appt_emergency()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -828,7 +834,11 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="tlo.population.html">tlo.population module</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="tlo.population.html#tlo.population.PatientDetails"><code class="docutils literal notranslate"><span class="pre">PatientDetails</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.population.html#tlo.population.IndividualProperties"><code class="docutils literal notranslate"><span class="pre">IndividualProperties</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="tlo.population.html#tlo.population.IndividualProperties.synchronize_updates_to_dataframe"><code class="docutils literal notranslate"><span class="pre">IndividualProperties.synchronize_updates_to_dataframe()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tlo.population.html#tlo.population.IndividualProperties.finalize"><code class="docutils literal notranslate"><span class="pre">IndividualProperties.finalize()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="tlo.population.html#tlo.population.Population"><code class="docutils literal notranslate"><span class="pre">Population</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="tlo.population.html#tlo.population.Population.initial_size"><code class="docutils literal notranslate"><span class="pre">Population.initial_size</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.population.html#tlo.population.Population.props"><code class="docutils literal notranslate"><span class="pre">Population.props</span></code></a></li>
@@ -837,7 +847,7 @@
 <li class="toctree-l3"><a class="reference internal" href="tlo.population.html#tlo.population.Population.next_person_id"><code class="docutils literal notranslate"><span class="pre">Population.next_person_id</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.population.html#tlo.population.Population.do_birth"><code class="docutils literal notranslate"><span class="pre">Population.do_birth()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.population.html#tlo.population.Population.make_test_property"><code class="docutils literal notranslate"><span class="pre">Population.make_test_property()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="tlo.population.html#tlo.population.Population.row_in_readonly_form"><code class="docutils literal notranslate"><span class="pre">Population.row_in_readonly_form()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tlo.population.html#tlo.population.Population.individual_properties"><code class="docutils literal notranslate"><span class="pre">Population.individual_properties()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -888,6 +898,8 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="tlo.scenario.html">tlo.scenario module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="tlo.scenario.html#tlo.scenario.BaseScenario"><code class="docutils literal notranslate"><span class="pre">BaseScenario</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="tlo.scenario.html#tlo.scenario.BaseScenario.parse_arguments"><code class="docutils literal notranslate"><span class="pre">BaseScenario.parse_arguments()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tlo.scenario.html#tlo.scenario.BaseScenario.add_arguments"><code class="docutils literal notranslate"><span class="pre">BaseScenario.add_arguments()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.scenario.html#tlo.scenario.BaseScenario.log_configuration"><code class="docutils literal notranslate"><span class="pre">BaseScenario.log_configuration()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.scenario.html#tlo.scenario.BaseScenario.modules"><code class="docutils literal notranslate"><span class="pre">BaseScenario.modules()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.scenario.html#tlo.scenario.BaseScenario.draw_parameters"><code class="docutils literal notranslate"><span class="pre">BaseScenario.draw_parameters()</span></code></a></li>
@@ -923,7 +935,6 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="tlo.simulation.html">tlo.simulation module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="tlo.simulation.html#tlo.simulation.Simulation"><code class="docutils literal notranslate"><span class="pre">Simulation</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="tlo.simulation.html#tlo.simulation.Simulation.configure_logging"><code class="docutils literal notranslate"><span class="pre">Simulation.configure_logging()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.simulation.html#tlo.simulation.Simulation.log_filepath"><code class="docutils literal notranslate"><span class="pre">Simulation.log_filepath</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.simulation.html#tlo.simulation.Simulation.register"><code class="docutils literal notranslate"><span class="pre">Simulation.register()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.simulation.html#tlo.simulation.Simulation.make_initial_population"><code class="docutils literal notranslate"><span class="pre">Simulation.make_initial_population()</span></code></a></li>
@@ -962,6 +973,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="tlo.util.html#tlo.util.random_date"><code class="docutils literal notranslate"><span class="pre">random_date()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.util.html#tlo.util.str_to_pandas_date"><code class="docutils literal notranslate"><span class="pre">str_to_pandas_date()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="tlo.util.html#tlo.util.hash_dataframe"><code class="docutils literal notranslate"><span class="pre">hash_dataframe()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="tlo.util.html#tlo.util.get_person_id_to_inherit_from"><code class="docutils literal notranslate"><span class="pre">get_person_id_to_inherit_from()</span></code></a></li>
 </ul>
@@ -989,7 +1001,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on May 27, 2024.
+      <span class="lastupdated">Last updated on Aug 02, 2024.
       </span></p>
   </div>
 

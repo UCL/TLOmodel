@@ -6,7 +6,7 @@ tlo.methods.depression module
 
 .. autoclass:: Depression
 
-     Bases: :class:`tlo.core.Module`
+     Bases: :class:`tlo.core.Module`, :class:`tlo.methods.hsi_generic_first_appts.GenericFirstAppointmentsMixin`
 
 
      **PARAMETERS:**
@@ -87,6 +87,9 @@ tlo.methods.depression module
         * - rr_depr_agege60
           - REAL
           - Relative rate of depression associated with age > 60
+        * - rr_depr_hiv
+          - REAL
+          - Relative rate of depression associated with HIV infection
         * - depr_resolution_rates
           - LIST
           - Risk of depression resolving in 3 months if no chronic conditions and no treatments.Each individual is equally likely to be assigned each of these risks
@@ -175,15 +178,15 @@ tlo.methods.depression module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'Suicide': <tlo.methods.causes.Cause object at 0x12e00e590>}
+     CAUSES_OF_DEATH : {'Suicide': <tlo.methods.causes.Cause object at 0x12a59c4d0>}
 
-     CAUSES_OF_DISABILITY : {'SevereDepression': <tlo.methods.causes.Cause object at 0x12e00e890>}
+     CAUSES_OF_DISABILITY : {'SevereDepression': <tlo.methods.causes.Cause object at 0x12a59cfd0>}
 
-     INIT_DEPENDENCIES : {'Contraception', 'HealthSystem', 'Lifestyle', 'SymptomManager', 'Demography'}
+     INIT_DEPENDENCIES : {'HealthSystem', 'Demography', 'SymptomManager', 'Lifestyle', 'Contraception'}
 
-     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>}
 
-     OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
+     OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden', 'Hiv'}
 
      **Functions (defined or overridden in class Depression):**
 

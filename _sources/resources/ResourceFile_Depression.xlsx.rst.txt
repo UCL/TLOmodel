@@ -34,18 +34,19 @@ parameter_values
   20  rr\_depr\_on\_antidepr                                    30
   21  rr\_depr\_age1519                                         1                                         Kim et al 2015;
   22  rr\_depr\_agege60                                         3                                         Kohler et al 2017;
-  23  depr\_resolution\_rates                                   [0.2, 0.3, 0.5, 0.7, 0.95]                Abas et al, 1997; Dow et al 2014;
-  24  rr\_resol\_depr\_cc                                       0.5
-  25  rr\_resol\_depr\_on\_antidepr                             1.5                                       Hengartner 2017; Cipriani et al 2018; Furukawa et al 2016;Faria et 2017; Kirsch 2014;
-  26  rr\_resol\_depr\_current\_talk\_ther                      1.1
-  27  prob\_3m\_stop\_antidepr                                  0.7                                       None
-  28  prob\_3m\_default\_antidepr                               0.2                                       None
-  29  prob\_3m\_suicide\_depr\_m                                0.0005                                    Chasimpha et al 2015   to be infered based on overall suicide rate and prevalence of depression (assume depression a pre-requisite for suicide) Suicide rate in adults in Karonga study 26.1 per 100,000 person years in adult men (age ge 15) and 8.0 per 100,000 person years in adult women.  Chasimpha et al BMC Public Health 2015
-  30  rr\_suicide\_depr\_f                                      0.333                                     Chasimpha et al 2015
-  31  prob\_3m\_selfharm\_depr                                  0.0005                                    None
-  32  sensitivity\_of\_assessment\_of\_depression               0.75                                      None
-  33  pr\_assessed\_for\_depression\_in\_generic\_appt\_level1  0.01                                      No available reference found, but co-calibrated with pr\_assessed\_for\_depression\_for\_perinatal\_female for a better Model/Data ratio on mental health service usage.
-  34  anti\_depressant\_medication\_item\_code                  267                                       First line treatment (Amitriptyline 25mg\_100\_CMST)
-  35  pr\_assessed\_for\_depression\_for\_perinatal\_female     0.01                                      No available reference found, but co-calibrated with pr\_assessed\_for\_depression\_in\_generic\_appt\_level1 for a better Model/Data ratio on mental health service usage.
+  23  rr\_depr\_hiv                                             1.99                                      Ciesla & Roberts 2001;
+  24  depr\_resolution\_rates                                   [0.2, 0.3, 0.5, 0.7, 0.95]                Abas et al, 1997; Dow et al 2014;
+  25  rr\_resol\_depr\_cc                                       0.5
+  26  rr\_resol\_depr\_on\_antidepr                             1.5                                       Hengartner 2017; Cipriani et al 2018; Furukawa et al 2016;Faria et 2017; Kirsch 2014;
+  27  rr\_resol\_depr\_current\_talk\_ther                      1.1
+  28  prob\_3m\_stop\_antidepr                                  0.7                                       None
+  29  prob\_3m\_default\_antidepr                               0.2                                       None
+  30  prob\_3m\_suicide\_depr\_m                                0.0005                                    Chasimpha et al 2015   to be infered based on overall suicide rate and prevalence of depression (assume depression a pre-requisite for suicide) Suicide rate in adults in Karonga study 26.1 per 100,000 person years in adult men (age ge 15) and 8.0 per 100,000 person years in adult women.  Chasimpha et al BMC Public Health 2015
+  31  rr\_suicide\_depr\_f                                      0.333                                     Chasimpha et al 2015
+  32  prob\_3m\_selfharm\_depr                                  0.0005                                    None
+  33  sensitivity\_of\_assessment\_of\_depression               0.75                                      None
+  34  pr\_assessed\_for\_depression\_in\_generic\_appt\_level1  0.01                                      No available reference found, but co-calibrated with pr\_assessed\_for\_depression\_for\_perinatal\_female for a better Model/Data ratio on mental health service usage.
+  35  anti\_depressant\_medication\_item\_code                  267                                       First line treatment (Amitriptyline 25mg\_100\_CMST)
+  36  pr\_assessed\_for\_depression\_for\_perinatal\_female     0.01                                      No available reference found, but co-calibrated with pr\_assessed\_for\_depression\_in\_generic\_appt\_level1 for a better Model/Data ratio on mental health service usage.
 ====  ========================================================  ==========================  ============  =======================================================================================================================================================================================================================================================================================================================================  ============  ============  ============  ============
 

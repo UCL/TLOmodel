@@ -6,7 +6,7 @@ tlo.methods.schisto module
 
 .. autoclass:: Schisto
 
-     Bases: :class:`tlo.core.Module`
+     Bases: :class:`tlo.core.Module`, :class:`tlo.methods.hsi_generic_first_appts.GenericFirstAppointmentsMixin`
 
 
      **PARAMETERS:**
@@ -60,11 +60,11 @@ tlo.methods.schisto module
 
      CAUSES_OF_DEATH : {}
 
-     CAUSES_OF_DISABILITY : {'Schistosomiasis': <tlo.methods.causes.Cause object at 0x11cc9e150>}
+     CAUSES_OF_DISABILITY : {'Schistosomiasis': <tlo.methods.causes.Cause object at 0x119053590>}
 
      INIT_DEPENDENCIES : {'Demography', 'SymptomManager'}
 
-     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthSystem', 'HealthBurden'}
 

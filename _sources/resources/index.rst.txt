@@ -8,6 +8,7 @@ Resource  files used in ``TLOmodel`` simulations
 
     cmd/index.rst
     contraception/index.rst
+    costing/index.rst
     demography/index.rst
     epilepsy/index.rst
     gbd/index.rst

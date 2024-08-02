@@ -80,15 +80,16 @@ diabetes
   54  rr\_chronic\_lower\_back\_pain                               0
   55  rr\_chronic\_ischemic\_heart\_disease                        0
   56  rr\_cancers                                                  0
-  57  rr\_ever\_stroke                                             0
-  58  rr\_ever\_heart\_attack                                      0
-  59  rr\_diabetes\_on\_medication                                 0
-  60  rr\_hypertension\_on\_medication                             0
-  61  rr\_chronic\_kidney\_disease\_on\_medication                 0
-  62  rr\_chronic\_lower\_back\_pain\_on\_medication               0
-  63  rr\_chronic\_ischemic\_heart\_disease\_on\_medication        0
-  64  rr\_stroke\_on\_medication                                   0
-  65  rr\_heart\_attack\_on\_medication                            0
+  57  rr\_hiv                                                      0
+  58  rr\_ever\_stroke                                             0
+  59  rr\_ever\_heart\_attack                                      0
+  60  rr\_diabetes\_on\_medication                                 0
+  61  rr\_hypertension\_on\_medication                             0
+  62  rr\_chronic\_kidney\_disease\_on\_medication                 0
+  63  rr\_chronic\_lower\_back\_pain\_on\_medication               0
+  64  rr\_chronic\_ischemic\_heart\_disease\_on\_medication        0
+  65  rr\_stroke\_on\_medication                                   0
+  66  rr\_heart\_attack\_on\_medication                            0
 ====  =====================================================  =======
 
 hypertension
@@ -154,15 +155,16 @@ hypertension
   54  rr\_chronic\_lower\_back\_pain                               0
   55  rr\_chronic\_ischemic\_heart\_disease                        0
   56  rr\_cancers                                                  0
-  57  rr\_ever\_stroke                                             0
-  58  rr\_ever\_heart\_attack                                      0
-  59  rr\_diabetes\_on\_medication                                 0
-  60  rr\_hypertension\_on\_medication                             0
-  61  rr\_chronic\_kidney\_disease\_on\_medication                 0
-  62  rr\_chronic\_lower\_back\_pain\_on\_medication               0
-  63  rr\_chronic\_ischemic\_heart\_disease\_on\_medication        0
-  64  rr\_stroke\_on\_medication                                   0
-  65  rr\_heart\_attack\_on\_medication                            0
+  57  rr\_hiv                                                      0
+  58  rr\_ever\_stroke                                             0
+  59  rr\_ever\_heart\_attack                                      0
+  60  rr\_diabetes\_on\_medication                                 0
+  61  rr\_hypertension\_on\_medication                             0
+  62  rr\_chronic\_kidney\_disease\_on\_medication                 0
+  63  rr\_chronic\_lower\_back\_pain\_on\_medication               0
+  64  rr\_chronic\_ischemic\_heart\_disease\_on\_medication        0
+  65  rr\_stroke\_on\_medication                                   0
+  66  rr\_heart\_attack\_on\_medication                            0
 ====  =====================================================  =======
 
 chronic_lower_back_pain
@@ -228,15 +230,16 @@ chronic_lower_back_pain
   54  rr\_chronic\_lower\_back\_pain                            1
   55  rr\_chronic\_ischemic\_heart\_disease                     1
   56  rr\_cancers                                               1
-  57  rr\_ever\_stroke                                          1
-  58  rr\_ever\_heart\_attack                                   1
-  59  rr\_diabetes\_on\_medication                              1
-  60  rr\_hypertension\_on\_medication                          1
-  61  rr\_chronic\_kidney\_disease\_on\_medication              1
-  62  rr\_chronic\_lower\_back\_pain\_on\_medication            1
-  63  rr\_chronic\_ischemic\_heart\_disease\_on\_medication     1
-  64  rr\_stroke\_on\_medication                                1
-  65  rr\_heart\_attack\_on\_medication                         1
+  57  rr\_hiv                                                   1
+  58  rr\_ever\_stroke                                          1
+  59  rr\_ever\_heart\_attack                                   1
+  60  rr\_diabetes\_on\_medication                              1
+  61  rr\_hypertension\_on\_medication                          1
+  62  rr\_chronic\_kidney\_disease\_on\_medication              1
+  63  rr\_chronic\_lower\_back\_pain\_on\_medication            1
+  64  rr\_chronic\_ischemic\_heart\_disease\_on\_medication     1
+  65  rr\_stroke\_on\_medication                                1
+  66  rr\_heart\_attack\_on\_medication                         1
 ====  =====================================================  =======
 
 chronic_kidney_disease
@@ -302,15 +305,16 @@ chronic_kidney_disease
   54  rr\_chronic\_lower\_back\_pain                               0
   55  rr\_chronic\_ischemic\_heart\_disease                        0
   56  rr\_cancers                                                  0
-  57  rr\_ever\_stroke                                             0
-  58  rr\_ever\_heart\_attack                                      0
-  59  rr\_diabetes\_on\_medication                                 0
-  60  rr\_hypertension\_on\_medication                             0
-  61  rr\_chronic\_kidney\_disease\_on\_medication                 0
-  62  rr\_chronic\_lower\_back\_pain\_on\_medication               0
-  63  rr\_chronic\_ischemic\_heart\_disease\_on\_medication        0
-  64  rr\_stroke\_on\_medication                                   0
-  65  rr\_heart\_attack\_on\_medication                            0
+  57  rr\_hiv                                                      0
+  58  rr\_ever\_stroke                                             0
+  59  rr\_ever\_heart\_attack                                      0
+  60  rr\_diabetes\_on\_medication                                 0
+  61  rr\_hypertension\_on\_medication                             0
+  62  rr\_chronic\_kidney\_disease\_on\_medication                 0
+  63  rr\_chronic\_lower\_back\_pain\_on\_medication               0
+  64  rr\_chronic\_ischemic\_heart\_disease\_on\_medication        0
+  65  rr\_stroke\_on\_medication                                   0
+  66  rr\_heart\_attack\_on\_medication                            0
 ====  =====================================================  =======
 
 chronic_ischemic_hd
@@ -376,14 +380,15 @@ chronic_ischemic_hd
   54  rr\_chronic\_lower\_back\_pain                               0
   55  rr\_chronic\_ischemic\_heart\_disease                        0
   56  rr\_cancers                                                  0
-  57  rr\_ever\_stroke                                             0
-  58  rr\_ever\_heart\_attack                                      0
-  59  rr\_diabetes\_on\_medication                                 0
-  60  rr\_hypertension\_on\_medication                             0
-  61  rr\_chronic\_kidney\_disease\_on\_medication                 0
-  62  rr\_chronic\_lower\_back\_pain\_on\_medication               0
-  63  rr\_chronic\_ischemic\_heart\_disease\_on\_medication        0
-  64  rr\_stroke\_on\_medication                                   0
-  65  rr\_heart\_attack\_on\_medication                            0
+  57  rr\_hiv                                                      0
+  58  rr\_ever\_stroke                                             0
+  59  rr\_ever\_heart\_attack                                      0
+  60  rr\_diabetes\_on\_medication                                 0
+  61  rr\_hypertension\_on\_medication                             0
+  62  rr\_chronic\_kidney\_disease\_on\_medication                 0
+  63  rr\_chronic\_lower\_back\_pain\_on\_medication               0
+  64  rr\_chronic\_ischemic\_heart\_disease\_on\_medication        0
+  65  rr\_stroke\_on\_medication                                   0
+  66  rr\_heart\_attack\_on\_medication                            0
 ====  =====================================================  =======
 

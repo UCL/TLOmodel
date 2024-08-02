@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.postnatal_supervisor &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
+  <title>tlo.methods.postnatal_supervisor &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
@@ -16,7 +16,7 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../../../_static/documentation_options.js?v=f3d69a25"></script>
         <script src="../../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -1439,23 +1439,27 @@
             <span class="k">return</span>
 
         <span class="c1"># Define the consumables</span>
-        <span class="n">of_repair_cons</span> <span class="o">=</span> <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">get_list_of_items</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Scalpel blade size 22 (individually wrapped)_100_CMST&#39;</span><span class="p">,</span>
-                   <span class="s1">&#39;Halothane (fluothane)_250ml_CMST&#39;</span><span class="p">,</span>
-                   <span class="s1">&#39;Ceftriaxone 1g, PFR_each_CMST&#39;</span><span class="p">,</span>
-                   <span class="s1">&#39;Metronidazole 200mg_1000_CMST&#39;</span><span class="p">,</span>
-                   <span class="s1">&#39;Cannula iv  (winged with injection pot) 18_each_CMST&#39;</span><span class="p">,</span>
-                   <span class="s1">&#39;Paracetamol, tablet, 500 mg&#39;</span><span class="p">,</span>
-                   <span class="s1">&#39;Declofenac injection_each_CMST&#39;</span><span class="p">,</span>
-                   <span class="s1">&#39;Pethidine, 50 mg/ml, 2 ml ampoule&#39;</span><span class="p">,</span>
-                   <span class="s1">&#39;Foley catheter&#39;</span><span class="p">,</span>
-                   <span class="s1">&#39;Bag, urine, collecting, 2000 ml&#39;</span><span class="p">,</span>
-                   <span class="s2">&quot;ringer&#39;s lactate (Hartmann&#39;s solution), 1000 ml_12_IDA&quot;</span><span class="p">,</span>
-                   <span class="s1">&#39;Sodium chloride, injectable solution, 0,9 %, 500 ml&#39;</span><span class="p">,</span>
-                   <span class="s2">&quot;Giving set iv administration + needle 15 drops/ml_each_CMST&quot;</span><span class="p">,</span>
-                   <span class="s2">&quot;Chlorhexidine 1.5</span><span class="si">% s</span><span class="s2">olution_5_CMST&quot;</span><span class="p">])</span>
+        <span class="n">ic</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span>
+
+        <span class="n">of_repair_cons</span> <span class="o">=</span> \
+            <span class="p">{</span><span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Scalpel blade size 22 (individually wrapped)_100_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Halothane (fluothane)_250ml_CMST&#39;</span><span class="p">):</span> <span class="mi">100</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Ceftriaxone 1g, PFR_each_CMST&#39;</span><span class="p">):</span> <span class="mi">2</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Metronidazole 200mg_1000_CMST&#39;</span><span class="p">):</span> <span class="mi">6000</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Cannula iv  (winged with injection pot) 18_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Paracetamol, tablet, 500 mg&#39;</span><span class="p">):</span> <span class="mi">8000</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Declofenac injection_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Foley catheter&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Bag, urine, collecting, 2000 ml&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s2">&quot;ringer&#39;s lactate (Hartmann&#39;s solution), 1000 ml_12_IDA&quot;</span><span class="p">):</span> <span class="mi">2000</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Sodium chloride, injectable solution, 0,9 %, 500 ml&#39;</span><span class="p">):</span> <span class="mi">2000</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Giving set iv administration + needle 15 drops/ml_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">ic</span><span class="p">(</span><span class="s1">&#39;Chlorhexidine 1.5</span><span class="si">% s</span><span class="s1">olution_5_CMST&#39;</span><span class="p">):</span> <span class="mi">50</span><span class="p">,</span>
+             <span class="p">}</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="o">=</span><span class="n">of_repair_cons</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_equipment</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">healthcare_system</span><span class="o">.</span><span class="n">equipment</span><span class="o">.</span><span class="n">from_pkg_names</span><span class="p">(</span><span class="s1">&#39;Major Surgery&#39;</span><span class="p">))</span>
 
         <span class="c1"># Log the end of disability in the MNI</span>
         <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">store_dalys_in_mni</span><span class="p">(</span>
@@ -1476,7 +1480,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on May 27, 2024.
+      <span class="lastupdated">Last updated on Aug 02, 2024.
       </span></p>
   </div>
 

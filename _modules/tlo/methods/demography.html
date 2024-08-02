@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.demography &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
+  <title>tlo.methods.demography &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
@@ -16,7 +16,7 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../../../_static/documentation_options.js?v=f3d69a25"></script>
         <script src="../../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -115,6 +115,7 @@
     <span class="n">logging</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span> <span class="nn">tlo.events</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">,</span> <span class="n">RegularEvent</span>
+<span class="kn">from</span> <span class="nn">tlo.logging.helpers</span> <span class="kn">import</span> <span class="n">get_dataframe_row_as_dict_for_logging</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.causes</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">Cause</span><span class="p">,</span>
     <span class="n">collect_causes_from_disease_modules</span><span class="p">,</span>
@@ -218,12 +219,17 @@
         <span class="s1">&#39;date_of_death&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">DATE</span><span class="p">,</span> <span class="s1">&#39;Date of death of this individual&#39;</span><span class="p">),</span>
         <span class="s1">&#39;sex&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">CATEGORICAL</span><span class="p">,</span> <span class="s1">&#39;Male or female&#39;</span><span class="p">,</span> <span class="n">categories</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;M&#39;</span><span class="p">,</span> <span class="s1">&#39;F&#39;</span><span class="p">]),</span>
         <span class="s1">&#39;mother_id&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">INT</span><span class="p">,</span> <span class="s1">&#39;Unique identifier of mother of this individual&#39;</span><span class="p">),</span>
-        <span class="s1">&#39;district_num_of_residence&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">INT</span><span class="p">,</span> <span class="s1">&#39;The district number in which the person is resident&#39;</span><span class="p">),</span>
 
         <span class="c1"># the categories of these properties are set in `pre_initialise_population`</span>
         <span class="s1">&#39;cause_of_death&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span>
             <span class="n">Types</span><span class="o">.</span><span class="n">CATEGORICAL</span><span class="p">,</span>
             <span class="s1">&#39;The cause of death of this individual (the tlo_cause defined by the module)&#39;</span><span class="p">,</span>
+            <span class="n">categories</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;SET_AT_RUNTIME&#39;</span><span class="p">]</span>
+        <span class="p">),</span>
+
+        <span class="s1">&#39;district_num_of_residence&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">CATEGORICAL</span><span class="p">,</span> 
+            <span class="s1">&#39;The district number in which the person is resident&#39;</span><span class="p">,</span>
             <span class="n">categories</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;SET_AT_RUNTIME&#39;</span><span class="p">]</span>
         <span class="p">),</span>
 
@@ -318,6 +324,11 @@
             <span class="n">Types</span><span class="o">.</span><span class="n">CATEGORICAL</span><span class="p">,</span>
             <span class="s1">&#39;The cause of death of this individual (the tlo_cause defined by the module)&#39;</span><span class="p">,</span>
             <span class="n">categories</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">causes_of_death</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">PROPERTIES</span><span class="p">[</span><span class="s1">&#39;district_num_of_residence&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Property</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">CATEGORICAL</span><span class="p">,</span>
+            <span class="s1">&#39;The district (name) of residence (mapped from district_num_of_residence).&#39;</span><span class="p">,</span>
+            <span class="n">categories</span><span class="o">=</span><span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;district_num_to_region_name&#39;</span><span class="p">]),</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">PROPERTIES</span><span class="p">[</span><span class="s1">&#39;district_of_residence&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Property</span><span class="p">(</span>
             <span class="n">Types</span><span class="o">.</span><span class="n">CATEGORICAL</span><span class="p">,</span>
@@ -617,7 +628,7 @@
         <span class="n">data_to_log_for_each_death</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="n">person</span><span class="p">[</span><span class="s1">&#39;age_years&#39;</span><span class="p">],</span>
             <span class="s1">&#39;sex&#39;</span><span class="p">:</span> <span class="n">person</span><span class="p">[</span><span class="s1">&#39;sex&#39;</span><span class="p">],</span>
-            <span class="s1">&#39;cause&#39;</span><span class="p">:</span> <span class="n">cause</span><span class="p">,</span>
+            <span class="s1">&#39;cause&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">cause</span><span class="p">),</span>
             <span class="s1">&#39;label&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">causes_of_death</span><span class="p">[</span><span class="n">cause</span><span class="p">]</span><span class="o">.</span><span class="n">label</span><span class="p">,</span>
             <span class="s1">&#39;person_id&#39;</span><span class="p">:</span> <span class="n">individual_id</span><span class="p">,</span>
             <span class="s1">&#39;li_wealth&#39;</span><span class="p">:</span> <span class="n">person</span><span class="p">[</span><span class="s1">&#39;li_wealth&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="s1">&#39;li_wealth&#39;</span> <span class="ow">in</span> <span class="n">person</span> <span class="k">else</span> <span class="o">-</span><span class="mi">99</span><span class="p">,</span>
@@ -633,7 +644,7 @@
 
         <span class="c1"># - log all the properties for the deceased person</span>
         <span class="n">logger_detail</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;properties_of_deceased_persons&#39;</span><span class="p">,</span>
-                           <span class="n">data</span><span class="o">=</span><span class="n">person</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+                           <span class="n">data</span><span class="o">=</span><span class="n">get_dataframe_row_as_dict_for_logging</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">individual_id</span><span class="p">),</span>
                            <span class="n">description</span><span class="o">=</span><span class="s1">&#39;values of all properties at the time of death for deceased persons&#39;</span><span class="p">)</span>
 
         <span class="c1"># - log the death in the Deviance module (if it is registered)</span>
@@ -772,11 +783,11 @@
         <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">dates_of_birth</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;date_of_birth&#39;</span><span class="p">]</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;age_exact_years&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">age_at_date</span><span class="p">(</span>
-            <span class="n">population</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span> <span class="n">dates_of_birth</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span> <span class="n">dates_of_birth</span>
         <span class="p">)</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;age_years&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;age_exact_years&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;int64&#39;</span><span class="p">)</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;age_range&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;age_years&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">age_range_lookup</span><span class="p">)</span>
-        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;age_days&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">population</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">-</span> <span class="n">dates_of_birth</span><span class="p">)</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">days</span></div>
+        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;age_days&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">-</span> <span class="n">dates_of_birth</span><span class="p">)</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">days</span></div>
 </div>
 
 
@@ -973,7 +984,7 @@
         <span class="n">num_children</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span> <span class="n">data</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
             <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">age_years</span> <span class="o">&lt;</span> <span class="mi">5</span><span class="p">)]</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;age_years&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">size</span><span class="p">(),</span>
             <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span>
-        <span class="p">)</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
 
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;num_children&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">num_children</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span>
 
@@ -992,7 +1003,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on May 27, 2024.
+      <span class="lastupdated">Last updated on Aug 02, 2024.
       </span></p>
   </div>
 

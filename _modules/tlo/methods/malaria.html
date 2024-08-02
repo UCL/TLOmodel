@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.malaria &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
+  <title>tlo.methods.malaria &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
@@ -16,7 +16,7 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../../../_static/documentation_options.js?v=f3d69a25"></script>
         <script src="../../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -100,19 +100,20 @@
 
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
-<span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">DateOffset</span><span class="p">,</span> <span class="n">Module</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">Property</span><span class="p">,</span> <span class="n">Types</span><span class="p">,</span> <span class="n">logging</span>
-<span class="kn">from</span> <span class="nn">tlo.core</span> <span class="kn">import</span> <span class="n">DiagnosisFunction</span><span class="p">,</span> <span class="n">IndividualPropertyUpdates</span>
+<span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">Date</span><span class="p">,</span> <span class="n">DateOffset</span><span class="p">,</span> <span class="n">Module</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">Property</span><span class="p">,</span> <span class="n">Types</span><span class="p">,</span> <span class="n">logging</span>
 <span class="kn">from</span> <span class="nn">tlo.events</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">,</span> <span class="n">RegularEvent</span>
 <span class="kn">from</span> <span class="nn">tlo.lm</span> <span class="kn">import</span> <span class="n">LinearModel</span><span class="p">,</span> <span class="n">Predictor</span>
 <span class="kn">from</span> <span class="nn">tlo.methods</span> <span class="kn">import</span> <span class="n">Metadata</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.causes</span> <span class="kn">import</span> <span class="n">Cause</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.dxmanager</span> <span class="kn">import</span> <span class="n">DxTest</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.hsi_event</span> <span class="kn">import</span> <span class="n">HSI_Event</span>
+<span class="kn">from</span> <span class="nn">tlo.methods.hsi_generic_first_appts</span> <span class="kn">import</span> <span class="n">GenericFirstAppointmentsMixin</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.symptommanager</span> <span class="kn">import</span> <span class="n">Symptom</span>
 <span class="kn">from</span> <span class="nn">tlo.util</span> <span class="kn">import</span> <span class="n">random_date</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">tlo.population</span> <span class="kn">import</span> <span class="n">PatientDetails</span>
+    <span class="kn">from</span> <span class="nn">tlo.methods.hsi_generic_first_appts</span> <span class="kn">import</span> <span class="n">DiagnosisFunction</span><span class="p">,</span> <span class="n">HSIEventScheduler</span>
+    <span class="kn">from</span> <span class="nn">tlo.population</span> <span class="kn">import</span> <span class="n">IndividualProperties</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
@@ -120,7 +121,7 @@
 
 <div class="viewcode-block" id="Malaria">
 <a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria">[docs]</a>
-<span class="k">class</span> <span class="nc">Malaria</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">Malaria</span><span class="p">(</span><span class="n">Module</span><span class="p">,</span> <span class="n">GenericFirstAppointmentsMixin</span><span class="p">):</span>
 <div class="viewcode-block" id="Malaria.__init__">
 <a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.__init__">[docs]</a>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -143,9 +144,7 @@
         <span class="s1">&#39;Contraception&#39;</span><span class="p">,</span> <span class="s1">&#39;Demography&#39;</span><span class="p">,</span> <span class="s1">&#39;HealthSystem&#39;</span><span class="p">,</span> <span class="s1">&#39;SymptomManager&#39;</span>
     <span class="p">}</span>
 
-    <span class="n">OPTIONAL_INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;HealthBurden&#39;</span><span class="p">}</span>
-
-    <span class="n">ADDITIONAL_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Hiv&#39;</span><span class="p">,</span> <span class="s1">&#39;Tb&#39;</span><span class="p">}</span>
+    <span class="n">OPTIONAL_INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;HealthBurden&#39;</span><span class="p">,</span> <span class="s1">&#39;Hiv&#39;</span><span class="p">}</span>
 
     <span class="n">METADATA</span> <span class="o">=</span> <span class="p">{</span>
         <span class="n">Metadata</span><span class="o">.</span><span class="n">DISEASE_MODULE</span><span class="p">,</span>
@@ -283,12 +282,25 @@
         <span class="s1">&#39;prob_of_treatment_success&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
             <span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span>
             <span class="s1">&#39;probability that treatment will clear malaria symptoms&#39;</span>
+        <span class="p">),</span>
+        <span class="s2">&quot;type_of_scaleup&quot;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">STRING</span><span class="p">,</span> <span class="s2">&quot;argument to determine type scale-up of program which will be implemented, &quot;</span>
+                          <span class="s2">&quot;can be &#39;none&#39;, &#39;target&#39; or &#39;max&#39;&quot;</span><span class="p">,</span>
+        <span class="p">),</span>
+        <span class="s2">&quot;scaleup_start_year&quot;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">INT</span><span class="p">,</span>
+            <span class="s2">&quot;the year when the scale-up starts (it will occur on 1st January of that year)&quot;</span>
+        <span class="p">),</span>
+        <span class="s2">&quot;scaleup_parameters&quot;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">,</span>
+            <span class="s2">&quot;the parameters and values changed in scenario analysis&quot;</span>
         <span class="p">)</span>
-
     <span class="p">}</span>
 
     <span class="n">PROPERTIES</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s1">&#39;ma_is_infected&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">BOOL</span><span class="p">,</span> <span class="s1">&#39;Current status of malaria&#39;</span><span class="p">),</span>
+        <span class="s1">&#39;ma_is_infected&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">BOOL</span><span class="p">,</span> <span class="s1">&#39;Current status of malaria, infected with malaria parasitaemia&#39;</span>
+        <span class="p">),</span>
         <span class="s1">&#39;ma_date_infected&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">DATE</span><span class="p">,</span> <span class="s1">&#39;Date of latest infection&#39;</span><span class="p">),</span>
         <span class="s1">&#39;ma_date_symptoms&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span>
             <span class="n">Types</span><span class="o">.</span><span class="n">DATE</span><span class="p">,</span> <span class="s1">&#39;Date of symptom start for clinical infection&#39;</span>
@@ -337,10 +349,14 @@
 
         <span class="n">p</span><span class="p">[</span><span class="s1">&#39;sev_symp_prob&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">workbook</span><span class="p">[</span><span class="s1">&#39;severe_symptoms&#39;</span><span class="p">]</span>
         <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rdt_testing_rates&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">workbook</span><span class="p">[</span><span class="s1">&#39;WHO_TestData2023&#39;</span><span class="p">]</span>
+        <span class="n">p</span><span class="p">[</span><span class="s1">&#39;highrisk_districts&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">workbook</span><span class="p">[</span><span class="s1">&#39;highrisk_districts&#39;</span><span class="p">]</span>
 
         <span class="n">p</span><span class="p">[</span><span class="s1">&#39;inf_inc&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span> <span class="o">/</span> <span class="s1">&#39;malaria&#39;</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_malaria_InfInc_expanded.csv&#39;</span><span class="p">)</span>
         <span class="n">p</span><span class="p">[</span><span class="s1">&#39;clin_inc&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span> <span class="o">/</span> <span class="s1">&#39;malaria&#39;</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_malaria_ClinInc_expanded.csv&#39;</span><span class="p">)</span>
         <span class="n">p</span><span class="p">[</span><span class="s1">&#39;sev_inc&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span> <span class="o">/</span> <span class="s1">&#39;malaria&#39;</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_malaria_SevInc_expanded.csv&#39;</span><span class="p">)</span>
+
+        <span class="c1"># load parameters for scale-up projections</span>
+        <span class="n">p</span><span class="p">[</span><span class="s1">&#39;scaleup_parameters&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">workbook</span><span class="p">[</span><span class="s2">&quot;scaleup_parameters&quot;</span><span class="p">]</span>
 
         <span class="c1"># check itn projected values are &lt;=0.7 and rounded to 1dp for matching to incidence tables</span>
         <span class="n">p</span><span class="p">[</span><span class="s1">&#39;itn&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;itn&#39;</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
@@ -409,13 +425,19 @@
 <div class="viewcode-block" id="Malaria.pre_initialise_population">
 <a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.pre_initialise_population">[docs]</a>
     <span class="k">def</span> <span class="nf">pre_initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        * Establish the Linear Models</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Do things required before the population is created</span>
+<span class="sd">        * Build the LinearModels&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_build_linear_models</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Malaria._build_linear_models">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria._build_linear_models">[docs]</a>
+    <span class="k">def</span> <span class="nf">_build_linear_models</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Establish the Linear Models</span>
 
 <span class="sd">        if HIV is registered, the conditional predictors will apply</span>
 <span class="sd">        otherwise only IPTp will affect risk of clinical/severe malaria</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
 
         <span class="c1"># ---- LINEAR MODELS -----</span>
@@ -454,7 +476,7 @@
                              <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_severe_malaria_hiv_over5&#39;</span><span class="p">]),</span>
             <span class="n">Predictor</span><span class="p">()</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;(hv_inf == True) &amp; (is_pregnant == True)&#39;</span><span class="p">,</span>
                              <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_severe_malaria_hiv_pregnant&#39;</span><span class="p">]),</span>
-        <span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;hiv&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span> <span class="k">else</span> <span class="p">[]</span>
+        <span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;Hiv&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span> <span class="k">else</span> <span class="p">[]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">lm</span><span class="p">[</span><span class="s2">&quot;rr_of_severe_malaria&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="o">.</span><span class="n">multiplicative</span><span class="p">(</span>
             <span class="o">*</span><span class="p">(</span><span class="n">predictors</span> <span class="o">+</span> <span class="n">conditional_predictors</span><span class="p">))</span></div>
@@ -516,9 +538,11 @@
         <span class="k">def</span> <span class="nf">_draw_incidence_for</span><span class="p">(</span><span class="n">_col</span><span class="p">,</span> <span class="n">_where</span><span class="p">):</span>
 <span class="w">            </span><span class="sd">&quot;&quot;&quot;a helper function to perform random draw for selected individuals on column of probabilities&quot;&quot;&quot;</span>
             <span class="c1"># create an index from the individuals to lookup entries in the current incidence table</span>
-            <span class="n">district_age_subset</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">_where</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;district_num_of_residence&#39;</span><span class="p">,</span> <span class="s1">&#39;ma_age_edited&#39;</span><span class="p">]]</span>
-            <span class="n">district_age_subset</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">district_age_subset</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">to_list</span><span class="p">(),</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="n">district_age_lookup</span> <span class="o">=</span> <span class="n">district_age_subset</span><span class="o">.</span><span class="n">index</span>
+            <span class="n">district_age_lookup</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">df</span><span class="p">[</span><span class="n">_where</span><span class="p">]</span>
+                <span class="o">.</span><span class="n">set_index</span><span class="p">([</span><span class="s1">&#39;district_num_of_residence&#39;</span><span class="p">,</span> <span class="s1">&#39;ma_age_edited&#39;</span><span class="p">])</span>
+                <span class="o">.</span><span class="n">index</span>
+            <span class="p">)</span>
             <span class="c1"># get the monthly incidence probabilities for these individuals</span>
             <span class="n">monthly_prob</span> <span class="o">=</span> <span class="n">curr_inc</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">district_age_lookup</span><span class="p">,</span> <span class="n">_col</span><span class="p">]</span>
             <span class="c1"># update the index so it&#39;s the same as the original population dataframe for these individuals</span>
@@ -538,7 +562,7 @@
                     <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">_where</span><span class="p">]</span>
                 <span class="p">)</span>
 
-                <span class="n">random_draw</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">(</span><span class="n">_where</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span> <span class="o">&lt;</span> <span class="n">monthly_prob</span> <span class="o">*</span> <span class="n">individual_risk</span>
+                <span class="n">random_draw</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">(</span><span class="n">_where</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">monthly_prob</span> <span class="o">*</span> <span class="n">individual_risk</span><span class="p">)</span>
 
             <span class="n">selected</span> <span class="o">=</span> <span class="n">_where</span> <span class="o">&amp;</span> <span class="n">random_draw</span>
 
@@ -553,7 +577,8 @@
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">alive_over_one</span><span class="p">,</span> <span class="s1">&#39;ma_age_edited&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">alive_over_one</span><span class="p">,</span> <span class="s1">&#39;age_years&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
 
         <span class="c1"># select new infections</span>
-        <span class="n">alive_uninfected</span> <span class="o">=</span> <span class="n">alive</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">ma_is_infected</span>
+        <span class="c1"># eligible: uninfected or asym</span>
+        <span class="n">alive_uninfected</span> <span class="o">=</span> <span class="n">alive</span> <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">ma_inf_type</span><span class="o">.</span><span class="n">isin</span><span class="p">([</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="s1">&#39;asym&#39;</span><span class="p">])</span>
         <span class="n">now_infected</span> <span class="o">=</span> <span class="n">_draw_incidence_for</span><span class="p">(</span><span class="s1">&#39;monthly_prob_inf&#39;</span><span class="p">,</span> <span class="n">alive_uninfected</span><span class="p">)</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">now_infected</span><span class="p">,</span> <span class="s1">&#39;ma_inf_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;asym&#39;</span>
 
@@ -638,8 +663,12 @@
 
         <span class="c1"># extract annual testing rates from NMCP reports</span>
         <span class="c1"># this is the # rdts issued divided by population size</span>
-        <span class="n">test_rates</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rdt_testing_rates&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;Year&#39;</span><span class="p">)[</span><span class="s1">&#39;Rate_rdt_testing&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
-        <span class="n">rdt_rate</span> <span class="o">=</span> <span class="n">test_rates</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="nb">min</span><span class="p">(</span><span class="n">test_rates</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">year</span><span class="p">)]</span> <span class="o">/</span> <span class="mi">12</span>
+        <span class="n">year</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">year</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">year</span> <span class="o">&lt;=</span> <span class="mi">2024</span> <span class="k">else</span> <span class="mi">2024</span>
+
+        <span class="n">test_rates</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rdt_testing_rates&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;Year&#39;</span><span class="p">)[</span><span class="s1">&#39;Rate_rdt_testing&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+        <span class="p">)</span>
+        <span class="n">rdt_rate</span> <span class="o">=</span> <span class="n">test_rates</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="nb">min</span><span class="p">(</span><span class="n">test_rates</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="n">year</span><span class="p">)]</span> <span class="o">/</span> <span class="mi">12</span>
 
         <span class="c1"># adjust rdt usage reported rate to reflect consumables availability</span>
         <span class="n">rdt_rate</span> <span class="o">=</span> <span class="n">rdt_rate</span> <span class="o">*</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;scaling_factor_for_rdt_availability&#39;</span><span class="p">]</span>
@@ -684,6 +713,12 @@
         <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">MalariaLoggingEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">years</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
         <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">MalariaTxLoggingEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">years</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
         <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">MalariaPrevDistrictLoggingEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+
+        <span class="c1"># Optional: Schedule the scale-up of programs</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;type_of_scaleup&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;none&#39;</span><span class="p">:</span>
+            <span class="n">scaleup_start_date</span> <span class="o">=</span> <span class="n">Date</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;scaleup_start_year&quot;</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="n">scaleup_start_date</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">start_date</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Date </span><span class="si">{</span><span class="n">scaleup_start_date</span><span class="si">}</span><span class="s2"> is before simulation starts.&quot;</span>
+            <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">MalariaScaleUpEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">scaleup_start_date</span><span class="p">)</span>
 
         <span class="c1"># 2) ----------------------------------- DIAGNOSTIC TESTS -----------------------------------</span>
         <span class="c1"># Create the diagnostic test representing the use of RDT for malaria diagnosis</span>
@@ -733,7 +768,65 @@
 
         <span class="c1"># malaria IPTp for pregnant women</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;malaria_iptp&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_item_code</span><span class="p">(</span>
-            <span class="s1">&#39;Sulfamethoxazole + trimethropin, tablet 400 mg + 80 mg&#39;</span><span class="p">)</span></div>
+            <span class="s1">&#39;Sulfamethoxazole + trimethropin, tablet 400 mg + 80 mg&#39;</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Malaria.update_parameters_for_program_scaleup">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.update_parameters_for_program_scaleup">[docs]</a>
+    <span class="k">def</span> <span class="nf">update_parameters_for_program_scaleup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; options for program scale-up are &#39;target&#39; or &#39;max&#39; &quot;&quot;&quot;</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
+        <span class="n">scaled_params_workbook</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;scaleup_parameters&quot;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;type_of_scaleup&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;target&#39;</span><span class="p">:</span>
+            <span class="n">scaled_params</span> <span class="o">=</span> <span class="n">scaled_params_workbook</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;parameter&#39;</span><span class="p">)[</span><span class="s1">&#39;target_value&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">scaled_params</span> <span class="o">=</span> <span class="n">scaled_params_workbook</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;parameter&#39;</span><span class="p">)[</span><span class="s1">&#39;max_value&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+
+        <span class="c1"># scale-up malaria program</span>
+        <span class="c1"># increase testing</span>
+        <span class="c1"># prob_malaria_case_tests=0.4 default</span>
+        <span class="n">p</span><span class="p">[</span><span class="s2">&quot;prob_malaria_case_tests&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scaled_params</span><span class="p">[</span><span class="s2">&quot;prob_malaria_case_tests&quot;</span><span class="p">]</span>
+
+        <span class="c1"># gen pop testing rates</span>
+        <span class="c1"># annual Rate_rdt_testing=0.64 at 2023</span>
+        <span class="n">p</span><span class="p">[</span><span class="s2">&quot;rdt_testing_rates&quot;</span><span class="p">][</span><span class="s2">&quot;Rate_rdt_testing&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scaled_params</span><span class="p">[</span><span class="s2">&quot;rdt_testing_rates&quot;</span><span class="p">]</span>
+
+        <span class="c1"># treatment reaches XX</span>
+        <span class="c1"># no default between testing and treatment, governed by tx availability</span>
+
+        <span class="c1"># coverage IPTp reaches XX</span>
+        <span class="c1"># given during ANC visits and MalariaIPTp Event which selects ALL eligible women</span>
+
+        <span class="c1"># treatment success reaches 1 - default is currently 1 also</span>
+        <span class="n">p</span><span class="p">[</span><span class="s2">&quot;prob_of_treatment_success&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scaled_params</span><span class="p">[</span><span class="s2">&quot;prob_of_treatment_success&quot;</span><span class="p">]</span>
+
+        <span class="c1"># bednet and ITN coverage</span>
+        <span class="c1"># set IRS for 4 high-risk districts</span>
+        <span class="c1"># lookup table created in malaria read_parameters</span>
+        <span class="c1"># produces self.itn_irs called by malaria poll to draw incidence</span>
+        <span class="c1"># need to overwrite this</span>
+        <span class="n">highrisk_distr_num</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;highrisk_districts&quot;</span><span class="p">][</span><span class="s2">&quot;district_num&quot;</span><span class="p">]</span>
+
+        <span class="c1"># Find indices where District_Num is in highrisk_distr_num</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">itn_irs</span><span class="p">[</span><span class="s1">&#39;irs_rate&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">get_level_values</span><span class="p">(</span><span class="s1">&#39;District_Num&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span>
+            <span class="n">highrisk_distr_num</span><span class="p">)</span>
+
+        <span class="c1"># IRS values can be 0 or 0.8 - no other value in lookup table</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">itn_irs</span><span class="p">[</span><span class="s1">&#39;irs_rate&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">scaled_params</span><span class="p">[</span><span class="s2">&quot;irs_district&quot;</span><span class="p">]</span>
+
+        <span class="c1"># set ITN for all districts</span>
+        <span class="c1"># Set these values to 0.7 - this is the max value possible in lookup table</span>
+        <span class="c1"># equivalent to 0.7 of all pop sleeping under bednet</span>
+        <span class="c1"># household coverage could be 100%, but not everyone in household sleeping under bednet</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">itn_irs</span><span class="p">[</span><span class="s1">&#39;itn_rate&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scaled_params</span><span class="p">[</span><span class="s2">&quot;itn_district&quot;</span><span class="p">]</span>
+
+        <span class="c1"># itn rates for 2019 onwards</span>
+        <span class="n">p</span><span class="p">[</span><span class="s2">&quot;itn&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scaled_params</span><span class="p">[</span><span class="s2">&quot;itn&quot;</span><span class="p">]</span>
+
+        <span class="c1"># update exising linear models to use new scaled-up parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_build_linear_models</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="Malaria.on_birth">
@@ -792,7 +885,7 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">true_malaria_infection_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">diagnosis_function</span><span class="p">:</span> <span class="n">DiagnosisFunction</span><span class="p">,</span>
-        <span class="n">patient_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">person_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">fever_is_a_symptom</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">patient_age</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">facility_level</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -811,14 +904,14 @@
         <span class="c1"># Log the test: line-list of summary information about each test</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
             <span class="n">key</span><span class="o">=</span><span class="s2">&quot;rdt_log&quot;</span><span class="p">,</span>
-            <span class="n">data</span><span class="o">=</span><span class="p">{</span>
-                <span class="s2">&quot;person_id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">,</span>
-                <span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="n">patient_age</span><span class="p">,</span>
-                <span class="s2">&quot;fever_present&quot;</span><span class="p">:</span> <span class="n">fever_is_a_symptom</span><span class="p">,</span>
-                <span class="s2">&quot;rdt_result&quot;</span><span class="p">:</span> <span class="n">dx_result</span><span class="p">,</span>
-                <span class="s2">&quot;facility_level&quot;</span><span class="p">:</span> <span class="n">facility_level</span><span class="p">,</span>
-                <span class="s2">&quot;called_by&quot;</span><span class="p">:</span> <span class="n">treatment_id</span><span class="p">,</span>
-            <span class="p">},</span>
+            <span class="n">data</span><span class="o">=</span><span class="n">_data_for_rdt_log</span><span class="p">(</span>
+                <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
+                <span class="n">age</span><span class="o">=</span><span class="n">patient_age</span><span class="p">,</span>
+                <span class="n">fever_is_a_symptom</span><span class="o">=</span><span class="n">fever_is_a_symptom</span><span class="p">,</span>
+                <span class="n">dx_result</span><span class="o">=</span><span class="n">dx_result</span><span class="p">,</span>
+                <span class="n">facility_level</span><span class="o">=</span><span class="n">facility_level</span><span class="p">,</span>
+                <span class="n">treatment_id</span><span class="o">=</span><span class="n">treatment_id</span>
+            <span class="p">)</span>
         <span class="p">)</span>
 
         <span class="c1"># Severe malaria infection always returns positive RDT</span>
@@ -834,16 +927,15 @@
 <a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.do_at_generic_first_appt">[docs]</a>
     <span class="k">def</span> <span class="nf">do_at_generic_first_appt</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">patient_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-        <span class="n">patient_details</span><span class="p">:</span> <span class="n">PatientDetails</span><span class="p">,</span>
+        <span class="n">person_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">individual_properties</span><span class="p">:</span> <span class="n">IndividualProperties</span><span class="p">,</span>
         <span class="n">symptoms</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">schedule_hsi_event</span><span class="p">:</span> <span class="n">HSIEventScheduler</span><span class="p">,</span>
         <span class="n">diagnosis_function</span><span class="p">:</span> <span class="n">DiagnosisFunction</span><span class="p">,</span>
         <span class="n">facility_level</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">treatment_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">IndividualPropertyUpdates</span><span class="p">:</span>
-        <span class="n">patient_details_updates</span> <span class="o">=</span> <span class="p">{}</span>
-
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">malaria_associated_symptoms</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;fever&quot;</span><span class="p">,</span>
             <span class="s2">&quot;headache&quot;</span><span class="p">,</span>
@@ -853,78 +945,75 @@
         <span class="p">}</span>
         <span class="k">if</span> <span class="p">(</span>
             <span class="nb">bool</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">symptoms</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">malaria_associated_symptoms</span><span class="p">)</span>
-            <span class="ow">and</span> <span class="n">patient_details</span><span class="o">.</span><span class="n">ma_tx</span> <span class="o">==</span> <span class="s2">&quot;none&quot;</span>
+            <span class="ow">and</span> <span class="n">individual_properties</span><span class="p">[</span><span class="s2">&quot;ma_tx&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;none&quot;</span>
         <span class="p">):</span>
             <span class="n">malaria_test_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_if_fever_is_caused_by_malaria</span><span class="p">(</span>
-                <span class="n">true_malaria_infection_type</span><span class="o">=</span><span class="n">patient_details</span><span class="o">.</span><span class="n">ma_inf_type</span><span class="p">,</span>
+                <span class="n">true_malaria_infection_type</span><span class="o">=</span><span class="n">individual_properties</span><span class="p">[</span><span class="s2">&quot;ma_inf_type&quot;</span><span class="p">],</span>
                 <span class="n">diagnosis_function</span><span class="o">=</span><span class="n">diagnosis_function</span><span class="p">,</span>
-                <span class="n">patient_id</span><span class="o">=</span><span class="n">patient_id</span><span class="p">,</span>
+                <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
                 <span class="n">fever_is_a_symptom</span><span class="o">=</span><span class="s2">&quot;fever&quot;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">,</span>
-                <span class="n">patient_age</span><span class="o">=</span><span class="n">patient_details</span><span class="o">.</span><span class="n">age_years</span><span class="p">,</span>
+                <span class="n">patient_age</span><span class="o">=</span><span class="n">individual_properties</span><span class="p">[</span><span class="s2">&quot;age_years&quot;</span><span class="p">],</span>
                 <span class="n">facility_level</span><span class="o">=</span><span class="n">facility_level</span><span class="p">,</span>
                 <span class="n">treatment_id</span><span class="o">=</span><span class="n">treatment_id</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="c1"># Treat / refer based on diagnosis</span>
             <span class="k">if</span> <span class="n">malaria_test_result</span> <span class="o">==</span> <span class="s2">&quot;severe_malaria&quot;</span><span class="p">:</span>
-                <span class="n">patient_details_updates</span><span class="p">[</span><span class="s2">&quot;ma_dx_counter&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">patient_details</span><span class="o">.</span><span class="n">ma_dx_counter</span> <span class="o">+</span> <span class="mi">1</span>
-                <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_Malaria_Treatment_Complicated</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">patient_id</span><span class="p">,</span> <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">healthsystem</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
+                <span class="n">individual_properties</span><span class="p">[</span><span class="s2">&quot;ma_dx_counter&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_Malaria_Treatment_Complicated</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+                <span class="n">schedule_hsi_event</span><span class="p">(</span>
                     <span class="n">event</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
                 <span class="p">)</span>
 
             <span class="c1"># return type &#39;clinical_malaria&#39; includes asymptomatic infection</span>
             <span class="k">elif</span> <span class="n">malaria_test_result</span> <span class="o">==</span> <span class="s2">&quot;clinical_malaria&quot;</span><span class="p">:</span>
-                <span class="n">patient_details_updates</span><span class="p">[</span><span class="s2">&quot;ma_dx_counter&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">patient_details</span><span class="o">.</span><span class="n">ma_dx_counter</span> <span class="o">+</span> <span class="mi">1</span>
-                <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_Malaria_Treatment</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">patient_id</span><span class="p">,</span> <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">healthsystem</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
+                <span class="n">individual_properties</span><span class="p">[</span><span class="s2">&quot;ma_dx_counter&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_Malaria_Treatment</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+                <span class="n">schedule_hsi_event</span><span class="p">(</span>
                     <span class="n">event</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
-                <span class="p">)</span>
-        <span class="k">return</span> <span class="n">patient_details_updates</span></div>
+                <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Malaria.do_at_generic_first_appt_emergency">
 <a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.do_at_generic_first_appt_emergency">[docs]</a>
     <span class="k">def</span> <span class="nf">do_at_generic_first_appt_emergency</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">patient_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-        <span class="n">patient_details</span><span class="p">:</span> <span class="n">PatientDetails</span><span class="p">,</span>
+        <span class="n">person_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">individual_properties</span><span class="p">:</span> <span class="n">IndividualProperties</span><span class="p">,</span>
         <span class="n">symptoms</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">schedule_hsi_event</span><span class="p">:</span> <span class="n">HSIEventScheduler</span><span class="p">,</span>
         <span class="n">diagnosis_function</span><span class="p">:</span> <span class="n">DiagnosisFunction</span><span class="p">,</span>
         <span class="n">facility_level</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">treatment_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">IndividualPropertyUpdates</span><span class="p">:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># This is called for a person (of any age) that attends an</span>
         <span class="c1"># emergency generic HSI and has a fever.</span>
         <span class="c1"># (Quick diagnosis algorithm - just perfectly recognises the</span>
         <span class="c1"># symptoms of severe malaria.)</span>
-        <span class="n">patient_details_updates</span> <span class="o">=</span> <span class="p">{}</span>
-
         <span class="k">if</span> <span class="s1">&#39;severe_malaria&#39;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">patient_details</span><span class="o">.</span><span class="n">ma_tx</span> <span class="o">==</span> <span class="s1">&#39;none&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">individual_properties</span><span class="p">[</span><span class="s2">&quot;ma_tx&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;none&#39;</span><span class="p">:</span>
                 <span class="c1"># Check if malaria parasitaemia:</span>
                 <span class="n">malaria_test_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_if_fever_is_caused_by_malaria</span><span class="p">(</span>
-                    <span class="n">true_malaria_infection_type</span><span class="o">=</span><span class="n">patient_details</span><span class="o">.</span><span class="n">ma_inf_type</span><span class="p">,</span>
+                    <span class="n">true_malaria_infection_type</span><span class="o">=</span><span class="n">individual_properties</span><span class="p">[</span><span class="s2">&quot;ma_inf_type&quot;</span><span class="p">],</span>
                     <span class="n">diagnosis_function</span><span class="o">=</span><span class="n">diagnosis_function</span><span class="p">,</span>
-                    <span class="n">patient_id</span><span class="o">=</span><span class="n">patient_id</span><span class="p">,</span>
+                    <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
                     <span class="n">fever_is_a_symptom</span><span class="o">=</span><span class="s2">&quot;fever&quot;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">,</span>
-                    <span class="n">patient_age</span><span class="o">=</span><span class="n">patient_details</span><span class="o">.</span><span class="n">age_years</span><span class="p">,</span>
+                    <span class="n">patient_age</span><span class="o">=</span><span class="n">individual_properties</span><span class="p">[</span><span class="s2">&quot;age_years&quot;</span><span class="p">],</span>
                     <span class="n">facility_level</span><span class="o">=</span><span class="n">facility_level</span><span class="p">,</span>
                     <span class="n">treatment_id</span><span class="o">=</span><span class="n">treatment_id</span><span class="p">,</span>
                 <span class="p">)</span>
 
                 <span class="c1"># if any symptoms indicative of malaria and they have parasitaemia (would return a positive rdt)</span>
                 <span class="k">if</span> <span class="n">malaria_test_result</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;severe_malaria&#39;</span><span class="p">,</span> <span class="s1">&#39;clinical_malaria&#39;</span><span class="p">):</span>
-                    <span class="n">patient_details_updates</span><span class="p">[</span><span class="s1">&#39;ma_dx_counter&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">patient_details</span><span class="o">.</span><span class="n">ma_dx_counter</span> <span class="o">+</span> <span class="mi">1</span>
+                    <span class="n">individual_properties</span><span class="p">[</span><span class="s1">&#39;ma_dx_counter&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
 
                     <span class="c1"># Launch the HSI for treatment for Malaria, HSI_Malaria_Treatment will determine correct treatment</span>
                     <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_Malaria_Treatment_Complicated</span><span class="p">(</span>
-                        <span class="n">person_id</span><span class="o">=</span><span class="n">patient_id</span><span class="p">,</span> <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
+                        <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
                     <span class="p">)</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">healthsystem</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
+                    <span class="n">schedule_hsi_event</span><span class="p">(</span>
                         <span class="n">event</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
-                    <span class="p">)</span>
-        <span class="k">return</span> <span class="n">patient_details_updates</span></div>
+                    <span class="p">)</span></div>
 </div>
 
 
@@ -952,6 +1041,30 @@
 
         <span class="c1"># schedule rdt for general population, rate increases over time</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">general_population_rdt_scheduler</span><span class="p">(</span><span class="n">population</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="MalariaScaleUpEvent">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaScaleUpEvent">[docs]</a>
+<span class="k">class</span> <span class="nc">MalariaScaleUpEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; This event exists to change parameters or functions</span>
+<span class="sd">    depending on the scenario for projections which has been set</span>
+<span class="sd">    It only occurs once on date: scaleup_start_date,</span>
+<span class="sd">    called by initialise_simulation</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="MalariaScaleUpEvent.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaScaleUpEvent.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MalariaScaleUpEvent.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaScaleUpEvent.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">update_parameters_for_program_scaleup</span><span class="p">()</span></div>
 </div>
 
 
@@ -1141,15 +1254,15 @@
         <span class="p">)</span>
 
         <span class="c1"># Log the test: line-list of summary information about each test</span>
-        <span class="n">fever_present</span> <span class="o">=</span> <span class="s1">&#39;fever&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;SymptomManager&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">has_what</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span>
-        <span class="n">person_details_for_test</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;person_id&#39;</span><span class="p">:</span> <span class="n">person_id</span><span class="p">,</span>
-            <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;age_years&#39;</span><span class="p">],</span>
-            <span class="s1">&#39;fever_present&#39;</span><span class="p">:</span> <span class="n">fever_present</span><span class="p">,</span>
-            <span class="s1">&#39;rdt_result&#39;</span><span class="p">:</span> <span class="n">dx_result</span><span class="p">,</span>
-            <span class="s1">&#39;facility_level&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span><span class="p">,</span>
-            <span class="s1">&#39;called_by&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span>
-        <span class="p">}</span>
+        <span class="n">fever_present</span> <span class="o">=</span> <span class="s1">&#39;fever&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;SymptomManager&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">has_what</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
+        <span class="n">person_details_for_test</span> <span class="o">=</span> <span class="n">_data_for_rdt_log</span><span class="p">(</span>
+            <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
+            <span class="n">age</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;age_years&#39;</span><span class="p">],</span>
+            <span class="n">fever_is_a_symptom</span><span class="o">=</span><span class="n">fever_present</span><span class="p">,</span>
+            <span class="n">dx_result</span><span class="o">=</span><span class="n">dx_result</span><span class="p">,</span>
+            <span class="n">facility_level</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span><span class="p">,</span>
+            <span class="n">treatment_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span><span class="p">,</span>
+        <span class="p">)</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;rdt_log&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">person_details_for_test</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">dx_result</span><span class="p">:</span>
@@ -1242,15 +1355,16 @@
         <span class="p">)</span>
 
         <span class="c1"># Log the test: line-list of summary information about each test</span>
-        <span class="n">fever_present</span> <span class="o">=</span> <span class="s1">&#39;fever&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;SymptomManager&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">has_what</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span>
-        <span class="n">person_details_for_test</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;person_id&#39;</span><span class="p">:</span> <span class="n">person_id</span><span class="p">,</span>
-            <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;age_years&#39;</span><span class="p">],</span>
-            <span class="s1">&#39;fever_present&#39;</span><span class="p">:</span> <span class="n">fever_present</span><span class="p">,</span>
-            <span class="s1">&#39;rdt_result&#39;</span><span class="p">:</span> <span class="n">dx_result</span><span class="p">,</span>
-            <span class="s1">&#39;facility_level&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span><span class="p">,</span>
-            <span class="s1">&#39;called_by&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span>
-        <span class="p">}</span>
+        <span class="n">fever_present</span> <span class="o">=</span> <span class="s1">&#39;fever&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;SymptomManager&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">has_what</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
+        <span class="n">person_details_for_test</span> <span class="o">=</span> <span class="n">_data_for_rdt_log</span><span class="p">(</span>
+            <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
+            <span class="n">age</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;age_years&#39;</span><span class="p">],</span>
+            <span class="n">fever_is_a_symptom</span><span class="o">=</span><span class="n">fever_present</span><span class="p">,</span>
+            <span class="n">dx_result</span><span class="o">=</span><span class="n">dx_result</span><span class="p">,</span>
+            <span class="n">facility_level</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span><span class="p">,</span>
+            <span class="n">treatment_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span><span class="p">,</span>
+        <span class="p">)</span>
+
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;rdt_log&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">person_details_for_test</span><span class="p">)</span>
 
         <span class="c1"># if positive, refer for a confirmatory test at level 1a</span>
@@ -1313,15 +1427,15 @@
 
                 <span class="c1"># rdt is offered as part of the treatment package</span>
                 <span class="c1"># Log the test: line-list of summary information about each test</span>
-                <span class="n">fever_present</span> <span class="o">=</span> <span class="s1">&#39;fever&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;SymptomManager&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">has_what</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span>
-                <span class="n">person_details_for_test</span> <span class="o">=</span> <span class="p">{</span>
-                    <span class="s1">&#39;person_id&#39;</span><span class="p">:</span> <span class="n">person_id</span><span class="p">,</span>
-                    <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;age_years&#39;</span><span class="p">],</span>
-                    <span class="s1">&#39;fever_present&#39;</span><span class="p">:</span> <span class="n">fever_present</span><span class="p">,</span>
-                    <span class="s1">&#39;rdt_result&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-                    <span class="s1">&#39;facility_level&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span><span class="p">,</span>
-                    <span class="s1">&#39;called_by&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span>
-                <span class="p">}</span>
+                <span class="n">fever_present</span> <span class="o">=</span> <span class="s1">&#39;fever&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;SymptomManager&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">has_what</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
+                <span class="n">person_details_for_test</span> <span class="o">=</span> <span class="n">_data_for_rdt_log</span><span class="p">(</span>
+                    <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
+                    <span class="n">age</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;age_years&#39;</span><span class="p">],</span>
+                    <span class="n">fever_is_a_symptom</span><span class="o">=</span><span class="n">fever_present</span><span class="p">,</span>
+                    <span class="n">dx_result</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">facility_level</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span><span class="p">,</span>
+                    <span class="n">treatment_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span><span class="p">,</span>
+                <span class="p">)</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;rdt_log&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">person_details_for_test</span><span class="p">)</span></div>
 
 
@@ -1419,17 +1533,21 @@
                 <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ma_date_tx&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
                 <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ma_tx_counter&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
 
+                <span class="c1"># Add used equipment</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">add_equipment</span><span class="p">({</span><span class="s1">&#39;Drip stand&#39;</span><span class="p">,</span> <span class="s1">&#39;Haemoglobinometer&#39;</span><span class="p">,</span>
+                                       <span class="s1">&#39;Analyser, Combined Chemistry and Electrolytes&#39;</span><span class="p">})</span>
+
                 <span class="c1"># rdt is offered as part of the treatment package</span>
                 <span class="c1"># Log the test: line-list of summary information about each test</span>
-                <span class="n">fever_present</span> <span class="o">=</span> <span class="s1">&#39;fever&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;SymptomManager&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">has_what</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span>
-                <span class="n">person_details_for_test</span> <span class="o">=</span> <span class="p">{</span>
-                    <span class="s1">&#39;person_id&#39;</span><span class="p">:</span> <span class="n">person_id</span><span class="p">,</span>
-                    <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;age_years&#39;</span><span class="p">],</span>
-                    <span class="s1">&#39;fever_present&#39;</span><span class="p">:</span> <span class="n">fever_present</span><span class="p">,</span>
-                    <span class="s1">&#39;rdt_result&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-                    <span class="s1">&#39;facility_level&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span><span class="p">,</span>
-                    <span class="s1">&#39;called_by&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span>
-                <span class="p">}</span>
+                <span class="n">fever_present</span> <span class="o">=</span> <span class="s1">&#39;fever&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;SymptomManager&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">has_what</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
+                <span class="n">person_details_for_test</span> <span class="o">=</span> <span class="n">_data_for_rdt_log</span><span class="p">(</span>
+                    <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
+                    <span class="n">age</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;age_years&#39;</span><span class="p">],</span>
+                    <span class="n">fever_is_a_symptom</span><span class="o">=</span><span class="n">fever_present</span><span class="p">,</span>
+                    <span class="n">dx_result</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">facility_level</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span><span class="p">,</span>
+                    <span class="n">treatment_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span><span class="p">,</span>
+                <span class="p">)</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;rdt_log&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">person_details_for_test</span><span class="p">)</span></div>
 
 
@@ -1533,7 +1651,7 @@
 <span class="sd">        * assigns symptoms</span>
 <span class="sd">        * schedules rdt</span>
 <span class="sd">        * cures people currently on treatment for malaria</span>
-<span class="sd">        * clears symptoms for those not on treatment</span>
+<span class="sd">        * clears symptoms for those not on treatment but self-cured</span>
 <span class="sd">        * clears parasites if treated</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -1616,14 +1734,22 @@
         <span class="c1"># select people with clinical malaria and treatment for at least 5 days</span>
         <span class="c1"># if treated, will clear symptoms and parasitaemia</span>
         <span class="c1"># this will also clear parasitaemia for asymptomatic cases picked up by routine rdt</span>
-        <span class="n">clinical_and_treated</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span>
-                                        <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">ma_date_tx</span> <span class="o">&lt;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">-</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">5</span><span class="p">)))</span> <span class="o">&amp;</span>
-                                        <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">ma_inf_type</span> <span class="o">==</span> <span class="s1">&#39;clinical&#39;</span><span class="p">)]</span>
+        <span class="n">random_draw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">))</span>
+
+        <span class="n">clinical_and_treated</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">[</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span>
+            <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">ma_date_tx</span> <span class="o">&lt;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">-</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">5</span><span class="p">)))</span>
+            <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">ma_inf_type</span> <span class="o">==</span> <span class="s1">&#39;clinical&#39;</span><span class="p">)</span>
+            <span class="o">&amp;</span> <span class="p">(</span><span class="n">random_draw</span> <span class="o">&lt;</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;prob_of_treatment_success&#39;</span><span class="p">])</span>
+        <span class="p">]</span>
 
         <span class="c1"># select people with severe malaria and treatment for at least 7 days</span>
-        <span class="n">severe_and_treated</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span>
-                                      <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">ma_date_tx</span> <span class="o">&lt;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">-</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">7</span><span class="p">)))</span> <span class="o">&amp;</span>
-                                      <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">ma_inf_type</span> <span class="o">==</span> <span class="s1">&#39;severe&#39;</span><span class="p">)]</span>
+        <span class="n">severe_and_treated</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">[</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span>
+            <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">ma_date_tx</span> <span class="o">&lt;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">-</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">7</span><span class="p">)))</span>
+            <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">ma_inf_type</span> <span class="o">==</span> <span class="s1">&#39;severe&#39;</span><span class="p">)</span>
+            <span class="o">&amp;</span> <span class="p">(</span><span class="n">random_draw</span> <span class="o">&lt;</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;prob_of_treatment_success&#39;</span><span class="p">])</span>
+        <span class="p">]</span>
 
         <span class="c1"># create list of all cases to be resolved through treatment</span>
         <span class="n">infections_to_clear</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">clinical_and_treated</span><span class="p">)</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">severe_and_treated</span><span class="p">))</span>
@@ -1637,13 +1763,14 @@
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">infections_to_clear</span><span class="p">,</span> <span class="s1">&#39;ma_is_infected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">infections_to_clear</span><span class="p">,</span> <span class="s1">&#39;ma_inf_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;none&#39;</span>
 
-        <span class="c1"># UNTREATED</span>
-        <span class="c1"># if not treated, self-cure occurs after 6 days of symptoms</span>
+        <span class="c1"># UNTREATED or TREATMENT FAILURE</span>
+        <span class="c1"># if not treated or treatment failed, self-cure occurs after 6 days of symptoms</span>
         <span class="c1"># but parasites remain in blood</span>
-        <span class="n">clinical_not_treated</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span>
-                                        <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">ma_inf_type</span> <span class="o">==</span> <span class="s1">&#39;clinical&#39;</span><span class="p">)</span> <span class="o">&amp;</span>
-                                        <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">ma_date_symptoms</span> <span class="o">&lt;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">-</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">6</span><span class="p">)))</span> <span class="o">&amp;</span>
-                                        <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">ma_tx</span> <span class="o">==</span> <span class="s1">&#39;none&#39;</span><span class="p">)]</span>
+        <span class="n">clinical_not_treated</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">[</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span>
+            <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">ma_inf_type</span> <span class="o">==</span> <span class="s1">&#39;clinical&#39;</span><span class="p">)</span>
+            <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">ma_date_symptoms</span> <span class="o">&lt;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">-</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">6</span><span class="p">)))</span>
+        <span class="p">]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">clear_symptoms</span><span class="p">(</span>
             <span class="n">person_id</span><span class="o">=</span><span class="n">clinical_not_treated</span><span class="p">,</span> <span class="n">disease_module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span>
@@ -1919,6 +2046,24 @@
                     <span class="n">description</span><span class="o">=</span><span class="s1">&#39;District population sizes&#39;</span><span class="p">)</span></div>
 </div>
 
+
+
+<span class="k">def</span> <span class="nf">_data_for_rdt_log</span><span class="p">(</span>
+    <span class="n">person_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">fever_is_a_symptom</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">dx_result</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span>
+    <span class="n">facility_level</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">treatment_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;person_id&quot;</span><span class="p">:</span> <span class="n">person_id</span><span class="p">,</span>
+        <span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="n">age</span><span class="p">,</span>
+        <span class="s2">&quot;fever_present&quot;</span><span class="p">:</span> <span class="n">fever_is_a_symptom</span><span class="p">,</span>
+        <span class="s2">&quot;rdt_result&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">dx_result</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;boolean&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;facility_level&quot;</span><span class="p">:</span> <span class="n">facility_level</span><span class="p">,</span>
+        <span class="s2">&quot;called_by&quot;</span><span class="p">:</span> <span class="n">treatment_id</span><span class="p">,</span>
+    <span class="p">}</span>
 </pre></div>
 
            </div>
@@ -1929,7 +2074,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on May 27, 2024.
+      <span class="lastupdated">Last updated on Aug 02, 2024.
       </span></p>
   </div>
 

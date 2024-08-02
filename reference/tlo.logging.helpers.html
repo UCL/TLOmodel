@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.logging.helpers module &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
+  <title>tlo.logging.helpers module &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -17,7 +17,7 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../_static/documentation_options.js?v=f3d69a25"></script>
         <script src="../_static/doctools.js?v=9a2dae69"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -94,22 +94,8 @@
   <section id="module-tlo.logging.helpers">
 <span id="tlo-logging-helpers-module"></span><h1>tlo.logging.helpers module<a class="headerlink" href="#module-tlo.logging.helpers" title="Link to this heading"></a></h1>
 <dl class="py function">
-<dt class="sig sig-object py" id="tlo.logging.helpers.set_output_file">
-<span class="sig-name descname"><span class="pre">set_output_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">log_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">FileHandler</span></span></span><a class="reference internal" href="../_modules/tlo/logging/helpers.html#set_output_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.logging.helpers.set_output_file" title="Link to this definition"></a></dt>
-<dd><p>Add filehandler to logger</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>log_path</strong> – path for file</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>filehandler object</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
 <dt class="sig sig-object py" id="tlo.logging.helpers.set_logging_levels">
-<span class="sig-name descname"><span class="pre">set_logging_levels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">custom_levels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/logging/helpers.html#set_logging_levels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.logging.helpers.set_logging_levels" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">set_logging_levels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">custom_levels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/tlo/logging/helpers.html#set_logging_levels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.logging.helpers.set_logging_levels" title="Link to this definition"></a></dt>
 <dd><p>Set custom logging levels for disease modules</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -119,17 +105,51 @@
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="tlo.logging.helpers.init_logging">
-<span class="sig-name descname"><span class="pre">init_logging</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">add_stdout_handler</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/logging/helpers.html#init_logging"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.logging.helpers.init_logging" title="Link to this definition"></a></dt>
-<dd><p>Initialise default logging with stdout stream</p>
+<dt class="sig sig-object py" id="tlo.logging.helpers.get_dataframe_row_as_dict_for_logging">
+<span class="sig-name descname"><span class="pre">get_dataframe_row_as_dict_for_logging</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataframe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">row_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="../_modules/tlo/logging/helpers.html#get_dataframe_row_as_dict_for_logging"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.logging.helpers.get_dataframe_row_as_dict_for_logging" title="Link to this definition"></a></dt>
+<dd><p>Get row of a pandas dataframe in a format suitable for logging.</p>
+<p>Retrieves entries for all or a subset of columns for a particular row in a dataframe
+and returns a dict keyed by column name, with values NumPy or pandas extension types
+which should be the same for all rows in dataframe.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataframe</strong> – Population properties dataframe to get properties from.</p></li>
+<li><p><strong>row_label</strong> – Unique index label identifying row in dataframe.</p></li>
+<li><p><strong>columns</strong> – Set of column names to extract - if <code class="docutils literal notranslate"><span class="pre">None</span></code>, the default, all
+column values will be returned.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary with column names as keys and corresponding entries in row as
+values.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="tlo.logging.helpers.set_simulation">
-<span class="sig-name descname"><span class="pre">set_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">simulation</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/logging/helpers.html#set_simulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.logging.helpers.set_simulation" title="Link to this definition"></a></dt>
-<dd><p>Inject simulation into logger for structured logging, called by the simulation
-:param simulation:
-:return:</p>
+<dt class="sig sig-object py" id="tlo.logging.helpers.grouped_counts_with_all_combinations">
+<span class="sig-name descname"><span class="pre">grouped_counts_with_all_combinations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataframe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group_by_columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_possible_values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Collection</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Series</span></span></span><a class="reference internal" href="../_modules/tlo/logging/helpers.html#grouped_counts_with_all_combinations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.logging.helpers.grouped_counts_with_all_combinations" title="Link to this definition"></a></dt>
+<dd><p>Perform group-by count in which all combinations of column values are included.</p>
+<p>As all combinations are included irrespective of whether they are present in data
+(and so have a non-zero count), this gives a multi-index series output of fixed
+structure suitable for logging.</p>
+<p>Attempts to convert all columns to categorical datatype, with bool(ean) columns
+automatically converted, and other non-categorical columns needing to have set of
+possible values specified (which requires that this set is finite).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataframe</strong> – Dataframe to perform group-by counts on.</p></li>
+<li><p><strong>group_by_columns</strong> – Columns to perform grouping on.</p></li>
+<li><p><strong>column_possible_values</strong> – Dictionary mapping from column names to set of
+possible values for all columns not of categorical or bool(ean) data type.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Multi-index series with values corresponding to grouped counts.</p>
+</dd>
+</dl>
 </dd></dl>
 
 </section>
@@ -146,7 +166,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on May 27, 2024.
+      <span class="lastupdated">Last updated on Aug 02, 2024.
       </span></p>
   </div>
 

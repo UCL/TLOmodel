@@ -205,37 +205,65 @@ MAP_InfectionData2023
 parameters
 ----------
 
-====  =======================================  ========
-  ..  parameter\_name                             value
-====  =======================================  ========
-   0  sensitivity\_rdt                            0.95
-   1  cfr                                         0.15
-   2  dur\_asym                                 110
-   3  dur\_clin                                   5
-   4  dur\_clin\_para                           195
-   5  treatment\_adjustment                       0.5
-   6  p\_sev\_anaemia\_preg                       0.075
-   7  mortality\_adjust                          10
+====  =======================================  =======
+  ..  parameter\_name                          value
+====  =======================================  =======
+   0  sensitivity\_rdt                         0.95
+   1  cfr                                      0.15
+   2  dur\_asym                                110
+   3  dur\_clin                                5
+   4  dur\_clin\_para                          195
+   5  treatment\_adjustment                    0.5
+   6  p\_sev\_anaemia\_preg                    0.075
+   7  mortality\_adjust                        10
    8  data\_end                                2018
-   9  irs\_rates\_boundary                        0.5
-  10  irs\_rates\_upper                           0.8
-  11  irs\_rates\_lower                           0
-  12  prob\_malaria\_case\_tests                  0.4
-  13  itn                                         0.6
-  14  scaling\_factor\_for\_rdt\_availability     1.2
-  15  duration\_iptp\_protection\_weeks           6
-  16  rr\_clinical\_malaria\_hiv\_under5          1.7
-  17  rr\_clinical\_malaria\_hiv\_over5           2.6
-  18  rr\_clinical\_malaria\_hiv\_pregnant        3.96
-  19  rr\_clinical\_malaria\_cotrimoxazole        0.58
-  20  rr\_clinical\_malaria\_art                  0.74
-  21  rr\_clinical\_malaria\_iptp                 0.54
-  22  rr\_severe\_malaria\_hiv\_under5            9.69
-  23  rr\_severe\_malaria\_hiv\_over5             2.68
-  24  rr\_severe\_malaria\_hiv\_pregnant          2.8
-  25  rr\_severe\_malaria\_iptp                   0.6
-  26  prob\_of\_treatment\_success                1
-====  =======================================  ========
+   9  irs\_rates\_boundary                     0.5
+  10  irs\_rates\_upper                        0.8
+  11  irs\_rates\_lower                        0
+  12  prob\_malaria\_case\_tests               0.4
+  13  itn                                      0.6
+  14  scaling\_factor\_for\_rdt\_availability  1.2
+  15  duration\_iptp\_protection\_weeks        6
+  16  rr\_clinical\_malaria\_hiv\_under5       1.7
+  17  rr\_clinical\_malaria\_hiv\_over5        2.6
+  18  rr\_clinical\_malaria\_hiv\_pregnant     3.96
+  19  rr\_clinical\_malaria\_cotrimoxazole     0.58
+  20  rr\_clinical\_malaria\_art               0.74
+  21  rr\_clinical\_malaria\_iptp              0.54
+  22  rr\_severe\_malaria\_hiv\_under5         9.69
+  23  rr\_severe\_malaria\_hiv\_over5          2.68
+  24  rr\_severe\_malaria\_hiv\_pregnant       2.8
+  25  rr\_severe\_malaria\_iptp                0.6
+  26  prob\_of\_treatment\_success             1
+  27  type\_of\_scaleup                        none
+  28  scaleup\_start\_year                     2025
+====  =======================================  =======
+
+scaleup_parameters
+------------------
+
+====  ============================  ===============  ============  ============
+  ..  parameter                       target\_value    min\_value    max\_value
+====  ============================  ===============  ============  ============
+   0  prob\_malaria\_case\_tests                1               0           1
+   1  rdt\_testing\_rates                       0.8             0           1
+   2  prob\_of\_treatment\_success              1               0           1
+   3  irs\_district                             0.8             0           0.8
+   4  itn\_district                             0.7             0           0.7
+   5  itn                                       0.7             0           0.7
+====  ============================  ===============  ============  ============
+
+highrisk_districts
+------------------
+
+====  ==========  ===============
+  ..  district      district\_num
+====  ==========  ===============
+   0  Nkhotakota                8
+   1  Balaka                   28
+   2  Mangochi                 17
+   3  Nkhata Bay                2
+====  ==========  ===============
 
 NMCP
 ----

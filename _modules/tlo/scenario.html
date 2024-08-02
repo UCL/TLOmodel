@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.scenario &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
+  <title>tlo.scenario &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../_static/theme_overrides.css?v=6ea10ece" />
@@ -16,7 +16,7 @@
   
         <script src="../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../../_static/documentation_options.js?v=f3d69a25"></script>
         <script src="../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -148,12 +148,14 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">abc</span>
+<span class="kn">import</span> <span class="nn">argparse</span>
 <span class="kn">import</span> <span class="nn">datetime</span>
 <span class="kn">import</span> <span class="nn">json</span>
 <span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Iterable</span>
 <span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">product</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span><span class="p">,</span> <span class="n">PurePosixPath</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
@@ -215,6 +217,53 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">resources</span> <span class="o">=</span> <span class="n">resources_path</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rng</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scenario_path</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">arguments</span> <span class="o">=</span> <span class="p">[]</span>
+
+<div class="viewcode-block" id="BaseScenario.parse_arguments">
+<a class="viewcode-back" href="../../reference/tlo.scenario.html#tlo.scenario.BaseScenario.parse_arguments">[docs]</a>
+    <span class="k">def</span> <span class="nf">parse_arguments</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">extra_arguments</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Base class command line arguments handling for scenarios. This should not be overridden by subclasses.</span>
+<span class="sd">        Subclasses can add argument handling to their classes by implementing the `add_arguments` method.&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">extra_arguments</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">extra_arguments</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">),</span> <span class="s2">&quot;Arguments must be a list of strings&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">arguments</span> <span class="o">=</span> <span class="n">extra_arguments</span>
+
+        <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
+
+        <span class="c1"># add arguments from the subclass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_arguments</span><span class="p">(</span><span class="n">parser</span><span class="p">)</span>
+
+        <span class="n">arguments</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">arguments</span><span class="p">)</span>
+
+        <span class="c1"># set the arguments as attributes of the scenario</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">vars</span><span class="p">(</span><span class="n">arguments</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Overriding attribute: </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">key</span><span class="p">)</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BaseScenario.add_arguments">
+<a class="viewcode-back" href="../../reference/tlo.scenario.html#tlo.scenario.BaseScenario.add_arguments">[docs]</a>
+    <span class="k">def</span> <span class="nf">add_arguments</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">:</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add scenario-specific arguments that can be passed to scenario from the command line.</span>
+
+<span class="sd">        This method is called to add scenario-specific arguments to the command line parser. The method should add</span>
+<span class="sd">        arguments to the parser using the `add_argument` method. Arguments that have a value of None are not set or</span>
+<span class="sd">        overridden.</span>
+
+<span class="sd">        :param parser: An instance of `argparse.ArgumentParser` to which arguments should be added.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            parser.add_argument(&#39;--pop-size&#39;, type=int, default=20_000, help=&#39;Population size&#39;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
 
 <div class="viewcode-block" id="BaseScenario.log_configuration">
 <a class="viewcode-back" href="../../reference/tlo.scenario.html#tlo.scenario.BaseScenario.log_configuration">[docs]</a>
@@ -404,6 +453,7 @@
         <span class="k">return</span> <span class="p">{</span>
             <span class="s2">&quot;scenario_script_path&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">PurePosixPath</span><span class="p">(</span><span class="n">scenario_path</span><span class="p">)),</span>
             <span class="s2">&quot;scenario_seed&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">scenario</span><span class="o">.</span><span class="n">seed</span><span class="p">,</span>
+            <span class="s2">&quot;arguments&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">scenario</span><span class="o">.</span><span class="n">arguments</span><span class="p">,</span>
             <span class="s2">&quot;runs_per_draw&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">runs_per_draw</span><span class="p">,</span>
             <span class="s2">&quot;draws&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">draws</span><span class="p">,</span>
         <span class="p">}</span></div>
@@ -411,7 +461,8 @@
 
 <div class="viewcode-block" id="DrawGenerator.save_config">
 <a class="viewcode-back" href="../../reference/tlo.scenario.html#tlo.scenario.DrawGenerator.save_config">[docs]</a>
-    <span class="k">def</span> <span class="nf">save_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">output_path</span><span class="p">):</span>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">save_config</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">output_path</span><span class="p">):</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span></div>
 </div>
@@ -426,6 +477,8 @@
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">run_configuration_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">run_config</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scenario</span> <span class="o">=</span> <span class="n">ScenarioLoader</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_config</span><span class="p">[</span><span class="s2">&quot;scenario_script_path&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">get_scenario</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_config</span><span class="p">[</span><span class="s2">&quot;arguments&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">scenario</span><span class="o">.</span><span class="n">parse_arguments</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_config</span><span class="p">[</span><span class="s2">&quot;arguments&quot;</span><span class="p">])</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Loaded scenario using </span><span class="si">{</span><span class="n">run_configuration_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">number_of_draws</span><span class="si">}</span><span class="s2"> draws; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">runs_per_draw</span><span class="si">}</span><span class="s2"> runs/draw&quot;</span><span class="p">)</span>
 
@@ -648,7 +701,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on May 27, 2024.
+      <span class="lastupdated">Last updated on Aug 02, 2024.
       </span></p>
   </div>
 

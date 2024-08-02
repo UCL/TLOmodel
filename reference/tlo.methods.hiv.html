@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.hiv module &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
+  <title>tlo.methods.hiv module &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -17,7 +17,7 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../_static/documentation_options.js?v=f3d69a25"></script>
         <script src="../_static/doctools.js?v=9a2dae69"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -111,7 +111,7 @@ AIDS symptoms can also lead to care-seeking and there is routine testing for HIV
 <li><p>without viral suppression: when there is no benefit in avoiding AIDS and infectiousness is unchanged.</p></li>
 </ul>
 </dd>
-<dt>Maintenance on ART and PrEP is re-assessed at periodic ‘Decision Events’, at which is it is determined if the person</dt><dd><p>will attend the “next” HSI for continuation of the service; and if not, they are removed from that service and “stop
+<dt>Maintenance on ART and PrEP is re-assessed at periodic ‘Decision Events’, at which it is determined if the person</dt><dd><p>will attend the “next” HSI for continuation of the service; and if not, they are removed from that service and “stop
 treatment”. If a stock-out or non-availability of health system resources prevent treatment continuation, the person
 “stops treatment”. Stopping treatment leads to a new AIDS Event being scheduled. Persons can restart treatment. If a
 person has developed AIDS, starts treatment and then defaults from treatment, their ‘original’ AIDS Death Event will
@@ -133,7 +133,7 @@ still occur.</p>
 <dt class="sig sig-object py" id="tlo.methods.hiv.Hiv">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Hiv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_with_checks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#Hiv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.Hiv" title="Link to this definition"></a></dt>
 <dd><p>The HIV Disease Module</p>
-<p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.core.Module</span></code></a></p>
+<p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.core.Module</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_generic_first_appts.GenericFirstAppointmentsMixin</span></code></p>
 <p><strong>PARAMETERS:</strong></p>
 <table class="docutils align-default">
 <colgroup>
@@ -232,193 +232,217 @@ still occur.</p>
 <td><p>REAL</p></td>
 <td><p>Relative risk of HIV with higher education</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_behaviour_change</p></td>
+<tr class="row-odd"><td><p>rr_schisto</p></td>
+<td><p>REAL</p></td>
+<td><p>Relative risk of HIV with high intensity S. haematobium infection</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_behaviour_change</p></td>
 <td><p>REAL</p></td>
 <td><p>Relative risk of HIV with behaviour modification</p></td>
 </tr>
-<tr class="row-even"><td><p>proportion_reduction_in_risk_of_hiv_aq_if_on_prep</p></td>
+<tr class="row-odd"><td><p>proportion_reduction_in_risk_of_hiv_aq_if_on_prep</p></td>
 <td><p>REAL</p></td>
 <td><p>Proportion reduction in risk of HIV acquisition if on PrEP. 0 for no efficacy; 1.0 for perfect efficacy.</p></td>
 </tr>
-<tr class="row-odd"><td><p>mean_months_between_aids_and_death</p></td>
+<tr class="row-even"><td><p>mean_months_between_aids_and_death</p></td>
 <td><p>REAL</p></td>
 <td><p>Mean number of months (distributed exponentially) for the time between AIDS and AIDS Death</p></td>
 </tr>
-<tr class="row-even"><td><p>mean_months_between_aids_and_death_infant</p></td>
+<tr class="row-odd"><td><p>mean_months_between_aids_and_death_infant</p></td>
 <td><p>REAL</p></td>
 <td><p>Mean number of months for the time between AIDS and AIDS Death for infants</p></td>
 </tr>
-<tr class="row-odd"><td><p>infection_to_death_weibull_shape_1519</p></td>
+<tr class="row-even"><td><p>infection_to_death_weibull_shape_1519</p></td>
 <td><p>REAL</p></td>
 <td><p>Shape parameter for Weibull describing time between infection and death for 15-19 yo (units: years)</p></td>
 </tr>
-<tr class="row-even"><td><p>infection_to_death_weibull_shape_2024</p></td>
+<tr class="row-odd"><td><p>infection_to_death_weibull_shape_2024</p></td>
 <td><p>REAL</p></td>
 <td><p>Shape parameter for Weibull describing time between infection and death for 20-24 yo (units: years)</p></td>
 </tr>
-<tr class="row-odd"><td><p>infection_to_death_weibull_shape_2529</p></td>
+<tr class="row-even"><td><p>infection_to_death_weibull_shape_2529</p></td>
 <td><p>REAL</p></td>
 <td><p>Shape parameter for Weibull describing time between infection and death for 25-29 yo (units: years)</p></td>
 </tr>
-<tr class="row-even"><td><p>infection_to_death_weibull_shape_3034</p></td>
+<tr class="row-odd"><td><p>infection_to_death_weibull_shape_3034</p></td>
 <td><p>REAL</p></td>
 <td><p>Shape parameter for Weibull describing time between infection and death for 30-34 yo (units: years)</p></td>
 </tr>
-<tr class="row-odd"><td><p>infection_to_death_weibull_shape_3539</p></td>
+<tr class="row-even"><td><p>infection_to_death_weibull_shape_3539</p></td>
 <td><p>REAL</p></td>
 <td><p>Shape parameter for Weibull describing time between infection and death for 35-39 yo (units: years)</p></td>
 </tr>
-<tr class="row-even"><td><p>infection_to_death_weibull_shape_4044</p></td>
+<tr class="row-odd"><td><p>infection_to_death_weibull_shape_4044</p></td>
 <td><p>REAL</p></td>
 <td><p>Shape parameter for Weibull describing time between infection and death for 40-44 yo (units: years)</p></td>
 </tr>
-<tr class="row-odd"><td><p>infection_to_death_weibull_shape_4549</p></td>
+<tr class="row-even"><td><p>infection_to_death_weibull_shape_4549</p></td>
 <td><p>REAL</p></td>
 <td><p>Shape parameter for Weibull describing time between infection and death for 45-49 yo (units: years)</p></td>
 </tr>
-<tr class="row-even"><td><p>infection_to_death_weibull_scale_1519</p></td>
+<tr class="row-odd"><td><p>infection_to_death_weibull_scale_1519</p></td>
 <td><p>REAL</p></td>
 <td><p>Scale parameter for Weibull describing time between infection and death for 15-19 yo (units: years)</p></td>
 </tr>
-<tr class="row-odd"><td><p>infection_to_death_weibull_scale_2024</p></td>
+<tr class="row-even"><td><p>infection_to_death_weibull_scale_2024</p></td>
 <td><p>REAL</p></td>
 <td><p>Scale parameter for Weibull describing time between infection and death for 20-24 yo (units: years)</p></td>
 </tr>
-<tr class="row-even"><td><p>infection_to_death_weibull_scale_2529</p></td>
+<tr class="row-odd"><td><p>infection_to_death_weibull_scale_2529</p></td>
 <td><p>REAL</p></td>
 <td><p>Scale parameter for Weibull describing time between infection and death for 25-29 yo (units: years)</p></td>
 </tr>
-<tr class="row-odd"><td><p>infection_to_death_weibull_scale_3034</p></td>
+<tr class="row-even"><td><p>infection_to_death_weibull_scale_3034</p></td>
 <td><p>REAL</p></td>
 <td><p>Scale parameter for Weibull describing time between infection and death for 30-34 yo (units: years)</p></td>
 </tr>
-<tr class="row-even"><td><p>infection_to_death_weibull_scale_3539</p></td>
+<tr class="row-odd"><td><p>infection_to_death_weibull_scale_3539</p></td>
 <td><p>REAL</p></td>
 <td><p>Scale parameter for Weibull describing time between infection and death for 35-39 yo (units: years)</p></td>
 </tr>
-<tr class="row-odd"><td><p>infection_to_death_weibull_scale_4044</p></td>
+<tr class="row-even"><td><p>infection_to_death_weibull_scale_4044</p></td>
 <td><p>REAL</p></td>
 <td><p>Scale parameter for Weibull describing time between infection and death for 40-44 yo (units: years)</p></td>
 </tr>
-<tr class="row-even"><td><p>infection_to_death_weibull_scale_4549</p></td>
+<tr class="row-odd"><td><p>infection_to_death_weibull_scale_4549</p></td>
 <td><p>REAL</p></td>
 <td><p>Scale parameter for Weibull describing time between infection and death for 45-49 yo (units: years)</p></td>
 </tr>
-<tr class="row-odd"><td><p>art_default_to_aids_mean_years</p></td>
+<tr class="row-even"><td><p>art_default_to_aids_mean_years</p></td>
 <td><p>REAL</p></td>
 <td><p>Mean years between when a person (any change) stops being on treatment to when AIDS is onset (if the absence of resuming treatment).</p></td>
 </tr>
-<tr class="row-even"><td><p>prop_delayed_aids_onset</p></td>
+<tr class="row-odd"><td><p>prop_delayed_aids_onset</p></td>
 <td><p>REAL</p></td>
 <td><p>Proportion of PLHIV that will have delayed AIDS onset to compensate for AIDS-TB</p></td>
 </tr>
-<tr class="row-odd"><td><p>mean_survival_for_infants_infected_prior_to_birth</p></td>
+<tr class="row-even"><td><p>mean_survival_for_infants_infected_prior_to_birth</p></td>
 <td><p>REAL</p></td>
 <td><p>Exponential rate parameter for mortality in infants who are infected before birth</p></td>
 </tr>
-<tr class="row-even"><td><p>infection_to_death_infant_infection_after_birth_weibull_scale</p></td>
+<tr class="row-odd"><td><p>infection_to_death_infant_infection_after_birth_weibull_scale</p></td>
 <td><p>REAL</p></td>
 <td><p>Weibull scale parameter for mortality in infants who are infected after birth</p></td>
 </tr>
-<tr class="row-odd"><td><p>infection_to_death_infant_infection_after_birth_weibull_shape</p></td>
+<tr class="row-even"><td><p>infection_to_death_infant_infection_after_birth_weibull_shape</p></td>
 <td><p>REAL</p></td>
 <td><p>Weibull shape parameter for mortality in infants who are infected after birth</p></td>
 </tr>
-<tr class="row-even"><td><p>hiv_testing_rates</p></td>
+<tr class="row-odd"><td><p>hiv_testing_rates</p></td>
 <td><p>DATA_FRAME</p></td>
 <td><p>annual rates of testing for children and adults</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_test_hiv_positive</p></td>
+<tr class="row-even"><td><p>rr_test_hiv_positive</p></td>
 <td><p>REAL</p></td>
 <td><p>relative likelihood of having HIV test for people with HIV</p></td>
 </tr>
-<tr class="row-even"><td><p>hiv_testing_rate_adjustment</p></td>
+<tr class="row-odd"><td><p>hiv_testing_rate_adjustment</p></td>
 <td><p>REAL</p></td>
 <td><p>adjustment to current testing rates to account for multiple routes into HIV testing</p></td>
 </tr>
-<tr class="row-odd"><td><p>treatment_initiation_adjustment</p></td>
+<tr class="row-even"><td><p>treatment_initiation_adjustment</p></td>
 <td><p>REAL</p></td>
 <td><p>adjustment to current ART coverage levels to account for defaulters</p></td>
 </tr>
-<tr class="row-even"><td><p>vs_adjustment</p></td>
+<tr class="row-odd"><td><p>vs_adjustment</p></td>
 <td><p>REAL</p></td>
 <td><p>adjustment to current viral suppression levels to account for defaulters</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_hiv_test_at_anc_or_delivery</p></td>
+<tr class="row-even"><td><p>prob_hiv_test_at_anc_or_delivery</p></td>
 <td><p>REAL</p></td>
 <td><p>probability of a women having hiv test at anc or following delivery</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_hiv_test_for_newborn_infant</p></td>
+<tr class="row-odd"><td><p>prob_hiv_test_for_newborn_infant</p></td>
 <td><p>REAL</p></td>
 <td><p>probability of a newborn infant having HIV test pre-discharge</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_start_art_or_vs</p></td>
+<tr class="row-even"><td><p>prob_start_art_or_vs</p></td>
 <td><p>REAL</p></td>
 <td><p>Probability that a person will start treatment and be virally suppressed following testing</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_behav_chg_after_hiv_test</p></td>
+<tr class="row-odd"><td><p>prob_behav_chg_after_hiv_test</p></td>
 <td><p>REAL</p></td>
 <td><p>Probability that a person will change risk behaviours, if HIV-negative, following testing</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_prep_for_fsw_after_hiv_test</p></td>
+<tr class="row-even"><td><p>prob_prep_for_fsw_after_hiv_test</p></td>
 <td><p>REAL</p></td>
 <td><p>Probability that a FSW will start PrEP, if HIV-negative, following testing</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_prep_for_agyw</p></td>
+<tr class="row-odd"><td><p>prob_prep_for_agyw</p></td>
 <td><p>REAL</p></td>
 <td><p>Probability that adolescent girls / young women will start PrEP</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_circ_after_hiv_test</p></td>
+<tr class="row-even"><td><p>prob_circ_after_hiv_test</p></td>
 <td><p>REAL</p></td>
 <td><p>Probability that a male will be circumcised, if HIV-negative, following testing</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_circ_for_child_before_2020</p></td>
+<tr class="row-odd"><td><p>prob_circ_for_child_before_2020</p></td>
 <td><p>REAL</p></td>
 <td><p>Probability that a male aging &lt;15 yrs will be circumcised before year 2020</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_circ_for_child_from_2020</p></td>
+<tr class="row-even"><td><p>prob_circ_for_child_from_2020</p></td>
 <td><p>REAL</p></td>
 <td><p>Probability that a male aging &lt;15 yrs will be circumcised from year 2020, which is different from before 2020 as children vmmc policy/fund/cases has changed, according to PEPFAR 2020 Country Operational Plan and DHIS2 data</p></td>
 </tr>
-<tr class="row-even"><td><p>probability_of_being_retained_on_prep_every_3_months</p></td>
+<tr class="row-odd"><td><p>probability_of_being_retained_on_prep_every_3_months</p></td>
 <td><p>REAL</p></td>
 <td><p>Probability that someone who has initiated on prep will attend an appointment and be on prep for the next 3 months, until the next appointment.</p></td>
 </tr>
-<tr class="row-odd"><td><p>probability_of_being_retained_on_art_every_3_months</p></td>
+<tr class="row-even"><td><p>probability_of_being_retained_on_art_every_3_months</p></td>
 <td><p>REAL</p></td>
 <td><p>Probability that someone who has initiated on treatment will attend an appointment and be on treatment for next 3 months, until the next appointment.</p></td>
 </tr>
-<tr class="row-even"><td><p>probability_of_seeking_further_art_appointment_if_drug_not_available</p></td>
+<tr class="row-odd"><td><p>probability_of_seeking_further_art_appointment_if_drug_not_available</p></td>
 <td><p>REAL</p></td>
 <td><p>Probability that a person who ‘should’ be on art will seek another appointment (the following day and try for each of the next 7 days) if drugs were not available.</p></td>
 </tr>
-<tr class="row-odd"><td><p>probability_of_seeking_further_art_appointment_if_appointment_not_available</p></td>
+<tr class="row-even"><td><p>probability_of_seeking_further_art_appointment_if_appointment_not_available</p></td>
 <td><p>REAL</p></td>
 <td><p>Probability that a person who ‘should’ be on art will seek another appointment if the health-system has not been able to provide them with an appointment</p></td>
 </tr>
-<tr class="row-even"><td><p>prep_start_year</p></td>
+<tr class="row-odd"><td><p>prep_start_year</p></td>
 <td><p>REAL</p></td>
 <td><p>Year from which PrEP is available</p></td>
 </tr>
-<tr class="row-odd"><td><p>ART_age_cutoff_young_child</p></td>
+<tr class="row-even"><td><p>ART_age_cutoff_young_child</p></td>
 <td><p>INT</p></td>
 <td><p>Age cutoff for ART regimen for young children</p></td>
 </tr>
-<tr class="row-even"><td><p>ART_age_cutoff_older_child</p></td>
+<tr class="row-odd"><td><p>ART_age_cutoff_older_child</p></td>
 <td><p>INT</p></td>
 <td><p>Age cutoff for ART regimen for older children</p></td>
 </tr>
-<tr class="row-odd"><td><p>rel_probability_art_baseline_aids</p></td>
+<tr class="row-even"><td><p>rel_probability_art_baseline_aids</p></td>
 <td><p>REAL</p></td>
 <td><p>relative probability of person with HIV infection over 10 years being on ART at baseline</p></td>
 </tr>
-<tr class="row-even"><td><p>aids_tb_treatment_adjustment</p></td>
+<tr class="row-odd"><td><p>aids_tb_treatment_adjustment</p></td>
 <td><p>REAL</p></td>
 <td><p>probability of death if aids and tb, person on treatment for tb</p></td>
+</tr>
+<tr class="row-even"><td><p>hiv_healthseekingbehaviour_cap</p></td>
+<td><p>INT</p></td>
+<td><p>number of repeat visits assumed for healthcare services</p></td>
 </tr>
 <tr class="row-odd"><td><p>dispensation_period_months</p></td>
 <td><p>REAL</p></td>
 <td><p>length of prescription for ARVs in months, same for all PLHIV</p></td>
+</tr>
+<tr class="row-even"><td><p>length_of_inpatient_stay_if_terminal</p></td>
+<td><p>LIST</p></td>
+<td><p>length in days of inpatient stay for end-of-life HIV patients: list has two elements [low-bound-inclusive, high-bound-exclusive]</p></td>
+</tr>
+<tr class="row-odd"><td><p>type_of_scaleup</p></td>
+<td><p>STRING</p></td>
+<td><p>argument to determine type scale-up of program which will be implemented, can be ‘none’, ‘target’ or ‘max’</p></td>
+</tr>
+<tr class="row-even"><td><p>scaleup_start_year</p></td>
+<td><p>INT</p></td>
+<td><p>the year when the scale-up starts (it will occur on 1st January of that year)</p></td>
+</tr>
+<tr class="row-odd"><td><p>scaleup_parameters</p></td>
+<td><p>DATA_FRAME</p></td>
+<td><p>the parameters and values changed in scenario analysis</p></td>
 </tr>
 </tbody>
 </table>
@@ -484,10 +508,10 @@ still occur.</p>
 </table>
 <p><strong>Class attributes:</strong></p>
 <p>ADDITIONAL_DEPENDENCIES : {‘NewbornOutcomes’, ‘Tb’}</p>
-<p>CAUSES_OF_DEATH : {‘AIDS_non_TB’: &lt;tlo.methods.causes.Cause object at 0x11cd8cc10&gt;, ‘AIDS_TB’: &lt;tlo.methods.causes.Cause object at 0x11cd8ea10&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘HIV’: &lt;tlo.methods.causes.Cause object at 0x11cd8d650&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘Demography’, ‘HealthSystem’, ‘Lifestyle’, ‘SymptomManager’}</p>
-<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
+<p>CAUSES_OF_DEATH : {‘AIDS_non_TB’: &lt;tlo.methods.causes.Cause object at 0x11903b550&gt;, ‘AIDS_TB’: &lt;tlo.methods.causes.Cause object at 0x119039210&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘HIV’: &lt;tlo.methods.causes.Cause object at 0x11903b1d0&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘Demography’, ‘HealthSystem’, ‘SymptomManager’, ‘Lifestyle’}</p>
+<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’}</p>
 <p><strong>Functions (defined or overridden in class Hiv):</strong></p>
 <dl class="py method">
@@ -521,10 +545,14 @@ generator.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.hiv.Hiv.pre_initialise_population">
 <span class="sig-name descname"><span class="pre">pre_initialise_population</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#Hiv.pre_initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.Hiv.pre_initialise_population" title="Link to this definition"></a></dt>
-<dd><ul class="simple">
-<li><p>Establish the Linear Models</p></li>
-<li></li>
-</ul>
+<dd><p>Do things required before the population is created
+* Build the LinearModels</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.Hiv._build_linear_models">
+<span class="sig-name descname"><span class="pre">_build_linear_models</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#Hiv._build_linear_models"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.Hiv._build_linear_models" title="Link to this definition"></a></dt>
+<dd><p>Establish the Linear Models</p>
 </dd></dl>
 
 <dl class="py method">
@@ -589,6 +617,12 @@ use the spectrum proportion PLHIV who know status to assign remaining tests</p>
 </ol>
 </li>
 </ul>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.Hiv.update_parameters_for_program_scaleup">
+<span class="sig-name descname"><span class="pre">update_parameters_for_program_scaleup</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#Hiv.update_parameters_for_program_scaleup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.Hiv.update_parameters_for_program_scaleup" title="Link to this definition"></a></dt>
+<dd><p>options for program scale-up are ‘target’ or ‘max’</p>
 </dd></dl>
 
 <dl class="py method">
@@ -679,7 +713,7 @@ Assumes that the time between onset of AIDS symptoms and deaths is exponentially
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.hiv.Hiv.do_when_hiv_diagnosed">
 <span class="sig-name descname"><span class="pre">do_when_hiv_diagnosed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#Hiv.do_when_hiv_diagnosed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.Hiv.do_when_hiv_diagnosed" title="Link to this definition"></a></dt>
-<dd><p>Things to do when a person has been tested and found (newly) be be HIV-positive:.
+<dd><p>Things to do when a person has been tested and found (newly) to be HIV-positive:.
 * Consider if ART should be initiated, and schedule HSI if so.
 The person should not yet be on ART.</p>
 </dd></dl>
@@ -746,49 +780,38 @@ It is called from newborn_outcomes.py under hiv_screening_for_at_risk_newborns.<
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.hiv.Hiv.do_at_generic_first_appt">
-<span class="sig-name descname"><span class="pre">do_at_generic_first_appt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">patient_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">symptoms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#Hiv.do_at_generic_first_appt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.Hiv.do_at_generic_first_appt" title="Link to this definition"></a></dt>
-<dd><p>Actions to be take during a NON-emergency generic HSI.</p>
-<p>Derived classes should overwrite this method so that they are
-compatible with the HealthSystem module, and can schedule HSI
-events when a patient presents symptoms indicative of the
-corresponding illness or condition.</p>
-<p>When overwriting, arguments that are not required can be left out
-of the definition.
-If done so, the method MUST take a <a href="#id1"><span class="problematic" id="id2">**</span></a>kwargs input to avoid errors
-when looping over all disease modules and running their generic
-HSI methods.</p>
-<p>HSI_Events should be scheduled by the Module implementing this
-method using the <code class="xref py py-meth docutils literal notranslate"><span class="pre">Module.healthsystem.schedule_hsi()</span></code> method.
-However, they should not write updates back to the population
-DataFrame in this method - these values should be returned as a
-dictionary as described below:</p>
-<p>The return value of this function should be a dictionary
-containing any changes that need to be made to the individual’s
-row in the population DataFrame.
-Key/value pairs should be the column name and the new value to
-assign to the patient.
-In the event no updates are required; return an object that evaluates
-to False when cast to a bool. Your options are:
-- Omit a return statement and value (preferred).
-- Return an empty dictionary. Use this case when patient details
-might need updating conditionally, on EG patient symptoms or consumable
-availability. In which case, an empty dictionary should be created and
-key-value pairs added to this dictionary as such conditionals are checked.
-If no conditionals are met, the empty dictionary will be returned.
-- Use a return statement with no values (use if the logic of your
-module-specific method necessitates the explicit return).
-- Return None (not recommended, use “return” on its own, as above).</p>
+<span class="sig-name descname"><span class="pre">do_at_generic_first_appt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">symptoms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schedule_hsi_event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">HSIEventScheduler</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#Hiv.do_at_generic_first_appt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.Hiv.do_at_generic_first_appt" title="Link to this definition"></a></dt>
+<dd><p>Actions to take during a non-emergency generic health system interaction (HSI).</p>
+<p>Derived classes should overwrite this method so that they are compatible with
+the <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem" title="tlo.methods.healthsystem.HealthSystem"><code class="xref py py-class docutils literal notranslate"><span class="pre">HealthSystem</span></code></a> module, and can schedule HSI events when a
+individual presents symptoms indicative of the corresponding illness or
+condition.</p>
+<p>When overwriting, arguments that are not required can be left out of the
+definition. If done so, the method <strong>must</strong> take a <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code> input to avoid
+errors when looping over all disease modules and running their generic HSI
+methods.</p>
+<p>HSI events should be scheduled by the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> subclass implementing
+this method using the <code class="docutils literal notranslate"><span class="pre">schedule_hsi_event</span></code> argument.</p>
+<p>Implementations of this method should <strong>not</strong> make any updates to the population
+dataframe directly - if the target individuals properties need to be updated
+this should be performed by updating the <code class="docutils literal notranslate"><span class="pre">individual_properties</span></code> argument.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>patient_id</strong> – Row index (ID) of the individual target of the HSI event in the population DataFrame.</p></li>
-<li><p><strong>patient_details</strong> – Patient details as provided in the population DataFrame.</p></li>
+<li><p><strong>person_id</strong> – Row index (ID) of the individual target of the HSI event in
+the population dataframe.</p></li>
+<li><p><strong>individual_properties</strong> – Properties of individual target as provided in the
+population dataframe. Updates to individual properties may be written to
+this object.</p></li>
 <li><p><strong>symptoms</strong> – List of symptoms the patient is experiencing.</p></li>
-<li><p><strong>diagnosis_function</strong> – A function that can run diagnosis tests based on the patient’s symptoms.</p></li>
-<li><p><strong>consumables_checker</strong> – A function that can query the HealthSystem to check for available consumables.</p></li>
+<li><p><strong>schedule_hsi_event</strong> – A function that can schedule subsequent HSI events.</p></li>
+<li><p><strong>diagnosis_function</strong> – A function that can run diagnosis tests based on the
+patient’s symptoms.</p></li>
+<li><p><strong>consumables_checker</strong> – A function that can query the health system to check
+for available consumables.</p></li>
 <li><p><strong>facility_level</strong> – The level of the facility that the patient presented at.</p></li>
-<li><p><strong>treatment_id</strong> – The treatment id of the HSI event triggering the generic appointment.</p></li>
-<li><p><strong>random_state</strong> – Random number generator to be used when making random choices during event creation.</p></li>
+<li><p><strong>treatment_id</strong> – The treatment id of the HSI event triggering the generic
+appointment.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1117,9 +1140,52 @@ constructor, but may also take further keyword arguments.</p></li>
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HivScaleUpEvent">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HivScaleUpEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HivScaleUpEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HivScaleUpEvent" title="Link to this definition"></a></dt>
+<dd><p>This event exists to change parameters or functions
+depending on the scenario for projections which has been set
+It only occurs once on date: scaleup_start_date,
+called by initialise_simulation</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<p><strong>Class attributes:</strong></p>
+<p>__annotations__ : {}</p>
+<p><strong>Functions (defined or overridden in class HivScaleUpEvent):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HivScaleUpEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HivScaleUpEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HivScaleUpEvent.__init__" title="Link to this definition"></a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HivScaleUpEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HivScaleUpEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HivScaleUpEvent.apply" title="Link to this definition"></a></dt>
+<dd><p>Apply this event to the given target.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.hiv.HSI_Hiv_TestAndRefer">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Hiv_TestAndRefer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_not_refer_if_neg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suppress_footprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">referred_from</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HSI_Hiv_TestAndRefer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HSI_Hiv_TestAndRefer" title="Link to this definition"></a></dt>
-<dd><p>The is the Test-and-Refer HSI. Individuals may seek an HIV test at any time. From this, they can be referred on to
+<dd><p>This is the Test-and-Refer HSI. Individuals may seek an HIV test at any time. From this, they can be referred on to
 other services.
 This event is scheduled by:</p>
 <blockquote>
@@ -1276,7 +1342,7 @@ Default the person to being off PrEP</p>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Hiv_StartOrContinueTreatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HSI_Hiv_StartOrContinueTreatment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HSI_Hiv_StartOrContinueTreatment" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event" title="tlo.methods.hsi_event.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_event.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
-<p>EXPECTED_APPT_FOOTPRINT : &lt;property object at 0x11cb5e1b0&gt;</p>
+<p>EXPECTED_APPT_FOOTPRINT : &lt;property object at 0x119207a10&gt;</p>
 <p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class HSI_Hiv_StartOrContinueTreatment):</strong></p>
 <dl class="py method">
@@ -1339,6 +1405,42 @@ Consider whether IPT is needed at this time. This is run only when treatment is 
 <dd><p>This is called if this HSI was never run.
 * Default the person to being off ART.
 * Determine if they will re-seek care themselves in the future:</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HSI_Hiv_EndOfLifeCare">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Hiv_EndOfLifeCare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beddays</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">17</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HSI_Hiv_EndOfLifeCare"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HSI_Hiv_EndOfLifeCare" title="Link to this definition"></a></dt>
+<dd><p>this is a hospital stay for terminally-ill patients with AHD
+it does not affect disability weight or probability of death
+no consumables are logged but health system capacity (HR) is allocated
+there are no consequences if hospital bed is not available as person has scheduled death
+already within 2 weeks</p>
+<p>Bases: <a class="reference internal" href="tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event" title="tlo.methods.hsi_event.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_event.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Class attributes:</strong></p>
+<p>__annotations__ : {}</p>
+<p><strong>Functions (defined or overridden in class HSI_Hiv_EndOfLifeCare):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HSI_Hiv_EndOfLifeCare.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beddays</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">17</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HSI_Hiv_EndOfLifeCare.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HSI_Hiv_EndOfLifeCare.__init__" title="Link to this definition"></a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HSI_Hiv_EndOfLifeCare.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HSI_Hiv_EndOfLifeCare.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HSI_Hiv_EndOfLifeCare.apply" title="Link to this definition"></a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
 </dd></dl>
 
 </dd></dl>
@@ -1525,7 +1627,7 @@ It is a good place to add initial events to the event queue.</p>
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on May 27, 2024.
+      <span class="lastupdated">Last updated on Aug 02, 2024.
       </span></p>
   </div>
 

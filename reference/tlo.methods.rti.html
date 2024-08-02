@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.rti module &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
+  <title>tlo.methods.rti module &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -17,7 +17,7 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../_static/documentation_options.js?v=f3d69a25"></script>
         <script src="../_static/doctools.js?v=9a2dae69"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -98,7 +98,7 @@
 <dt class="sig sig-object py" id="tlo.methods.rti.RTI">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RTI</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI" title="Link to this definition"></a></dt>
 <dd><p>The road traffic injuries module for the TLO model, handling all injuries related to road traffic accidents.</p>
-<p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.core.Module</span></code></a></p>
+<p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.core.Module</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_generic_first_appts.GenericFirstAppointmentsMixin</span></code></p>
 <p><strong>PARAMETERS:</strong></p>
 <table class="docutils align-default">
 <colgroup>
@@ -973,6 +973,10 @@
 <td><p>INT</p></td>
 <td><p>A cut-off score above which an injuries will be considered severe enough to cause mortality in those whohave not sought care.</p></td>
 </tr>
+<tr class="row-odd"><td><p>maximum_number_of_times_HSI_events_should_run</p></td>
+<td><p>INT</p></td>
+<td><p>limit on the number of times an HSI event can run</p></td>
+</tr>
 </tbody>
 </table>
 <p><strong>PROPERTIES:</strong></p>
@@ -1161,17 +1165,17 @@
 </table>
 <p><strong>Class attributes:</strong></p>
 <p>ADDITIONAL_DEPENDENCIES : {‘Demography’, ‘HealthSystem’, ‘Lifestyle’}</p>
-<p>CAUSES_OF_DEATH : {‘RTI_death_without_med’: &lt;tlo.methods.causes.Cause object at 0x12df31d10&gt;, ‘RTI_death_with_med’: &lt;tlo.methods.causes.Cause object at 0x12df31050&gt;, ‘RTI_unavailable_med’: &lt;tlo.methods.causes.Cause object at 0x12df32e90&gt;, ‘RTI_imm_death’: &lt;tlo.methods.causes.Cause object at 0x12df30dd0&gt;, ‘RTI_death_shock’: &lt;tlo.methods.causes.Cause object at 0x12df33090&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘RTI’: &lt;tlo.methods.causes.Cause object at 0x12df30690&gt;}</p>
+<p>CAUSES_OF_DEATH : {‘RTI_death_without_med’: &lt;tlo.methods.causes.Cause object at 0x12a68ded0&gt;, ‘RTI_death_with_med’: &lt;tlo.methods.causes.Cause object at 0x12a825cd0&gt;, ‘RTI_unavailable_med’: &lt;tlo.methods.causes.Cause object at 0x12a827b90&gt;, ‘RTI_imm_death’: &lt;tlo.methods.causes.Cause object at 0x12a8259d0&gt;, ‘RTI_death_shock’: &lt;tlo.methods.causes.Cause object at 0x12a825dd0&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘RTI’: &lt;tlo.methods.causes.Cause object at 0x12a825590&gt;}</p>
 <p>DATE_TO_REMOVE_DALY_COLUMNS : [‘rt_date_to_remove_daly_1’, ‘rt_date_to_remove_daly_2’, ‘rt_date_to_remove_daly_3’, ‘rt_date_to_remove_daly_4’, ‘rt_date_to_remove_daly_5’, ‘rt_date_to_remove_daly_6’, ‘rt_date_to_remove_daly_7’, ‘rt_date_to_remove_daly_8’]</p>
 <p>FRACTURE_CODES : [‘112’, ‘113’, ‘211’, ‘212’, ‘412’, ‘414’, ‘612’, ‘712’, ‘811’, ‘812’, ‘813’]</p>
-<p>INIT_DEPENDENCIES : {‘HealthBurden’, ‘SymptomManager’}</p>
+<p>INIT_DEPENDENCIES : {‘SymptomManager’, ‘HealthBurden’}</p>
 <p>INJURIES_REQ_IMAGING : [‘112’, ‘113’, ‘211’, ‘212’, ‘412’, ‘414’, ‘612’, ‘712a’, ‘712b’, ‘712c’, ‘811’, ‘812’, ‘813a’, ‘813b’, ‘813c’, ‘822a’, ‘822b’, ‘813bo’, ‘813co’, ‘813do’, ‘813eo’, ‘673’, ‘674’, ‘675’, ‘676’, ‘322’, ‘323’, ‘722’, ‘342’, ‘343’, ‘441’, ‘443’, ‘453’, ‘133’, ‘134’, ‘135’, ‘552’, ‘553’, ‘554’, ‘342’, ‘343’, ‘441’, ‘443’, ‘453’, ‘361’, ‘363’, ‘461’, ‘463’]</p>
 <p>INJURY_CODES : [‘none’, ‘112’, ‘113’, ‘133a’, ‘133b’, ‘133c’, ‘133d’, ‘134a’, ‘134b’, ‘135’, ‘1101’, ‘1114’, ‘211’, ‘212’, ‘241’, ‘2101’, ‘2114’, ‘291’, ‘342’, ‘343’, ‘361’, ‘363’, ‘322’, ‘323’, ‘3101’, ‘3113’, ‘412’, ‘414’, ‘461’, ‘463’, ‘453a’, ‘453b’, ‘441’, ‘442’, ‘443’, ‘4101’, ‘4113’, ‘552’, ‘553’, ‘554’, ‘5101’, ‘5113’, ‘612’, ‘673a’, ‘673b’, ‘674a’, ‘674b’, ‘675a’, ‘675b’, ‘676’, ‘712a’, ‘712b’, ‘712c’, ‘722’, ‘782a’, ‘782b’, ‘782c’, ‘783’, ‘7101’, ‘7113’, ‘811’, ‘813do’, ‘812’, ‘813eo’, ‘813a’, ‘813b’, ‘813bo’, ‘813c’, ‘813co’, ‘822a’, ‘822b’, ‘882’, ‘883’, ‘884’, ‘8101’, ‘8113’, ‘P133a’, ‘P133b’, ‘P133c’, ‘P133d’, ‘P134a’, ‘P134b’, ‘P135’, ‘P673a’, ‘P673b’, ‘P674a’, ‘P674b’, ‘P675a’, ‘P675b’, ‘P676’, ‘P782a’, ‘P782b’, ‘P782c’, ‘P783’, ‘P882’, ‘P883’, ‘P884’]</p>
 <p>INJURY_COLUMNS : [‘rt_injury_1’, ‘rt_injury_2’, ‘rt_injury_3’, ‘rt_injury_4’, ‘rt_injury_5’, ‘rt_injury_6’, ‘rt_injury_7’, ‘rt_injury_8’]</p>
 <p>INJURY_DATE_COLUMN_MAP : {‘rt_injury_1’: ‘rt_date_to_remove_daly_1’, ‘rt_injury_2’: ‘rt_date_to_remove_daly_2’, ‘rt_injury_3’: ‘rt_date_to_remove_daly_3’, ‘rt_injury_4’: ‘rt_date_to_remove_daly_4’, ‘rt_injury_5’: ‘rt_date_to_remove_daly_5’, ‘rt_injury_6’: ‘rt_date_to_remove_daly_6’, ‘rt_injury_7’: ‘rt_date_to_remove_daly_7’, ‘rt_injury_8’: ‘rt_date_to_remove_daly_8’, ‘rt_date_to_remove_daly_1’: ‘rt_injury_1’, ‘rt_date_to_remove_daly_2’: ‘rt_injury_2’, ‘rt_date_to_remove_daly_3’: ‘rt_injury_3’, ‘rt_date_to_remove_daly_4’: ‘rt_injury_4’, ‘rt_date_to_remove_daly_5’: ‘rt_injury_5’, ‘rt_date_to_remove_daly_6’: ‘rt_injury_6’, ‘rt_date_to_remove_daly_7’: ‘rt_injury_7’, ‘rt_date_to_remove_daly_8’: ‘rt_injury_8’}</p>
 <p>INJURY_INDICES : range(1, 9)</p>
-<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
+<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;}</p>
 <p>NO_TREATMENT_RECOVERY_TIMES_IN_DAYS : {‘112’: 49, ‘113’: 49, ‘1101’: 7, ‘211’: 49, ‘212’: 49, ‘241’: 7, ‘2101’: 7, ‘291’: 7, ‘342’: 42, ‘343’: 42, ‘361’: 7, ‘363’: 14, ‘322’: 42, ‘323’: 42, ‘3101’: 7, ‘3113’: 56, ‘412’: 35, ‘414’: 365, ‘461’: 7, ‘463’: 14, ‘453a’: 84, ‘453b’: 84, ‘441’: 14, ‘442’: 14, ‘4101’: 7, ‘552’: 90, ‘553’: 90, ‘554’: 90, ‘5101’: 7, ‘5113’: 56, ‘612’: 63, ‘712a’: 70, ‘712b’: 70, ‘722’: 84, ‘7101’: 7, ‘7113’: 56, ‘813do’: 240, ‘811’: 70, ‘812’: 70, ‘813eo’: 240, ‘813bo’: 240, ‘813co’: 240, ‘822a’: 60, ‘822b’: 180, ‘8101’: 7, ‘8113’: 56}</p>
 <p>SWAPPING_CODES : [‘712b’, ‘812’, ‘3113’, ‘4113’, ‘5113’, ‘7113’, ‘8113’, ‘813a’, ‘813b’, ‘P673a’, ‘P673b’, ‘P674a’, ‘P674b’, ‘P675a’, ‘P675b’, ‘P676’, ‘P782b’, ‘P783’, ‘P883’, ‘P884’, ‘813bo’, ‘813co’, ‘813do’, ‘813eo’]</p>
 <p><strong>Functions (defined or overridden in class RTI):</strong></p>
@@ -1587,56 +1591,45 @@ polytrauma or not.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.rti.RTI._common_first_appt_steps">
-<span class="sig-name descname"><span class="pre">_common_first_appt_steps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">patient_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patient_details</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="tlo.population.html#tlo.population.PatientDetails" title="tlo.population.PatientDetails"><span class="pre">PatientDetails</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">IndividualPropertyUpdates</span></span></span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI._common_first_appt_steps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI._common_first_appt_steps" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">_common_first_appt_steps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_properties</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="tlo.population.html#tlo.population.IndividualProperties" title="tlo.population.IndividualProperties"><span class="pre">IndividualProperties</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">schedule_hsi_event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">HSIEventScheduler</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI._common_first_appt_steps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI._common_first_appt_steps" title="Link to this definition"></a></dt>
 <dd><p>Shared logic steps that are used by the RTI module when a generic HSI
 event is to be scheduled.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.rti.RTI.do_at_generic_first_appt">
-<span class="sig-name descname"><span class="pre">do_at_generic_first_appt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">patient_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patient_details</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="tlo.population.html#tlo.population.PatientDetails" title="tlo.population.PatientDetails"><span class="pre">PatientDetails</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">symptoms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">IndividualPropertyUpdates</span></span></span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI.do_at_generic_first_appt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI.do_at_generic_first_appt" title="Link to this definition"></a></dt>
-<dd><p>Actions to be take during a NON-emergency generic HSI.</p>
-<p>Derived classes should overwrite this method so that they are
-compatible with the HealthSystem module, and can schedule HSI
-events when a patient presents symptoms indicative of the
-corresponding illness or condition.</p>
-<p>When overwriting, arguments that are not required can be left out
-of the definition.
-If done so, the method MUST take a <a href="#id1"><span class="problematic" id="id2">**</span></a>kwargs input to avoid errors
-when looping over all disease modules and running their generic
-HSI methods.</p>
-<p>HSI_Events should be scheduled by the Module implementing this
-method using the <code class="xref py py-meth docutils literal notranslate"><span class="pre">Module.healthsystem.schedule_hsi()</span></code> method.
-However, they should not write updates back to the population
-DataFrame in this method - these values should be returned as a
-dictionary as described below:</p>
-<p>The return value of this function should be a dictionary
-containing any changes that need to be made to the individual’s
-row in the population DataFrame.
-Key/value pairs should be the column name and the new value to
-assign to the patient.
-In the event no updates are required; return an object that evaluates
-to False when cast to a bool. Your options are:
-- Omit a return statement and value (preferred).
-- Return an empty dictionary. Use this case when patient details
-might need updating conditionally, on EG patient symptoms or consumable
-availability. In which case, an empty dictionary should be created and
-key-value pairs added to this dictionary as such conditionals are checked.
-If no conditionals are met, the empty dictionary will be returned.
-- Use a return statement with no values (use if the logic of your
-module-specific method necessitates the explicit return).
-- Return None (not recommended, use “return” on its own, as above).</p>
+<span class="sig-name descname"><span class="pre">do_at_generic_first_appt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_properties</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="tlo.population.html#tlo.population.IndividualProperties" title="tlo.population.IndividualProperties"><span class="pre">IndividualProperties</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">symptoms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schedule_hsi_event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">HSIEventScheduler</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI.do_at_generic_first_appt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI.do_at_generic_first_appt" title="Link to this definition"></a></dt>
+<dd><p>Actions to take during a non-emergency generic health system interaction (HSI).</p>
+<p>Derived classes should overwrite this method so that they are compatible with
+the <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem" title="tlo.methods.healthsystem.HealthSystem"><code class="xref py py-class docutils literal notranslate"><span class="pre">HealthSystem</span></code></a> module, and can schedule HSI events when a
+individual presents symptoms indicative of the corresponding illness or
+condition.</p>
+<p>When overwriting, arguments that are not required can be left out of the
+definition. If done so, the method <strong>must</strong> take a <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code> input to avoid
+errors when looping over all disease modules and running their generic HSI
+methods.</p>
+<p>HSI events should be scheduled by the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> subclass implementing
+this method using the <code class="docutils literal notranslate"><span class="pre">schedule_hsi_event</span></code> argument.</p>
+<p>Implementations of this method should <strong>not</strong> make any updates to the population
+dataframe directly - if the target individuals properties need to be updated
+this should be performed by updating the <code class="docutils literal notranslate"><span class="pre">individual_properties</span></code> argument.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>patient_id</strong> – Row index (ID) of the individual target of the HSI event in the population DataFrame.</p></li>
-<li><p><strong>patient_details</strong> – Patient details as provided in the population DataFrame.</p></li>
+<li><p><strong>person_id</strong> – Row index (ID) of the individual target of the HSI event in
+the population dataframe.</p></li>
+<li><p><strong>individual_properties</strong> – Properties of individual target as provided in the
+population dataframe. Updates to individual properties may be written to
+this object.</p></li>
 <li><p><strong>symptoms</strong> – List of symptoms the patient is experiencing.</p></li>
-<li><p><strong>diagnosis_function</strong> – A function that can run diagnosis tests based on the patient’s symptoms.</p></li>
-<li><p><strong>consumables_checker</strong> – A function that can query the HealthSystem to check for available consumables.</p></li>
+<li><p><strong>schedule_hsi_event</strong> – A function that can schedule subsequent HSI events.</p></li>
+<li><p><strong>diagnosis_function</strong> – A function that can run diagnosis tests based on the
+patient’s symptoms.</p></li>
+<li><p><strong>consumables_checker</strong> – A function that can query the health system to check
+for available consumables.</p></li>
 <li><p><strong>facility_level</strong> – The level of the facility that the patient presented at.</p></li>
-<li><p><strong>treatment_id</strong> – The treatment id of the HSI event triggering the generic appointment.</p></li>
-<li><p><strong>random_state</strong> – Random number generator to be used when making random choices during event creation.</p></li>
+<li><p><strong>treatment_id</strong> – The treatment id of the HSI event triggering the generic
+appointment.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1644,14 +1637,14 @@ module-specific method necessitates the explicit return).
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.rti.RTI.do_at_generic_first_appt_emergency">
-<span class="sig-name descname"><span class="pre">do_at_generic_first_appt_emergency</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">patient_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patient_details</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="tlo.population.html#tlo.population.PatientDetails" title="tlo.population.PatientDetails"><span class="pre">PatientDetails</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">symptoms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">IndividualPropertyUpdates</span></span></span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI.do_at_generic_first_appt_emergency"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI.do_at_generic_first_appt_emergency" title="Link to this definition"></a></dt>
-<dd><p>Actions to be take during an EMERGENCY generic HSI.
-Call signature and return values are identical to the
-<code class="xref py py-meth docutils literal notranslate"><span class="pre">do_at_generic_first_appt()</span></code> method.
-Derived classes should overwrite this method so that they are
-compatible with the HealthSystem module, and can schedule HSI
-events when a patient presents symptoms indicative of the
-corresponding illness or condition.</p>
+<span class="sig-name descname"><span class="pre">do_at_generic_first_appt_emergency</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_properties</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="tlo.population.html#tlo.population.IndividualProperties" title="tlo.population.IndividualProperties"><span class="pre">IndividualProperties</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">symptoms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schedule_hsi_event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">HSIEventScheduler</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI.do_at_generic_first_appt_emergency"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI.do_at_generic_first_appt_emergency" title="Link to this definition"></a></dt>
+<dd><p>Actions to take during an emergency generic health system interaction (HSI).</p>
+<p>Call signature is identical to the
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">do_at_generic_first_appt()</span></code> method.</p>
+<p>Derived classes should overwrite this method so that they are compatible with
+the :py:class`~.HealthSystem` module, and can schedule HSI events when a
+individual presents symptoms indicative of the corresponding illness or
+condition.</p>
 </dd></dl>
 
 </dd></dl>
@@ -1667,7 +1660,7 @@ system with for treatment.</p>
 <p>Those who don’t die on scene and are injured then attempt to go to an emergency generic first appointment</p>
 </dd>
 </dl>
-<p>This event will change the <a href="#id3"><span class="problematic" id="id4">rt_</span></a> properties:
+<p>This event will change the <a href="#id1"><span class="problematic" id="id2">rt_</span></a> properties:
 1) rt_road_traffic_inc - False when not involved in a collision, True when RTI_Event decides they are in a collision</p>
 <ol class="arabic simple" start="2">
 <li><p>rt_date_inj - Change to current date if the person has been involved in a road traffic accident</p></li>
@@ -1983,9 +1976,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 <dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Shock_Treatment">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_RTI_Shock_Treatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Shock_Treatment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Shock_Treatment" title="Link to this definition"></a></dt>
 <dd><p>This HSI event handles the process of treating hypovolemic shock, as recommended by the pediatric
-handbook for Malawi and (TODO: FIND ADULT REFERENCE)
-Currently this HSI_Event is described only and not used, as I still need to work out how to model the occurrence
-of shock</p>
+handbook for Malawi and (TODO: FIND ADULT REFERENCE)</p>
 <p>Bases: <a class="reference internal" href="tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event" title="tlo.methods.hsi_event.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_event.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
 <p>__annotations__ : {}</p>
@@ -2637,7 +2628,7 @@ This is a regular event that can output current states of people or cumulative e
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on May 27, 2024.
+      <span class="lastupdated">Last updated on Aug 02, 2024.
       </span></p>
   </div>
 

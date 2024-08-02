@@ -48,12 +48,15 @@ tlo.methods.healthsystem module
         * - item_and_package_code_lookups
           - DATA_FRAME
           - Data imported from the OneHealth Tool on consumable items, packages and costs.
+        * - consumables_item_designations
+          - DATA_FRAME
+          - Look-up table for the designations of consumables (whether diagnostic, medicine, or other
         * - availability_estimates
           - DATA_FRAME
           - Estimated availability of consumables in the LMIS dataset.
         * - cons_availability
           - STRING
-          - Availability of consumables. If 'default' then use the availability specified in the ResourceFile; if 'none', then let no consumable be  ever be available; if 'all', then all consumables are always available. When using 'all' or 'none', requests for consumables are not logged. NB. This parameter is over-riddenif an argument is provided to the module initialiser.
+          - Availability of consumables. If 'default' then use the availability specified in the ResourceFile; if 'none', then let no consumable be  ever be available; if 'all', then all consumables are always available. When using 'all' or 'none', requests for consumables are not logged. NB. This parameter is over-riddenif an argument is provided to the module initialiser.Note that other options are also available: see the `Consumables` class.
         * - BedCapacity
           - DATA_FRAME
           - Data on the number of beds available of each type by facility_id
@@ -90,6 +93,9 @@ tlo.methods.healthsystem module
         * - year_cons_availability_switch
           - INT
           - Year in which consumable availability switch is enforced. The change happenson 1st January of that year.)
+        * - year_use_funded_or_actual_staffing_switch
+          - INT
+          - Year in which switch for `use_funded_or_actual_staffing` is enforced. (The change happenson 1st January of that year.)
         * - priority_rank
           - DICT
           - Data on the priority ranking of each of the Treatment_IDs to be adopted by  the queueing system under different policies, where the lower the number the higher the priority, and on which categories of individuals classify for fast-tracking  for specific treatments
@@ -132,6 +138,9 @@ tlo.methods.healthsystem module
         * - cons_availability_postSwitch
           - STRING
           - Consumables availability after switch in `year_cons_availability_switch`. Acceptable valuesare the same as those for Parameter `cons_availability`.
+        * - use_funded_or_actual_staffing_postSwitch
+          - STRING
+          - Staffing availability after switch in `year_use_funded_or_actual_staffing_switch`. Acceptable values are the same as those for Parameter `use_funded_or_actual_staffing`.
 
 
      **PROPERTIES:**
@@ -153,11 +162,13 @@ tlo.methods.healthsystem module
 
      INIT_DEPENDENCIES : {'Demography'}
 
-     capabilities_today : <property object at 0x11ca3b510>
+     capabilities_today : <property object at 0x118f00680>
 
-     hsi_event_counts : <property object at 0x11ca3b6a0>
+     hsi_event_counts : <property object at 0x118f008b0>
 
-     never_ran_hsi_event_counts : <property object at 0x11ca3b6f0>
+     never_ran_hsi_event_counts : <property object at 0x118f00900>
+
+     use_funded_or_actual_staffing : <property object at 0x118f00770>
 
      **Functions (defined or overridden in class HealthSystem):**
 
@@ -177,7 +188,9 @@ tlo.methods.healthsystem module
 
      .. automethod:: setup_priority_policy
 
-     .. automethod:: process_human_resources_files
+     .. automethod:: process_healthsystem_organisation_files
+
+     .. automethod:: setup_daily_capabilities
 
      .. automethod:: format_daily_capabilities
 
@@ -196,8 +209,6 @@ tlo.methods.healthsystem module
      .. automethod:: schedule_to_call_never_ran_on_date
 
      .. automethod:: get_mode_appt_constraints
-
-     .. automethod:: get_use_funded_or_actual_staffing
 
      .. automethod:: get_priority_policy_initial
 
@@ -334,7 +345,7 @@ tlo.methods.healthsystem module
 
      __annotations__ : {}
 
-     current_pop_size : <property object at 0x11ca3b9c0>
+     current_pop_size : <property object at 0x118f00bd0>
 
      **Functions (defined or overridden in class DynamicRescalingHRCapabilities):**
 

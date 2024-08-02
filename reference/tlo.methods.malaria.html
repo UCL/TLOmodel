@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.malaria module &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
+  <title>tlo.methods.malaria module &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -17,7 +17,7 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../_static/documentation_options.js?v=f3d69a25"></script>
         <script src="../_static/doctools.js?v=9a2dae69"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -99,7 +99,7 @@ including the malaria RDT using DxTest</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.malaria.Malaria">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Malaria</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#Malaria"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.Malaria" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.core.Module</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.core.Module</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_generic_first_appts.GenericFirstAppointmentsMixin</span></code></p>
 <p><strong>PARAMETERS:</strong></p>
 <table class="docutils align-default">
 <colgroup>
@@ -258,6 +258,18 @@ including the malaria RDT using DxTest</p>
 <td><p>REAL</p></td>
 <td><p>probability that treatment will clear malaria symptoms</p></td>
 </tr>
+<tr class="row-even"><td><p>type_of_scaleup</p></td>
+<td><p>STRING</p></td>
+<td><p>argument to determine type scale-up of program which will be implemented, can be ‘none’, ‘target’ or ‘max’</p></td>
+</tr>
+<tr class="row-odd"><td><p>scaleup_start_year</p></td>
+<td><p>INT</p></td>
+<td><p>the year when the scale-up starts (it will occur on 1st January of that year)</p></td>
+</tr>
+<tr class="row-even"><td><p>scaleup_parameters</p></td>
+<td><p>DATA_FRAME</p></td>
+<td><p>the parameters and values changed in scenario analysis</p></td>
+</tr>
 </tbody>
 </table>
 <p><strong>PROPERTIES:</strong></p>
@@ -276,7 +288,7 @@ including the malaria RDT using DxTest</p>
 <tbody>
 <tr class="row-even"><td><p>ma_is_infected</p></td>
 <td><p>BOOL</p></td>
-<td><p>Current status of malaria</p></td>
+<td><p>Current status of malaria, infected with malaria parasitaemia</p></td>
 </tr>
 <tr class="row-odd"><td><p>ma_date_infected</p></td>
 <td><p>DATE</p></td>
@@ -329,12 +341,11 @@ including the malaria RDT using DxTest</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ADDITIONAL_DEPENDENCIES : {‘Hiv’, ‘Tb’}</p>
-<p>CAUSES_OF_DEATH : {‘Malaria’: &lt;tlo.methods.causes.Cause object at 0x12e0e7890&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘Malaria’: &lt;tlo.methods.causes.Cause object at 0x12e0e6d90&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘Contraception’, ‘HealthSystem’, ‘Demography’, ‘SymptomManager’}</p>
-<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
-<p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’}</p>
+<p>CAUSES_OF_DEATH : {‘Malaria’: &lt;tlo.methods.causes.Cause object at 0x12a42ce50&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘Malaria’: &lt;tlo.methods.causes.Cause object at 0x12a42c1d0&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘Demography’, ‘HealthSystem’, ‘SymptomManager’, ‘Contraception’}</p>
+<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;}</p>
+<p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’, ‘Hiv’}</p>
 <p><strong>Functions (defined or overridden in class Malaria):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.malaria.Malaria.__init__">
@@ -366,9 +377,14 @@ Typically, modules would read a particular file within here.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.malaria.Malaria.pre_initialise_population">
 <span class="sig-name descname"><span class="pre">pre_initialise_population</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#Malaria.pre_initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.Malaria.pre_initialise_population" title="Link to this definition"></a></dt>
-<dd><ul class="simple">
-<li><p>Establish the Linear Models</p></li>
-</ul>
+<dd><p>Do things required before the population is created
+* Build the LinearModels</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.malaria.Malaria._build_linear_models">
+<span class="sig-name descname"><span class="pre">_build_linear_models</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#Malaria._build_linear_models"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.Malaria._build_linear_models" title="Link to this definition"></a></dt>
+<dd><p>Establish the Linear Models</p>
 <p>if HIV is registered, the conditional predictors will apply
 otherwise only IPTp will affect risk of clinical/severe malaria</p>
 </dd></dl>
@@ -423,6 +439,12 @@ rates are set to match rdt usage reports from WHO / NMCP</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.malaria.Malaria.update_parameters_for_program_scaleup">
+<span class="sig-name descname"><span class="pre">update_parameters_for_program_scaleup</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#Malaria.update_parameters_for_program_scaleup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.Malaria.update_parameters_for_program_scaleup" title="Link to this definition"></a></dt>
+<dd><p>options for program scale-up are ‘target’ or ‘max’</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.malaria.Malaria.on_birth">
 <span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#Malaria.on_birth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.Malaria.on_birth" title="Link to this definition"></a></dt>
 <dd><p>Initialise our properties for a newborn individual.</p>
@@ -445,7 +467,7 @@ rates are set to match rdt usage reports from WHO / NMCP</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.malaria.Malaria.check_if_fever_is_caused_by_malaria">
-<span class="sig-name descname"><span class="pre">check_if_fever_is_caused_by_malaria</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">true_malaria_infection_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diagnosis_function</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patient_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fever_is_a_symptom</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patient_age</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">treatment_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'severe_malaria'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'clinical_malaria'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'negative_malaria_test'</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#Malaria.check_if_fever_is_caused_by_malaria"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.Malaria.check_if_fever_is_caused_by_malaria" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">check_if_fever_is_caused_by_malaria</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">true_malaria_infection_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diagnosis_function</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DiagnosisFunction</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fever_is_a_symptom</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patient_age</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">treatment_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'severe_malaria'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'clinical_malaria'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'negative_malaria_test'</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#Malaria.check_if_fever_is_caused_by_malaria"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.Malaria.check_if_fever_is_caused_by_malaria" title="Link to this definition"></a></dt>
 <dd><p>Run by an HSI when an adult presents with fever.
 Determine if the cause is malaria.</p>
 <p>Optional arguments are used by the logger,
@@ -454,49 +476,38 @@ and are not needed in the diagnosis.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.malaria.Malaria.do_at_generic_first_appt">
-<span class="sig-name descname"><span class="pre">do_at_generic_first_appt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">patient_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patient_details</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="tlo.population.html#tlo.population.PatientDetails" title="tlo.population.PatientDetails"><span class="pre">PatientDetails</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">symptoms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diagnosis_function</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DiagnosisFunction</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">treatment_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">IndividualPropertyUpdates</span></span></span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#Malaria.do_at_generic_first_appt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.Malaria.do_at_generic_first_appt" title="Link to this definition"></a></dt>
-<dd><p>Actions to be take during a NON-emergency generic HSI.</p>
-<p>Derived classes should overwrite this method so that they are
-compatible with the HealthSystem module, and can schedule HSI
-events when a patient presents symptoms indicative of the
-corresponding illness or condition.</p>
-<p>When overwriting, arguments that are not required can be left out
-of the definition.
-If done so, the method MUST take a <a href="#id1"><span class="problematic" id="id2">**</span></a>kwargs input to avoid errors
-when looping over all disease modules and running their generic
-HSI methods.</p>
-<p>HSI_Events should be scheduled by the Module implementing this
-method using the <code class="xref py py-meth docutils literal notranslate"><span class="pre">Module.healthsystem.schedule_hsi()</span></code> method.
-However, they should not write updates back to the population
-DataFrame in this method - these values should be returned as a
-dictionary as described below:</p>
-<p>The return value of this function should be a dictionary
-containing any changes that need to be made to the individual’s
-row in the population DataFrame.
-Key/value pairs should be the column name and the new value to
-assign to the patient.
-In the event no updates are required; return an object that evaluates
-to False when cast to a bool. Your options are:
-- Omit a return statement and value (preferred).
-- Return an empty dictionary. Use this case when patient details
-might need updating conditionally, on EG patient symptoms or consumable
-availability. In which case, an empty dictionary should be created and
-key-value pairs added to this dictionary as such conditionals are checked.
-If no conditionals are met, the empty dictionary will be returned.
-- Use a return statement with no values (use if the logic of your
-module-specific method necessitates the explicit return).
-- Return None (not recommended, use “return” on its own, as above).</p>
+<span class="sig-name descname"><span class="pre">do_at_generic_first_appt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_properties</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="tlo.population.html#tlo.population.IndividualProperties" title="tlo.population.IndividualProperties"><span class="pre">IndividualProperties</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">symptoms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schedule_hsi_event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">HSIEventScheduler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diagnosis_function</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DiagnosisFunction</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">treatment_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#Malaria.do_at_generic_first_appt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.Malaria.do_at_generic_first_appt" title="Link to this definition"></a></dt>
+<dd><p>Actions to take during a non-emergency generic health system interaction (HSI).</p>
+<p>Derived classes should overwrite this method so that they are compatible with
+the <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem" title="tlo.methods.healthsystem.HealthSystem"><code class="xref py py-class docutils literal notranslate"><span class="pre">HealthSystem</span></code></a> module, and can schedule HSI events when a
+individual presents symptoms indicative of the corresponding illness or
+condition.</p>
+<p>When overwriting, arguments that are not required can be left out of the
+definition. If done so, the method <strong>must</strong> take a <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code> input to avoid
+errors when looping over all disease modules and running their generic HSI
+methods.</p>
+<p>HSI events should be scheduled by the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> subclass implementing
+this method using the <code class="docutils literal notranslate"><span class="pre">schedule_hsi_event</span></code> argument.</p>
+<p>Implementations of this method should <strong>not</strong> make any updates to the population
+dataframe directly - if the target individuals properties need to be updated
+this should be performed by updating the <code class="docutils literal notranslate"><span class="pre">individual_properties</span></code> argument.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>patient_id</strong> – Row index (ID) of the individual target of the HSI event in the population DataFrame.</p></li>
-<li><p><strong>patient_details</strong> – Patient details as provided in the population DataFrame.</p></li>
+<li><p><strong>person_id</strong> – Row index (ID) of the individual target of the HSI event in
+the population dataframe.</p></li>
+<li><p><strong>individual_properties</strong> – Properties of individual target as provided in the
+population dataframe. Updates to individual properties may be written to
+this object.</p></li>
 <li><p><strong>symptoms</strong> – List of symptoms the patient is experiencing.</p></li>
-<li><p><strong>diagnosis_function</strong> – A function that can run diagnosis tests based on the patient’s symptoms.</p></li>
-<li><p><strong>consumables_checker</strong> – A function that can query the HealthSystem to check for available consumables.</p></li>
+<li><p><strong>schedule_hsi_event</strong> – A function that can schedule subsequent HSI events.</p></li>
+<li><p><strong>diagnosis_function</strong> – A function that can run diagnosis tests based on the
+patient’s symptoms.</p></li>
+<li><p><strong>consumables_checker</strong> – A function that can query the health system to check
+for available consumables.</p></li>
 <li><p><strong>facility_level</strong> – The level of the facility that the patient presented at.</p></li>
-<li><p><strong>treatment_id</strong> – The treatment id of the HSI event triggering the generic appointment.</p></li>
-<li><p><strong>random_state</strong> – Random number generator to be used when making random choices during event creation.</p></li>
+<li><p><strong>treatment_id</strong> – The treatment id of the HSI event triggering the generic
+appointment.</p></li>
 </ul>
 </dd>
 </dl>
@@ -504,14 +515,14 @@ module-specific method necessitates the explicit return).
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.malaria.Malaria.do_at_generic_first_appt_emergency">
-<span class="sig-name descname"><span class="pre">do_at_generic_first_appt_emergency</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">patient_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patient_details</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="tlo.population.html#tlo.population.PatientDetails" title="tlo.population.PatientDetails"><span class="pre">PatientDetails</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">symptoms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diagnosis_function</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DiagnosisFunction</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">treatment_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">IndividualPropertyUpdates</span></span></span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#Malaria.do_at_generic_first_appt_emergency"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.Malaria.do_at_generic_first_appt_emergency" title="Link to this definition"></a></dt>
-<dd><p>Actions to be take during an EMERGENCY generic HSI.
-Call signature and return values are identical to the
-<code class="xref py py-meth docutils literal notranslate"><span class="pre">do_at_generic_first_appt()</span></code> method.
-Derived classes should overwrite this method so that they are
-compatible with the HealthSystem module, and can schedule HSI
-events when a patient presents symptoms indicative of the
-corresponding illness or condition.</p>
+<span class="sig-name descname"><span class="pre">do_at_generic_first_appt_emergency</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_properties</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="tlo.population.html#tlo.population.IndividualProperties" title="tlo.population.IndividualProperties"><span class="pre">IndividualProperties</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">symptoms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schedule_hsi_event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">HSIEventScheduler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diagnosis_function</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DiagnosisFunction</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">treatment_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#Malaria.do_at_generic_first_appt_emergency"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.Malaria.do_at_generic_first_appt_emergency" title="Link to this definition"></a></dt>
+<dd><p>Actions to take during an emergency generic health system interaction (HSI).</p>
+<p>Call signature is identical to the
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">do_at_generic_first_appt()</span></code> method.</p>
+<p>Derived classes should overwrite this method so that they are compatible with
+the :py:class`~.HealthSystem` module, and can schedule HSI events when a
+individual presents symptoms indicative of the corresponding illness or
+condition.</p>
 </dd></dl>
 
 </dd></dl>
@@ -545,6 +556,49 @@ and schedules rdt at a community level (non-symptom driven)</p>
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#MalariaPollingEventDistrict.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.MalariaPollingEventDistrict.apply" title="Link to this definition"></a></dt>
 <dd><p>Apply this event to the given target.</p>
 <p>This is a no-op; subclasses should override this method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.malaria.MalariaScaleUpEvent">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MalariaScaleUpEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#MalariaScaleUpEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.MalariaScaleUpEvent" title="Link to this definition"></a></dt>
+<dd><p>This event exists to change parameters or functions
+depending on the scenario for projections which has been set
+It only occurs once on date: scaleup_start_date,
+called by initialise_simulation</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<p><strong>Class attributes:</strong></p>
+<p>__annotations__ : {}</p>
+<p><strong>Functions (defined or overridden in class MalariaScaleUpEvent):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.malaria.MalariaScaleUpEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#MalariaScaleUpEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.MalariaScaleUpEvent.__init__" title="Link to this definition"></a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.malaria.MalariaScaleUpEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#MalariaScaleUpEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.MalariaScaleUpEvent.apply" title="Link to this definition"></a></dt>
+<dd><p>Apply this event to the given target.</p>
+<p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
@@ -898,7 +952,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 * assigns symptoms
 * schedules rdt
 * cures people currently on treatment for malaria
-* clears symptoms for those not on treatment
+* clears symptoms for those not on treatment but self-cured
 * clears parasites if treated</p>
 </dd></dl>
 
@@ -1062,7 +1116,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on May 27, 2024.
+      <span class="lastupdated">Last updated on Aug 02, 2024.
       </span></p>
   </div>
 

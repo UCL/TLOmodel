@@ -6,7 +6,7 @@ tlo.methods.labour module
 
 .. autoclass:: Labour
 
-     Bases: :class:`tlo.core.Module`
+     Bases: :class:`tlo.core.Module`, :class:`tlo.methods.hsi_generic_first_appts.GenericFirstAppointmentsMixin`
 
 
      **PARAMETERS:**
@@ -643,11 +643,11 @@ tlo.methods.labour module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'NewbornOutcomes', 'Contraception', 'HealthSystem', 'Lifestyle', 'PregnancySupervisor', 'PostnatalSupervisor', 'CareOfWomenDuringPregnancy'}
+     ADDITIONAL_DEPENDENCIES : {'HealthSystem', 'CareOfWomenDuringPregnancy', 'PostnatalSupervisor', 'PregnancySupervisor', 'NewbornOutcomes', 'Lifestyle', 'Contraception'}
 
-     CAUSES_OF_DEATH : {'uterine_rupture': <tlo.methods.causes.Cause object at 0x12e0a7f10>, 'intrapartum_sepsis': <tlo.methods.causes.Cause object at 0x12e0a4e10>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x12e0a7550>, 'postpartum_sepsis': <tlo.methods.causes.Cause object at 0x12e0a7090>, 'postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x12e0a61d0>, 'secondary_postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x12e0a5110>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x12e0a57d0>, 'eclampsia': <tlo.methods.causes.Cause object at 0x12e0a7a90>}
+     CAUSES_OF_DEATH : {'uterine_rupture': <tlo.methods.causes.Cause object at 0x12a3fd850>, 'intrapartum_sepsis': <tlo.methods.causes.Cause object at 0x12a3ffad0>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x12a3fda50>, 'postpartum_sepsis': <tlo.methods.causes.Cause object at 0x12a3ffc10>, 'postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x12a3fff10>, 'secondary_postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x12a3fc690>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x12a3fead0>, 'eclampsia': <tlo.methods.causes.Cause object at 0x12a3febd0>}
 
-     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x12e0a4610>}
+     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x12a3fd3d0>}
 
      INIT_DEPENDENCIES : {'Demography'}
 

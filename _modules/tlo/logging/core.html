@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.logging.core &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
+  <title>tlo.logging.core &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
@@ -16,7 +16,7 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../../../_static/documentation_options.js?v=f3d69a25"></script>
         <script src="../../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -86,247 +86,25 @@
            <div itemprop="articleBody">
              
   <h1>Source code for tlo.logging.core</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">hashlib</span>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">hashlib</span>
 <span class="kn">import</span> <span class="nn">json</span>
 <span class="kn">import</span> <span class="nn">logging</span> <span class="k">as</span> <span class="nn">_logging</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partialmethod</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">TypeAlias</span><span class="p">,</span> <span class="n">Union</span>
 
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
 <span class="kn">from</span> <span class="nn">tlo.logging</span> <span class="kn">import</span> <span class="n">encoding</span>
 
-
-<div class="viewcode-block" id="disable">
-<a class="viewcode-back" href="../../../reference/tlo.logging.core.html#tlo.logging.disable">[docs]</a>
-<span class="k">def</span> <span class="nf">disable</span><span class="p">(</span><span class="n">level</span><span class="p">):</span>
-    <span class="n">_logging</span><span class="o">.</span><span class="n">disable</span><span class="p">(</span><span class="n">level</span><span class="p">)</span></div>
-
-
-
-<div class="viewcode-block" id="getLogger">
-<a class="viewcode-back" href="../../../reference/tlo.logging.core.html#tlo.logging.getLogger">[docs]</a>
-<span class="k">def</span> <span class="nf">getLogger</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;tlo&#39;</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a TLO logger of the specified name&quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_LOGGERS</span><span class="p">:</span>
-        <span class="n">_LOGGERS</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">Logger</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">_LOGGERS</span><span class="p">[</span><span class="n">name</span><span class="p">]</span></div>
-
-
-
-<span class="k">class</span> <span class="nc">_MockSim</span><span class="p">:</span>
-    <span class="c1"># used as place holder for any logging that happens before simulation is setup!</span>
-    <span class="k">class</span> <span class="nc">MockDate</span><span class="p">:</span>
-        <span class="nd">@staticmethod</span>
-        <span class="k">def</span> <span class="nf">isoformat</span><span class="p">():</span>
-            <span class="k">return</span> <span class="s2">&quot;0000-00-00T00:00:00&quot;</span>
-    <span class="n">date</span> <span class="o">=</span> <span class="n">MockDate</span><span class="p">()</span>
-
-
-<div class="viewcode-block" id="Logger">
-<a class="viewcode-back" href="../../../reference/tlo.logging.core.html#tlo.logging.Logger">[docs]</a>
-<span class="k">class</span> <span class="nc">Logger</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A Logger for TLO log messages, with simplified usage. Outputs structured log messages in JSON</span>
-<span class="sd">    format and is connected to the Simulation instance.&quot;&quot;&quot;</span>
-    <span class="n">HASH_LEN</span> <span class="o">=</span> <span class="mi">10</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="n">_logging</span><span class="o">.</span><span class="n">NOTSET</span><span class="p">):</span>
-
-        <span class="k">assert</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;tlo&#39;</span><span class="p">),</span> <span class="sa">f</span><span class="s1">&#39;Only logging of tlo modules is allowed; name is </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span>
-
-        <span class="c1"># we build our logger on top of the standard python logging</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_std_logger</span> <span class="o">=</span> <span class="n">_logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_std_logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">level</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_std_logger</span><span class="o">.</span><span class="n">name</span>
-
-        <span class="c1"># don&#39;t propograte messages up from &quot;tlo&quot; to root logger</span>
-        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;tlo&#39;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_std_logger</span><span class="o">.</span><span class="n">propagate</span> <span class="o">=</span> <span class="kc">False</span>
-
-        <span class="c1"># the key of the structured logging calls for this logger</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">keys</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-
-        <span class="c1"># populated by init_logging(simulation) for the top-level &quot;tlo&quot; logger</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">simulation</span> <span class="o">=</span> <span class="n">_MockSim</span><span class="p">()</span>
-
-        <span class="c1"># a logger should only be using old-style or new-style logging, not a mixture</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logged_stdlib</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logged_structured</span> <span class="o">=</span> <span class="kc">False</span>
-
-        <span class="c1"># disable logging multirow dataframes until we&#39;re confident it&#39;s robust</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_disable_dataframe_logging</span> <span class="o">=</span> <span class="kc">True</span>
-
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;&lt;TLOmodel Logger `</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">` (</span><span class="si">{</span><span class="n">_logging</span><span class="o">.</span><span class="n">getLevelName</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">level</span><span class="p">)</span><span class="si">}</span><span class="s1">)&gt;&#39;</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">handlers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_std_logger</span><span class="o">.</span><span class="n">handlers</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">level</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_std_logger</span><span class="o">.</span><span class="n">level</span>
-
-    <span class="nd">@handlers</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">handlers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handlers</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_std_logger</span><span class="o">.</span><span class="n">handlers</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
-        <span class="k">for</span> <span class="n">handler</span> <span class="ow">in</span> <span class="n">handlers</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_std_logger</span><span class="o">.</span><span class="n">handlers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">handler</span><span class="p">)</span>
-
-<div class="viewcode-block" id="Logger.addHandler">
-<a class="viewcode-back" href="../../../reference/tlo.logging.core.html#tlo.logging.Logger.addHandler">[docs]</a>
-    <span class="k">def</span> <span class="nf">addHandler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hdlr</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_std_logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">hdlr</span><span class="o">=</span><span class="n">hdlr</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="Logger.isEnabledFor">
-<a class="viewcode-back" href="../../../reference/tlo.logging.core.html#tlo.logging.Logger.isEnabledFor">[docs]</a>
-    <span class="k">def</span> <span class="nf">isEnabledFor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">level</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_std_logger</span><span class="o">.</span><span class="n">isEnabledFor</span><span class="p">(</span><span class="n">level</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="Logger.reset_attributes">
-<a class="viewcode-back" href="../../../reference/tlo.logging.core.html#tlo.logging.Logger.reset_attributes">[docs]</a>
-    <span class="k">def</span> <span class="nf">reset_attributes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reset logger attributes to an unset state&quot;&quot;&quot;</span>
-        <span class="c1"># clear all logger settings</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">handlers</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">simulation</span> <span class="o">=</span> <span class="n">_MockSim</span><span class="p">()</span>
-        <span class="c1"># boolean attributes used for now, can be removed after transition to structured logging</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logged_stdlib</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logged_structured</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">INFO</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="Logger.setLevel">
-<a class="viewcode-back" href="../../../reference/tlo.logging.core.html#tlo.logging.Logger.setLevel">[docs]</a>
-    <span class="k">def</span> <span class="nf">setLevel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">level</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_std_logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">level</span><span class="p">)</span></div>
-
-
-    <span class="k">def</span> <span class="nf">_get_data_as_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert log data to a dictionary if it isn&#39;t already&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">data</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="s1">&#39;records&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_disable_dataframe_logging</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Logging multirow dataframes is disabled - if you need this feature let us know&quot;</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;dataframe&#39;</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="s1">&#39;index&#39;</span><span class="p">)}</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">set</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)):</span>
-            <span class="k">return</span> <span class="p">{</span><span class="sa">f</span><span class="s1">&#39;item_</span><span class="si">{</span><span class="n">index</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">:</span> <span class="n">value</span> <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">data</span><span class="p">)}</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-            <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="n">data</span><span class="p">}</span>
-
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Unexpected type given as data:</span><span class="se">\n</span><span class="si">{</span><span class="n">data</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">_get_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">level</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">set</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Writes structured log message if handler allows this and logging level is allowed</span>
-
-<span class="sd">        Will write a header line the first time a new logging key is encountered</span>
-<span class="sd">        Then will only write data rows in later rows for this logging key</span>
-
-<span class="sd">        :param level: Level the message is being logged as</span>
-<span class="sd">        :param key: logging key</span>
-<span class="sd">        :param data: data to be logged</span>
-<span class="sd">        :param description: description of this log type</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># message level less than than the logger level, early exit</span>
-        <span class="k">if</span> <span class="n">level</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_std_logger</span><span class="o">.</span><span class="n">level</span><span class="p">:</span>
-            <span class="k">return</span>
-
-        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_data_as_dict</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-        <span class="n">header_json</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
-
-        <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">:</span>
-            <span class="c1"># new log key, so create header json row</span>
-            <span class="n">uuid</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">md5</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">+</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()[:</span><span class="n">Logger</span><span class="o">.</span><span class="n">HASH_LEN</span><span class="p">]</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">uuid</span>
-
-            <span class="n">header</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;uuid&quot;</span><span class="p">:</span> <span class="n">uuid</span><span class="p">,</span>
-                <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;header&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;module&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
-                <span class="s2">&quot;key&quot;</span><span class="p">:</span> <span class="n">key</span><span class="p">,</span>
-                <span class="s2">&quot;level&quot;</span><span class="p">:</span> <span class="n">_logging</span><span class="o">.</span><span class="n">getLevelName</span><span class="p">(</span><span class="n">level</span><span class="p">),</span>
-                <span class="c1"># using type().__name__ so both pandas and stdlib types can be used</span>
-                <span class="s2">&quot;columns&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">()},</span>
-                <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="n">description</span>
-            <span class="p">}</span>
-            <span class="n">header_json</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">header</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
-
-        <span class="n">uuid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-
-        <span class="c1"># create data json row; in DEBUG mode we echo the module and key for easier eyeballing</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_std_logger</span><span class="o">.</span><span class="n">level</span> <span class="o">==</span> <span class="n">DEBUG</span><span class="p">:</span>
-            <span class="n">row</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;date&quot;</span><span class="p">:</span> <span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;tlo&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">simulation</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
-                   <span class="s2">&quot;module&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
-                   <span class="s2">&quot;key&quot;</span><span class="p">:</span> <span class="n">key</span><span class="p">,</span>
-                   <span class="s2">&quot;uuid&quot;</span><span class="p">:</span> <span class="n">uuid</span><span class="p">,</span>
-                   <span class="s2">&quot;values&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">())}</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">row</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;uuid&quot;</span><span class="p">:</span> <span class="n">uuid</span><span class="p">,</span>
-                   <span class="s2">&quot;date&quot;</span><span class="p">:</span> <span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;tlo&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">simulation</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
-                   <span class="s2">&quot;values&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">())}</span>
-
-        <span class="n">row_json</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="n">encoding</span><span class="o">.</span><span class="n">PandasEncoder</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">header_json</span><span class="si">}{</span><span class="n">row_json</span><span class="si">}</span><span class="s2">&quot;</span>
-
-    <span class="k">def</span> <span class="nf">_make_old_style_msg</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">level</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">level</span><span class="si">}</span><span class="s1">|</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">|</span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s1">&#39;</span>
-
-    <span class="k">def</span> <span class="nf">_check_logging_style</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">is_structured</span><span class="p">:</span> <span class="nb">bool</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set booleans for logging type and throw exception if both types of logging haven&#39;t been used&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">is_structured</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logged_structured</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logged_stdlib</span> <span class="o">=</span> <span class="kc">True</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">logged_structured</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">logged_stdlib</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Both oldstyle and structured logging has been used for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">, &quot;</span>
-                             <span class="s2">&quot;please update all logging to use structured logging&quot;</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">_check_and_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">level</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_std_logger</span><span class="o">.</span><span class="n">isEnabledFor</span><span class="p">(</span><span class="n">level</span><span class="p">):</span>
-            <span class="n">level_str</span> <span class="o">=</span> <span class="n">_logging</span><span class="o">.</span><span class="n">getLevelName</span><span class="p">(</span><span class="n">level</span><span class="p">)</span>  <span class="c1"># e.g. &#39;CRITICAL&#39;, &#39;INFO&#39; etc.</span>
-            <span class="n">level_function</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_std_logger</span><span class="p">,</span> <span class="n">level_str</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>  <span class="c1"># e.g. `critical` or `info` methods</span>
-            <span class="k">if</span> <span class="n">key</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Structured logging requires `key` and `data` keyword arguments&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_check_logging_style</span><span class="p">(</span><span class="n">is_structured</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="n">level_function</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_json</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">level</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="n">description</span><span class="p">))</span>
-
-<div class="viewcode-block" id="Logger.critical">
-<a class="viewcode-back" href="../../../reference/tlo.logging.core.html#tlo.logging.Logger.critical">[docs]</a>
-    <span class="k">def</span> <span class="nf">critical</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-                 <span class="n">data</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">set</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_check_and_filter</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="n">description</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="n">CRITICAL</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="Logger.debug">
-<a class="viewcode-back" href="../../../reference/tlo.logging.core.html#tlo.logging.Logger.debug">[docs]</a>
-    <span class="k">def</span> <span class="nf">debug</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-              <span class="n">data</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">set</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_check_and_filter</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="n">description</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="n">DEBUG</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="Logger.info">
-<a class="viewcode-back" href="../../../reference/tlo.logging.core.html#tlo.logging.Logger.info">[docs]</a>
-    <span class="k">def</span> <span class="nf">info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-             <span class="n">data</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">set</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_check_and_filter</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="n">description</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="n">INFO</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="Logger.warning">
-<a class="viewcode-back" href="../../../reference/tlo.logging.core.html#tlo.logging.Logger.warning">[docs]</a>
-    <span class="k">def</span> <span class="nf">warning</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-                <span class="n">data</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">set</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_check_and_filter</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="n">description</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="n">WARNING</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
-</div>
-
-
+<span class="n">LogLevel</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="nb">int</span>
+<span class="n">LogData</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">set</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]</span>
+<span class="n">SimulationDateGetter</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="nb">str</span><span class="p">]</span>
 
 <span class="n">CRITICAL</span> <span class="o">=</span> <span class="n">_logging</span><span class="o">.</span><span class="n">CRITICAL</span>
 <span class="n">DEBUG</span> <span class="o">=</span> <span class="n">_logging</span><span class="o">.</span><span class="n">DEBUG</span>
@@ -334,8 +112,377 @@
 <span class="n">INFO</span> <span class="o">=</span> <span class="n">_logging</span><span class="o">.</span><span class="n">INFO</span>
 <span class="n">WARNING</span> <span class="o">=</span> <span class="n">_logging</span><span class="o">.</span><span class="n">WARNING</span>
 
-<span class="n">_FORMATTER</span> <span class="o">=</span> <span class="n">_logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%(message)s</span><span class="s1">&#39;</span><span class="p">)</span>
-<span class="n">_LOGGERS</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;tlo&#39;</span><span class="p">:</span> <span class="n">Logger</span><span class="p">(</span><span class="s1">&#39;tlo&#39;</span><span class="p">,</span> <span class="n">WARNING</span><span class="p">)}</span>
+<span class="n">_DEFAULT_LEVEL</span> <span class="o">=</span> <span class="n">INFO</span>
+
+<span class="n">_DEFAULT_FORMATTER</span> <span class="o">=</span> <span class="n">_logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%(message)s</span><span class="s2">&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="InconsistentLoggedColumnsWarning">
+<a class="viewcode-back" href="../../../reference/tlo.logging.core.html#tlo.logging.InconsistentLoggedColumnsWarning">[docs]</a>
+<span class="k">class</span> <span class="nc">InconsistentLoggedColumnsWarning</span><span class="p">(</span><span class="ne">UserWarning</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Warning raised when structured log entry has different columns from header.&quot;&quot;&quot;</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">_mock_simulation_date_getter</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="s2">&quot;0000-00-00T00:00:00&quot;</span>
+
+
+<span class="n">_get_simulation_date</span><span class="p">:</span> <span class="n">SimulationDateGetter</span> <span class="o">=</span> <span class="n">_mock_simulation_date_getter</span>
+<span class="n">_loggers</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Logger</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
+
+<div class="viewcode-block" id="initialise">
+<a class="viewcode-back" href="../../../reference/tlo.logging.core.html#tlo.logging.initialise">[docs]</a>
+<span class="k">def</span> <span class="nf">initialise</span><span class="p">(</span>
+    <span class="n">add_stdout_handler</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">simulation_date_getter</span><span class="p">:</span> <span class="n">SimulationDateGetter</span> <span class="o">=</span> <span class="n">_mock_simulation_date_getter</span><span class="p">,</span>
+    <span class="n">root_level</span><span class="p">:</span> <span class="n">LogLevel</span> <span class="o">=</span> <span class="n">WARNING</span><span class="p">,</span>
+    <span class="n">stdout_handler_level</span><span class="p">:</span> <span class="n">LogLevel</span> <span class="o">=</span> <span class="n">DEBUG</span><span class="p">,</span>
+    <span class="n">formatter</span><span class="p">:</span> <span class="n">_logging</span><span class="o">.</span><span class="n">Formatter</span> <span class="o">=</span> <span class="n">_DEFAULT_FORMATTER</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialise logging system and set up root `tlo` logger.</span>
+
+<span class="sd">    :param add_stdout_handler: Whether to add a handler to output log entries to stdout.</span>
+<span class="sd">    :param simulation_date_getter: Zero-argument function returning simulation date as</span>
+<span class="sd">        string in ISO format to use in log entries. Defaults to function returning a</span>
+<span class="sd">        a fixed dummy date for use before a simulation has been initialised.</span>
+<span class="sd">    :param root_level: Logging level for root `tlo` logger.</span>
+<span class="sd">    :param formatter: Formatter to use for logging to stdout.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">_get_simulation_date</span><span class="p">,</span> <span class="n">_loggers</span>
+    <span class="n">_get_simulation_date</span> <span class="o">=</span> <span class="n">simulation_date_getter</span>
+    <span class="k">for</span> <span class="n">logger</span> <span class="ow">in</span> <span class="n">_loggers</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">reset_attributes</span><span class="p">()</span>
+    <span class="n">root_logger</span> <span class="o">=</span> <span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;tlo&quot;</span><span class="p">)</span>
+    <span class="n">root_logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">root_level</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">add_stdout_handler</span><span class="p">:</span>
+        <span class="n">handler</span> <span class="o">=</span> <span class="n">_logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
+        <span class="n">handler</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">stdout_handler_level</span><span class="p">)</span>
+        <span class="n">handler</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">formatter</span><span class="p">)</span>
+        <span class="n">root_logger</span><span class="o">.</span><span class="n">handlers</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">h</span>
+            <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">root_logger</span><span class="o">.</span><span class="n">handlers</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">_logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">)</span> <span class="ow">and</span> <span class="n">h</span><span class="o">.</span><span class="n">stream</span> <span class="ow">is</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="n">root_logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">handler</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="reset">
+<a class="viewcode-back" href="../../../reference/tlo.logging.core.html#tlo.logging.reset">[docs]</a>
+<span class="k">def</span> <span class="nf">reset</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Reset global logging state to values at initial import.&quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">_get_simulation_date</span><span class="p">,</span> <span class="n">_loggers</span>
+    <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">_loggers</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">name</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">_loggers</span><span class="o">.</span><span class="n">popitem</span><span class="p">()</span>
+        <span class="n">_logging</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">loggerDict</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>  <span class="c1"># pylint: disable=E1101</span>
+    <span class="n">_loggers</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+    <span class="n">_get_simulation_date</span> <span class="o">=</span> <span class="n">_mock_simulation_date_getter</span></div>
+
+
+
+<div class="viewcode-block" id="set_output_file">
+<a class="viewcode-back" href="../../../reference/tlo.logging.core.html#tlo.logging.set_output_file">[docs]</a>
+<span class="k">def</span> <span class="nf">set_output_file</span><span class="p">(</span>
+    <span class="n">log_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
+    <span class="n">formatter</span><span class="p">:</span> <span class="n">_logging</span><span class="o">.</span><span class="n">Formatter</span> <span class="o">=</span> <span class="n">_DEFAULT_FORMATTER</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_logging</span><span class="o">.</span><span class="n">FileHandler</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add file handler to logger.</span>
+
+<span class="sd">    :param log_path: Path for file.</span>
+<span class="sd">    :return: File handler object.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">file_handler</span> <span class="o">=</span> <span class="n">_logging</span><span class="o">.</span><span class="n">FileHandler</span><span class="p">(</span><span class="n">log_path</span><span class="p">)</span>
+    <span class="n">file_handler</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">formatter</span><span class="p">)</span>
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;tlo&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">handlers</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">h</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">logger</span><span class="o">.</span><span class="n">handlers</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">_logging</span><span class="o">.</span><span class="n">FileHandler</span><span class="p">)</span>
+    <span class="p">]</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">file_handler</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">file_handler</span></div>
+
+
+
+<div class="viewcode-block" id="disable">
+<a class="viewcode-back" href="../../../reference/tlo.logging.core.html#tlo.logging.disable">[docs]</a>
+<span class="k">def</span> <span class="nf">disable</span><span class="p">(</span><span class="n">level</span><span class="p">:</span> <span class="n">LogLevel</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Disable all logging calls of specified level and below.&quot;&quot;&quot;</span>
+    <span class="n">_logging</span><span class="o">.</span><span class="n">disable</span><span class="p">(</span><span class="n">level</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="getLogger">
+<a class="viewcode-back" href="../../../reference/tlo.logging.core.html#tlo.logging.getLogger">[docs]</a>
+<span class="k">def</span> <span class="nf">getLogger</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;tlo&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Logger</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a TLO logger of the specified name&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_loggers</span><span class="p">:</span>
+        <span class="n">_loggers</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">Logger</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_loggers</span><span class="p">[</span><span class="n">name</span><span class="p">]</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">_numeric_or_str_sort_key</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Key function to sort mixture of numeric and string items.</span>
+
+<span class="sd">    Orders non-string values first and then string values, assuming ascending order.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">),</span> <span class="n">value</span>
+
+
+<span class="k">def</span> <span class="nf">_convert_keys_to_strings_and_sort</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert all dictionary keys to strings and sort dictionary by key.&quot;&quot;&quot;</span>
+    <span class="c1"># Sort by mix of numeric or string keys _then_ convert all keys to strings to</span>
+    <span class="c1"># ensure stringified numeric keys have natural numeric ordering, for example</span>
+    <span class="c1"># &#39;1&#39;, &#39;2&#39;, &#39;10&#39; not &#39;1&#39;, &#39;10&#39;, &#39;2&#39;</span>
+    <span class="n">sorted_data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+        <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">k</span><span class="p">),</span> <span class="n">v</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">i</span><span class="p">:</span> <span class="n">_numeric_or_str_sort_key</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sorted_data</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;At least one pair of keys in data dictionary </span><span class="si">{</span><span class="n">data</span><span class="si">}</span><span class="s2"> map to same string.&quot;</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">sorted_data</span>
+
+
+<span class="k">def</span> <span class="nf">_sort_set_with_numeric_or_str_elements</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">set</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sort a set with elements that may be either strings or numeric types.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">_numeric_or_str_sort_key</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_get_log_data_as_dict</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">LogData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert log data to a dictionary if it isn&#39;t already&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">_convert_keys_to_strings_and_sort</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">data_dict</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">_convert_keys_to_strings_and_sort</span><span class="p">(</span><span class="n">data_dict</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Logging multirow dataframes is not currently supported - &quot;</span>
+                <span class="s2">&quot;if you need this feature let us know&quot;</span>
+            <span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">set</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">set</span><span class="p">):</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">_sort_set_with_numeric_or_str_elements</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span><span class="sa">f</span><span class="s2">&quot;item_</span><span class="si">{</span><span class="n">index</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">:</span> <span class="n">value</span> <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">data</span><span class="p">)}</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="n">data</span><span class="p">}</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unexpected type given as data:</span><span class="se">\n</span><span class="si">{</span><span class="n">data</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_convert_numpy_scalars_to_python_types</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert NumPy scalar types to suitable standard Python types.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="n">key</span><span class="p">:</span> <span class="p">(</span>
+            <span class="n">value</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">number</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">str_</span><span class="p">))</span> <span class="k">else</span> <span class="n">value</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+    <span class="p">}</span>
+
+
+<span class="k">def</span> <span class="nf">_get_columns_from_data_dict</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get columns dictionary specifying types of data dictionary values.&quot;&quot;&quot;</span>
+    <span class="c1"># using type().__name__ so both pandas and stdlib types can be used</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+
+<div class="viewcode-block" id="Logger">
+<a class="viewcode-back" href="../../../reference/tlo.logging.core.html#tlo.logging.Logger">[docs]</a>
+<span class="k">class</span> <span class="nc">Logger</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Logger for structured log messages output by simulation.</span>
+
+<span class="sd">    Outputs structured log messages in JSON format along with simulation date log entry</span>
+<span class="sd">    was generated at. Log messages are associated with a string key and for each key</span>
+<span class="sd">    the log message data is expected to have a fixed structure:</span>
+
+<span class="sd">    - Collection like data (tuples, lists, sets) should be of fixed length.</span>
+<span class="sd">    - Mapping like data (dictionaries, pandas series and dataframes) should have a fixed</span>
+<span class="sd">      set of keys and the values should be of fixed data types.</span>
+
+<span class="sd">    The first log message for a given key will generate a &#39;header&#39; log entry which</span>
+<span class="sd">    records the structure of the message with subsequent log messages only logging the</span>
+<span class="sd">    values for efficiency, hence the requirement for the structure to remain fixed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">HASH_LEN</span> <span class="o">=</span> <span class="mi">10</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">level</span><span class="p">:</span> <span class="n">LogLevel</span> <span class="o">=</span> <span class="n">_DEFAULT_LEVEL</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span>
+            <span class="s2">&quot;tlo&quot;</span>
+        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Only logging of tlo modules is allowed; name is </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="c1"># we build our logger on top of the standard python logging</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_std_logger</span> <span class="o">=</span> <span class="n">_logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_std_logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">level</span><span class="p">)</span>
+        <span class="c1"># don&#39;t propagate messages up from &quot;tlo&quot; to root logger</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;tlo&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_std_logger</span><span class="o">.</span><span class="n">propagate</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="c1"># the unique identifiers of the structured logging calls for this logger</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_uuids</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="c1"># the columns for the structured logging calls for this logger</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_columns</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;&lt;TLOmodel Logger `</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">` (</span><span class="si">{</span><span class="n">_logging</span><span class="o">.</span><span class="n">getLevelName</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">level</span><span class="p">)</span><span class="si">}</span><span class="s2">)&gt;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_std_logger</span><span class="o">.</span><span class="n">name</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">handlers</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">_logging</span><span class="o">.</span><span class="n">Handler</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_std_logger</span><span class="o">.</span><span class="n">handlers</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">level</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LogLevel</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_std_logger</span><span class="o">.</span><span class="n">level</span>
+
+    <span class="nd">@handlers</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">handlers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handlers</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">_logging</span><span class="o">.</span><span class="n">Handler</span><span class="p">]):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_std_logger</span><span class="o">.</span><span class="n">handlers</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">handler</span> <span class="ow">in</span> <span class="n">handlers</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_std_logger</span><span class="o">.</span><span class="n">handlers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">handler</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Logger.addHandler">
+<a class="viewcode-back" href="../../../reference/tlo.logging.core.html#tlo.logging.Logger.addHandler">[docs]</a>
+    <span class="k">def</span> <span class="nf">addHandler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hdlr</span><span class="p">:</span> <span class="n">_logging</span><span class="o">.</span><span class="n">Handler</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_std_logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">hdlr</span><span class="o">=</span><span class="n">hdlr</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Logger.isEnabledFor">
+<a class="viewcode-back" href="../../../reference/tlo.logging.core.html#tlo.logging.Logger.isEnabledFor">[docs]</a>
+    <span class="k">def</span> <span class="nf">isEnabledFor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">level</span><span class="p">:</span> <span class="n">LogLevel</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_std_logger</span><span class="o">.</span><span class="n">isEnabledFor</span><span class="p">(</span><span class="n">level</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Logger.reset_attributes">
+<a class="viewcode-back" href="../../../reference/tlo.logging.core.html#tlo.logging.Logger.reset_attributes">[docs]</a>
+    <span class="k">def</span> <span class="nf">reset_attributes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reset logger attributes to an unset state&quot;&quot;&quot;</span>
+        <span class="c1"># clear all logger settings</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">handlers</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_uuids</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_columns</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">_DEFAULT_LEVEL</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Logger.setLevel">
+<a class="viewcode-back" href="../../../reference/tlo.logging.core.html#tlo.logging.Logger.setLevel">[docs]</a>
+    <span class="k">def</span> <span class="nf">setLevel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">level</span><span class="p">:</span> <span class="n">LogLevel</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_std_logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">level</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_get_uuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">hexdigest</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">md5</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">+</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">hexdigest</span><span class="p">[:</span> <span class="n">Logger</span><span class="o">.</span><span class="n">HASH_LEN</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_get_json</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">level</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">LogData</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">description</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Writes structured log message if handler allows this and level is allowed.</span>
+
+<span class="sd">        Will write a header line the first time a new logging key is encountered.</span>
+<span class="sd">        Then will only write data rows in later rows for this logging key.</span>
+
+<span class="sd">        :param level: Level the message is being logged as.</span>
+<span class="sd">        :param key: Logging key.</span>
+<span class="sd">        :param data: Data to be logged.</span>
+<span class="sd">        :param description: Description of this log type.</span>
+
+<span class="sd">        :returns: String with JSON-encoded data row and optionally header row.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">_get_log_data_as_dict</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">_convert_numpy_scalars_to_python_types</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">header_json</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_uuids</span><span class="p">:</span>
+            <span class="c1"># new log key, so create header json row</span>
+            <span class="n">uuid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_uuid</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="n">columns</span> <span class="o">=</span> <span class="n">_get_columns_from_data_dict</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_uuids</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">uuid</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_columns</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">columns</span>
+            <span class="n">header</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;uuid&quot;</span><span class="p">:</span> <span class="n">uuid</span><span class="p">,</span>
+                <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;header&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;module&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                <span class="s2">&quot;key&quot;</span><span class="p">:</span> <span class="n">key</span><span class="p">,</span>
+                <span class="s2">&quot;level&quot;</span><span class="p">:</span> <span class="n">_logging</span><span class="o">.</span><span class="n">getLevelName</span><span class="p">(</span><span class="n">level</span><span class="p">),</span>
+                <span class="s2">&quot;columns&quot;</span><span class="p">:</span> <span class="n">columns</span><span class="p">,</span>
+                <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="n">description</span><span class="p">,</span>
+            <span class="p">}</span>
+            <span class="n">header_json</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">header</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">uuid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_uuids</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            <span class="n">columns</span> <span class="o">=</span> <span class="n">_get_columns_from_data_dict</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">columns</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_columns</span><span class="p">[</span><span class="n">key</span><span class="p">]:</span>
+                <span class="n">header_columns</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_columns</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+                <span class="n">logged_columns</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">columns</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Inconsistent columns in logged values for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> logger &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;with key </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> compared to header generated from initial log &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;entry:</span><span class="se">\n</span><span class="s2">&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;  Columns in header not in logged values are</span><span class="se">\n</span><span class="s2">&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="nb">dict</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">header_columns</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">logged_columns</span><span class="p">))</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;  Columns in logged values not in header are</span><span class="se">\n</span><span class="s2">&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="nb">dict</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">logged_columns</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">header_columns</span><span class="p">))</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                    <span class="n">msg</span><span class="p">,</span>
+                    <span class="n">InconsistentLoggedColumnsWarning</span><span class="p">,</span>
+                    <span class="c1"># Set stack level so that user is given location of top-level</span>
+                    <span class="c1"># {info,warning,debug,critical} convenience method call</span>
+                    <span class="n">stacklevel</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+                <span class="p">)</span>
+
+        <span class="c1"># create data json row</span>
+        <span class="n">row</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;uuid&quot;</span><span class="p">:</span> <span class="n">uuid</span><span class="p">,</span>
+            <span class="s2">&quot;date&quot;</span><span class="p">:</span> <span class="n">_get_simulation_date</span><span class="p">(),</span>
+            <span class="s2">&quot;values&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_std_logger</span><span class="o">.</span><span class="n">level</span> <span class="o">==</span> <span class="n">DEBUG</span><span class="p">:</span>
+            <span class="c1"># in DEBUG mode we echo the module and key for easier eyeballing</span>
+            <span class="n">row</span><span class="p">[</span><span class="s2">&quot;module&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+            <span class="n">row</span><span class="p">[</span><span class="s2">&quot;key&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">key</span>
+
+        <span class="n">row_json</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="n">encoding</span><span class="o">.</span><span class="n">PandasEncoder</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">row_json</span> <span class="k">if</span> <span class="n">header_json</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">header_json</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">row_json</span><span class="si">}</span><span class="s2">&quot;</span>
+
+<div class="viewcode-block" id="Logger.log">
+<a class="viewcode-back" href="../../../reference/tlo.logging.core.html#tlo.logging.Logger.log">[docs]</a>
+    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">level</span><span class="p">:</span> <span class="n">LogLevel</span><span class="p">,</span>
+        <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">:</span> <span class="n">LogData</span><span class="p">,</span>
+        <span class="n">description</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Log structured data for a key at specified level with optional description.</span>
+
+<span class="sd">        :param level: Level the message is being logged as.</span>
+<span class="sd">        :param key: Logging key.</span>
+<span class="sd">        :param data: Data to be logged.</span>
+<span class="sd">        :param description: Description of this log type.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_std_logger</span><span class="o">.</span><span class="n">isEnabledFor</span><span class="p">(</span><span class="n">level</span><span class="p">):</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_json</span><span class="p">(</span>
+                <span class="n">level</span><span class="o">=</span><span class="n">level</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="n">description</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_std_logger</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">level</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="n">msg</span><span class="p">)</span></div>
+
+
+    <span class="n">critical</span> <span class="o">=</span> <span class="n">partialmethod</span><span class="p">(</span><span class="n">log</span><span class="p">,</span> <span class="n">CRITICAL</span><span class="p">)</span>
+    <span class="n">debug</span> <span class="o">=</span> <span class="n">partialmethod</span><span class="p">(</span><span class="n">log</span><span class="p">,</span> <span class="n">DEBUG</span><span class="p">)</span>
+    <span class="n">info</span> <span class="o">=</span> <span class="n">partialmethod</span><span class="p">(</span><span class="n">log</span><span class="p">,</span> <span class="n">INFO</span><span class="p">)</span>
+    <span class="n">warning</span> <span class="o">=</span> <span class="n">partialmethod</span><span class="p">(</span><span class="n">log</span><span class="p">,</span> <span class="n">WARNING</span><span class="p">)</span></div>
+
 </pre></div>
 
            </div>
@@ -346,7 +493,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on May 27, 2024.
+      <span class="lastupdated">Last updated on Aug 02, 2024.
       </span></p>
   </div>
 

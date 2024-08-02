@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.contraception &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
+  <title>tlo.methods.contraception &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
@@ -16,7 +16,7 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../../../_static/documentation_options.js?v=f3d69a25"></script>
         <script src="../../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -769,23 +769,60 @@
 <a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.Contraception.get_item_code_for_each_contraceptive">[docs]</a>
     <span class="k">def</span> <span class="nf">get_item_code_for_each_contraceptive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the item_code for each contraceptive and for contraceptive initiation.&quot;&quot;&quot;</span>
-        <span class="c1"># TODO: update with optional items (currently all considered essential)</span>
 
-        <span class="n">get_items_from_pkg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_item_codes_from_package_name</span>
+        <span class="c1"># ### Get item codes from item names and define number of units per case here</span>
+        <span class="n">get_item_code</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span>
 
         <span class="n">_cons_codes</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-        <span class="c1"># items for each method that requires an HSI to switch to</span>
-        <span class="n">_cons_codes</span><span class="p">[</span><span class="s1">&#39;pill&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_items_from_pkg</span><span class="p">(</span><span class="s1">&#39;Pill&#39;</span><span class="p">)</span>
-        <span class="n">_cons_codes</span><span class="p">[</span><span class="s1">&#39;male_condom&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_items_from_pkg</span><span class="p">(</span><span class="s1">&#39;Male condom&#39;</span><span class="p">)</span>
-        <span class="n">_cons_codes</span><span class="p">[</span><span class="s1">&#39;other_modern&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_items_from_pkg</span><span class="p">(</span><span class="s1">&#39;Female Condom&#39;</span><span class="p">)</span>
-        <span class="c1"># NB. The consumable female condom is used for the contraceptive state of &quot;other_modern method&quot;</span>
-        <span class="n">_cons_codes</span><span class="p">[</span><span class="s1">&#39;IUD&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_items_from_pkg</span><span class="p">(</span><span class="s1">&#39;IUD&#39;</span><span class="p">)</span>
-        <span class="n">_cons_codes</span><span class="p">[</span><span class="s1">&#39;injections&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_items_from_pkg</span><span class="p">(</span><span class="s1">&#39;Injectable&#39;</span><span class="p">)</span>
-        <span class="n">_cons_codes</span><span class="p">[</span><span class="s1">&#39;implant&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_items_from_pkg</span><span class="p">(</span><span class="s1">&#39;Implant&#39;</span><span class="p">)</span>
-        <span class="n">_cons_codes</span><span class="p">[</span><span class="s1">&#39;female_sterilization&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_items_from_pkg</span><span class="p">(</span><span class="s1">&#39;Female sterilization&#39;</span><span class="p">)</span>
+        <span class="c1"># # items for each method that requires an HSI to switch to</span>
+        <span class="c1"># in 80% cases combined pills administrated</span>
+        <span class="c1"># in other 20% cases same amount of progesterone-only pills (&quot;Levonorgestrel 0.0375 mg, cycle&quot;) administrated</span>
+        <span class="c1"># (omitted in here)</span>
+        <span class="n">_cons_codes</span><span class="p">[</span><span class="s1">&#39;pill&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="p">{</span><span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Levonorgestrel 0.15 mg + Ethinyl estradiol 30 mcg (Microgynon), cycle&quot;</span><span class="p">):</span> <span class="mi">21</span> <span class="o">*</span> <span class="mf">3.75</span><span class="p">}</span>
+        <span class="n">_cons_codes</span><span class="p">[</span><span class="s1">&#39;male_condom&#39;</span><span class="p">]</span> <span class="o">=</span>\
+            <span class="p">{</span><span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Condom, male&quot;</span><span class="p">):</span> <span class="mi">30</span><span class="p">}</span>
+        <span class="n">_cons_codes</span><span class="p">[</span><span class="s1">&#39;other_modern&#39;</span><span class="p">]</span> <span class="o">=</span>\
+            <span class="p">{</span><span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Female Condom_Each_CMST&quot;</span><span class="p">):</span> <span class="mi">30</span><span class="p">}</span>
+        <span class="n">_cons_codes</span><span class="p">[</span><span class="s1">&#39;IUD&#39;</span><span class="p">]</span> <span class="o">=</span>\
+            <span class="p">{</span><span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Glove disposable powdered latex medium_100_CMST&quot;</span><span class="p">):</span> <span class="mi">2</span><span class="p">,</span>
+             <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;IUD, Copper T-380A&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">}</span>
+        <span class="n">_cons_codes</span><span class="p">[</span><span class="s1">&#39;injections&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="p">{</span><span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Depot-Medroxyprogesterone Acetate 150 mg - 3 monthly&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Glove disposable powdered latex medium_100_CMST&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Water for injection, 10ml_Each_CMST&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Povidone iodine, solution, 10 %, 5 ml per injection&quot;</span><span class="p">):</span> <span class="mi">5</span><span class="p">,</span>
+             <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Gauze, swabs 8-ply 10cm x 10cm_100_CMST&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">}</span>
+        <span class="n">_cons_codes</span><span class="p">[</span><span class="s1">&#39;implant&#39;</span><span class="p">]</span> <span class="o">=</span>\
+            <span class="p">{</span><span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Glove disposable powdered latex medium_100_CMST&quot;</span><span class="p">):</span> <span class="mi">3</span><span class="p">,</span>
+             <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml&quot;</span><span class="p">):</span> <span class="mi">2</span><span class="p">,</span>
+             <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Povidone iodine, solution, 10 %, 5 ml per injection&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="o">*</span><span class="mi">5</span><span class="p">,</span>  <span class="c1"># unit: 1 ml</span>
+             <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Syringe, needle + swab&quot;</span><span class="p">):</span> <span class="mi">2</span><span class="p">,</span>
+             <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Trocar&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Needle suture intestinal round bodied ½ circle trocar_6_CMST&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="c1"># in 50% cases Jadelle administrated</span>
+             <span class="c1"># in other 50% cases other type of implant (&quot;Implanon (Etonogestrel 68 mg)&quot;) administrated</span>
+             <span class="c1"># (omitted in here)</span>
+             <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Jadelle (implant), box of 2_CMST&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Gauze, swabs 8-ply 10cm x 10cm_100_CMST&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">}</span>
+        <span class="n">_cons_codes</span><span class="p">[</span><span class="s1">&#39;female_sterilization&#39;</span><span class="p">]</span> <span class="o">=</span>\
+            <span class="p">{</span><span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Atropine sulphate  600 micrograms/ml, 1ml_each_CMST&quot;</span><span class="p">):</span> <span class="mf">0.5</span><span class="p">,</span>  <span class="c1"># 1 unit used only in 50% cases</span>
+             <span class="c1"># approximated by 0.5 unit each time</span>
+             <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Diazepam, injection, 5 mg/ml, in 2 ml ampoule&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Syringe, autodestruct, 5ml, disposable, hypoluer with 21g needle_each_CMST&quot;</span><span class="p">):</span> <span class="mi">3</span><span class="p">,</span>
+             <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Gauze, swabs 8-ply 10cm x 10cm_100_CMST&quot;</span><span class="p">):</span> <span class="mi">2</span><span class="p">,</span>
+             <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Needle, suture, assorted sizes, round body&quot;</span><span class="p">):</span> <span class="mi">3</span><span class="p">,</span>
+             <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Suture, catgut, chromic, 0, 150 cm&quot;</span><span class="p">):</span> <span class="mi">3</span><span class="p">,</span>
+             <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Tape, adhesive, 2.5 cm wide, zinc oxide, 5 m roll&quot;</span><span class="p">):</span> <span class="mi">125</span><span class="p">,</span>  <span class="c1"># unit: 1 cm long (2.5 cm wide)</span>
+             <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Glove surgeon&#39;s size 7 sterile_2_CMST&quot;</span><span class="p">):</span> <span class="mi">2</span><span class="p">,</span>
+             <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Paracetamol, tablet, 500 mg&quot;</span><span class="p">):</span> <span class="mi">8</span><span class="o">*</span><span class="mi">500</span><span class="p">,</span>  <span class="c1"># unit: 1 mg</span>
+             <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Povidone iodine, solution, 10 %, 5 ml per injection&quot;</span><span class="p">):</span> <span class="mi">2</span><span class="o">*</span><span class="mi">5</span><span class="p">,</span>  <span class="c1"># unit: 1 ml</span>
+             <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Cotton wool, 500g_1_CMST&quot;</span><span class="p">):</span> <span class="mi">100</span><span class="p">}</span>  <span class="c1"># unit: 1 g</span>
+
         <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">_cons_codes</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">states_that_may_require_HSI_to_switch_to</span><span class="p">)</span>
         <span class="c1"># items used when initiating a modern reliable method after not using or switching from non-reliable method</span>
-        <span class="n">_cons_codes</span><span class="p">[</span><span class="s1">&#39;co_initiation&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_items_from_pkg</span><span class="p">(</span><span class="s1">&#39;Contraception initiation&#39;</span><span class="p">)</span>
+        <span class="n">_cons_codes</span><span class="p">[</span><span class="s1">&#39;co_initiation&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Pregnancy slide test kit_100_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">}</span>
 
         <span class="k">return</span> <span class="n">_cons_codes</span></div>
 
@@ -1336,8 +1373,12 @@
         <span class="c1"># Record the date that Family Planning Appointment happened for this person</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;co_date_of_last_fp_appt&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
 
+        <span class="c1"># Measure weight, height and BP even if contraception not administrated</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_equipment</span><span class="p">({</span>
+            <span class="s1">&#39;Weighing scale&#39;</span><span class="p">,</span> <span class="s1">&#39;Height Pole (Stadiometer)&#39;</span><span class="p">,</span> <span class="s1">&#39;Blood pressure machine&#39;</span>
+        <span class="p">})</span>
+
         <span class="c1"># Determine essential and optional items</span>
-        <span class="c1"># TODO: we don&#39;t distinguish essential X optional for contraception methods yet, will need to update once we do</span>
         <span class="n">items_essential</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_codes</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">new_contraceptive</span><span class="p">]</span>
         <span class="n">items_optional</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="c1"># Record use of consumables and default the person to &quot;not_using&quot; if the consumable is not available.</span>
@@ -1362,7 +1403,8 @@
         <span class="n">items_all</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">items_essential</span><span class="p">,</span> <span class="o">**</span><span class="n">items_optional</span><span class="p">}</span>
 
         <span class="c1"># Determine whether the contraception is administrated (ie all essential items are available),</span>
-        <span class="c1"># if so do log the availability of all items, if not set the contraception to &quot;not_using&quot;:</span>
+        <span class="c1"># if so do log the availability of all items and update used equipment if any, if not set the contraception to</span>
+        <span class="c1"># &quot;not_using&quot;:</span>
         <span class="n">co_administrated</span> <span class="o">=</span> <span class="nb">all</span><span class="p">(</span><span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">cons_available</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">items_essential</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">co_administrated</span><span class="p">:</span>
@@ -1386,6 +1428,18 @@
                              <span class="p">)</span>
 
             <span class="n">_new_contraceptive</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_contraceptive</span>
+
+            <span class="c1"># Add used equipment</span>
+            <span class="k">if</span> <span class="n">_new_contraceptive</span> <span class="o">==</span> <span class="s1">&#39;female_sterilization&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">add_equipment</span><span class="p">({</span>
+                    <span class="s1">&#39;Cusco’s/ bivalved Speculum (small, medium, large)&#39;</span><span class="p">,</span> <span class="s1">&#39;Lamp, Anglepoise&#39;</span>
+                <span class="p">})</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">add_equipment</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">healthcare_system</span><span class="o">.</span><span class="n">equipment</span><span class="o">.</span><span class="n">from_pkg_names</span><span class="p">(</span><span class="s1">&#39;Minor Surgery&#39;</span><span class="p">))</span>
+            <span class="k">elif</span> <span class="n">_new_contraceptive</span> <span class="o">==</span> <span class="s1">&#39;IUD&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">add_equipment</span><span class="p">({</span>
+                    <span class="s1">&#39;Cusco’s/ bivalved Speculum (small, medium, large)&#39;</span><span class="p">,</span> <span class="s1">&#39;Sponge Holding Forceps&#39;</span>
+                <span class="p">})</span>
+
         <span class="k">else</span><span class="p">:</span>
             <span class="n">_new_contraceptive</span> <span class="o">=</span> <span class="s2">&quot;not_using&quot;</span>
 
@@ -1637,7 +1691,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on May 27, 2024.
+      <span class="lastupdated">Last updated on Aug 02, 2024.
       </span></p>
   </div>
 

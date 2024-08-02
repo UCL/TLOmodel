@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.epilepsy &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
+  <title>tlo.methods.epilepsy &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
@@ -16,7 +16,7 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../../../_static/documentation_options.js?v=f3d69a25"></script>
         <script src="../../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -87,20 +87,25 @@
            <div itemprop="articleBody">
              
   <h1>Source code for tlo.methods.epilepsy</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
 <span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">DateOffset</span><span class="p">,</span> <span class="n">Module</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">Property</span><span class="p">,</span> <span class="n">Types</span><span class="p">,</span> <span class="n">logging</span>
-<span class="kn">from</span> <span class="nn">tlo.core</span> <span class="kn">import</span> <span class="n">IndividualPropertyUpdates</span>
 <span class="kn">from</span> <span class="nn">tlo.events</span> <span class="kn">import</span> <span class="n">IndividualScopeEventMixin</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">,</span> <span class="n">RegularEvent</span>
 <span class="kn">from</span> <span class="nn">tlo.methods</span> <span class="kn">import</span> <span class="n">Metadata</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.causes</span> <span class="kn">import</span> <span class="n">Cause</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.demography</span> <span class="kn">import</span> <span class="n">InstantaneousDeath</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.hsi_event</span> <span class="kn">import</span> <span class="n">HSI_Event</span>
+<span class="kn">from</span> <span class="nn">tlo.methods.hsi_generic_first_appts</span> <span class="kn">import</span> <span class="n">GenericFirstAppointmentsMixin</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.symptommanager</span> <span class="kn">import</span> <span class="n">Symptom</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">tlo.methods.hsi_generic_first_appts</span> <span class="kn">import</span> <span class="n">HSIEventScheduler</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
@@ -108,7 +113,7 @@
 
 <div class="viewcode-block" id="Epilepsy">
 <a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.Epilepsy">[docs]</a>
-<span class="k">class</span> <span class="nc">Epilepsy</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">Epilepsy</span><span class="p">(</span><span class="n">Module</span><span class="p">,</span> <span class="n">GenericFirstAppointmentsMixin</span><span class="p">):</span>
 <div class="viewcode-block" id="Epilepsy.__init__">
 <a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.Epilepsy.__init__">[docs]</a>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -515,13 +520,14 @@
 <a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.Epilepsy.do_at_generic_first_appt_emergency">[docs]</a>
     <span class="k">def</span> <span class="nf">do_at_generic_first_appt_emergency</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">patient_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">person_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">symptoms</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">schedule_hsi_event</span><span class="p">:</span> <span class="n">HSIEventScheduler</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">IndividualPropertyUpdates</span><span class="p">:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="s2">&quot;seizures&quot;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">:</span>
-            <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_Epilepsy_Start_Anti_Epileptic</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">patient_id</span><span class="p">,</span> <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">healthsystem</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span></div>
+            <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_Epilepsy_Start_Anti_Epileptic</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+            <span class="n">schedule_hsi_event</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span></div>
 </div>
 
 
@@ -695,16 +701,16 @@
         <span class="n">n_seiz_stat_1_3</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">status_groups</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">is_alive</span><span class="p">)</span>
         <span class="n">n_seiz_stat_2_3</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">status_groups</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">2</span><span class="p">:]</span><span class="o">.</span><span class="n">is_alive</span><span class="p">)</span>
 
-        <span class="n">n_antiep</span> <span class="o">=</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">ep_antiep</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">n_antiep</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">ep_antiep</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
 
-        <span class="n">n_epi_death</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">ep_epi_death</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">n_epi_death</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">ep_epi_death</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
 
         <span class="n">status_groups</span><span class="p">[</span><span class="s1">&#39;prop_seiz_stats&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">status_groups</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">/</span> <span class="nb">sum</span><span class="p">(</span><span class="n">status_groups</span><span class="o">.</span><span class="n">is_alive</span><span class="p">)</span>
 
         <span class="n">status_groups</span><span class="p">[</span><span class="s1">&#39;prop_seiz_stat_on_anti_ep&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">status_groups</span><span class="p">[</span><span class="s1">&#39;ep_antiep&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">status_groups</span><span class="o">.</span><span class="n">is_alive</span>
         <span class="n">status_groups</span><span class="p">[</span><span class="s1">&#39;prop_seiz_stat_on_anti_ep&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">status_groups</span><span class="p">[</span><span class="s1">&#39;prop_seiz_stat_on_anti_ep&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
         <span class="n">epi_death_rate</span> <span class="o">=</span> \
-            <span class="p">(</span><span class="n">n_epi_death</span> <span class="o">*</span> <span class="mi">4</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">)</span> <span class="o">/</span> <span class="n">n_seiz_stat_2_3</span> <span class="k">if</span> <span class="n">n_seiz_stat_2_3</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="p">(</span><span class="n">n_epi_death</span> <span class="o">*</span> <span class="mi">4</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">)</span> <span class="o">/</span> <span class="n">n_seiz_stat_2_3</span> <span class="k">if</span> <span class="n">n_seiz_stat_2_3</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">0.0</span>
 
         <span class="n">cum_deaths</span> <span class="o">=</span> <span class="p">(</span><span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
 
@@ -758,7 +764,14 @@
 
         <span class="k">if</span> <span class="n">best_available_medicine</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># Request the medicine from the health system</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes</span><span class="p">[</span><span class="n">best_available_medicine</span><span class="p">])</span>
+
+            <span class="n">dose</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;phenobarbitone&#39;</span><span class="p">:</span> <span class="mi">9131</span><span class="p">,</span>  <span class="c1"># 100mg per day - 3 months</span>
+                    <span class="s1">&#39;carbamazepine&#39;</span><span class="p">:</span> <span class="mi">91_311</span><span class="p">,</span>  <span class="c1"># 1000mg per day - 3 months</span>
+                    <span class="s1">&#39;phenytoin&#39;</span><span class="p">:</span> <span class="mi">27_393</span><span class="p">}</span>  <span class="c1"># 300mg per day - 3 months</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">({</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes</span><span class="p">[</span><span class="n">best_available_medicine</span><span class="p">]:</span>
+                                  <span class="n">dose</span><span class="p">[</span><span class="n">best_available_medicine</span><span class="p">]})</span>
+
             <span class="c1"># Update this person&#39;s properties to show that they are currently on medication</span>
             <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ep_antiep&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
@@ -818,18 +831,30 @@
         <span class="c1"># Request the medicine</span>
         <span class="n">best_available_medicine</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">get_best_available_medicine</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">best_available_medicine</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+
+            <span class="c1"># Schedule a reoccurrence of this follow-up in 3 months if ep_seiz_stat == &#39;3&#39;,</span>
+            <span class="c1"># else, schedule this reoccurrence of it in 1 year (i.e., if ep_seiz_stat == &#39;2&#39;</span>
+            <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ep_seiz_stat&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;3&#39;</span><span class="p">:</span>
+                <span class="n">fu_mnths</span> <span class="o">=</span> <span class="mi">3</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">fu_mnths</span> <span class="o">=</span> <span class="mi">12</span>
+
             <span class="c1"># The medicine is available, so request it</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes</span><span class="p">[</span><span class="n">best_available_medicine</span><span class="p">])</span>
+            <span class="n">dose</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;phenobarbitone_3_mnths&#39;</span><span class="p">:</span> <span class="mi">9131</span><span class="p">,</span> <span class="s1">&#39;phenobarbitone_12_mnths&#39;</span><span class="p">:</span> <span class="mi">36_525</span><span class="p">,</span>  <span class="c1"># 100mg per day - 3/12 months</span>
+                    <span class="s1">&#39;carbamazepine_3_mnths&#39;</span><span class="p">:</span> <span class="mi">91_311</span><span class="p">,</span> <span class="s1">&#39;carbamazepine_12_mnths&#39;</span><span class="p">:</span> <span class="mi">365_250</span><span class="p">,</span>  <span class="c1"># 1000mg per day - 3/12 months</span>
+                    <span class="s1">&#39;phenytoin_3_mnths&#39;</span><span class="p">:</span> <span class="mi">27_393</span><span class="p">,</span>  <span class="s1">&#39;phenytoin_12_mnths&#39;</span><span class="p">:</span> <span class="mi">109_575</span><span class="p">}</span>  <span class="c1"># 300mg per day - 3/12 months</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">({</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes</span><span class="p">[</span><span class="n">best_available_medicine</span><span class="p">]:</span>
+                                  <span class="n">dose</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">best_available_medicine</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">fu_mnths</span><span class="si">}</span><span class="s1">_mnths&#39;</span><span class="p">]})</span>
 
             <span class="c1"># Reset counter of &quot;failed attempts&quot; and put the appointment for the next occurrence to the usual</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_counter_of_failed_attempts_due_to_unavailable_medicines</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_DEFAULT_APPT_FOOTPRINT</span>
 
-            <span class="c1"># Schedule a reoccurrence of this follow-up in 3 months if ep_seiz_stat == &#39;3&#39;,</span>
-            <span class="c1"># else, schedule this reoccurrence of it in 1 year (i.e., if ep_seiz_stat == &#39;2&#39;)</span>
+            <span class="c1"># Schedule follow-up</span>
             <span class="n">hs</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
                 <span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
-                <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">3</span> <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ep_seiz_stat&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;3&#39;</span> <span class="k">else</span> <span class="mi">12</span><span class="p">),</span>
+                <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="n">fu_mnths</span><span class="p">),</span>
                 <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                 <span class="n">priority</span><span class="o">=</span><span class="mi">0</span>
             <span class="p">)</span>
@@ -865,7 +890,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on May 27, 2024.
+      <span class="lastupdated">Last updated on Aug 02, 2024.
       </span></p>
   </div>
 

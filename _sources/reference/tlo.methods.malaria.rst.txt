@@ -6,7 +6,7 @@ tlo.methods.malaria module
 
 .. autoclass:: Malaria
 
-     Bases: :class:`tlo.core.Module`
+     Bases: :class:`tlo.core.Module`, :class:`tlo.methods.hsi_generic_first_appts.GenericFirstAppointmentsMixin`
 
 
      **PARAMETERS:**
@@ -126,6 +126,15 @@ tlo.methods.malaria module
         * - prob_of_treatment_success
           - REAL
           - probability that treatment will clear malaria symptoms
+        * - type_of_scaleup
+          - STRING
+          - argument to determine type scale-up of program which will be implemented, can be 'none', 'target' or 'max'
+        * - scaleup_start_year
+          - INT
+          - the year when the scale-up starts (it will occur on 1st January of that year)
+        * - scaleup_parameters
+          - DATA_FRAME
+          - the parameters and values changed in scenario analysis
 
 
      **PROPERTIES:**
@@ -139,7 +148,7 @@ tlo.methods.malaria module
           - Description
         * - ma_is_infected
           - BOOL
-          - Current status of malaria
+          - Current status of malaria, infected with malaria parasitaemia
         * - ma_date_infected
           - DATE
           - Date of latest infection
@@ -181,17 +190,15 @@ tlo.methods.malaria module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'Hiv', 'Tb'}
+     CAUSES_OF_DEATH : {'Malaria': <tlo.methods.causes.Cause object at 0x12a42ce50>}
 
-     CAUSES_OF_DEATH : {'Malaria': <tlo.methods.causes.Cause object at 0x12e0e7890>}
+     CAUSES_OF_DISABILITY : {'Malaria': <tlo.methods.causes.Cause object at 0x12a42c1d0>}
 
-     CAUSES_OF_DISABILITY : {'Malaria': <tlo.methods.causes.Cause object at 0x12e0e6d90>}
+     INIT_DEPENDENCIES : {'Demography', 'HealthSystem', 'SymptomManager', 'Contraception'}
 
-     INIT_DEPENDENCIES : {'Contraception', 'HealthSystem', 'Demography', 'SymptomManager'}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>}
 
-     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHSYSTEM: 3>}
-
-     OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
+     OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden', 'Hiv'}
 
      **Functions (defined or overridden in class Malaria):**
 
@@ -201,6 +208,8 @@ tlo.methods.malaria module
 
      .. automethod:: pre_initialise_population
 
+     .. automethod:: _build_linear_models
+
      .. automethod:: initialise_population
 
      .. automethod:: malaria_poll2
@@ -208,6 +217,8 @@ tlo.methods.malaria module
      .. automethod:: general_population_rdt_scheduler
 
      .. automethod:: initialise_simulation
+
+     .. automethod:: update_parameters_for_program_scaleup
 
      .. automethod:: on_birth
 
@@ -237,6 +248,29 @@ tlo.methods.malaria module
      __annotations__ : {}
 
      **Functions (defined or overridden in class MalariaPollingEventDistrict):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: MalariaScaleUpEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
+     **Functions (defined or overridden in class MalariaScaleUpEvent):**
 
      .. automethod:: __init__
 

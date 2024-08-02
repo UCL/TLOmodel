@@ -100,7 +100,8 @@ HealthSeekingBehaviour
 Hiv
 ***
 
-* ``Prevention_Circumcision`` at facility level 1a with appointment footprint: ``MaleCirc``.
+* ``PalliativeCare`` at facility level 2 with appointment footprint:  and bed days footprint: ``general_bed`` (17 days).
+* ``Prevention_Circumcision`` at facility level 1b with appointment footprint: ``MaleCirc``.
 * ``Prevention_Infant`` at facility level 1a with appointment footprint: ``Peds``, ``VCTNegative``.
 * ``Prevention_Prep`` at facility level 1a with appointment footprint: ``PharmDispensing``, ``VCTNegative``.
 * ``Test`` at facility level 1a with appointment footprint: ``VCTNegative``.
@@ -195,6 +196,7 @@ Stunting
 Tb
 **
 
+* ``PalliativeCare`` at facility level 2 with appointment footprint:  and bed days footprint: ``general_bed`` (8 days).
 * ``Prevention_Ipt`` at facility level 1a with appointment footprint: ``Over5OPD``.
 * ``Test_Clinical`` at facility level 1a with appointment footprint: ``Under5OPD``.
 * ``Test_FollowUp`` at facility level 1a with appointment footprint: ``TBFollowUp``.

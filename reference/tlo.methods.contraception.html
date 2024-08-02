@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.contraception module &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
+  <title>tlo.methods.contraception module &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -17,7 +17,7 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../_static/documentation_options.js?v=f3d69a25"></script>
         <script src="../_static/doctools.js?v=9a2dae69"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -247,8 +247,8 @@ Calibration is done in two stages:
 <p>INIT_DEPENDENCIES : {‘Demography’}</p>
 <p>METADATA : {}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthSystem’}</p>
-<p>all_contraception_states : {‘other_traditional’, ‘female_sterilization’, ‘IUD’, ‘withdrawal’, ‘injections’, ‘male_condom’, ‘periodic_abstinence’, ‘not_using’, ‘pill’, ‘implant’, ‘other_modern’}</p>
-<p>contraceptives_initiated_with_additional_items : {‘female_sterilization’, ‘IUD’, ‘pill’, ‘implant’, ‘injections’}</p>
+<p>all_contraception_states : {‘IUD’, ‘male_condom’, ‘pill’, ‘other_modern’, ‘not_using’, ‘injections’, ‘implant’, ‘withdrawal’, ‘female_sterilization’, ‘other_traditional’, ‘periodic_abstinence’}</p>
+<p>contraceptives_initiated_with_additional_items : {‘IUD’, ‘implant’, ‘pill’, ‘female_sterilization’, ‘injections’}</p>
 <p><strong>Functions (defined or overridden in class Contraception):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.contraception.Contraception.__init__">
@@ -529,7 +529,7 @@ method fails).</p>
 between contraceptives.</p>
 <p>Bases: <a class="reference internal" href="tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event" title="tlo.methods.hsi_event.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_event.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
-<p>EXPECTED_APPT_FOOTPRINT : &lt;property object at 0x12dfc19e0&gt;</p>
+<p>EXPECTED_APPT_FOOTPRINT : &lt;property object at 0x12a7228e0&gt;</p>
 <p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class HSI_Contraception_FamilyPlanningAppt):</strong></p>
 <dl class="py method">
@@ -803,7 +803,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on May 27, 2024.
+      <span class="lastupdated">Last updated on Aug 02, 2024.
       </span></p>
   </div>
 

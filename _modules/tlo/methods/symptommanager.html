@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.symptommanager &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
+  <title>tlo.methods.symptommanager &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
@@ -16,7 +16,7 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../../../_static/documentation_options.js?v=f3d69a25"></script>
         <script src="../../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -100,9 +100,11 @@
 <span class="sd">* The probability of spurious symptoms is not informed by data.</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
@@ -111,6 +113,9 @@
 <span class="kn">from</span> <span class="nn">tlo.events</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">,</span> <span class="n">RegularEvent</span>
 <span class="kn">from</span> <span class="nn">tlo.methods</span> <span class="kn">import</span> <span class="n">Metadata</span>
 <span class="kn">from</span> <span class="nn">tlo.util</span> <span class="kn">import</span> <span class="n">BitsetHandler</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">tlo.population</span> <span class="kn">import</span> <span class="n">IndividualProperties</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
@@ -380,7 +385,8 @@
         <span class="n">SymptomManager</span><span class="o">.</span><span class="n">PROPERTIES</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">symptom_name</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">symptom_names</span><span class="p">):</span>
             <span class="n">symptom_column_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_column_name_for_symptom</span><span class="p">(</span><span class="n">symptom_name</span><span class="p">)</span>
-            <span class="n">SymptomManager</span><span class="o">.</span><span class="n">PROPERTIES</span><span class="p">[</span><span class="n">symptom_column_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">BITSET</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;Presence of symptom </span><span class="si">{</span><span class="n">symptom_name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span></div>
+            <span class="n">SymptomManager</span><span class="o">.</span><span class="n">PROPERTIES</span><span class="p">[</span><span class="n">symptom_column_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">BITSET</span><span class="p">,</span>
+                                                                      <span class="sa">f</span><span class="s1">&#39;Presence of symptom </span><span class="si">{</span><span class="n">symptom_name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SymptomManager.initialise_population">
@@ -588,33 +594,81 @@
 
 <div class="viewcode-block" id="SymptomManager.has_what">
 <a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.has_what">[docs]</a>
-    <span class="k">def</span> <span class="nf">has_what</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">disease_module</span><span class="p">:</span> <span class="n">Module</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">has_what</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">person_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">individual_details</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">IndividualProperties</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">disease_module</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Module</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is a helper function that will give a list of strings for the symptoms that a _single_ person</span>
 <span class="sd">        is currently experiencing.</span>
-<span class="sd">        Optionally can specify disease_module_name to limit to the symptoms caused by that disease module</span>
 
-<span class="sd">        :param person_id: the person_of of interest</span>
-<span class="sd">        :param disease_module: (optional) disease module of interest</span>
-<span class="sd">        :return: list of strings for the symptoms that are currently being experienced</span>
+<span class="sd">        If working in a `tlo.population.IndividualProperties` context, one can pass the context object</span>
+<span class="sd">        instead of supplying the person&#39;s DataFrame index.</span>
+<span class="sd">        Note that at least one of these inputs must be passed as a keyword argument however.</span>
+<span class="sd">        In the event that both arguments are passed, the individual_details argument takes precedence over the person_id.</span>
+
+<span class="sd">        Optionally can specify disease_module_name to limit to the symptoms caused by that disease module.</span>
+
+<span class="sd">        :param person_id: the person_of of interest.</span>
+<span class="sd">        :param individual_details: `tlo.population.IndividualProperties` object for the person of interest.</span>
+<span class="sd">        :param disease_module: (optional) disease module of interest.</span>
+<span class="sd">        :return: list of strings for the symptoms that are currently being experienced.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="n">disease_module</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">recognised_module_names</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">disease_module</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="kc">True</span>
+        <span class="p">),</span> <span class="s2">&quot;Disease Module Name is not recognised&quot;</span>
 
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">)),</span> <span class="s1">&#39;person_id must be a single integer for one particular person&#39;</span>
+        <span class="k">if</span> <span class="n">individual_details</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># We are working in an IndividualDetails context, avoid lookups to the</span>
+            <span class="c1"># population DataFrame as we have this context stored already.</span>
+            <span class="k">assert</span> <span class="n">individual_details</span><span class="p">[</span><span class="s2">&quot;is_alive&quot;</span><span class="p">],</span> <span class="s2">&quot;The person is not alive&quot;</span>
 
-        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
-        <span class="k">assert</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;is_alive&#39;</span><span class="p">],</span> <span class="s2">&quot;The person is not alive&quot;</span>
-
-        <span class="k">if</span> <span class="n">disease_module</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="n">disease_module</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">recognised_module_names</span><span class="p">),</span> \
-                <span class="s2">&quot;Disease Module Name is not recognised&quot;</span>
-            <span class="n">sy_columns</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">get_column_name_for_symptom</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">symptom_names</span><span class="p">]</span>
-            <span class="n">person_has</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bsh</span><span class="o">.</span><span class="n">has</span><span class="p">(</span>
-                <span class="p">[</span><span class="n">person_id</span><span class="p">],</span> <span class="n">disease_module</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">first</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">sy_columns</span>
-            <span class="p">)</span>
-            <span class="k">return</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">symptom_names</span> <span class="k">if</span> <span class="n">person_has</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;sy_</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]]</span>
+            <span class="k">if</span> <span class="n">disease_module</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">int_repr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bsh</span><span class="o">.</span><span class="n">_element_to_int_map</span><span class="p">[</span><span class="n">disease_module</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+                <span class="k">return</span> <span class="p">[</span>
+                    <span class="n">symptom</span>
+                    <span class="k">for</span> <span class="n">symptom</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">symptom_names</span>
+                    <span class="k">if</span> <span class="n">individual_details</span><span class="p">[</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">bsh</span><span class="o">.</span><span class="n">_get_columns</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_column_name_for_symptom</span><span class="p">(</span><span class="n">symptom</span><span class="p">))</span>
+                    <span class="p">]</span>
+                    <span class="o">&amp;</span> <span class="n">int_repr</span>
+                    <span class="o">!=</span> <span class="mi">0</span>
+                <span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">[</span>
+                    <span class="n">symptom</span>
+                    <span class="k">for</span> <span class="n">symptom</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">symptom_names</span>
+                    <span class="k">if</span> <span class="n">individual_details</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">get_column_name_for_symptom</span><span class="p">(</span><span class="n">symptom</span><span class="p">)]</span> <span class="o">&gt;</span> <span class="mi">0</span>
+                <span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">symptom_cols</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;sy_</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">symptom_names</span><span class="p">]]</span>
-            <span class="k">return</span> <span class="n">symptom_cols</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">symptom_cols</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">removeprefix</span><span class="p">(</span><span class="s2">&quot;sy_&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span></div>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span>
+                <span class="n">person_id</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">)</span>
+            <span class="p">),</span> <span class="s2">&quot;person_id must be a single integer for one particular person&quot;</span>
+
+            <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
+            <span class="k">assert</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;is_alive&quot;</span><span class="p">],</span> <span class="s2">&quot;The person is not alive&quot;</span>
+
+            <span class="k">if</span> <span class="n">disease_module</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">sy_columns</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">get_column_name_for_symptom</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">symptom_names</span>
+                <span class="p">]</span>
+                <span class="n">person_has</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bsh</span><span class="o">.</span><span class="n">has</span><span class="p">(</span>
+                    <span class="p">[</span><span class="n">person_id</span><span class="p">],</span> <span class="n">disease_module</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">first</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">sy_columns</span>
+                <span class="p">)</span>
+                <span class="k">return</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">symptom_names</span> <span class="k">if</span> <span class="n">person_has</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;sy_</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">symptom_cols</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
+                    <span class="n">person_id</span><span class="p">,</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;sy_</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">symptom_names</span><span class="p">]</span>
+                <span class="p">]</span>
+                <span class="k">return</span> <span class="p">(</span>
+                    <span class="n">symptom_cols</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">symptom_cols</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+                    <span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">removeprefix</span><span class="p">(</span><span class="s2">&quot;sy_&quot;</span><span class="p">)</span>
+                    <span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
+                <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SymptomManager.have_what">
@@ -912,7 +966,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on May 27, 2024.
+      <span class="lastupdated">Last updated on Aug 02, 2024.
       </span></p>
   </div>
 

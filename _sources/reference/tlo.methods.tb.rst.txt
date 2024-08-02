@@ -39,9 +39,6 @@ tlo.methods.tb module
         * - rr_tb_child
           - REAL
           - relative risk of tb infection if under 16 years of age
-        * - rr_bcg_inf
-          - REAL
-          - relative risk of tb infection with bcg vaccination
         * - monthly_prob_relapse_tx_complete
           - REAL
           - monthly probability of relapse once treatment complete
@@ -54,6 +51,9 @@ tlo.methods.tb module
         * - rr_relapse_hiv
           - REAL
           - relative risk of relapse for HIV-positive people
+        * - rr_relapse_diabetes
+          - REAL
+          - relative risk of relapse for people with diabetes (treated/untreated)
         * - scaling_factor_WHO
           - REAL
           - scaling factor applied to WHO estimates to account for the impact of interventions in place
@@ -81,6 +81,9 @@ tlo.methods.tb module
         * - death_rate_adult_treated
           - REAL
           - probability of death in adult aged >=15 years with treated tb
+        * - rr_death_diabetes
+          - REAL
+          - additional risk of death if person has diabetes (treated/untreated)
         * - rr_tb_bcg
           - REAL
           - relative risk of progression to active disease for children with BCG vaccine
@@ -99,9 +102,9 @@ tlo.methods.tb module
         * - rr_tb_obese
           - REAL
           - relative risk of progression to active disease if obese
-        * - rr_tb_diabetes1
+        * - rr_tb_diabetes
           - REAL
-          - relative risk of progression to active disease with type 1 diabetes
+          - relative risk of progression to active disease with any type diabetes
         * - rr_tb_alcohol
           - REAL
           - relative risk of progression to active disease with heavy alcohol use
@@ -174,9 +177,6 @@ tlo.methods.tb module
         * - prob_tx_success_5_14
           - REAL
           - Probability of treatment success for children aged 5-14 years
-        * - prob_tx_success_shorter
-          - REAL
-          - Probability of treatment success for children aged <16 years on shorter regimen
         * - rate_testing_general_pop
           - REAL
           - rate of screening / testing per month in general population
@@ -192,9 +192,6 @@ tlo.methods.tb module
         * - mdr_treatment_length
           - REAL
           - length of treatment for mdr-tb in months
-        * - child_shorter_treatment_length
-          - REAL
-          - length of treatment for shorter paediatric regimen in months
         * - prob_retained_ipt_6_months
           - REAL
           - probability of being retained on IPT every 6 months if still eligible
@@ -204,27 +201,30 @@ tlo.methods.tb module
         * - ipt_start_date
           - INT
           - year from which IPT is available for paediatric contacts of diagnosed active TB cases
-        * - scenario
-          - INT
-          - integer value labelling the scenario to be run: default is 0
-        * - scenario_start_date
-          - DATE
-          - date from which different scenarios are run
         * - first_line_test
           - STRING
           - name of first test to be used for TB diagnosis
         * - second_line_test
           - STRING
           - name of second test to be used for TB diagnosis
-        * - probability_access_to_xray
-          - REAL
-          - probability a person will have access to chest x-ray
-        * - prob_tb_referral_in_generic_hsi
-          - REAL
-          - probability of referral to TB screening HSI if presenting with TB-related symptoms
+        * - tb_healthseekingbehaviour_cap
+          - INT
+          - number of repeat visits assumed for healthcare services
+        * - data_end
+          - INT
+          - last year for which data are available
+        * - length_of_inpatient_stay_if_terminal
+          - LIST
+          - length of inpatient stay for end-of-life TB patients
+        * - type_of_scaleup
+          - STRING
+          - argument to determine type scale-up of program which will be implemented, can be 'none', 'target' or 'max'
+        * - scaleup_start_year
+          - INT
+          - the year when the scale-up starts (it will occur on 1st January of that year)
         * - scaleup_parameters
           - DATA_FRAME
-          - list of parameters and values changed in scenario analysis
+          - the parameters and values changed in scenario analysis
 
 
      **PROPERTIES:**
@@ -274,7 +274,7 @@ tlo.methods.tb module
           - date most recent tb treatment started
         * - tb_treatment_regimen
           - CATEGORICAL
-          - current tb treatment regimen.  Possible values are: [none, tb_tx_adult, tb_tx_child, tb_tx_child_shorter, tb_retx_adult, tb_retx_child, tb_mdrtx, ]
+          - current tb treatment regimen.  Possible values are: [none, tb_tx_adult, tb_tx_child, tb_retx_adult, tb_retx_child, tb_mdrtx, ]
         * - tb_ever_treated
           - BOOL
           - if ever treated for active tb
@@ -298,17 +298,17 @@ tlo.methods.tb module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'TB': <tlo.methods.causes.Cause object at 0x11cbb9a90>, 'AIDS_TB': <tlo.methods.causes.Cause object at 0x11cbb9590>}
+     CAUSES_OF_DEATH : {'TB': <tlo.methods.causes.Cause object at 0x119293690>, 'AIDS_TB': <tlo.methods.causes.Cause object at 0x119291310>}
 
-     CAUSES_OF_DISABILITY : {'TB': <tlo.methods.causes.Cause object at 0x11cbb9dd0>}
+     CAUSES_OF_DISABILITY : {'TB': <tlo.methods.causes.Cause object at 0x119291810>}
 
-     INIT_DEPENDENCIES : {'HealthSystem', 'Lifestyle', 'SymptomManager', 'Epi', 'Demography'}
+     INIT_DEPENDENCIES : {'HealthSystem', 'Epi', 'Demography', 'SymptomManager', 'Lifestyle'}
 
-     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>}
 
-     OPTIONAL_INIT_DEPENDENCIES : {'Hiv', 'HealthBurden'}
+     OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden', 'Hiv'}
 
-     SYMPTOMS : {'fatigue', 'night_sweats'}
+     SYMPTOMS : {'night_sweats', 'fatigue'}
 
      **Functions (defined or overridden in class Tb):**
 
@@ -317,6 +317,8 @@ tlo.methods.tb module
      .. automethod:: read_parameters
 
      .. automethod:: pre_initialise_population
+
+     .. automethod:: _build_linear_models
 
      .. automethod:: send_for_screening_general
 
@@ -327,6 +329,8 @@ tlo.methods.tb module
      .. automethod:: initialise_population
 
      .. automethod:: initialise_simulation
+
+     .. automethod:: update_parameters_for_program_scaleup
 
      .. automethod:: on_birth
 
@@ -343,29 +347,6 @@ tlo.methods.tb module
      .. automethod:: end_treatment
 
      .. automethod:: check_config_of_properties
-
-
-
-
-
-
-
-
-.. autoclass:: ScenarioSetupEvent
-
-     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
-
-
-
-     **Class attributes:**
-
-     __annotations__ : {}
-
-     **Functions (defined or overridden in class ScenarioSetupEvent):**
-
-     .. automethod:: __init__
-
-     .. automethod:: apply
 
 
 
@@ -397,7 +378,7 @@ tlo.methods.tb module
 
 
 
-.. autoclass:: TbTreatmentAndRelapseEvents
+.. autoclass:: TbRegularEvents
 
      Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
@@ -407,7 +388,30 @@ tlo.methods.tb module
 
      __annotations__ : {}
 
-     **Functions (defined or overridden in class TbTreatmentAndRelapseEvents):**
+     **Functions (defined or overridden in class TbRegularEvents):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: TbScaleUpEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
+     **Functions (defined or overridden in class TbScaleUpEvent):**
 
      .. automethod:: __init__
 
@@ -566,7 +570,7 @@ tlo.methods.tb module
 
      **Class attributes:**
 
-     EXPECTED_APPT_FOOTPRINT : <property object at 0x11cb5d850>
+     EXPECTED_APPT_FOOTPRINT : <property object at 0x119206c50>
 
      __annotations__ : {}
 
@@ -575,8 +579,6 @@ tlo.methods.tb module
      .. automethod:: __init__
 
      .. automethod:: apply
-
-     .. automethod:: post_apply_hook
 
      .. automethod:: select_treatment
 
@@ -633,12 +635,53 @@ tlo.methods.tb module
 
 
 
+.. autoclass:: HSI_Tb_EndOfLifeCare
+
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
+     **Functions (defined or overridden in class HSI_Tb_EndOfLifeCare):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
 .. autoclass:: Tb_DecisionToContinueIPT
 
      Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
 
      **Functions (defined or overridden in class Tb_DecisionToContinueIPT):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: TbDecideDeathEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class TbDecideDeathEvent):**
 
      .. automethod:: __init__
 

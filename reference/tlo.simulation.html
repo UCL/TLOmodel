@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.simulation module &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
+  <title>tlo.simulation module &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -17,7 +17,7 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../_static/documentation_options.js?v=f3d69a25"></script>
         <script src="../_static/doctools.js?v=9a2dae69"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -114,28 +114,6 @@ Note that individual modules also have their own random number generator
 with independent state.</p>
 </dd>
 </dl>
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.simulation.Simulation.configure_logging">
-<span class="sig-name descname"><span class="pre">configure_logging</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'./outputs'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">custom_levels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suppress_stdout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/simulation.html#Simulation.configure_logging"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.simulation.Simulation.configure_logging" title="Link to this definition"></a></dt>
-<dd><p>Configure logging, can write logging to a logfile in addition the default of stdout.</p>
-<p>Minimum custom levels for each logger can be specified for filtering out messages</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>filename</strong> – Prefix for logfile name, final logfile will have a datetime appended</p></li>
-<li><p><strong>directory</strong> – Path to output directory, default value is the outputs folder.</p></li>
-<li><p><strong>custom_levels</strong> – dictionary to set logging levels, ‘*’ can be used as a key for all registered modules.
-This is likely to be used to disable all disease modules, and then enable one of interest
-e.g. <code class="docutils literal notranslate"><span class="pre">{'*':</span> <span class="pre">logging.CRITICAL</span> <span class="pre">'tlo.methods.hiv':</span> <span class="pre">logging.INFO}</span></code></p></li>
-<li><p><strong>suppress_stdout</strong> – If True, suppresses logging to standard output stream (default is False)</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Path of the log file if a filename has been given.</p>
-</dd>
-</dl>
-</dd></dl>
-
 <dl class="py property">
 <dt class="sig sig-object py" id="tlo.simulation.Simulation.log_filepath">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">log_filepath</span></span><a class="headerlink" href="#tlo.simulation.Simulation.log_filepath" title="Link to this definition"></a></dt>
@@ -296,7 +274,7 @@ all modules to initialise the child’s properties.</p>
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on May 27, 2024.
+      <span class="lastupdated">Last updated on Aug 02, 2024.
       </span></p>
   </div>
 

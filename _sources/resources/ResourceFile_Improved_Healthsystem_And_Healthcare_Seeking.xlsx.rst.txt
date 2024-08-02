@@ -132,8 +132,8 @@ main
  118  PregnancySupervisor         prob\_late\_initiation\_anc4                                                                                            [0.3, 0.29]                                                                       Remain
  119  PregnancySupervisor         prob\_early\_initiation\_anc\_below4                                                                                    [0.115, 0.101]                                                                    Remain
  120  PregnancySupervisor         prob\_early\_anc\_at\_facility\_level\_1\_2                                                                             [[0.5, 0.5], [0.5, 0.5]]                                                          Remain
- 121  Schisto                     delay\_till\_hsi\_a\_repeated                                                                                           0.9999
- 122  Schisto                     delay\_till\_hsi\_b\_repeated                                                                                           0.9999
+ 121  Schisto                     delay\_till\_hsi\_a\_repeated                                                                                           1.0000001
+ 122  Schisto                     delay\_till\_hsi\_b\_repeated                                                                                           1.0000001
  123  Schisto                     prob\_sent\_to\_lab\_test\_children                                                   0.9999
  124  Schisto                     prob\_sent\_to\_lab\_test\_adults                                                     0.9999
  125  Schisto                     MDA\_coverage\_historical                                                             #MDA\_historical\_Coverage!A1                                                                                       100% for 2010 onwards, incl. PSAC, SAC, Adults
@@ -143,8 +143,7 @@ main
  129  Tb                          rate\_testing\_active\_tb                                                                                               #NTP2019!A1                                                                       100% for 2010 onwards
  130  Tb                          sens\_clinical                                                                        0.9999
  131  Tb                          spec\_clinical                                                                        0.9999
- 132  Tb                          rate\_testing\_general\_pop                                                           0.9999                            0.9999
- 133  Tb                          prob\_retained\_ipt\_6\_months                                                                                          0.9999
+ 132  Tb                          prob\_retained\_ipt\_6\_months                                                                                          0.9999
 ====  ==========================  ====================================================================================  ================================  ================================================================================  ============================================================================================================================================
 
 ever_stroke
@@ -308,15 +307,16 @@ hypertension_testing
   54  rr\_chronic\_lower\_back\_pain                             1
   55  rr\_chronic\_ischemic\_heart\_disease                      1
   56  rr\_cancers                                                1
-  57  rr\_ever\_stroke                                           1
-  58  rr\_ever\_heart\_attack                                    1
-  59  rr\_diabetes\_on\_medication                               1
-  60  rr\_hypertension\_on\_medication                           1
-  61  rr\_chronic\_kidney\_disease\_on\_medication               1
-  62  rr\_chronic\_lower\_back\_pain\_on\_medication             1
-  63  rr\_chronic\_ischemic\_heart\_disease\_on\_medication      1
-  64  rr\_stroke\_on\_medication                                 1
-  65  rr\_heart\_attack\_on\_medication                          1
+  57  rr\_hiv                                                    1
+  58  rr\_ever\_stroke                                           1
+  59  rr\_ever\_heart\_attack                                    1
+  60  rr\_diabetes\_on\_medication                               1
+  61  rr\_hypertension\_on\_medication                           1
+  62  rr\_chronic\_kidney\_disease\_on\_medication               1
+  63  rr\_chronic\_lower\_back\_pain\_on\_medication             1
+  64  rr\_chronic\_ischemic\_heart\_disease\_on\_medication      1
+  65  rr\_stroke\_on\_medication                                 1
+  66  rr\_heart\_attack\_on\_medication                          1
 ====  =====================================================  =======
 
 MoH_numbers_tests
@@ -649,6 +649,8 @@ NTP2019
    7    2017  95.0001                                              99.9999  86                           9.7            39.1                      85                              55                                  35.0001                       61.0001
    8    2018  88.0001                                              99.9999  87.2                         8.6            38.5                      126                             68.8                                                              57.0001
    9    2019  92.0001                                              99.9999                                              35.5                      104                                                                                               57.0001
+  10    2020  76                                                   99.9999  89                           8              45                        97                              76                                                                48
+  11    2021                                                       99.9999                                                                                                                                                                          41
 ====  ======  =====================================  =====================  ===========================  =============  ========================  ==============================  ==================================  ============================  =====================================
 
 WHO_TestData2023

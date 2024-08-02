@@ -15,19 +15,17 @@ tlo.methods.hsi_event module
 
      _received_info_about_bed_days : None
 
-     bed_days_allocated_to_this_event : <property object at 0x11c6d92b0>
+     bed_days_allocated_to_this_event : <property object at 0x118f002c0>
 
      expected_time_requests : {}
 
      facility_info : None
 
-     healthcare_system : <property object at 0x11ca3b1f0>
+     healthcare_system : <property object at 0x118f00360>
 
-     is_all_declared_equipment_available : <property object at 0x11ca3b240>
+     is_all_declared_equipment_available : <property object at 0x118f003b0>
 
-     sim : <property object at 0x11ca3b1a0>
-
-     target_is_alive : <property object at 0x11ca3b150>
+     sim : <property object at 0x118f00310>
 
      **Functions (defined or overridden in class HSI_Event):**
 

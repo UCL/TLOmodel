@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.stunting module &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
+  <title>tlo.methods.stunting module &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -17,7 +17,7 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../_static/documentation_options.js?v=f3d69a25"></script>
         <script src="../_static/doctools.js?v=9a2dae69"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -105,7 +105,7 @@ if they have any stunting they are provided with an intervention - <cite>HSI_Stu
 <dt class="sig sig-object py" id="tlo.methods.stunting.Stunting">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Stunting</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/stunting.html#Stunting"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.stunting.Stunting" title="Link to this definition"></a></dt>
 <dd><p>This is the disease module for Stunting</p>
-<p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.core.Module</span></code></a></p>
+<p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.core.Module</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_generic_first_appts.GenericFirstAppointmentsMixin</span></code></p>
 <p><strong>PARAMETERS:</strong></p>
 <table class="docutils align-default">
 <colgroup>
@@ -267,7 +267,7 @@ if they have any stunting they are provided with an intervention - <cite>HSI_Stu
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>INIT_DEPENDENCIES : {‘Diarrhoea’, ‘NewbornOutcomes’, ‘Wasting’, ‘Hiv’, ‘Demography’}</p>
+<p>INIT_DEPENDENCIES : {‘Wasting’, ‘Hiv’, ‘Demography’, ‘NewbornOutcomes’, ‘Diarrhoea’}</p>
 <p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
 <p><strong>Functions (defined or overridden in class Stunting):</strong></p>
 <dl class="py method">
@@ -348,49 +348,38 @@ of the person immediately.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.stunting.Stunting.do_at_generic_first_appt">
-<span class="sig-name descname"><span class="pre">do_at_generic_first_appt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">patient_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patient_details</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="tlo.population.html#tlo.population.PatientDetails" title="tlo.population.PatientDetails"><span class="pre">PatientDetails</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">IndividualPropertyUpdates</span></span></span><a class="reference internal" href="../_modules/tlo/methods/stunting.html#Stunting.do_at_generic_first_appt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.stunting.Stunting.do_at_generic_first_appt" title="Link to this definition"></a></dt>
-<dd><p>Actions to be take during a NON-emergency generic HSI.</p>
-<p>Derived classes should overwrite this method so that they are
-compatible with the HealthSystem module, and can schedule HSI
-events when a patient presents symptoms indicative of the
-corresponding illness or condition.</p>
-<p>When overwriting, arguments that are not required can be left out
-of the definition.
-If done so, the method MUST take a <a href="#id1"><span class="problematic" id="id2">**</span></a>kwargs input to avoid errors
-when looping over all disease modules and running their generic
-HSI methods.</p>
-<p>HSI_Events should be scheduled by the Module implementing this
-method using the <code class="xref py py-meth docutils literal notranslate"><span class="pre">Module.healthsystem.schedule_hsi()</span></code> method.
-However, they should not write updates back to the population
-DataFrame in this method - these values should be returned as a
-dictionary as described below:</p>
-<p>The return value of this function should be a dictionary
-containing any changes that need to be made to the individual’s
-row in the population DataFrame.
-Key/value pairs should be the column name and the new value to
-assign to the patient.
-In the event no updates are required; return an object that evaluates
-to False when cast to a bool. Your options are:
-- Omit a return statement and value (preferred).
-- Return an empty dictionary. Use this case when patient details
-might need updating conditionally, on EG patient symptoms or consumable
-availability. In which case, an empty dictionary should be created and
-key-value pairs added to this dictionary as such conditionals are checked.
-If no conditionals are met, the empty dictionary will be returned.
-- Use a return statement with no values (use if the logic of your
-module-specific method necessitates the explicit return).
-- Return None (not recommended, use “return” on its own, as above).</p>
+<span class="sig-name descname"><span class="pre">do_at_generic_first_appt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_properties</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="tlo.population.html#tlo.population.IndividualProperties" title="tlo.population.IndividualProperties"><span class="pre">IndividualProperties</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">schedule_hsi_event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">HSIEventScheduler</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/tlo/methods/stunting.html#Stunting.do_at_generic_first_appt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.stunting.Stunting.do_at_generic_first_appt" title="Link to this definition"></a></dt>
+<dd><p>Actions to take during a non-emergency generic health system interaction (HSI).</p>
+<p>Derived classes should overwrite this method so that they are compatible with
+the <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem" title="tlo.methods.healthsystem.HealthSystem"><code class="xref py py-class docutils literal notranslate"><span class="pre">HealthSystem</span></code></a> module, and can schedule HSI events when a
+individual presents symptoms indicative of the corresponding illness or
+condition.</p>
+<p>When overwriting, arguments that are not required can be left out of the
+definition. If done so, the method <strong>must</strong> take a <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code> input to avoid
+errors when looping over all disease modules and running their generic HSI
+methods.</p>
+<p>HSI events should be scheduled by the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> subclass implementing
+this method using the <code class="docutils literal notranslate"><span class="pre">schedule_hsi_event</span></code> argument.</p>
+<p>Implementations of this method should <strong>not</strong> make any updates to the population
+dataframe directly - if the target individuals properties need to be updated
+this should be performed by updating the <code class="docutils literal notranslate"><span class="pre">individual_properties</span></code> argument.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>patient_id</strong> – Row index (ID) of the individual target of the HSI event in the population DataFrame.</p></li>
-<li><p><strong>patient_details</strong> – Patient details as provided in the population DataFrame.</p></li>
+<li><p><strong>person_id</strong> – Row index (ID) of the individual target of the HSI event in
+the population dataframe.</p></li>
+<li><p><strong>individual_properties</strong> – Properties of individual target as provided in the
+population dataframe. Updates to individual properties may be written to
+this object.</p></li>
 <li><p><strong>symptoms</strong> – List of symptoms the patient is experiencing.</p></li>
-<li><p><strong>diagnosis_function</strong> – A function that can run diagnosis tests based on the patient’s symptoms.</p></li>
-<li><p><strong>consumables_checker</strong> – A function that can query the HealthSystem to check for available consumables.</p></li>
+<li><p><strong>schedule_hsi_event</strong> – A function that can schedule subsequent HSI events.</p></li>
+<li><p><strong>diagnosis_function</strong> – A function that can run diagnosis tests based on the
+patient’s symptoms.</p></li>
+<li><p><strong>consumables_checker</strong> – A function that can query the health system to check
+for available consumables.</p></li>
 <li><p><strong>facility_level</strong> – The level of the facility that the patient presented at.</p></li>
-<li><p><strong>treatment_id</strong> – The treatment id of the HSI event triggering the generic appointment.</p></li>
-<li><p><strong>random_state</strong> – Random number generator to be used when making random choices during event creation.</p></li>
+<li><p><strong>treatment_id</strong> – The treatment id of the HSI event triggering the generic
+appointment.</p></li>
 </ul>
 </dd>
 </dl>
@@ -570,7 +559,7 @@ constructor, but may also take further keyword arguments.</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ALTERNATIVE_TO : {‘Diarrhoea’, ‘Hiv’, ‘Wasting’}</p>
+<p>ALTERNATIVE_TO : {‘Diarrhoea’, ‘Wasting’, ‘Hiv’}</p>
 <p>INIT_DEPENDENCIES : {‘Demography’}</p>
 <p><strong>Functions (defined or overridden in class StuntingPropertiesOfOtherModules):</strong></p>
 <dl class="py method">
@@ -658,7 +647,7 @@ It is a good place to add initial events to the event queue.</p>
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on May 27, 2024.
+      <span class="lastupdated">Last updated on Aug 02, 2024.
       </span></p>
   </div>
 

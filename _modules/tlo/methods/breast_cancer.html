@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.breast_cancer &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
+  <title>tlo.methods.breast_cancer &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
@@ -16,7 +16,7 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../../../_static/documentation_options.js?v=f3d69a25"></script>
         <script src="../../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -101,7 +101,6 @@
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
 <span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">DateOffset</span><span class="p">,</span> <span class="n">Module</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">Property</span><span class="p">,</span> <span class="n">Types</span><span class="p">,</span> <span class="n">logging</span>
-<span class="kn">from</span> <span class="nn">tlo.core</span> <span class="kn">import</span> <span class="n">IndividualPropertyUpdates</span>
 <span class="kn">from</span> <span class="nn">tlo.events</span> <span class="kn">import</span> <span class="n">IndividualScopeEventMixin</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">,</span> <span class="n">RegularEvent</span>
 <span class="kn">from</span> <span class="nn">tlo.lm</span> <span class="kn">import</span> <span class="n">LinearModel</span><span class="p">,</span> <span class="n">LinearModelType</span><span class="p">,</span> <span class="n">Predictor</span>
 <span class="kn">from</span> <span class="nn">tlo.methods</span> <span class="kn">import</span> <span class="n">Metadata</span>
@@ -110,10 +109,12 @@
 <span class="kn">from</span> <span class="nn">tlo.methods.demography</span> <span class="kn">import</span> <span class="n">InstantaneousDeath</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.dxmanager</span> <span class="kn">import</span> <span class="n">DxTest</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.hsi_event</span> <span class="kn">import</span> <span class="n">HSI_Event</span>
+<span class="kn">from</span> <span class="nn">tlo.methods.hsi_generic_first_appts</span> <span class="kn">import</span> <span class="n">GenericFirstAppointmentsMixin</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.symptommanager</span> <span class="kn">import</span> <span class="n">Symptom</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">tlo.population</span> <span class="kn">import</span> <span class="n">PatientDetails</span>
+    <span class="kn">from</span> <span class="nn">tlo.methods.hsi_generic_first_appts</span> <span class="kn">import</span> <span class="n">HSIEventScheduler</span>
+    <span class="kn">from</span> <span class="nn">tlo.population</span> <span class="kn">import</span> <span class="n">IndividualProperties</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
@@ -121,7 +122,7 @@
 
 <div class="viewcode-block" id="BreastCancer">
 <a class="viewcode-back" href="../../../reference/tlo.methods.breast_cancer.html#tlo.methods.breast_cancer.BreastCancer">[docs]</a>
-<span class="k">class</span> <span class="nc">BreastCancer</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">BreastCancer</span><span class="p">(</span><span class="n">Module</span><span class="p">,</span> <span class="n">GenericFirstAppointmentsMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Breast Cancer Disease Module&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="BreastCancer.__init__">
@@ -686,19 +687,20 @@
 <a class="viewcode-back" href="../../../reference/tlo.methods.breast_cancer.html#tlo.methods.breast_cancer.BreastCancer.do_at_generic_first_appt">[docs]</a>
     <span class="k">def</span> <span class="nf">do_at_generic_first_appt</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">patient_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-        <span class="n">patient_details</span><span class="p">:</span> <span class="n">PatientDetails</span><span class="p">,</span>
+        <span class="n">person_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">individual_properties</span><span class="p">:</span> <span class="n">IndividualProperties</span><span class="p">,</span>
         <span class="n">symptoms</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">schedule_hsi_event</span><span class="p">:</span> <span class="n">HSIEventScheduler</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">IndividualPropertyUpdates</span><span class="p">:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># If the patient is not a child and symptoms include breast</span>
         <span class="c1"># lump discernible</span>
-        <span class="k">if</span> <span class="n">patient_details</span><span class="o">.</span><span class="n">age_years</span> <span class="o">&gt;</span> <span class="mi">5</span> <span class="ow">and</span> <span class="s2">&quot;breast_lump_discernible&quot;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">individual_properties</span><span class="p">[</span><span class="s2">&quot;age_years&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">5</span> <span class="ow">and</span> <span class="s2">&quot;breast_lump_discernible&quot;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">:</span>
             <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_BreastCancer_Investigation_Following_breast_lump_discernible</span><span class="p">(</span>
-                <span class="n">person_id</span><span class="o">=</span><span class="n">patient_id</span><span class="p">,</span>
+                <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
                 <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
             <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">healthsystem</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></div>
+            <span class="n">schedule_hsi_event</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></div>
 </div>
 
 
@@ -815,7 +817,7 @@
             <span class="k">return</span> <span class="n">hs</span><span class="o">.</span><span class="n">get_blank_appt_footprint</span><span class="p">()</span>
 
         <span class="c1"># Check that this event has been called for someone with the symptom breast_lump_discernible</span>
-        <span class="k">assert</span> <span class="s1">&#39;breast_lump_discernible&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">has_what</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="s1">&#39;breast_lump_discernible&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">has_what</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
 
         <span class="c1"># If the person is already diagnosed, then take no action:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;brc_date_diagnosis&quot;</span><span class="p">]):</span>
@@ -826,11 +828,13 @@
         <span class="c1"># Check consumables to undertake biopsy are available</span>
         <span class="n">cons_avail</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_breast_can</span><span class="p">[</span><span class="s1">&#39;screening_biopsy_core&#39;</span><span class="p">],</span>
                                           <span class="n">optional_item_codes</span><span class="o">=</span>
-                                          <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_breast_can</span><span class="p">[</span><span class="s1">&#39;screening_biopsy_optional&#39;</span><span class="p">])</span>
+                                          <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_breast_can</span><span class="p">[</span>
+                                              <span class="s1">&#39;screening_biopsy_endoscopy_cystoscopy_optional&#39;</span><span class="p">])</span>
 
         <span class="k">if</span> <span class="n">cons_avail</span><span class="p">:</span>
             <span class="c1"># Use a biopsy to diagnose whether the person has breast Cancer</span>
-            <span class="c1"># If consumables are available, run the dx_test representing the biopsy</span>
+            <span class="c1"># If consumables are available, add the used equipment and run the dx_test representing the biopsy</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_equipment</span><span class="p">({</span><span class="s1">&#39;Ultrasound scanning machine&#39;</span><span class="p">,</span> <span class="s1">&#39;Ordinary Microscope&#39;</span><span class="p">})</span>
 
             <span class="n">dx_result</span> <span class="o">=</span> <span class="n">hs</span><span class="o">.</span><span class="n">dx_manager</span><span class="o">.</span><span class="n">run_dx_test</span><span class="p">(</span>
                 <span class="n">dx_tests_to_run</span><span class="o">=</span><span class="s1">&#39;biopsy_for_breast_cancer_given_breast_lump_discernible&#39;</span><span class="p">,</span>
@@ -903,8 +907,6 @@
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">hs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span>
 
-        <span class="c1"># todo: request consumables needed for this</span>
-
         <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;is_alive&#39;</span><span class="p">]:</span>
             <span class="k">return</span> <span class="n">hs</span><span class="o">.</span><span class="n">get_blank_appt_footprint</span><span class="p">()</span>
 
@@ -937,7 +939,9 @@
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">cons_available</span><span class="p">:</span>
-            <span class="c1"># If consumables, treatment will go ahead</span>
+            <span class="c1"># If consumables are available and the treatment will go ahead - add the used equipment</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_equipment</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">healthcare_system</span><span class="o">.</span><span class="n">equipment</span><span class="o">.</span><span class="n">from_pkg_names</span><span class="p">(</span><span class="s1">&#39;Major Surgery&#39;</span><span class="p">))</span>
+
             <span class="c1"># Log the use of adjuvant chemotherapy</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
                 <span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_breast_can</span><span class="p">[</span><span class="s1">&#39;treatment_chemotherapy&#39;</span><span class="p">],</span>
@@ -1063,7 +1067,8 @@
             <span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_breast_can</span><span class="p">[</span><span class="s1">&#39;palliation&#39;</span><span class="p">])</span>
 
         <span class="k">if</span> <span class="n">cons_available</span><span class="p">:</span>
-            <span class="c1"># If consumables are available and the treatment will go ahead</span>
+            <span class="c1"># If consumables are available and the treatment will go ahead - add the used equipment</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_equipment</span><span class="p">({</span><span class="s1">&#39;Infusion pump&#39;</span><span class="p">,</span> <span class="s1">&#39;Drip stand&#39;</span><span class="p">})</span>
 
             <span class="c1"># Record the start of palliative care if this is first appointment</span>
             <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;brc_date_palliative_care&quot;</span><span class="p">]):</span>
@@ -1190,7 +1195,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on May 27, 2024.
+      <span class="lastupdated">Last updated on Aug 02, 2024.
       </span></p>
   </div>
 

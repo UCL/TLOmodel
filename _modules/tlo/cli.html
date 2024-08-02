@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.cli &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
+  <title>tlo.cli &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../_static/theme_overrides.css?v=6ea10ece" />
@@ -16,7 +16,7 @@
   
         <script src="../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../../_static/documentation_options.js?v=f3d69a25"></script>
         <script src="../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -132,17 +132,23 @@
     <span class="n">ctx</span><span class="o">.</span><span class="n">obj</span><span class="p">[</span><span class="s2">&quot;verbose&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">verbose</span>
 
 
-<span class="nd">@cli</span><span class="o">.</span><span class="n">command</span><span class="p">()</span>
+<span class="nd">@cli</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">context_settings</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">ignore_unknown_options</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;scenario_file&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">click</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">exists</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--draw-only&quot;</span><span class="p">,</span> <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Only generate draws; do not run the simulation&quot;</span><span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--draw&quot;</span><span class="p">,</span> <span class="s2">&quot;-d&quot;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--output-dir&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">scenario_run</span><span class="p">(</span><span class="n">scenario_file</span><span class="p">,</span> <span class="n">draw_only</span><span class="p">,</span> <span class="n">draw</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s1">&#39;scenario_args&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">click</span><span class="o">.</span><span class="n">UNPROCESSED</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">scenario_run</span><span class="p">(</span><span class="n">scenario_file</span><span class="p">,</span> <span class="n">draw_only</span><span class="p">,</span> <span class="n">draw</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scenario_args</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Run the specified scenario locally.</span>
 
 <span class="sd">    SCENARIO_FILE is path to file containing a scenario class</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">scenario</span> <span class="o">=</span> <span class="n">load_scenario</span><span class="p">(</span><span class="n">scenario_file</span><span class="p">)</span>
+
+    <span class="c1"># if we have other scenario arguments, parse them</span>
+    <span class="k">if</span> <span class="n">scenario_args</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">scenario</span><span class="o">.</span><span class="n">parse_arguments</span><span class="p">(</span><span class="n">scenario_args</span><span class="p">)</span>
+
     <span class="n">config</span> <span class="o">=</span> <span class="n">scenario</span><span class="o">.</span><span class="n">save_draws</span><span class="p">(</span><span class="n">return_config</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">json_string</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 
@@ -936,7 +942,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on May 27, 2024.
+      <span class="lastupdated">Last updated on Aug 02, 2024.
       </span></p>
   </div>
 

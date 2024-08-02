@@ -6,7 +6,7 @@ tlo.methods.other_adult_cancers module
 
 .. autoclass:: OtherAdultCancer
 
-     Bases: :class:`tlo.core.Module`
+     Bases: :class:`tlo.core.Module`, :class:`tlo.methods.hsi_generic_first_appts.GenericFirstAppointmentsMixin`
 
 
      **PARAMETERS:**
@@ -45,6 +45,9 @@ tlo.methods.other_adult_cancers module
         * - rr_site_confined_agege70
           - REAL
           - rate ratio for site-confined other_adult cancer for age ge 70
+        * - rr_site_confined_hiv
+          - REAL
+          - rate ratio for site-confined other_adult_cancer if infected with HIV
         * - r_local_ln_site_confined_other_adult_ca
           - REAL
           - probabilty per 3 months of local ln other_adult cancer amongst people with site confined
@@ -121,15 +124,15 @@ tlo.methods.other_adult_cancers module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'OtherAdultCancer': <tlo.methods.causes.Cause object at 0x12e08d5d0>}
+     CAUSES_OF_DEATH : {'OtherAdultCancer': <tlo.methods.causes.Cause object at 0x12a81b650>}
 
-     CAUSES_OF_DISABILITY : {'OtherAdultCancer': <tlo.methods.causes.Cause object at 0x12e08fed0>}
+     CAUSES_OF_DISABILITY : {'OtherAdultCancer': <tlo.methods.causes.Cause object at 0x12a685e90>}
 
-     INIT_DEPENDENCIES : {'HealthSystem', 'Demography', 'SymptomManager'}
+     INIT_DEPENDENCIES : {'Demography', 'HealthSystem', 'SymptomManager'}
 
-     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>}
 
-     OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
+     OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden', 'Hiv'}
 
      gbd_causes_of_cancer_represented_in_this_module : ['Other malignant neoplasms', 'Nasopharynx cancer', 'Other pharynx cancer', 'Gallbladder and biliary tract cancer', 'Pancreatic cancer', 'Malignant skin melanoma', 'Non-melanoma skin cancer', 'Ovarian cancer', 'Testicular cancer', 'Kidney cancer', 'Thyroid cancer', 'Mesothelioma', 'Hodgkin lymphoma', 'Non-Hodgkin lymphoma', 'Multiple myeloma', 'Leukemia', 'Other neoplasms', 'Cervical cancer', 'Uterine cancer', 'Colon and rectum cancer', 'Lip and oral cavity cancer', 'Stomach cancer', 'Liver cancer']
 

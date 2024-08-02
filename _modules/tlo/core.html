@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.core &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
+  <title>tlo.core &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../_static/theme_overrides.css?v=6ea10ece" />
@@ -16,7 +16,7 @@
   
         <script src="../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../../_static/documentation_options.js?v=f3d69a25"></script>
         <script src="../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -96,27 +96,15 @@
 
 <span class="kn">import</span> <span class="nn">json</span>
 <span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">auto</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">TypeAlias</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">numpy.random</span> <span class="kn">import</span> <span class="n">RandomState</span>
+    <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
 
-    <span class="kn">from</span> <span class="nn">tlo.methods.healthsystem</span> <span class="kn">import</span> <span class="n">HealthSystem</span>
-    <span class="kn">from</span> <span class="nn">tlo.population</span> <span class="kn">import</span> <span class="n">PatientDetails</span>
     <span class="kn">from</span> <span class="nn">tlo.simulation</span> <span class="kn">import</span> <span class="n">Simulation</span>
-
-<span class="n">DiagnosisFunction</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bool</span><span class="p">,</span> <span class="nb">bool</span><span class="p">],</span> <span class="n">Any</span><span class="p">]</span>
-<span class="n">ConsumablesChecker</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="n">Callable</span><span class="p">[</span>
-    <span class="p">[</span>
-        <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Dict</span><span class="p">],</span>
-        <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Dict</span><span class="p">],</span>
-    <span class="p">],</span>
-    <span class="n">Union</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="n">Dict</span><span class="p">],</span>
-<span class="p">]</span>
-<span class="n">IndividualPropertyUpdates</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
 
 <div class="viewcode-block" id="Types">
 <a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Types">[docs]</a>
@@ -358,9 +346,6 @@
     <span class="c1"># parameters created from the PARAMETERS specification.</span>
     <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;parameters&#39;</span><span class="p">,</span> <span class="s1">&#39;rng&#39;</span><span class="p">,</span> <span class="s1">&#39;sim&#39;</span><span class="p">)</span>
 
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">healthsystem</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">HealthSystem</span><span class="p">:</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Construct a new disease module ready to be included in a simulation.</span>
@@ -410,7 +395,7 @@
                 <span class="sa">f</span><span class="s2">&quot;The value of &#39;</span><span class="si">{</span><span class="n">parameter_value</span><span class="si">}</span><span class="s2">&#39; for parameter &#39;</span><span class="si">{</span><span class="n">parameter_name</span><span class="si">}</span><span class="s2">&#39; &quot;</span>
                 <span class="sa">f</span><span class="s2">&quot;could not be parsed as a </span><span class="si">{</span><span class="n">parameter_definition</span><span class="o">.</span><span class="n">type_</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> data type&quot;</span>
             <span class="p">)</span>
-            <span class="k">if</span> <span class="n">parameter_definition</span><span class="o">.</span><span class="n">python_type</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">parameter_definition</span><span class="o">.</span><span class="n">python_type</span> <span class="ow">is</span> <span class="nb">list</span><span class="p">:</span>
                 <span class="k">try</span><span class="p">:</span>
                     <span class="c1"># chose json.loads instead of save_eval</span>
                     <span class="c1"># because it raises error instead of joining two strings without a comma</span>
@@ -516,91 +501,6 @@
     <span class="k">def</span> <span class="nf">on_simulation_end</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;This is called after the simulation has ended.</span>
 <span class="sd">        Modules do not need to declare this.&quot;&quot;&quot;</span></div>
-
-
-<div class="viewcode-block" id="Module.do_at_generic_first_appt">
-<a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Module.do_at_generic_first_appt">[docs]</a>
-    <span class="k">def</span> <span class="nf">do_at_generic_first_appt</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">patient_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-        <span class="n">patient_details</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">PatientDetails</span><span class="p">],</span>
-        <span class="n">symptoms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span>
-        <span class="n">diagnosis_function</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DiagnosisFunction</span><span class="p">],</span>
-        <span class="n">consumables_checker</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ConsumablesChecker</span><span class="p">],</span>
-        <span class="n">facility_level</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
-        <span class="n">treatment_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
-        <span class="n">random_state</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RandomState</span><span class="p">],</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">IndividualPropertyUpdates</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Actions to be take during a NON-emergency generic HSI.</span>
-
-<span class="sd">        Derived classes should overwrite this method so that they are</span>
-<span class="sd">        compatible with the HealthSystem module, and can schedule HSI</span>
-<span class="sd">        events when a patient presents symptoms indicative of the</span>
-<span class="sd">        corresponding illness or condition.</span>
-
-<span class="sd">        When overwriting, arguments that are not required can be left out</span>
-<span class="sd">        of the definition.</span>
-<span class="sd">        If done so, the method MUST take a **kwargs input to avoid errors</span>
-<span class="sd">        when looping over all disease modules and running their generic</span>
-<span class="sd">        HSI methods.</span>
-
-<span class="sd">        HSI_Events should be scheduled by the Module implementing this</span>
-<span class="sd">        method using the :py:meth:`Module.healthsystem.schedule_hsi` method.</span>
-<span class="sd">        However, they should not write updates back to the population</span>
-<span class="sd">        DataFrame in this method - these values should be returned as a</span>
-<span class="sd">        dictionary as described below:</span>
-
-<span class="sd">        The return value of this function should be a dictionary</span>
-<span class="sd">        containing any changes that need to be made to the individual&#39;s</span>
-<span class="sd">        row in the population DataFrame.</span>
-<span class="sd">        Key/value pairs should be the column name and the new value to</span>
-<span class="sd">        assign to the patient.</span>
-<span class="sd">        In the event no updates are required; return an object that evaluates</span>
-<span class="sd">        to False when cast to a bool. Your options are:</span>
-<span class="sd">        - Omit a return statement and value (preferred).</span>
-<span class="sd">        - Return an empty dictionary. Use this case when patient details</span>
-<span class="sd">        might need updating conditionally, on EG patient symptoms or consumable</span>
-<span class="sd">        availability. In which case, an empty dictionary should be created and</span>
-<span class="sd">        key-value pairs added to this dictionary as such conditionals are checked.</span>
-<span class="sd">        If no conditionals are met, the empty dictionary will be returned.</span>
-<span class="sd">        - Use a return statement with no values (use if the logic of your</span>
-<span class="sd">        module-specific method necessitates the explicit return).</span>
-<span class="sd">        - Return None (not recommended, use &quot;return&quot; on its own, as above).</span>
-
-<span class="sd">        :param patient_id: Row index (ID) of the individual target of the HSI event in the population DataFrame.</span>
-<span class="sd">        :param patient_details: Patient details as provided in the population DataFrame.</span>
-<span class="sd">        :param symptoms: List of symptoms the patient is experiencing.</span>
-<span class="sd">        :param diagnosis_function: A function that can run diagnosis tests based on the patient&#39;s symptoms.</span>
-<span class="sd">        :param consumables_checker: A function that can query the HealthSystem to check for available consumables.</span>
-<span class="sd">        :param facility_level: The level of the facility that the patient presented at.</span>
-<span class="sd">        :param treatment_id: The treatment id of the HSI event triggering the generic appointment.</span>
-<span class="sd">        :param random_state: Random number generator to be used when making random choices during event creation.</span>
-<span class="sd">        &quot;&quot;&quot;</span></div>
-
-
-<div class="viewcode-block" id="Module.do_at_generic_first_appt_emergency">
-<a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Module.do_at_generic_first_appt_emergency">[docs]</a>
-    <span class="k">def</span> <span class="nf">do_at_generic_first_appt_emergency</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">patient_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-        <span class="n">patient_details</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">PatientDetails</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">symptoms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">diagnosis_function</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DiagnosisFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">consumables_checker</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ConsumablesChecker</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">facility_level</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">treatment_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">random_state</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RandomState</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">IndividualPropertyUpdates</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Actions to be take during an EMERGENCY generic HSI.</span>
-<span class="sd">        Call signature and return values are identical to the</span>
-<span class="sd">        :py:meth:`~Module.do_at_generic_first_appt` method.</span>
-<span class="sd">        Derived classes should overwrite this method so that they are</span>
-<span class="sd">        compatible with the HealthSystem module, and can schedule HSI</span>
-<span class="sd">        events when a patient presents symptoms indicative of the</span>
-<span class="sd">        corresponding illness or condition.</span>
-<span class="sd">        &quot;&quot;&quot;</span></div>
 </div>
 
 </pre></div>
@@ -613,7 +513,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on May 27, 2024.
+      <span class="lastupdated">Last updated on Aug 02, 2024.
       </span></p>
   </div>
 

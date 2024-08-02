@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.simulation &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
+  <title>tlo.simulation &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../_static/theme_overrides.css?v=6ea10ece" />
@@ -16,7 +16,7 @@
   
         <script src="../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../../_static/documentation_options.js?v=f3d69a25"></script>
         <script src="../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -158,8 +158,8 @@
         <span class="k">if</span> <span class="n">log_config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">log_config</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_custom_log_levels</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_log_filepath</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">configure_logging</span><span class="p">(</span><span class="o">**</span><span class="n">log_config</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_log_filepath</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_configure_logging</span><span class="p">(</span><span class="o">**</span><span class="n">log_config</span><span class="p">)</span>
+        
 
         <span class="c1"># random number generator</span>
         <span class="n">seed_from</span> <span class="o">=</span> <span class="s1">&#39;auto&#39;</span> <span class="k">if</span> <span class="n">seed</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="s1">&#39;user&#39;</span>
@@ -171,10 +171,8 @@
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">MT19937</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_seed_seq</span><span class="p">))</span>
 
-<div class="viewcode-block" id="Simulation.configure_logging">
-<a class="viewcode-back" href="../../reference/tlo.simulation.html#tlo.simulation.Simulation.configure_logging">[docs]</a>
-    <span class="k">def</span> <span class="nf">configure_logging</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">directory</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;./outputs&quot;</span><span class="p">,</span>
-                          <span class="n">custom_levels</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">suppress_stdout</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_configure_logging</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">directory</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;./outputs&quot;</span><span class="p">,</span>
+                           <span class="n">custom_levels</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">suppress_stdout</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Configure logging, can write logging to a logfile in addition the default of stdout.</span>
 
 <span class="sd">        Minimum custom levels for each logger can be specified for filtering out messages</span>
@@ -191,8 +189,10 @@
         <span class="c1"># clear logging environment</span>
         <span class="c1"># if using progress bar we do not print log messages to stdout to avoid</span>
         <span class="c1"># clashes between progress bar and log output</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">init_logging</span><span class="p">(</span><span class="n">add_stdout_handler</span><span class="o">=</span><span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">show_progress_bar</span> <span class="ow">or</span> <span class="n">suppress_stdout</span><span class="p">))</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">set_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">initialise</span><span class="p">(</span>
+            <span class="n">add_stdout_handler</span><span class="o">=</span><span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">show_progress_bar</span> <span class="ow">or</span> <span class="n">suppress_stdout</span><span class="p">),</span>
+            <span class="n">simulation_date_getter</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+        <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">custom_levels</span><span class="p">:</span>
             <span class="c1"># if modules have already been registered</span>
@@ -207,11 +207,9 @@
             <span class="n">log_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s2">__</span><span class="si">{</span><span class="n">timestamp</span><span class="si">}</span><span class="s2">.log&quot;</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">output_file</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">set_output_file</span><span class="p">(</span><span class="n">log_path</span><span class="p">)</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;info&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Log output: </span><span class="si">{</span><span class="n">log_path</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_log_filepath</span> <span class="o">=</span> <span class="n">log_path</span>
             <span class="k">return</span> <span class="n">log_path</span>
 
-        <span class="k">return</span> <span class="kc">None</span></div>
-
+        <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">log_filepath</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -281,7 +279,12 @@
             <span class="n">module</span><span class="o">.</span><span class="n">pre_initialise_population</span><span class="p">()</span>
 
         <span class="c1"># Make the initial population</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">population</span> <span class="o">=</span> <span class="n">Population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+        <span class="n">properties</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">name</span><span class="p">:</span> <span class="n">prop</span>
+            <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">module</span><span class="o">.</span><span class="n">PROPERTIES</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">population</span> <span class="o">=</span> <span class="n">Population</span><span class="p">(</span><span class="n">properties</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
             <span class="n">start1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
             <span class="n">module</span><span class="o">.</span><span class="n">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="p">)</span>
@@ -474,7 +477,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on May 27, 2024.
+      <span class="lastupdated">Last updated on Aug 02, 2024.
       </span></p>
   </div>
 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.hiv &mdash; TLOmodel 0.1.dev2407+gde94ffa documentation</title>
+  <title>tlo.methods.hiv &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
@@ -16,7 +16,7 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../../_static/documentation_options.js?v=8142288c"></script>
+        <script src="../../../_static/documentation_options.js?v=f3d69a25"></script>
         <script src="../../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -98,7 +98,7 @@
 <span class="sd">    - with viral suppression: when the person with not develop AIDS, or if they have already, it is relieved and they</span>
 <span class="sd">        will not die of AIDS; and the person is not infectious</span>
 <span class="sd">    - without viral suppression: when there is no benefit in avoiding AIDS and infectiousness is unchanged.</span>
-<span class="sd">Maintenance on ART and PrEP is re-assessed at periodic &#39;Decision Events&#39;, at which is it is determined if the person</span>
+<span class="sd">Maintenance on ART and PrEP is re-assessed at periodic &#39;Decision Events&#39;, at which it is determined if the person</span>
 <span class="sd">  will attend the &quot;next&quot; HSI for continuation of the service; and if not, they are removed from that service and &quot;stop</span>
 <span class="sd">  treatment&quot;. If a stock-out or non-availability of health system resources prevent treatment continuation, the person</span>
 <span class="sd">  &quot;stops treatment&quot;. Stopping treatment leads to a new AIDS Event being scheduled. Persons can restart treatment. If a</span>
@@ -112,23 +112,27 @@
 <span class="sd">    * Cotrimoxazole is not included - either in effect of consumption of the drug (because the effect is not known).</span>
 <span class="sd">    * Calibration has not been done: most things look OK - except HIV-AIDS deaths</span>
 <span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">List</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
-<span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">DAYS_IN_YEAR</span><span class="p">,</span> <span class="n">DateOffset</span><span class="p">,</span> <span class="n">Module</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">Property</span><span class="p">,</span> <span class="n">Types</span><span class="p">,</span> <span class="n">logging</span>
-<span class="kn">from</span> <span class="nn">tlo.core</span> <span class="kn">import</span> <span class="n">IndividualPropertyUpdates</span>
+<span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">DAYS_IN_YEAR</span><span class="p">,</span> <span class="n">Date</span><span class="p">,</span> <span class="n">DateOffset</span><span class="p">,</span> <span class="n">Module</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">Property</span><span class="p">,</span> <span class="n">Types</span><span class="p">,</span> <span class="n">logging</span>
 <span class="kn">from</span> <span class="nn">tlo.events</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">,</span> <span class="n">RegularEvent</span>
 <span class="kn">from</span> <span class="nn">tlo.lm</span> <span class="kn">import</span> <span class="n">LinearModel</span><span class="p">,</span> <span class="n">LinearModelType</span><span class="p">,</span> <span class="n">Predictor</span>
 <span class="kn">from</span> <span class="nn">tlo.methods</span> <span class="kn">import</span> <span class="n">Metadata</span><span class="p">,</span> <span class="n">demography</span><span class="p">,</span> <span class="n">tb</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.causes</span> <span class="kn">import</span> <span class="n">Cause</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.dxmanager</span> <span class="kn">import</span> <span class="n">DxTest</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.hsi_event</span> <span class="kn">import</span> <span class="n">HSI_Event</span>
+<span class="kn">from</span> <span class="nn">tlo.methods.hsi_generic_first_appts</span> <span class="kn">import</span> <span class="n">GenericFirstAppointmentsMixin</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.symptommanager</span> <span class="kn">import</span> <span class="n">Symptom</span>
 <span class="kn">from</span> <span class="nn">tlo.util</span> <span class="kn">import</span> <span class="n">create_age_range_lookup</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">tlo.methods.hsi_generic_first_appts</span> <span class="kn">import</span> <span class="n">HSIEventScheduler</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
@@ -136,7 +140,7 @@
 
 <div class="viewcode-block" id="Hiv">
 <a class="viewcode-back" href="../../../reference/tlo.methods.hiv.html#tlo.methods.hiv.Hiv">[docs]</a>
-<span class="k">class</span> <span class="nc">Hiv</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">Hiv</span><span class="p">(</span><span class="n">Module</span><span class="p">,</span> <span class="n">GenericFirstAppointmentsMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    The HIV Disease Module</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -282,6 +286,9 @@
         <span class="p">),</span>
         <span class="s2">&quot;rr_edlevel_higher&quot;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
             <span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span> <span class="s2">&quot;Relative risk of HIV with higher education&quot;</span>
+        <span class="p">),</span>
+        <span class="s2">&quot;rr_schisto&quot;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span> <span class="s2">&quot;Relative risk of HIV with high intensity S. haematobium infection&quot;</span>
         <span class="p">),</span>
         <span class="c1"># Natural history - transmission - relative risk of HIV acquisition (interventions)</span>
         <span class="s2">&quot;rr_behaviour_change&quot;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
@@ -471,9 +478,31 @@
             <span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span>
             <span class="s2">&quot;probability of death if aids and tb, person on treatment for tb&quot;</span><span class="p">,</span>
         <span class="p">),</span>
+        <span class="s2">&quot;hiv_healthseekingbehaviour_cap&quot;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">INT</span><span class="p">,</span>
+            <span class="s2">&quot;number of repeat visits assumed for healthcare services&quot;</span><span class="p">,</span>
+        <span class="p">),</span>
         <span class="s2">&quot;dispensation_period_months&quot;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
             <span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span>
             <span class="s2">&quot;length of prescription for ARVs in months, same for all PLHIV&quot;</span><span class="p">,</span>
+        <span class="p">),</span>
+        <span class="s2">&quot;length_of_inpatient_stay_if_terminal&quot;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span>
+            <span class="s2">&quot;length in days of inpatient stay for end-of-life HIV patients: list has two elements [low-bound-inclusive,&quot;</span>
+            <span class="s2">&quot; high-bound-exclusive]&quot;</span><span class="p">,</span>
+        <span class="p">),</span>
+        <span class="c1"># ------------------ scale-up parameters for scenario analysis ------------------ #</span>
+        <span class="s2">&quot;type_of_scaleup&quot;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">STRING</span><span class="p">,</span> <span class="s2">&quot;argument to determine type scale-up of program which will be implemented, &quot;</span>
+                          <span class="s2">&quot;can be &#39;none&#39;, &#39;target&#39; or &#39;max&#39;&quot;</span><span class="p">,</span>
+        <span class="p">),</span>
+        <span class="s2">&quot;scaleup_start_year&quot;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">INT</span><span class="p">,</span>
+            <span class="s2">&quot;the year when the scale-up starts (it will occur on 1st January of that year)&quot;</span>
+        <span class="p">),</span>
+        <span class="s2">&quot;scaleup_parameters&quot;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">,</span>
+            <span class="s2">&quot;the parameters and values changed in scenario analysis&quot;</span>
         <span class="p">),</span>
     <span class="p">}</span>
 
@@ -487,7 +516,7 @@
 
         <span class="c1"># 1) Read the ResourceFiles</span>
 
-        <span class="c1"># Short cut to parameters dict</span>
+        <span class="c1"># Shortcut to parameters dict</span>
         <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
 
         <span class="n">workbook</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span>
@@ -514,6 +543,9 @@
         <span class="c1"># Load spectrum estimates of treatment cascade</span>
         <span class="n">p</span><span class="p">[</span><span class="s2">&quot;treatment_cascade&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">workbook</span><span class="p">[</span><span class="s2">&quot;spectrum_treatment_cascade&quot;</span><span class="p">]</span>
 
+        <span class="c1"># load parameters for scale-up projections</span>
+        <span class="n">p</span><span class="p">[</span><span class="s1">&#39;scaleup_parameters&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">workbook</span><span class="p">[</span><span class="s2">&quot;scaleup_parameters&quot;</span><span class="p">]</span>
+
         <span class="c1"># DALY weights</span>
         <span class="c1"># get the DALY weight that this module will use from the weight database (these codes are just random!)</span>
         <span class="k">if</span> <span class="s2">&quot;HealthBurden&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
@@ -539,16 +571,22 @@
 <div class="viewcode-block" id="Hiv.pre_initialise_population">
 <a class="viewcode-back" href="../../../reference/tlo.methods.hiv.html#tlo.methods.hiv.Hiv.pre_initialise_population">[docs]</a>
     <span class="k">def</span> <span class="nf">pre_initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        * Establish the Linear Models</span>
-<span class="sd">        *</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Do things required before the population is created</span>
+<span class="sd">        * Build the LinearModels&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_build_linear_models</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Hiv._build_linear_models">
+<a class="viewcode-back" href="../../../reference/tlo.methods.hiv.html#tlo.methods.hiv.Hiv._build_linear_models">[docs]</a>
+    <span class="k">def</span> <span class="nf">_build_linear_models</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Establish the Linear Models&quot;&quot;&quot;</span>
+
         <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
 
         <span class="c1"># ---- LINEAR MODELS -----</span>
         <span class="c1"># LinearModel for the relative risk of becoming infected during the simulation</span>
         <span class="c1"># N.B. age assumed not to have an effect on incidence</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">lm</span><span class="p">[</span><span class="s2">&quot;rr_of_infection&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="o">.</span><span class="n">multiplicative</span><span class="p">(</span>
+        <span class="n">predictors</span> <span class="o">=</span> <span class="p">[</span>
             <span class="n">Predictor</span><span class="p">(</span><span class="s2">&quot;age_years&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;&lt;15&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;&lt;49&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span><span class="o">.</span><span class="n">otherwise</span><span class="p">(</span><span class="mf">0.0</span><span class="p">),</span>
             <span class="n">Predictor</span><span class="p">(</span><span class="s2">&quot;sex&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;F&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;rr_sex_f&quot;</span><span class="p">]),</span>
             <span class="n">Predictor</span><span class="p">(</span><span class="s2">&quot;li_is_circ&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;rr_circumcision&quot;</span><span class="p">]),</span>
@@ -563,17 +601,32 @@
             <span class="n">Predictor</span><span class="p">(</span><span class="s2">&quot;li_ed_lev&quot;</span><span class="p">,</span> <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;rr_edlevel_primary&quot;</span><span class="p">])</span>
             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;rr_edlevel_secondary&quot;</span><span class="p">]),</span>
-            <span class="n">Predictor</span><span class="p">(</span><span class="s2">&quot;hv_behaviour_change&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;rr_behaviour_change&quot;</span><span class="p">]),</span>
-        <span class="p">)</span>
+            <span class="n">Predictor</span><span class="p">(</span><span class="s2">&quot;hv_behaviour_change&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;rr_behaviour_change&quot;</span><span class="p">])</span>
+        <span class="p">]</span>
+
+        <span class="n">conditional_predictors</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">Predictor</span><span class="p">()</span><span class="o">.</span><span class="n">when</span><span class="p">(</span>
+                <span class="s1">&#39;(ss_sh_infection_status == &quot;High-infection&quot;) &amp;&#39;</span>
+                <span class="s1">&#39;(sex == &quot;F&quot;)&#39;</span><span class="p">,</span>
+                <span class="n">p</span><span class="p">[</span><span class="s2">&quot;rr_schisto&quot;</span><span class="p">]</span>
+            <span class="p">),</span>
+        <span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;Schisto&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span> <span class="k">else</span> <span class="p">[]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">lm</span><span class="p">[</span><span class="s2">&quot;rr_of_infection&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="o">.</span><span class="n">multiplicative</span><span class="p">(</span>
+            <span class="o">*</span><span class="p">(</span><span class="n">predictors</span> <span class="o">+</span> <span class="n">conditional_predictors</span><span class="p">))</span>
 
         <span class="c1"># LinearModels to give the shape and scale for the Weibull distribution describing time from infection to death</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lm</span><span class="p">[</span><span class="s2">&quot;scale_parameter_for_infection_to_death&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="o">.</span><span class="n">multiplicative</span><span class="p">(</span>
             <span class="n">Predictor</span><span class="p">(</span>
                 <span class="s2">&quot;age_years&quot;</span><span class="p">,</span>
                 <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                <span class="n">conditions_are_exhaustive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">conditions_are_exhaustive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;==0&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;mean_survival_for_infants_infected_prior_to_birth&quot;</span><span class="p">])</span>
-            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;.between(1,4)&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;infection_to_death_infant_infection_after_birth_weibull_scale&quot;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span>
+                <span class="s2">&quot;.between(1,4)&quot;</span><span class="p">,</span>
+                <span class="n">p</span><span class="p">[</span><span class="s2">&quot;infection_to_death_infant_infection_after_birth_weibull_scale&quot;</span><span class="p">],</span>
+            <span class="p">)</span>
             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;.between(5, 19)&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;infection_to_death_weibull_scale_1519&quot;</span><span class="p">])</span>
             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;.between(20, 24)&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;infection_to_death_weibull_scale_2024&quot;</span><span class="p">])</span>
             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;.between(25, 29)&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;infection_to_death_weibull_scale_2529&quot;</span><span class="p">])</span>
@@ -602,13 +655,16 @@
         <span class="p">)</span>
 
         <span class="c1"># -- Linear Model to give the mean months between aids and death depending on age</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">lm</span><span class="p">[</span><span class="s2">&quot;offset_parameter_for_months_from_aids_to_death&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="o">.</span><span class="n">multiplicative</span><span class="p">(</span>
-            <span class="n">Predictor</span><span class="p">(</span>
-                <span class="s2">&quot;age_years&quot;</span><span class="p">,</span>
-                <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                <span class="n">conditions_are_exhaustive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;&lt;5&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;mean_months_between_aids_and_death_infant&quot;</span><span class="p">])</span>
-            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;&gt;=5&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;mean_months_between_aids_and_death&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lm</span><span class="p">[</span><span class="s2">&quot;offset_parameter_for_months_from_aids_to_death&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">LinearModel</span><span class="o">.</span><span class="n">multiplicative</span><span class="p">(</span>
+                <span class="n">Predictor</span><span class="p">(</span>
+                    <span class="s2">&quot;age_years&quot;</span><span class="p">,</span>
+                    <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">conditions_are_exhaustive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;&lt;5&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;mean_months_between_aids_and_death_infant&quot;</span><span class="p">])</span>
+                <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;&gt;=5&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;mean_months_between_aids_and_death&quot;</span><span class="p">])</span>
+            <span class="p">)</span>
         <span class="p">)</span>
 
         <span class="c1"># -- Linear Models for the Uptake of Services</span>
@@ -669,7 +725,6 @@
         <span class="c1"># --- Current status</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s2">&quot;hv_inf&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s2">&quot;hv_art&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;not&quot;</span>
-        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s2">&quot;hv_date_treated&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s2">&quot;hv_is_on_prep&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s2">&quot;hv_behaviour_change&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s2">&quot;hv_diagnosed&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
@@ -678,6 +733,8 @@
         <span class="c1"># --- Dates on which things have happened</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s2">&quot;hv_date_inf&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s2">&quot;hv_last_test_date&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s2">&quot;hv_date_treated&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s2">&quot;hv_date_last_ART&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
 
         <span class="c1"># Launch sub-routines for allocating the right number of people into each category</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">initialise_baseline_prevalence</span><span class="p">(</span><span class="n">population</span><span class="p">)</span>  <span class="c1"># allocate baseline prevalence</span>
@@ -713,16 +770,14 @@
             <span class="n">Predictor</span><span class="p">(</span><span class="s2">&quot;li_is_sexworker&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;rr_fsw&quot;</span><span class="p">]),</span>
             <span class="n">Predictor</span><span class="p">(</span><span class="s2">&quot;li_is_circ&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;rr_circumcision&quot;</span><span class="p">]),</span>
             <span class="n">Predictor</span><span class="p">(</span><span class="s2">&quot;li_urban&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;rr_rural&quot;</span><span class="p">]),</span>
-            <span class="n">Predictor</span><span class="p">(</span>
-                <span class="s2">&quot;li_wealth&quot;</span><span class="p">,</span> <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span>
-                <span class="mi">2</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;rr_windex_poorer&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">when</span><span class="p">(</span>
-                <span class="mi">3</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;rr_windex_middle&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">when</span><span class="p">(</span>
-                <span class="mi">4</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;rr_windex_richer&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">when</span><span class="p">(</span>
-                <span class="mi">5</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;rr_windex_richest&quot;</span><span class="p">]),</span>
-            <span class="n">Predictor</span><span class="p">(</span>
-                <span class="s2">&quot;li_ed_lev&quot;</span><span class="p">,</span> <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span>
-                <span class="mi">2</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;rr_edlevel_primary&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">when</span><span class="p">(</span>
-                <span class="mi">3</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;rr_edlevel_secondary&quot;</span><span class="p">])</span>
+            <span class="n">Predictor</span><span class="p">(</span><span class="s2">&quot;li_wealth&quot;</span><span class="p">,</span> <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;rr_windex_poorer&quot;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;rr_windex_middle&quot;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;rr_windex_richer&quot;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;rr_windex_richest&quot;</span><span class="p">]),</span>
+            <span class="n">Predictor</span><span class="p">(</span><span class="s2">&quot;li_ed_lev&quot;</span><span class="p">,</span> <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;rr_edlevel_primary&quot;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;rr_edlevel_secondary&quot;</span><span class="p">]),</span>
         <span class="p">)</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">])</span>
 
         <span class="c1"># Rescale relative probability of infection so that its average is 1.0 within each age/sex group</span>
@@ -866,6 +921,11 @@
         <span class="c1"># this window is 1-90 days (3-monthly prescribing)</span>
         <span class="k">for</span> <span class="n">person</span> <span class="ow">in</span> <span class="n">art_idx</span><span class="p">:</span>
             <span class="n">days</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;dispensation_period_months&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="mf">30.5</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+
+            <span class="n">date_treated</span> <span class="o">=</span> <span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;dispensation_period_months&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="mf">30.5</span><span class="p">)</span> <span class="o">-</span> <span class="n">days</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person</span><span class="p">,</span> <span class="s2">&quot;hv_date_treated&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">-</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_timedelta</span><span class="p">(</span><span class="n">date_treated</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;days&quot;</span><span class="p">)</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person</span><span class="p">,</span> <span class="s2">&quot;hv_date_last_ART&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">-</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_timedelta</span><span class="p">(</span><span class="n">date_treated</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;days&quot;</span><span class="p">)</span>
+
             <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span>
                 <span class="n">Hiv_DecisionToContinueTreatment</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person</span><span class="p">,</span> <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">),</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_timedelta</span><span class="p">(</span><span class="n">days</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;days&quot;</span><span class="p">),</span>
@@ -960,6 +1020,7 @@
 <span class="sd">        * 7) Look-up and save the codes for consumables</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
 
         <span class="c1"># 1) Schedule the Main HIV Regular Polling Event</span>
         <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span>
@@ -969,10 +1030,16 @@
         <span class="c1"># 2) Schedule the Logging Event</span>
         <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">HivLoggingEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">years</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
 
+        <span class="c1"># Optional: Schedule the scale-up of programs</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;type_of_scaleup&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;none&#39;</span><span class="p">:</span>
+            <span class="n">scaleup_start_date</span> <span class="o">=</span> <span class="n">Date</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;scaleup_start_year&quot;</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="n">scaleup_start_date</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">start_date</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Date </span><span class="si">{</span><span class="n">scaleup_start_date</span><span class="si">}</span><span class="s2"> is before simulation starts.&quot;</span>
+            <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">HivScaleUpEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">scaleup_start_date</span><span class="p">)</span>
+
         <span class="c1"># 3) Determine who has AIDS and impose the Symptoms &#39;aids_symptoms&#39;</span>
 
         <span class="c1"># Those on ART currently (will not get any further events scheduled):</span>
-        <span class="n">on_art_idx</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">hv_inf</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">hv_art</span> <span class="o">!=</span> <span class="s2">&quot;not&quot;</span><span class="p">)]</span><span class="o">.</span><span class="n">index</span>
+        <span class="n">on_art_idx</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">hv_inf</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">hv_art</span> <span class="o">==</span> <span class="s2">&quot;on_VL_suppressed&quot;</span><span class="p">)]</span><span class="o">.</span><span class="n">index</span>
 
         <span class="c1"># Those that lived more than ten years and not currently on ART are assumed to currently have AIDS</span>
         <span class="c1">#  (will have AIDS Death event scheduled)</span>
@@ -980,7 +1047,7 @@
             <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span>
             <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">hv_inf</span>
             <span class="o">&amp;</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">-</span> <span class="n">df</span><span class="o">.</span><span class="n">hv_date_inf</span><span class="p">)</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">days</span> <span class="o">&gt;</span> <span class="mi">10</span> <span class="o">*</span> <span class="mi">365</span><span class="p">)</span>
-            <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">hv_art</span> <span class="o">==</span> <span class="s2">&quot;not&quot;</span><span class="p">)</span>
+            <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">hv_art</span> <span class="o">!=</span> <span class="s2">&quot;on_VL_suppressed&quot;</span><span class="p">)</span>
             <span class="p">]</span><span class="o">.</span><span class="n">index</span>
 
         <span class="c1"># Those that are in neither category are &quot;before AIDS&quot; (will have AIDS Onset Event scheduled)</span>
@@ -1034,7 +1101,8 @@
             <span class="p">)</span>
 
             <span class="n">date_aids_death</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mi">18</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span>
+                <span class="n">months</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;mean_months_between_aids_and_death&#39;</span><span class="p">]))</span>
             <span class="p">)</span>
 
             <span class="c1"># 30% AIDS deaths have TB co-infection</span>
@@ -1043,6 +1111,23 @@
             <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span>
                 <span class="n">HivAidsDeathEvent</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">cause</span><span class="o">=</span><span class="n">cause_of_death</span><span class="p">),</span>
                 <span class="n">date</span><span class="o">=</span><span class="n">date_aids_death</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="c1"># schedule hospital stay for end of life care if untreated</span>
+            <span class="n">beddays</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span>
+                <span class="n">low</span><span class="o">=</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;length_of_inpatient_stay_if_terminal&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+                <span class="n">high</span><span class="o">=</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;length_of_inpatient_stay_if_terminal&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">date_admission</span> <span class="o">=</span> <span class="n">date_aids_death</span> <span class="o">-</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">beddays</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
+                <span class="n">hsi_event</span><span class="o">=</span><span class="n">HSI_Hiv_EndOfLifeCare</span><span class="p">(</span>
+                    <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">beddays</span><span class="o">=</span><span class="n">beddays</span>
+                <span class="p">),</span>
+                <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                <span class="n">topen</span><span class="o">=</span><span class="p">(</span>
+                    <span class="n">date_admission</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="n">date_admission</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
+                    <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
+                <span class="p">),</span>
             <span class="p">)</span>
 
         <span class="c1"># 5) (Optionally) Schedule the event to check the configuration of all properties</span>
@@ -1074,31 +1159,37 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;circ&#39;</span><span class="p">]</span> <span class="o">=</span> \
             <span class="n">hs</span><span class="o">.</span><span class="n">get_item_codes_from_package_name</span><span class="p">(</span><span class="s2">&quot;Male circumcision &quot;</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;prep&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="n">hs</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;Tenofovir (TDF)/Emtricitabine (FTC), tablet, 300/200 mg&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">}</span>
+        <span class="c1"># adult prep: 1 tablet daily</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;prep&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="n">hs</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;Tenofovir (TDF)/Emtricitabine (FTC), tablet, 300/200 mg&quot;</span><span class="p">)</span>
 
-        <span class="c1"># infant NVP given in 3-monthly dosages</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;infant_prep&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="n">hs</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;Nevirapine, oral solution, 10 mg/ml&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">}</span>
+        <span class="c1"># infant NVP 1.5mg daily for birth weight 2500g or above, for 6 weeks</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;infant_prep&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="n">hs</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;Nevirapine, oral solution, 10 mg/ml&quot;</span><span class="p">)</span>
 
         <span class="c1"># First - line ART for adults(age &gt; &quot;ART_age_cutoff_older_child&quot;)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;First-line ART regimen: adult&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="n">hs</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;First-line ART regimen: adult&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;First-line ART regimen: adult: cotrimoxazole&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="n">hs</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;Cotrimoxizole, 960mg pppy&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">}</span>
+        <span class="c1"># TDF/3TC/DTG 120/60/50mg, 1 tablet per day</span>
+        <span class="c1"># cotrim adult tablet, 1 tablet per day, units specified in mg * dispensation days</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;First-line ART regimen: adult&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="n">hs</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;First-line ART regimen: adult&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;First-line ART regimen: adult: cotrimoxazole&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="n">hs</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;Cotrimoxizole, 960mg pppy&quot;</span><span class="p">)</span>
 
         <span class="c1"># ART for older children aged (&quot;ART_age_cutoff_younger_child&quot; &lt; age &lt;= &quot;ART_age_cutoff_older_child&quot;):</span>
-        <span class="c1"># cotrim is separate item - optional in get_cons call</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;First line ART regimen: older child&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="n">hs</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;First line ART regimen: older child&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;First line ART regimen: older child: cotrimoxazole&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="n">hs</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;Sulfamethoxazole + trimethropin, tablet 400 mg + 80 mg&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">}</span>
+        <span class="c1"># ABC/3TC/DTG 120/60/50mg, 3 tablets per day</span>
+        <span class="c1"># cotrim paediatric tablet, 4 tablets per day, units specified in mg * dispensation days</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;First line ART regimen: older child&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="n">hs</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;First line ART regimen: older child&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;First line ART regimen: older child: cotrimoxazole&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="n">hs</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;Cotrimoxazole 120mg_1000_CMST&quot;</span><span class="p">)</span>
 
         <span class="c1"># ART for younger children aged (age &lt; &quot;ART_age_cutoff_younger_child&quot;):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;First line ART regimen: young child&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="n">hs</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;First line ART regimen: young child&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;First line ART regimen: young child: cotrimoxazole&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="n">hs</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;Sulfamethoxazole + trimethropin, oral suspension, 240 mg, 100 ml&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">}</span>
+        <span class="c1"># ABC/3TC/DTG 120/60/10mg, 2 tablets per day</span>
+        <span class="c1"># cotrim paediatric tablet, 2 tablets per day, units specified in mg * dispensation days</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;First line ART regimen: young child&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="n">hs</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;First line ART regimen: young child&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;First line ART regimen: young child: cotrimoxazole&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="n">hs</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;Cotrimoxazole 120mg_1000_CMST&quot;</span><span class="p">)</span>
 
         <span class="c1"># 7) Define the DxTests</span>
         <span class="c1"># HIV Rapid Diagnostic Test:</span>
@@ -1128,6 +1219,52 @@
         <span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="Hiv.update_parameters_for_program_scaleup">
+<a class="viewcode-back" href="../../../reference/tlo.methods.hiv.html#tlo.methods.hiv.Hiv.update_parameters_for_program_scaleup">[docs]</a>
+    <span class="k">def</span> <span class="nf">update_parameters_for_program_scaleup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; options for program scale-up are &#39;target&#39; or &#39;max&#39; &quot;&quot;&quot;</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
+        <span class="n">scaled_params_workbook</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;scaleup_parameters&quot;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;type_of_scaleup&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;target&#39;</span><span class="p">:</span>
+            <span class="n">scaled_params</span> <span class="o">=</span> <span class="n">scaled_params_workbook</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;parameter&#39;</span><span class="p">)[</span><span class="s1">&#39;target_value&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">scaled_params</span> <span class="o">=</span> <span class="n">scaled_params_workbook</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;parameter&#39;</span><span class="p">)[</span><span class="s1">&#39;max_value&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+
+        <span class="c1"># scale-up HIV program</span>
+        <span class="c1"># reduce risk of HIV - applies to whole adult population</span>
+        <span class="n">p</span><span class="p">[</span><span class="s2">&quot;beta&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;beta&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">scaled_params</span><span class="p">[</span><span class="s2">&quot;reduction_in_hiv_beta&quot;</span><span class="p">]</span>
+
+        <span class="c1"># increase PrEP coverage for FSW after HIV test</span>
+        <span class="n">p</span><span class="p">[</span><span class="s2">&quot;prob_prep_for_fsw_after_hiv_test&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scaled_params</span><span class="p">[</span><span class="s2">&quot;prob_prep_for_fsw_after_hiv_test&quot;</span><span class="p">]</span>
+
+        <span class="c1"># prep poll for AGYW - target to the highest risk</span>
+        <span class="c1"># increase retention to 75% for FSW and AGYW</span>
+        <span class="n">p</span><span class="p">[</span><span class="s2">&quot;prob_prep_for_agyw&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scaled_params</span><span class="p">[</span><span class="s2">&quot;prob_prep_for_agyw&quot;</span><span class="p">]</span>
+        <span class="n">p</span><span class="p">[</span><span class="s2">&quot;probability_of_being_retained_on_prep_every_3_months&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scaled_params</span><span class="p">[</span><span class="s2">&quot;probability_of_being_retained_on_prep_every_3_months&quot;</span><span class="p">]</span>
+
+        <span class="c1"># perfect retention on ART</span>
+        <span class="n">p</span><span class="p">[</span><span class="s2">&quot;probability_of_being_retained_on_art_every_3_months&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scaled_params</span><span class="p">[</span><span class="s2">&quot;probability_of_being_retained_on_art_every_3_months&quot;</span><span class="p">]</span>
+
+        <span class="c1"># increase probability of VMMC after hiv test</span>
+        <span class="n">p</span><span class="p">[</span><span class="s2">&quot;prob_circ_after_hiv_test&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scaled_params</span><span class="p">[</span><span class="s2">&quot;prob_circ_after_hiv_test&quot;</span><span class="p">]</span>
+
+        <span class="c1"># increase testing/diagnosis rates, default 2020 0.03/0.25 -&gt; 93% dx</span>
+        <span class="n">p</span><span class="p">[</span><span class="s2">&quot;hiv_testing_rates&quot;</span><span class="p">][</span><span class="s2">&quot;annual_testing_rate_adults&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scaled_params</span><span class="p">[</span><span class="s2">&quot;annual_testing_rate_adults&quot;</span><span class="p">]</span>
+
+        <span class="c1"># ANC testing - value for mothers and infants testing</span>
+        <span class="n">p</span><span class="p">[</span><span class="s2">&quot;prob_hiv_test_at_anc_or_delivery&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scaled_params</span><span class="p">[</span><span class="s2">&quot;prob_hiv_test_at_anc_or_delivery&quot;</span><span class="p">]</span>
+        <span class="n">p</span><span class="p">[</span><span class="s2">&quot;prob_hiv_test_for_newborn_infant&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scaled_params</span><span class="p">[</span><span class="s2">&quot;prob_hiv_test_for_newborn_infant&quot;</span><span class="p">]</span>
+
+        <span class="c1"># viral suppression rates</span>
+        <span class="c1"># adults already at 95% by 2020</span>
+        <span class="c1"># change all column values</span>
+        <span class="n">p</span><span class="p">[</span><span class="s2">&quot;prob_start_art_or_vs&quot;</span><span class="p">][</span><span class="s2">&quot;virally_suppressed_on_art&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scaled_params</span><span class="p">[</span><span class="s2">&quot;virally_suppressed_on_art&quot;</span><span class="p">]</span>
+
+        <span class="c1"># update exising linear models to use new scaled-up paramters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_build_linear_models</span><span class="p">()</span></div>
+
+
 <div class="viewcode-block" id="Hiv.on_birth">
 <a class="viewcode-back" href="../../../reference/tlo.methods.hiv.html#tlo.methods.hiv.Hiv.on_birth">[docs]</a>
     <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
@@ -1144,7 +1281,6 @@
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s2">&quot;hv_inf&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s2">&quot;hv_art&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;not&quot;</span>
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s2">&quot;hv_on_cotrimoxazole&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s2">&quot;hv_date_treated&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s2">&quot;hv_is_on_prep&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s2">&quot;hv_behaviour_change&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s2">&quot;hv_diagnosed&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
@@ -1153,6 +1289,8 @@
         <span class="c1"># --- Dates on which things have happened</span>
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s2">&quot;hv_date_inf&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s2">&quot;hv_last_test_date&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s2">&quot;hv_date_treated&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s2">&quot;hv_date_last_ART&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
 
         <span class="c1"># ----------------------------------- MTCT - AT OR PRIOR TO BIRTH --------------------------</span>
         <span class="c1">#  DETERMINE IF THE CHILD IS INFECTED WITH HIV FROM THEIR MOTHER DURING PREGNANCY / DELIVERY</span>
@@ -1215,7 +1353,7 @@
                     <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                 <span class="p">)</span>
 
-        <span class="c1"># if mother known HIV+, schedule virological test for infant</span>
+        <span class="c1"># if mother known HIV+, schedule virological test for infant and give prep</span>
         <span class="k">if</span> <span class="n">mother</span><span class="o">.</span><span class="n">hv_diagnosed</span> <span class="ow">and</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s2">&quot;is_alive&quot;</span><span class="p">]:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
                 <span class="n">hsi_event</span><span class="o">=</span><span class="n">HSI_Hiv_StartInfantProphylaxis</span><span class="p">(</span>
@@ -1401,13 +1539,13 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">mean</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;mean_months_between_aids_and_death&quot;</span><span class="p">]</span>
         <span class="n">draw_number_of_months</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="n">mean</span><span class="p">)))</span>
-        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="n">draw_number_of_months</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="p">(</span><span class="n">draw_number_of_months</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="Hiv.do_when_hiv_diagnosed">
 <a class="viewcode-back" href="../../../reference/tlo.methods.hiv.html#tlo.methods.hiv.Hiv.do_when_hiv_diagnosed">[docs]</a>
     <span class="k">def</span> <span class="nf">do_when_hiv_diagnosed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Things to do when a person has been tested and found (newly) be be HIV-positive:.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Things to do when a person has been tested and found (newly) to be HIV-positive:.</span>
 <span class="sd">        * Consider if ART should be initiated, and schedule HSI if so.</span>
 <span class="sd">        The person should not yet be on ART.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1484,7 +1622,8 @@
 <a class="viewcode-back" href="../../../reference/tlo.methods.hiv.html#tlo.methods.hiv.Hiv.stops_treatment">[docs]</a>
     <span class="k">def</span> <span class="nf">stops_treatment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Helper function that is called when someone stops being on ART.</span>
-<span class="sd">        Sets the flag for ART status. If the person was already on ART, it schedules a new AIDSEvent&quot;&quot;&quot;</span>
+<span class="sd">        Sets the flag for ART status. If the person was already on ART, it schedules a new AIDSEvent</span>
+<span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
 
@@ -1585,11 +1724,13 @@
         <span class="n">mother_id</span> <span class="o">=</span> <span class="n">mother_id</span>
         <span class="n">child_id</span> <span class="o">=</span> <span class="n">child_id</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;hv_diagnosed&#39;</span><span class="p">]</span> <span class="ow">and</span> \
-            <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">mother_id</span><span class="p">,</span> <span class="s1">&#39;hv_diagnosed&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="p">(</span>
-            <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;nb_pnc_check&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;prob_hiv_test_for_newborn_infant&#39;</span><span class="p">]):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s2">&quot;hv_diagnosed&quot;</span><span class="p">]</span>
+            <span class="ow">and</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">mother_id</span><span class="p">,</span> <span class="s2">&quot;hv_diagnosed&quot;</span><span class="p">]</span>
+            <span class="ow">and</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s2">&quot;nb_pnc_check&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;prob_hiv_test_for_newborn_infant&quot;</span><span class="p">])</span>
+        <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
                 <span class="n">HSI_Hiv_TestAndRefer</span><span class="p">(</span>
                     <span class="n">person_id</span><span class="o">=</span><span class="n">child_id</span><span class="p">,</span>
                     <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
@@ -1667,22 +1808,23 @@
 <a class="viewcode-back" href="../../../reference/tlo.methods.hiv.html#tlo.methods.hiv.Hiv.do_at_generic_first_appt">[docs]</a>
     <span class="k">def</span> <span class="nf">do_at_generic_first_appt</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">patient_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">person_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">symptoms</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">schedule_hsi_event</span><span class="p">:</span> <span class="n">HSIEventScheduler</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">IndividualPropertyUpdates</span><span class="p">:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># &#39;Automatic&#39; testing for HIV for everyone attending care with AIDS symptoms:</span>
         <span class="c1">#  - suppress the footprint (as it done as part of another appointment)</span>
         <span class="c1">#  - do not do referrals if the person is HIV negative (assumed not time for counselling etc).</span>
         <span class="k">if</span> <span class="s2">&quot;aids_symptoms&quot;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">:</span>
             <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_Hiv_TestAndRefer</span><span class="p">(</span>
-                <span class="n">person_id</span><span class="o">=</span><span class="n">patient_id</span><span class="p">,</span>
+                <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
                 <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
                 <span class="n">referred_from</span><span class="o">=</span><span class="s2">&quot;hsi_generic_first_appt&quot;</span><span class="p">,</span>
                 <span class="n">suppress_footprint</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                 <span class="n">do_not_refer_if_neg</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">healthsystem</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span></div>
+            <span class="n">schedule_hsi_event</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span></div>
 </div>
 
 
@@ -2077,6 +2219,23 @@
                     <span class="p">),</span>
                     <span class="n">date</span><span class="o">=</span><span class="n">date_of_aids_death</span><span class="p">,</span>
                 <span class="p">)</span>
+                <span class="c1"># schedule hospital stay</span>
+                <span class="n">beddays</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;Hiv&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+                <span class="n">date_admission</span> <span class="o">=</span> <span class="n">date_of_aids_death</span> <span class="o">-</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">beddays</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
+                    <span class="n">hsi_event</span><span class="o">=</span><span class="n">HSI_Hiv_EndOfLifeCare</span><span class="p">(</span>
+                        <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
+                        <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;Hiv&quot;</span><span class="p">],</span>
+                        <span class="n">beddays</span><span class="o">=</span><span class="n">beddays</span><span class="p">,</span>
+                    <span class="p">),</span>
+                    <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                    <span class="n">topen</span><span class="o">=</span><span class="p">(</span>
+                        <span class="n">date_admission</span>
+                        <span class="k">if</span> <span class="p">(</span><span class="n">date_admission</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
+                        <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
+                    <span class="p">),</span>
+                    <span class="n">tclose</span><span class="o">=</span><span class="n">date_of_aids_death</span><span class="p">,</span>
+                <span class="p">)</span>
 
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># cause is active TB</span>
@@ -2085,6 +2244,23 @@
                         <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;Hiv&quot;</span><span class="p">],</span> <span class="n">cause</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cause</span>
                     <span class="p">),</span>
                     <span class="n">date</span><span class="o">=</span><span class="n">date_of_aids_death</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="c1"># schedule hospital stay</span>
+                <span class="n">beddays</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;Hiv&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+                <span class="n">date_admission</span> <span class="o">=</span> <span class="n">date_of_aids_death</span> <span class="o">-</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">beddays</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
+                    <span class="n">hsi_event</span><span class="o">=</span><span class="n">HSI_Hiv_EndOfLifeCare</span><span class="p">(</span>
+                        <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
+                        <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;Hiv&quot;</span><span class="p">],</span>
+                        <span class="n">beddays</span><span class="o">=</span><span class="n">beddays</span><span class="p">,</span>
+                    <span class="p">),</span>
+                    <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                    <span class="n">topen</span><span class="o">=</span><span class="p">(</span>
+                        <span class="n">date_admission</span>
+                        <span class="k">if</span> <span class="p">(</span><span class="n">date_admission</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
+                        <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
+                    <span class="p">),</span>
+                    <span class="n">tclose</span><span class="o">=</span><span class="n">date_of_aids_death</span><span class="p">,</span>
                 <span class="p">)</span></div>
 </div>
 
@@ -2170,16 +2346,22 @@
 <a class="viewcode-back" href="../../../reference/tlo.methods.hiv.html#tlo.methods.hiv.HivAidsTbDeathEvent.apply">[docs]</a>
     <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;Hiv&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span>
 
         <span class="c1"># Check person is_alive</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;is_alive&quot;</span><span class="p">]:</span>
             <span class="k">return</span>
 
         <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;tb_on_treatment&#39;</span><span class="p">]:</span>
-            <span class="n">prob</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span>
+
+            <span class="n">risk_of_death</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;aids_tb_treatment_adjustment&quot;</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="s2">&quot;CardioMetabolicDisorders&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;nc_diabetes&quot;</span><span class="p">]:</span>
+                    <span class="n">risk_of_death</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;Tb&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;rr_death_diabetes&quot;</span><span class="p">]</span>
 
             <span class="c1"># treatment adjustment reduces probability of death</span>
-            <span class="k">if</span> <span class="n">prob</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;Hiv&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;aids_tb_treatment_adjustment&quot;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">risk_of_death</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;Demography&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">do_death</span><span class="p">(</span>
                     <span class="n">individual_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
                     <span class="n">cause</span><span class="o">=</span><span class="s2">&quot;AIDS_TB&quot;</span><span class="p">,</span>
@@ -2197,6 +2379,23 @@
                         <span class="n">cause</span><span class="o">=</span><span class="s2">&quot;AIDS_non_TB&quot;</span>
                     <span class="p">),</span>
                     <span class="n">date</span><span class="o">=</span><span class="n">date_of_aids_death</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="c1"># schedule hospital stay</span>
+                <span class="n">beddays</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+                <span class="n">date_admission</span> <span class="o">=</span> <span class="n">date_of_aids_death</span> <span class="o">-</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">beddays</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
+                    <span class="n">hsi_event</span><span class="o">=</span><span class="n">HSI_Hiv_EndOfLifeCare</span><span class="p">(</span>
+                        <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
+                        <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;Hiv&quot;</span><span class="p">],</span>
+                        <span class="n">beddays</span><span class="o">=</span><span class="n">beddays</span><span class="p">,</span>
+                    <span class="p">),</span>
+                    <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                    <span class="n">topen</span><span class="o">=</span><span class="p">(</span>
+                        <span class="n">date_admission</span>
+                        <span class="k">if</span> <span class="p">(</span><span class="n">date_admission</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
+                        <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
+                    <span class="p">),</span>
+                    <span class="n">tclose</span><span class="o">=</span><span class="n">date_of_aids_death</span><span class="p">,</span>
                 <span class="p">)</span>
 
         <span class="c1"># aids-tb and not on tb treatment</span>
@@ -2325,15 +2524,39 @@
 
 
 
+<div class="viewcode-block" id="HivScaleUpEvent">
+<a class="viewcode-back" href="../../../reference/tlo.methods.hiv.html#tlo.methods.hiv.HivScaleUpEvent">[docs]</a>
+<span class="k">class</span> <span class="nc">HivScaleUpEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; This event exists to change parameters or functions</span>
+<span class="sd">    depending on the scenario for projections which has been set</span>
+<span class="sd">    It only occurs once on date: scaleup_start_date,</span>
+<span class="sd">    called by initialise_simulation</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="HivScaleUpEvent.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.hiv.html#tlo.methods.hiv.HivScaleUpEvent.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HivScaleUpEvent.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.hiv.html#tlo.methods.hiv.HivScaleUpEvent.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">update_parameters_for_program_scaleup</span><span class="p">()</span></div>
+</div>
+
+
+
 <span class="c1"># ---------------------------------------------------------------------------</span>
 <span class="c1">#   Health System Interactions (HSI)</span>
 <span class="c1"># ---------------------------------------------------------------------------</span>
+
 
 <div class="viewcode-block" id="HSI_Hiv_TestAndRefer">
 <a class="viewcode-back" href="../../../reference/tlo.methods.hiv.html#tlo.methods.hiv.HSI_Hiv_TestAndRefer">[docs]</a>
 <span class="k">class</span> <span class="nc">HSI_Hiv_TestAndRefer</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    The is the Test-and-Refer HSI. Individuals may seek an HIV test at any time. From this, they can be referred on to</span>
+<span class="sd">    This is the Test-and-Refer HSI. Individuals may seek an HIV test at any time. From this, they can be referred on to</span>
 <span class="sd">    other services.</span>
 <span class="sd">    This event is scheduled by:</span>
 <span class="sd">        * the main event poll,</span>
@@ -2366,7 +2589,8 @@
         <span class="c1"># Define the necessary information for an HSI</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s2">&quot;Hiv_Test&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s2">&quot;VCTNegative&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1a&#39;</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s2">&quot;1a&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">counter_for_test_not_available</span> <span class="o">=</span> <span class="mi">0</span></div>
 
 
 <div class="viewcode-block" id="HSI_Hiv_TestAndRefer.apply">
@@ -2484,13 +2708,21 @@
             <span class="c1"># Test was not possible, set blank footprint and schedule another test</span>
             <span class="n">ACTUAL_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s2">&quot;VCTNegative&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
 
-            <span class="c1"># repeat appt for HIV test</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
-                <span class="n">HSI_Hiv_TestAndRefer</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span> <span class="n">referred_from</span><span class="o">=</span><span class="s1">&#39;HIV_test&#39;</span><span class="p">),</span>
-                <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
-                <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-            <span class="p">)</span>
+            <span class="c1"># set cap for number of repeat tests</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">counter_for_test_not_available</span> <span class="o">+=</span> <span class="mi">1</span>  <span class="c1"># The current appointment is included in the count.</span>
+
+
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">counter_for_test_not_available</span>
+                <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;hiv_healthseekingbehaviour_cap&quot;</span><span class="p">]</span>
+            <span class="p">):</span>
+                <span class="c1"># repeat appt for HIV test</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="p">,</span>
+                    <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">7</span><span class="p">),</span>
+                    <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                    <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                <span class="p">)</span>
 
         <span class="c1"># Return the footprint. If it should be suppressed, return a blank footprint.</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">suppress_footprint</span><span class="p">:</span>
@@ -2511,7 +2743,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s2">&quot;Hiv_Prevention_Circumcision&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s2">&quot;MaleCirc&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1a&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1b&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">number_of_occurrences</span> <span class="o">=</span> <span class="mi">0</span></div>
 
 
@@ -2536,6 +2768,10 @@
                 <span class="c1"># Update circumcision state</span>
                 <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;li_is_circ&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
+                <span class="c1"># Add used equipment</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">add_equipment</span><span class="p">({</span><span class="s1">&#39;Drip stand&#39;</span><span class="p">,</span> <span class="s1">&#39;Stool, adjustable height&#39;</span><span class="p">,</span> <span class="s1">&#39;Autoclave&#39;</span><span class="p">,</span>
+                                       <span class="s1">&#39;Bipolar Diathermy Machine&#39;</span><span class="p">,</span> <span class="s1">&#39;Bed, adult&#39;</span><span class="p">,</span> <span class="s1">&#39;Trolley, patient&#39;</span><span class="p">})</span>
+
                 <span class="c1"># Schedule follow-up appts</span>
                 <span class="c1"># schedule first follow-up appt, 3 days from procedure;</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
@@ -2553,7 +2789,10 @@
                 <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># schedule repeating appt when consumables not available</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">number_of_occurrences</span> <span class="o">&lt;=</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="k">if</span> <span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">number_of_occurrences</span>
+                    <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;hiv_healthseekingbehaviour_cap&quot;</span><span class="p">]</span>
+                <span class="p">):</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
                         <span class="bp">self</span><span class="p">,</span>
                         <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">weeks</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
@@ -2601,7 +2840,9 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get_blank_appt_footprint</span><span class="p">()</span>
 
         <span class="c1"># Check that infant prophylaxis is available and if it is, initiate:</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;infant_prep&#39;</span><span class="p">]):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
+            <span class="n">item_codes</span><span class="o">=</span><span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;infant_prep&#39;</span><span class="p">]:</span> <span class="mi">63</span><span class="p">}</span>
+        <span class="p">):</span>
             <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;hv_is_on_prep&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
             <span class="c1"># Schedule follow-up visit for 3 months time</span>
@@ -2617,10 +2858,13 @@
             <span class="p">)</span>
 
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">repeat_visits</span> <span class="o">&lt;=</span> <span class="mi">4</span><span class="p">:</span>
-                <span class="c1"># infant does not get NVP now but has repeat visit scheduled up to 5 times</span>
-                <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;hv_is_on_prep&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="c1"># infant does not get NVP now but has repeat visit scheduled up to 5 times</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;hv_is_on_prep&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
 
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">repeat_visits</span>
+                <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;hiv_healthseekingbehaviour_cap&quot;</span><span class="p">]</span>
+            <span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">repeat_visits</span> <span class="o">+=</span> <span class="mi">1</span>
 
                 <span class="c1"># Schedule repeat visit for one week&#39;s time</span>
@@ -2657,7 +2901,8 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s2">&quot;Hiv_Prevention_Prep&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s2">&quot;PharmDispensing&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;VCTNegative&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1a&#39;</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1a&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">counter_for_drugs_not_available</span> <span class="o">=</span> <span class="mi">0</span></div>
 
 
 <div class="viewcode-block" id="HSI_Hiv_StartOrContinueOnPrep.apply">
@@ -2693,7 +2938,10 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s2">&quot;Over5OPD&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;VCTPositive&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
 
         <span class="c1"># Check that PrEP is available and if it is, initiate or continue  PrEP:</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;prep&#39;</span><span class="p">]):</span>
+        <span class="n">quantity_required</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;dispensation_period_months&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">30</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
+            <span class="n">item_codes</span><span class="o">=</span><span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;prep&#39;</span><span class="p">]:</span> <span class="n">quantity_required</span><span class="p">}</span>
+        <span class="p">):</span>
             <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;hv_is_on_prep&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
             <span class="c1"># Schedule &#39;decision about whether to continue on PrEP&#39; for 3 months time</span>
@@ -2704,7 +2952,23 @@
 
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># If PrEP is not available, the person will default and not be on PrEP</span>
-            <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;hv_is_on_prep&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div>
+            <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;hv_is_on_prep&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">counter_for_drugs_not_available</span> <span class="o">+=</span> <span class="p">(</span>
+                <span class="mi">1</span>  <span class="c1"># The current appointment is included in the count.</span>
+            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">counter_for_drugs_not_available</span>
+                <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;hiv_healthseekingbehaviour_cap&quot;</span><span class="p">]</span>
+            <span class="p">):</span>
+                <span class="c1"># Schedule repeat visit for one week&#39;s time</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="p">,</span>
+                    <span class="n">priority</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                    <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">7</span><span class="p">),</span>
+                    <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="HSI_Hiv_StartOrContinueOnPrep.never_ran">
@@ -2750,8 +3014,8 @@
 
         <span class="c1"># check whether person had Rx at least 3 months ago and is now due repeat prescription</span>
         <span class="c1"># alternate routes into testing/tx may mean person already has recent ARV dispensation</span>
-        <span class="k">if</span> <span class="n">person</span><span class="p">[</span><span class="s1">&#39;hv_date_last_ART&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">-</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;dispensation_period_months&#39;</span><span class="p">])):</span>
+        <span class="k">if</span> <span class="n">person</span><span class="p">[</span><span class="s1">&#39;hv_date_last_ART&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">-</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;dispensation_period_months&#39;</span><span class="p">])):</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get_blank_appt_footprint</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="n">art_status_at_beginning_of_hsi</span> <span class="o">==</span> <span class="s2">&quot;not&quot;</span><span class="p">:</span>
@@ -2791,57 +3055,58 @@
             <span class="p">}</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;hiv_arv_NA&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">person_details_for_tx</span><span class="p">)</span>
 
-        <span class="c1"># As drugs were not available, the person will default to being off ART (...if they were on ART at the</span>
-        <span class="c1"># beginning of the HSI.)</span>
-        <span class="c1"># NB. If the person was not on ART at the beginning of the HSI, then there is no need to stop them (which</span>
-        <span class="c1">#  causes a new AIDSOnsetEvent to be scheduled.)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">counter_for_drugs_not_available</span> <span class="o">+=</span> <span class="mi">1</span>  <span class="c1"># The current appointment is included in the count.</span>
+            <span class="c1"># As drugs were not available, the person will default to being off ART (...if they were on ART at the</span>
+            <span class="c1"># beginning of the HSI.)</span>
+            <span class="c1"># NB. If the person was not on ART at the beginning of the HSI, then there is no need to stop them (which</span>
+            <span class="c1">#  causes a new AIDSOnsetEvent to be scheduled.)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">counter_for_drugs_not_available</span> <span class="o">+=</span> <span class="mi">1</span>  <span class="c1"># The current appointment is included in the count.</span>
 
-        <span class="k">if</span> <span class="n">art_status_at_beginning_of_hsi</span> <span class="o">!=</span> <span class="s2">&quot;not&quot;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">stops_treatment</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">art_status_at_beginning_of_hsi</span> <span class="o">!=</span> <span class="s2">&quot;not&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">stops_treatment</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span>
 
-        <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;probability_of_seeking_further_art_appointment_if_drug_not_available&quot;</span><span class="p">]</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span>
+                <span class="s2">&quot;probability_of_seeking_further_art_appointment_if_drug_not_available&quot;</span>
+            <span class="p">]</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span> <span class="o">&gt;=</span> <span class="n">p</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span> <span class="o">&gt;=</span> <span class="n">p</span><span class="p">:</span>
 
-            <span class="c1"># add in referral straight back to tx</span>
-            <span class="c1"># if defaulting, seek another treatment appointment in 6 months</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
-                <span class="n">hsi_event</span><span class="o">=</span><span class="n">HSI_Hiv_StartOrContinueTreatment</span><span class="p">(</span>
-                    <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span>
-                    <span class="n">facility_level_of_this_hsi</span><span class="o">=</span><span class="s2">&quot;1a&quot;</span><span class="p">,</span>
-                <span class="p">),</span>
-                <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">6</span><span class="p">),</span>
-                <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-            <span class="p">)</span>
-
-        <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># If person &#39;decides to&#39; seek another treatment appointment,</span>
-            <span class="c1"># schedule a new HSI appointment for next month</span>
-            <span class="c1"># NB. With a probability of 1.0, this will keep occurring,</span>
-            <span class="c1"># if person has already tried unsuccessfully to get ART at level 1a 2 times</span>
-            <span class="c1">#  then refer to level 1b</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">counter_for_drugs_not_available</span> <span class="o">&lt;=</span> <span class="mi">2</span><span class="p">:</span>
-                <span class="c1"># repeat attempt for ARVs at level 1a</span>
+                <span class="c1"># add in referral straight back to tx</span>
+                <span class="c1"># if defaulting, seek another treatment appointment in 6 months</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
                     <span class="n">hsi_event</span><span class="o">=</span><span class="n">HSI_Hiv_StartOrContinueTreatment</span><span class="p">(</span>
-                        <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span>
-                        <span class="n">facility_level_of_this_hsi</span><span class="o">=</span><span class="s2">&quot;1a&quot;</span>
+                        <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
+                        <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span>
+                        <span class="n">facility_level_of_this_hsi</span><span class="o">=</span><span class="s2">&quot;1a&quot;</span><span class="p">,</span>
                     <span class="p">),</span>
-                    <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+                    <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">6</span><span class="p">),</span>
                     <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                 <span class="p">)</span>
 
             <span class="k">else</span><span class="p">:</span>
-                <span class="c1"># refer to higher facility level</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
-                    <span class="n">hsi_event</span><span class="o">=</span><span class="n">HSI_Hiv_StartOrContinueTreatment</span><span class="p">(</span>
-                        <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span>
-                        <span class="n">facility_level_of_this_hsi</span><span class="o">=</span><span class="s2">&quot;2&quot;</span>
-                    <span class="p">),</span>
-                    <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
-                    <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                <span class="p">)</span>
+                <span class="c1"># If person &#39;decides to&#39; seek another treatment appointment,</span>
+                <span class="c1"># schedule a new HSI appointment for next month</span>
+                <span class="c1"># NB. With a probability of 1.0, this will keep occurring,</span>
+                <span class="c1"># if person has already tried unsuccessfully to get ART at level 1a 2 times</span>
+                <span class="c1">#  then refer to level 1b</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">counter_for_drugs_not_available</span> <span class="o">&lt;=</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="c1"># repeat attempt for ARVs at level 1a</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="p">,</span>
+                        <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+                        <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                    <span class="p">)</span>
+
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># refer to higher facility level</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
+                        <span class="n">hsi_event</span><span class="o">=</span><span class="n">HSI_Hiv_StartOrContinueTreatment</span><span class="p">(</span>
+                            <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
+                            <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span>
+                            <span class="n">facility_level_of_this_hsi</span><span class="o">=</span><span class="s2">&quot;2&quot;</span><span class="p">,</span>
+                        <span class="p">),</span>
+                        <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+                        <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                    <span class="p">)</span>
 
         <span class="c1"># also screen for tb</span>
         <span class="k">if</span> <span class="s2">&quot;Tb&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
@@ -2941,29 +3206,33 @@
 <span class="sd">        whether individual drugs were available&quot;&quot;&quot;</span>
 
         <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span>
+        <span class="n">dispensation_days</span> <span class="o">=</span> <span class="mi">30</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;dispensation_period_months&#39;</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="n">age_of_person</span> <span class="o">&lt;</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;ART_age_cutoff_young_child&quot;</span><span class="p">]:</span>
             <span class="c1"># Formulation for young children</span>
             <span class="n">drugs_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
-                <span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;First line ART regimen: young child&#39;</span><span class="p">],</span>
-                <span class="n">optional_item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span>
-                    <span class="s1">&#39;First line ART regimen: young child: cotrimoxazole&#39;</span><span class="p">],</span>
+                <span class="n">item_codes</span><span class="o">=</span><span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span>
+                                <span class="s1">&#39;First line ART regimen: young child&#39;</span><span class="p">]:</span> <span class="n">dispensation_days</span> <span class="o">*</span> <span class="mi">2</span><span class="p">},</span>
+                <span class="n">optional_item_codes</span><span class="o">=</span><span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span>
+                                         <span class="s1">&#39;First line ART regimen: young child: cotrimoxazole&#39;</span><span class="p">]:</span> <span class="n">dispensation_days</span> <span class="o">*</span> <span class="mi">240</span><span class="p">},</span>
                 <span class="n">return_individual_results</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
         <span class="k">elif</span> <span class="n">age_of_person</span> <span class="o">&lt;=</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;ART_age_cutoff_older_child&quot;</span><span class="p">]:</span>
             <span class="c1"># Formulation for older children</span>
             <span class="n">drugs_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
-                <span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;First line ART regimen: older child&#39;</span><span class="p">],</span>
-                <span class="n">optional_item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span>
-                    <span class="s1">&#39;First line ART regimen: older child: cotrimoxazole&#39;</span><span class="p">],</span>
+                <span class="n">item_codes</span><span class="o">=</span><span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span>
+                                <span class="s1">&#39;First line ART regimen: older child&#39;</span><span class="p">]:</span> <span class="n">dispensation_days</span> <span class="o">*</span> <span class="mi">3</span><span class="p">},</span>
+                <span class="n">optional_item_codes</span><span class="o">=</span><span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span>
+                    <span class="s1">&#39;First line ART regimen: older child: cotrimoxazole&#39;</span><span class="p">]:</span> <span class="n">dispensation_days</span> <span class="o">*</span> <span class="mi">480</span><span class="p">},</span>
                 <span class="n">return_individual_results</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># Formulation for adults</span>
             <span class="n">drugs_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
-                <span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;First-line ART regimen: adult&#39;</span><span class="p">],</span>
-                <span class="n">optional_item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span>
-                    <span class="s1">&#39;First-line ART regimen: adult: cotrimoxazole&#39;</span><span class="p">],</span>
+                <span class="n">item_codes</span><span class="o">=</span><span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span>
+                                <span class="s1">&#39;First-line ART regimen: adult&#39;</span><span class="p">]:</span> <span class="n">dispensation_days</span><span class="p">},</span>
+                <span class="n">optional_item_codes</span><span class="o">=</span><span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span>
+                    <span class="s1">&#39;First-line ART regimen: adult: cotrimoxazole&#39;</span><span class="p">]:</span> <span class="n">dispensation_days</span> <span class="o">*</span> <span class="mi">960</span><span class="p">},</span>
                 <span class="n">return_individual_results</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
         <span class="c1"># add drug names to dict</span>
@@ -3034,6 +3303,51 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s2">&quot;NewAdult&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>  <span class="c1"># Adult newly starting treatment</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s2">&quot;EstNonCom&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>  <span class="c1"># Adult already on treatment</span></div>
+
+
+
+<div class="viewcode-block" id="HSI_Hiv_EndOfLifeCare">
+<a class="viewcode-back" href="../../../reference/tlo.methods.hiv.html#tlo.methods.hiv.HSI_Hiv_EndOfLifeCare">[docs]</a>
+<span class="k">class</span> <span class="nc">HSI_Hiv_EndOfLifeCare</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    this is a hospital stay for terminally-ill patients with AHD</span>
+<span class="sd">    it does not affect disability weight or probability of death</span>
+<span class="sd">    no consumables are logged but health system capacity (HR) is allocated</span>
+<span class="sd">    there are no consequences if hospital bed is not available as person has scheduled death</span>
+<span class="sd">    already within 2 weeks</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="HSI_Hiv_EndOfLifeCare.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.hiv.html#tlo.methods.hiv.HSI_Hiv_EndOfLifeCare.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">beddays</span><span class="o">=</span><span class="mi">17</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">Hiv</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s2">&quot;Hiv_PalliativeCare&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s2">&quot;2&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">beddays</span> <span class="o">=</span> <span class="n">beddays</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">BEDDAYS_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_beddays_footprint</span><span class="p">({</span><span class="s2">&quot;general_bed&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">beddays</span><span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="HSI_Hiv_EndOfLifeCare.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.hiv.html#tlo.methods.hiv.HSI_Hiv_EndOfLifeCare.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
+        <span class="n">hs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;is_alive&quot;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="n">hs</span><span class="o">.</span><span class="n">get_blank_appt_footprint</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;hv_art&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;virally_suppressed&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">hs</span><span class="o">.</span><span class="n">get_blank_appt_footprint</span><span class="p">()</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="n">key</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;HSI_Hiv_EndOfLifeCare: inpatient admission for </span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="p">)</span></div>
+</div>
 
 
 
@@ -3369,15 +3683,15 @@
             <span class="n">count</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">subset</span><span class="p">)</span>
             <span class="c1"># proportion of subset living with HIV that are diagnosed:</span>
             <span class="n">proportion_diagnosed</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="nb">sum</span><span class="p">(</span><span class="n">subset</span> <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">hv_diagnosed</span><span class="p">)</span> <span class="o">/</span> <span class="n">count</span> <span class="k">if</span> <span class="n">count</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+                <span class="nb">sum</span><span class="p">(</span><span class="n">subset</span> <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">hv_diagnosed</span><span class="p">)</span> <span class="o">/</span> <span class="n">count</span> <span class="k">if</span> <span class="n">count</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">0.0</span>
             <span class="p">)</span>
             <span class="c1"># proportions of subset living with HIV on treatment:</span>
             <span class="n">art</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">subset</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">hv_art</span> <span class="o">!=</span> <span class="s2">&quot;not&quot;</span><span class="p">))</span>
-            <span class="n">art_cov</span> <span class="o">=</span> <span class="n">art</span> <span class="o">/</span> <span class="n">count</span> <span class="k">if</span> <span class="n">count</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="n">art_cov</span> <span class="o">=</span> <span class="n">art</span> <span class="o">/</span> <span class="n">count</span> <span class="k">if</span> <span class="n">count</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">0.0</span>
 
             <span class="c1"># proportion of subset on treatment that have good VL suppression</span>
             <span class="n">art_vs</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">subset</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">hv_art</span> <span class="o">==</span> <span class="s2">&quot;on_VL_suppressed&quot;</span><span class="p">))</span>
-            <span class="n">art_cov_vs</span> <span class="o">=</span> <span class="n">art_vs</span> <span class="o">/</span> <span class="n">art</span> <span class="k">if</span> <span class="n">art</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="n">art_cov_vs</span> <span class="o">=</span> <span class="n">art_vs</span> <span class="o">/</span> <span class="n">art</span> <span class="k">if</span> <span class="n">art</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">0.0</span>
             <span class="k">return</span> <span class="n">proportion_diagnosed</span><span class="p">,</span> <span class="n">art_cov</span><span class="p">,</span> <span class="n">art_cov_vs</span>
 
         <span class="n">alive_infected</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">hv_inf</span>
@@ -3628,7 +3942,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on May 27, 2024.
+      <span class="lastupdated">Last updated on Aug 02, 2024.
       </span></p>
   </div>
 
