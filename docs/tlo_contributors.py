@@ -98,6 +98,7 @@ if __name__ == "__main__":
     with open(args.contributors_file_path, "r") as f:
         contributors = yaml.safe_load(f)
     contribution_categories = (
+        "Policy translation",
         "Epidemiology and modelling",
         "Health economics",
         "Software development",
