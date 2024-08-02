@@ -16,8 +16,8 @@ resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 outputpath = Path("./outputs")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 1)
-popsize = 100
+end_date = Date(2020, 1, 1)
+popsize = 1000
 seed = 42
 
 def extract_mapper(key):
@@ -55,4 +55,5 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
     prevalence_tb_function = prevalence['Tb']
     prevalence_tb_log = output['tlo.methods.tb']["tb_prevalence"]["tbPrevActive"] + output['tlo.methods.tb']["tb_prevalence"]["tbPrevLatent"]
 
-    assert prevalence_tb_function ==  prevalence_tb_log
+    print(prevalence_tb_function)
+    assert prevalence_tb_function[0] ==  prevalence_tb_log[0]

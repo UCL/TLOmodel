@@ -700,7 +700,8 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
             ]
             # Append to list of prevalences reported by each module
             prevalence_from_each_disease_module.append(prevalence_from_disease_module)
-
+        prevalence_from_each_disease_module.append(self.sim.modules['Demography'].report_prevalence()) #maternal_mortality
+        print(prevalence_from_each_disease_module)
         # 2) Combine into a single dataframe (each column of this dataframe gives the reports from each module), and
         # add together prevalence reported by different modules that have the same cause (i.e., add together columns with
         # the same name).
