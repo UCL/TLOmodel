@@ -234,9 +234,9 @@ class BaseScenario(abc.ABC):
         """
         return None
 
-    def draw_names(self, draw_number) -> str:
-        """Returns the name of the draw corresponding to the given draw number. This is offered for convenience, so that
-        the models logs containing a 'user-friendly' label for what this run intends to represent."""
+    def draw_name(self, draw_number) -> str:
+        """Returns the name of the draw corresponding to the given draw number. This is offered for convenience so that
+        the logfile contain a 'user-friendly' label for the draw."""
         return ""
 
     def get_log_config(self, override_output_directory=None):
@@ -324,7 +324,7 @@ class DrawGenerator:
         return {
             "draw_number": draw_number,
             "parameters": self.scenario.draw_parameters(draw_number, self.scenario.rng),
-            "draw_name": self.scenario.draw_names(draw_number),
+            "draw_name": self.scenario.draw_name(draw_number),
         }
 
     def get_run_config(self, scenario_path):
