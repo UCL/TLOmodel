@@ -4213,8 +4213,8 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
         # Check that there are enough consumables to treat this person's fractures
         is_cons_available = self.get_consumables(self.module.cons_item_codes["open_fracture_treatment"]) and (
             # If wound is "grossly contaminated" administer Metronidazole, else ignore
-            self.get_consumables("open_fracture_treatment_additional_if_contaminated") if wound_contaminated else True
-        )
+            self.get_consumables(self.module.cons_item_codes["open_fracture_treatment_additional_if_contaminated"])
+            if wound_contaminated else True)
 
         if is_cons_available:
             logger.debug(key='rti_general_message',
@@ -4394,7 +4394,6 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
 
 
     def apply(self, person_id, squeeze_factor):
-        get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
         df = self.sim.population.props
         self._number_of_times_this_event_has_run += 1
 
@@ -4423,7 +4422,7 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
                 # check if they have multiple burns, which implies a higher burned total body surface area (TBSA) which
                 # will alter the treatment plan
                 cons_needed.update(
-                    self.modules.cons_item_codes['ringers lactate for multiple burns']
+                    self.module.cons_item_codes['ringers lactate for multiple burns']
                 )
 
             is_cons_available = self.get_consumables(cons_needed)
