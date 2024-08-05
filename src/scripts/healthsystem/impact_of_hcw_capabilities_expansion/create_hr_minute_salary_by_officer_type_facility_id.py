@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pandas as pd
 
-
 resourcefilepath = Path('./resources')
 
 mfl = pd.read_csv(resourcefilepath / 'healthsystem' / 'organisation' / 'ResourceFile_Master_Facilities_List.csv')
