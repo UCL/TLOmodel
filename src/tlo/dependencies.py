@@ -111,10 +111,10 @@ def initialise_missing_dependencies(modules: Iterable[Module], **module_kwargs) 
                 module_class_map[dependency](**module_kwargs)
                 for dependency in missing_dependencies
             ]
-            all_module_instances.extend(missing_module_instances)
-            add_missing_module_instances(all_module_instances, all_missing_module_names)
+            modules.extend(missing_module_instances)
+            add_missing_module_instances(modules, all_missing_module_names)
 
-    add_missing_module_instances(modules, set())
+    add_missing_module_instances(all_module_instances, set())
     return set(all_module_instances) - set(modules)
 
 
