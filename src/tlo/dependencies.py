@@ -105,7 +105,7 @@ def initialise_missing_dependencies(modules: Iterable[Module], **module_kwargs) 
         missing_dependencies: set[str] = get_missing_dependencies(
             modules, get_all_dependencies
         )
-        if not missing_dependencies.issubset(all_missing_module_names):
+        if len(missing_dependencies) > 0:
             all_missing_module_names |= missing_dependencies
             missing_module_instances: list[Module] = [
                 module_class_map[dependency](**module_kwargs)
