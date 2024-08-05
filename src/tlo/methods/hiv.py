@@ -398,16 +398,16 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             " high-bound-exclusive]",
         ),
         # ------------------ scale-up parameters for scenario analysis ------------------ #
-        "do_scaleup": Parameter(
-            Types.BOOL,
-        "argument to determine whether scale-up of program will be implemented"
+        "type_of_scaleup": Parameter(
+            Types.STRING, "argument to determine type scale-up of program which will be implemented, "
+                          "can be 'none', 'target' or 'max'",
         ),
         "scaleup_start_year": Parameter(
             Types.INT,
             "the year when the scale-up starts (it will occur on 1st January of that year)"
         ),
         "scaleup_parameters": Parameter(
-            Types.DICT,
+            Types.DATA_FRAME,
             "the parameters and values changed in scenario analysis"
         ),
     }
@@ -448,7 +448,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         p["treatment_cascade"] = workbook["spectrum_treatment_cascade"]
 
         # load parameters for scale-up projections
-        p["scaleup_parameters"] = workbook["scaleup_parameters"].set_index('parameter')['scaleup_value'].to_dict()
+        p['scaleup_parameters'] = workbook["scaleup_parameters"]
 
         # DALY weights
         # get the DALY weight that this module will use from the weight database (these codes are just random!)
@@ -472,10 +472,13 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         )
 
     def pre_initialise_population(self):
-        """
-        * Establish the Linear Models
-        *
-        """
+        """Do things required before the population is created
+        * Build the LinearModels"""
+        self._build_linear_models()
+
+    def _build_linear_models(self):
+        """Establish the Linear Models"""
+
         p = self.parameters
 
         # ---- LINEAR MODELS -----
@@ -911,7 +914,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(years=1))
 
         # Optional: Schedule the scale-up of programs
-        if self.parameters["do_scaleup"]:
+        if self.parameters["type_of_scaleup"] != 'none':
             scaleup_start_date = Date(self.parameters["scaleup_start_year"], 1, 1)
             assert scaleup_start_date >= self.sim.start_date, f"Date {scaleup_start_date} is before simulation starts."
             sim.schedule_event(HivScaleUpEvent(self), scaleup_start_date)
@@ -1099,42 +1102,47 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         )
 
     def update_parameters_for_program_scaleup(self):
-
+        """ options for program scale-up are 'target' or 'max' """
         p = self.parameters
-        scaled_params = p["scaleup_parameters"]
+        scaled_params_workbook = p["scaleup_parameters"]
 
-        if p["do_scaleup"]:
+        if p['type_of_scaleup'] == 'target':
+            scaled_params = scaled_params_workbook.set_index('parameter')['target_value'].to_dict()
+        else:
+            scaled_params = scaled_params_workbook.set_index('parameter')['max_value'].to_dict()
 
-            # scale-up HIV program
-            # reduce risk of HIV - applies to whole adult population
-            p["beta"] = p["beta"] * scaled_params["reduction_in_hiv_beta"]
+        # scale-up HIV program
+        # reduce risk of HIV - applies to whole adult population
+        p["beta"] = p["beta"] * scaled_params["reduction_in_hiv_beta"]
 
-            # increase PrEP coverage for FSW after HIV test
-            p["prob_prep_for_fsw_after_hiv_test"] = scaled_params["prob_prep_for_fsw_after_hiv_test"]
+        # increase PrEP coverage for FSW after HIV test
+        p["prob_prep_for_fsw_after_hiv_test"] = scaled_params["prob_prep_for_fsw_after_hiv_test"]
 
-            # prep poll for AGYW - target to the highest risk
-            # increase retention to 75% for FSW and AGYW
-            p["prob_prep_for_agyw"] = scaled_params["prob_prep_for_agyw"]
-            p["probability_of_being_retained_on_prep_every_3_months"] = scaled_params["probability_of_being_retained_on_prep_every_3_months"]
+        # prep poll for AGYW - target to the highest risk
+        # increase retention to 75% for FSW and AGYW
+        p["prob_prep_for_agyw"] = scaled_params["prob_prep_for_agyw"]
+        p["probability_of_being_retained_on_prep_every_3_months"] = scaled_params["probability_of_being_retained_on_prep_every_3_months"]
 
-            # increase probability of VMMC after hiv test
-            p["prob_circ_after_hiv_test"] = scaled_params["prob_circ_after_hiv_test"]
+        # perfect retention on ART
+        p["probability_of_being_retained_on_art_every_3_months"] = scaled_params["probability_of_being_retained_on_art_every_3_months"]
 
-            # increase testing/diagnosis rates, default 2020 0.03/0.25 -> 93% dx
-            p["hiv_testing_rates"]["annual_testing_rate_children"] = scaled_params["annual_testing_rate_children"]
-            p["hiv_testing_rates"]["annual_testing_rate_adults"] = scaled_params["annual_testing_rate_adults"]
+        # increase probability of VMMC after hiv test
+        p["prob_circ_after_hiv_test"] = scaled_params["prob_circ_after_hiv_test"]
 
-            # ANC testing - value for mothers and infants testing
-            p["prob_hiv_test_at_anc_or_delivery"] = scaled_params["prob_hiv_test_at_anc_or_delivery"]
-            p["prob_hiv_test_for_newborn_infant"] = scaled_params["prob_hiv_test_for_newborn_infant"]
+        # increase testing/diagnosis rates, default 2020 0.03/0.25 -> 93% dx
+        p["hiv_testing_rates"]["annual_testing_rate_adults"] = scaled_params["annual_testing_rate_adults"]
 
-            # prob ART start if dx, this is already 95% at 2020
-            p["prob_start_art_after_hiv_test"] = scaled_params["prob_start_art_after_hiv_test"]
+        # ANC testing - value for mothers and infants testing
+        p["prob_hiv_test_at_anc_or_delivery"] = scaled_params["prob_hiv_test_at_anc_or_delivery"]
+        p["prob_hiv_test_for_newborn_infant"] = scaled_params["prob_hiv_test_for_newborn_infant"]
 
-            # viral suppression rates
-            # adults already at 95% by 2020
-            # change all column values
-            p["prob_start_art_or_vs"]["virally_suppressed_on_art"] = scaled_params["virally_suppressed_on_art"]
+        # viral suppression rates
+        # adults already at 95% by 2020
+        # change all column values
+        p["prob_start_art_or_vs"]["virally_suppressed_on_art"] = scaled_params["virally_suppressed_on_art"]
+
+        # update exising linear models to use new scaled-up paramters
+        self._build_linear_models()
 
     def on_birth(self, mother_id, child_id):
         """
@@ -3339,15 +3347,15 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             count = sum(subset)
             # proportion of subset living with HIV that are diagnosed:
             proportion_diagnosed = (
-                sum(subset & df.hv_diagnosed) / count if count > 0 else 0
+                sum(subset & df.hv_diagnosed) / count if count > 0 else 0.0
             )
             # proportions of subset living with HIV on treatment:
             art = sum(subset & (df.hv_art != "not"))
-            art_cov = art / count if count > 0 else 0
+            art_cov = art / count if count > 0 else 0.0
 
             # proportion of subset on treatment that have good VL suppression
             art_vs = sum(subset & (df.hv_art == "on_VL_suppressed"))
-            art_cov_vs = art_vs / art if art > 0 else 0
+            art_cov_vs = art_vs / art if art > 0 else 0.0
             return proportion_diagnosed, art_cov, art_cov_vs
 
         alive_infected = df.is_alive & df.hv_inf
