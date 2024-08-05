@@ -46,7 +46,7 @@ resourcefilepath = Path("./resources")
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2025, 1, 1)
-popsize = 170000
+popsize = 340000
 
 def run_sim(service_availability):
     # Establish the simulation object and set the seed
@@ -147,6 +147,42 @@ plt.plot(out_df_4['rounded_decimal_year'], out_df_4['n_diagnosed_past_year'], ma
 plt.title('Total diagnosed per Year')
 plt.xlabel('Year')
 plt.ylabel('Total diagnosed per year')
+plt.grid(True)
+plt.ylim(0,10000)
+plt.show()
+
+
+
+
+# plot number cc treated in past year
+out_df_13 = pd.read_csv(output_csv_file)
+out_df_13 = out_df_13[['n_treated_past_year', 'rounded_decimal_year']].dropna()
+out_df_13 = out_df_13[out_df_13['rounded_decimal_year'] >= 2011]
+out_df_13['n_treated_past_year'] = out_df_13['n_treated_past_year'] * scale_factor
+print(out_df_13)
+plt.figure(figsize=(10, 6))
+plt.plot(out_df_13['rounded_decimal_year'], out_df_13['n_treated_past_year'], marker='o')
+plt.title('Total treated per Year')
+plt.xlabel('Year')
+plt.ylabel('Total treated per year')
+plt.grid(True)
+plt.ylim(0,10000)
+plt.show()
+
+
+
+
+# plot number cc cured in past year
+out_df_14 = pd.read_csv(output_csv_file)
+out_df_14 = out_df_14[['n_cured_past_year', 'rounded_decimal_year']].dropna()
+out_df_14 = out_df_14[out_df_14['rounded_decimal_year'] >= 2011]
+out_df_14['n_cured_past_year'] = out_df_14['n_cured_past_year'] * scale_factor
+print(out_df_14)
+plt.figure(figsize=(10, 6))
+plt.plot(out_df_14['rounded_decimal_year'], out_df_14['n_cured_past_year'], marker='o')
+plt.title('Total cured per Year')
+plt.xlabel('Year')
+plt.ylabel('Total cured per year')
 plt.grid(True)
 plt.ylim(0,10000)
 plt.show()
@@ -288,6 +324,20 @@ plt.ylim(0, 0.30)
 plt.show()
 
 
+# plot number of hivpos in stage 4
+out_df_11 = pd.read_csv(output_csv_file)
+out_df_11 = out_df_11[['total_hivpos_stage4', 'rounded_decimal_year']].dropna()
+# out_df_11 = out_df_11[out_df_11['rounded_decimal_year'] >= 2011]
+# out_df_11['total_hivpos_stage4'] = out_df_11['total_hivpos_stage4'] * scale_factor
+print(out_df_11)
+plt.figure(figsize=(10, 6))
+plt.plot(out_df_11['rounded_decimal_year'], out_df_11['total_hivpos_stage4'], marker='o')
+plt.title('total_hivpos_stage4')
+plt.xlabel('Year')
+plt.ylabel('total_hivpos_stage4')
+plt.grid(True)
+plt.ylim(0,100)
+plt.show()
 
 
 # plot number of hivneg in stage 4
@@ -306,20 +356,24 @@ plt.ylim(0,100)
 plt.show()
 
 
-# plot number of hivpos in stage 4
-out_df_11 = pd.read_csv(output_csv_file)
-out_df_11 = out_df_11[['total_hivpos_stage4', 'rounded_decimal_year']].dropna()
-# out_df_11 = out_df_11[out_df_11['rounded_decimal_year'] >= 2011]
-# out_df_11['total_hivpos_stage4'] = out_df_11['total_hivpos_stage4'] * scale_factor
-print(out_df_11)
+# plot number of hivneg in stage 4
+out_df_13 = pd.read_csv(output_csv_file)
+out_df_13 = out_df_13[['total_hivneg_stage4', 'rounded_decimal_year']].dropna()
+out_df_13 = out_df_13[out_df_13['rounded_decimal_year'] >= 2011]
+out_df_13['total_hivneg_stage4'] = out_df_13['total_hivneg_stage4'] * scale_factor
+print(out_df_13)
 plt.figure(figsize=(10, 6))
-plt.plot(out_df_11['rounded_decimal_year'], out_df_11['total_hivpos_stage4'], marker='o')
-plt.title('total_hivpos_stage4')
+plt.plot(out_df_13['rounded_decimal_year'], out_df_13['total_hivneg_stage4'], marker='o')
+plt.title('total_hivneg_stage4')
 plt.xlabel('Year')
-plt.ylabel('total_hivpos_stage4')
+plt.ylabel('total_hivneg_stage4')
 plt.grid(True)
-plt.ylim(0,100)
+plt.ylim(0,10000)
 plt.show()
+
+
+
+
 
 
 # ---------------------------------------------------------------------------

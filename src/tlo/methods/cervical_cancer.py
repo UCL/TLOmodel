@@ -225,6 +225,10 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             Types.BOOL,
             "ever been treated for cc"
         ),
+        "ce_cured_date_cc": Property(
+            Types.DATE,
+            "ever cured of cervical cancer date"
+        ),
         "ce_cc_ever": Property(
             Types.BOOL,
             "ever had cc"
@@ -342,6 +346,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         df.loc[df.is_alive, "ce_biopsy"] = False
         df.loc[df.is_alive, "ce_ever_screened"] = False
         df.loc[df.is_alive, "ce_ever_diagnosed"] = False
+        df.loc[df.is_alive, "ce_cured_date_cc"] = pd.NaT
 
         # -------------------- ce_hpv_cc_status -----------
         # this was not assigned here at outset because baseline value of hv_inf was not accessible - it is assigned
@@ -612,7 +617,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         df.at[child_id, "ce_biopsy"] = False
         df.at[child_id, "ce_ever_screened"] = False
         df.at[child_id, "ce_ever_diagnosed"] = False
-
+        df.at[child_id, "ce_cured_date_cc"] = pd.NaT
 
     def report_daly_values(self):
 
@@ -1195,6 +1200,7 @@ class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             and df.at[person_id, "ce_date_treatment"] == self.sim.date):
             df.at[person_id, "ce_hpv_cc_status"] = 'none'
             df.at[person_id, 'ce_current_cc_diagnosed'] = False
+            df.at[person_id, 'ce_cured_date_cc'] = self.sim.date
         else:
             df.at[person_id, "ce_hpv_cc_status"] = 'stage1'
 
@@ -1202,6 +1208,7 @@ class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             and df.at[person_id, "ce_date_treatment"] == self.sim.date):
             df.at[person_id, "ce_hpv_cc_status"] = 'none'
             df.at[person_id, 'ce_current_cc_diagnosed'] = False
+            df.at[person_id, 'ce_cured_date_cc'] = self.sim.date
         else:
             df.at[person_id, "ce_hpv_cc_status"] = 'stage2a'
 
@@ -1209,6 +1216,7 @@ class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             and df.at[person_id, "ce_date_treatment"] == self.sim.date):
             df.at[person_id, "ce_hpv_cc_status"] = 'none'
             df.at[person_id, 'ce_current_cc_diagnosed'] = False
+            df.at[person_id, 'ce_cured_date_cc'] = self.sim.date
         else:
             df.at[person_id, "ce_hpv_cc_status"] = 'stage2b'
 
@@ -1216,6 +1224,7 @@ class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             and df.at[person_id, "ce_date_treatment"] == self.sim.date):
             df.at[person_id, "ce_hpv_cc_status"] = 'none'
             df.at[person_id, 'ce_current_cc_diagnosed'] = False
+            df.at[person_id, 'ce_cured_date_cc'] = self.sim.date
         else:
             df.at[person_id, "ce_hpv_cc_status"] = 'stage3'
 
@@ -1461,6 +1470,7 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_deaths_cc_hivpos_past_year = ((df['hv_inf']) & df.ce_date_death.between(date_1_year_ago, self.sim.date)).sum()
         n_deaths_cc_hiv_past_year = ((df['hv_inf']) & df.ce_date_death.between(date_1_year_ago, self.sim.date)).sum()
         n_treated_past_year = df.ce_date_treatment.between(date_1_year_ago, self.sim.date).sum()
+        n_cured_past_year = df.ce_cured_date_cc.between(date_1_year_ago, self.sim.date).sum()
 
         date_1p25_years_ago = self.sim.date - pd.DateOffset(days=456)
         date_0p75_years_ago = self.sim.date - pd.DateOffset(days=274)
@@ -1554,6 +1564,7 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         out.update({"n_deaths_cc_hivpos_past_year": n_deaths_cc_hivpos_past_year})
         out.update({"n_deaths_cc_hiv_past_year": n_deaths_cc_hiv_past_year})
         out.update({"n_treated_past_year": n_treated_past_year})
+        out.update({"n_cured_past_year": n_cured_past_year})
         out.update({"prop_cc_hiv": prop_cc_hiv})
         out.update({"n_diagnosed_past_year_stage1": n_diagnosed_past_year_stage1})
         out.update({"n_diagnosed_past_year_stage2a": n_diagnosed_past_year_stage2a})
@@ -1633,6 +1644,7 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
               'n_women_vaccinated', out['n_women_vaccinated'],
               'n_ever_screened', out['n_ever_screened'],
               'n_diagnosed_past_year:', out['n_diagnosed_past_year'],
+              'n_cured_past_year:', out['n_cured_past_year'],
               'n_women_alive:', out['n_women_alive'],
               'rate_diagnosed_cc:', out['rate_diagnosed_cc'],
               'n_women_with_cc:', out['cc'],
@@ -1696,11 +1708,11 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         selected_columns = ['ce_hpv_cc_status', 'sy_vaginal_bleeding', 'ce_biopsy','ce_current_cc_diagnosed',
         'ce_selected_for_xpert_this_month', 'sy_chosen_xpert_screening_for_hpv_cervical_cancer',
         'ce_xpert_hpv_ever_pos', 'ce_date_cryo',
-        'ce_date_diagnosis', 'ce_date_treatment',
+        'ce_date_diagnosis', 'ce_date_treatment','ce_cured_date_cc',
         'ce_date_palliative_care', 'ce_selected_for_via_this_month', 'sy_chosen_via_screening_for_cin_cervical_cancer',
         'ce_via_cin_ever_detected']
 
-        selected_columns = ["hv_inf", "ce_hiv_unsuppressed", "hv_art", "ce_hpv_cc_status"]
+        selected_columns = ["hv_inf", "ce_hiv_unsuppressed", "hv_art", "ce_hpv_cc_status",'ce_cured_date_cc']
 
         selected_rows = df[(df['sex'] == 'F') & (df['age_years'] > 15) & df['is_alive'] & (df['hv_inf'])]
 
