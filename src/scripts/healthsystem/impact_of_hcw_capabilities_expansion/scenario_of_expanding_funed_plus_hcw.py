@@ -22,13 +22,15 @@ from tlo.methods.fullmodel import fullmodel
 from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScenarioSwitcher
 from tlo.scenario import BaseScenario
 
+import pandas as pd
+
 
 class LongRun(BaseScenario):
     def __init__(self):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2025, 1, 1)  # todo: TBC
+        self.end_date = Date(2030, 1, 1)
         self.pop_size = 20_000  # todo: TBC
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
@@ -54,173 +56,25 @@ class LongRun(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         return list(self._scenarios.values())[draw_number]
 
-    def _get_scenarios(self) -> Dict[str, Dict]:  # todo: create many scenarios of expanding HCW (C, NM, P, DCSA)
+    def _get_scenarios(self) -> Dict[str, Dict]:
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
 
-        self.YEAR_OF_CHANGE = 2020  # This is the year to change HR scaling mode.
-        # Year 2030 is when the Establishment HCW will be met as estimated by Berman 2022.
-        # But it can be 2020, or 2019, to reduce running time (2010-2030 instead of 2010-2040).
+        self.YEAR_OF_CHANGE = 2020  # This is the year to change run settings and to start hr expansion.
+
+        self.scenarios = pd.read_csv(Path('./resources')
+                                     / 'healthsystem' / 'human_resources' / 'scaling_capabilities'
+                                     / 'ResourceFile_HR_expansion_by_officer_type_given_extra_budget.csv'
+                                     ).set_index('Officer_Category')  # do we need 'self' or not?
 
         return {
-            "Establishment HCW":
+            self.scenarios.columns[i]:
                 mix_scenarios(
                     self._baseline(),
                     {'HealthSystem': {
-                        'HR_scaling_by_level_and_officer_type_mode': 'default',
-                        'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE
+                        'HR_expansion_by_officer_type': list(self.scenarios.iloc[:, i])
                     }
                     }
-                ),
-
-            "Establishment HCW Expansion C1":
-                mix_scenarios(
-                    self._baseline(),
-                    {'HealthSystem': {
-                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_c1',
-                        'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE
-                    }
-                    }
-                ),
-
-            "Establishment HCW Expansion C2":
-                mix_scenarios(
-                    self._baseline(),
-                    {'HealthSystem': {
-                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_c2',
-                        'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE
-                    }
-                    }
-                ),
-
-            "Establishment HCW Expansion C3":
-                mix_scenarios(
-                    self._baseline(),
-                    {'HealthSystem': {
-                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_c3',
-                        'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE
-                    }
-                    }
-                ),
-
-            "Establishment HCW Expansion P1":
-                mix_scenarios(
-                    self._baseline(),
-                    {'HealthSystem': {
-                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_p1',
-                        'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE
-                    }
-                    }
-                ),
-
-            "Establishment HCW Expansion P2":
-                mix_scenarios(
-                    self._baseline(),
-                    {'HealthSystem': {
-                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_p2',
-                        'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE
-                    }
-                    }
-                ),
-
-            "Establishment HCW Expansion P3":
-                mix_scenarios(
-                    self._baseline(),
-                    {'HealthSystem': {
-                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_p3',
-                        'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE
-                    }
-                    }
-                ),
-
-            "Establishment HCW Expansion C1P1":
-                mix_scenarios(
-                    self._baseline(),
-                    {'HealthSystem': {
-                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_c1p1',
-                        'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE
-                    }
-                    }
-                ),
-
-            "Establishment HCW Expansion C2P1":
-                mix_scenarios(
-                    self._baseline(),
-                    {'HealthSystem': {
-                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_c2p1',
-                        'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE
-                    }
-                    }
-                ),
-
-            "Establishment HCW Expansion C3P1":
-                mix_scenarios(
-                    self._baseline(),
-                    {'HealthSystem': {
-                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_c3p1',
-                        'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE
-                    }
-                    }
-                ),
-
-            "Establishment HCW Expansion C1P2":
-                mix_scenarios(
-                    self._baseline(),
-                    {'HealthSystem': {
-                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_c1p2',
-                        'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE
-                    }
-                    }
-                ),
-
-            "Establishment HCW Expansion C2P2":
-                mix_scenarios(
-                    self._baseline(),
-                    {'HealthSystem': {
-                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_c2p2',
-                        'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE
-                    }
-                    }
-                ),
-
-            "Establishment HCW Expansion C3P2":
-                mix_scenarios(
-                    self._baseline(),
-                    {'HealthSystem': {
-                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_c3p2',
-                        'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE
-                    }
-                    }
-                ),
-
-            "Establishment HCW Expansion C1P3":
-                mix_scenarios(
-                    self._baseline(),
-                    {'HealthSystem': {
-                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_c1p3',
-                        'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE
-                    }
-                    }
-                ),
-
-            "Establishment HCW Expansion C2P3":
-                mix_scenarios(
-                    self._baseline(),
-                    {'HealthSystem': {
-                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_c2p3',
-                        'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE
-                    }
-                    }
-                ),
-
-            "Establishment HCW Expansion C3P3":
-                mix_scenarios(
-                    self._baseline(),
-                    {'HealthSystem': {
-                        'HR_scaling_by_level_and_officer_type_mode': 'expand_funded_c3p3',
-                        'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE
-                    }
-                    }
-                ),
+                ) for i in range(len(self.scenarios.columns))
         }
 
     def _baseline(self) -> Dict:
