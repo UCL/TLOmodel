@@ -3010,7 +3010,7 @@ class HRExpansionByOfficerType(Event, PopulationScopeEventMixin):
         daily_extra_budget = 0.042*(total_cost_clinical + total_cost_dcsa + total_cost_nursing + total_cost_pharmacy)
 
         # get proportional daily extra budget for each of the four cadres
-        daily_extra_budget_by_officer = daily_extra_budget * self.parameters['HR_expansion_by_officer_type']
+        daily_extra_budget_by_officer = daily_extra_budget * self.module.parameters['HR_expansion_by_officer_type']
 
         # get the scale up factor for each cadre, assumed to be the same for each facility id of that cadre
         sf_clinical = (total_cost_clinical + daily_extra_budget_by_officer[0])/total_cost_clinical
