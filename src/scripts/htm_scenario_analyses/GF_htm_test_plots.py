@@ -1,7 +1,6 @@
 import datetime
 from pathlib import Path
 
-import matplotlib.lines as mlines
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
