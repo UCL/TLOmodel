@@ -16,13 +16,13 @@ tlo scenario-run src/scripts/healthsystem/impact_of_hcw_capabilities_expansion/s
 from pathlib import Path
 from typing import Dict
 
+import pandas as pd
+
 from tlo import Date, logging
 from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios
 from tlo.methods.fullmodel import fullmodel
 from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScenarioSwitcher
 from tlo.scenario import BaseScenario
-
-import pandas as pd
 
 
 class LongRun(BaseScenario):
