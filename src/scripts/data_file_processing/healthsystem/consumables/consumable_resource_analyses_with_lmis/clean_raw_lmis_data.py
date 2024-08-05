@@ -236,6 +236,18 @@ lmis = lmis[~(lmis.fac_level == '0')]
 months_reversed_dict = {v: k for k, v in months_dict.items()}
 lmis['month'] = lmis['month'].map(months_reversed_dict)
 
+# Create a lower case and clean version of consumable names
+def remove_redundant_characters(_df, _col):
+    return _df[_col].str.lower() \
+    .str.replace(",", "", regex=False) \
+    .str.replace(" ", "", regex=False) \
+    .str.replace("each", "", regex=False) \
+    .str.replace("(", "", regex=False) \
+    .str.replace(")", "", regex=False) \
+    .str.replace("kitof.*tests", "", regex=True)  # Using '.*' to match any characters between 'kitof' and 'tests'
+
+lmis['item_lowercase'] = remove_redundant_characters(lmis, 'item')
+
 # Understand the distribution of facilities which don't report data
 full_district_set = set(districts_dict.values())
 for y in range(1,len(years_dict)+1):
@@ -287,11 +299,23 @@ if sample_run == 1:
 else:
     pass
 
+# Create a dictonary of consumable names which a duplicated in the cleaned lower case columns
+# Find duplicated rows based on 'item' and 'item_lowercase'
+lmis_cons_names = lmis[['item', 'item_lowercase']].drop_duplicates(['item', 'item_lowercase'])
+duplicated_rows = lmis_cons_names.duplicated(subset=['item_lowercase'], keep=False)
+lmis_cons_names_duplicated = lmis_cons_names[duplicated_rows]
+duplicate_items = lmis_cons_names_duplicated.item_lowercase.unique().tolist()
 
 # Import manually cleaned list of consumable names
-clean_consumables_names = pd.read_csv(path_for_new_resourcefiles / 'ResourceFile_processing_lmis_consumable_names.csv', low_memory = False)[['Program', 'Consumable','Alternate consumable name',	'Substitute group']]
+clean_consumables_names = pd.read_csv(path_for_new_resourcefiles / 'ResourceFile_processing_lmis_consumable_names.csv', low_memory = False)[['Program', 'Consumable','Alternate consumable name', 'Substitute group']]
+clean_consumables_names['Alternate consumable name_lowercase'] = remove_redundant_characters(clean_consumables_names, 'Alternate consumable name')
+clean_consumables_names['Consumable_lowercase'] = remove_redundant_characters(clean_consumables_names, 'Consumable')
+clean_consumables_names = clean_consumables_names[~clean_consumables_names.duplicated(['Consumable', 'Alternate consumable name_lowercase' ])]
+
+lmis[lmis.item_lowercase == 'clotrimazole500mgvaginaltabletblister10x10withapp'].to_csv(figurespath / 'clotrimazole_old.csv')
+
 # Create a dictionary of cleaned consumable name categories
-cons_alternate_name_dict = clean_consumables_names[clean_consumables_names['Consumable'] != clean_consumables_names['Alternate consumable name']].set_index('Consumable')['Alternate consumable name'].to_dict()
+cons_alternate_name_dict = clean_consumables_names[clean_consumables_names['Consumable_lowercase'] != clean_consumables_names['Alternate consumable name_lowercase']].set_index('Consumable_lowercase')['Alternate consumable name_lowercase'].to_dict()
 cond_substitute_available =  clean_consumables_names['Substitute group'].notna()
 cond_substitute_different_from_original =  clean_consumables_names['Consumable'] != clean_consumables_names['Substitute group']
 cons_substitutes_dict = clean_consumables_names[cond_substitute_available & cond_substitute_different_from_original].set_index('Consumable')['Substitute group'].to_dict()
@@ -300,7 +324,7 @@ def rename_items_to_address_inconsistentencies(_df, item_dict):
     old_unique_item_count = _df.item.nunique()
 
     # replace item names with alternate names - these are mostly spelling inconsistencies
-    _df['item'].replace(cons_alternate_name_dict, inplace = True)
+    _df['item_lowercase'].replace(cons_alternate_name_dict, inplace = True)
 
 
     # Make a list of column names to be collapsed using different methods
@@ -310,6 +334,7 @@ def rename_items_to_address_inconsistentencies(_df, item_dict):
 
     # Remove commas and convert to numeric
     _df[columns_to_sum] = _df[columns_to_sum].applymap(clean_convert)
+    _df[columns_to_average] = _df[columns_to_average].applymap(clean_convert)
     _df[columns_to_preserve] = _df[columns_to_preserve].astype(str)
 
     def custom_agg(x):
@@ -325,20 +350,23 @@ def rename_items_to_address_inconsistentencies(_df, item_dict):
             return x.iloc[0]  # this function extracts the first value
 
     # Collapse dataframe
-    _collapsed_df = _df.groupby(['item', 'district', 'fac_level', 'fac_owner', 'fac_name', 'year', 'month']).agg(
-        {col: custom_agg for col in columns_to_preserve + columns_to_sum}
+    _collapsed_df = _df.groupby(['item_lowercase', 'district', 'fac_level', 'fac_owner', 'fac_name', 'year', 'month']).agg(
+        {col: custom_agg for col in columns_to_preserve + columns_to_average + columns_to_sum}
     ).reset_index()
 
     # Test that all items in the dictionary have been found in the dataframe
-    new_unique_item_count = _collapsed_df.item.nunique()
+    new_unique_item_count = _collapsed_df.item_lowercase.nunique()
+    print(f"After addressing naming inconsistencies, unique item count reduced from {old_unique_item_count} to {new_unique_item_count}")
     #assert len(item_dict) == old_unique_item_count - new_unique_item_count
     return _collapsed_df
 
 # Hold out the dataframe with no naming inconsistencies
 list_of_items_with_inconsistent_names_zipped = set(zip(cons_alternate_name_dict.keys(), cons_alternate_name_dict.values()))
 list_of_items_with_inconsistent_names = [item for sublist in list_of_items_with_inconsistent_names_zipped for item in sublist]
-df_with_consistent_item_names =  lmis[~lmis['item'].isin(list_of_items_with_inconsistent_names)]
-df_without_consistent_item_names = lmis[lmis['item'].isin(list_of_items_with_inconsistent_names)]
+list_of_items_with_inconsistent_names = list_of_items_with_inconsistent_names + duplicate_items # Add to this list any items which are duplicates once redundant characters are removed
+
+df_with_consistent_item_names =  lmis[~lmis['item_lowercase'].isin(list_of_items_with_inconsistent_names)]
+df_without_consistent_item_names = lmis[lmis['item_lowercase'].isin(list_of_items_with_inconsistent_names)]
 
 # Make inconsistently named drugs uniform across the dataframe
 df_without_consistent_item_names_corrected = rename_items_to_address_inconsistentencies(
@@ -347,6 +375,10 @@ df_without_consistent_item_names_corrected = rename_items_to_address_inconsisten
 lmis = pd.concat([df_without_consistent_item_names_corrected, df_with_consistent_item_names],
                               ignore_index=True)
 
+
+lmis[lmis.item_lowercase == 'clotrimazole500mgvaginaltabletblister10x10withapp'].to_csv(figurespath / 'clotrimazole_new.csv')
+
+assert(lmis.duplicated(['fac_name', 'item_lowercase', 'year', 'month']).sum() == 0) # Assert that there are no remaining duplicates in consumable names
 #lmis_with_updated_names.to_csv(figurespath / 'lmis_with_updated_names.csv')
 #lmis_with_updated_names = pd.read_csv(figurespath / 'lmis_with_updated_names.csv', low_memory = False)[1:300000]
 #lmis_with_updated_names = lmis_with_updated_names.drop('Unnamed: 0', axis = 1)
@@ -354,10 +386,12 @@ lmis = pd.concat([df_without_consistent_item_names_corrected, df_with_consistent
 # Drop months which have inconsistent data
 #-------------------------------------------
 # July 2021 records negative stockout days and infeasibly high stockout days
+cond_inconsistent_data = (lmis.month == 7) & (lmis.year == 2021)
+lmis = lmis[~cond_inconsistent_data]
 
 # Feb and Mar 2023 record too many consumables
-
-# Browse data missingness
+#lmis[lmis.year == 2023].item_lowercase.nunique()
+#lmis[lmis.year == 2021].item_lowercase.nunique()
 
 # Interpolation to address missingness
 #-------------------------------------------
@@ -463,7 +497,7 @@ print(f"{count_stkout_entries} ({round(count_stkout_entries/len(lmis) * 100, 2) 
 lmis = interpolation1_using_other_cols(lmis)
 lmis = correct_infeasible_stockout_days(lmis)
 
-# RULE 2 --- If the consumable was previously reported and during a given month, if any consumable was reported, assume
+# RULE 2 --- If the consumable was previously reported during the year and during a given month, if any consumable was reported, assume
 # 100% days of stckout ---
 # If the balance on a consumable is ever reported and if any consumables are reported during the month, stkout_
 # days = number of days of the month
