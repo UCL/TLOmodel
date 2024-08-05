@@ -4,9 +4,8 @@ We calculate the salar cost of current and funded plus HCW.
 
 from pathlib import Path
 
-# import numpy as np
 import pandas as pd
-# import re
+
 
 resourcefilepath = Path('./resources')
 
