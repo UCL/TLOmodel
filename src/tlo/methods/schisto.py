@@ -1,25 +1,28 @@
+from __future__ import annotations
+
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Literal, Sequence, Optional, Union
+from typing import TYPE_CHECKING, List, Sequence, Optional, Union
 
 import numpy as np
 import pandas as pd
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
-from tlo.core import DiagnosisFunction, IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.hsi_event import HSI_Event
+from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date
 from tlo.methods.dxmanager import DxTest
 
 if TYPE_CHECKING:
-    from tlo.population import PatientDetails
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
 
 # Definition of the age-groups used in the module, as a tuple of two integers (a,b) such that the given age group
 #  is in range a <= group <= b. i.e.,
@@ -178,9 +181,10 @@ class Schisto(Module):
         df.loc[df.is_alive, f'{self.module_prefix}_last_PZQ_date'] = pd.NaT
 
         # reset all to one district if doing calibration or test runs
+        # choose Zomba as it hsa ~10% prev of both species
         if self.single_district:
-            df['district_num_of_residence'] = 0
-            df['district_of_residence'] = pd.Categorical(['Chitipa'] * len(df),
+            df['district_num_of_residence'] = 19
+            df['district_of_residence'] = pd.Categorical(['Zomba'] * len(df),
                                                          categories=df['district_of_residence'].cat.categories)
 
         for _spec in self.species.values():
@@ -576,10 +580,10 @@ class Schisto(Module):
 
     def do_at_generic_first_appt(
         self,
-        patient_id: int,
+        person_id: int,
         symptoms: List[str],
-        **kwargs
-    ) -> IndividualPropertyUpdates:
+        schedule_hsi_event: HSIEventScheduler,
+    ) -> None:
         # Do when person presents to the GenericFirstAppt.
         # If the person has certain set of symptoms, refer ta HSI for testing.
         set_of_symptoms_indicative_of_schisto = {'anemia',
@@ -593,9 +597,9 @@ class Schisto(Module):
 
         if any(symptom in set_of_symptoms_indicative_of_schisto for symptom in symptoms):
             event = HSI_Schisto_TestingFollowingSymptoms(
-                module=self, person_id=patient_id
+                module=self, person_id=person_id
             )
-            self.healthsystem.schedule_hsi_event(event, priority=0, topen=self.sim.date)
+            schedule_hsi_event(event, priority=0, topen=self.sim.date)
 
     def select_test(self, person_id):
 
@@ -1320,8 +1324,8 @@ class SchistoWashScaleUp(RegularEvent, PopulationScopeEventMixin):
 
         # scale-up property li_unimproved_sanitation and no_clean_water
         # set the properties to False for everyone
-        df.loc['li_unimproved_sanitation'] = False
-        df.loc['li_no_clean_drinking_water'] = False
+        df['li_unimproved_sanitation'] = False
+        df['li_no_clean_drinking_water'] = False
 
         # change proportion susceptible uniformly across the districts
         # reduce the number of people that are currently susceptible by 60% (rr_WASH)
