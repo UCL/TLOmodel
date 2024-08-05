@@ -248,6 +248,7 @@ def remove_redundant_characters(_df, _col):
     .str.replace("each", "", regex=False) \
     .str.replace("(", "", regex=False) \
     .str.replace(")", "", regex=False) \
+    .str.replace("'", "", regex=False) \
     .str.replace("kitof.*tests", "", regex=True)  # Using '.*' to match any characters between 'kitof' and 'tests'
 
 lmis['item_lowercase'] = remove_redundant_characters(lmis, 'item')
@@ -322,6 +323,7 @@ duplicate_items = lmis_cons_names_duplicated.item_lowercase.unique().tolist()
 # Import manually cleaned list of consumable names
 clean_consumables_names = pd.read_csv(path_for_new_resourcefiles / 'ResourceFile_processing_lmis_consumable_names.csv', low_memory = False)[['Program', 'Consumable','Alternate consumable name', 'Substitute group']]
 clean_consumables_names['Alternate consumable name_lowercase'] = remove_redundant_characters(clean_consumables_names, 'Alternate consumable name')
+clean_consumables_names['Substitute group_lowercase'] = remove_redundant_characters(clean_consumables_names, 'Substitute group')
 clean_consumables_names['Consumable_lowercase'] = remove_redundant_characters(clean_consumables_names, 'Consumable')
 clean_consumables_names = clean_consumables_names[~clean_consumables_names.duplicated(['Consumable', 'Alternate consumable name_lowercase' ])]
 
@@ -329,9 +331,9 @@ lmis[lmis.item_lowercase == 'clotrimazole500mgvaginaltabletblister10x10withapp']
 
 # Create a dictionary of cleaned consumable name categories
 cons_alternate_name_dict = clean_consumables_names[clean_consumables_names['Consumable_lowercase'] != clean_consumables_names['Alternate consumable name_lowercase']].set_index('Consumable_lowercase')['Alternate consumable name_lowercase'].to_dict()
-cond_substitute_available =  clean_consumables_names['Substitute group'].notna()
-cond_substitute_different_from_original =  clean_consumables_names['Consumable'] != clean_consumables_names['Substitute group']
-cons_substitutes_dict = clean_consumables_names[cond_substitute_available & cond_substitute_different_from_original].set_index('Consumable')['Substitute group'].to_dict()
+cond_substitute_available =  clean_consumables_names['Substitute group_lowercase'].notna()
+cond_substitute_different_from_original =  clean_consumables_names['Consumable_lowercase'] != clean_consumables_names['Substitute group_lowercase']
+cons_substitutes_dict = clean_consumables_names[cond_substitute_available & cond_substitute_different_from_original].set_index('Consumable_lowercase')['Substitute group_lowercase'].to_dict()
 def rename_items_to_address_inconsistentencies(_df, item_dict):
     """Return a dataframe with rows for the same item with inconsistent names collapsed into one"""
     old_unique_item_count = _df.item.nunique()
@@ -415,6 +417,11 @@ lmis = lmis[~cond_inconsistent_data]
 #lmis[lmis.year == 2023].item_lowercase.nunique()
 #lmis[lmis.year == 2021].item_lowercase.nunique()
 
+#############################################################
+# Keep only those items which are matched with the TLO model
+#############################################################
+
+
 # Interpolation to address missingness
 #-------------------------------------------
 # Ensure that the columns that should be numerical are numeric
@@ -431,7 +438,7 @@ def create_full_dataset(_df):
     facility_features_to_preserve = ['district', 'fac_level', 'fac_owner', 'fac_name']
     consumable_features_to_preserve = ['program', 'item']
     facility_features = _df[facility_features_to_preserve]
-    facility_features = facility_features[~facility_features.fac_name.duplicated(keep='first')] #TODO 20 duplicated facilities
+    facility_features = facility_features[~facility_features.fac_name.duplicated(keep='first')] # TODO 20 duplicated facilities
     consumable_features = _df[consumable_features_to_preserve]
     consumable_features = consumable_features[~consumable_features.item.duplicated(keep='first')]
     _df = _df.drop(['district', 'fac_level', 'fac_owner', 'program'], axis = 1) # drop columns which will be preserved
@@ -653,11 +660,11 @@ def update_availability_for_substitutable_consumables(_df, groupby_list):
 # Hold out the dataframe with no substitutes
 list_of_items_with_substitutes_zipped = set(zip(cons_substitutes_dict.keys(), cons_substitutes_dict.values()))
 list_of_items_with_substitutes = [item for sublist in list_of_items_with_substitutes_zipped for item in sublist]
-df_with_no_substitutes =  lmis[~lmis['item'].isin(list_of_items_with_substitutes)]
-df_with_substitutes = lmis[lmis['item'].isin(list_of_items_with_substitutes)]
+df_with_no_substitutes =  lmis[~lmis['item_lowercase'].isin(list_of_items_with_substitutes)]
+df_with_substitutes = lmis[lmis['item_lowercase'].isin(list_of_items_with_substitutes)]
 
 # Update the names of drugs with substitutes to a common name
-df_with_substitutes['substitute'] = df_with_substitutes['item'].replace(cons_substitutes_dict)
+df_with_substitutes['substitute'] = df_with_substitutes['item_lowercase'].replace(cons_substitutes_dict)
 groupby_list = ['district',	'fac_level', 'fac_owner', 'fac_name', 'substitute', 'year'] # TODO month
 df_with_substitutes_adjusted = update_availability_for_substitutable_consumables(df_with_substitutes, groupby_list)
 df_with_substitutes_adjusted = pd.merge(df_with_substitutes.drop(['stkout_prob', 'data_source'], axis = 1), df_with_substitutes_adjusted[groupby_list + ['stkout_prob', 'data_source']], on = groupby_list, validate = "m:1", how = 'left')
@@ -676,7 +683,7 @@ lmis['available_prob'] = 1 - lmis['stkout_prob']
 tlo_lmis_mapping = pd.read_csv(path_for_new_resourcefiles / 'ResourceFile_consumables_matched.csv', low_memory=False,
                              encoding="ISO-8859-1")
 cond_remove = tlo_lmis_mapping['matching_status'] == 'Remove'
-tlo_lmis_mapping = tlo_lmis_mapping[~cond]  # Remove items which were removed due to updates or the existence of duplicates
+tlo_lmis_mapping = tlo_lmis_mapping[~cond_remove]  # Remove items which were removed due to updates or the existence of duplicates
 
 # Keep only the correctly matched consumables for stockout analysis based on OpenLMIS
 cond1 = tlo_lmis_mapping['matching_status'] == 'Matched'
@@ -684,7 +691,12 @@ cond2 = tlo_lmis_mapping['verified_by_DM_lead'] != 'Incorrect'
 tlo_lmis_mapping = tlo_lmis_mapping[cond1 & cond2]
 
 # Rename columns
-tlo_lmis_mapping.rename(columns = {'consumable_name_lmis': 'item'}, inplace = True)
+tlo_lmis_mapping['item_lowercase'] = remove_redundant_characters(tlo_lmis_mapping, 'consumable_name_lmis')
+tlo_lmis_mapping['item_lowercase'].replace(cons_alternate_name_dict, inplace=True) # Update to the consistent alternate names used in the cleaned LMIS data
+
+#tlo_lmis_mapping.rename(columns = {'consumable_name_lmis': 'item'}, inplace = True)
+
+# Update name of consumable to
 
 '''
 # Update matched consumable name where the name in the OpenLMIS data was updated in September
@@ -701,7 +713,7 @@ matched_consumables = replace_old_item_names_in_lmis_data(matched_consumables, i
 lmis.to_pickle(figurespath / "lmis.pkl")
 
 # Merge data with LMIS data
-tlo_cons_availability = pd.merge(lmis, tlo_lmis_mapping, how='inner', on='item')
+tlo_cons_availability = pd.merge(tlo_lmis_mapping, lmis,  how='left', on='item_lowercase') # TODO should how be inner
 #tlo_cons_availability = tlo_cons_availability.sort_values('data_source')
 
 # Aggregate substitutes and complements
