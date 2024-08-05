@@ -143,3 +143,12 @@ Minute_Salary = Minute_Salary.fillna(0)
 
 Minute_Salary.rename(columns={'Officer_Category': 'Officer_Type_Code'}, inplace=True)
 Minute_Salary.to_csv(resourcefilepath / 'costing' / 'Minute_Salary_HR.csv', index=False)
+
+# calculate the current cost distribution of the four cadres
+staff_count = hr_current.groupby('Officer_Category')['Staff_Count'].sum().reset_index()
+staff_cost = staff_count.merge(hr_salary, on=['Officer_Category'], how='outer')
+staff_cost['annual_cost'] = staff_cost['Staff_Count'] * staff_cost['Annual_Salary_USD']
+four_cadres_cost = staff_cost.loc[
+    staff_cost.Officer_Category.isin(['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy'])].reset_index(drop=True)
+four_cadres_cost['cost_frac'] = four_cadres_cost['annual_cost'] / four_cadres_cost['annual_cost'].sum()
+assert four_cadres_cost.cost_frac.sum() == 1
