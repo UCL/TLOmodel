@@ -97,7 +97,7 @@ def initialise_missing_dependencies(modules: Iterable[Module], **module_kwargs) 
     module_class_map: Mapping[str, Type[Module]] = get_module_class_map(set())
     all_module_instances: list[Module] = list(modules)
 
-    def add_missing_module_instances(modules: Iterable[Module], all_missing_module_names: set[str]) -> None:
+    def add_missing_module_instances(modules: list[Module], all_missing_module_names: set[str]) -> None:
         """ add missing module instances to all_module_instances list
         :param modules: Iterable of registered modules
         :param all_missing_module_names: Set of missing module names
