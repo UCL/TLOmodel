@@ -420,7 +420,23 @@ lmis = lmis[~cond_inconsistent_data]
 #############################################################
 # Keep only those items which are matched with the TLO model
 #############################################################
+# Load and clean data
+# Import matched list of consumanbles
+tlo_lmis_mapping = pd.read_csv(path_for_new_resourcefiles / 'ResourceFile_consumables_matched.csv', low_memory=False,
+                             encoding="ISO-8859-1")
+cond_remove = tlo_lmis_mapping['matching_status'] == 'Remove'
+tlo_lmis_mapping = tlo_lmis_mapping[~cond_remove]  # Remove items which were removed due to updates or the existence of duplicates
 
+# Keep only the correctly matched consumables for stockout analysis based on OpenLMIS
+cond1 = tlo_lmis_mapping['matching_status'] == 'Matched'
+cond2 = tlo_lmis_mapping['verified_by_DM_lead'] != 'Incorrect'
+tlo_lmis_mapping = tlo_lmis_mapping[cond1 & cond2]
+
+# Rename columns
+tlo_lmis_mapping['item_lowercase'] = remove_redundant_characters(tlo_lmis_mapping, 'consumable_name_lmis')
+tlo_lmis_mapping['item_lowercase'].replace(cons_alternate_name_dict, inplace=True) # Update to the consistent alternate names used in the cleaned LMIS data
+items_for_tlo_model = tlo_lmis_mapping['item_lowercase'].unique().tolist()
+lmis = lmis[lmis['item_lowercase'].isin(items_for_tlo_model)]
 
 # Interpolation to address missingness
 #-------------------------------------------
@@ -678,26 +694,6 @@ lmis['available_prob'] = 1 - lmis['stkout_prob']
 
 # 5. LOAD CLEANED MATCHED CONSUMABLE LIST FROM TLO MODEL AND MERGE WITH LMIS DATA ##
 ####################################################################################
-# Load and clean data
-# Import matched list of consumanbles
-tlo_lmis_mapping = pd.read_csv(path_for_new_resourcefiles / 'ResourceFile_consumables_matched.csv', low_memory=False,
-                             encoding="ISO-8859-1")
-cond_remove = tlo_lmis_mapping['matching_status'] == 'Remove'
-tlo_lmis_mapping = tlo_lmis_mapping[~cond_remove]  # Remove items which were removed due to updates or the existence of duplicates
-
-# Keep only the correctly matched consumables for stockout analysis based on OpenLMIS
-cond1 = tlo_lmis_mapping['matching_status'] == 'Matched'
-cond2 = tlo_lmis_mapping['verified_by_DM_lead'] != 'Incorrect'
-tlo_lmis_mapping = tlo_lmis_mapping[cond1 & cond2]
-
-# Rename columns
-tlo_lmis_mapping['item_lowercase'] = remove_redundant_characters(tlo_lmis_mapping, 'consumable_name_lmis')
-tlo_lmis_mapping['item_lowercase'].replace(cons_alternate_name_dict, inplace=True) # Update to the consistent alternate names used in the cleaned LMIS data
-
-#tlo_lmis_mapping.rename(columns = {'consumable_name_lmis': 'item'}, inplace = True)
-
-# Update name of consumable to
-
 '''
 # Update matched consumable name where the name in the OpenLMIS data was updated in September
 def replace_old_item_names_in_lmis_data(_df, item_dict):
