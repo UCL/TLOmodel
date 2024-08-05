@@ -289,7 +289,7 @@ else:
 
 
 # Import manually cleaned list of consumable names
-clean_consumables_names = pd.read_csv(path_to_files_in_the_tlo_dropbox / 'OpenLMIS/cleaned_consumable_names.csv', low_memory = False)[['Program', 'Consumable','Alternate consumable name',	'Substitute group']]
+clean_consumables_names = pd.read_csv(path_for_new_resourcefiles / 'ResourceFile_processing_lmis_consumable_names.csv', low_memory = False)[['Program', 'Consumable','Alternate consumable name',	'Substitute group']]
 # Create a dictionary of cleaned consumable name categories
 cons_alternate_name_dict = clean_consumables_names[clean_consumables_names['Consumable'] != clean_consumables_names['Alternate consumable name']].set_index('Consumable')['Alternate consumable name'].to_dict()
 cond_substitute_available =  clean_consumables_names['Substitute group'].notna()
@@ -304,7 +304,8 @@ def rename_items_to_address_inconsistentencies(_df, item_dict):
 
 
     # Make a list of column names to be collapsed using different methods
-    columns_to_sum = ['closing_bal', 'dispensed', 'stkout_days', 'average_monthly_consumption', 'qty_received']
+    columns_to_sum = ['closing_bal', 'dispensed', 'qty_received']
+    columns_to_average = ['stkout_days', 'average_monthly_consumption']
     columns_to_preserve = ['program']
 
     # Remove commas and convert to numeric
@@ -317,6 +318,9 @@ def rename_items_to_address_inconsistentencies(_df, item_dict):
                 x.notnull() & (x >= 0)) else np.nan  # this ensures that the NaNs are retained
         # , i.e. not changed to 0, when the corresponding data for both item name variations are NaN, and when there
         # is a 0 or positive value for one or both item name variation, the sum is taken.
+        if x.name in columns_to_average:
+            return x.mean(skipna=True) if np.any(
+                x.notnull() & (x >= 0)) else np.nan  # this ensures that the NaNs are retained
         elif x.name in columns_to_preserve:
             return x.iloc[0]  # this function extracts the first value
 
@@ -562,7 +566,7 @@ df_with_substitutes = lmis[lmis['item'].isin(list_of_items_with_substitutes)]
 
 # Update the names of drugs with substitutes to a common name
 df_with_substitutes['substitute'] = df_with_substitutes['item'].replace(cons_substitutes_dict)
-groupby_list = ['district',	'fac_level', 'fac_owner', 'fac_name', 'substitute', 'year']
+groupby_list = ['district',	'fac_level', 'fac_owner', 'fac_name', 'substitute', 'year'] # TODO month
 df_with_substitutes_adjusted = update_availability_for_substitutable_consumables(df_with_substitutes, groupby_list)
 df_with_substitutes_adjusted = pd.merge(df_with_substitutes.drop(['stkout_prob', 'data_source'], axis = 1), df_with_substitutes_adjusted[groupby_list + ['stkout_prob', 'data_source']], on = groupby_list, validate = "m:1", how = 'left')
 
