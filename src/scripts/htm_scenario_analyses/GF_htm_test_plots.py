@@ -664,7 +664,6 @@ def plot_summarized_deaths_by_age(deaths_summarized_by_age):
 
 
 # line plot of number deaths by age
-# todo for every run, aggregate numbers deaths, then summarise by age-groups
 def barplot_summarized_deaths_by_age(deaths_summarized_by_age, proportion):
     # combine some age-groups
     deaths_summarized_by_age.loc['15-59'] = deaths_summarized_by_age.loc[['15-19', '20-24', '25-29',
