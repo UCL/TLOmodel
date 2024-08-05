@@ -2517,3 +2517,7 @@ def test_dynamic_HR_scaling_multiple_changes(seed, tmpdir):
     ratio_in_sim = caps / initial_caps
 
     assert np.allclose(ratio_in_sim, expected_overall_scaling)
+
+
+# todo: test the function of HR expansion by officer type
+# def test_HR_expansion_by_officer_type(seed, tmpdir):
