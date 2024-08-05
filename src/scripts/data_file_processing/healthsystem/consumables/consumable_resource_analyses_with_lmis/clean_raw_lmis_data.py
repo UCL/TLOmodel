@@ -131,14 +131,18 @@ def generate_summary_heatmap(_df,
                              y_var,
                              value_var,
                              value_label,
-                             summary_func='mean'):
+                             summary_func='mean',
+                             name_suffix = ''):
     # Get the appropriate function from the pandas Series object
-    if hasattr(pd.Series, summary_func):
-        agg_func = getattr(pd.Series, summary_func)
+    if summary_func == 'count_not_na':
+        heatmap_df = _df.groupby([x_var, y_var])[value_var].count().reset_index()
     else:
-        raise ValueError(f"Unsupported summary function: {summary_func}")
+        if hasattr(pd.Series, summary_func):
+            agg_func = getattr(pd.Series, summary_func)
+        else:
+            raise ValueError(f"Unsupported summary function: {summary_func}")
 
-    heatmap_df = _df.groupby([x_var, y_var])[value_var].apply(agg_func).reset_index()
+        heatmap_df = _df.groupby([x_var, y_var])[value_var].apply(agg_func).reset_index()
     heatmap_df = heatmap_df.pivot(x_var, y_var, value_var)
 
     # Calculate the aggregate row and column
@@ -164,7 +168,7 @@ def generate_summary_heatmap(_df,
     plt.xticks(rotation=45)
     plt.yticks(rotation=0)
 
-    plt.savefig(figurespath / f'{value_var}_{x_var}_{y_var}.png', dpi=300,
+    plt.savefig(figurespath / f'{value_var}_{x_var}_{y_var}{name_suffix}.png', dpi=300,
                 bbox_inches='tight')
     plt.show()
     plt.close()
@@ -287,17 +291,26 @@ if sample_run == 1:
     # Select a subset of items and facilities to test run the code for cleaning
     unique_items = lmis['item'].unique()
     unique_items_df = pd.DataFrame(unique_items, columns=['item'])
-    sampled_items = unique_items_df.sample(frac=0.1, random_state=1)
+    sampled_items = unique_items_df.sample(frac=0.25, random_state=1)
 
     unique_facilities = lmis['fac_name'].unique()
     unique_facilities_df = pd.DataFrame(unique_facilities, columns=['fac_name'])
-    sampled_facilities = unique_facilities_df.sample(frac=0.1, random_state=1)
+    sampled_facilities = unique_facilities_df.sample(frac=0.25, random_state=1)
 
     # Filter the original DataFrame to only include rows with sampled items
     lmis = lmis[lmis['item'].isin(sampled_items['item'])]
     lmis = lmis[lmis['fac_name'].isin(sampled_facilities['fac_name'])]
 else:
     pass
+
+lmis['year_month'] = lmis['year'].astype(str) + "_" +  lmis['month'].astype(str) # concatenate month and year for plots
+generate_summary_heatmap(_df = lmis,
+                         x_var = 'year_month',
+                         y_var = 'program',
+                         value_var = 'item',
+                         value_label = 'Number of consumables reported',
+                         summary_func='nunique',
+                         name_suffix= '_beforecleaning')
 
 # Create a dictonary of consumable names which a duplicated in the cleaned lower case columns
 # Find duplicated rows based on 'item' and 'item_lowercase'
@@ -383,6 +396,15 @@ assert(lmis.duplicated(['fac_name', 'item_lowercase', 'year', 'month']).sum() ==
 #lmis_with_updated_names = pd.read_csv(figurespath / 'lmis_with_updated_names.csv', low_memory = False)[1:300000]
 #lmis_with_updated_names = lmis_with_updated_names.drop('Unnamed: 0', axis = 1)
 
+lmis['year_month'] = lmis['year'].astype(str) + "_" +  lmis['month'].astype(str) # concatenate month and year for plots
+generate_summary_heatmap(_df = lmis,
+                         x_var = 'year_month',
+                         y_var = 'program',
+                         value_var = 'item_lowercase',
+                         value_label = 'Number of consumables reported',
+                         summary_func='nunique',
+                         name_suffix= '_aftercleaning')
+
 # Drop months which have inconsistent data
 #-------------------------------------------
 # July 2021 records negative stockout days and infeasibly high stockout days
@@ -439,6 +461,15 @@ def create_full_dataset(_df):
     return _df
 
 # TODO some columns can be dropped fac_name	item	year	month_num	index	district	fac_level	fac_owner	month	program	closing_bal	dispensed	stkout_days	average_monthly_consumption	qty_received	fac_type	year_month	program_item	opening_bal
+
+lmis['year_month'] = lmis['year'].astype(str) + "_" +  lmis['month'].astype(str) # concatenate month and year for plots
+generate_summary_heatmap(_df = lmis,
+                         x_var = 'year_month',
+                         y_var = 'program',
+                         value_var = 'stkout_days',
+                         value_label = 'Number of instances of stockout_days',
+                         summary_func='count_not_na',
+                         name_suffix= '_beforeinterpolation')
 
 def prepare_data_for_interpolation(_df):
     # Reset index as columns and sort values for interpolation
@@ -497,6 +528,15 @@ print(f"{count_stkout_entries} ({round(count_stkout_entries/len(lmis) * 100, 2) 
 lmis = interpolation1_using_other_cols(lmis)
 lmis = correct_infeasible_stockout_days(lmis)
 
+lmis['year_month'] = lmis['year'].astype(str) + "_" +  lmis['month'].astype(str) # concatenate month and year for plots
+generate_summary_heatmap(_df = lmis,
+                         x_var = 'year_month',
+                         y_var = 'program',
+                         value_var = 'stkout_days',
+                         value_label = 'Number of instances of stockout_days',
+                         summary_func='count_not_na',
+                         name_suffix= '_afterinterpolation1')
+
 # RULE 2 --- If the consumable was previously reported during the year and during a given month, if any consumable was reported, assume
 # 100% days of stckout ---
 # If the balance on a consumable is ever reported and if any consumables are reported during the month, stkout_
@@ -532,6 +572,15 @@ def interpolation2_using_reporting_omission(_df):
 
 lmis = interpolation2_using_reporting_omission(lmis)
 
+lmis['year_month'] = lmis['year'].astype(str) + "_" +  lmis['month'].astype(str) # concatenate month and year for plots
+generate_summary_heatmap(_df = lmis,
+                         x_var = 'year_month',
+                         y_var = 'program',
+                         value_var = 'stkout_days',
+                         value_label = 'Number of instances of stockout_days',
+                         summary_func='count_not_na',
+                         name_suffix= '_afterinterpolation2')
+
 # RULE 3 --- If a facility did not report data for a given month, assume same as the average of the three previous months
 # Calculate the average stockout days for the previous three months
 def interpolation3_using_previous_months_data(_df):
@@ -553,6 +602,15 @@ def interpolation3_using_previous_months_data(_df):
     return _df
 
 lmis = interpolation3_using_previous_months_data(lmis)
+
+lmis['year_month'] = lmis['year'].astype(str) + "_" +  lmis['month'].astype(str) # concatenate month and year for plots
+generate_summary_heatmap(_df = lmis,
+                         x_var = 'year_month',
+                         y_var = 'program',
+                         value_var = 'stkout_days',
+                         value_label = 'Number of instances of stockout_days',
+                         summary_func='count_not_na',
+                         name_suffix= '_afterinterpolation3')
 
 # 4. CALCULATE STOCK OUT RATES BY MONTH and FACILITY ##
 #########################################################################################
