@@ -11,6 +11,7 @@ from tlo.population import Population
 
 if TYPE_CHECKING:
     from tlo import Module, Simulation
+    from tlo.methods.bed_days import BedDaysFootprint
     from tlo.methods.healthsystem import HealthSystem
 
 logger = logging.getLogger(__name__)
@@ -174,9 +175,18 @@ class HSI_Event:
          * Record the equipment that has been added before and during the course of the HSI Event.
         """
         if isinstance(self.target, int):
-            self.healthcare_system.bed_days.impose_beddays_footprint(
-                person_id=self.target, footprint=self.bed_days_allocated_to_this_event
+            are_new_inpatient = (
+                self.healthcare_system.bed_days.impose_beddays_footprint(
+                    footprint=self.bed_days_allocated_to_this_event,
+                    facility=self.healthcare_system.get_facility_id_for_beds(
+                        self.target
+                    ),
+                    first_day=self.sim.date,
+                    patient_id=self.target,
+                )
             )
+            if are_new_inpatient:
+                self.sim.population.props.at[self.target, "hs_is_inpatient"] = True
 
         if self.facility_info is not None:
             # If there is a facility_info (e.g., healthsystem not running in disabled mode), then record equipment used
@@ -238,22 +248,16 @@ class HSI_Event:
         else:
             return rtn
 
-    def make_beddays_footprint(self, dict_of_beddays) -> Dict[str, Union[float, int]]:
-        """Helper function to make a correctly-formed 'bed-days footprint'"""
-
-        # get blank footprint
-        footprint = self.healthcare_system.bed_days.get_blank_beddays_footprint()
-
-        # do checks on the dict_of_beddays provided.
-        assert isinstance(dict_of_beddays, dict)
-        assert all((k in footprint.keys()) for k in dict_of_beddays.keys())
-        assert all(isinstance(v, (float, int)) for v in dict_of_beddays.values())
-
-        # make footprint (defaulting to zero where a type of bed-days is not specified)
-        for k, v in dict_of_beddays.items():
-            footprint[k] = v
-
-        return footprint
+    def make_beddays_footprint(
+        self, dict_of_beddays: Dict[str, int | float] = {}
+    ) -> BedDaysFootprint:
+        """
+        Helper function to make a correctly-formed 'bed-days footprint',
+        may be overwritten by subclasses.
+        """
+        return self.healthcare_system.bed_days.get_blank_beddays_footprint(
+            **dict_of_beddays
+        )
 
     def is_all_beddays_allocated(self) -> bool:
         """Check if the entire footprint requested is allocated"""
