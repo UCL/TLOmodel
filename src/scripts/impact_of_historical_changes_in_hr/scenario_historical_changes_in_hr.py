@@ -25,7 +25,7 @@ class HistoricalChangesInHRH(BaseScenario):
         self.pop_size = 100_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 1  # <--- todo: N.B. Very small number of repeated run, to be efficient for now
+        self.runs_per_draw = 3  # <--- todo: N.B. Very small number of repeated run, to be efficient for now
 
     def log_configuration(self):
         return {
