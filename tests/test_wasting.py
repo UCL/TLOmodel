@@ -242,7 +242,7 @@ def test_report_daly_weights(tmpdir):
     # Reset diagnosis and check correct daly weight is given for MAM
     df.loc[person_id, 'un_clinical_acute_malnutrition'] = 'MAM'
     df.loc[person_id, 'un_am_bilateral_oedema'] = True
-    daly_wts['MAM_with_oedema'] = get_daly_weights(sequlae_code=461)
+    daly_wts['mod_wasting_with_oedema'] = get_daly_weights(sequlae_code=461)
 
     # Verify diagnosis
     assert df.loc[person_id, 'un_clinical_acute_malnutrition'] == 'MAM'
@@ -252,7 +252,7 @@ def test_report_daly_weights(tmpdir):
     daly_weights_reported = sim.modules["Wasting"].report_daly_values()
 
     # Compare the daly weight of this individual with the daly weight obtained from HealthBurden module
-    assert daly_wts['MAM_with_oedema'] == daly_weights_reported.loc[person_id]
+    assert daly_wts['mod_wasting_with_oedema'] == daly_weights_reported.loc[person_id]
 
     # Check daly weight for person with SAM and oedema (SAM_oedema weight is 0.172)
     # Reset diagnosis
@@ -269,10 +269,10 @@ def test_report_daly_weights(tmpdir):
     daly_weights_reported = sim.modules["Wasting"].report_daly_values()
 
     # Get daly weights of SAM with Oedema
-    daly_wts['SAM_with_oedema'] = get_daly_weights(sequlae_code=463)
+    daly_wts['sev_wasting_with_oedema'] = get_daly_weights(sequlae_code=463)
 
     # Compare the daly weight of this individual with the daly weight obtained from HealthBurden module
-    assert daly_wts['SAM_with_oedema'] == daly_weights_reported.loc[person_id]
+    assert daly_wts['sev_wasting_with_oedema'] == daly_weights_reported.loc[person_id]
 
     # Check daly weight for person with SAM no Oedema (SAM no oedema weight is 0.128)
     # Reset diagnosis
@@ -280,7 +280,7 @@ def test_report_daly_weights(tmpdir):
     df.loc[person_id, 'un_am_bilateral_oedema'] = False
 
     # Get day weights of SAM without Oedema
-    daly_wts['SAM_w/o_oedema'] = get_daly_weights(sequlae_code=462)
+    daly_wts['sev_wasting_w/o_oedema'] = get_daly_weights(sequlae_code=462)
 
     # Report daly weight for this individual
     daly_weights_reported = sim.modules["Wasting"].report_daly_values()
@@ -290,7 +290,7 @@ def test_report_daly_weights(tmpdir):
     assert not df.loc[person_id, 'un_am_bilateral_oedema']
 
     # Compare the daly weight of this individual with the daly weight obtained from HealthBurden module
-    assert daly_wts['SAM_w/o_oedema'] == daly_weights_reported.loc[person_id]
+    assert daly_wts['sev_wasting_w/o_oedema'] == daly_weights_reported.loc[person_id]
 
 
 def test_recovery_moderate_wasting(tmpdir):

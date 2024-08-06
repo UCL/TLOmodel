@@ -506,21 +506,21 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         # Get DALY weights
         get_daly_weight = self.sim.modules['HealthBurden'].get_daly_weight
 
-        daly_wts['MAM_with_oedema'] = get_daly_weight(sequlae_code=461)
-        daly_wts['SAM_w/o_oedema'] = get_daly_weight(sequlae_code=462)
-        daly_wts['SAM_with_oedema'] = get_daly_weight(sequlae_code=463)
+        daly_wts['mod_wasting_with_oedema'] = get_daly_weight(sequlae_code=461)
+        daly_wts['sev_wasting_w/o_oedema'] = get_daly_weight(sequlae_code=462)
+        daly_wts['sev_wasting_with_oedema'] = get_daly_weight(sequlae_code=463)
 
         total_daly_values = pd.Series(data=0.0,
                                       index=df.index[df.is_alive])
         total_daly_values.loc[df.is_alive & (df.un_clinical_acute_malnutrition == 'SAM') &
-                              df.un_am_bilateral_oedema] = daly_wts['SAM_with_oedema']
+                              df.un_am_bilateral_oedema] = daly_wts['sev_wasting_with_oedema']
         total_daly_values.loc[df.is_alive & (df.un_clinical_acute_malnutrition == 'SAM') &
-                              (~df.un_am_bilateral_oedema)] = daly_wts['SAM_w/o_oedema']
+                              (~df.un_am_bilateral_oedema)] = daly_wts['sev_wasting_w/o_oedema']
         total_daly_values.loc[df.is_alive & (
                 ((df.un_WHZ_category == '-3<=WHZ<-2') & (df.un_am_MUAC_category != "<115mm")) | (
                     (df.un_WHZ_category != 'WHZ<-3') & (
                         df.un_am_MUAC_category != "[115-125)mm"))) & df.un_am_bilateral_oedema] = daly_wts[
-            'MAM_with_oedema']
+            'mod_wasting_with_oedema']
         return total_daly_values
 
     def wasting_clinical_symptoms(self, person_id):
