@@ -2570,3 +2570,85 @@ def test_scaling_up_HRH_using_yearly_scaling_and_scaling_by_level_together(seed)
     caps_scaling_by_both_with_rescaling = get_capabilities(yearly_scaling=True, scaling_by_level=True, rescaling=True)
     assert caps_scaling_by_both_with_rescaling > caps_only_scaling_by_level_with_rescaling
     assert caps_scaling_by_both_with_rescaling > caps_only_scaling_by_year_with_rescaling
+
+
+def test_HR_expansion_by_officer_type(seed, tmpdir):
+    """Check that we can use the parameter `HR_expansion_by_officer_type` to update the minutes of time available
+    for healthcare workers."""
+
+    def get_initial_capabilities() -> pd.DataFrame:
+        sim = Simulation(start_date=start_date, seed=seed)
+        sim.register(
+            demography.Demography(resourcefilepath=resourcefilepath),
+            healthsystem.HealthSystem(resourcefilepath=resourcefilepath)
+        )
+        popsize=100
+        sim.make_initial_population(n=popsize)
+        sim.simulate(end_date=start_date + pd.DateOffset(days=0))
+
+        caps = pd.DataFrame(sim.modules['HealthSystem'].capabilities_today)
+        caps = caps[caps != 0]
+
+        return caps
+
+    def get_capabilities_after_update(end_year, HR_expansion_by_officer_type) -> pd.Series:
+        sim = Simulation(start_date=start_date, seed=seed)
+        sim.register(
+            demography.Demography(resourcefilepath=resourcefilepath),
+            healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+            simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+
+        )
+        params = sim.modules['HealthSystem'].parameters
+        params['start_year_HR_expansion_by_officer_type'] = 2011
+        params['end_year_HR_expansion_by_officer_type'] = end_year
+        params['HR_expansion_by_officer_type'] = HR_expansion_by_officer_type
+
+        popsize = 100
+        sim.make_initial_population(n=popsize)
+
+        sim.simulate(end_date=Date(end_year, 1, 2))
+
+        caps = pd.DataFrame(sim.modules['HealthSystem'].capabilities_today)
+        caps = caps[caps != 0]
+
+        return caps
+
+    initial_caps = get_initial_capabilities()
+    caps_clinical_one_update = get_capabilities_after_update(2012, [1, 0, 0, 0])
+    caps_clinical_dcsa_one_update = get_capabilities_after_update(2012, [0.5, 0.5, 0, 0])
+    caps_clinical_two_updates = get_capabilities_after_update(2013, [1, 0, 0, 0])
+
+    # check that the cadres are expanded as expected
+    def compare(cadre, caps_1, caps_2) -> tuple:
+
+        assert (caps_1.index == caps_2.index).all()
+        comp_caps_0 = caps_1.merge(caps_2, left_index=True, right_index=True)
+        comp_caps_0 = comp_caps_0[comp_caps_0.index.str.contains(cadre, regex=True)]
+        ratio = (comp_caps_0.iloc[:, 1] / comp_caps_0.iloc[:, 0]).dropna()
+
+        return (ratio > 1).all(), (abs(ratio - ratio.unique()[0]) < 1e-6).all()
+
+    # initial_caps vs caps_clinical_one_update
+    # check if the clinical cadre of each facility id is expanded
+    assert compare('Clinical', initial_caps, caps_clinical_one_update)[0]
+    # check if the cadre is expanded by the same ratio of each facilty id
+    assert compare('Clinical', initial_caps, caps_clinical_one_update)[1]
+
+    # caps_clinical_one_update vs caps_clinical_two_updates
+    # check if the clinical cadre of each facility id is expanded more in the latter scenario with two updates
+    assert compare('Clinical', caps_clinical_one_update, caps_clinical_two_updates)[0]
+    # check if the cadre is expanded by the same ratio of each facilty id
+    assert compare('Clinical', caps_clinical_one_update, caps_clinical_two_updates)[1]
+
+    # initial_caps vs caps_clinical_dcsa_one_update
+    # check if the DCSA cadre of each facility id is expanded
+    assert compare('DCSA', initial_caps, caps_clinical_dcsa_one_update)[0]
+    # check if the cadre is expanded by the same ratio of each facilty id
+    assert compare('DCSA', initial_caps, caps_clinical_dcsa_one_update)[1]
+
+    # caps_clinical_one_update vs caps_clinical_dcsa_one_update
+    # check if the cadre of each facility id is expanded less in the latter scenario with a smaller frac of extra budget
+    assert compare('Clinical', caps_clinical_dcsa_one_update, caps_clinical_one_update)[0]
+    # check if the cadre is expanded by the same ratio of each facilty id
+    assert compare('Clinical', caps_clinical_dcsa_one_update, caps_clinical_one_update)[1]
