@@ -250,8 +250,8 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
             # apply prevalence of wasting and categorise into moderate (-3 <= WHZ < -2) or severe (WHZ < -3) wasting
             wasted = self.rng.random_sample(len(prevalence_of_wasting)) < prevalence_of_wasting
+            probability_of_severe = self.get_prob_severe_wasting_or_odds_wasting(agegp=agegp, get_odds=False)
             for idx in prevalence_of_wasting.index[wasted]:
-                probability_of_severe = self.get_prob_severe_wasting_or_odds_wasting(agegp=agegp)
                 wasted_category = self.rng.choice(['WHZ<-3', '-3<=WHZ<-2'], p=[probability_of_severe,
                                                                                1 - probability_of_severe])
                 df.at[idx, 'un_WHZ_category'] = wasted_category
@@ -300,8 +300,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         This function will calculate the WHZ scores by categories and return probability of severe wasting
         for those with wasting status, or odds of wasting
         :param agegp: age grouped in months
-        :param get_odds: when set to True, this argument will cause this method return the odds of wasting to be used
-                for scaling wasting prevalence linear model
+        :param get_odds: True/False (default: False), indicates which output from fnc name will be returned
         :return: probability of severe wasting among all wasting cases (if 'get_odds' == False),
                 or odds of wasting among all children under 5 (if 'get_odds' == True)
         """
@@ -464,7 +463,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             # determine the duration of SAM episode
             duration_sev_wasting = int(max(p['min_days_duration_of_wasting'], p['duration_of_untreated_mod_wasting']
                                            + p['duration_of_untreated_sev_wasting']))
-            # Allocate a date of outcome (progression, recovery or death)
+            # Allocate a date of outcome (death, or recovery)
             date_of_outcome = df.at[person_id, 'un_last_wasting_date_of_onset'] + DateOffset(days=duration_sev_wasting)
             return date_of_outcome
 
@@ -687,11 +686,9 @@ class WastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # Determine who will be onset with wasting among those who are not currently wasted -------------
         not_wasted = df.loc[df.is_alive & (df.age_exact_years < 5) & (
             df.un_WHZ_category == 'WHZ>=-2')]
-        incidence_of_wasting = self.module.wasting_models.wasting_incidence_lm.predict(not_wasted,
-                                                                                       rng=rng
-                                                                                       )
+        incidence_of_wasting = self.module.wasting_models.wasting_incidence_lm.predict(not_wasted, rng=rng)
         not_wasted_idx = not_wasted.index
-        # update the properties for wasted children
+        # update the properties for new cases of wasted children
         df.loc[not_wasted_idx[incidence_of_wasting], 'un_ever_wasted'] = True
         df.loc[not_wasted_idx[incidence_of_wasting], 'un_last_wasting_date_of_onset'] = self.sim.date
         # start as moderate wasting
@@ -1247,6 +1244,8 @@ class WastingLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         for age_grp in self.module.wasting_incident_case_tracker.keys():
             for state in self.module.wasting_states:
                 inc_df.loc[age_grp, state] = len(self.module.wasting_incident_case_tracker[age_grp][state])
+                assert all(date >= self.date_last_run for
+                           date in self.module.wasting_incident_case_tracker[age_grp][state])
 
         logger.info(key='wasting_incidence_count', data=inc_df.to_dict())
 
