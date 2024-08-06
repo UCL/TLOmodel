@@ -21,11 +21,11 @@ class HistoricalChangesInHRH(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2024, 1, 1)  # <-- End at beginning 2024, as this is when the data runs out
+        self.end_date = Date(2023, 1, 1)  # <-- End at beginning 2023, as this is when the data runs out
         self.pop_size = 100_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 3  # <--- todo: N.B. Very small number of repeated run, to be efficient for now
+        self.runs_per_draw = 1  # <--- todo: N.B. Very small number of repeated run, to be efficient for now
 
     def log_configuration(self):
         return {
@@ -58,7 +58,7 @@ class HistoricalChangesInHRH(BaseScenario):
                     {
                         "HealthSystem": {
                             # SCALE-UP IN HRH
-                            'yearly_HR_scaling_mode': 'historical_scaling',  # Scale-up of HRH by 12% per year from 2018, onwards
+                            'yearly_HR_scaling_mode': 'historical_scaling',  # Scale-up of HRH by 3% per year from 2018, onwards
                         }
                     }
                 ),
