@@ -4192,7 +4192,6 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive']:
             return self.make_appt_footprint({})
         road_traffic_injuries = self.sim.modules['RTI']
-        get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
         # isolate the relevant injury information
         person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         # check if they have a fracture that requires a cast
@@ -4298,7 +4297,6 @@ class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
             'maximum_number_of_times_HSI_events_should_run']
 
     def apply(self, person_id, squeeze_factor):
-        get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
         df = self.sim.population.props
         self._number_of_times_this_event_has_run += 1
 
