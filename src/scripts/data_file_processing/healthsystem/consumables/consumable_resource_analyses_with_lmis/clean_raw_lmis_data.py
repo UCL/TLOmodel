@@ -181,7 +181,7 @@ sample_run = 0
 # 1. DATA IMPORT AND CLEANING ##
 #########################################################################################
 if sample_run == 1:
-    number_of_months = 3 # 13
+    number_of_months = 5 # 13
 else:
     number_of_months = 13
 for y in range(2,len(years_dict)+1): # the format of the 2018 dataset received was different from the other years so we start at 2 here
@@ -209,7 +209,7 @@ lmis_2018 = pd.read_csv(path_to_files_in_the_tlo_dropbox / 'OpenLMIS/ResourceFil
 rename_lmis_columns(lmis_2018)
 
 if sample_run == 1:
-    lmis_2018 = lmis_2018[lmis_2018.month.isin(['January', 'February'])]
+    lmis_2018 = lmis_2018[lmis_2018.month.isin(['January', 'February', 'March', 'April'])]
 else:
     pass
 
@@ -242,6 +242,9 @@ lmis = lmis[~(lmis.fac_level == '0')]
 # Update month coding to numeric
 months_reversed_dict = {v: k for k, v in months_dict.items()}
 lmis['month'] = lmis['month'].map(months_reversed_dict)
+
+# Correct program
+lmis.loc[lmis.program == 'RH', 'program'] = 'Reproductive Health'
 
 # Create a lower case and clean version of consumable names
 def remove_redundant_characters(_df, _col):
@@ -439,8 +442,17 @@ tlo_lmis_mapping = tlo_lmis_mapping[cond1 & cond2]
 # Rename columns
 tlo_lmis_mapping['item_lowercase'] = remove_redundant_characters(tlo_lmis_mapping, 'consumable_name_lmis')
 tlo_lmis_mapping['item_lowercase'].replace(cons_alternate_name_dict, inplace=True) # Update to the consistent alternate names used in the cleaned LMIS data
+tlo_lmis_mapping['item'] = tlo_lmis_mapping['item_lowercase']
 items_for_tlo_model = tlo_lmis_mapping['item_lowercase'].unique().tolist()
 lmis = lmis[lmis['item_lowercase'].isin(items_for_tlo_model)]
+
+# Replace item with item_lowercase
+lmis['item'] = lmis['item_lowercase']
+lmis = lmis.drop('item_lowercase', axis = 1)
+
+# Check the status of data availability by program
+print("Before interpolation\n", lmis.groupby(['program', 'year'])['stkout_days'].mean())
+print("Before interpolation\n", lmis.groupby('year')['stkout_days'].mean(), lmis.groupby('year')['stkout_days'].count())
 
 # Interpolation to address missingness
 #-------------------------------------------
@@ -534,7 +546,7 @@ lmis = prepare_data_for_interpolation(lmis)
 def interpolation1_using_other_cols(_df):
     print("Running interpolation 1")
     cond_stkout_missing = _df['stkout_days'].isna()
-    cond_otherdata_available = _df['closing_bal'].notna() & _df['average_monthly_consumption'].notna() & _df['qty_received'].notna()
+    cond_otherdata_available = _df['opening_bal'].notna() & _df['average_monthly_consumption'].notna() & _df['qty_received'].notna()
     cond_interpolation_1 = cond_stkout_missing & cond_otherdata_available
     _df.loc[cond_interpolation_1, 'stkout_days'] = (_df['average_monthly_consumption'] - _df['opening_bal']- _df['qty_received'])/_df['average_monthly_consumption'] * _df['month_length']
 
@@ -563,6 +575,11 @@ generate_summary_heatmap(_df = lmis,
                          value_label = 'Number of instances of stockout_days',
                          summary_func='count_not_na',
                          name_suffix= '_afterinterpolation1')
+
+# Check the status of data availability by program
+print("After interpolation 1\n", lmis.groupby(['program', 'year'])['stkout_days'].mean())
+print("After interpolation 1\n", lmis.groupby('year')['stkout_days'].mean(), lmis.groupby('year')['stkout_days'].count())
+
 
 # RULE 2 --- If the consumable was previously reported during the year and during a given month, if any consumable was reported, assume
 # 100% days of stckout ---
@@ -608,6 +625,10 @@ generate_summary_heatmap(_df = lmis,
                          summary_func='count_not_na',
                          name_suffix= '_afterinterpolation2')
 
+# Check the status of data availability by program
+print("After interpolation 2\n", lmis.groupby(['program', 'year'])['stkout_days'].mean())
+print("After interpolation 2\n", lmis.groupby('year')['stkout_days'].mean(), lmis.groupby('year')['stkout_days'].count())
+
 # RULE 3 --- If a facility did not report data for a given month, assume same as the average of the three previous months
 # Calculate the average stockout days for the previous three months
 def interpolation3_using_previous_months_data(_df):
@@ -639,6 +660,10 @@ generate_summary_heatmap(_df = lmis,
                          summary_func='count_not_na',
                          name_suffix= '_afterinterpolation3')
 
+# Check the status of data availability by program
+print("After interpolation 3\n", lmis.groupby(['program', 'year'])['stkout_days'].mean())
+print("After interpolation 3\n", lmis.groupby('year')['stkout_days'].mean(), lmis.groupby('year')['stkout_days'].count())
+
 # 4. CALCULATE STOCK OUT RATES BY MONTH and FACILITY ##
 #########################################################################################
 lmis['stkout_prob'] = lmis['stkout_days']/lmis['month_length']
@@ -646,6 +671,7 @@ lmis['stkout_prob'] = lmis['stkout_days']/lmis['month_length']
 #lmis_with_updated_names = pd.read_csv(figurespath / 'lmis_with_prob.csv', low_memory = False)[1:300000]
 #lmis_with_updated_names = lmis_with_updated_names.drop('Unnamed: 0', axis = 1)
 
+print("Before accounting for substitutes\n", lmis.groupby('year')['stkout_prob'].mean())
 
 # Update probability of stockout when there are substitutes
 def update_availability_for_substitutable_consumables(_df, groupby_list):
@@ -680,11 +706,11 @@ def update_availability_for_substitutable_consumables(_df, groupby_list):
 # Hold out the dataframe with no substitutes
 list_of_items_with_substitutes_zipped = set(zip(cons_substitutes_dict.keys(), cons_substitutes_dict.values()))
 list_of_items_with_substitutes = [item for sublist in list_of_items_with_substitutes_zipped for item in sublist]
-df_with_no_substitutes =  lmis[~lmis['item_lowercase'].isin(list_of_items_with_substitutes)]
-df_with_substitutes = lmis[lmis['item_lowercase'].isin(list_of_items_with_substitutes)]
+df_with_no_substitutes =  lmis[~lmis['item'].isin(list_of_items_with_substitutes)]
+df_with_substitutes = lmis[lmis['item'].isin(list_of_items_with_substitutes)]
 
 # Update the names of drugs with substitutes to a common name
-df_with_substitutes['substitute'] = df_with_substitutes['item_lowercase'].replace(cons_substitutes_dict)
+df_with_substitutes['substitute'] = df_with_substitutes['item'].replace(cons_substitutes_dict)
 groupby_list = ['district',	'fac_level', 'fac_owner', 'fac_name', 'substitute', 'year'] # TODO month
 df_with_substitutes_adjusted = update_availability_for_substitutable_consumables(df_with_substitutes, groupby_list)
 df_with_substitutes_adjusted = pd.merge(df_with_substitutes.drop(['stkout_prob', 'data_source'], axis = 1), df_with_substitutes_adjusted[groupby_list + ['stkout_prob', 'data_source']], on = groupby_list, validate = "m:1", how = 'left')
@@ -695,6 +721,9 @@ lmis = pd.concat([df_with_substitutes_adjusted, df_with_no_substitutes],
 
 # Calculate the probability of consumables being available (converse of stockout)
 lmis['available_prob'] = 1 - lmis['stkout_prob']
+
+print("After accounting for substitutes\n", lmis.groupby('year')['stkout_prob'].mean())
+
 
 # 5. LOAD CLEANED MATCHED CONSUMABLE LIST FROM TLO MODEL AND MERGE WITH LMIS DATA ##
 ####################################################################################
@@ -713,7 +742,7 @@ matched_consumables = replace_old_item_names_in_lmis_data(matched_consumables, i
 lmis.to_pickle(figurespath / "lmis.pkl")
 
 # Merge data with LMIS data
-tlo_cons_availability = pd.merge(tlo_lmis_mapping, lmis,  how='left', on='item_lowercase') # TODO should how be inner
+tlo_cons_availability = pd.merge(tlo_lmis_mapping, lmis,  how='left', on='item') # TODO should how be inner
 #tlo_cons_availability = tlo_cons_availability.sort_values('data_source')
 
 # Aggregate substitutes and complements
@@ -853,7 +882,64 @@ generate_summary_heatmap(_df = tlo_cons_availability,
                          value_label = 'Average Pr(availability)',
                          summary_func='mean')
 
+time_taken = time.time() - start
 print(f'Time: {time.time() - start}')
+
+# FULL INTERPOLATION
+
+###########################################################################################################
+## TREND ANALYSIS ##
+###########################################################################################################
+#import statsmodels.api as sm
+import statsmodels.formula.api as smf
+
+# Prepare dataframe for regression analysis
+item_designations = pd.read_csv(path_for_new_resourcefiles / 'ResourceFile_Consumables_Item_Designations.csv')
+regression_df = pd.merge(tlo_cons_availability, item_designations, on = 'item_code', how = 'left', validate = "m:1")
+
+columns = ['fac_name', 'item', 'year', 'month', 'module_name', 'fac_level', 'district']
+var_of_interest = 'available_prob'
+
+# Fully specified linear regression model
+# available_prob ~ year + month + HIV/TB/Malaria + fac_level + district + *eml* + *drug_or_consumable* + fac_level*year + district*year + eml*year + drug_or_consumable*year + HIV/TB/Malaria*year
+
+## Line plot to visualise trend
+# Calculate mean outcome per item per year
+item_trends = df.groupby(['year', 'item']).outcome_variable.mean().unstack()
+# Calculate the overall mean per year (across all items)
+overall_trend = df.groupby('year').outcome_variable.mean()
+# Calculate mean outcome per fac_level per year
+fac_level_trends = df.groupby(['year', 'fac_level']).outcome_variable.mean().unstack()
+
+# Plotting
+fig, ax = plt.subplots(figsize=(10, 6))
+# Plot each item trend
+for item in item_trends.columns:
+    ax.plot(item_trends.index, item_trends[item], label=item)
+# Plot overall trend, make it bold
+ax.plot(overall_trend.index, overall_trend, label='Overall Trend', linewidth=3, color='black')
+# Plot fac_level trends
+for level in fac_level_trends.columns:
+    ax.plot(fac_level_trends.index, fac_level_trends[level], label=f'{level} Level Avg', linestyle='--')
+
+# Adding labels and title
+ax.set_xlabel('Year')
+ax.set_ylabel('Average probability that consumable is available')
+ax.set_title('Trends of consumable availability')
+
+# Save plot
+plt.savefig(figurespath / 'availability_time_trend_by_item_and_level.png')
+
+# Mixed effects regression model (random effects for fac_name and item)
+# Fit Random Effects Model using statsmodels
+# 'item' is considered as a group with random effects
+_df = tlo_cons_availability
+model = smf.mixedlm("available_prob ~ year + is_vital + is_drug_or_vaccine + is_diagnostic + fac_level + district", data=_df, groups=_df[['item', 'month']],
+                    re_formula="1")
+#re_formula = "~year" for slope of year to vary by item
+result = model.fit()
+print(result.summary())
+
 
 # Descriptive analysis
 # Number of facilities reporting by level
