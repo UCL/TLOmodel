@@ -104,7 +104,7 @@ class WastingAnalyses:
     def plot_wasting_prevalence_per_year(self):
         """ plot wasting prevalence of all age groups per year. Proportions are obtained by getting a total number of
         children wasted divide by the total number of children less than 5 years"""
-        w_prev_df = self.__logs_dict["wasting_prevalence_count"]
+        w_prev_df = self.__logs_dict["wasting_prevalence_props"]
         w_prev_df = w_prev_df[['date', 'total_under5_prop']]
         w_prev_df.set_index(w_prev_df.date.dt.year, inplace=True)
         w_prev_df.drop(columns='date', inplace=True)
@@ -126,7 +126,7 @@ class WastingAnalyses:
     def plot_wasting_prevalence_by_age_group(self):
         """ plot wasting prevalence per each age group. Proportions are obtained by getting a total number of
         children wasted in a particular age-group divide by the total number of children per that age-group"""
-        w_prev_df = self.__logs_dict["wasting_prevalence_count"]
+        w_prev_df = self.__logs_dict["wasting_prevalence_props"]
         w_prev_df.drop(columns={'total_under5_prop'}, inplace=True)
         w_prev_df.set_index(w_prev_df.date.dt.year, inplace=True)
         w_prev_df = w_prev_df.loc[w_prev_df.index == 2023]

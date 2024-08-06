@@ -1273,4 +1273,4 @@ class WastingLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # add to dictionary proportion of all wasted children under 5 years
         wasting_prev_dict['total_under5_prop'] = (under5s.un_WHZ_category != 'WHZ>=-2').sum() / len(under5s)
         # log wasting prevalence
-        logger.info(key='wasting_prevalence_count', data=wasting_prev_dict)
+        logger.info(key='wasting_prevalence_props', data=wasting_prev_dict)
