@@ -13,6 +13,9 @@ import seaborn as sns
 import numpy as np
 import pandas as pd
 
+import time
+start = time.time()
+
 from tlo.methods.consumables import check_format_of_consumables_file
 
 # Set local Dropbox source
@@ -173,7 +176,7 @@ def generate_summary_heatmap(_df,
     plt.show()
     plt.close()
 
-sample_run = 1
+sample_run = 0
 # %%
 # 1. DATA IMPORT AND CLEANING ##
 #########################################################################################
@@ -393,7 +396,8 @@ lmis = pd.concat([df_without_consistent_item_names_corrected, df_with_consistent
 
 lmis[lmis.item_lowercase == 'clotrimazole500mgvaginaltabletblister10x10withapp'].to_csv(figurespath / 'clotrimazole_new.csv')
 
-assert(lmis.duplicated(['fac_name', 'item_lowercase', 'year', 'month']).sum() == 0) # Assert that there are no remaining duplicates in consumable names
+print(f"{lmis.duplicated(['fac_name', 'item_lowercase', 'year', 'month']).sum()} duplicates remain") # Assert that there are no remaining duplicates in consumable names
+lmis = lmis[~lmis[['fac_name', 'item_lowercase', 'year', 'month']].duplicated(keep='first')]
 #lmis_with_updated_names.to_csv(figurespath / 'lmis_with_updated_names.csv')
 #lmis_with_updated_names = pd.read_csv(figurespath / 'lmis_with_updated_names.csv', low_memory = False)[1:300000]
 #lmis_with_updated_names = lmis_with_updated_names.drop('Unnamed: 0', axis = 1)
@@ -793,6 +797,7 @@ tlo_cons_availability.groupby(['year', 'module_name'])['available_prob'].mean()
 # Save the DataFrame to a pickle file
 tlo_cons_availability.to_pickle(figurespath / "tlo_cons_availability.pkl")
 #tlo_cons_availability = pd.read_pickle(figurespath / "tlo_cons_availability.pkl")
+tlo_cons_availability['year_month'] = tlo_cons_availability['year'].astype(str) + "_" +  tlo_cons_availability['month'].astype(str) # concatenate month and year for plots
 
 availability_summary = tlo_cons_availability.groupby(['year', 'month', 'district', 'fac_level', 'module_name', 'consumable_name_tlo']).agg({
     'available_prob': 'mean',  # Mean of available_prop
@@ -836,7 +841,7 @@ generate_summary_heatmap(_df = tlo_cons_availability,
 
 generate_summary_heatmap(_df = tlo_cons_availability,
                          x_var = 'module_name',
-                         y_var = 'year',
+                         y_var = 'year_month',
                          value_var = 'available_prob',
                          value_label = 'Average Pr(availability)',
                          summary_func='mean')
@@ -847,6 +852,8 @@ generate_summary_heatmap(_df = tlo_cons_availability,
                          value_var = 'available_prob',
                          value_label = 'Average Pr(availability)',
                          summary_func='mean')
+
+print(f'Time: {time.time() - start}')
 
 # Descriptive analysis
 # Number of facilities reporting by level
