@@ -890,32 +890,62 @@ print(f'Time: {time.time() - start}')
 ###########################################################################################################
 ## TREND ANALYSIS ##
 ###########################################################################################################
+# ---Generate new category variable for analysis --- #
+tlo_cons_availability['category'] = tlo_cons_availability['module_name'].str.lower()
+cond_RH = (tlo_cons_availability['category'].str.contains('care_of_women_during_pregnancy')) | \
+          (tlo_cons_availability['category'].str.contains('labour'))
+cond_newborn = (tlo_cons_availability['category'].str.contains('newborn'))
+cond_childhood = (tlo_cons_availability['category'] == 'acute lower respiratory infections') | \
+                 (tlo_cons_availability['category'] == 'measles') | \
+                 (tlo_cons_availability['category'] == 'diarrhoea')
+cond_rti = tlo_cons_availability['category'] == 'road traffic injuries'
+cond_cancer = tlo_cons_availability['category'].str.contains('cancer')
+cond_ncds = (tlo_cons_availability['category'] == 'epilepsy') | \
+            (tlo_cons_availability['category'] == 'depression')
+tlo_cons_availability.loc[cond_RH, 'category'] = 'reproductive_health'
+tlo_cons_availability.loc[cond_cancer, 'category'] = 'cancer'
+tlo_cons_availability.loc[cond_newborn, 'category'] = 'neonatal_health'
+tlo_cons_availability.loc[cond_childhood, 'category'] = 'other_childhood_illnesses'
+tlo_cons_availability.loc[cond_rti, 'category'] = 'road_traffic_injuries'
+tlo_cons_availability.loc[cond_ncds, 'category'] = 'ncds'
+
+cond_condom = tlo_cons_availability['item_code'] == 2
+tlo_cons_availability.loc[cond_condom, 'category'] = 'contraception'
+
+# Create a general consumables category
+general_cons_list = [300, 33, 57, 58, 141, 5, 6, 10, 21, 23, 127, 24, 80, 93, 144, 149, 154, 40, 67, 73, 76,
+                     82, 101, 103, 88, 126, 135, 71, 98, 171, 133, 134, 244, 247]
+cond_general = tlo_cons_availability['item_code'].isin(general_cons_list)
+tlo_cons_availability.loc[cond_general, 'category'] = 'general'
+
+# TODO try the analysis below with LMIS data instead
 #import statsmodels.api as sm
 import statsmodels.formula.api as smf
 
 # Prepare dataframe for regression analysis
 item_designations = pd.read_csv(path_for_new_resourcefiles / 'ResourceFile_Consumables_Item_Designations.csv')
+item_designations = item_designations.rename(columns = {'Item_Code': 'item_code'})
 regression_df = pd.merge(tlo_cons_availability, item_designations, on = 'item_code', how = 'left', validate = "m:1")
 
-columns = ['fac_name', 'item', 'year', 'month', 'module_name', 'fac_level', 'district']
-var_of_interest = 'available_prob'
+#columns = ['fac_name', 'item', 'year', 'month', 'module_name', 'fac_level', 'district']
+#var_of_interest = 'available_prob'
 
 # Fully specified linear regression model
 # available_prob ~ year + month + HIV/TB/Malaria + fac_level + district + *eml* + *drug_or_consumable* + fac_level*year + district*year + eml*year + drug_or_consumable*year + HIV/TB/Malaria*year
 
-## Line plot to visualise trend
+## 1 Line plot to visualise trend
 # Calculate mean outcome per item per year
-item_trends = df.groupby(['year', 'item']).outcome_variable.mean().unstack()
+item_trends = regression_df.groupby(['year', 'item_code']).available_prob.mean().unstack()
 # Calculate the overall mean per year (across all items)
-overall_trend = df.groupby('year').outcome_variable.mean()
+overall_trend = regression_df.groupby('year').available_prob.mean()
 # Calculate mean outcome per fac_level per year
-fac_level_trends = df.groupby(['year', 'fac_level']).outcome_variable.mean().unstack()
+fac_level_trends = regression_df.groupby(['year', 'fac_level']).available_prob.mean().unstack()
 
 # Plotting
 fig, ax = plt.subplots(figsize=(10, 6))
 # Plot each item trend
-for item in item_trends.columns:
-    ax.plot(item_trends.index, item_trends[item], label=item)
+#for item in item_trends.columns:
+#    ax.plot(item_trends.index, item_trends[item], label=item)
 # Plot overall trend, make it bold
 ax.plot(overall_trend.index, overall_trend, label='Overall Trend', linewidth=3, color='black')
 # Plot fac_level trends
@@ -930,16 +960,63 @@ ax.set_title('Trends of consumable availability')
 # Save plot
 plt.savefig(figurespath / 'availability_time_trend_by_item_and_level.png')
 
+## 2 Line plot to visualise trend
+# Calculate the overall mean per year (across all items)
+overall_trend = regression_df.groupby('year').available_prob.mean()
+# Calculate mean outcome per fac_level per year
+category_trends = regression_df.groupby(['year', 'category']).available_prob.mean().unstack()
+
+# Sorting categories based on the first year's data
+first_year = category_trends.index.min()
+sorted_categories = category_trends.loc[first_year].sort_values(ascending=False).index
+
+# Plotting
+fig, ax = plt.subplots(figsize=(10, 6))
+# Plot overall trend, make it bold
+ax.plot(overall_trend.index, overall_trend, label='Overall Trend', linewidth=3, color='black')
+# Plot category trends
+for category in sorted_categories:
+    ax.plot(category_trends.index, category_trends[category], label=f'{category} Avg', linestyle='--')
+
+# Adding labels and title
+ax.set_xlabel('Year')
+ax.set_ylabel('Average probability that consumable is available')
+ax.set_title('Trends of consumable availability')
+
+# Setting y-axis limits
+ax.set_ylim(0, 1)
+# Adding a legend
+ax.legend(title='Category', loc='center left', bbox_to_anchor=(1, 0.5))
+
+# Save plot
+plt.savefig(figurespath / 'availability_time_trend_by_item_and_program.png',  bbox_inches='tight')
+
+# Linear model
+_df = regression_df
+model = smf.ols('available_prob ~ year + is_vital + is_drug_or_vaccine + is_diagnostic + fac_level + district', data=_df).fit()
+# Print the summary of the regression
+print(model.summary())
+# store model results in an excel file
+summary_df = pd.DataFrame(model.summary().tables[1])
+writer = pd.ExcelWriter((figurespath / 'model_results.xlsx'), engine='xlsxwriter')
+# Store linear model results
+summary_df.to_excel(writer, sheet_name='linear_model', index=False)
+writer.save()
+
 # Mixed effects regression model (random effects for fac_name and item)
 # Fit Random Effects Model using statsmodels
 # 'item' is considered as a group with random effects
-_df = tlo_cons_availability
-model = smf.mixedlm("available_prob ~ year + is_vital + is_drug_or_vaccine + is_diagnostic + fac_level + district", data=_df, groups=_df[['item', 'month']],
-                    re_formula="1")
+regression_cols = ['available_prob', 'year', 'is_vital', 'is_drug_or_vaccine', 'is_diagnostic', 'fac_level', 'district', 'item_code']
+_df = regression_df[regression_cols].dropna()
+re_model = smf.mixedlm("available_prob ~ year + is_vital + is_drug_or_vaccine + is_diagnostic + fac_level + district", data=_df, groups=_df['item_code'],
+                    re_formula="1").fit()
+print(re_model.summary())
 #re_formula = "~year" for slope of year to vary by item
-result = model.fit()
-print(result.summary())
-
+summary_df = pd.DataFrame(re_model.summary().tables[1])
+file_path = (figurespath / 'model_results.xlsx')
+with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+    # Write DataFrame to a new sheet named 'NewData'
+    summary_df.to_excel(writer, sheet_name='re_model', index=True)
 
 # Descriptive analysis
 # Number of facilities reporting by level
