@@ -7,7 +7,7 @@ import pandas as pd
 
 # Set local Dropbox source
 path_to_dropbox = Path(  # <-- point to the TLO dropbox locally
-    '/Users/tbh03/SPH Imperial College Dropbox/Tim Hallett/Thanzi la Onse Theme 1 SHARE'
+    '/Users/tbh03/Library/CloudStorage/OneDrive-SharedLibraries-ImperialCollegeLondon/TLOModel - WP - Documents/'
 )
 
 
