@@ -211,7 +211,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_Wasting.csv')
         )
 
-        # Register wasting symptom(weight loss) in Symptoms Manager
+        # Register wasting symptom (weight loss) in Symptoms Manager
         self.sim.modules['SymptomManager'].register_symptom(Symptom(name=self.wasting_symptom))
 
     def initialise_population(self, population):
@@ -591,7 +591,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         :param intervention:
         """
         df = self.sim.population.props
-        # Log that the treatment is provided:
+        # Set the date when the treatment is provided:
         df.at[person_id, 'un_am_tx_start_date'] = self.sim.date
 
         if intervention == 'SFP':
@@ -956,7 +956,7 @@ class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEv
         # Get a blank footprint and then edit to define call on resources
         # of this treatment event
         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
+        the_appt_footprint['Under5OPD'] = 1  # This requires one outpatient
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Undernutrition_Feeding_Supplementary'
@@ -967,13 +967,11 @@ class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEv
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
 
-        # Stop the person from dying of acute malnutrition (if they were
-        # going to die)
+        # Stop the person from dying of acute malnutrition (if they were going to die)
         if not df.at[person_id, 'is_alive']:
             return
 
-        # Do here whatever happens to an individual during this health
-        # system interaction event
+        # Do here whatever happens to an individual during this health system interaction event
         # ~~~~~~~~~~~~~~~~~~~~~~
         # Make request for some consumables
         consumables = self.sim.modules['HealthSystem'].parameters['item_and_package_code_lookups']
@@ -990,10 +988,11 @@ class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEv
             df.at[person_id, 'un_am_treatment_type'] = 'CSB++'
             self.module.do_when_am_treatment(person_id, intervention='SFP')
         else:
-            logger.debug(key='debug', data="PkgCode1 is not available, so can't use it.")
+            logger.debug(key='debug',
+                         data=f"Consumable(s) not available, hence {self.TREATMENT_ID} cannot be provided.")
 
     def did_not_run(self):
-        logger.debug(key='debug', data='Undernutrition_Feeding_Supplementary: did not run')
+        logger.debug(key='debug', data=f'{self.TREATMENT_ID}: did not run')
         pass
 
 
@@ -1046,10 +1045,11 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
             df.at[person_id, 'un_am_treatment_type'] = 'standard_RUTF'
             self.module.do_when_am_treatment(person_id, intervention='OTC')
         else:
-            logger.debug(key='debug', data="consumables not available, so can't use it.")
+            logger.debug(key='debug',
+                         data=f"Consumable(s) not available, hence {self.TREATMENT_ID} cannot be provided.")
 
     def did_not_run(self):
-        logger.debug(key='debug', data="HSI_Undernutrition_Feeding_Outpatient: did not run")
+        logger.debug(key='debug', data=f'{self.TREATMENT_ID}: did not run')
         pass
 
 
@@ -1097,10 +1097,11 @@ class HSI_Wasting_InpatientCareForComplicated_SAM(HSI_Event, IndividualScopeEven
             df.at[person_id, 'un_am_treatment_type'] = 'inpatient_care'
             self.module.do_when_am_treatment(person_id, intervention='ITC')
         else:
-            logger.debug(key='debug', data="consumables not available, so can't use it.")
+            logger.debug(key='debug',
+                         data=f"Consumable(s) not available, hence {self.TREATMENT_ID} cannot be provided.")
 
     def did_not_run(self):
-        logger.debug(key='debug', data='HSI_inpatient_care_for_complicated_SAM: did not run')
+        logger.debug(key='debug', data=f'{self.TREATMENT_ID}: did not run')
         pass
 
 
