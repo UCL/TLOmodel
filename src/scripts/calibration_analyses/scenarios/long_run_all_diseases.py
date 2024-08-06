@@ -21,10 +21,10 @@ class LongRun(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2031, 1, 1)  # The simulation will stop before reaching this date.
-        self.pop_size = 20_000
+        self.end_date = Date(2014, 1, 1)  # The simulation will stop before reaching this date.
+        self.pop_size = 2_000
         self.number_of_draws = 1
-        self.runs_per_draw = 10
+        self.runs_per_draw = 1
 
     def log_configuration(self):
         return {
@@ -38,6 +38,7 @@ class LongRun(BaseScenario):
                 'tlo.methods.healthsystem': logging.INFO,
                 'tlo.methods.healthsystem.summary': logging.INFO,
                 "tlo.methods.contraception": logging.INFO,
+                "tlo.methods.wasting": logging.INFO,
             }
         }
 
