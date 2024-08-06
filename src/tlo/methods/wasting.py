@@ -512,15 +512,12 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
         total_daly_values = pd.Series(data=0.0,
                                       index=df.index[df.is_alive])
-        total_daly_values.loc[df.is_alive & (df.un_clinical_acute_malnutrition == 'SAM') &
+        total_daly_values.loc[df.is_alive & (df.un_WHZ_category == 'WHZ<-3') &
                               df.un_am_bilateral_oedema] = daly_wts['sev_wasting_with_oedema']
-        total_daly_values.loc[df.is_alive & (df.un_clinical_acute_malnutrition == 'SAM') &
+        total_daly_values.loc[df.is_alive & (df.un_WHZ_category == 'WHZ<-3') &
                               (~df.un_am_bilateral_oedema)] = daly_wts['sev_wasting_w/o_oedema']
-        total_daly_values.loc[df.is_alive & (
-                ((df.un_WHZ_category == '-3<=WHZ<-2') & (df.un_am_MUAC_category != "<115mm")) | (
-                    (df.un_WHZ_category != 'WHZ<-3') & (
-                        df.un_am_MUAC_category != "[115-125)mm"))) & df.un_am_bilateral_oedema] = daly_wts[
-            'mod_wasting_with_oedema']
+        total_daly_values.loc[df.is_alive & (df.un_WHZ_category == '-3<=WHZ<-2') &
+                              df.un_am_bilateral_oedema] = daly_wts['mod_wasting_with_oedema']
         return total_daly_values
 
     def wasting_clinical_symptoms(self, person_id):
