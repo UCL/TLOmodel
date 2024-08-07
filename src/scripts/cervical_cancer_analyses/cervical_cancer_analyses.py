@@ -46,7 +46,7 @@ resourcefilepath = Path("./resources")
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2025, 1, 1)
-popsize = 340000
+popsize = 170000
 
 def run_sim(service_availability):
     # Establish the simulation object and set the seed
