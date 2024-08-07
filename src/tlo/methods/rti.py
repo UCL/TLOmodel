@@ -4,7 +4,6 @@ Road traffic injury module.
 """
 from __future__ import annotations
 
-import copy
 from pathlib import Path
 from typing import TYPE_CHECKING, List
 
