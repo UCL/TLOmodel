@@ -129,7 +129,7 @@ for idx, val in to_plot['Scale-up'].sort_index().items():
 
 
 scale_up_scenario = pd.DataFrame({'dynamic_HR_scaling_factor': pd.Series(scale_up_multipliers)})
-scale_up_scenario['scale_HR_by_popsizescale_HR_by_popsize'] = ["FALSE"] * len(scale_up_scenario)
+scale_up_scenario['scale_HR_by_popsize'] = ["FALSE"] * len(scale_up_scenario)
 scale_up_scenario = scale_up_scenario.reset_index()
 scale_up_scenario = scale_up_scenario.rename(columns={'index': 'year'})
 scale_up_scenario['year'] = scale_up_scenario['year'].astype(int)
