@@ -21,7 +21,7 @@ class HistoricalChangesInHRH(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2023, 1, 1)  # <-- End at beginning 2023, as this is when the data runs out
+        self.end_date = Date(2024, 1, 1)  # <-- End at beginning 2024, as this is when the data runs out
         self.pop_size = 100_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
@@ -64,7 +64,7 @@ class HistoricalChangesInHRH(BaseScenario):
                     }
                 ),
 
-            "Counterfactual (No Scale-up since 2017)":
+            "Counterfactual (No Scale-up)":
                 mix_scenarios(
                     self._common_baseline(),
                     {
@@ -84,7 +84,7 @@ class HistoricalChangesInHRH(BaseScenario):
                     "mode_appt_constraints": 1,                 # <-- Mode 1 prior to change to preserve calibration
                     "mode_appt_constraints_postSwitch": 2,      # <-- Mode 2 post-change to show effects of HRH
                     "scale_to_effective_capabilities": True,    # <-- Transition into Mode2 with the effective capabilities in HRH 'revealed' in Mode 1
-                    "year_mode_switch": 2017,    # <-- The transition happens in 2017, when we start to model the scale-up of HRH
+                    "year_mode_switch": 2019,    # <-- The transition happens in 2017, when we start to model the scale-up of HRH
 
                     # Normalize the behaviour of Mode 2
                     "policy_name": "Naive",
