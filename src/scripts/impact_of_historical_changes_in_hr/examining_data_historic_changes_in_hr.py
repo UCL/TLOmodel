@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from tlo.analysis.utils import get_root_path
+
 # Set local Dropbox source
 path_to_dropbox = Path(  # <-- point to the TLO dropbox locally
     '/Users/tbh03/Library/CloudStorage/OneDrive-SharedLibraries-ImperialCollegeLondon/TLOModel - WP - Documents/'
@@ -114,3 +116,27 @@ ax.grid()
 ax.set_ylim(0.95, 1.3)
 ax.set_xlabel('Date')
 fig.show()
+
+
+#%% Save this as a scale-up scenario
+
+# Work-out the annual multipliers that will give the desired scale-up pattern
+scale_up_multipliers = dict()
+scale_up_multipliers[2010] = 1.0
+for idx, val in to_plot['Scale-up'].sort_index().items():
+    if idx-1 > to_plot['Scale-up'].index[0]:
+        scale_up_multipliers[idx] = val / to_plot.loc[idx-1, 'Scale-up']
+
+
+scale_up_scenario = pd.DataFrame({'dynamic_HR_scaling_factor': pd.Series(scale_up_multipliers)})
+scale_up_scenario['scale_HR_by_popsizescale_HR_by_popsize'] = ["FALSE"] * len(scale_up_scenario)
+scale_up_scenario = scale_up_scenario.reset_index()
+scale_up_scenario = scale_up_scenario.rename(columns={'index': 'year'})
+scale_up_scenario['year'] = scale_up_scenario['year'].astype(int)
+scale_up_scenario.sort_values('year', inplace=True)
+
+# Add (or over-write) a sheet called 'historical_scaling' with the scale-up pattern to the relevant ResourceFile
+target_file = get_root_path() / 'resources' / 'healthsystem' / 'human_resources' / 'scaling_capabilities' / 'ResourceFile_dynamic_HR_scaling.xlsx'
+
+with pd.ExcelWriter(target_file, engine='openpyxl', mode='a', if_sheet_exists="replace") as writer:
+    scale_up_scenario.to_excel(writer, sheet_name='historical_scaling', index=False)
