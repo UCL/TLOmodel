@@ -1,5 +1,9 @@
 
 
+#todo: possibility that thermoablation does not successfully remove the cin2/3 ?
+#todo: screening probability depends on date last screen and result (who guidelines)
+#todo: consider fact that who recommend move towards xpert screening away from via
+
 """
 Cervical Cancer Disease Module
 
@@ -267,6 +271,10 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             Types.BOOL,
         "cin ever_detected on via"
         ),
+        "ce_date_last_screened": Property(
+          Types.DATE,
+          "date of last screening"
+        ),
         "ce_date_thermoabl": Property(
             Types.DATE,
         "date of thermoablation for CIN"
@@ -349,6 +357,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         df.loc[df.is_alive, "ce_ever_screened"] = False
         df.loc[df.is_alive, "ce_ever_diagnosed"] = False
         df.loc[df.is_alive, "ce_cured_date_cc"] = pd.NaT
+        df.loc[df.is_alive, "ce_date_last_screened"] = pd.NaT
 
         # -------------------- ce_hpv_cc_status -----------
         # this was not assigned here at outset because baseline value of hv_inf was not accessible - it is assigned
@@ -620,6 +629,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         df.at[child_id, "ce_ever_screened"] = False
         df.at[child_id, "ce_ever_diagnosed"] = False
         df.at[child_id, "ce_cured_date_cc"] = pd.NaT
+        df.at[child_id, "ce_date_last_screened"] = pd.NaT
 
     def report_daly_values(self):
 
@@ -805,8 +815,21 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         df.ce_selected_for_via_this_month = False
 
-        eligible_population = df.is_alive & (df.sex == 'F') & (df.age_years >= 25) & (df.age_years < 50) & \
-                              ~df.ce_current_cc_diagnosed
+        days_since_last_screen = (self.sim.date - df.ce_date_last_screened).dt.days
+        days_since_last_thermoabl = (self.sim.date - df.ce_date_thermoabl).dt.days
+
+        eligible_population = (
+            (df.is_alive) &
+            (df.sex == 'F') &
+            (df.age_years >= 25) &
+            (df.age_years < 50) &
+            (~df.ce_current_cc_diagnosed) &
+            (
+                pd.isna(df.ce_date_last_screened) |
+                (days_since_last_screen > 1825) |
+                ((days_since_last_screen > 730) & (days_since_last_thermoabl < 1095))
+            )
+        )
 
         df.loc[eligible_population, 'ce_selected_for_via_this_month'] = (
             np.random.random_sample(size=len(df[eligible_population])) < p['prob_via_screen']
@@ -815,6 +838,7 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[eligible_population, 'ce_selected_for_xpert_this_month'] = (
             np.random.random_sample(size=len(df[eligible_population])) < p['prob_xpert_screen']
         )
+
 
         # self.sim.modules['SymptomManager'].change_symptom(
         #     person_id=df.loc[df['ce_selected_for_via_this_month']].index,
@@ -829,9 +853,6 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         #     add_or_remove='+',
         #     disease_module=self.module
         # )
-
-        df.loc[(df['ce_selected_for_xpert_this_month'] == True) | (
-                df['ce_selected_for_via_this_month'] == True), 'ce_ever_screened'] = True
 
 
     # -------------------- UPDATING OF SYMPTOM OF vaginal bleeding OVER TIME --------------------------------
@@ -895,7 +916,6 @@ class HSI_CervicalCancer_AceticAcidScreening(HSI_Event, IndividualScopeEventMixi
         person = df.loc[person_id]
         hs = self.sim.modules["HealthSystem"]
 
-
         # Check consumables are available
         cons_avail = self.get_consumables(
             item_codes=self.module.item_codes_cervical_can['cervical_cancer_screening_via'])
@@ -909,6 +929,8 @@ class HSI_CervicalCancer_AceticAcidScreening(HSI_Event, IndividualScopeEventMixi
                 dx_tests_to_run='screening_with_via_for_cin_and_cervical_cancer',
                 hsi_event=self
             )
+            df.at[person_id, "ce_date_last_screened"] = self.sim.date
+            df.at[person_id, "ce_ever_screened"] = True
 
             if dx_result:
                 df.at[person_id, 'ce_via_cin_ever_detected'] = True
@@ -979,6 +1001,8 @@ class HSI_CervicalCancer_XpertHPVScreening(HSI_Event, IndividualScopeEventMixin)
             dx_tests_to_run='screening_with_xpert_for_hpv',
             hsi_event=self
         )
+        df.at[person_id, "ce_date_last_screened"] = self.sim.date
+        df.at[person_id, "ce_ever_screened"] = True
 
         if dx_result:
             df.at[person_id, 'ce_xpert_hpv_ever_pos'] = True
@@ -1597,7 +1621,7 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         out.update({"n_women_hiv_unsuppressed": n_women_hiv_unsuppressed})
         out.update({"n_women_hivneg": n_women_hivneg})
         out.update({"n_women_hivpos": n_women_hivpos})
-        out.update({"n_thermoabl_past_year ": n_thermoabl_past_year})
+        out.update({"n_thermoabl_past_year": n_thermoabl_past_year})
 
         pop = len(df[df.is_alive])
         count_summary = {
@@ -1715,12 +1739,17 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         'ce_date_palliative_care', 'ce_selected_for_via_this_month', 'sy_chosen_via_screening_for_cin_cervical_cancer',
         'ce_via_cin_ever_detected']
 
-        selected_columns = ["hv_inf", "ce_hiv_unsuppressed", "hv_art", "ce_hpv_cc_status",'ce_cured_date_cc']
+#       selected_columns = ["hv_inf", "ce_hiv_unsuppressed", "hv_art", "ce_hpv_cc_status",'ce_cured_date_cc']
+
+        selected_columns = ["ce_selected_for_via_this_month", "ce_selected_for_xpert_this_month",
+                            "ce_ever_screened", "ce_date_last_screened", "ce_date_cin_removal",
+                            "ce_xpert_hpv_ever_pos", "ce_via_cin_ever_detected",  "ce_date_thermoabl",
+                            "ce_biopsy"]
 
         selected_rows = df[(df['sex'] == 'F') & (df['age_years'] > 15) & df['is_alive'] & (df['hv_inf'])]
 
 #       pd.set_option('display.max_rows', None)
-#       print(selected_rows[selected_columns])
+        print(selected_rows[selected_columns])
 
 #       selected_columns = ['sex', 'age_years', 'is_alive']
 #       pd.set_option('display.max_rows', None)
