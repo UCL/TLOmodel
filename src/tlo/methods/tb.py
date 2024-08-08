@@ -3022,7 +3022,7 @@ class DummyTbModule(Module):
         super().__init__(name)
         self.active_tb_prev = active_tb_prev
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath=None):
         pass
 
     def initialise_population(self, population):

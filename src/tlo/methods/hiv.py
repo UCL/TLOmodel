@@ -3539,7 +3539,7 @@ class DummyHivModule(Module):
         self.hiv_prev = hiv_prev
         self.art_cov = art_cov
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath=None):
         pass
 
     def initialise_population(self, population):
