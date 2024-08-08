@@ -31,14 +31,13 @@ logger.setLevel(logging.INFO)
 
 
 class Malaria(Module, GenericFirstAppointmentsMixin):
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         """Create instance of Malaria module
 
         :param name: Name of this module (optional, defaults to name of class)
         :param resourcefilepath: Path to the TLOmodel `resources` directory
         """
         super().__init__(name)
-        self.resourcefilepath = Path(resourcefilepath)
 
         # cleaned coverage values for IRS and ITN (populated in `read_parameters`)
         self.itn_irs = None
@@ -241,8 +240,8 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         'ma_iptp': Property(Types.BOOL, 'if woman has IPTp in current pregnancy'),
     }
 
-    def read_parameters(self, data_folder):
-        workbook = pd.read_excel(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria.xlsx', sheet_name=None)
+    def read_parameters(self, resourcefilepath=None):
+        workbook = pd.read_excel(Path(resourcefilepath) / 'malaria' / 'ResourceFile_malaria.xlsx', sheet_name=None)
         self.load_parameters_from_dataframe(workbook['parameters'])
 
         p = self.parameters
@@ -256,9 +255,9 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         p['rdt_testing_rates'] = workbook['WHO_TestData2023']
         p['highrisk_districts'] = workbook['highrisk_districts']
 
-        p['inf_inc'] = pd.read_csv(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria_InfInc_expanded.csv')
-        p['clin_inc'] = pd.read_csv(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria_ClinInc_expanded.csv')
-        p['sev_inc'] = pd.read_csv(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria_SevInc_expanded.csv')
+        p['inf_inc'] = pd.read_csv(Path(resourcefilepath) / 'malaria' / 'ResourceFile_malaria_InfInc_expanded.csv')
+        p['clin_inc'] = pd.read_csv(Path(resourcefilepath) / 'malaria' / 'ResourceFile_malaria_ClinInc_expanded.csv')
+        p['sev_inc'] = pd.read_csv(Path(resourcefilepath) / 'malaria' / 'ResourceFile_malaria_SevInc_expanded.csv')
 
         # load parameters for scale-up projections
         p["scaleup_parameters"] = workbook["scaleup_parameters"].set_index('parameter')['scaleup_value'].to_dict()

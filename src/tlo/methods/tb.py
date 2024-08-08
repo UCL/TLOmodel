@@ -26,10 +26,9 @@ logger.setLevel(logging.INFO)
 class Tb(Module):
     """Set up the baseline population with TB prevalence"""
 
-    def __init__(self, name=None, resourcefilepath=None, run_with_checks=False):
+    def __init__(self, name=None, run_with_checks=False):
         super().__init__(name)
 
-        self.resourcefilepath = resourcefilepath
         self.daly_wts = dict()
         self.lm = dict()
         self.footprints_for_consumables_required = dict()
@@ -391,7 +390,7 @@ class Tb(Module):
         )
     }
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath=None):
         """
         * 1) Reads the ResourceFiles
         * 2) Declares the DALY weights
@@ -400,7 +399,7 @@ class Tb(Module):
 
         # 1) Read the ResourceFiles
         workbook = pd.read_excel(
-            os.path.join(self.resourcefilepath, "ResourceFile_TB.xlsx"), sheet_name=None
+            os.path.join(resourcefilepath, "ResourceFile_TB.xlsx"), sheet_name=None
         )
         self.load_parameters_from_dataframe(workbook["parameters"])
 

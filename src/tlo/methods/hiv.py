@@ -54,9 +54,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
     The HIV Disease Module
     """
 
-    def __init__(self, name=None, resourcefilepath=None, run_with_checks=False):
+    def __init__(self, name=None, run_with_checks=False):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
 
         assert isinstance(run_with_checks, bool)
         self.run_with_checks = run_with_checks
@@ -412,7 +411,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         ),
     }
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath=None):
         """
         * 1) Reads the ResourceFiles
         * 2) Declare the Symptoms
@@ -424,7 +423,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         p = self.parameters
 
         workbook = pd.read_excel(
-            os.path.join(self.resourcefilepath, "ResourceFile_HIV.xlsx"),
+            os.path.join(resourcefilepath, "ResourceFile_HIV.xlsx"),
             sheet_name=None,
         )
         self.load_parameters_from_dataframe(workbook["parameters"])
