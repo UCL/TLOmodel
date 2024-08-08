@@ -121,17 +121,19 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             Types.LIST,
             'mean and standard deviation of a normal distribution of MUAC measurements for WHZ >= -2'),
         'proportion_WHZ<-3_with_MUAC<115mm': Parameter(
-            Types.REAL, 'proportion of severe wasting with MUAC < 115mm'),
+            Types.REAL, 'proportion of individuals with severe wasting who have MUAC < 115 mm'),
         'proportion_-3<=WHZ<-2_with_MUAC<115mm': Parameter(
-            Types.REAL, 'proportion of moderate wasting with MUAC < 115mm'),
+            Types.REAL, 'proportion of individuals with moderate wasting who have MUAC < 115 mm'),
         'proportion_-3<=WHZ<-2_with_MUAC_[115-125)mm': Parameter(
-            Types.REAL, 'proportion of moderate wasting with 115 mm ≤ MUAC < 125mm'),
+            Types.REAL, 'proportion of individuals with moderate wasting who have 115 mm ≤ MUAC < 125 mm'),
         'proportion_mam_with_MUAC_[115-125)mm_and_normal_whz': Parameter(
-            Types.REAL, 'proportion of MAM cases with 115 mm ≤ MUAC < 125 mm and normal/mild WHZ'),
+            Types.REAL, 'proportion of individuals with MAM who have 115 mm ≤ MUAC < 125 mm and normal/mild'
+                        ' WHZ'),
         'proportion_mam_with_MUAC_[115-125)mm_and_-3<=WHZ<-2': Parameter(
-            Types.REAL, 'proportion of MAM cases with both 115 mm ≤ MUAC < 125 mm and moderate wasting'),
+            Types.REAL, 'proportion of individuals with MAM who have both 115 mm ≤ MUAC < 125 mm and moderate'
+                        ' wasting'),
         'proportion_mam_with_-3<=WHZ<-2_and_normal_MUAC': Parameter(
-            Types.REAL, 'proportion of MAM cases with moderate wasting and normal MUAC'),
+            Types.REAL, 'proportion of individuals with MAM who have moderate wasting and normal MUAC'),
         # bilateral oedema
         'prevalence_nutritional_oedema': Parameter(
             Types.REAL, 'prevalence of nutritional oedema in children under 5 in Malawi'),
