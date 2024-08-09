@@ -23,7 +23,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-
 # Definition of the age-groups used in the module, as a tuple of two integers (a,b) such that the given age group
 #  is in range a <= group <= b. i.e.,
 #     0 <= PSAC <= 4
@@ -187,7 +186,7 @@ class Schisto(Module):
             df['district_of_residence'] = pd.Categorical(['Zomba'] * len(df),
                                                          categories=df['district_of_residence'].cat.categories)
             df['region_of_residence'] = pd.Categorical(['Southern'] * len(df),
-                                                         categories=df['region_of_residence'].cat.categories)
+                                                       categories=df['region_of_residence'].cat.categories)
         for _spec in self.species.values():
             _spec.initialise_population(population)
 
@@ -231,7 +230,11 @@ class Schisto(Module):
         """
         df = self.sim.population.props
         df.at[child_id, f'{self.module_prefix}_last_PZQ_date'] = pd.NaT
-        # df.at[child_id, 'ss_scheduled_hsi_date'] = pd.NaT
+
+        # WASH in action, update property li_unimproved_sanitation=False for all new births
+        if self.parameters['scaleup_WASH'] and (
+            self.sim.date >= Date(self.parameters['scaleup_WASH_start_year'], 1, 1)):
+            df.at[child_id, 'li_unimproved_sanitation'] = False
 
         for _spec in self.species.values():
             _spec.on_birth(mother_id, child_id)
@@ -780,11 +783,28 @@ class SchistoSpecies:
         df.at[child_id, prop('aggregate_worm_burden')] = 0
 
         # Generate the harbouring rate depending on a district of residence.
-        district = df.loc[child_id, 'district_of_residence']
+        district = df.at[child_id, 'district_of_residence']
         df.at[child_id, prop('harbouring_rate')] = rng.gamma(params['gamma_alpha'][district], size=1)
 
-        # determine susceptibility depending on district
-        df.at[child_id, prop('susceptibility')] = rng.binomial(n=1, p=params['prop_susceptible'][district], size=1)
+        # Determine if individual should automatically be susceptible
+        if df.at[child_id, 'li_unimproved_sanitation']:
+            df.at[child_id, prop('susceptibility')] = 1
+        else:
+            # determine susceptibility depending on district
+            prop_susceptible = params['prop_susceptible'][district]
+            # Calculate current susceptible count and proportion
+            current_susceptible = len(df.index[(df['district_of_residence'] == district) &
+                                               (df[prop('susceptibility')] == 1)])
+
+            total_in_district = len(df.index[df['district_of_residence'] == district])
+
+            current_proportion = current_susceptible / total_in_district
+
+            # Step 3: Determine if the individual should be susceptible based on the proportion
+            if current_proportion < prop_susceptible:
+                df.at[child_id, prop('susceptibility')] = 1
+            else:
+                df.at[child_id, prop('susceptibility')] = 0  # this is the default
 
     def update_infectious_status_and_symptoms(self, idx: pd.Index) -> None:
         """Updates the infection status and symptoms based on the current aggregate worm burden of this species.
@@ -900,7 +920,6 @@ class SchistoSpecies:
             n_susceptible = int(np.ceil(prop_susceptible * num_in_district))
 
             # Select people with li_unimproved_sanitation=True
-            # num li_unimproved_sanitation=True is 112, all should be in Zomba
             no_sanitation = df.loc[(df['district_of_residence'] == district) & (df['li_unimproved_sanitation'] == True)]
 
             # Determine the number of people to select from those with no sanitation
@@ -914,14 +933,12 @@ class SchistoSpecies:
             n_susceptible_remaining = n_susceptible - n_no_sanitation
 
             if n_susceptible_remaining > 0:
-                # Select additional people from those with li_no_sanitation=False if needed
-                with_sanitation = df.loc[(df['district_of_residence'] == district) & (df['li_unimproved_sanitation'] == False)]
+                # Select additional people from those with li_unimproved_sanitation=False if needed
+                with_sanitation = df.loc[
+                    (df['district_of_residence'] == district) & (df['li_unimproved_sanitation'] == False)]
                 susceptible_additional_idx = rng.choice(with_sanitation.index, size=n_susceptible_remaining,
                                                         replace=False)
                 df.loc[susceptible_additional_idx, prop('susceptibility')] = 1
-
-            # The rest of the population should have susceptibility = 0 (or any other default value you prefer)
-            df.loc[in_the_district & df['susceptibility'].isna(), 'susceptibility'] = 0
 
     def _assign_initial_worm_burden(self, population) -> None:
         """Assign initial distribution of worms to each person (based on district and age-group)."""
@@ -1047,6 +1064,7 @@ class SchistoSpecies:
         """Log the number of persons in each infection status for this species, by age-group and district."""
 
         df = self.schisto_module.sim.population.props
+        prop = self.prefix_species_property
 
         age_grp = df.loc[df.is_alive].age_years.map(self.schisto_module.age_group_mapper)
 
@@ -1061,6 +1079,21 @@ class SchistoSpecies:
             key=f'infection_status_{self.name}',
             data=flatten_multi_index_series_into_dict_for_logging(data),
             description='Counts of infection status with this species by age-group and district.'
+        )
+
+        # Group by district and calculate counts
+        grouped_data = df.loc[df.is_alive].groupby('district_of_residence')[prop('susceptibility')].agg(
+            total_count='count',
+            susceptible_count=lambda x: (x == 1).sum()
+        )
+
+        # Calculate the proportion of susceptible individuals in each district
+        grouped_data['susceptibility_proportion'] = grouped_data['susceptible_count'] / grouped_data['total_count']
+
+        logger.info(
+            key=f'susceptibility_{self.name}',
+            data=grouped_data['susceptibility_proportion'].to_dict(),
+            description='Proportion of people susceptible to this species in district.'
         )
 
     def log_mean_worm_burden(self) -> None:
@@ -1350,28 +1383,23 @@ class SchistoWashScaleUp(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         p = self.module.parameters
 
+        # identify people with unimproved sanitation
+        no_sanitation = df.index[df['li_unimproved_sanitation'] == True]
+
+        # of these people with no sanitation, 40% will now be not susceptible to schisto
+        # Calculate the number of people to switch (40% of the no_sanitation group)
+        n_to_select = int((1-p['rr_WASH']) * len(no_sanitation))
+
+        # Randomly select 40% of these indices
+        switch_to_not_susceptible = np.random.choice(no_sanitation, size=n_to_select, replace=False)
+
+        df.loc[switch_to_not_susceptible, 'ss_sm_susceptibility'] = 0
+        df.loc[switch_to_not_susceptible, 'ss_sh_susceptibility'] = 0
+
         # scale-up property li_unimproved_sanitation and no_clean_water
         # set the properties to False for everyone
         df['li_unimproved_sanitation'] = False
         df['li_date_acquire_improved_sanitation'] = self.sim.date
-        # df['li_no_clean_drinking_water'] = False
-
-        # change proportion susceptible uniformly across the districts
-        # reduce the number of people that are currently susceptible by 60% (rr_WASH)
-        # ss_sh_susceptibility is binary 0/1
-        # if do this separately for both species, will it over-estimate effect?
-        # allow those currently infected to be selected, their exposure now reduces
-        # alternative method, if any susceptibility to either species then eligible for reduction
-        # if selected for reduced susceptibility, apply to both species
-
-        susceptible_haem = df.loc[df.is_alive & ((df.ss_sh_susceptibility == 1) | (df.ss_sm_susceptibility == 1))].index
-        reduce_susceptibility = (
-            self.module.rng.random_sample(len(susceptible_haem))
-            < p["rr_WASH"]
-        )
-        change_susceptibility = susceptible_haem[reduce_susceptibility]
-        df.loc[change_susceptibility, 'ss_sh_susceptibility'] = 0
-        df.loc[change_susceptibility, 'ss_sm_susceptibility'] = 0
 
 
 class HSI_Schisto_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin):
@@ -1581,7 +1609,6 @@ class SchistoPersonDaysLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
 class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
-
         """This is a regular event (every month) that causes the logging for each species."""
         self.repeat = 1
         super().__init__(module, frequency=DateOffset(months=self.repeat))
@@ -1598,6 +1625,7 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # treatment episodes
         df = population.props
         now = self.sim.date
+
         new_tx = len(
             df[
                 (df.ss_last_PZQ_date >= (now - DateOffset(months=self.repeat)))
@@ -1621,4 +1649,3 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # clear the logger ready for the next year
         self.log_person_days_any_infection = 0
         self.log_person_days_high_infection = 0
-
