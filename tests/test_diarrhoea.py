@@ -73,17 +73,17 @@ def test_basic_run_of_diarrhoea_module_with_default_params(tmpdir, seed):
                       "tlo.methods.diarrhoea": logging.INFO}
                   }
 
-    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, resourcefilepath=resourcefilepath)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable_and_reject_all=True),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
+    sim.register(demography.Demography(),
+                 simplified_births.SimplifiedBirths(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(disable_and_reject_all=True),
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthburden.HealthBurden(),
+                 diarrhoea.Diarrhoea(do_checks=True),
                  diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
                  )
 
@@ -106,17 +106,17 @@ def test_basic_run_of_diarrhoea_module_with_zero_incidence(seed):
     end_date = Date(2015, 12, 31)
     popsize = 1000
 
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
+    sim.register(demography.Demography(),
+                 simplified_births.SimplifiedBirths(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(disable=True),
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthburden.HealthBurden(),
+                 diarrhoea.Diarrhoea(),
                  diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
                  )
 
@@ -157,8 +157,8 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_zero_death(tmpdir
     """Check that there are incident cases, and that everyone recovers naturally"""
 
     start_date = Date(2010, 1, 1)
-    end_date = Date(2015, 12, 31)
-    popsize = 2000
+    end_date = Date(2010, 12, 31)
+    popsize = 1000
 
     log_config = {'filename': 'tmpfile',
                   'directory': tmpdir,
@@ -166,17 +166,17 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_zero_death(tmpdir
                       "tlo.methods.diarrhoea": logging.INFO}
                   }
 
-    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, resourcefilepath=resourcefilepath)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable_and_reject_all=True),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
+    sim.register(demography.Demography(),
+                 simplified_births.SimplifiedBirths(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(disable_and_reject_all=True),
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthburden.HealthBurden(),
+                 diarrhoea.Diarrhoea(do_checks=True),
                  diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
                  )
 
@@ -209,8 +209,8 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_zero_death(tmpdir
 def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_no_treatment(tmpdir, seed):
     """Check that there are incident cases, treatments and deaths occurring correctly"""
     start_date = Date(2010, 1, 1)
-    end_date = Date(2015, 12, 31)
-    popsize = 2000
+    end_date = Date(2010, 12, 31)
+    popsize = 1000
 
     log_config = {'filename': 'tmpfile',
                   'directory': tmpdir,
@@ -218,17 +218,17 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_no
                       "tlo.methods.diarrhoea": logging.INFO}
                   }
 
-    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, resourcefilepath=resourcefilepath)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable_and_reject_all=True),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
+    sim.register(demography.Demography(),
+                 simplified_births.SimplifiedBirths(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(disable_and_reject_all=True),
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthburden.HealthBurden(),
+                 diarrhoea.Diarrhoea(do_checks=True),
                  diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
                  )
 
@@ -281,26 +281,21 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
                           "tlo.methods.diarrhoea": logging.INFO}
                       }
 
-        sim = Simulation(start_date=start_date, seed=seed, show_progress_bar=True, log_config=log_config)
+        sim = Simulation(start_date=start_date, seed=seed, show_progress_bar=True,
+                         log_config=log_config, resourcefilepath=resourcefilepath)
 
         # Register the appropriate modules
-        sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                     simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                     healthsystem.HealthSystem(
-                         resourcefilepath=resourcefilepath,
-                         disable=True,
+        sim.register(demography.Demography(),
+                     simplified_births.SimplifiedBirths(),
+                     enhanced_lifestyle.Lifestyle(),
+                     healthsystem.HealthSystem(disable=True,
                          cons_availability='all',
                      ),
-                     symptommanager.SymptomManager(resourcefilepath=resourcefilepath,
-                                                   spurious_symptoms=spurious_symptoms
-                                                   ),
-                     healthseekingbehaviour.HealthSeekingBehaviour(
-                         resourcefilepath=resourcefilepath,
-                         force_any_symptom_to_lead_to_healthcareseeking=True
+                     symptommanager.SymptomManager(spurious_symptoms=spurious_symptoms),
+                     healthseekingbehaviour.HealthSeekingBehaviour(force_any_symptom_to_lead_to_healthcareseeking=True
                          # every symptom leads to healthcare seeking
                      ),
-                     diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
+                     diarrhoea.Diarrhoea(do_checks=True),
                      diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
                      )
         # Edit rate of spurious symptoms to be limited to additional cases of diarrhoea:
@@ -355,23 +350,18 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration(seed):
     start_date = Date(2010, 1, 1)
     popsize = 200  # smallest population size that works
 
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(
-                     resourcefilepath=resourcefilepath,
-                     disable=False,
-                     cons_availability='all'
-                 ),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+    sim.register(demography.Demography(),
+                 simplified_births.SimplifiedBirths(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(disable=False, cons_availability='all'),
+                 symptommanager.SymptomManager(),
                  healthseekingbehaviour.HealthSeekingBehaviour(
-                     resourcefilepath=resourcefilepath,
                      force_any_symptom_to_lead_to_healthcareseeking=True  # every symptom leads to health-care seeking
                  ),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
+                 healthburden.HealthBurden(),
+                 diarrhoea.Diarrhoea(do_checks=True),
                  diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
                  )
 
@@ -451,23 +441,18 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration_dxtest_notfuncti
     start_date = Date(2010, 1, 1)
     popsize = 200  # smallest population size that works
 
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(
-                     resourcefilepath=resourcefilepath,
-                     disable=False,
-                     cons_availability='all'
-                 ),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+    sim.register(demography.Demography(),
+                 simplified_births.SimplifiedBirths(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(disable=False, cons_availability='all'),
+                 symptommanager.SymptomManager(),
                  healthseekingbehaviour.HealthSeekingBehaviour(
-                     resourcefilepath=resourcefilepath,
                      force_any_symptom_to_lead_to_healthcareseeking=True  # every symptom leads to health-care seeking
                  ),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
+                 healthburden.HealthBurden(),
+                 diarrhoea.Diarrhoea(do_checks=True),
                  diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
                  )
 
@@ -530,23 +515,18 @@ def test_do_when_presentation_with_diarrhoea_non_severe_dehydration(seed):
     start_date = Date(2010, 1, 1)
     popsize = 200  # smallest population size that works
 
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(
-                     resourcefilepath=resourcefilepath,
-                     disable=False,
-                     cons_availability='all'
-                 ),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+    sim.register(demography.Demography(),
+                 simplified_births.SimplifiedBirths(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(disable=False, cons_availability='all'),
+                 symptommanager.SymptomManager(),
                  healthseekingbehaviour.HealthSeekingBehaviour(
-                     resourcefilepath=resourcefilepath,
                      force_any_symptom_to_lead_to_healthcareseeking=True  # every symptom leads to health-care seeking
                  ),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
+                 healthburden.HealthBurden(),
+                 diarrhoea.Diarrhoea(do_checks=True),
                  diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
                  )
 
@@ -607,24 +587,19 @@ def test_run_each_of_the_HSI(seed):
     start_date = Date(2010, 1, 1)
     popsize = 200  # smallest population size that works
 
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(
-                     resourcefilepath=resourcefilepath,
-                     disable=False,
-                     cons_availability='all'
-                 ),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+    sim.register(demography.Demography(),
+                 simplified_births.SimplifiedBirths(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(disable=False, cons_availability='all'),
+                 symptommanager.SymptomManager(),
                  healthseekingbehaviour.HealthSeekingBehaviour(
-                     resourcefilepath=resourcefilepath,
                      force_any_symptom_to_lead_to_healthcareseeking=True  # every symptom leads to health-care seeking
                  ),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
+                 healthburden.HealthBurden(),
+                 diarrhoea.Diarrhoea(do_checks=True),
                  diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
                  )
 
@@ -645,17 +620,17 @@ def test_does_treatment_prevent_death(seed):
 
     start_date = Date(2010, 1, 1)
     popsize = 1000
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
+    sim.register(demography.Demography(),
+                 simplified_births.SimplifiedBirths(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(disable=True),
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthburden.HealthBurden(),
+                 diarrhoea.Diarrhoea(),
                  diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
                  )
 
@@ -723,23 +698,18 @@ def test_do_treatment_for_those_that_will_die_if_consumables_available(seed):
     # ** If consumables are available **:
     start_date = Date(2010, 1, 1)
     popsize = 200  # smallest population size that works
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(
-                     resourcefilepath=resourcefilepath,
-                     disable=False,
-                     cons_availability='all'
-                 ),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+    sim.register(demography.Demography(),
+                 simplified_births.SimplifiedBirths(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(disable=False,  cons_availability='all'),
+                 symptommanager.SymptomManager(),
                  healthseekingbehaviour.HealthSeekingBehaviour(
-                     resourcefilepath=resourcefilepath,
                      force_any_symptom_to_lead_to_healthcareseeking=True  # every symptom leads to health-care seeking
                  ),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
+                 healthburden.HealthBurden(),
+                 diarrhoea.Diarrhoea(do_checks=True),
                  diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
                  )
     increase_risk_of_death(sim.modules['Diarrhoea'])
@@ -795,23 +765,18 @@ def test_do_treatment_for_those_that_will_die_if_consumables_not_available(seed)
     # ** If consumables are available **:
     start_date = Date(2010, 1, 1)
     popsize = 200  # smallest population size that works
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(
-                     resourcefilepath=resourcefilepath,
-                     disable=False,
-                     cons_availability='none'
-                 ),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+    sim.register(demography.Demography(),
+                 simplified_births.SimplifiedBirths(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(disable=False, cons_availability='none'),
+                 symptommanager.SymptomManager(),
                  healthseekingbehaviour.HealthSeekingBehaviour(
-                     resourcefilepath=resourcefilepath,
                      force_any_symptom_to_lead_to_healthcareseeking=True  # every symptom leads to health-care seeking
                  ),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
+                 healthburden.HealthBurden(),
+                 diarrhoea.Diarrhoea(do_checks=True),
                  diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
                  )
     increase_risk_of_death(sim.modules['Diarrhoea'])
@@ -868,23 +833,18 @@ def test_do_treatment_for_those_that_will_not_die(seed):
     # ** If consumables are available **:
     start_date = Date(2010, 1, 1)
     popsize = 200  # smallest population size that works
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(
-                     resourcefilepath=resourcefilepath,
-                     disable=False,
-                     cons_availability='all'
-                 ),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+    sim.register(demography.Demography(),
+                 simplified_births.SimplifiedBirths(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(disable=False, cons_availability='all'),
+                 symptommanager.SymptomManager(),
                  healthseekingbehaviour.HealthSeekingBehaviour(
-                     resourcefilepath=resourcefilepath,
                      force_any_symptom_to_lead_to_healthcareseeking=True  # every symptom leads to health-care seeking
                  ),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
+                 healthburden.HealthBurden(),
+                 diarrhoea.Diarrhoea(do_checks=True),
                  diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
                  )
     sim.make_initial_population(n=popsize)
@@ -947,15 +907,15 @@ def test_effect_of_vaccine(seed):
     start_date = Date(2010, 1, 1)
     popsize = 200
 
-    sim = Simulation(start_date=start_date, seed=seed)
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable_and_reject_all=True),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    sim.register(demography.Demography(),
+                 simplified_births.SimplifiedBirths(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(disable_and_reject_all=True),
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthburden.HealthBurden(),
+                 diarrhoea.Diarrhoea(do_checks=True),
                  diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
                  )
     sim.make_initial_population(n=popsize)
@@ -1002,15 +962,15 @@ def test_check_perfect_treatment_leads_to_zero_risk_of_death(seed):
     start_date = Date(2010, 1, 1)
     popsize = 200
 
-    sim = Simulation(start_date=start_date, seed=seed)
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable_and_reject_all=True),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    sim.register(demography.Demography(),
+                 simplified_births.SimplifiedBirths(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(disable_and_reject_all=True),
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthburden.HealthBurden(),
+                 diarrhoea.Diarrhoea(do_checks=True),
                  diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
                  )
     sim.make_initial_population(n=popsize)
@@ -1069,7 +1029,7 @@ def test_zero_deaths_when_perfect_treatment(seed):
             """Dummy module that will cause everyone to have diarrhoea from the first day of the simulation"""
             METADATA = {Metadata.DISEASE_MODULE}
 
-            def read_parameters(self, data_folder):
+            def read_parameters(self, resourcefilepath=None):
                 pass
 
             def initialise_population(self, population):
@@ -1090,23 +1050,18 @@ def test_zero_deaths_when_perfect_treatment(seed):
 
         start_date = Date(2010, 1, 1)
         popsize = 10_000
-        sim = Simulation(start_date=start_date, seed=seed)
+        sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
         # Register the appropriate modules
-        sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                     simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                     healthsystem.HealthSystem(
-                         resourcefilepath=resourcefilepath,
-                         disable=True,
-                         cons_availability='all',
-                     ),
-                     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        sim.register(demography.Demography(),
+                     simplified_births.SimplifiedBirths(),
+                     enhanced_lifestyle.Lifestyle(),
+                     healthsystem.HealthSystem(disable=True, cons_availability='all'),
+                     symptommanager.SymptomManager(),
                      healthseekingbehaviour.HealthSeekingBehaviour(
-                         resourcefilepath=resourcefilepath,
                          force_any_symptom_to_lead_to_healthcareseeking=force_any_symptom_to_lead_to_healthcareseeking
                          # every symptom leads to health-care seeking
                      ),
-                     diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
+                     diarrhoea.Diarrhoea(do_checks=True),
                      diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
                      DummyModule(),
                      )

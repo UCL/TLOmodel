@@ -25,7 +25,7 @@ from tlo.methods import (
 # %%
 
 
-resourcefilepath = Path("./resources")
+resourcefilepath = './resources'
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
@@ -57,23 +57,22 @@ for label, service_avail in scenarios.items():
         _disable_and_reject_all = False
 
     # add file handler for the purpose of logging
-    sim = Simulation(start_date=start_date, seed=0, log_config=log_config, show_progress_bar=True)
+    sim = Simulation(start_date=start_date, seed=0, log_config=log_config,
+                     show_progress_bar=True, resourcefilepath=resourcefilepath)
 
     # run the simulation
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           disable=_disable,
+    sim.register(demography.Demography(),
+                 enhanced_lifestyle.Lifestyle(),
+                 symptommanager.SymptomManager(),
+                 healthsystem.HealthSystem(disable=_disable,
                                            disable_and_reject_all=_disable_and_reject_all,
                                            mode_appt_constraints=0,
                                            cons_availability='all',
                                            ),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath,
-                                                               force_any_symptom_to_lead_to_healthcareseeking=True),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(force_any_symptom_to_lead_to_healthcareseeking=True),
+                 healthburden.HealthBurden(),
+                 simplified_births.SimplifiedBirths(),
+                 diarrhoea.Diarrhoea(),
                  diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
                  )
 
