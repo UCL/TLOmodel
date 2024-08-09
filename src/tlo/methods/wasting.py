@@ -137,8 +137,10 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         # bilateral oedema
         'prevalence_nutritional_oedema': Parameter(
             Types.REAL, 'prevalence of nutritional oedema in children under 5 in Malawi'),
+        'proportion_WHZ<-2_with_oedema': Parameter(
+            Types.REAL, 'proportion of individuals with wasting (moderate or severe) who have oedema'),
         'proportion_oedema_with_WHZ<-2': Parameter(
-            Types.REAL, 'proportion of oedematous malnutrition with concurrent wasting'),
+            Types.REAL, 'proportion of individuals with oedema who are wasted (moderately or severely)'),
         # treatment
         'coverage_supplementary_feeding_program': Parameter(
             Types.REAL, 'coverage of supplementary feeding program for MAM in health centres'),
@@ -383,6 +385,8 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         This function applies the probability of bilateral oedema present in wasting and non-wasted cases
         :param idx: index of children under 5, or person_id
         """
+        if len(idx) == 0:
+            return
         df = self.sim.population.props
         p = self.parameters
 
@@ -394,12 +398,19 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
         # oedema among wasted children
         oedema_in_wasted_children = self.rng.random_sample(size=len(
-            children_with_wasting)) < p['prevalence_nutritional_oedema'] * p['proportion_oedema_with_WHZ<-2']
+            children_with_wasting)) < p['proportion_WHZ<-2_with_oedema']
         df.loc[children_with_wasting, 'un_am_bilateral_oedema'] = oedema_in_wasted_children
 
         # oedema among non-wasted children
+        if len(children_without_wasting) == 0:
+            return
+        # proportion_normalWHZ_with_oedema: P(oedema|WHZ>=-2) =
+        # P(oedema & WHZ>=-2) / P(WHZ>=-2) = P(oedema) * [1 -P(WHZ<-2|oedema)] / (#WHZ>=-2 / #all under 5)
+        proportion_normal_whz_with_oedema = \
+            p['prevalence_nutritional_oedema'] * (1 - p['proportion_oedema_with_WHZ<-2']) / \
+            (len(children_without_wasting) / len(idx))
         oedema_in_non_wasted = self.rng.random_sample(size=len(
-            children_without_wasting)) < p['prevalence_nutritional_oedema'] * (1 - p['proportion_oedema_with_WHZ<-2'])
+            children_without_wasting)) < proportion_normal_whz_with_oedema
         df.loc[children_without_wasting, 'un_am_bilateral_oedema'] = oedema_in_non_wasted
 
     def clinical_acute_malnutrition_state(self, person_id, pop_dataframe):
