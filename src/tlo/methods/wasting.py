@@ -275,7 +275,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         """
 
         # schedule wasting pool event
-        sim.schedule_event(WastingPollingEvent(self), sim.date + DateOffset(months=3))
+        sim.schedule_event(IncidenceWastingPollingEvent(self), sim.date + DateOffset(months=3))
 
         # schedule wasting logging event
         sim.schedule_event(WastingLoggingEvent(self), sim.date + DateOffset(months=12))
@@ -668,7 +668,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                         date=df.at[person_id, 'un_am_tx_start_date'] + DateOffset(weeks=4))
 
 
-class WastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
+class IncidenceWastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
     Regular event that determines new cases of wasting (WHZ < -2) to the under-5 population, and schedules
     individual incident cases to represent onset. It determines those who will progress to severe wasting
@@ -709,7 +709,7 @@ class WastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # Add these incident cases to the tracker
         for person in not_wasted_idx:
             wasting_severity = df.at[person, 'un_WHZ_category']
-            age_group = WastingPollingEvent.AGE_GROUPS.get(df.loc[person].age_years, '5+y')
+            age_group = IncidenceWastingPollingEvent.AGE_GROUPS.get(df.loc[person].age_years, '5+y')
             # if wasting_severity != 'WHZ>=-2':
             self.module.wasting_incident_case_tracker[age_group][wasting_severity].append(self.sim.date)
 
@@ -796,7 +796,7 @@ class ProgressionSevereWastingEvent(Event, IndividualScopeEventMixin):
             # -------------------------------------------------------------------------------------------
             # Add this incident case to the tracker
             wasting_severity = df.at[person_id, 'un_WHZ_category']
-            age_group = WastingPollingEvent.AGE_GROUPS.get(df.loc[person_id].age_years, '5+y')
+            age_group = IncidenceWastingPollingEvent.AGE_GROUPS.get(df.loc[person_id].age_years, '5+y')
             if wasting_severity != 'WHZ>=-2':
                 m.wasting_incident_case_tracker[age_group][wasting_severity].append(self.sim.date)
 

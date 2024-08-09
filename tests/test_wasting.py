@@ -28,11 +28,11 @@ from tlo.methods.wasting import (
     ClinicalAcuteMalnutritionRecoveryEvent,
     HSI_Wasting_InpatientCareForComplicated_SAM,
     HSI_Wasting_OutpatientTherapeuticProgramme_SAM,
+    IncidenceWastingPollingEvent,
     ProgressionSevereWastingEvent,
     SevereAcuteMalnutritionDeathEvent,
     UpdateToMAM,
     WastingNaturalRecoveryEvent,
-    WastingPollingEvent,
 )
 
 # Path to the resource files used by the disease and intervention methods
@@ -196,7 +196,7 @@ def test_wasting_incidence(tmpdir):
     sim.modules['Wasting'].wasting_models.wasting_incidence_lm = LinearModel.multiplicative()
 
     # Run polling event: check that all children should now have moderate wasting:
-    polling = WastingPollingEvent(sim.modules['Wasting'])
+    polling = IncidenceWastingPollingEvent(sim.modules['Wasting'])
     polling.apply(sim.population)
 
     # Check properties of individuals: should now be moderately wasted
@@ -323,7 +323,7 @@ def test_recovery_moderate_wasting(tmpdir):
     sim.modules['Wasting'].wasting_models.wasting_incidence_lm = LinearModel.multiplicative()
 
     # Run Wasting Polling event: This event should cause all young children to be moderate wasting
-    polling = WastingPollingEvent(module=sim.modules['Wasting'])
+    polling = IncidenceWastingPollingEvent(module=sim.modules['Wasting'])
     polling.apply(sim.population)
 
     # Check properties of this individual: should now be moderately wasted
@@ -391,7 +391,7 @@ def test_recovery_severe_wasting_without_complications(tmpdir):
     wmodule.parameters['prob_mam_after_care'] = 1.0
 
     # Run Wasting Polling event to get new incident cases:
-    polling = WastingPollingEvent(module=sim.modules['Wasting'])
+    polling = IncidenceWastingPollingEvent(module=sim.modules['Wasting'])
     polling.apply(sim.population)
 
     # Check properties of this individual: should now be moderately wasted
@@ -680,7 +680,7 @@ def test_nat_hist_cure_if_recovery_scheduled(tmpdir):
     assert df.loc[person_id, 'un_WHZ_category'] == 'WHZ>=-2'
 
     # Run Wasting Polling event to get new incident cases:
-    polling = WastingPollingEvent(module=sim.modules['Wasting'])
+    polling = IncidenceWastingPollingEvent(module=sim.modules['Wasting'])
     polling.apply(sim.population)
 
     # Check properties of this individual: (should now be moderately wasted without progression to severe)
@@ -751,7 +751,7 @@ def test_nat_hist_cure_if_death_scheduled(tmpdir):
     assert df.loc[person_id, 'un_WHZ_category'] == 'WHZ>=-2'
 
     # Run Wasting Polling event to get new incident cases:
-    polling = WastingPollingEvent(module=sim.modules['Wasting'])
+    polling = IncidenceWastingPollingEvent(module=sim.modules['Wasting'])
     polling.apply(sim.population)
 
     # Check properties of this individual: (should now be moderately wasted with a scheduled progression to severe date)
