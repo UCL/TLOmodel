@@ -181,12 +181,13 @@ class Schisto(Module):
         df.loc[df.is_alive, f'{self.module_prefix}_last_PZQ_date'] = pd.NaT
 
         # reset all to one district if doing calibration or test runs
-        # choose Zomba as it hsa ~10% prev of both species
+        # choose Zomba as it has ~10% prev of both species
         if self.single_district:
             df['district_num_of_residence'] = 19
             df['district_of_residence'] = pd.Categorical(['Zomba'] * len(df),
                                                          categories=df['district_of_residence'].cat.categories)
-
+            df['region_of_residence'] = pd.Categorical(['Southern'] * len(df),
+                                                         categories=df['region_of_residence'].cat.categories)
         for _spec in self.species.values():
             _spec.initialise_population(population)
 
@@ -884,16 +885,43 @@ class SchistoSpecies:
         rng = self.schisto_module.rng
 
         for district in districts:
-            in_the_district = df.index[df['district_of_residence'] == district]
-            # harbouring rate
-            hr = params['gamma_alpha'][district]
-            df.loc[in_the_district, prop('harbouring_rate')] = rng.gamma(hr, size=len(in_the_district))
+            in_the_district = df.index[df['district_of_residence'] == district]  # people in the district
+            num_in_district = len(in_the_district)  # population size in district
 
-            # susceptibility
-            susceptibility = params['prop_susceptible'][district]
-            # assign 0 and 1 to each person in the district based on the district proportion susceptible
-            df.loc[in_the_district, prop('susceptibility')] = rng.binomial(n=1, p=susceptibility,
-                                                                           size=len(in_the_district))
+            # HARBOURING RATE
+            hr = params['gamma_alpha'][district]
+            df.loc[in_the_district, prop('harbouring_rate')] = rng.gamma(hr, size=num_in_district)
+
+            # SUSCEPTIBILITY
+            # Calculate the number of people that need to be susceptible
+            prop_susceptible = params['prop_susceptible'][district]
+
+            # the total number needed to fill the proportion susceptible in district
+            n_susceptible = int(np.ceil(prop_susceptible * num_in_district))
+
+            # Select people with li_unimproved_sanitation=True
+            # num li_unimproved_sanitation=True is 112, all should be in Zomba
+            no_sanitation = df.loc[(df['district_of_residence'] == district) & (df['li_unimproved_sanitation'] == True)]
+
+            # Determine the number of people to select from those with no sanitation
+            n_no_sanitation = min(n_susceptible, len(no_sanitation))
+
+            # Assign susceptibility=1 to the selected people with no sanitation
+            susceptible_idx = rng.choice(no_sanitation.index, size=n_no_sanitation, replace=False)
+            df.loc[susceptible_idx, prop('susceptibility')] = 1
+
+            # Update the number of susceptible people still needed
+            n_susceptible_remaining = n_susceptible - n_no_sanitation
+
+            if n_susceptible_remaining > 0:
+                # Select additional people from those with li_no_sanitation=False if needed
+                with_sanitation = df.loc[(df['district_of_residence'] == district) & (df['li_unimproved_sanitation'] == False)]
+                susceptible_additional_idx = rng.choice(with_sanitation.index, size=n_susceptible_remaining,
+                                                        replace=False)
+                df.loc[susceptible_additional_idx, prop('susceptibility')] = 1
+
+            # The rest of the population should have susceptibility = 0 (or any other default value you prefer)
+            df.loc[in_the_district & df['susceptibility'].isna(), 'susceptibility'] = 0
 
     def _assign_initial_worm_burden(self, population) -> None:
         """Assign initial distribution of worms to each person (based on district and age-group)."""
@@ -1325,7 +1353,8 @@ class SchistoWashScaleUp(RegularEvent, PopulationScopeEventMixin):
         # scale-up property li_unimproved_sanitation and no_clean_water
         # set the properties to False for everyone
         df['li_unimproved_sanitation'] = False
-        df['li_no_clean_drinking_water'] = False
+        df['li_date_acquire_improved_sanitation'] = self.sim.date
+        # df['li_no_clean_drinking_water'] = False
 
         # change proportion susceptible uniformly across the districts
         # reduce the number of people that are currently susceptible by 60% (rr_WASH)
