@@ -266,7 +266,8 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
         # ------------------------------------------------------------------
         # # # # # # Give MUAC category, presence of oedema, and determine acute malnutrition state # # # # #
-        self.population_poll_clinical_am(df)
+        index_under5 = df.index[df.is_alive & (df.age_exact_years < 5)]
+        self.clinical_am_poll(index_under5)
 
     def initialise_simulation(self, sim):
         """Prepares for simulation:
@@ -480,28 +481,31 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             date_of_outcome = df.at[person_id, 'un_last_wasting_date_of_onset'] + DateOffset(days=duration_sev_wasting)
             return date_of_outcome
 
-    def population_poll_clinical_am(self, population):
+    def clinical_am_poll(self, idx):
         """
-        Update at the population level other anthropometric indices and clinical signs (MUAC, oedema,
+        When WHZ changed, update other anthropometric indices and clinical signs (MUAC, oedema,
         medical complications) that determine the clinical state of acute malnutrition. This will include both wasted
         and non-wasted children with other signs of acute malnutrition.
-        :param population: population dataframe
+        :param idx: index of children or person_id less than 5 years old
         """
-        df = population
+        df = self.sim.population.props
+
+        # if idx only person_id, transform into an Index object
+        if not isinstance(idx, pd.Index):
+            idx = pd.Index([idx])
 
         # give MUAC measurement category for all WHZ, including well
         # nourished children -----
         for whz in ['WHZ<-3', '-3<=WHZ<-2', 'WHZ>=-2']:
-            index_6_59mo_by_whz = df.index[df.is_alive & (df.age_exact_years.between(0.5, 5, inclusive='left'))
-                                           & (df.un_WHZ_category == whz)]
+            index_6_59mo_by_whz = idx.intersection(df.index[df.age_exact_years.between(0.5, 5, inclusive='left')
+                                                            & (df.un_WHZ_category == whz)])
             self.muac_cutoff_by_WHZ(idx=index_6_59mo_by_whz, whz=whz)
 
         # determine the presence of bilateral oedema / oedematous malnutrition
-        index_under5 = df.index[df.is_alive & (df.age_exact_years < 5)]
-        self.nutritional_oedema_present(idx=index_under5)
+        self.nutritional_oedema_present(idx=idx)
 
         # determine the clinical acute malnutrition state -----
-        for person_id in index_under5:
+        for person_id in idx:
             self.clinical_acute_malnutrition_state(person_id=person_id, pop_dataframe=df)
 
     def report_daly_values(self):
@@ -712,7 +716,9 @@ class IncidenceWastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
             age_group = IncidenceWastingPollingEvent.AGE_GROUPS.get(df.loc[person].age_years, '5+y')
             # if wasting_severity != 'WHZ>=-2':
             self.module.wasting_incident_case_tracker[age_group][wasting_severity].append(self.sim.date)
-
+        # Update properties related to clinical acute malnutrition
+        # (MUAC, oedema, clinical state of acute malnutrition, and check complications if SAM)
+        self.module.clinical_am_poll(not_wasted_idx[incidence_of_wasting])
         # ---------------------------------------------------------------------
 
         # # # PROGRESS TO SEVERE WASTING # # # # # # # # # # # # # # # # # #
@@ -749,16 +755,6 @@ class IncidenceWastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 self.sim.schedule_event(event=WastingNaturalRecoveryEvent(
                     module=self.module, person_id=person), date=outcome_date)
 
-        # ------------------------------------------------------------------------------------------
-        # ## UPDATE PROPERTIES RELATED TO CLINICAL ACUTE MALNUTRITION # # # #
-        # ------------------------------------------------------------------------------------------
-        # This applies to all children under 5
-
-        # give MUAC measurement category for all WHZ, including well nourished children -----
-        # determine the presence of bilateral oedema / oedematous malnutrition
-        # determine the clinical state of acute malnutrition, and check complications if SAM
-        self.module.population_poll_clinical_am(df)
-
 
 class ProgressionSevereWastingEvent(Event, IndividualScopeEventMixin):
     """
@@ -774,6 +770,9 @@ class ProgressionSevereWastingEvent(Event, IndividualScopeEventMixin):
         df = self.sim.population.props  # shortcut to the dataframe
         m = self.module
 
+        if (not df.at[person_id, 'is_alive']) or (df.at[person_id, 'age_exact_years'] >= 5):
+            return
+
         # before progression to severe wasting, check those who started
         # supplementary feeding programme before today
         if df.at[person_id, 'un_last_wasting_date_of_onset'] < \
@@ -783,15 +782,10 @@ class ProgressionSevereWastingEvent(Event, IndividualScopeEventMixin):
         # continue with progression to severe if not treated/recovered
         else:
             # update properties
+            # - WHZ
             df.at[person_id, 'un_WHZ_category'] = 'WHZ<-3'
-
-            # Give MUAC measurement category for WHZ < -3
-            if df.at[person_id, 'age_exact_years'] > 0.5:
-                m.muac_cutoff_by_WHZ(idx=df.loc[[person_id]].index, whz='WHZ<-3')
-
-            # update the clinical state of acute malnutrition, and check
-            # complications if SAM
-            m.clinical_acute_malnutrition_state(person_id=person_id, pop_dataframe=df)
+            # - MUAC, oedema, clinical state of acute malnutrition, and check complications if SAM
+            self.module.clinical_am_poll(person_id)
 
             # -------------------------------------------------------------------------------------------
             # Add this incident case to the tracker
@@ -838,24 +832,18 @@ class WastingNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
 
     def apply(self, person_id):
         df = self.sim.population.props  # shortcut to the dataframe
-        m = self.module
 
         if not df.at[person_id, 'is_alive']:
             return
 
         df.at[person_id, 'un_am_recovery_date'] = self.sim.date
+        # update properties
+        # - WHZ
         df.at[person_id, 'un_WHZ_category'] = 'WHZ>=-2'  # not undernourished
+        # - MUAC, oedema, clinical state of acute malnutrition, and check complications if SAM
+        self.module.clinical_am_poll(person_id)
 
-        # For cases with normal WHZ, attribute probability of MUAC category
-        if df.at[person_id, 'age_exact_years'] > 0.5:
-            m.muac_cutoff_by_WHZ(idx=df.loc[[person_id]].index, whz='WHZ>=-2')
-
-        # Note assumption: prob of oedema remained the same as applied in
-        # wasting onset
-
-        # update the clinical acute malnutrition state
-        m.clinical_acute_malnutrition_state(person_id=person_id, pop_dataframe=df)
-        if df.at[person_id, 'un_clinical_acute_malnutrition'] != 'SAM':
+        if df.at[person_id, 'un_clinical_acute_malnutrition'] == 'well':
             # this will clear all wasting symptoms
             self.sim.modules["SymptomManager"].clear_symptoms(
                 person_id=person_id, disease_module=self.module
