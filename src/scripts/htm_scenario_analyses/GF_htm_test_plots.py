@@ -35,6 +35,12 @@ scenario_info = get_scenario_info(results_folder)
 params = extract_params(results_folder)
 
 
+
+# compare two draws
+log4 = load_pickled_dataframes(results_folder, draw=4)
+
+
+
 # -----------------------------------------------------------------------------------------
 # %% Epi outputs
 # -----------------------------------------------------------------------------------------
@@ -192,6 +198,24 @@ def tb_inc_func(results_folder):
 
 
 tb_inc = tb_inc_func(results_folder)
+
+tb_inc_num = extract_results(
+    results_folder,
+    module="tlo.methods.tb",
+    key="tb_incidence",
+    column="num_new_active_tb",
+    index="date",
+    do_scaling=False
+)
+
+tb_mdr_prop = extract_results(
+    results_folder,
+    module="tlo.methods.tb",
+    key="tb_mdr",
+    column="tbPropActiveCasesMdr",
+    index="date",
+    do_scaling=False
+)
 
 # ---------------------------------- MALARIA ---------------------------------- #
 
