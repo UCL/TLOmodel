@@ -109,10 +109,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     alpha=0.2,
                     zorder=5
                     )
-    ax.set_title("Population Size 2010-2030")
+    ax.set_title("Population Size 2010-2040")
     ax.set_xlabel("Year")
     ax.set_ylabel("Population Size (millions)")
-    ax.set_xlim(2010, 2030)
+    ax.set_xlim(2010, 2040)
     ax.xaxis.set_major_formatter(FormatStrFormatter('%.0f'))
     ax.set_ylim(0, 30)
     ax.legend()
@@ -262,7 +262,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         )
         return num_by_age
 
-    for year in [2010, 2015, 2018, 2029, 2039] #2049, 2059, 2069, 2079]:
+    for year in [2010, 2015, 2018, 2029, 2039]: #2049, 2059, 2069, 2079]:
         if year in pop_model.index:
             # Get WPP data:
             wpp_thisyr = wpp_ann.loc[wpp_ann['Year'] == year].groupby(['Sex', 'Age_Grp'])['Count'].sum()
@@ -581,11 +581,21 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         (deaths_by_period['Model_upper'] / 1e6).to_numpy(),
         facecolor=colors['Model'], alpha=0.2)
 
+    def find_index_with_string(target_list, target_string="2040"):
+
+        for index, string in enumerate(target_list):
+            if target_string in string:
+                return index
+        return -1
+    # Function to extract the starting year from the index string
+
+    max_index = find_index_with_string(deaths_by_period.index)
     ax.set_title('Number of Deaths')
     ax.legend(loc='upper left')
     ax.set_xlabel('Calendar Period')
     ax.set_ylabel('Number per period (millions)')
     plt.xticks(np.arange(len(deaths_by_period.index)), deaths_by_period.index, rotation=90)
+    ax.set_xlim(right = max_index)
     fig.tight_layout()
     plt.savefig(make_graph_file_name("Deaths_OverTime"))
     plt.close(fig)
@@ -612,7 +622,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     calperiods_selected = list()
     for cal in calperiods:
         if cal != '2100+':
-            if (2010 <= int(cal.split('-')[0])) and (int(cal.split('-')[1]) < 2030):
+            if (2010 <= int(cal.split('-')[0])) and (int(cal.split('-')[1]) < 2040):
                 calperiods_selected.append(cal)
 
     for period in calperiods_selected:
