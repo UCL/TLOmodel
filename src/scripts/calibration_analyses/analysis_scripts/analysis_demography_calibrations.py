@@ -334,7 +334,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     time_period = {
         '1950-2099': births.index,
         '2010-2029': [(2010 <= int(x[0])) & (int(x[1]) < 2030) for x in births.index.str.split('-')],
-        '2010-2049': [(2010 <= int(x[0])) & (int(x[1]) < 2050) for x in births.index.str.split('-')]
+        '2010-2040': [(2010 <= int(x[0])) & (int(x[1]) < 2040) for x in births.index.str.split('-')]
     }
 
     # Plot:
