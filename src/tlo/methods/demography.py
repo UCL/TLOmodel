@@ -389,7 +389,6 @@ class Demography(Module):
         Returns a dataframe with these
         """
         df = self.sim.population.props
-        print(df[df['age_days'] < 29])
         if len(df[df['age_days'] < 29]) == 0:
             neonatal_deaths = 0
         else:
