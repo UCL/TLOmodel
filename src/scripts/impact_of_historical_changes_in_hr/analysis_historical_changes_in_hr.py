@@ -28,7 +28,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     - We estimate the draw on healthcare system resources as the FEWER appointments when that treatment does not occur.
     """
 
-    TARGET_PERIOD = (Date(2017, 1, 1), Date(2024, 12, 31))
+    TARGET_PERIOD = (Date(2017, 1, 1), Date(2023, 12, 31))
 
     # Definitions of general helper functions
     make_graph_file_name = lambda stub: output_folder / f"{stub.replace('*', '_star_')}.png"  # noqa: E731
@@ -198,7 +198,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # %% Deaths and DALYS averted relative to Counterfactual
 
-    counterfactual_scenario = 'Counterfactual (No Scale-up since 2017)'
+    counterfactual_scenario = 'Counterfactual (No Scale-up)'
     actual_scenario = 'Actual (Scale-up)'
 
     num_deaths_averted = summarize(
@@ -348,7 +348,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             bbox=dict(boxstyle='round', ec='black', fc='white'),
             )
 
-    ax.set_ylim([0, 4])
+    # ax.set_ylim([0, 1])
     ax.set_title(name_of_plot)
     ax.set_ylabel(f'DALYs Averted\n(Millions)')
     ax.set_xlabel('')
