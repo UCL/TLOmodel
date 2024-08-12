@@ -55,5 +55,5 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
     prevalence_tb_function = prevalence['Tb']
     prevalence_tb_log = output['tlo.methods.tb']["tb_prevalence"]["tbPrevActive"] + output['tlo.methods.tb']["tb_prevalence"]["tbPrevLatent"]
 
-    print(prevalence_tb_function)
+
     assert prevalence_tb_function[0] ==  prevalence_tb_log[0]
