@@ -30,7 +30,7 @@ from tlo.analysis.utils import (
 )
 
 PREFIX_ON_FILENAME = '1'
-
+max_year = "2040"
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
 
@@ -112,7 +112,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.set_title("Population Size 2010-2040")
     ax.set_xlabel("Year")
     ax.set_ylabel("Population Size (millions)")
-    ax.set_xlim(2010, 2040)
+    ax.set_xlim(2010, int(max_year))
     ax.xaxis.set_major_formatter(FormatStrFormatter('%.0f'))
     ax.set_ylim(0, 30)
     ax.legend()
@@ -581,7 +581,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         (deaths_by_period['Model_upper'] / 1e6).to_numpy(),
         facecolor=colors['Model'], alpha=0.2)
 
-    def find_index_with_string(target_list, target_string="2040"):
+    def find_index_with_string(target_list, target_string=max_year):
 
         for index, string in enumerate(target_list):
             if target_string in string:
