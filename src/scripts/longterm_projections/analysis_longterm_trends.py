@@ -1,6 +1,13 @@
-
 """
 Plot to demonstrate correspondence between model and data outputs wrt births, population size and total deaths.
+
+This uses the results of the Scenario defined in:
+
+src/scripts/calibration_analyses/scenarios/long_run_no_diseases.py
+
+or
+
+src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py
 
 """
 import argparse
@@ -23,9 +30,8 @@ from tlo.analysis.utils import (
 )
 
 PREFIX_ON_FILENAME = '1'
-max_year = 2080
-min_year = 2010
-years_of_interest = list(range(min_year, max_year + 1, 5))
+
+
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
 
     # Declare path for output graphs from this script
@@ -103,12 +109,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     alpha=0.2,
                     zorder=5
                     )
-    ax.set_title(f"Population Size 2010-{max_year}")
+    ax.set_title("Population Size 2010-2030")
     ax.set_xlabel("Year")
     ax.set_ylabel("Population Size (millions)")
-    ax.set_xlim(2010, max_year)
+    ax.set_xlim(2010, 2030)
     ax.xaxis.set_major_formatter(FormatStrFormatter('%.0f'))
-    ax.set_ylim(0, max_year)
+    ax.set_ylim(0, 30)
     ax.legend()
     fig.tight_layout()
     plt.savefig(make_graph_file_name("Pop_Over_Time"))
@@ -256,7 +262,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         )
         return num_by_age
 
-    for year in years_of_interest:
+    for year in [2010, 2015, 2018, 2029, 2049, 2059, 2069, 2079]:
         if year in pop_model.index:
             # Get WPP data:
             wpp_thisyr = wpp_ann.loc[wpp_ann['Year'] == year].groupby(['Sex', 'Age_Grp'])['Count'].sum()
@@ -328,7 +334,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     time_period = {
         '1950-2099': births.index,
         '2010-2029': [(2010 <= int(x[0])) & (int(x[1]) < 2030) for x in births.index.str.split('-')],
-        '2010-2049': [(2010 <= int(x[0])) & (int(x[1]) < 2050) for x in births.index.str.split('-')]
+        '2010-2049': [(2010 <= int(x[0])) & (int(x[1]) < 2050) for x in births.index.str.split('-')],
+        '2050-2099': [(2010 <= int(x[0])) & (int(x[1]) > 2050) for x in births.index.str.split('-')]
+
     }
 
     # Plot:
@@ -371,102 +379,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         plt.savefig(make_graph_file_name(f"Births_Over_Time_{tp}"))
         plt.close(fig)
 
-    # %% Describe patterns of contraceptive usage over time
-
-    def get_annual_mean_usage(_df):
-        _x = _df \
-            .assign(year=_df['date'].dt.year) \
-            .set_index('year') \
-            .drop(columns=['date']) \
-            .apply(lambda row: row / row.sum(),
-                   axis=1
-                   )
-        return _x.groupby(_x.index).mean().stack()
-
-    mean_usage = summarize(extract_results(results_folder,
-                                           module="tlo.methods.contraception",
-                                           key="contraception_use_summary",
-                                           custom_generate_series=get_annual_mean_usage,
-                                           do_scaling=False),
-                           collapse_columns=True
-                           )
-    order_of_contraceptive_methods = list(mean_usage['mean'].unstack().columns)
-
-    # Plot just the means:
-    mean_usage_mean = mean_usage['mean'].unstack()
-    fig, ax = plt.subplots()
-    spacing = (np.arange(len(mean_usage_mean)) % 5) == 0
-    mean_usage_mean.loc[spacing].plot.bar(stacked=True, ax=ax, legend=False)
-    plt.title('Proportion Females 15-49 Using Contraceptive Methods')
-    plt.xlabel('Year')
-    plt.ylabel('Proportion')
-
-    fig.legend(loc=7)
-    fig.tight_layout()
-    fig.subplots_adjust(right=0.65)
-    plt.savefig(make_graph_file_name("Contraception_1549"))
-    plt.close(fig)
-
-    # %% Describe patterns of contraceptive usage over time and age
-
-    def get_usage_by_age_and_year(_df):
-        _x = _df \
-            .assign(year=_df['date'].dt.year) \
-            .set_index('year') \
-            .drop(columns=['date'])\
-            .sort_index()
-
-        # restore the multi-index that had to be flattened to pass through the logger"
-        _x = unflatten_flattened_multi_index_in_logging(_x)
-
-        # For each age-range, find distribution across method, and mean of that distribution over the months in the year
-        out = list()
-        for _age in adult_age_groups:
-            q = _x.loc[:, (slice(None), _age)].copy()
-            q.columns = q.columns.droplevel(1)
-            q = pd.DataFrame(q.apply(lambda row: row / row.sum(), axis=1).groupby(q.index).mean().stack())
-            q['age_range'] = _age
-            out.append(q)
-
-        return pd.concat(out).set_index('age_range', append=True)[0]
-
-    mean_usage_by_age = summarize(extract_results(results_folder,
-                                                  module="tlo.methods.contraception",
-                                                  key="contraception_use_summary_by_age",
-                                                  custom_generate_series=get_usage_by_age_and_year,
-                                                  do_scaling=False),
-                                  collapse_columns=True,
-                                  only_mean=True
-                                  ).unstack()
-
-    # Plot distribution for each age group:
-    for _age in adult_age_groups:
-        distr = mean_usage_by_age[_age].unstack()
-        distr = distr.reindex(columns=order_of_contraceptive_methods)
-        fig, ax = plt.subplots()
-        spacing = (np.arange(len(mean_usage_mean)) % 5) == 0
-        distr.loc[spacing].plot.bar(stacked=True, ax=ax, legend=False)
-        plt.title(f'Proportion Females {_age}y Using Contraceptive Methods')
-        plt.xlabel('Year')
-        plt.ylabel('Proportion')
-
-        fig.legend(loc=7)
-        fig.tight_layout()
-        fig.subplots_adjust(right=0.65)
-        plt.savefig(make_graph_file_name(f"Contraception_use_over_time_{_age}"))
-        plt.close(fig)
-
-    # Show Distribution of use at different ages at one time point (2015)
-    year_of_interest = 2015
-    contaceptive_use_in_year_of_interest = mean_usage_by_age.loc[(year_of_interest, slice(None))].T
-    fig, ax = plt.subplots()
-    contaceptive_use_in_year_of_interest.plot.bar(stacked=True, ax=ax, legend=False)
-    ax.set_title(f'Contraceptive Method Use in {year_of_interest}')
-    ax.set_xlabel('Age-Group')
-    ax.set_ylabel('Proportion')
-    fig.tight_layout()
-    fig.savefig(make_graph_file_name(f"Contraception_use_by_age_in_year_{year_of_interest}"))
-    plt.close(fig)
 
     # %% Age-specific fertility
 
@@ -507,7 +419,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # Get the age-specific fertility rates of the WPP source
     wpp = pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_ASFR_WPP.csv')
 
-    def expand_by_year(periods, vals, years=range(2010, 2030)):
+    def expand_by_year(periods, vals, years=range(2010, 2080)):
         _ser = dict()
         for y in years:
             _ser[y] = vals.loc[(periods == calperiodlookup[y])].values[0]
@@ -515,7 +427,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     fig, ax = plt.subplots(2, 4, sharex=True, sharey=True)
     ax = ax.reshape(-1)
-    years = range(2010, 2030)
+    years = range(2010, 2080)
     for i, _agegrp in enumerate(adult_age_groups):
         model = asfr.loc[(slice(2011, years[-1]), _agegrp), :].unstack()
         data = wpp.loc[
