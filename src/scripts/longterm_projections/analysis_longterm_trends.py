@@ -262,7 +262,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         )
         return num_by_age
 
-    for year in [2010, 2015, 2018, 2029, 2049, 2059, 2069, 2079]:
+    for year in [2010, 2015, 2018, 2029, 2039] #2049, 2059, 2069, 2079]:
         if year in pop_model.index:
             # Get WPP data:
             wpp_thisyr = wpp_ann.loc[wpp_ann['Year'] == year].groupby(['Sex', 'Age_Grp'])['Count'].sum()
@@ -334,8 +334,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     time_period = {
         '1950-2099': births.index,
         '2010-2029': [(2010 <= int(x[0])) & (int(x[1]) < 2030) for x in births.index.str.split('-')],
-        '2010-2049': [(2010 <= int(x[0])) & (int(x[1]) < 2050) for x in births.index.str.split('-')],
-        '2050-2099': [(2010 <= int(x[0])) & (int(x[1]) > 2050) for x in births.index.str.split('-')]
+        '2010-2040': [(2010 <= int(x[0])) & (int(x[1]) <= 2040) for x in births.index.str.split('-')],
+        #'2050-2099': [(2010 <= int(x[0])) & (int(x[1]) > 2050) for x in births.index.str.split('-')]
 
     }
 
@@ -419,7 +419,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # Get the age-specific fertility rates of the WPP source
     wpp = pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_ASFR_WPP.csv')
 
-    def expand_by_year(periods, vals, years=range(2010, 2080)):
+    def expand_by_year(periods, vals, years=range(2010, 2040)):
         _ser = dict()
         for y in years:
             _ser[y] = vals.loc[(periods == calperiodlookup[y])].values[0]
@@ -427,7 +427,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     fig, ax = plt.subplots(2, 4, sharex=True, sharey=True)
     ax = ax.reshape(-1)
-    years = range(2010, 2080)
+    years = range(2010, 2040)
     for i, _agegrp in enumerate(adult_age_groups):
         model = asfr.loc[(slice(2011, years[-1]), _agegrp), :].unstack()
         data = wpp.loc[
