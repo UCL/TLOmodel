@@ -100,7 +100,7 @@ class HealthBurden(Module):
         self.years_life_lost_stacked_time = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time)
         self.years_life_lost_stacked_age_and_time = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time)
         self.years_lived_with_disability = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time)
-        self.prevalence_of_diseases = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time)
+        self.prevalence_of_diseases = pd.DataFrame(index=year_index)
 
         # 2) Collect the module that will use this HealthBurden module
         self.recognised_modules_names = [
@@ -422,7 +422,7 @@ class HealthBurden(Module):
             """Return pd.DataFrame that gives the summary of the `df` for the `year` by certain levels in the df's
             multi-index. The `level` argument gives a list of levels to use in `groupby`: e.g., level=[0,1] gives a
             summary of sex/age-group; and level=[2] gives a summary only by wealth category."""
-            return df.loc[(slice(None), slice(None), slice(None), year)] \
+            return df.loc[(year)] \
                      .groupby(level=level) \
                      .sum() \
                      .reset_index() \
@@ -537,7 +537,7 @@ class HealthBurden(Module):
             key='prevalence_of_diseases',
             description='Prevalence of each disease., '
                         'broken down by year, sex, age-group',
-            df=(disease_prevalence := summarise_results_for_this_year(self.prevalence_of_diseases)),
+            df=(summarise_results_for_this_year(self.prevalence_of_diseases)),
             force_cols= self.recognised_modules_names,
         )
         self._years_written_to_log += [year]
@@ -671,78 +671,37 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=1))
 
     def apply(self, population):
-        # Running the prevalence Logger
-
-        # Do nothing if no disease modules are registered or no causes of disability are registered
-        if (not self.module.recognised_modules_names) or (not self.module.causes_of_disability):
+        if not self.module.recognised_modules_names or not self.module.causes_of_disability:
             return
 
-        # Get the population dataframe
-        df = self.sim.population.props
-        idx_alive = df.loc[df.is_alive].index
+        prevalence_from_each_disease_module = pd.DataFrame()
 
-        # 1) Ask each disease module to log the prevalence for the previous month
-        prevalence_from_each_disease_module = list()
         for disease_module_name in self.module.recognised_modules_names:
-            if disease_module_name == 'NewbornOutcomes' or disease_module_name == 'PostnatalSupervisor':
+            if disease_module_name in ['NewbornOutcomes', 'PostnatalSupervisor']:
                 continue
+
             disease_module = self.sim.modules[disease_module_name]
             prevalence_from_disease_module = disease_module.report_prevalence()
+
             if disease_module_name == "CardioMetabolicDisorders":
                 prevalence_from_disease_module = pd.DataFrame(prevalence_from_disease_module)
             else:
                 prevalence_from_disease_module = pd.DataFrame([[prevalence_from_disease_module]])
-            # Prefix column names with the disease module name
-            prevalence_from_disease_module.columns = [
-                "Intrapartum stillbirth" if disease_module_name == "Labour" else
-                "Antenatal stillbirth" if disease_module_name == "PregnancySupervisor" else
-                f"{disease_module_name}" for col in prevalence_from_disease_module.columns
-            ]
-            # Append to list of prevalences reported by each module
-            prevalence_from_each_disease_module.append(prevalence_from_disease_module)
-        prevalence_from_each_disease_module.append(self.sim.modules['Demography'].report_prevalence()) #maternal_mortality
-        print(prevalence_from_each_disease_module)
-        # 2) Combine into a single dataframe (each column of this dataframe gives the reports from each module), and
-        # add together prevalence reported by different modules that have the same cause (i.e., add together columns with
-        # the same name).
-        disease_specific_prevalence_values_this_month = pd.concat(
-            prevalence_from_each_disease_module, axis=1).groupby(axis=1, level=0).sum()
 
-        # 3) Summarise the results for this month wrt sex/age/wealth
-        # - merge in age/wealth/sex information
-        disease_specific_prevalence_values_this_month = disease_specific_prevalence_values_this_month.merge(
-            df.loc[idx_alive, ['sex', 'li_wealth', 'age_range']], left_index=True, right_index=True, how='left')
+            column_name = ("Intrapartum stillbirth" if disease_module_name == "Labour" else
+                           "Antenatal stillbirth" if disease_module_name == "PregnancySupervisor" else
+                           disease_module_name)
 
-        # - sum of disease_specific_prevalence_values_this_month, by sex/age/wealth
-        prevalence_monthly_summary = pd.DataFrame(
-            disease_specific_prevalence_values_this_month.groupby(['sex', 'age_range', 'li_wealth']).sum().fillna(0))
+            # Add the prevalence data as a new column to the DataFrame
+            prevalence_from_each_disease_module[column_name] = prevalence_from_disease_module.iloc[:, 0]
+        maternal_mortality = self.sim.modules['Demography'].report_prevalence() # Already a dataframe
+        prevalence_from_each_disease_module = pd.concat([prevalence_from_each_disease_module, maternal_mortality], ignore_index=True)
 
-        # - add the year into the multi-index
-        prevalence_monthly_summary['year'] = self.sim.date.year
-        prevalence_monthly_summary.set_index('year', append=True, inplace=True)
-        prevalence_monthly_summary = prevalence_monthly_summary.reorder_levels(
-            ['sex', 'age_range', 'li_wealth', 'year'])
+        # Set the index to the year using self.sim.date
+        #prevalence_from_each_disease_module['year'] = self.sim.date.year
+        #prevalence_from_each_disease_module.set_index('year', append=True, inplace=True)
 
-        # 4) Add the monthly summary to the overall dataframe
-        prevalence_to_add = prevalence_monthly_summary.sum().sum()     # for checking
-        prevalence_current = self.module.prevalence_of_diseases.sum().sum()  # for checking
-
-        # (Nb. this will add columns that are not otherwise present and add values to columns where they are.)
-        combined = self.module.prevalence_of_diseases.combine(
-            prevalence_monthly_summary,
-            fill_value=0.0,
-            func=np.add,
-            overwrite=False)
-
-        # Merge into a dataframe with the correct multi-index
-        self.module.prevalence_of_diseases = \
-            pd.DataFrame(index=self.module.multi_index_for_age_and_wealth_and_time)\
-              .merge(combined, left_index=True, right_index=True, how='left')
-
-        # Check multi-index is in check and that the addition of prevalence has worked
-        assert self.module.prevalence_of_diseases.index.equals(self.module.multi_index_for_age_and_wealth_and_time)
-        assert abs(self.module.prevalence_of_diseases.sum().sum() - (prevalence_to_add + prevalence_current)) < 1e-5
-        self.module.check_multi_index()
+        self.module.prevalence_of_diseases = (prevalence_from_each_disease_module)
 
 
 class Healthburden_WriteToLog(RegularEvent, PopulationScopeEventMixin):
