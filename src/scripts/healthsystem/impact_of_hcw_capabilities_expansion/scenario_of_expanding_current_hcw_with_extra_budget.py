@@ -10,8 +10,7 @@ scenario_of_expanding_current_hcw_with_extra_budget.py
 
 or locally using:
 ```
-tlo scenario-run src/scripts/healthsystem/impact_of_hcw_capabilities_expansion/
-scenario_of_expanding_current_hcw_with_extra_budget.py
+tlo scenario-run src/scripts/healthsystem/impact_of_hcw_capabilities_expansion/scenario_of_expanding_current_hcw_with_extra_budget.py
 ```
 """
 
@@ -32,11 +31,11 @@ class LongRun(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2030, 1, 1)
-        self.pop_size = 20_000  # todo: TBC
+        self.end_date = Date(2023, 1, 1)
+        self.pop_size = 100  # todo: TBC
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 10  # todo: TBC
+        self.runs_per_draw = 2  # todo: TBC
 
     def log_configuration(self):
         return {
@@ -76,7 +75,7 @@ class LongRun(BaseScenario):
                         'HR_expansion_by_officer_type': list(self.scenarios.iloc[:, i])
                     }
                     }
-                ) for i in range(len(self.scenarios.columns))
+                ) for i in range(len(self.scenarios.columns) - 14)
         }
 
     def _baseline(self) -> Dict:
