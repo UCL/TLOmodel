@@ -11,12 +11,14 @@ src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py
 
 """
 import argparse
+import datetime
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
+from tlo.analysis.life_expectancy import get_life_expectancy_estimates
 
 from tlo.analysis.utils import (
     extract_results,
@@ -701,3 +703,44 @@ if __name__ == "__main__":
         output_folder=args.results_folder,
         resourcefilepath=Path('./resources')
     )
+
+
+dataframes = []
+
+for year in range(2010, int(max_year) -1):
+    df = get_life_expectancy_estimates(
+        results_folder=args.results_folder,
+        target_period=(datetime.date(year, 1, 1), datetime.date(year, 12, 31)),
+        summary=True,
+    )
+    print(df)
+    df['Year'] = year  # Add a new column for the year
+    dataframes.append(df)
+
+# Concatenate all dataframes
+rtn_all_years = pd.concat(dataframes, ignore_index=True)
+
+# Optionally, set the 'Year' column as the index if it exists
+#rtn_all_years.set_index('Year', inplace=True)
+
+# Save the DataFrame to a CSV file
+rtn_all_years.to_csv(args.results_folder / 'life_expectancy_estimates.csv', index=True)
+
+print(rtn_all_years.columns)
+
+# Assuming 'life_expectancy' is the column of interest
+plt.figure(figsize=(10, 6))
+
+# Plot odd indices (for "F")
+plt.plot(rtn_all_years.index[1::2], rtn_all_years.iloc[1::2, 0], marker='o', color='blue', label="F")
+
+# Plot even indices (for "M")
+plt.plot(rtn_all_years.index[0::2], rtn_all_years.iloc[0::2, 0], marker='o', color='green', label="M")
+
+plt.legend(loc='lower right')
+plt.xlabel('Year')
+plt.ylim(0,75)
+plt.ylabel('Life Expectancy')
+plt.title('Life Expectancy Over Years')
+plt.grid(True)
+plt.savefig(args.results_folder /'life_expectancy_over_years.png')
