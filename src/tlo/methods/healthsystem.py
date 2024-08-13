@@ -3037,6 +3037,17 @@ class HRExpansionByOfficerType(Event, PopulationScopeEventMixin):
             else:
                 self.module._daily_capabilities[officer] *= 1
 
+        # save the scale up factor into logger
+        logger_summary.info(key='HRScaling',
+                            description='The HR scale up factor by office type - '
+                                        'Clinical, DCSA, Nursing_and_Midwifery, Pharmacy - '
+                                        'given fractions of an extra budget',
+                            data={
+                                'Scale up factor': [sf_clinical, sf_dcsa, sf_nursing, sf_pharmacy],
+                                'Year of scaling up': self.sim.date.year,
+                            }
+                            )
+
 
 class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
     """ This event exists to change the priority policy adopted by the
