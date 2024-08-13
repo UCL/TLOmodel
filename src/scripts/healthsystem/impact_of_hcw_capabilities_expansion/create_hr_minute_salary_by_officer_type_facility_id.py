@@ -1,7 +1,7 @@
 """
 We calculate the salar cost of current and funded plus HCW.
 """
-
+import pickle
 from pathlib import Path
 
 import pandas as pd
@@ -88,3 +88,13 @@ for s in extra_budget_frac_data.columns:
     # for the years with scaled up hr
     for y in range(2020, 2030):
         scale_up_factor_dict[s][y] = calculate_hr_scale_up_factor(list(extra_budget_frac_data[s]), y, s)
+
+# save and read pickle file
+pickle_file_path = Path(resourcefilepath / 'healthsystem' / 'human_resources' / 'scaling_capabilities' /
+                        'ResourceFile_HR_expansion_by_officer_type_yearly_scale_up_factors.pickle')
+
+with open(pickle_file_path, 'wb') as f:
+    pickle.dump(scale_up_factor_dict, f)
+
+with open(pickle_file_path, 'rb') as f:
+    x = pickle.load(f)
