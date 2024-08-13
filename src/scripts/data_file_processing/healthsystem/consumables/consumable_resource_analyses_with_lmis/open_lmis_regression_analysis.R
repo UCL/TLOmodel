@@ -109,53 +109,23 @@ df_for_re_reg_sorted_months_collapsed_without_2023 <- df_for_re_reg_sorted_month
 # 3. Run Regression Model
 #######################################################################
 # Fixed effects model
+#---------------------
 model_fe_yearly_data <- glm(mean_available_prob ~ fac_level + district + category + is_vital + year +
                              item_code + year*category + year*fac_level + year*is_vital,
                            family = binomial(logit), #gaussian(link = "identity")
                            data = df_for_re_reg_sorted_months_collapsed)
 summary(model_fe_yearly_data)
 
-model_fe_without_2023_yearly_data <- glm(mean_available_prob ~ fac_level + district + category + is_vital + year +
-                             item_code + year*category + year*fac_level + year*is_vital,
-                           family = binomial(logit), #gaussian(link = "identity")
-                           data = df_for_re_reg_sorted_months_collapsed_without_2023)
-summary(model_fe_without_2023_yearly_data)
-
-model_cse_item_yearly_data <- feglm(mean_available_prob ~ fac_level + district + category + is_vital + year +
-                               year*category + year*fac_level + year*is_vital | item_code,
-                              family = binomial(link = "logit"),
-                              data = df_for_re_reg_sorted_months_collapsed)
-summary(model_cse_item_yearly_data)
-
-model_cse_item_without_2023_yearly_data <- feglm(mean_available_prob ~ fac_level + district + category + is_vital + year +
-                              year*category + year*fac_level + year*is_vital | item_code,
-                           family = binomial(logit), #gaussian(link = "identity")
-                           data = df_for_re_reg_sorted_months_collapsed_without_2023)
-summary(model_cse_item_without_2023_yearly_data)
-
+# Model with clustered standard errors
+#--------------------------------------------------------
 model_cse_item_and_fac_yearly_data <- feglm(mean_available_prob ~ year + fac_level + district + category + is_vital +
                                year*category + year*fac_level + year*is_vital + year*district,
                               family = binomial(link = "logit"),
                               data = df_for_re_reg_sorted_months_collapsed, clustervar = c("item_code", "fac_name"))
 summary(model_cse_item_and_fac_yearly_data)
 
-linmodel_cse_item_and_fac_yearly_data <- feols(mean_available_prob ~ year + fac_level + district + category + is_vital +
-                  year * category + year * fac_level + year * is_vital + year*district ,
-                  data = df_for_re_reg_sorted_months_collapsed,
-                  vcov = ~ item_code + fac_name)
-summary(linmodel_cse_item_and_fac_yearly_data)
-
-linmodel_cse_item_and_fac_yearly_data_without_2023 <- feols(mean_available_prob ~ year + fac_level + district + category + is_vital +
-                  year * category + year * fac_level + year * is_vital + year*district ,
-                  data = df_for_re_reg_sorted_months_collapsed_without_2023,
-                  vcov = ~ item_code + fac_name)
-summary(linmodel_cse_item_and_fac_yearly_data_without_2023)
-
-model_cse_item_and_fac_yearly_data_nointeraction <- feglm(mean_available_prob ~ year + fac_level + district + category + is_vital,
-                              family = binomial(link = "probit"),
-                              data = df_for_re_reg_sorted_months_collapsed, clustervar = c("item_code", "fac_name"))
-summary(model_cse_item_and_fac_yearly_data_nointeraction)
-
+# Model with clustered standard errors (without 2023 data)
+#--------------------------------------------------------
 model_cse_item_and_fac_without_2023_yearly_data <- feglm(mean_available_prob ~ year + fac_level + district + category + is_vital +
                                year*category + year*fac_level + year*is_vital + year*district,
                            family = binomial(logit), #gaussian(link = "identity")
@@ -163,17 +133,14 @@ model_cse_item_and_fac_without_2023_yearly_data <- feglm(mean_available_prob ~ y
                                                          clustervar = c("item_code", "fac_name"))
 summary(model_cse_item_and_fac_without_2023_yearly_data)
 
-model_fe_monthly_data <- glm(available_prob ~ fac_level + district + category + is_vital + year +
-                             item_code + year*category + year*fac_level + year*is_vital,
-                           family = binomial(logit), #gaussian(link = "identity")
-                           data = df_for_re_reg_sorted)
-summary(model_fe_monthly_data)
 
-model_fe_without_2023_monthly_data <- glm(available_prob ~ fac_level + district + category + is_vital + year +
-                             item_code + year*category + year*fac_level + year*is_vital,
-                           family = binomial(logit), #gaussian(link = "identity")
-                           data = df_for_re_reg_sorted_without_2023)
-summary(model_fe_without_2023_monthly_data)
+# Linear model with clustered standard errors
+#--------------------------------------------------------
+linmodel_cse_item_and_fac_yearly_data <- feols(mean_available_prob ~ year + fac_level + district + category + is_vital +
+                  year * category + year * fac_level + year * is_vital + year*district ,
+                  data = df_for_re_reg_sorted_months_collapsed,
+                  vcov = ~ item_code + fac_name)
+summary(linmodel_cse_item_and_fac_yearly_data)
 
 # Random effects model (takes too loong to converge)
 model_item_re <- glmer(mean_available_prob ~ fac_level + district + category + is_vital + year +
@@ -181,57 +148,30 @@ model_item_re <- glmer(mean_available_prob ~ fac_level + district + category + i
                            family = binomial(logit), #gaussian(link = "identity")
                            data = df_for_re_reg_sorted_months_collapsed,
                            control = glmerControl(optimizer = "bobyqa",
-                                                  optCtrl=list(maxfun=1e5),
-                                                  calc.derivs = TRUE)) #  + (1|fac_name)
+                                                  optCtrl=list(maxfun=1e5))) #  + (1|fac_name)
 
-# Calculate the Intra-class correlation
-icc_between_model_fac_item_re <- performance::icc(model_fac_item_re, by_group = TRUE)
-
-# Save regression results
-#-------------------------
-save(model_fe_monthly_data, file = paste0(path_to_data, "regression_analysis/model_fe_monthly_data.rdta"))
-save(model_fe_without_2023_monthly_data, file = paste0(path_to_data, "regression_analysis/model_fe_without_2023_monthly_data.rdta"))
-save(model_fe_yearly_data, file = paste0(path_to_data, "regression_analysis/model_fe_yearly_data.rdta"))
-save(model_fe_without_2023_yearly_data, file = paste0(path_to_data, "regression_analysis/model_fe_without_2023_yearly_data.rdta"))
-save(model_cse_item_yearly_data, file = paste0(path_to_data, "regression_analysis/model_cse_item_yearly_data.rdta"))
+# Save chosen regression results
+#--------------------------------------
 save(model_cse_item_and_fac_yearly_data, file = paste0(path_to_data, "regression_analysis/model_cse_item_and_fac_yearly_data.rdta"))
-save(linmodel_cse_item_and_fac_yearly_data, file = paste0(path_to_data, "regression_analysis/linmodel_cse_item_and_fac_yearly_data.rdta"))
 
 # Extract results to excel file
-linear_model <- tidy(linmodel_cse_item_and_fac_yearly_data, conf.int = TRUE)
-linear_model_without_2023 <- tidy(linmodel_cse_item_and_fac_yearly_data_without_2023, conf.int = TRUE)
 logit_model <- tidy(model_cse_item_and_fac_yearly_data, conf.int = TRUE)
-logit_model_without_2023 <- tidy(model_cse_item_and_fac_without_2023_yearly_data, conf.int = TRUE)
-
-write.csv(linear_model, file = paste0(path_to_data, "regression_analysis/linear_regression_model.csv"))
-write.csv(linear_model_without_2023, file = paste0(path_to_data, "regression_analysis/linear_regression_model_without_2023.csv"))
 write.csv(logit_model, file = paste0(path_to_data, "regression_analysis/logit_regression_model.csv"))
-write.csv(logit_model_without_2023, file = paste0(path_to_data, "regression_analysis/logit_regression_model_without_2023.csv"))
 logit_model$estimate <- exp(logit_model$estimate)
 logit_model$conf.low <- exp(logit_model$conf.low)
 logit_model$conf.high <- exp(logit_model$conf.high)
 write.csv(logit_model, file = paste0(path_to_data, "regression_analysis/logit_regression_model_exponentiated.csv"))
-logit_model_without_2023$estimate <- exp(logit_model_without_2023$estimate)
-logit_model_without_2023$conf.low <- exp(logit_model_without_2023$conf.low)
-logit_model_without_2023$conf.high <- exp(logit_model_without_2023$conf.high)
-write.csv(logit_model_without_2023, file = paste0(path_to_data, "regression_analysis/logit_regression_model_without_2023_exponentiated.csv"))
 
-
+# Plot regression results
+#---------------------------------------
 varlist_margins <- c('fac_level', 'category', 'is_vital', 'year')
 chosen_model <- model_cse_item_and_fac_yearly_data
-chosen_model_without_2023 <- model_cse_item_and_fac_without_2023_yearly_data
-# For the main regression model, calculate average marginal effects for the manuscript text
-margin_chosen_model <- marginaleffects(chosen_model, variables = varlist_margins)
-
-margin_fe_yearly_data <- margins(model_fe_yearly_data, type = "response", variables = varlist_margins)
-write_xlsx(margin_fe_yearly_data,paste0(path_to_data, "regression_analysis/margin_fe_yearly_data.xlsx"))
 
 # All effects
-library(effects)
-all_effects <- allEffects(chosen_model)
-plot(all_effects)
-Effect("year", chosen_model)
-
+#library(effects)
+#all_effects <- allEffects(chosen_model)
+#plot(all_effects)
+#Effect("year", chosen_model)
 
 library(broom.helpers)
 table <- chosen_model %>%
@@ -241,19 +181,6 @@ table <- chosen_model %>%
   ) %>%
   bold_labels()
 table
-
-png(paste0(path_to_data, "regression_analysis/predicted_values_by_fac_level_without_2023.png"), width = 800, height = 600)
-plot_model(chosen_model_without_2023, type = "pred", terms = c( "year", "fac_level"))
-dev.off()
-png(paste0(path_to_data, "regression_analysis/predicted_values_by_eml_category_without_2023.png"), width = 800, height = 600)
-plot_model(chosen_model_without_2023, type = "pred", terms = c( "year", "is_vital"))
-dev.off()
-png(paste0(path_to_data, "regression_analysis/predicted_values_by_programmatic_category_without_2023.png"), width = 800, height = 600)
-plot_model(chosen_model_without_2023, type = "pred", terms = c( "year", "category"))
-dev.off()
-png(paste0(path_to_data, "regression_analysis/predicted_values_by_district_without_2023.png"), width = 800, height = 600)
-plot_model(chosen_model_without_2023, type = "pred", terms = c( "year", "district"))
-dev.off()
 
 png(paste0(path_to_data, "regression_analysis/predicted_values_by_fac_level.png"), width = 800, height = 600)
 plot_model(chosen_model, type = "pred", terms = c( "year", "fac_level"))
@@ -271,23 +198,28 @@ plot_model(chosen_model, type = "pred", terms = c("fac_level"))
 png(paste0(path_to_data, "regression_analysis/predicted_values_by_programmatic_category_static.png"), width = 800, height = 600)
 plot_model(chosen_model, type = "pred", terms = c("category"))
 dev.off()
-plot_model(chosen_model, type = "pred", terms = c("is_vital"))
-plot_model(chosen_model, type = "pred", terms = c("year", "category ['hiv','tb','malaria']", "fac_level"))
 
-# Summarise results in a table/figure
-#--------------------------------
-t <- tbl_regression(chosen_model, exponentiate = TRUE, conf.int = TRUE, pvalue_fun = ~style_sigfig(., digits = 4))
-
-tbl_merge <-
-  tbl_merge(
-    tbls = list(t),
-    tab_spanner = c("**Fixed effects**") #
-  )  %>%    # build gtsummary table
-  as_gt() # %>%             # convert to gt table
-  gt::gtsave(             # save table as image
-    filename = reg_results
-  )
-
-
+#######################################################################
+# 4. Extract average marginal effects for model
+#######################################################################
 # Based on the chosen regression models, predict the probability of consumable availability
-explanatory_df <-
+explanatory_df <- df_for_re_reg_sorted_months_collapsed
+predicted_availability <- predict(chosen_model,
+                        explanatory_df,
+                        type = "response")
+
+predicted_availability <- cbind(explanatory_df, predicted_availability)
+ggplot(predicted_availability, aes(x = mean_available_prob, y = predicted_availability)) +
+  geom_point() +  # Plot the points
+    geom_smooth(method = "lm", color = "blue", se = TRUE) +
+  labs(x = "Actual values", y = "Predicted values", title = "Scatter Plot of predicted and actual values of the probability of availability") +
+  theme_minimal()  +  # Use a minimal theme for a clean look
+  scale_x_continuous(limits = c(0, 1)) +
+      scale_y_continuous(limits = c(0, 1))
+
+# Calculating the average of Col3 grouped by Col1 and Col2
+average_effects <- predicted_availability %>%
+  group_by(year, category, fac_level, is_vital) %>%
+  summarise(average_predicted_availability = mean(predicted_availability), .groups = "drop")
+write.csv(average_effects, file = paste0(path_to_data, "regression_analysis/average_effects_logit_model.csv"))
+
