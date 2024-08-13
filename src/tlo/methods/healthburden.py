@@ -422,6 +422,16 @@ class HealthBurden(Module):
             """Return pd.DataFrame that gives the summary of the `df` for the `year` by certain levels in the df's
             multi-index. The `level` argument gives a list of levels to use in `groupby`: e.g., level=[0,1] gives a
             summary of sex/age-group; and level=[2] gives a summary only by wealth category."""
+            return df.loc[(slice(None), slice(None), slice(None), year)] \
+                .groupby(level=level) \
+                .sum() \
+                .reset_index() \
+                .assign(year=year)
+
+        def summarise_results_for_this_year_prevalence(df, level=[0, 1]) -> pd.DataFrame:
+            """Return pd.DataFrame that gives the summary of the `df` for the `year` by certain levels in the df's
+            multi-index. The `level` argument gives a list of levels to use in `groupby`: e.g., level=[0,1] gives a
+            summary of sex/age-group; and level=[2] gives a summary only by wealth category."""
             return df.loc[(year)] \
                      .groupby(level=level) \
                      .sum() \
@@ -537,7 +547,7 @@ class HealthBurden(Module):
             key='prevalence_of_diseases',
             description='Prevalence of each disease., '
                         'broken down by year, sex, age-group',
-            df=(summarise_results_for_this_year(self.prevalence_of_diseases)),
+            df=(self.prevalence_of_diseases),
             force_cols= self.recognised_modules_names,
         )
         self._years_written_to_log += [year]
@@ -694,15 +704,15 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
 
             # Add the prevalence data as a new column to the DataFrame
             prevalence_from_each_disease_module[column_name] = prevalence_from_disease_module.iloc[:, 0]
-        maternal_mortality = self.sim.modules['Demography'].report_prevalence() # Already a dataframe
-        prevalence_from_each_disease_module = pd.concat([prevalence_from_each_disease_module, maternal_mortality], ignore_index=True)
+        maternal_mortality = pd.DataFrame(self.sim.modules['Demography'].report_prevalence()) # Already a dataframe
+        prevalence_from_each_disease_module['newborn_deaths'] = maternal_mortality.iloc[:,0]
+        prevalence_from_each_disease_module['maternal_deaths'] = maternal_mortality.iloc[:,1]
+        print(prevalence_from_each_disease_module)
 
-        # Set the index to the year using self.sim.date
-        #prevalence_from_each_disease_module['year'] = self.sim.date.year
-        #prevalence_from_each_disease_module.set_index('year', append=True, inplace=True)
+        # (Nb. this will add columns that are not otherwise present and add values to columns where they are.)
 
-        self.module.prevalence_of_diseases = (prevalence_from_each_disease_module)
-
+        self.module.prevalence_of_diseases = prevalence_from_each_disease_module
+        print(self.module.prevalence_of_diseases)
 
 class Healthburden_WriteToLog(RegularEvent, PopulationScopeEventMixin):
     """ This event runs every year, as the last event on the last day of the year, and writes to the log the YLD, YLL
