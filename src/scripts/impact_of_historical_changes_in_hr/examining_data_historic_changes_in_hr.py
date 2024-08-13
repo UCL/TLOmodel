@@ -57,7 +57,7 @@ plt.show()
 
 #%% Plot to explain setup of Scenario
 
-to_plot = pd.DataFrame(index=pd.Index(range(2017, 2030), name='year'))
+to_plot = pd.DataFrame(index=pd.Index(range(2017, 2031), name='year'))
 
 to_plot['Data'] = year_by_year / year_by_year[2017]  # data is the year-on-year trend, normalised to 2017
 
@@ -114,8 +114,13 @@ for xlim in (datetime.date(2025, 1, 1), datetime.date(2031, 1, 1)):
     ax.grid()
     ax.set_ylim(0.95, 1.6)
     ax.set_xlabel('Date')
-    ax.set_xlim(datetime.date(2017, 7, 1), xlim)
+    xtickrange = pd.date_range(datetime.date(2017, 1, 1), xlim, freq='YS', inclusive='both')
+    ax.set_xlim(xtickrange.min(), xtickrange.max())
+    ax.set_xticks(xtickrange)
+    ax.set_xticklabels(xtickrange.year, rotation=90)
+    fig.tight_layout()
     fig.show()
+
 
 
 #%% Save this as a scale-up scenario

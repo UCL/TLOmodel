@@ -28,7 +28,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     - We estimate the draw on healthcare system resources as the FEWER appointments when that treatment does not occur.
     """
 
-    TARGET_PERIOD = (Date(2017, 1, 1), Date(2023, 12, 31))
+    TARGET_PERIOD = (Date(2017, 1, 1), Date(2024, 12, 31))
 
     # Definitions of general helper functions
     make_graph_file_name = lambda stub: output_folder / f"{stub.replace('*', '_star_')}.png"  # noqa: E731
@@ -367,6 +367,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # percent of DALYS averted in HTM
     1.0 - (total_num_dalys_by_label_results_averted_vs_baseline.loc['Other'] / total_num_dalys_by_label_results_averted_vs_baseline.sum())
 
+    # todo repeat for different target periods
+    # todo include scenarios for consumables scale-up
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

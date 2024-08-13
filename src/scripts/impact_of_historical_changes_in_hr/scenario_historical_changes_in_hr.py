@@ -21,11 +21,11 @@ class HistoricalChangesInHRH(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2024, 1, 1)  # <-- End at beginning 2024, as this is when the data runs out
+        self.end_date = Date(2031, 1, 1)  # <-- End at the end of year 2030
         self.pop_size = 100_000     # <--- todo: N.B. Very small population size, to be efficient for now
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 3      # <--- todo: N.B. Very small number of repeated run, to be efficient for now
+        self.runs_per_draw = 10      # <--- todo: N.B. Very small number of repeated run, to be efficient for now
 
     def log_configuration(self):
         return {
