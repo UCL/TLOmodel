@@ -237,6 +237,8 @@ class Schisto(Module):
             df.at[child_id, 'li_unimproved_sanitation'] = False
 
         for _spec in self.species.values():
+            # this assigns infection_status, aggregate_worm_burden, harbouring_rate, susceptibility
+            # if li_unimproved_sanitation=False, child susceptibility determined on current prop susceptible in district
             _spec.on_birth(mother_id, child_id)
 
     def report_daly_values(self):
@@ -618,6 +620,37 @@ class Schisto(Module):
 
         return test
 
+    def reduce_susceptibility(self, df, species_column):
+        """
+        Reduce the proportion of individuals susceptible to each species by a specified percentage
+        applied
+        """
+        p = self.parameters
+
+        # Find the number of individuals currently susceptible to the species
+        num_susc = len(df[df[species_column] == 1])
+
+        # Calculate the number to be reduced
+        n_to_reduce = int(p['rr_WASH'] * num_susc)
+
+        # select as many as possible from those with no sanitation
+        susceptible_no_sanitation = df.index[(df[species_column] == 1) & (df['li_unimproved_sanitation'] == True)]
+        n_from_no_sanitation = min(len(susceptible_no_sanitation), n_to_reduce)
+
+        if n_from_no_sanitation > 0:
+            selected_no_sanitation = np.random.choice(susceptible_no_sanitation, size=n_from_no_sanitation,
+                                                      replace=False)
+            df.loc[selected_no_sanitation, species_column] = 0
+
+        # Calculate the remaining number to be reduced
+        n_remaining_to_reduce = n_to_reduce - n_from_no_sanitation
+
+        # If more need to be reduced, select from the rest of the susceptible population
+        if n_remaining_to_reduce > 0:
+            susceptible_rest = df.index[(df[species_column] == 1) & (~df.index.isin(selected_no_sanitation))]
+            selected_rest = np.random.choice(susceptible_rest, size=n_remaining_to_reduce, replace=False)
+            df.loc[selected_rest, species_column] = 0
+
 
 class SchistoSpecies:
     """Helper Class to hold the information specific to a particular species (either S. mansoni or S. haematobium)."""
@@ -804,6 +837,14 @@ class SchistoSpecies:
             if current_proportion < prop_susceptible:
                 df.at[child_id, prop('susceptibility')] = 1
             else:
+                df.at[child_id, prop('susceptibility')] = 0  # this is the default
+
+        # WASH in action, need to reduce probability of being susceptible for all new births
+        if params['scaleup_WASH'] and (
+            self.schisto_module.sim.date >= Date(params['scaleup_WASH_start_year'], 1, 1)) and (
+                df.at[child_id, prop('susceptibility')] == 1):
+            # if random number <= params['rr_WASH'] then change this property
+            if self.schisto_module.rng.random_sample() <= params['rr_WASH']:
                 df.at[child_id, prop('susceptibility')] = 0  # this is the default
 
     def update_infectious_status_and_symptoms(self, idx: pd.Index) -> None:
@@ -1365,10 +1406,10 @@ class SchistoMDAEvent(Event, PopulationScopeEventMixin):
 class SchistoWashScaleUp(RegularEvent, PopulationScopeEventMixin):
     """
     When WASH is implemented, two processes will occur:
-    *1 increase the proportion of the population who have access to
-    sanitation and clean drinking water
-    *2 scale the proportion of the population susceptible to schisto infection
+    *1 scale the proportion of the population susceptible to schisto infection
     assuming that WASH reduces individual risk of infection by 0.6
+    *2 increase the proportion of the population who have access to
+    sanitation and clean drinking water
 
     Event is initially scheduled by initialise_simulation on specified date
     This is a one-off event
@@ -1381,22 +1422,16 @@ class SchistoWashScaleUp(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         df = population.props
-        p = self.module.parameters
 
-        # identify people with unimproved sanitation
-        no_sanitation = df.index[df['li_unimproved_sanitation'] == True]
+        # need to reduce proportion susceptible by 60% for both species
 
-        # of these people with no sanitation, 40% will now be not susceptible to schisto
-        # Calculate the number of people to switch (40% of the no_sanitation group)
-        n_to_select = int((1-p['rr_WASH']) * len(no_sanitation))
+        # Reduce susceptibility for mansoni
+        self.module.reduce_susceptibility(df, species_column='ss_sm_susceptibility')
 
-        # Randomly select 40% of these indices
-        switch_to_not_susceptible = np.random.choice(no_sanitation, size=n_to_select, replace=False)
+        # Reduce susceptibility for haematobium
+        self.module.reduce_susceptibility(df, species_column='ss_sh_susceptibility')
 
-        df.loc[switch_to_not_susceptible, 'ss_sm_susceptibility'] = 0
-        df.loc[switch_to_not_susceptible, 'ss_sh_susceptibility'] = 0
-
-        # scale-up property li_unimproved_sanitation and no_clean_water
+        # scale-up property li_unimproved_sanitation
         # set the properties to False for everyone
         df['li_unimproved_sanitation'] = False
         df['li_date_acquire_improved_sanitation'] = self.sim.date

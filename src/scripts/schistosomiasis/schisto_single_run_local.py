@@ -2,7 +2,7 @@
 that the model is working as originally intended."""
 
 from pathlib import Path
-
+import pickle
 import matplotlib.pyplot as plt
 import pandas as pd
 
@@ -54,7 +54,7 @@ def run_simulation(popsize,
                    single_district):
 
     start_date = Date(2010, 1, 1)
-    end_date = Date(2015, 12, 31)
+    end_date = Date(2020, 12, 31)
 
     # For logging
     custom_levels = {
@@ -90,7 +90,7 @@ def run_simulation(popsize,
 
     # sim.modules["Schisto"].parameters["calibration_scenario"] = 0
     sim.modules["Schisto"].parameters["scaleup_WASH"] = True
-    sim.modules["Schisto"].parameters["scaleup_WASH_start_year"] = 2011
+    sim.modules["Schisto"].parameters["scaleup_WASH_start_year"] = 2015
 
     # initialise the population
     sim.make_initial_population(n=popsize)
@@ -103,7 +103,7 @@ def run_simulation(popsize,
 
 
 # todo update these parameters
-sim, output = run_simulation(popsize=1_000,
+sim, output = run_simulation(popsize=5_000,
                              use_really_simplified_births=False,
                              equal_allocation_by_district=True,
                              hs_disable_and_reject_all=False,  # if True, no HSIs run
@@ -112,6 +112,15 @@ sim, output = run_simulation(popsize=1_000,
 
 
 # %% Extract and process the `pd.DataFrame`s needed
+
+with open(outputpath / "test_run.pickle", "wb") as f:
+    # Pickle the 'data' dictionary using the highest protocol available.
+    pickle.dump(dict(output), f, pickle.HIGHEST_PROTOCOL)
+
+# load the results
+with open(outputpath / "test_run.pickle", "rb") as f:
+    output = pickle.load(f)
+
 
 
 def construct_dfs(schisto_log) -> dict:
@@ -163,8 +172,27 @@ def get_model_prevalence_by_district_over_time(spec: str):
     return prop_infected
 
 
+def construct_susceptibility_dfs(schisto_log, species: list) -> dict:
+    """
+    Create a dict of pd.DataFrames containing counts of infection_status by date and district for each species.
+    """
+    dfs_susc = {}
+    for s in species:
+        key = f'susceptibility_{s}'
+        if key in schisto_log:
+            # Simply set the date as the index without any additional processing
+            df_processed = schisto_log[key].set_index('date')
+            dfs_susc[s] = df_processed
+    return dfs_susc
 
-# ----------- PLOTS -----------------
+
+dfs_susc = construct_susceptibility_dfs(output['tlo.methods.schisto'], species)
+
+
+# %%  -------------------------- PLOTS --------------------------
+
+
+# PREVALENCE
 
 # Districts with prevalence fitted
 fig, axes = plt.subplots(1, 2, sharey=True)
@@ -221,3 +249,32 @@ for i, _spec in enumerate(species):
 fig.tight_layout()
 # fig.savefig(make_graph_file_name('annual_prev_in_districts'))
 fig.show()
+
+
+# PROPORTION SUSCEPTIBLE
+
+def plot_susceptibility(dfs_susc: dict):
+    """
+    Plot susceptibility over time for each species.
+
+    Args:
+    dfs_susc (dict): A dictionary where each key is a species name and the value is a DataFrame
+                     containing susceptibility data with 'date' as the index.
+    """
+    for species, df in dfs_susc.items():
+        plt.figure(figsize=(10, 6))
+        for column in df.columns:
+            plt.plot(df.index, df[column], label=column)
+
+        plt.title(f'Proportion susceptible {species.capitalize()}')
+        plt.xlabel('Date')
+        plt.ylabel('Proportion susceptible')
+        plt.legend(title="Districts", bbox_to_anchor=(0.5, -0.2), loc="upper center", ncol=4)
+        plt.grid(True)
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        plt.show()
+
+
+# Example usage
+plot_susceptibility(dfs_susc)
