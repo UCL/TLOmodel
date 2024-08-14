@@ -348,7 +348,7 @@ class CopdAnalyses:
 start_date = Date(2010, 1, 1)
 end_date = Date(2030, 1, 1)
 
-resourcefilepath = Path("./resources")  # Path to resource files
+resourcefilepath = './resources'  # Path to resource files
 
 outputpath = Path('./outputs')  # path to outputs folder
 
@@ -363,18 +363,16 @@ def get_simulation(popsize):
         log_config={
             'filename': 'copd_analyses',
             'directory': outputpath,
-        },
+        }, resourcefilepath=resourcefilepath
     )
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           disable=False,
-                                           cons_availability='all'),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 copd.Copd(resourcefilepath=resourcefilepath),
+    sim.register(demography.Demography(),
+                 simplified_births.SimplifiedBirths(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(disable=False, cons_availability='all'),
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthburden.HealthBurden(),
+                 copd.Copd(),
                  )
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
