@@ -189,6 +189,12 @@ class HealthSystem(Module):
             " When using 'all' or 'none', requests for consumables are not logged. NB. This parameter is over-ridden"
             "if an argument is provided to the module initialiser."
             "Note that other options are also available: see the `Consumables` class."),
+        'consumables_availability_time_trend': Parameter(
+            Types.BOOL, "Whether to incorporate the observed time-trend in availability of consumables."
+        ),
+        'availability_estimates_time_trend': Parameter(
+            Types.DATA_FRAME, "The data on the trend over time in the availability of consumables."
+        ),
 
         # Infrastructure and Equipment
         'BedCapacity': Parameter(
