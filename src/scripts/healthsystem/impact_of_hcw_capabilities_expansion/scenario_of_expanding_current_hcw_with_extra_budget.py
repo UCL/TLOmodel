@@ -4,14 +4,12 @@ It's used for analysis of impact of expanding funded hcw, assuming all other set
 
 Run on the batch system using:
 ```
-tlo batch-submit src/scripts/healthsystem/impact_of_hcw_capabilities_expansion/
-scenario_of_expanding_current_hcw_with_extra_budget.py
+tlo batch-submit src/scripts/healthsystem/impact_of_hcw_capabilities_expansion/scenario_of_expanding_current_hcw_with_extra_budget.py
 ```
 
 or locally using:
 ```
-tlo scenario-run src/scripts/healthsystem/impact_of_hcw_capabilities_expansion/
-scenario_of_expanding_current_hcw_with_extra_budget.py
+tlo scenario-run src/scripts/healthsystem/impact_of_hcw_capabilities_expansion/scenario_of_expanding_current_hcw_with_extra_budget.py
 ```
 """
 
@@ -36,7 +34,7 @@ class LongRun(BaseScenario):
         self.pop_size = 20_000  # todo: TBC
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 10  # todo: TBC
+        self.runs_per_draw = 5  # todo: TBC
 
     def log_configuration(self):
         return {
@@ -83,9 +81,6 @@ class LongRun(BaseScenario):
         return mix_scenarios(
             get_parameters_for_status_quo(),
             {'HealthSystem': {
-                'use_funded_or_actual_staffing': 'actual',
-                'use_funded_or_actual_staffing_postSwitch': 'funded_plus',
-                'year_use_funded_or_actual_staffing_switch': self.YEAR_OF_CHANGE,
                 'mode_appt_constraints': 1,
                 'mode_appt_constraints_postSwitch': 2,
                 "year_mode_switch": self.YEAR_OF_CHANGE,
@@ -93,8 +88,9 @@ class LongRun(BaseScenario):
                 'cons_availability_postSwitch': 'all',
                 'year_cons_availability_switch': self.YEAR_OF_CHANGE,
                 'yearly_HR_scaling_mode': 'no_scaling',
-
-            }
+                'start_year_HR_expansion_by_officer_type': self.YEAR_OF_CHANGE,
+                'end_year_HR_expansion_by_officer_type': self.end_date.year,
+            }  # as to expand current hr and analyse the impact, we keep using 'actual' hr capabilities
             },
         )
 
