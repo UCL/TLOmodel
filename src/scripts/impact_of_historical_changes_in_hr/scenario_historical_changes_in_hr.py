@@ -22,10 +22,10 @@ class HistoricalChangesInHRH(BaseScenario):
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2031, 1, 1)  # <-- End at the end of year 2030
-        self.pop_size = 100_000     # <--- todo: N.B. Very small population size, to be efficient for now
+        self.pop_size = 100_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 10      # <--- todo: N.B. Very small number of repeated run, to be efficient for now
+        self.runs_per_draw = 10
 
     def log_configuration(self):
         return {
@@ -84,7 +84,7 @@ class HistoricalChangesInHRH(BaseScenario):
                     "mode_appt_constraints": 1,                 # <-- Mode 1 prior to change to preserve calibration
                     "mode_appt_constraints_postSwitch": 2,      # <-- Mode 2 post-change to show effects of HRH
                     "scale_to_effective_capabilities": True,    # <-- Transition into Mode2 with the effective capabilities in HRH 'revealed' in Mode 1
-                    "year_mode_switch": 2019,    # <-- The transition happens in 2017, when we start to model the scale-up of HRH
+                    "year_mode_switch": 2020,    # <-- transition happens at start of 2020 when HRH starts to grow
 
                     # Normalize the behaviour of Mode 2
                     "policy_name": "Naive",
