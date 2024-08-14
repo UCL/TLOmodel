@@ -34,7 +34,9 @@ class Consumables:
                  availability_data: pd.DataFrame = None,
                  item_code_designations: pd.DataFrame = None,
                  rng: np.random = None,
-                 availability: str = 'default'
+                 availability: str = 'default',
+                 use_time_trend: bool = False,
+                 time_trend_data: dict = None,
                  ) -> None:
 
         self._options_for_availability = {
@@ -56,8 +58,10 @@ class Consumables:
         self._is_unknown_item_available = None  # Whether an unknown item is available, by facility_id
         self._not_recognised_item_codes = set()  # The item codes requested but which are not recognised.
 
-        # Save designations
+        # Save designations and time-trend info
         self._item_code_designations = item_code_designations
+        self._time_trend_data = time_trend_data
+        self._use_time_trend = use_time_trend
 
         # Save all item_codes that are defined and pd.Series with probs of availability from ResourceFile
         self.item_codes,  self._processed_consumables_data = \
@@ -266,7 +270,7 @@ class Consumables:
 
     def on_simulation_end(self):
         """Do tasks at the end of the simulation.
-         
+
         Raise warnings and enter to log about item_codes not recognised.
         """
         if self._not_recognised_item_codes:
@@ -288,6 +292,26 @@ class Consumables:
 
     def on_end_of_year(self):
         self._summary_counter.write_to_log_and_reset_counters()
+
+        # Update consumables availability (for next year) to reflect secular trend
+        self._update_availability()
+
+    def _update_availability(self):
+        """Update availability of consumables"""
+        if not self._use_time_trend:
+            return  # Do nothing if there should not be a time-trend in the availability
+
+        # Data on the changes in availability
+        data = self._time_trend_data
+
+        # Annual multiplier on availability for each category....
+
+        # Items in each category.... (look up from the categories provided in the sheet)
+
+        # For each group, multiply availabilities in `self._prob_item_codes_available`, and clip to 1.0
+
+
+
 
 
 def get_item_codes_from_package_name(lookup_df: pd.DataFrame, package: str) -> dict:

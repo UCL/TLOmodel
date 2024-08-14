@@ -193,7 +193,7 @@ class HealthSystem(Module):
             Types.BOOL, "Whether to incorporate the observed time-trend in availability of consumables."
         ),
         'availability_estimates_time_trend': Parameter(
-            Types.DATA_FRAME, "The data on the trend over time in the availability of consumables."
+            Types.DICT, "Dict of dataframes describing the trend over time in the availability of consumables."
         ),
 
         # Infrastructure and Equipment
@@ -570,6 +570,11 @@ class HealthSystem(Module):
         ).set_index('Item_Code')
         self.parameters['availability_estimates'] = pd.read_csv(
             path_to_resourcefiles_for_healthsystem / 'consumables' / 'ResourceFile_Consumables_availability_small.csv')
+        self.parameters['availability_estimates_time_trend'] = pd.read_excel(
+            path_to_resourcefiles_for_healthsystem / 'consumables' /
+            'ResourceFile_Consumables_availability_estimates_time_trend.xlsx',
+            sheet_name=None
+        )
 
         # Data on the number of beds available of each type by facility_id
         self.parameters['BedCapacity'] = pd.read_csv(
@@ -669,7 +674,9 @@ class HealthSystem(Module):
                 self.parameters['availability_estimates']),
             item_code_designations=self.parameters['consumables_item_designations'],
             rng=rng_for_consumables,
-            availability=self.get_cons_availability()
+            availability=self.get_cons_availability(),
+            use_time_trend=self.parameters['consumables_availability_time_trend'],
+            time_trend_data=self.parameters['availability_estimates_time_trend']
         )
 
         # Determine equip_availability
