@@ -818,7 +818,6 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
 
         # Create a DataFrame from the prevalence dictionary
         prevalence_df = pd.DataFrame(prevalence_dict, index=[0])
-
         return prevalence_df
 
     def on_hsi_alert(self, person_id, treatment_id):
