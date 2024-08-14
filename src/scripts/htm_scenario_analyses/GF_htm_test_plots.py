@@ -1,3 +1,8 @@
+
+
+# tlo batch-download --username tbh03@ic.ac.uk htm_with_and_without_hss-2024-08-06T094422Z
+
+
 import datetime
 from pathlib import Path
 
@@ -340,6 +345,10 @@ def summarise_deaths_for_one_cause(results_folder, cause):
 aids_deaths = summarise_aids_deaths(results_folder)
 tb_deaths = summarise_deaths_for_one_cause(results_folder, 'TB')
 malaria_deaths = summarise_deaths_for_one_cause(results_folder, 'Malaria')
+
+# just get median columns
+selected_columns = tb_deaths.loc[:, tb_deaths.columns.get_level_values(1).str.contains('median')]
+
 
 # remove first yr of deaths data (2010) to align with inc outputs
 aids_deaths = aids_deaths.iloc[1:]
