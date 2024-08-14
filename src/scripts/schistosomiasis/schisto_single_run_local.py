@@ -55,7 +55,6 @@ def run_simulation(popsize,
 
     start_date = Date(2010, 1, 1)
     end_date = Date(2020, 12, 31)
-
     # For logging
     custom_levels = {
         "*": logging.WARNING,

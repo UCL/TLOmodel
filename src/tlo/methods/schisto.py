@@ -627,29 +627,16 @@ class Schisto(Module):
         """
         p = self.parameters
 
-        # Find the number of individuals currently susceptible to the species
-        num_susc = len(df[df[species_column] == 1])
+        # Find the number of individuals with currently susceptible to species and no sanitation
+        susceptible_no_sanitation = df.index[(df[species_column] == 1) & (df['li_unimproved_sanitation'] == True)]
 
         # Calculate the number to be reduced
-        n_to_reduce = int(p['rr_WASH'] * num_susc)
+        n_to_reduce = int(p['rr_WASH'] * len(susceptible_no_sanitation))
 
-        # select as many as possible from those with no sanitation
-        susceptible_no_sanitation = df.index[(df[species_column] == 1) & (df['li_unimproved_sanitation'] == True)]
-        n_from_no_sanitation = min(len(susceptible_no_sanitation), n_to_reduce)
-
-        if n_from_no_sanitation > 0:
-            selected_no_sanitation = np.random.choice(susceptible_no_sanitation, size=n_from_no_sanitation,
+        if n_to_reduce > 0:
+            selected_change_susceptibility = np.random.choice(susceptible_no_sanitation, size=n_to_reduce,
                                                       replace=False)
-            df.loc[selected_no_sanitation, species_column] = 0
-
-        # Calculate the remaining number to be reduced
-        n_remaining_to_reduce = n_to_reduce - n_from_no_sanitation
-
-        # If more need to be reduced, select from the rest of the susceptible population
-        if n_remaining_to_reduce > 0:
-            susceptible_rest = df.index[(df[species_column] == 1) & (~df.index.isin(selected_no_sanitation))]
-            selected_rest = np.random.choice(susceptible_rest, size=n_remaining_to_reduce, replace=False)
-            df.loc[selected_rest, species_column] = 0
+            df.loc[selected_change_susceptibility, species_column] = 0
 
 
 class SchistoSpecies:
@@ -809,6 +796,7 @@ class SchistoSpecies:
         df = self.schisto_module.sim.population.props
         prop = self.prefix_species_property
         params = self.params
+        global_params = self.schisto_module.parameters
         rng = self.schisto_module.rng
 
         # Assign the default for a newly born child
@@ -819,33 +807,41 @@ class SchistoSpecies:
         district = df.at[child_id, 'district_of_residence']
         df.at[child_id, prop('harbouring_rate')] = rng.gamma(params['gamma_alpha'][district], size=1)
 
-        # Determine if individual should automatically be susceptible
-        if df.at[child_id, 'li_unimproved_sanitation']:
-            df.at[child_id, prop('susceptibility')] = 1
+        # Determine if individual should be susceptible to each species
+        # susceptibility depends on district
+        prop_susceptible = params['prop_susceptible'][district]
+        df.at[child_id, prop('susceptibility')] = 0  # Default to not susceptible
+
+        # WASH in action
+        if global_params['scaleup_WASH'] and (
+                self.schisto_module.sim.date >= Date(global_params['scaleup_WASH_start_year'], 1, 1)):
+
+            # if the child has sanitation, apply risk mitigated by rr_WASH
+            if not df.at[child_id, 'li_unimproved_sanitation']:
+                if rng.random_sample() < (prop_susceptible * (1-global_params['rr_WASH'])):
+                    df.at[child_id, prop('susceptibility')] = 1
+            # if no sanitation, apply full risk
+            elif df.at[child_id, 'li_unimproved_sanitation']:
+                if rng.random_sample() < prop_susceptible:
+                    df.at[child_id, prop('susceptibility')] = 1
+
         else:
-            # determine susceptibility depending on district
-            prop_susceptible = params['prop_susceptible'][district]
-            # Calculate current susceptible count and proportion
-            current_susceptible = len(df.index[(df['district_of_residence'] == district) &
-                                               (df[prop('susceptibility')] == 1)])
+            # WASH not implemented
+            prop_population_without_sanitation = 0.11
+            p_no_san = prop_susceptible / (prop_population_without_sanitation + (
+                1 - prop_population_without_sanitation) * global_params['rr_WASH'])
+            p_with_san = p_no_san * global_params['rr_WASH']
 
-            total_in_district = len(df.index[df['district_of_residence'] == district])
-
-            current_proportion = current_susceptible / total_in_district
-
-            # Step 3: Determine if the individual should be susceptible based on the proportion
-            if current_proportion < prop_susceptible:
-                df.at[child_id, prop('susceptibility')] = 1
+            # Determine the probability based on sanitation status
+            # property li_unimproved_sanitation if False, person HAS improved sanitation
+            if not df.at[child_id, 'li_unimproved_sanitation']:
+                susceptibility_probability = p_with_san
             else:
-                df.at[child_id, prop('susceptibility')] = 0  # this is the default
+                susceptibility_probability = p_no_san
+            df.at[child_id, prop('susceptibility')] = 1 if rng.random_sample() < susceptibility_probability else 0
 
-        # WASH in action, need to reduce probability of being susceptible for all new births
-        if params['scaleup_WASH'] and (
-            self.schisto_module.sim.date >= Date(params['scaleup_WASH_start_year'], 1, 1)) and (
-                df.at[child_id, prop('susceptibility')] == 1):
-            # if random number <= params['rr_WASH'] then change this property
-            if self.schisto_module.rng.random_sample() <= params['rr_WASH']:
-                df.at[child_id, prop('susceptibility')] = 0  # this is the default
+
+
 
     def update_infectious_status_and_symptoms(self, idx: pd.Index) -> None:
         """Updates the infection status and symptoms based on the current aggregate worm burden of this species.
@@ -1657,7 +1653,7 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             _spec.log_infection_status()
             _spec.log_mean_worm_burden()
 
-        # treatment episodes
+        # PZQ treatment episodes
         df = population.props
         now = self.sim.date
 
@@ -1684,3 +1680,5 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # clear the logger ready for the next year
         self.log_person_days_any_infection = 0
         self.log_person_days_high_infection = 0
+
+        # todo add logger for property li_unimproved_sanitation - proportion by district
