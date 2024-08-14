@@ -5,6 +5,8 @@
 #todo: screening probability depends on date last screen and result (who guidelines)
 #todo: if positive on xpert then do via if hiv negative but go straight to thermoablation if hiv negative
 #todo: consider fact that who recommend move towards xpert screening away from via
+#todo: consider whether to have reversion of cin1 (back to hpv or to none)
+
 
 """
 Cervical Cancer Disease Module
