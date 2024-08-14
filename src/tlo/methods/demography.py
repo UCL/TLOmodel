@@ -398,7 +398,7 @@ class Demography(Module):
         maternal_deaths = maternal_direct_deaths + indirect_deaths_non_hiv + direct_deaths_non_hiv
 
         health_values_df = pd.DataFrame({
-            'newborn_deaths': [neonatal_deaths],
+            'neonatal': [neonatal_deaths],
             'maternal_deaths': [maternal_deaths]
         })
 
