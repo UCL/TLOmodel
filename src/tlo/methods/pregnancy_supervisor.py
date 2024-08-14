@@ -829,14 +829,11 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         """
         This function reports the prevalence of antenatal stillbrith for this module generated in the previous month
         """
-        #df = self.sim.population.props
-        #print(df.columns)
-        # Disability properties are mapped to DALY weights and stored for the health burden module
-        #total_prev_antenatal_stillbirth = len(
-        #    (df['antenatal_stillbirth'] != 0)
-        #) / len( df[(df['antenatal_stillbirth'] != 0) & (df['antenatal_stillbirth'] == 0)])
+        df = self.sim.population.props
 
-        #return total_prev_antenatal_stillbirth
+        total_prev = len(df[df['is_alive'] & df['ps_prev_stillbirth']]) / len(df)
+
+        return total_prev
     def pregnancy_supervisor_property_reset(self, id_or_index):
         """
         This function is called when all properties housed in the PregnancySupervisorModule should be reset. For example
