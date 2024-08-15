@@ -101,6 +101,9 @@ class Schisto(Module):
                                       'one of [PSAC_SAC, SAC, ALL]'),
         'mda_frequency_months': Parameter(Types.INT,
                                           'Number of months between MDA activities'),
+        'reset_calibration': Parameter(Types.BOOL,
+                                       'if True, will reset the prevalence and mean worm burden in 2022 to'
+                                       'match 2022 reported data'),
         'MDA_coverage_historical': Parameter(Types.DATA_FRAME,
                                              'Probability of getting PZQ in the MDA for PSAC, SAC and Adults '
                                              'in historic rounds'),
@@ -221,6 +224,11 @@ class Schisto(Module):
             sim.schedule_event(SchistoWashScaleUp(self),
                                Date(self.parameters['scaleup_WASH_start_year'], 1, 1))
 
+        # # schedule calibration reset
+        # if self.parameters['reset_calibration']:
+        #     sim.schedule_event(SchistoResetCalibration(self),
+        #                                                Date(2022, 1, 1))
+
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
         All children are born without an infection, even if the mother is infected.
@@ -318,7 +326,8 @@ class Schisto(Module):
                             'scaleup_WASH_start_year',
                             'mda_coverage',
                             'mda_target_group',
-                            'mda_frequency_months'
+                            'mda_frequency_months',
+                            'reset_calibration',
                             ):
             # parameters[_param_name] = float(param_list[_param_name])
             parameters[_param_name] = param_list[_param_name]
@@ -1431,6 +1440,23 @@ class SchistoWashScaleUp(RegularEvent, PopulationScopeEventMixin):
         # set the properties to False for everyone
         df['li_unimproved_sanitation'] = False
         df['li_date_acquire_improved_sanitation'] = self.sim.date
+
+
+# class SchistoResetCalibration(RegularEvent, PopulationScopeEventMixin):
+#     """
+#     if parameter reset_calibration is set to True,
+#     reset the calibration to match reported prevalence in 2022
+#     """
+#
+#     def __init__(self, module):
+#         super().__init__(
+#             module, frequency=DateOffset(years=100)
+#         )
+#
+#     def apply(self, population):
+#         df = population.props
+
+
 
 
 class HSI_Schisto_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin):

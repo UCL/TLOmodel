@@ -50,21 +50,15 @@ class TestScenario(BaseScenario):
 
         # todo reset
         self.end_date = Date(2023, 12, 31)
-        self.pop_size = 15_000  # todo if equal_allocation_by_district, 64,000=2k per district
-        self.runs_per_draw = 1
-
-        # self.coverage_options = [0.6, 0.7, 0.8]
-        # self.target_group_options = ['SAC', 'PSAC', 'All']
-        self.coverage_options = [0.0, 0.8]
-        self.target_group_options = ['All']
-        self.wash_options = [0, 1]  # although this is BOOL, python changes type when reading in from Excel
+        self.pop_size = 64_000  # todo if equal_allocation_by_district, 64,000=2k per district
+        self.runs_per_draw = 3
 
         self.mda_execute = True
-        self.single_district = True
+        self.single_district = False
         self.equal_allocation_by_district = True
 
         # Calculate the total number of combinations
-        self.number_of_draws = len(self.coverage_options) * len(self.target_group_options) * len(self.wash_options)
+        self.number_of_draws = 1
 
     def log_configuration(self):
         return {
@@ -109,20 +103,7 @@ class TestScenario(BaseScenario):
 
     def draw_parameters(self, draw_number, rng):
 
-        # Determine indices for each parameter
-        coverage_index = draw_number % len(self.coverage_options)
-        target_group_index = (draw_number // len(self.coverage_options)) % len(self.target_group_options)
-        wash_index = (draw_number // (len(self.coverage_options) * len(self.target_group_options))) % len(self.wash_options)
-
-        return {
-            'Schisto': {
-                'mda_coverage': self.coverage_options[coverage_index],
-                'mda_target_group': self.target_group_options[target_group_index],
-                'mda_frequency_months': 6,
-                'scaleup_WASH': self.wash_options[wash_index],
-                'scaleup_WASH_start_year': 2024,
-            },
-        }
+        return
 
 
 if __name__ == '__main__':

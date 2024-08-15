@@ -52,7 +52,6 @@ def run_simulation(popsize,
                    hs_disable_and_reject_all,
                    mda_execute,
                    single_district):
-
     start_date = Date(2010, 1, 1)
     end_date = Date(2020, 12, 31)
     # For logging
@@ -88,7 +87,7 @@ def run_simulation(popsize,
                  )
 
     # sim.modules["Schisto"].parameters["calibration_scenario"] = 0
-    sim.modules["Schisto"].parameters["scaleup_WASH"] = True
+    sim.modules["Schisto"].parameters["scaleup_WASH"] = False
     sim.modules["Schisto"].parameters["scaleup_WASH_start_year"] = 2015
 
     # initialise the population
@@ -107,8 +106,7 @@ sim, output = run_simulation(popsize=5_000,
                              equal_allocation_by_district=True,
                              hs_disable_and_reject_all=False,  # if True, no HSIs run
                              mda_execute=True,
-                             single_district=True)
-
+                             single_district=False)
 
 # %% Extract and process the `pd.DataFrame`s needed
 
@@ -119,7 +117,6 @@ with open(outputpath / "test_run.pickle", "wb") as f:
 # load the results
 with open(outputpath / "test_run.pickle", "rb") as f:
     output = pickle.load(f)
-
 
 
 def construct_dfs(schisto_log) -> dict:
@@ -147,7 +144,7 @@ def get_model_prevalence_by_district(spec: str, year: int):
 def get_expected_prevalence_by_district(species: str):
     """Get the prevalence of a particular species from the data (which is for year 2010/2011)."""
     expected_district_prevalence = pd.read_excel(resourcefilepath / 'ResourceFile_Schisto.xlsx',
-                                                 sheet_name='District_Params_' + species.lower())
+                                                 sheet_name='OLDDistrict_Params_' + species.lower())
     expected_district_prevalence.set_index("District", inplace=True)
     expected_district_prevalence = expected_district_prevalence.loc[:, 'Prevalence'].to_dict()
     return expected_district_prevalence
@@ -186,7 +183,6 @@ def construct_susceptibility_dfs(schisto_log, species: list) -> dict:
 
 
 dfs_susc = construct_susceptibility_dfs(output['tlo.methods.schisto'], species)
-
 
 # %%  -------------------------- PLOTS --------------------------
 

@@ -121,8 +121,8 @@ df_haem = prevalence_to_output[prevalence_to_output['SCH_spp'] == 'S.haematobium
 # Filter rows where SCH_spp is 'mansoni'
 df_mansoni = prevalence_to_output[prevalence_to_output['SCH_spp'] == 'S.mansoni']
 
-# Create an Excel writer object
-with pd.ExcelWriter(resourcefilepath / 'ResourceFile_Schisto.xlsx') as writer:
+#
+with pd.ExcelWriter(outputpath / 'latest_schisto_data.xlsx') as writer:
     # Write the haem data to the first sheet
     df_haem.to_excel(writer, sheet_name='LatestData_haematobium', index=False)
 
