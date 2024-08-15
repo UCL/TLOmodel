@@ -732,7 +732,7 @@ class SchistoSpecies:
         # Baseline reservoir size and other district-related params (R0, proportion susceptible)
         # schisto_initial_reservoir = workbook[f'District_Params_{self.name}'].set_index("District")
         # todo this is the updated (calibrated) data
-        schisto_initial_reservoir = workbook[f'Data_{self.name}'].set_index("District")
+        schisto_initial_reservoir = workbook[f'InitialData_{self.name}'].set_index("District")
         parameters['mean_worm_burden2010'] = schisto_initial_reservoir['Mean_worm_burden']
         parameters['R0'] = schisto_initial_reservoir['R0']
         parameters['gamma_alpha'] = schisto_initial_reservoir['gamma_alpha']
@@ -1681,4 +1681,27 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.log_person_days_any_infection = 0
         self.log_person_days_high_infection = 0
 
-        # todo add logger for property li_unimproved_sanitation - proportion by district
+        # WASH properties
+        unimproved_sanitation = len(
+            df[df.li_unimproved_sanitation & df.is_alive]
+        ) / len(df[df.is_alive]) if len(df[df.is_alive]) else 0
+
+        no_access_handwashing = len(
+            df[df.li_no_access_handwashing & df.is_alive]
+        ) / len(df[df.is_alive]) if len(df[df.is_alive]) else 0
+
+        no_clean_drinking_water = len(
+            df[df.li_no_clean_drinking_water & df.is_alive]
+        ) / len(df[df.is_alive]) if len(df[df.is_alive]) else 0
+
+        wash = {
+            'unimproved_sanitation': unimproved_sanitation,
+            'no_access_handwashing': no_access_handwashing,
+            'no_clean_drinking_water': no_clean_drinking_water,
+        }
+
+        logger.info(
+            key='Schisto_pwash_properties',
+            data=wash,
+            description='Proportion of population with each wash-related property'
+        )
