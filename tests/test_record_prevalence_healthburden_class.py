@@ -50,7 +50,10 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
                         output['tlo.methods.tb']["tb_prevalence"]["tbPrevLatent"]
     assert prevalence_tb_function[1] == prevalence_tb_log[0] # the first entry in TB function is before the regular logger has recorded anything
 
-
+    ## Malaria - only clinical prevalence
+    prevalence_malaria_function = prevalence['Malaria']
+    prevalence_malaria_log = output['tlo.methods.malaria']["prevalence"]["clinical_prev"]
+    assert prevalence_malaria_function[1] != prevalence_malaria_log[0] # the first entry in malaria function is before the regular logger has recorded anything
 
     ## Maternal deaths
     maternal_deaths_function = prevalence['maternal_deaths']
@@ -69,7 +72,6 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
     hiv_indirect_maternal_deaths = hiv_pd * 0.3
 
     maternal_deaths_log = direct_deaths + indirect_deaths_non_hiv + hiv_indirect_maternal_deaths
-    #assert maternal_deaths_function.sum() == maternal_deaths_log
 
     prevalence_newborn_deaths_function = prevalence['newborn_deaths']
     prevalence_newborn_deaths_log = (
@@ -83,9 +85,9 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
         .size()
     )
 
-    return prevalence_newborn_deaths_log, prevalence_newborn_deaths_function, prevalence, prevalence_tb_log, prevalence_HIV_function, prevalence_HIV_log
+    return prevalence_newborn_deaths_log, prevalence_newborn_deaths_function, prevalence, prevalence_tb_log, prevalence_HIV_function, prevalence_HIV_log, prevalence_malaria_function, prevalence_malaria_log
 
-prevalence_newborn_deaths_log, prevalence_newborn_deaths_function, prevalence, prevalence_tb_log, prevalence_HIV_function, prevalence_HIV_log= test_run_with_healthburden_with_dummy_diseases(outputpath, seed)
+prevalence_newborn_deaths_log, prevalence_newborn_deaths_function, prevalence, prevalence_tb_log, prevalence_HIV_function, prevalence_HIV_log, prevalence_malaria_function, prevalence_malaria_log = test_run_with_healthburden_with_dummy_diseases(outputpath, seed)
 print("prevalence_newborn_deaths_log", prevalence_newborn_deaths_log)
 print("prevalence_newborn_deaths_function", prevalence_newborn_deaths_function)
 print("prevalence", prevalence)
@@ -93,4 +95,6 @@ print("prevalence_tb_function", prevalence['Tb'])
 print("prevalence_tb_log", prevalence_tb_log)
 print("prevalence_HIV_function", prevalence_HIV_function)
 print("prevalence_HIV_log", prevalence_HIV_log)
+print("prevalence_malaria_function", prevalence_malaria_function)
+print("prevalence_malaria_log", prevalence_malaria_log)
 
