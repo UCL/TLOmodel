@@ -798,11 +798,10 @@ class Alri(Module, GenericFirstAppointmentsMixin):
                                               ' episodes interfering with one another.'),
     }
 
-    def __init__(self, name=None, resourcefilepath=None, log_indivdual=None, do_checks=False):
+    def __init__(self, name=None, log_indivdual=None, do_checks=False):
         super().__init__(name)
 
         # Store arguments provided
-        self.resourcefilepath = resourcefilepath
         self.do_checks = do_checks
 
         assert (log_indivdual is None or isinstance(log_indivdual, int)) and (not isinstance(log_indivdual, bool))
@@ -823,13 +822,13 @@ class Alri(Module, GenericFirstAppointmentsMixin):
         # Pointer to store the logging event used by this module
         self.logging_event = None
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath=None):
         """
         * Setup parameters values used by the module
         * Define symptoms
         """
         self.load_parameters_from_dataframe(
-            pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Alri.xlsx', sheet_name='Parameter_values')
+            pd.read_excel(Path(resourcefilepath) / 'ResourceFile_Alri.xlsx', sheet_name='Parameter_values')
         )
 
         self.check_params_read_in_ok()
@@ -2952,7 +2951,7 @@ class AlriPropertiesOfOtherModules(Module):
                                                    categories=['MAM', 'SAM', 'well']),
     }
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath=None):
         pass
 
     def initialise_population(self, population):

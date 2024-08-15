@@ -67,19 +67,17 @@ def get_sim(tmpdir, seed, cons_available, equip_available='all'):
                 "tlo.methods.alri": logging.INFO,
                 "tlo.methods.healthsystem": logging.DEBUG
             }
-        }
+        }, resourcefilepath=resourcefilepath
     )
     sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                  cons_availability=cons_available,
-                                  equip_availability=equip_available),
-        alri.Alri(resourcefilepath=resourcefilepath, log_indivdual=0, do_checks=True),
+        demography.Demography(),
+        simplified_births.SimplifiedBirths(),
+        enhanced_lifestyle.Lifestyle(),
+        symptommanager.SymptomManager(),
+        healthseekingbehaviour.HealthSeekingBehaviour(),
+        healthburden.HealthBurden(),
+        healthsystem.HealthSystem(cons_availability=cons_available, equip_availability=equip_available),
+        alri.Alri(log_indivdual=0, do_checks=True),
         AlriPropertiesOfOtherModules(),
     )
     return sim
@@ -112,17 +110,17 @@ def sim_hs_default_consumables(tmpdir, seed):
             'custom_levels': {
                 "*": logging.WARNING,
                 "tlo.methods.alri": logging.INFO}
-        }
+        }, resourcefilepath=resourcefilepath
     )
     sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, cons_availability='default'),
-        alri.Alri(resourcefilepath=resourcefilepath, log_indivdual=0, do_checks=True),
+        demography.Demography(),
+        simplified_births.SimplifiedBirths(),
+        enhanced_lifestyle.Lifestyle(),
+        symptommanager.SymptomManager(),
+        healthseekingbehaviour.HealthSeekingBehaviour(),
+        healthburden.HealthBurden(),
+        healthsystem.HealthSystem(cons_availability='default'),
+        alri.Alri(log_indivdual=0, do_checks=True),
         AlriPropertiesOfOtherModules(),
     )
     return sim
@@ -1220,24 +1218,20 @@ def test_impact_of_all_hsi(seed, tmpdir):
 
         start_date = Date(2010, 1, 1)
         popsize = 10_000
-        sim = Simulation(start_date=start_date, seed=seed)
+        sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
 
         sim.register(
-            demography.Demography(resourcefilepath=resourcefilepath),
-            simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-            enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-            symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+            demography.Demography(),
+            simplified_births.SimplifiedBirths(),
+            enhanced_lifestyle.Lifestyle(),
+            symptommanager.SymptomManager(),
             healthseekingbehaviour.HealthSeekingBehaviour(
-                resourcefilepath=resourcefilepath,
                 force_any_symptom_to_lead_to_healthcareseeking=force_any_symptom_to_lead_to_healthcareseeking,
             ),
-            healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-            healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                      disable_and_reject_all=disable_and_reject_all,
-                                      cons_availability='all',
-                                      equip_availability='all',
-                                      ),
-            alri.Alri(resourcefilepath=resourcefilepath),
+            healthburden.HealthBurden(),
+            healthsystem.HealthSystem(disable_and_reject_all=disable_and_reject_all, cons_availability='all',
+                                      equip_availability='all',),
+            alri.Alri(),
             AlriPropertiesOfOtherModules(),
             DummyModule(),
         )
@@ -1307,7 +1301,7 @@ def test_specific_effect_of_pulse_oximeter_and_oxgen_for_danger_signs_pneumonia(
             first day of the simulation"""
             METADATA = {Metadata.DISEASE_MODULE}
 
-            def read_parameters(self, data_folder):
+            def read_parameters(self, resourcefilepath=None):
                 pass
 
             def initialise_population(self, population):
@@ -1326,23 +1320,17 @@ def test_specific_effect_of_pulse_oximeter_and_oxgen_for_danger_signs_pneumonia(
 
         start_date = Date(2010, 1, 1)
         popsize = 1_000
-        sim = Simulation(start_date=start_date, seed=seed)
+        sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
 
         sim.register(
-            demography.Demography(resourcefilepath=resourcefilepath),
-            simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-            enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-            symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-            healthseekingbehaviour.HealthSeekingBehaviour(
-                resourcefilepath=resourcefilepath,
-                force_any_symptom_to_lead_to_healthcareseeking=True,
-            ),
-            healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-            healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                      cons_availability='all',
-                                      equip_availability='all',
-                                      ),
-            alri.Alri(resourcefilepath=resourcefilepath),
+            demography.Demography(),
+            simplified_births.SimplifiedBirths(),
+            enhanced_lifestyle.Lifestyle(),
+            symptommanager.SymptomManager(),
+            healthseekingbehaviour.HealthSeekingBehaviour(force_any_symptom_to_lead_to_healthcareseeking=True,),
+            healthburden.HealthBurden(),
+            healthsystem.HealthSystem(cons_availability='all', equip_availability='all',),
+            alri.Alri(),
             AlriPropertiesOfOtherModules(),
             DummyModule(),
         )
