@@ -393,7 +393,7 @@ class Demography(Module):
             neonatal_deaths = 0
             maternal_deaths = 0
         else:
-            neonatal_deaths = (len(df[(df['age_days'] < 29) & (df['age_years'] == 0) & (df['is_alive'] == False)]) / len(df[df['age_days'] < 29])) * 1000
+            neonatal_deaths = (len(df[(df['age_days'] < 29) & (df['age_years'] == 0) & ~(df['is_alive'])]) / len(df[df['age_days'] < 29])) * 1000
             number_births = len(df[df['age_days'] < 29])
             maternal_direct_deaths = len(df.loc[(df['cause_of_death'] == 'Maternal Disorders')])
             indirect_deaths_non_hiv = len(df.loc[
