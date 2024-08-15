@@ -1,6 +1,16 @@
 """
-This script generates estimates of availability of consumables in 2021 and 2023
+This script generates estimates of availability of consumables in 2018, 2021, 2022 and 2023.
+Inputs:
+* Raw OpenLMIS files in Dropbox/OneDrive - "05 - Resources/Module-healthsystem/consumables raw files/OpenLMIS/..."
+* Manually cleaned consumable names - ./resources/healthsystem/consumables/ResourceFile_processing_lmis_consumable_names.csv
+* OpenLMIS consumable names matched with TLO model consumable names - ./resources/healthsystem/consumables/ResourceFile_consumables_matched.csv
+* Item categories - ./resources/healthsystem/consumables/ResourceFile_Consumables_Item_Designations.csv
+
+Outputs:
+* Summarised average probability of availability by year, facility_level, item, district - ~./outputs/openlmis_data/availability_summary.csv
+* Full availability data for regression analysis on R - ~./outputs/openlmis_data/regression_subset_df.csv
 """
+
 import calendar
 import copy
 import datetime
@@ -31,7 +41,9 @@ timestamp = datetime.datetime.now().strftime("_%Y_%m_%d_%H_%M")
 # print the start time of the script
 print('Script Start', datetime.datetime.now().strftime('%H:%M'))
 
-# define a pathway to the data folder (note: currently outside the TLO model directory)
+# 1. Define functions and paths
+##########################################################################################################################
+# Define a pathway to the data folder (note: currently outside the TLO model directory)
 # remember to set working directory to TLOmodel/
 outputfilepath = Path("./outputs")
 resourcefilepath = Path("./resources")
@@ -135,7 +147,8 @@ def generate_summary_heatmap(_df,
                              value_var,
                              value_label,
                              summary_func='mean',
-                             name_suffix = ''):
+                             name_suffix = '',
+                             font_size = 0.9):
     # Get the appropriate function from the pandas Series object
     if summary_func == 'count_not_na':
         heatmap_df = _df.groupby([x_var, y_var])[value_var].count().reset_index()
@@ -159,7 +172,7 @@ def generate_summary_heatmap(_df,
     #heatmap_df.loc['Average'] = aggregate_col
 
     # Generate the heatmap
-    sns.set(font_scale=0.9)
+    sns.set(font_scale=font_size)
     plt.figure(figsize=(15, 10))
     sns.heatmap(heatmap_df, annot=True, cmap='RdYlGn', fmt='.2f',
                 cbar_kws={'label': value_label})
@@ -176,9 +189,11 @@ def generate_summary_heatmap(_df,
     plt.show()
     plt.close()
 
-sample_run = 0
+sample_run = 0 # This parameter is used to compile a smaller subset of raw files to save time during the process of cleaning.
+# Use 0 if the full dataset is being compiled (Default value)
+# Update to 1 if only 4 months of data and 10% of facilities and consumables are to be compiled for script finalisation
 # %%
-# 1. DATA IMPORT AND CLEANING ##
+# 2. DATA IMPORT AND CLEANING ##
 #########################################################################################
 if sample_run == 1:
     number_of_months = 5 # 13
@@ -284,13 +299,14 @@ print('Data import complete and ready for analysis; verified that data is comple
 
 # Clean inconsistent names of consumables across years
 #--------------------------------------------------------
-'''
-# Extract a list of consumables along with the year_month during which they were reported
+"""
+# Extract a list of consumables along with the year_month during which they were reported. This file is used to manually clean data names. In a future iteration, it might be better to first
+# use the remove_redundant_characters function before doing the manual clean
 lmis['program_item'] = lmis['program'].astype(str) + "---" +  lmis['item'].astype(str)
 consumable_reporting_rate = lmis.groupby(['program_item', 'year_month'])['fac_name'].nunique().reset_index()
 consumable_reporting_rate = consumable_reporting_rate.pivot( 'program_item', 'year_month', 'fac_name')
 consumable_reporting_rate.to_csv(figurespath / 'consumable_reporting_rate.csv')
-'''
+"""
 
 if sample_run == 1:
     print("Create a 10% random sample")
@@ -332,8 +348,6 @@ clean_consumables_names['Alternate consumable name_lowercase'] = remove_redundan
 clean_consumables_names['Substitute group_lowercase'] = remove_redundant_characters(clean_consumables_names, 'Substitute group')
 clean_consumables_names['Consumable_lowercase'] = remove_redundant_characters(clean_consumables_names, 'Consumable')
 clean_consumables_names = clean_consumables_names[~clean_consumables_names.duplicated(['Consumable', 'Alternate consumable name_lowercase' ])]
-
-lmis[lmis.item_lowercase == 'clotrimazole500mgvaginaltabletblister10x10withapp'].to_csv(figurespath / 'clotrimazole_old.csv')
 
 # Create a dictionary of cleaned consumable name categories
 cons_alternate_name_dict = clean_consumables_names[clean_consumables_names['Consumable_lowercase'] != clean_consumables_names['Alternate consumable name_lowercase']].set_index('Consumable_lowercase')['Alternate consumable name_lowercase'].to_dict()
@@ -396,14 +410,15 @@ df_without_consistent_item_names_corrected = rename_items_to_address_inconsisten
 lmis = pd.concat([df_without_consistent_item_names_corrected, df_with_consistent_item_names],
                               ignore_index=True)
 
-
-lmis[lmis.item_lowercase == 'clotrimazole500mgvaginaltabletblister10x10withapp'].to_csv(figurespath / 'clotrimazole_new.csv')
-
 print(f"{lmis.duplicated(['fac_name', 'item_lowercase', 'year', 'month']).sum()} duplicates remain") # Assert that there are no remaining duplicates in consumable names
 lmis = lmis[~lmis[['fac_name', 'item_lowercase', 'year', 'month']].duplicated(keep='first')]
-#lmis_with_updated_names.to_csv(figurespath / 'lmis_with_updated_names.csv')
-#lmis_with_updated_names = pd.read_csv(figurespath / 'lmis_with_updated_names.csv', low_memory = False)[1:300000]
-#lmis_with_updated_names = lmis_with_updated_names.drop('Unnamed: 0', axis = 1)
+
+'''
+# Use this code if data has to be saved to be re-read in order to avoid repeating the slow compilation process above
+lmis_with_updated_names.to_csv(figurespath / 'lmis_with_updated_names.csv')
+lmis_with_updated_names = pd.read_csv(figurespath / 'lmis_with_updated_names.csv', low_memory = False)[1:300000]
+lmis_with_updated_names = lmis_with_updated_names.drop('Unnamed: 0', axis = 1)
+'''
 
 lmis['year_month'] = lmis['year'].astype(str) + "_" +  lmis['month'].astype(str) # concatenate month and year for plots
 generate_summary_heatmap(_df = lmis,
@@ -420,13 +435,9 @@ generate_summary_heatmap(_df = lmis,
 cond_inconsistent_data = (lmis.month == 7) & (lmis.year == 2021)
 lmis = lmis[~cond_inconsistent_data]
 
-# Feb and Mar 2023 record too many consumables
-#lmis[lmis.year == 2023].item_lowercase.nunique()
-#lmis[lmis.year == 2021].item_lowercase.nunique()
 
-#############################################################
 # Keep only those items which are matched with the TLO model
-#############################################################
+#---------------------------------------------------------------------
 # Load and clean data
 # Import matched list of consumanbles
 tlo_lmis_mapping = pd.read_csv(path_for_new_resourcefiles / 'ResourceFile_consumables_matched.csv', low_memory=False,
@@ -454,8 +465,9 @@ lmis = lmis.drop('item_lowercase', axis = 1)
 print("Before interpolation\n", lmis.groupby(['program', 'year'])['stkout_days'].mean())
 print("Before interpolation\n", lmis.groupby('year')['stkout_days'].mean(), lmis.groupby('year')['stkout_days'].count())
 
-# Interpolation to address missingness
-#-------------------------------------------
+# %%
+# 3. INTERPOLATION TO ADDRESS MISSINGNESS ##
+#########################################################################################
 # Ensure that the columns that should be numerical are numeric
 numeric_cols = ['average_monthly_consumption', 'stkout_days', 'qty_received', 'closing_bal', 'month']
 lmis[numeric_cols] = lmis[numeric_cols].applymap(clean_convert)
@@ -499,7 +511,7 @@ def create_full_dataset(_df):
     print("feature merge complete")
     return _df
 
-# TODO some columns can be dropped fac_name	item	year	month_num	index	district	fac_level	fac_owner	month	program	closing_bal	dispensed	stkout_days	average_monthly_consumption	qty_received	fac_type	year_month	program_item	opening_bal
+# TODO for the agg function to run without warnings, the columns which are not used need to be dropped
 
 lmis['year_month'] = lmis['year'].astype(str) + "_" +  lmis['month'].astype(str) # concatenate month and year for plots
 generate_summary_heatmap(_df = lmis,
@@ -664,12 +676,17 @@ generate_summary_heatmap(_df = lmis,
 print("After interpolation 3\n", lmis.groupby(['program', 'year'])['stkout_days'].mean())
 print("After interpolation 3\n", lmis.groupby('year')['stkout_days'].mean(), lmis.groupby('year')['stkout_days'].count())
 
+# %%
 # 4. CALCULATE STOCK OUT RATES BY MONTH and FACILITY ##
 #########################################################################################
 lmis['stkout_prob'] = lmis['stkout_days']/lmis['month_length']
-#lmis.to_csv(figurespath / 'lmis_with_prob.csv')
-#lmis_with_updated_names = pd.read_csv(figurespath / 'lmis_with_prob.csv', low_memory = False)[1:300000]
-#lmis_with_updated_names = lmis_with_updated_names.drop('Unnamed: 0', axis = 1)
+
+"""
+# Use this code if data has to be saved to be re-read in order to avoid repeating the slow compilation process above
+lmis.to_csv(figurespath / 'lmis_with_prob.csv')
+lmis_with_updated_names = pd.read_csv(figurespath / 'lmis_with_prob.csv', low_memory = False)[1:300000]
+lmis_with_updated_names = lmis_with_updated_names.drop('Unnamed: 0', axis = 1)
+"""
 
 print("Before accounting for substitutes\n", lmis.groupby('year')['stkout_prob'].mean())
 
@@ -724,23 +741,13 @@ lmis['available_prob'] = 1 - lmis['stkout_prob']
 
 print("After accounting for substitutes\n", lmis.groupby('year')['stkout_prob'].mean())
 
-
+# %%
 # 5. LOAD CLEANED MATCHED CONSUMABLE LIST FROM TLO MODEL AND MERGE WITH LMIS DATA ##
 ####################################################################################
 '''
-# Update matched consumable name where the name in the OpenLMIS data was updated in September
-def replace_old_item_names_in_lmis_data(_df, item_dict):
-    """Return a dataframe with old LMIS consumable names replaced with the new name"""
-    for item in item_dict:
-        cond_oldname = _df.item == item_dict[item]
-        _df.loc[cond_oldname, 'item'] = item
-    return _df
-
-
-matched_consumables = replace_old_item_names_in_lmis_data(matched_consumables, inconsistent_item_names_mapping)
-'''
+# Use this code if data has to be saved to be re-read in order to avoid repeating the slow compilation process above
 lmis.to_pickle(figurespath / "lmis.pkl")
-
+'''
 # Merge data with LMIS data
 tlo_cons_availability = pd.merge(tlo_lmis_mapping, lmis,  how='left', on='item') # TODO should how be inner
 #tlo_cons_availability = tlo_cons_availability.sort_values('data_source')
@@ -823,6 +830,7 @@ tlo_cons_availability = tlo_cons_availability[
      'data_source']]
 tlo_cons_availability.groupby(['year', 'module_name'])['available_prob'].mean()
 #tlo_cons_availability.to_csv(figurespath / 'availability_df.csv')
+
 # Save the DataFrame to a pickle file
 tlo_cons_availability.to_pickle(figurespath / "tlo_cons_availability.pkl")
 #tlo_cons_availability = pd.read_pickle(figurespath / "tlo_cons_availability.pkl")
@@ -835,32 +843,25 @@ availability_summary = tlo_cons_availability.groupby(['year', 'month', 'district
 }).reset_index()
 availability_summary.to_csv(figurespath / 'availability_summary.csv')
 
-
+# %%
 # 6. FILL GAPS USING HHFA SURVEY DATA OR ASSUMPTIONS ##
 #######################################################
+# TODO as done in the consumable_availability_estimation.py script, missing values need to be substituted for which assumptions or HHFA data
 
-'''
-# this section is added added to load data prepared upto this point because of the time taken by the above code to run
-lmis_wide = pd.read_csv(figurespath / 'lmis_wide.csv', low_memory = False, header=[0, 1], skipinitialspace=True)
-lmis_wide = lmis_wide.drop([('Unnamed: 0_level_0',         'year_month')], axis = 1)
-unnamed_level1_columns = [(level0, '' if 'Unnamed' in level1 else level1) for level0, level1 in lmis_wide.columns]
-lmis_wide.columns = pd.MultiIndex.from_tuples(unnamed_level1_columns)
-'''
-
+# TO create the following figures
 # Bar chart of number of months during which each consumable was reported before and after cleaning names
-
 # List of new consumables which are reported from 2020 onwards
-
-# Calculate probability of availability based on the number of days of stock out
-
-# Address substitutes
-
-# Comparative plot of probability of consumable availability (consumable on X-axis, prob on y-axis)
-
 # Monthly availability plots for each year of data (heat map - program on the x-axis, month on the y-axis - one for each year)
 
-# Average heatmaps by program and level (how has availability change across years)
+# %%
+# 7. DATA VISUALISATION ##
+#######################################################
+# TODO create the following figures
+# Bar chart of number of months during which each consumable was reported before and after cleaning names
+# List of new consumables which are reported from 2020 onwards
+# Monthly availability plots for each year of data (heat map - program on the x-axis, month on the y-axis - one for each year)
 
+# Average heatmaps by level (how has availability change across years)
 generate_summary_heatmap(_df = tlo_cons_availability,
                          x_var = 'fac_level',
                          y_var = 'year',
@@ -868,13 +869,15 @@ generate_summary_heatmap(_df = tlo_cons_availability,
                          value_label = 'Average Pr(availability)',
                          summary_func='mean')
 
+# Average heatmaps by MODULE (how has availability change across years)
 generate_summary_heatmap(_df = tlo_cons_availability,
                          x_var = 'module_name',
-                         y_var = 'year_month',
+                         y_var = 'year',
                          value_var = 'available_prob',
                          value_label = 'Average Pr(availability)',
                          summary_func='mean')
 
+# Average heatmaps by district (how has availability change across years)
 generate_summary_heatmap(_df = tlo_cons_availability,
                          x_var = 'district',
                          y_var = 'year',
@@ -882,14 +885,14 @@ generate_summary_heatmap(_df = tlo_cons_availability,
                          value_label = 'Average Pr(availability)',
                          summary_func='mean')
 
-time_taken = time.time() - start
+time_taken = time.time() - start # Record the number of seconds taken to complete this exercise
 print(f'Time: {time.time() - start}')
 
-# FULL INTERPOLATION
+# TODO INTERPOLATE FOR ALL MISSING DATA - see consumable_availability_estimation.py
 
-###########################################################################################################
-## TREND ANALYSIS ##
-###########################################################################################################
+# Clean program names
+#----------------------------------------------------
+tlo_cons_availability = pd.read_pickle(figurespath / "6 Aug/tlo_cons_availability.pkl")
 # ---Generate new category variable for analysis --- #
 tlo_cons_availability['category'] = tlo_cons_availability['module_name'].str.lower()
 cond_RH = (tlo_cons_availability['category'].str.contains('care_of_women_during_pregnancy')) | \
@@ -919,79 +922,109 @@ cond_general = tlo_cons_availability['item_code'].isin(general_cons_list)
 tlo_cons_availability.loc[cond_general, 'category'] = 'general'
 
 # TODO try the analysis below with LMIS data instead
-#import statsmodels.api as sm
-import statsmodels.formula.api as smf
 
-# Prepare dataframe for regression analysis
+# Add item designations and frequency of use
 item_designations = pd.read_csv(path_for_new_resourcefiles / 'ResourceFile_Consumables_Item_Designations.csv')
 item_designations = item_designations.rename(columns = {'Item_Code': 'item_code'})
 regression_df = pd.merge(tlo_cons_availability, item_designations, on = 'item_code', how = 'left', validate = "m:1")
 
-#columns = ['fac_name', 'item', 'year', 'month', 'module_name', 'fac_level', 'district']
-#var_of_interest = 'available_prob'
+frequency_of_use = pd.read_csv(outputfilepath / 'openlmis_data/3_Table_Of_Frequency_Consumables_Requested.csv')
+frequency_of_use = frequency_of_use.rename(columns = {'Item_Code': 'item_code'})
+frequency_of_use = frequency_of_use[~frequency_of_use.item_code.duplicated(keep='first')]
+regression_df = pd.merge(regression_df, frequency_of_use, on = 'item_code', how = 'left', validate = "m:1")
+regression_df.loc[regression_df.rel_freq.notna(), 'priority_category'] = 'prioritised_consumables'
+regression_df.loc[regression_df.rel_freq.isna(), 'priority_category'] = 'other'
 
-# Fully specified linear regression model
+frequency_of_use_perfect_availability = pd.read_csv(outputfilepath / 'openlmis_data/Table_Of_Frequency_Consumables_Requested_perfect_availability.csv')
+frequency_of_use_perfect_availability = frequency_of_use_perfect_availability.rename(columns = {'Item_Code': 'item_code', 'rel_freq': 'rel_freq_perfect'})
+frequency_of_use_perfect_availability = frequency_of_use_perfect_availability[~frequency_of_use_perfect_availability.item_code.duplicated(keep='first')]
+regression_df = pd.merge(regression_df, frequency_of_use_perfect_availability, on = 'item_code', how = 'left', validate = "m:1")
+regression_df.loc[regression_df['rel_freq_perfect'].isna(), 'rel_freq_perfect'] = 0
+regression_df['available_prob_weighted'] = (regression_df['available_prob'] * regression_df['rel_freq_perfect'])/regression_df['rel_freq_perfect'].sum()
+
+# Summary visualisations
+#----------------------------------------------------
+def visualise_time_trend(_df, group, stat, var = 'available_prob', figname_suffix = '', subgroup = 'All consumables'):
+    # Only allow mean or median
+    if stat not in ['mean', 'median', 'sum']:
+        raise ValueError("Stat must be 'mean' or 'median'")
+
+    # Calculate the overall mean per year (across all items)
+    overall_trend = _df.groupby('year')[var].agg(stat)
+    # Calculate mean outcome by chosen group per year
+    group_trends = _df.groupby(['year', group])[var].agg(stat).unstack()
+
+    # Sorting categories based on the first year's data
+    first_year = group_trends.index.min()
+    sorted_categories = group_trends.loc[first_year].sort_values(ascending=False).index
+
+    # Plotting
+    fig, ax = plt.subplots(figsize=(10, 6))
+    # Plot overall trend, make it bold
+    ax.plot(overall_trend.index, overall_trend, label='Overall Trend', linewidth=3, color='black')
+    # Plot group trends
+    for g in sorted_categories:
+        ax.plot(group_trends.index, group_trends[g], label=f'{g}', linestyle='--')
+
+    # Adding labels and title
+    ax.set_xlabel('Year')
+    ax.set_ylabel(f'{stat} probability that consumable is available')
+    ax.set_title(f'Trends of consumable availability ({subgroup})')
+
+
+    ax.set_ylim(0, 1.15) # Setting y-axis limits
+    ax.legend(title='Category', loc='center left', bbox_to_anchor=(1, 0.5)) # Adding a legend
+    # Exclude certain years from x-axis
+    desired_years = [year for year in overall_trend.index if year not in [2019, 2020]]
+    ax.set_xticks(desired_years)
+    ax.set_xticklabels(desired_years)
+    # Adding a footnote
+    footnote_text = "Note: Consumable availability data is available only for 2018, 2021, 2022 and 2023."
+    fig.text(0.5, 0.01, footnote_text, ha='center', va='bottom', fontsize=8, color='gray')
+
+    # Save plot
+    plt.savefig(figurespath / f'{stat}_time_trend_by_{group}{figname_suffix}.png',  bbox_inches='tight')
+    plt.close()
+
+# Plot mean values
+visualise_time_trend(regression_df, 'category', 'mean', figname_suffix ='_FullData')
+visualise_time_trend(regression_df, 'fac_level', 'mean', figname_suffix ='_FullData')
+visualise_time_trend(regression_df, 'is_vital', 'mean', figname_suffix ='_FullData')
+visualise_time_trend(regression_df, 'priority_category', 'mean', figname_suffix ='_FullData')
+
+# Plot median values
+visualise_time_trend(regression_df[['item_code', 'category', 'fac_name', 'available_prob', 'year']].groupby(['category','item_code', 'fac_name', 'year'])['available_prob'].mean().reset_index(), 'category', 'median', figname_suffix ='_MonthlyDataCollapsed')
+visualise_time_trend(regression_df[['item_code', 'fac_level',  'fac_name', 'available_prob', 'year']].groupby(['fac_level', 'item_code', 'fac_name', 'year'])['available_prob'].mean().reset_index(), 'fac_level', 'median', figname_suffix ='_MonthlyDataCollapsed')
+visualise_time_trend(regression_df[['item_code', 'is_vital',  'fac_name', 'available_prob', 'year']].groupby(['is_vital', 'item_code', 'fac_name', 'year'])['available_prob'].mean().reset_index(), 'is_vital', 'median', figname_suffix ='_MonthlyDataCollapsed')
+visualise_time_trend(regression_df[['item_code', 'priority_category', 'fac_name', 'available_prob', 'year']].groupby(['priority_category','item_code', 'fac_name', 'year'])['available_prob'].mean().reset_index(), 'priority_category', 'median', figname_suffix ='_MonthlyDataCollapsed')
+
+# Plots by subsets
+hiv_subset = regression_df[(regression_df.category.isin(['hiv'])) & (regression_df.priority_category == 'prioritised_consumables')]
+tb_subset = regression_df[(regression_df.category.isin(['tb']))  & (regression_df.priority_category == 'prioritised_consumables')]
+malaria_subset = regression_df[(regression_df.category.isin(['malaria']))  & (regression_df.priority_category == 'prioritised_consumables')]
+visualise_time_trend(hiv_subset[['item_code', 'fac_level', 'fac_name', 'available_prob', 'year']].groupby(['fac_level','item_code', 'fac_name', 'year'])['available_prob'].mean().reset_index(), 'fac_level', 'median', var = 'available_prob', figname_suffix = '_MonthlyDataCollapsed_HIV', subgroup = 'HIV - Prioritised consumables')
+visualise_time_trend(tb_subset[['item_code', 'fac_level', 'fac_name', 'available_prob', 'year']].groupby(['fac_level','item_code', 'fac_name', 'year'])['available_prob'].mean().reset_index(), 'fac_level', 'median', var = 'available_prob', figname_suffix = '_MonthlyDataCollapsed_TB', subgroup = 'TB - Prioritised consumables')
+visualise_time_trend(malaria_subset[['item_code', 'fac_level', 'fac_name', 'available_prob', 'year']].groupby(['fac_level','item_code', 'fac_name', 'year'])['available_prob'].mean().reset_index(), 'fac_level', 'median', var = 'available_prob', figname_suffix = '_MonthlyDataCollapsed_Malaria', subgroup = 'Malaria - Prioritised consumables')
+visualise_time_trend(hiv_subset, 'fac_level', 'mean', var = 'available_prob', figname_suffix = '_FullData_HIV', subgroup = 'HIV - Prioritised consumables')
+visualise_time_trend(tb_subset, 'fac_level', 'mean', var = 'available_prob', figname_suffix = '_FullData_TB', subgroup = 'TB - Prioritised consumables')
+visualise_time_trend(malaria_subset, 'fac_level', 'mean', var = 'available_prob', figname_suffix = '_FullData_Malaria', subgroup = 'Malaria - Prioritised consumables')
+
+# Regression analysis
+#----------------------------------------------------
+# Theoretical Fully specified linear regression model
 # available_prob ~ year + month + HIV/TB/Malaria + fac_level + district + *eml* + *drug_or_consumable* + fac_level*year + district*year + eml*year + drug_or_consumable*year + HIV/TB/Malaria*year
+# Prepare data for regression analysis
+all_cols = ['available_prob', 'year', 'category', 'is_vital', 'fac_level', 'district', 'item_code', 'month', 'fac_name']
+regression_cols = [col for col in all_cols if col != 'available_prob']
+regression_subset_df = regression_df[regression_df.priority_category == 'prioritised_consumables'][all_cols]
+regression_subset_df.to_csv(outputfilepath / 'openlmis_data/regression_subset_df.csv', index = False) # This data is then analysed on R
+regression_subset_df = regression_subset_df.groupby(regression_cols)['available_prob'].mean().reset_index()
+regression_subset_df = regression_subset_df.dropna()
 
-## 1 Line plot to visualise trend
-# Calculate mean outcome per item per year
-item_trends = regression_df.groupby(['year', 'item_code']).available_prob.mean().unstack()
-# Calculate the overall mean per year (across all items)
-overall_trend = regression_df.groupby('year').available_prob.mean()
-# Calculate mean outcome per fac_level per year
-fac_level_trends = regression_df.groupby(['year', 'fac_level']).available_prob.mean().unstack()
-
-# Plotting
-fig, ax = plt.subplots(figsize=(10, 6))
-# Plot each item trend
-#for item in item_trends.columns:
-#    ax.plot(item_trends.index, item_trends[item], label=item)
-# Plot overall trend, make it bold
-ax.plot(overall_trend.index, overall_trend, label='Overall Trend', linewidth=3, color='black')
-# Plot fac_level trends
-for level in fac_level_trends.columns:
-    ax.plot(fac_level_trends.index, fac_level_trends[level], label=f'{level} Level Avg', linestyle='--')
-
-# Adding labels and title
-ax.set_xlabel('Year')
-ax.set_ylabel('Average probability that consumable is available')
-ax.set_title('Trends of consumable availability')
-
-# Save plot
-plt.savefig(figurespath / 'availability_time_trend_by_item_and_level.png')
-
-## 2 Line plot to visualise trend
-# Calculate the overall mean per year (across all items)
-overall_trend = regression_df.groupby('year').available_prob.mean()
-# Calculate mean outcome per fac_level per year
-category_trends = regression_df.groupby(['year', 'category']).available_prob.mean().unstack()
-
-# Sorting categories based on the first year's data
-first_year = category_trends.index.min()
-sorted_categories = category_trends.loc[first_year].sort_values(ascending=False).index
-
-# Plotting
-fig, ax = plt.subplots(figsize=(10, 6))
-# Plot overall trend, make it bold
-ax.plot(overall_trend.index, overall_trend, label='Overall Trend', linewidth=3, color='black')
-# Plot category trends
-for category in sorted_categories:
-    ax.plot(category_trends.index, category_trends[category], label=f'{category} Avg', linestyle='--')
-
-# Adding labels and title
-ax.set_xlabel('Year')
-ax.set_ylabel('Average probability that consumable is available')
-ax.set_title('Trends of consumable availability')
-
-# Setting y-axis limits
-ax.set_ylim(0, 1)
-# Adding a legend
-ax.legend(title='Category', loc='center left', bbox_to_anchor=(1, 0.5))
-
-# Save plot
-plt.savefig(figurespath / 'availability_time_trend_by_item_and_program.png',  bbox_inches='tight')
-
+"""
 # Linear model
+#-------------
+import statsmodels.formula.api as smf
 _df = regression_df
 model = smf.ols('available_prob ~ year + is_vital + is_drug_or_vaccine + is_diagnostic + fac_level + district', data=_df).fit()
 # Print the summary of the regression
@@ -1003,14 +1036,28 @@ writer = pd.ExcelWriter((figurespath / 'model_results.xlsx'), engine='xlsxwriter
 summary_df.to_excel(writer, sheet_name='linear_model', index=False)
 writer.save()
 
-# Mixed effects regression model (random effects for fac_name and item)
-# Fit Random Effects Model using statsmodels
+model = smf.ols('available_prob ~ year + is_vital + is_drug_or_vaccine + is_diagnostic + fac_level + fac_level*year + district', data=_df).fit()
+
+
+# Mixed-effects model
+#---------------------
+# Mixed effects regression model (random effects for item)
 # 'item' is considered as a group with random effects
-regression_cols = ['available_prob', 'year', 'is_vital', 'is_drug_or_vaccine', 'is_diagnostic', 'fac_level', 'district', 'item_code']
-_df = regression_df[regression_cols].dropna()
-re_model = smf.mixedlm("available_prob ~ year + is_vital + is_drug_or_vaccine + is_diagnostic + fac_level + district", data=_df, groups=_df['item_code'],
+re_model_full = smf.mixedlm("available_prob ~ year + category + is_vital + fac_level + district +  is_vital* year + year * category + year * fac_level", data=regression_subset_df, groups=regression_subset_df[['item_code', 'fac_name']],
                     re_formula="1").fit()
-print(re_model.summary())
+print(re_model_full.summary())
+
+from pymer4.models import Lmer
+
+re_model2 = Lmer("available_prob ~ year + category + is_vital + fac_level + district+ (1|item_code)",
+             data=regression_subset_df, family = 'binomial').fit()
+print(re_model2.summary())
+
+# Calculate the average marginal effects
+marginal_effects = re_model.get_margeff(at='mean', method='dydx')
+# Display the summary of marginal effects
+print(marginal_effects.summary())
+
 #re_formula = "~year" for slope of year to vary by item
 summary_df = pd.DataFrame(re_model.summary().tables[1])
 file_path = (figurespath / 'model_results.xlsx')
@@ -1018,77 +1065,4 @@ with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='rep
     # Write DataFrame to a new sheet named 'NewData'
     summary_df.to_excel(writer, sheet_name='re_model', index=True)
 
-# Descriptive analysis
-# Number of facilities reporting by level
-generate_summary_heatmap(_df = lmis,
-                         x_var = 'year_month',
-                         y_var = 'fac_level',
-                         value_var = 'fac_name',
-                         value_label = 'Number of facilities reporting',
-                         summary_func='nunique')
-
-# Number of facilities reporting by program
-generate_summary_heatmap(_df = lmis,
-                         x_var = 'year_month',
-                         y_var = 'program',
-                         value_var = 'fac_name',
-                         value_label = 'Number of facilities reporting',
-                         summary_func='nunique')
-
-
-# Number of consumables reported by level
-generate_summary_heatmap(_df = lmis,
-                         x_var = 'year_month',
-                         y_var = 'fac_level',
-                         value_var = 'item',
-                         value_label = 'Number of consumables reported',
-                         summary_func='nunique')
-
-# Number of consumables reported by program
-generate_summary_heatmap(_df = lmis,
-                         x_var = 'year_month',
-                         y_var = 'program',
-                         value_var = 'item',
-                         value_label = 'Number of consumables reported',
-                         summary_func='nunique')
-
-# Number of stkout_days by program
-generate_summary_heatmap(_df = lmis,
-                         x_var = 'year_month',
-                         y_var = 'fac_level',
-                         value_var = 'stkout_days',
-                         value_label = 'Average number of stockout days',
-                         summary_func='mean')
-
-# Number of stkout_days by level
-generate_summary_heatmap(_df = lmis,
-                         x_var = 'year_month',
-                         y_var = 'program',
-                         value_var = 'stkout_days',
-                         value_label = 'Average number of stockout days',
-                         summary_func='mean')
-
-# Number of stkout_days by level and program
-generate_summary_heatmap(_df = lmis,
-                         x_var = 'program',
-                         y_var = 'fac_level',
-                         value_var = 'stkout_days',
-                         value_label = 'Average number of stockout days',
-                         summary_func='mean')
-
-# Number of facilities reporting by level and program
-generate_summary_heatmap(_df = lmis,
-                         x_var = 'program',
-                         y_var = 'fac_level',
-                         value_var = 'fac_name',
-                         value_label = 'Number of facilities reporting',
-                         summary_func='nunique')
-
-# Number of consumables reported by level and program
-generate_summary_heatmap(_df = lmis,
-                         x_var = 'program',
-                         y_var = 'fac_level',
-                         value_var = 'item',
-                         value_label = 'Number of consumables reported',
-                         summary_func='nunique')
-
+"""
