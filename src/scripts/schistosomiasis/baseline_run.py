@@ -4,16 +4,16 @@ and runs with no MDA running
 outputs can be plotted against data to check calibration
 
 check the batch configuration gets generated without error:
-tlo scenario-run --draw-only src/scripts/schistosomiasis/scenario_runs.py
+tlo scenario-run --draw-only src/scripts/schistosomiasis/baseline_run.py
 
 Run locally:
-tlo scenario-run src/scripts/schistosomiasis/scenario_runs.py
+tlo scenario-run src/scripts/schistosomiasis/baseline_run.py
 
 or execute a single run:
-tlo scenario-run src/scripts/schistosomiasis/scenario_runs.py --draw 1 0
+tlo scenario-run src/scripts/schistosomiasis/baseline_run.py --draw 1 0
 
 Run on the batch system using:
-tlo batch-submit src/scripts/schistosomiasis/scenario_runs.py
+tlo batch-submit src/scripts/schistosomiasis/baseline_run.py
 
 """
 
