@@ -545,8 +545,7 @@ class HealthBurden(Module):
         # 5) Log the prevalence of each disease
         log_df_line_by_line(
             key='prevalence_of_diseases',
-            description='Prevalence of each disease., '
-                        'broken down by year, sex, age-group',
+            description='Prevalence of each disease.',
             df=(self.prevalence_of_diseases),
             force_cols= self.recognised_modules_names,
         )
@@ -694,20 +693,20 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
             prevalence_from_disease_module = disease_module.report_prevalence()
 
             if disease_module_name == "CardioMetabolicDisorders":
-                prevalence_from_disease_module = pd.DataFrame(prevalence_from_disease_module)
+                for i, column_name in enumerate(prevalence_from_disease_module.columns):
+                    prevalence_from_each_disease_module[column_name] = prevalence_from_disease_module.iloc[:, i]
             else:
                 prevalence_from_disease_module = pd.DataFrame([[prevalence_from_disease_module]])
 
-            column_name = ("Intrapartum stillbirth" if disease_module_name == "Labour" else
-                           "Antenatal stillbirth" if disease_module_name == "PregnancySupervisor" else
-                           disease_module_name)
+                column_name = ("Intrapartum stillbirth" if disease_module_name == "Labour" else
+                               "Antenatal stillbirth" if disease_module_name == "PregnancySupervisor" else
+                               disease_module_name)
 
-            # Add the prevalence data as a new column to the DataFrame
-            prevalence_from_each_disease_module[column_name] = prevalence_from_disease_module.iloc[:, 0]
+                # Add the prevalence data as a new column to the DataFrame
+                prevalence_from_each_disease_module[column_name] = prevalence_from_disease_module.iloc[:, 0]
         maternal_mortality = pd.DataFrame(self.sim.modules['Demography'].report_prevalence()) # Already a dataframe
         prevalence_from_each_disease_module['newborn_deaths'] = maternal_mortality.iloc[:,0]
         prevalence_from_each_disease_module['maternal_deaths'] = maternal_mortality.iloc[:,1]
-        print(prevalence_from_each_disease_module)
 
         # (Nb. this will add columns that are not otherwise present and add values to columns where they are.)
 
