@@ -999,7 +999,7 @@ class Alri(Module, GenericFirstAppointmentsMixin):
         # This returns dataframe that reports on the prevalence of ALRI for all individuals
         df = self.sim.population.props
         total_prev = len(
-            df[(df['is_alive']) & (df['ri_current_infection_status'] != False)]
+            df[(df['is_alive']) & (df['ri_current_infection_status'])]
         ) / len(df[df['is_alive']])
 
         return total_prev
