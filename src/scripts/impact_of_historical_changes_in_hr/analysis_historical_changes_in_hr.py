@@ -368,7 +368,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     1.0 - (total_num_dalys_by_label_results_averted_vs_baseline.loc['Other'] / total_num_dalys_by_label_results_averted_vs_baseline.sum())
 
     # todo repeat for different target periods
-    # todo include scenarios for consumables scale-up
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
