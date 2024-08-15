@@ -50,7 +50,7 @@ class TestScenario(BaseScenario):
 
         # todo reset
         self.end_date = Date(2023, 12, 31)
-        self.pop_size = 64_000  # todo if equal_allocation_by_district, 64,000=2k per district
+        self.pop_size = 160_000  # todo if equal_allocation_by_district, 64,000=2k per district, 160,000=5k/district
         self.runs_per_draw = 3
 
         self.mda_execute = True
