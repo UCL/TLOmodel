@@ -1091,7 +1091,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
 
         # Disability properties are mapped to DALY weights and stored for the health burden module
         total_prev_intrapartum_stillbirth = len(
-            (df[df['la_intrapartum_still_birth'] == True])
+            (df[df['la_intrapartum_still_birth']])
         ) / len( df['la_intrapartum_still_birth'])
 
         return total_prev_intrapartum_stillbirth
