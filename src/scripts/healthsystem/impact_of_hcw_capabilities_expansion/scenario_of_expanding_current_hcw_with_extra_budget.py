@@ -74,7 +74,7 @@ class LongRun(BaseScenario):
                         'HR_expansion_by_officer_type': list(self.scenarios.iloc[:, i])
                     }
                     }
-                ) for i in range(len(self.scenarios.columns))
+                ) for i in range(len(self.scenarios.columns) - 15)
         }
 
     def _baseline(self) -> Dict:
