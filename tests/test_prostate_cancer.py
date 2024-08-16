@@ -34,18 +34,18 @@ def make_simulation_healthsystemdisabled(seed):
     """Make the simulation with:
     * the demography module with the OtherDeathsPoll not running
     """
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 prostate_cancer.ProstateCancer(resourcefilepath=resourcefilepath))
+    sim.register(demography.Demography(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(disable=True),
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthburden.HealthBurden(),
+                 oesophagealcancer.OesophagealCancer(),
+                 simplified_births.SimplifiedBirths(),
+                 prostate_cancer.ProstateCancer())
     return sim
 
 
@@ -53,18 +53,18 @@ def make_simulation_nohsi(seed):
     """Make the simulation with:
     * the healthsystem enable but with no service availabilty (so no HSI run)
     """
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=[]),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 prostate_cancer.ProstateCancer(resourcefilepath=resourcefilepath)
+    sim.register(demography.Demography(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(service_availability=[]),
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthburden.HealthBurden(),
+                 oesophagealcancer.OesophagealCancer(),
+                 simplified_births.SimplifiedBirths(),
+                 prostate_cancer.ProstateCancer()
                  )
     return sim
 

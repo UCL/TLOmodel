@@ -34,9 +34,8 @@ logger.setLevel(logging.INFO)
 class ProstateCancer(Module, GenericFirstAppointmentsMixin):
     """Prostate Cancer Disease Module"""
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
         self.linear_models_for_progression_of_pc_status = dict()
         self.lm_prostate_ca_onset_urinary_symptoms = None
         self.lm_onset_pelvic_pain = None
@@ -196,12 +195,12 @@ class ProstateCancer(Module, GenericFirstAppointmentsMixin):
         )
     }
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath=None):
         """Setup parameters used by the module, now including disability weights"""
 
         # Update parameters from the resourcefile
         self.load_parameters_from_dataframe(
-            pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_Prostate_Cancer.xlsx",
+            pd.read_excel(Path(resourcefilepath) / "ResourceFile_Prostate_Cancer.xlsx",
                           sheet_name="parameter_values")
         )
 

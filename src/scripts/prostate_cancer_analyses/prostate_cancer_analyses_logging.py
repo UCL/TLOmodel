@@ -18,6 +18,9 @@ from tlo.methods import (
     pregnancy_supervisor,
     prostate_cancer,
     symptommanager,
+    hiv,
+    tb,
+    epi,
 )
 
 # Where will outputs go
@@ -27,7 +30,7 @@ outputpath = Path("./outputs")  # folder for convenience of storing outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource files
-resourcefilepath = Path("./resources")
+resourcefilepath = './resources'
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2020,  1, 1)
@@ -49,7 +52,7 @@ log_config = {
         #  'tlo.methods.bladder_cancer': logging.INFO,
     }
 }
-sim = Simulation(start_date=start_date, seed=1, log_config=log_config)
+sim = Simulation(start_date=start_date, seed=1, log_config=log_config, resourcefilepath=resourcefilepath)
 
 
 # make a dataframe that contains the switches for which interventions are allowed or not allowed
@@ -57,20 +60,23 @@ sim = Simulation(start_date=start_date, seed=1, log_config=log_config)
 
 # Register the appropriate modules
 sim.register(
-    care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-    demography.Demography(resourcefilepath=resourcefilepath),
-    contraception.Contraception(resourcefilepath=resourcefilepath),
-    enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-    healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
-    symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-    healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-    labour.Labour(resourcefilepath=resourcefilepath),
-    newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-    pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-    postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-    bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
-    prostate_cancer.ProstateCancer(resourcefilepath=resourcefilepath)
+    care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(),
+    demography.Demography(),
+    contraception.Contraception(),
+    enhanced_lifestyle.Lifestyle(),
+    healthsystem.HealthSystem(),
+    symptommanager.SymptomManager(),
+    healthseekingbehaviour.HealthSeekingBehaviour(),
+    healthburden.HealthBurden(),
+    labour.Labour(),
+    newborn_outcomes.NewbornOutcomes(),
+    pregnancy_supervisor.PregnancySupervisor(),
+    postnatal_supervisor.PostnatalSupervisor(),
+    bladder_cancer.BladderCancer(),
+    prostate_cancer.ProstateCancer(),
+    hiv.Hiv(),
+    tb.Tb(),
+    epi.Epi()
 )
 
 # Run the simulation and flush the logger
