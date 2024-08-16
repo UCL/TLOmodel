@@ -704,9 +704,9 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
 
                 # Add the prevalence data as a new column to the DataFrame
                 prevalence_from_each_disease_module[column_name] = prevalence_from_disease_module.iloc[:, 0]
-        maternal_mortality = pd.DataFrame(self.sim.modules['Demography'].report_prevalence()) # Already a dataframe
-        prevalence_from_each_disease_module['newborn_deaths'] = maternal_mortality.iloc[:,0]
-        prevalence_from_each_disease_module['maternal_deaths'] = maternal_mortality.iloc[:,1]
+        #maternal_mortality = pd.DataFrame(self.sim.modules['Demography'].report_prevalence()) # Already a dataframe
+        #prevalence_from_each_disease_module['newborn_deaths'] = maternal_mortality.iloc[:,0]
+        #prevalence_from_each_disease_module['maternal_deaths'] = maternal_mortality.iloc[:,1]
 
         # (Nb. this will add columns that are not otherwise present and add values to columns where they are.)
 
