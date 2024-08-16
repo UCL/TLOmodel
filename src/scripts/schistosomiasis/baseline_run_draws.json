@@ -1,0 +1,14 @@
+{
+  "scenario_script_path": "src/scripts/schistosomiasis/baseline_run.py",
+  "scenario_seed": 23508,
+  "arguments": [],
+  "runs_per_draw": 3,
+  "draws": [
+    {
+      "draw_number": 0,
+      "parameters": null
+    }
+  ],
+  "commit": "55012685c544c472e3574be3d4069be035d1d3c3",
+  "github": "https://github.com/UCL/TLOmodel/tree/55012685c544c472e3574be3d4069be035d1d3c3"
+}

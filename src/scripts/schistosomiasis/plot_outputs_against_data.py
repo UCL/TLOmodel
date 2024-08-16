@@ -38,7 +38,8 @@ resourcefilepath = Path("./resources")
 
 outputpath = Path("./outputs/t.mangal@imperial.ac.uk")
 
-results_folder = get_scenario_outputs("schisto_calibration.py", outputpath)[-1]
+# results_folder = get_scenario_outputs("schisto_calibration.py", outputpath)[-1]
+results_folder = get_scenario_outputs("schisto_scenarios.py", outputpath)[-1]
 
 # Declare path for output graphs from this script
 def make_graph_file_name(name):
@@ -313,133 +314,158 @@ plot_2010model_prevalence_with_2010_2015data(species, include='HML')
 plot_2010_2015model_prevalence_with_2010_2015data(species, include='HM')
 
 
+# ----------- PLOT LATEST DATA -----------------
+species = 'haematobium'
+tmp2022 = get_model_prevalence_one_year(spec=species, year=2019, include="HML", summarise=False)
+df = pd.DataFrame(tmp2022)
+
+# Assuming df and data are your DataFrames
+# df has columns for every district, and the first row is model_prevalence
+# data has rows for every district, with a column mean_prev for prevalence
+
+# Convert df first row (model_prevalence) into a Series
+model_prevalence = df.iloc[0]*100
+
+# Extract the district names (column names in df) and corresponding model prevalence
+districts = model_prevalence.index
+model_prev_values = model_prevalence.values
+
+# Extract the actual prevalence from the data DataFrame
+data = pd.read_excel(resourcefilepath / 'ResourceFile_Schisto.xlsx',
+                                             sheet_name='LatestData_' + species.lower())
+actual_prev_values = data['mean_prevalence2019'].values
+
+# Create a scatter plot
+plt.figure(figsize=(10, 8))
+sns.scatterplot(x=actual_prev_values, y=model_prev_values, s=100, color="blue")
+
+# Add a grey dashed line where x = y
+plt.plot([min(actual_prev_values), max(actual_prev_values)],
+         [min(actual_prev_values), max(actual_prev_values)],
+         ls="--", color="grey")
+
+# Add labels to each point
+for i, district in enumerate(districts):
+    plt.text(actual_prev_values[i], model_prev_values[i], district, fontsize=9, ha='right')
+
+# Set labels and title
+plt.xlabel('Reported Prevalence')
+plt.ylabel('Model Prevalence')
+plt.title(f'Comparison of Reported vs. Model Prevalence by District {species.upper()}')
+
+# Show plot
+plt.show()
 
 
+def generate_prevalence_comparison_plots(year):
+    species_list = ['haematobium', 'mansoni']
 
+    # Create subplots
+    fig, axes = plt.subplots(1, 2, figsize=(20, 8))
 
+    for i, _spec in enumerate(species_list):
+        # Get model prevalence for the specified species and year
+        tmp = get_model_prevalence_one_year(spec=_spec, year=year, include="HML", summarise=False)
+        df = pd.DataFrame(tmp)
 
+        # Assuming df and data are your DataFrames
+        # df has columns for every district, and the first row is model_prevalence
+        model_prevalence = df.iloc[0] * 100  # Convert to percentage if needed
 
+        # Extract the district names (column names in df) and corresponding model prevalence
+        districts = model_prevalence.index
+        model_prev_values = model_prevalence.values
 
+        # Extract the actual prevalence from the data DataFrame
+        data = pd.read_excel(resourcefilepath / 'ResourceFile_Schisto.xlsx',
+                             sheet_name='LatestData_' + _spec.lower())
+        actual_prev_values = data[f'mean_prevalence{year}'].values
 
-
-
-# ----------- PLOTS -----------------
-
-# Districts with prevalence fitted
-# # todo include HM only or HML for all infections in model
-
-def plot_2010model_prevalence_with_2010data(species, include='HM'):
-    fig, axes = plt.subplots(2, 1, sharex=True, figsize=(10, 8))
-
-    for i, _spec in enumerate(species):
+        # Plot on the appropriate subplot
         ax = axes[i]
+        sns.scatterplot(x=actual_prev_values, y=model_prev_values, s=100, color="blue", ax=ax)
 
-        # Fetch expected and model prevalence data
-        data_2010 = get_expected_prevalence_by_district_2010(_spec)
-        model_prevalence_stats = get_model_prevalence_one_year(_spec, year=2010, include=include)
+        # Add a grey dashed line where x = y
+        ax.plot([min(actual_prev_values), max(actual_prev_values)],
+                [min(actual_prev_values), max(actual_prev_values)],
+                ls="--", color="grey")
 
-        # Extract median and confidence intervals
-        districts = list(model_prevalence_stats.keys())
-        median_values = [model_prevalence_stats[d]['median'] for d in districts]
-        lower_bounds = [model_prevalence_stats[d]['percentile_2.5'] for d in districts]
-        upper_bounds = [model_prevalence_stats[d]['percentile_97.5'] for d in districts]
+        # Add labels to each point
+        for j, district in enumerate(districts):
+            ax.text(actual_prev_values[j], model_prev_values[j], district, fontsize=9, ha='right')
 
-        # Calculate error bars
-        yerr_lower = [median_values[j] - lower_bounds[j] for j in range(len(median_values))]
-        yerr_upper = [upper_bounds[j] - median_values[j] for j in range(len(median_values))]
-        yerr = [yerr_lower, yerr_upper]
+        # Set labels and title for each subplot
+        ax.set_xlabel('Reported Prevalence')
+        ax.set_ylabel('Model Prevalence')
+        ax.set_title(f'{_spec.capitalize()} - Comparison of Reported vs. Model Prevalence ({year})')
 
-        # Plot Data 2010 points
-        data_prevalence = [data_2010[d] for d in districts]
-        x_districts = range(len(districts))
-
-        # Stagger the points
-        offset = 0.2
-        x_data = [x - offset for x in x_districts]
-        x_model = [x + offset for x in x_districts]
-
-        # Plot Data 2010 points
-        ax.plot(x_data, data_prevalence, 'o', label='Data 2010', color='blue')
-
-        # Plot Model 2010 median with error bars
-        ax.errorbar(x_model, median_values, yerr=yerr, fmt='none', ecolor='red', capsize=4)
-        ax.plot(x_model, median_values, '_', markersize=10, color='red', label='Model 2010')
-
-        # Add vertical lines between districts
-        for x in x_districts:
-            ax.axvline(x - 0.5, color='lightgrey', linestyle='--', linewidth=0.5)
-
-        ax.set_title(f"{_spec}")
-        ax.set_xlabel('District')
-        ax.set_ylabel('Prevalence 2010')
-        ax.set_ylim(0, 0.6)
-        ax.legend(loc=1)
-        ax.set_xticks(x_districts)
-        ax.set_xticklabels(districts, rotation=90)
-
-    fig.tight_layout()
-    # fig.savefig(make_graph_file_name('prev_in_districts_all'))
+    # Adjust layout to prevent overlap
+    plt.tight_layout()
     plt.show()
 
 
-plot_2010model_prevalence_with_2010data(species, include='HL')
+generate_prevalence_comparison_plots(2019)
 
 
-# -----------------------------------------------------------------------
-# Average prevalence with summarised survey data 2010-2015
+def generate_prevalence_comparison_plots_bars(year):
+    species_list = ['haematobium', 'mansoni']
 
+    # Create subplots
+    fig, axes = plt.subplots(2, 1, figsize=(15, 15))
 
-def plot_2010model_prevalence_with_2010_2015data(species, include='HM'):
-    fig, axes = plt.subplots(2, 1, sharex=True, figsize=(10, 8))
+    for i, _spec in enumerate(species_list):
+        # Get model prevalence for the specified species and year
+        tmp = get_model_prevalence_one_year(spec=_spec, year=year, include="HML", summarise=False)
+        df = pd.DataFrame(tmp)
 
-    for i, _spec in enumerate(species):
+        # Assuming df and data are your DataFrames
+        model_prevalence = df.iloc[0] * 100  # Convert to percentage if needed
+        districts = model_prevalence.index
+        model_prev_values = model_prevalence.values
+
+        # Extract the actual prevalence from the data DataFrame
+        data = pd.read_excel(resourcefilepath / 'ResourceFile_Schisto.xlsx', sheet_name='LatestData_' + _spec.lower())
+        endemicity = data['Endemicity2022'].astype(str).values  # Ensure all values are treated as strings
+        district_names = data['District'].values
+
+        # Map Endemicity2022 to prevalence ranges
+        prevalence_ranges = {
+            'Moderate prevalence (10%-49%)': (10, 49),
+            'High prevalence (50% and above)': (50, 100),
+            'Low prevalence (<10%)': (0, 10),
+            '0': (0, 0)
+        }
+
+        # Plot on the appropriate subplot
         ax = axes[i]
 
-        # Fetch expected and model prevalence data
-        data_2010 = get_expected_prevalence_by_district_2010_2015(_spec)
-        model_prevalence_stats = get_model_prevalence_one_year(_spec, year=2010, include=include)
+        # Plot the actual prevalence as bars
+        for j, endemicity_value in enumerate(endemicity):
+            bar_range = prevalence_ranges[endemicity_value]
+            ax.bar(district_names[j], bar_range[1] - bar_range[0], bottom=bar_range[0], color='lightblue')
 
-        # Extract median and confidence intervals from model prevalence stats
-        districts = list(model_prevalence_stats.keys())
-        median_values = [model_prevalence_stats[d]['median'] for d in districts]
-        lower_bounds = [model_prevalence_stats[d]['percentile_2.5'] for d in districts]
-        upper_bounds = [model_prevalence_stats[d]['percentile_97.5'] for d in districts]
+        # Plot the model prevalence as crosses
+        sns.scatterplot(x=districts, y=model_prev_values, s=100, color="red", marker='x', ax=ax,
+                        label='Model Prevalence')
 
-        # Calculate error bars for model data
-        yerr_lower_model = np.array(median_values) - np.array(lower_bounds)
-        yerr_upper_model = np.array(upper_bounds) - np.array(median_values)
-        yerr_model = [yerr_lower_model, yerr_upper_model]
-
-        # Plot Data 2010 points with error bars as confidence intervals
-        x_districts = np.arange(len(districts))
-        data_prevalence = np.array([data_2010[d]['mean_prevalence'] for d in districts])
-        min_prevalence = np.array([data_2010[d]['min_prevalence'] for d in districts])
-        max_prevalence = np.array([data_2010[d]['max_prevalence'] for d in districts])
-        yerr_data = [data_prevalence - min_prevalence, max_prevalence - data_prevalence]
-
-        # Stagger the x-coordinates
-        offset = 0.2
-        x_data = x_districts - offset
-        x_model = x_districts + offset
-
-        ax.errorbar(x_data, data_prevalence, yerr=yerr_data, fmt='_', color='blue', label='Data 2010-2015', capsize=4)
-        ax.errorbar(x_model, median_values, yerr=yerr_model, fmt='_', color='red',
-                    label='Model', capsize=4)
-
-        # Add vertical lines between districts
-        for x in x_districts:
-            ax.axvline(x - 0.5, color='lightgrey', linestyle='--', linewidth=0.5)
-
-        ax.set_title(f"{_spec}")
+        # Customize the plot
         ax.set_xlabel('District')
-        ax.set_ylabel('Prevalence in SAC')
-        ax.set_ylim(0, 1.0)  # Adjust as needed
-        ax.legend(loc=1)
-        ax.set_xticks(x_districts)
-        ax.set_xticklabels(districts, rotation=90)
+        ax.set_ylabel('Prevalence (%)')
+        ax.set_title(f'{_spec.capitalize()} - District-Wise Prevalence Comparison ({year})')
 
-    fig.tight_layout()
+        # Ensure that the number of ticks matches the number of districts
+        ax.set_xticks(range(len(district_names)))
+        ax.set_xticklabels(district_names, rotation=90)
+        # Add grid for easier comparison
+        ax.grid(True, linestyle='--', alpha=0.7)
+
+        # Add legend
+        ax.legend()
+
+    # Adjust layout to prevent overlap
+    plt.tight_layout()
     plt.show()
 
-plot_2010model_prevalence_with_2010_2015data(species, include='HML')
 
+# Example usage
+generate_prevalence_comparison_plots_bars(2022)

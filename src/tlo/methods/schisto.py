@@ -1727,7 +1727,7 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         }
 
         logger.info(
-            key='Schisto_pwash_properties',
+            key='Schisto_wash_properties',
             data=wash,
             description='Proportion of population with each wash-related property'
         )
