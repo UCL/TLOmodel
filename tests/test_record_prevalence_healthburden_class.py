@@ -53,7 +53,7 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
     #assert prevalence_malaria_function[1] != prevalence_malaria_log[0] # the first entry in malaria function is before the regular logger has recorded anything
 
     ## Maternal deaths
-    #maternal_deaths_function = prevalence['maternal_deaths']
+    maternal_deaths_function = prevalence['maternal_deaths']
     death_df = output['tlo.methods.demography']['death']
 
     direct_deaths = len(death_df[death_df['cause'] == 'Maternal Disorders'])
@@ -68,7 +68,7 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
 
     hiv_indirect_maternal_deaths = hiv_pd * 0.3
 
-   # maternal_deaths_log = direct_deaths + indirect_deaths_non_hiv + hiv_indirect_maternal_deaths
+    maternal_deaths_log = direct_deaths + indirect_deaths_non_hiv + hiv_indirect_maternal_deaths
 
     prevalence_newborn_deaths_function = prevalence['newborn_deaths']
     prevalence_newborn_deaths_log = (
@@ -99,9 +99,9 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
         .count()
     )
 
-    return prevalence_newborn_deaths_log, prevalence_newborn_deaths_function, prevalence, prevalence_tb_log, prevalence_HIV_function, prevalence_HIV_log, prevalence_malaria_function, prevalence_malaria_log, intrapartum_stillbirths_function, intrapartum_stillbirths_log, antenatal_stillbirths_function, antenatal_stillbirths_log
+    return prevalence_newborn_deaths_log, prevalence_newborn_deaths_function, prevalence, prevalence_tb_function, prevalence_tb_log, prevalence_HIV_function, prevalence_HIV_log, prevalence_malaria_function, prevalence_malaria_log, intrapartum_stillbirths_function, intrapartum_stillbirths_log, antenatal_stillbirths_function, antenatal_stillbirths_log, maternal_deaths_log, maternal_deaths_function
 
-prevalence_newborn_deaths_log, prevalence_newborn_deaths_function, prevalence, prevalence_tb_log, prevalence_HIV_function, prevalence_HIV_log, prevalence_malaria_function, prevalence_malaria_log, intrapartum_stillbirths_function, intrapartum_stillbirths_log,antenatal_stillbirths_function, antenatal_stillbirths_log = test_run_with_healthburden_with_dummy_diseases(outputpath, seed)
+prevalence_newborn_deaths_log, prevalence_newborn_deaths_function, prevalence, prevalence_tb_function, prevalence_tb_log, prevalence_HIV_function, prevalence_HIV_log, prevalence_malaria_function, prevalence_malaria_log, intrapartum_stillbirths_function, intrapartum_stillbirths_log,antenatal_stillbirths_function, antenatal_stillbirths_log, maternal_deaths_log, maternal_deaths_function = test_run_with_healthburden_with_dummy_diseases(outputpath, seed)
 print("prevalence_newborn_deaths_log", prevalence_newborn_deaths_log)
 print("prevalence_newborn_deaths_function", prevalence_newborn_deaths_function)
 print("prevalence", prevalence)
