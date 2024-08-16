@@ -145,8 +145,20 @@ class Schisto(Module):
         self.age_group_mapper = s.to_dict()
 
         # create container for logging person-days infected
-        self.log_person_days_any_infection = 0
-        self.log_person_days_high_infection = 0
+        species = ['mansoni', 'haematobium']
+        age_groups = ['PSAC', 'SAC', 'Adults']
+        infection_levels = ['Low-infection', 'Moderate-infection', 'High-infection']
+
+        # Loop through each combination of species, age group, and infection level
+        for species in species:
+            for age_group in age_groups:
+                for infection_level in infection_levels:
+                    # Dynamically build the attribute name and initialise it with 0
+                    attr_name = f'log_person_days_{species}_{infection_level.lower().replace("-infection", "")}_{age_group}'
+                    setattr(self, attr_name, 0)
+
+        # self.log_person_days_any_infection = 0
+        # self.log_person_days_high_infection = 0
 
     def read_parameters(self, data_folder):
         """Read parameters and register symptoms."""
@@ -1652,16 +1664,46 @@ class SchistoPersonDaysLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         """
         df = self.sim.population.props
 
+        # _AGE_GROUPS = {'PSAC': (0, 4), 'SAC': (5, 14), 'Adults': (15, 120), 'All': (0, 120)}
+        species = ['mansoni', 'haematobium']
+        age_groups = ['PSAC', 'SAC', 'Adults']
+        infection_levels = ['Low-infection', 'Moderate-infection', 'High-infection']
+
+        def log_infection_counts(df, species, age_group, infection_level):
+            age_bands = df.loc[df.is_alive].age_years.map(self.module.age_group_mapper)
+
+            species_prefix = 'sm' if species == 'mansoni' else 'sh'
+            person_days = df[
+                (df[f'ss_{species_prefix}_infection_status'] == infection_level) &
+                (age_bands == age_group)
+                ].shape[0]
+
+            return person_days
+
+        # Loop through each combination of species, age group, and infection level
+        for species in species:
+            species_prefix = 'sm' if species == 'mansoni' else 'sh'
+            for age_group in age_groups:
+                for infection_level in infection_levels:
+                    # Calculate person_days for the current combination
+                    person_days = log_infection_counts(df, species, age_group, infection_level)
+
+                    # Dynamically build the attribute name and add the count to it
+                    attr_name = f'log_person_days_{species}_{infection_level.lower().replace("-infection", "")}_{age_group}'
+                    current_value = getattr(self.module, attr_name, 0)
+                    setattr(self.module, attr_name, current_value + person_days)
+
+
         # each day this runs, sum the number of people with each type of infection and add to logger
         # Count rows where person has either mansoni or haematobium infection, any infection intensity
-        count_any_infection = df[~((df['ss_sh_infection_status'] == 'Non-infected') &
-                                   (df['ss_sm_infection_status'] == 'Non-infected'))].shape[0]
-
-        count_high_infection = df[((df['ss_sh_infection_status'] == 'High-infection') |
-                                   (df['ss_sm_infection_status'] == 'High-infection'))].shape[0]
-
-        self.module.log_person_days_any_infection += count_any_infection
-        self.module.log_person_days_high_infection += count_high_infection
+        # count_any_infection = df[~((df['ss_sh_infection_status'] == 'Non-infected') &
+        #                            (df['ss_sm_infection_status'] == 'Non-infected'))].shape[0]
+        #
+        # count_high_infection = df[((df['ss_sh_infection_status'] == 'High-infection') |
+        #                            (df['ss_sm_infection_status'] == 'High-infection'))].shape[0]
+        #
+        # self.module.log_person_days_any_infection += count_any_infection
+        # self.module.log_person_days_high_infection += count_high_infection
 
 
 class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -1690,23 +1732,46 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 & (df.ss_last_PZQ_date >= (now - DateOffset(months=self.repeat)))
                 ]
         )
-
-        # treatment and person-days infected
-        tx_coverage = {
-            'person_days_any_infection': self.module.log_person_days_any_infection,
-            'person_days_high_infection': self.module.log_person_days_high_infection,
+        # treatment logger
+        treatment_episodes = {
             'treatment_episodes': new_tx,
         }
-
         logger.info(
-            key='Schisto_person_days_infected',
-            data=tx_coverage,
-            description='Counts of treatment and person-days infected by any species'
+            key='schisto_treatment_episodes',
+            data=treatment_episodes,
+            description='Counts of treatment occurring in timeperiod'
         )
 
-        # clear the logger ready for the next year
-        self.log_person_days_any_infection = 0
-        self.log_person_days_high_infection = 0
+        # person-days infected
+        species = ['mansoni', 'haematobium']
+        age_groups = ['PSAC', 'SAC', 'Adults']
+        infection_levels = ['Low-infection', 'Moderate-infection', 'High-infection']
+        infection_counts = {}
+
+        # Loop through each combination of species, age group, and infection level
+        for species in species:
+            for age_group in age_groups:
+                for infection_level in infection_levels:
+                    # Dynamically build the attribute name and add the count to it
+                    attr_name = f'log_person_days_{species}_{infection_level.lower().replace("-infection", "")}_{age_group}'
+                    current_value = getattr(self.module, attr_name, 0)
+                    # Add the attribute name and value to the dictionary
+                    infection_counts[attr_name] = current_value
+
+        person_days_infected = {
+            'person_days_infected': infection_counts,
+        }
+
+        # todo log person-years of infection by low, moderate and high for all, SAC and PSAC separately
+        logger.info(
+            key='Schisto_person_days_infected',
+            data=person_days_infected,
+            description='Counts of person-days infected by any species'
+        )
+
+        # todo reset this: clear the logger ready for the next year
+        # self.log_person_days_any_infection = 0
+        # self.log_person_days_high_infection = 0
 
         # WASH properties
         unimproved_sanitation = len(
