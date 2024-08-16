@@ -9,7 +9,7 @@ resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 outputpath = Path("./outputs")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2011, 1, 12)
+end_date = Date(2012, 1, 12)
 
 popsize = 1000
 seed = 42
@@ -68,17 +68,17 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
     #maternal_deaths_log = direct_deaths + indirect_deaths_non_hiv + hiv_indirect_maternal_deaths
 
     # Newborn deaths
-    prevalence_newborn_deaths_function = prevalence['newborn_deaths']
-    prevalence_newborn_deaths_log = (
-        properties_deceased[
-            (properties_deceased['age_days'] < 29) &
-            (properties_deceased['age_years'] == 0) &
-            (~properties_deceased['is_alive'])
-        ]
-        .assign(year=properties_deceased['date'].dt.month)
-        .groupby('year')
-        .size()
-    )
+    #prevalence_newborn_deaths_function = prevalence['newborn_deaths']
+    #prevalence_newborn_deaths_log = (
+    #    properties_deceased[
+    #        (properties_deceased['age_days'] < 29) &
+    #        (properties_deceased['age_years'] == 0) &
+    #        (~properties_deceased['is_alive'])
+    #    ]
+    #    .assign(year=properties_deceased['date'].dt.month)
+    #    .groupby('year')
+    #    .size()
+    #)
 
     # Stillbirths
     intrapartum_stillbirths_function = prevalence['Intrapartum stillbirth']
@@ -98,14 +98,19 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
     #)
 
     # Cardiometablis disorders
-    diabetes_prevalence_function = prevalence['diabetes']
-    diabetes_prevalence_log = output['tlo.methods.cardio_metabolic_disorders']["diabetes_prevalence"]
 
-    hypertension_prevalence_function = prevalence['hypertension']
-    hypertension_prevalence_log = output['tlo.methods.cardio_metabolic_disorders']["hypertension_prevalence"]
-    results = {
-        'prevalence_newborn_deaths_log': prevalence_newborn_deaths_log,
-        'prevalence_newborn_deaths_function': prevalence_newborn_deaths_function,
+    conditions = ['diabetes', 'hypertension', 'chronic_kidney_disease', 'chronic_lower_back_pain', 'chronic_ischemic_hd'] # logged only in adult population
+    results = {}
+
+    for condition in conditions:
+        prevalence_function = prevalence[condition]
+        prevalence_log = output['tlo.methods.cardio_metabolic_disorders'][f"{condition}_prevalence"]
+        results[f'{condition}_prevalence_function'] = prevalence_function
+        results[f'{condition}_prevalence_log'] = prevalence_log
+
+    results.update({
+        #'prevalence_newborn_deaths_log': prevalence_newborn_deaths_log,
+        #'prevalence_newborn_deaths_function': prevalence_newborn_deaths_function,
         'prevalence': prevalence,
         'prevalence_tb_function': prevalence_tb_function,
         'prevalence_tb_log': prevalence_tb_log,
@@ -117,10 +122,9 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
         #'intrapartum_stillbirths_log': intrapartum_stillbirths_log,
         'antenatal_stillbirths_function': antenatal_stillbirths_function,
         #'antenatal_stillbirths_log': antenatal_stillbirths_log,
-        'maternal_deaths_log': maternal_deaths_log,
-        'maternal_deaths_function': maternal_deaths_function
-    }
-
+        #'maternal_deaths_log': maternal_deaths_log,
+        #'maternal_deaths_function': maternal_deaths_function
+    })
     return results
 
 results = test_run_with_healthburden_with_dummy_diseases(outputpath, seed)
