@@ -7,22 +7,39 @@ import pandas as pd
 
 from tlo.analysis.utils import get_root_path
 
-# Numbers employed in HRH (As provided by Dominic Nkhoma: Email 13/8/14)
-# The numbers below are as quoted in the email by Dominic and found in the spreadsheet at the path given below.
-# Path(<<TLO SHARED FOLDER>>/07 - Data/Historical_Changes_In_HR/03/Malawi MOH Yearly_Employees_Data_Updated.xlsx
-
-year_by_year = pd.Series({
-    2017: 24863,
-    2018: 24156,
-    2019: 25994,
-    2020: 24763,
-    2021: 28737,
-    2022: 29570,
-    2023: 31304,
-    2024: 34486,
-})
+# Path to shared folder
+path_to_share = Path(  # <-- point to the shared folder
+    '/Users/tbh03/Library/CloudStorage/OneDrive-SharedLibraries-ImperialCollegeLondon/TLOModel - WP - Documents/'
+)
 
 
+
+
+
+#%% Numbers employed in HRH (As provided by Dominic Nkhoma: Email 13/8/14)
+
+df = pd.read_excel(
+    path_to_share / '07 - Data' / 'Historical_Changes_in_HR' / '03' / 'Malawi MOH Yearly_Employees_Data_Updated.xlsx',
+    sheet_name='Sheet1'
+)
+num_employees = df.set_index(['District', 'Month', 'Year'])['Emp_Totals']
+
+# Find number of employees each year, using the count in March. (This gives the identical values to that quoted
+# by Dominic in his email; i.e.,
+# year_by_year = pd.Series({
+#     2017: 24863,
+#     2018: 24156,
+#     2019: 25994,
+#     2020: 24763,
+#     2021: 28737,
+#     2022: 29570,
+#     2023: 31304,
+#     2024: 34486,
+# })
+year_by_year = num_employees.loc[(slice(None), 'March', slice(None))].groupby(by='Year').sum().astype(int)
+
+
+# Plot trend overall
 fig, ax = plt.subplots()
 year_by_year.plot(ax=ax, legend=False, marker='o')
 ax.set_title('Trend in Healthcare Workers', fontweight='bold', fontsize=10)
@@ -32,9 +49,18 @@ ax.set_xlim(2016, 2025)
 fig.tight_layout()
 fig.show()
 
-
 # difference vs 2017
 diff_since_2017 = year_by_year - year_by_year.at[2017]
+
+
+# Plot trend for the different districts
+fig, ax = plt.subplots(figsize=(6, 4), layout='constrained')
+num_employees.groupby(by=['Year', 'District']).mean().unstack().plot(ax=ax, legend=False, marker='.')
+ax.set_title('Trend in Healthcare Workers by District', fontweight='bold', fontsize=10)
+ax.set_ylabel('Number of HCW')
+ax.set_ylim([0, 5_000])
+fig.legend(loc="outside lower center", ncols=5, fontsize='small')
+fig.show()
 
 
 # %% Curve-fitting to the scale-up
