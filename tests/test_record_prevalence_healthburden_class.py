@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods.fullmodel import fullmodel
@@ -8,7 +9,7 @@ resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 outputpath = Path("./outputs")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 12)
+end_date = Date(2011, 1, 12)
 
 popsize = 1000
 seed = 42
@@ -121,3 +122,5 @@ results = test_run_with_healthburden_with_dummy_diseases(outputpath, seed)
 for key, value in results.items():
     print(f"{key}:")
     print(value)
+
+print("COPD", results['prevalence']["Copd"])
