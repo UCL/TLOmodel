@@ -100,7 +100,7 @@ def get_expected_prevalence_by_district_2010_2015(species: str):
 
 # %% get model outputs on prevalence
 
-def get_model_prevalence_one_year(spec: str, year: int, include: str, summarise=True):
+def get_model_prevalence_one_year(spec: str, year: int, include: str, summarise=True, age='SAC'):
     """Get the prevalence of a particular species in specified year
      SAC infections only
      include statement selects either moderate|high infections ('HM') or all infections ('HML")
@@ -118,7 +118,7 @@ def get_model_prevalence_one_year(spec: str, year: int, include: str, summarise=
         _df = dfs[f'infection_status_{spec}']
 
         # Select columns where 'age_years' level is 'SAC'
-        _df = _df.loc[:, _df.columns.get_level_values('age_years') == 'SAC']
+        _df = _df.loc[:, _df.columns.get_level_values('age_years') == age]
         t = _df.loc[_df.index.year == year].iloc[-1]  # gets the last entry for 2010 (Dec)
 
         # calculate the prop_infected for each year for each district
@@ -467,5 +467,76 @@ def generate_prevalence_comparison_plots_bars(year):
     plt.show()
 
 
-# Example usage
 generate_prevalence_comparison_plots_bars(2022)
+
+
+def generate_prevalence_min_max_bars(year):
+    species_list = ['haematobium', 'mansoni']
+
+    # Create subplots
+    fig, axes = plt.subplots(2, 1, figsize=(15, 15))
+
+    for i, _spec in enumerate(species_list):
+        # Get model prevalence for the specified species and year
+        tmp = get_model_prevalence_one_year(spec=_spec, year=year, include="HML", summarise=False)
+        df = pd.DataFrame(tmp)
+
+        # Assuming df and data are your DataFrames
+        model_prevalence = df.iloc[0] * 100  # Convert to percentage if needed
+        districts = model_prevalence.index
+        model_prev_values = model_prevalence.values
+
+        # Extract the actual prevalence from the data DataFrame
+        data = pd.read_excel(resourcefilepath / 'ResourceFile_Schisto.xlsx', sheet_name='LatestData_' + _spec.lower())
+        min_prevalence = data['min_prevalence'].values  # Extract minimum prevalence values
+        max_prevalence = data['max_prevalence'].values  # Extract maximum prevalence values
+        mean_prevalence = data['mean_prevalence2019'].values  # Extract mean prevalence values
+        district_names = data['District'].values
+
+        # Plot on the appropriate subplot
+        ax = axes[i]
+
+        # Define the width of the bars
+        bar_width = 0.8
+
+        # Plot the actual prevalence as bars
+        for j, (min_val, max_val, mean_val) in enumerate(zip(min_prevalence, max_prevalence, mean_prevalence)):
+            # Compute bar positions
+            bar_position = j
+
+            bar_height = max_val - min_val
+            bar_bottom = min_val
+            ax.bar(bar_position, bar_height, bottom=bar_bottom, width=bar_width, color='lightblue')
+
+            # Add horizontal line for the mean prevalence value
+            ax.hlines(mean_val, bar_position - bar_width / 2, bar_position + bar_width / 2,
+                      colors='darkblue', linestyles='-', label=f'Mean Prevalence' if j == 0 else "")
+
+        # Plot the model prevalence as crosses
+        sns.scatterplot(x=range(len(districts)), y=model_prev_values, s=100, color="red", marker='x', ax=ax,
+                        label='Model Prevalence')
+
+        # Customize the plot
+        ax.set_xlabel('District')
+        ax.set_ylabel('Prevalence (%)')
+        ax.set_title(f'{_spec.capitalize()} - District-Wise Prevalence Comparison ({year})')
+
+        # Ensure that the number of ticks matches the number of districts
+        ax.set_xticks(range(len(district_names)))
+        ax.set_xticklabels(district_names, rotation=90)
+        # Add grid for easier comparison
+        ax.grid(True, linestyle='--', alpha=0.7)
+
+        # Add legend
+        ax.legend()
+
+    # Adjust layout to prevent overlap
+    plt.tight_layout()
+    plt.show()
+
+
+generate_prevalence_min_max_bars(2019)
+
+
+
+

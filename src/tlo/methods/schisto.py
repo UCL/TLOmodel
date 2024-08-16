@@ -1683,6 +1683,7 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         now = self.sim.date
 
+        # todo this is logging MDA as well as treatment
         new_tx = len(
             df[
                 (df.ss_last_PZQ_date >= (now - DateOffset(months=self.repeat)))

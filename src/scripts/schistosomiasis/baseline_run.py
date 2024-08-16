@@ -82,10 +82,7 @@ class TestScenario(BaseScenario):
             enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
             epi.Epi(resourcefilepath=self.resources),
             healthburden.HealthBurden(resourcefilepath=self.resources),
-            healthsystem.HealthSystem(
-                resourcefilepath=self.resources,
-                disable_and_reject_all=False,  # if True, disable healthsystem and no HSI runs
-            ),
+            healthsystem.HealthSystem(resourcefilepath=self.resources),
             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
             symptommanager.SymptomManager(resourcefilepath=self.resources),
             # diseases
