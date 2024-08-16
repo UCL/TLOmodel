@@ -8,7 +8,8 @@ resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 outputpath = Path("./outputs")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2011, 1, 12)
+end_date = Date(2015, 1, 12) #end_date = Date(2011, 1, 12)
+
 popsize = 1000
 seed = 42
 
@@ -98,9 +99,9 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
         .count()
     )
 
-    return prevalence_newborn_deaths_log, prevalence_newborn_deaths_function, prevalence, prevalence_tb_log, prevalence_HIV_function, prevalence_HIV_log, prevalence_malaria_function, prevalence_malaria_log
+    return prevalence_newborn_deaths_log, prevalence_newborn_deaths_function, prevalence, prevalence_tb_log, prevalence_HIV_function, prevalence_HIV_log, prevalence_malaria_function, prevalence_malaria_log, intrapartum_stillbirths_function, intrapartum_stillbirths_log, antenatal_stillbirths_function, antenatal_stillbirths_log
 
-prevalence_newborn_deaths_log, prevalence_newborn_deaths_function, prevalence, prevalence_tb_log, prevalence_HIV_function, prevalence_HIV_log, prevalence_malaria_function, prevalence_malaria_log = test_run_with_healthburden_with_dummy_diseases(outputpath, seed)
+prevalence_newborn_deaths_log, prevalence_newborn_deaths_function, prevalence, prevalence_tb_log, prevalence_HIV_function, prevalence_HIV_log, prevalence_malaria_function, prevalence_malaria_log, intrapartum_stillbirths_function, intrapartum_stillbirths_log,antenatal_stillbirths_function, antenatal_stillbirths_log = test_run_with_healthburden_with_dummy_diseases(outputpath, seed)
 print("prevalence_newborn_deaths_log", prevalence_newborn_deaths_log)
 print("prevalence_newborn_deaths_function", prevalence_newborn_deaths_function)
 print("prevalence", prevalence)
