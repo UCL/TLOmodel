@@ -9,7 +9,7 @@ outputpath = Path("./outputs")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2011, 1, 12)
-popsize = 10000
+popsize = 1000
 seed = 42
 
 def check_dtypes(simulation):
@@ -79,6 +79,23 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
         .assign(year=properties_deceased['date'].dt.month)
         .groupby('year')
         .size()
+    )
+
+    ## Stillbirths
+    intrapartum_stillbirths_function =  prevalence['Intrapartum stillbirth']
+    antenatal_stillbirths_function=  prevalence['Antenatal stillbirth']
+
+    intrapartum_stillbirths_log = (
+        output['tlo.methods.labour']['intrapartum_stillbirth']
+        .assign(year=output['date'].dt.year)
+        .groupby(['year'])['year']
+        .count()
+    )
+    antenatal_stillbirths_log =  (
+        output['tlo.methods.pregnancy_supervisor']['antenatal_stillbirth']
+        .assign(year=output['date'].dt.year)
+        .groupby(['year'])['year']
+        .count()
     )
 
     return prevalence_newborn_deaths_log, prevalence_newborn_deaths_function, prevalence, prevalence_tb_log, prevalence_HIV_function, prevalence_HIV_log, prevalence_malaria_function, prevalence_malaria_log
