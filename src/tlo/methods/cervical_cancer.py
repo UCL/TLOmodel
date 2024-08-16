@@ -321,15 +321,15 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         # )
 # todo: in order to implement screening for cervical cancer creating a dummy symptom - likely there is a better way
 
-        # self.sim.modules['SymptomManager'].register_symptom(
-        #     Symptom(name='chosen_via_screening_for_cin_cervical_cancer',
-        #             odds_ratio_health_seeking_in_adults=100.00)
-        # )
-        #
-        # self.sim.modules['SymptomManager'].register_symptom(
-        #     Symptom(name='chosen_xpert_screening_for_hpv_cervical_cancer',
-        #             odds_ratio_health_seeking_in_adults=100.00)
-        # )
+        self.sim.modules['SymptomManager'].register_symptom(
+            Symptom(name='chosen_via_screening_for_cin_cervical_cancer',
+                    odds_ratio_health_seeking_in_adults=100.00)
+        )
+
+        self.sim.modules['SymptomManager'].register_symptom(
+            Symptom(name='chosen_xpert_screening_for_hpv_cervical_cancer',
+                    odds_ratio_health_seeking_in_adults=100.00)
+        )
 
 
     def initialise_population(self, population):
@@ -383,7 +383,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
 
         # ----- SCHEDULE MAIN POLLING EVENTS -----
         # Schedule main polling event to happen immediately
-        sim.schedule_event(CervicalCancerMainPollingEvent(self), sim.date + DateOffset(months=1))
+        sim.schedule_event(CervicalCancerMainPollingEvent(self), sim.date)
 
         # ----- SCHEDULE LOGGING EVENTS -----
         # Schedule logging event to happen immediately
@@ -702,15 +702,35 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
                 topen=self.sim.date,
                 tclose=None)
 
+        if 'chosen_via_screening_for_cin_cervical_cancer' in symptoms:
+            schedule_hsi_event(
+                HSI_CervicalCancer_AceticAcidScreening(
+                    person_id=person_id,
+                    module=self
+                ),
+                priority=0,
+                topen=self.sim.date,
+                tclose=None)
+
+        if 'chosen_xpert_screening_for_hpv_cervical_cancer' in symptoms:
+            schedule_hsi_event(
+                HSI_CervicalCancer_XpertHPVScreening(
+                    person_id=person_id,
+                    module=self
+                ),
+                priority=0,
+                topen=self.sim.date,
+                tclose=None)
+
         # else:
-        schedule_hsi_event(
-            HSI_CervicalCancer_Screening(
-                person_id=person_id,
-                module=self
-            ),
-            priority=0,
-            topen=self.sim.date,
-            tclose=None)
+        # schedule_hsi_event(
+        #     HSI_CervicalCancer_Screening(
+        #         person_id=person_id,
+        #         module=self
+        #     ),
+        #     priority=0,
+        #     topen=self.sim.date,
+        #     tclose=None)
 
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
@@ -842,19 +862,19 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         )
 
 
-        # self.sim.modules['SymptomManager'].change_symptom(
-        #     person_id=df.loc[df['ce_selected_for_via_this_month']].index,
-        #     symptom_string='chosen_via_screening_for_cin_cervical_cancer',
-        #     add_or_remove='+',
-        #     disease_module=self.module
-        # )
+        self.sim.modules['SymptomManager'].change_symptom(
+            person_id=df.loc[df['ce_selected_for_via_this_month']].index,
+            symptom_string='chosen_via_screening_for_cin_cervical_cancer',
+            add_or_remove='+',
+            disease_module=self.module
+        )
 
-        # self.sim.modules['SymptomManager'].change_symptom(
-        #     person_id=df.loc[df['ce_selected_for_xpert_this_month']].index,
-        #     symptom_string='chosen_xpert_screening_for_hpv_cervical_cancer',
-        #     add_or_remove='+',
-        #     disease_module=self.module
-        # )
+        self.sim.modules['SymptomManager'].change_symptom(
+            person_id=df.loc[df['ce_selected_for_xpert_this_month']].index,
+            symptom_string='chosen_xpert_screening_for_hpv_cervical_cancer',
+            add_or_remove='+',
+            disease_module=self.module
+        )
 
 
     # -------------------- UPDATING OF SYMPTOM OF vaginal bleeding OVER TIME --------------------------------
