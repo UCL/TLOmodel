@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-import pandas as pd
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods.fullmodel import fullmodel
@@ -84,18 +83,18 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
     intrapartum_stillbirths_function = prevalence['Intrapartum stillbirth']
     antenatal_stillbirths_function = prevalence['Antenatal stillbirth']
 
-    intrapartum_stillbirths_log = (
-        output['tlo.methods.labour']['intrapartum_stillbirth']
-        .assign(year=output['date'].dt.year)
-        .groupby(['year'])['year']
-        .count()
-    )
-    antenatal_stillbirths_log = (
-        output['tlo.methods.pregnancy_supervisor']['antenatal_stillbirth']
-        .assign(year=output['date'].dt.year)
-        .groupby(['year'])['year']
-        .count()
-    )
+    #intrapartum_stillbirths_log = (
+    #    output['tlo.methods.labour']['intrapartum_stillbirth']
+    #    .assign(year=output['date'].dt.year)
+    #    .groupby(['year'])#['year']
+    #    .count()
+    #)
+    #antenatal_stillbirths_log = (
+    #    output['tlo.methods.pregnancy_supervisor']['antenatal_stillbirth']
+    #    .assign(year=output['date'].dt.year)
+    #    .groupby(['year'])#['year']
+    #    .count()
+    #)
 
     results = {
         'prevalence_newborn_deaths_log': prevalence_newborn_deaths_log,
@@ -108,9 +107,9 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
         'prevalence_malaria_function': prevalence_malaria_function,
         'prevalence_malaria_log': prevalence_malaria_log,
         'intrapartum_stillbirths_function': intrapartum_stillbirths_function,
-        'intrapartum_stillbirths_log': intrapartum_stillbirths_log,
+        #'intrapartum_stillbirths_log': intrapartum_stillbirths_log,
         'antenatal_stillbirths_function': antenatal_stillbirths_function,
-        'antenatal_stillbirths_log': antenatal_stillbirths_log,
+        #'antenatal_stillbirths_log': antenatal_stillbirths_log,
         'maternal_deaths_log': maternal_deaths_log,
         'maternal_deaths_function': maternal_deaths_function
     }
