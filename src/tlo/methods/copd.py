@@ -186,7 +186,7 @@ class Copd(Module, GenericFirstAppointmentsMixin):
         # This returns dataframe that reports on the prevalence of COPD for all individuals
         df = self.sim.population.props
         total_prev = len(
-            df[(df['is_alive']) & (df['ch_lungfunction'] != 0)]
+            df[(df['is_alive']) & (df['ch_lungfunction'] > 0)] # 3 is mild COPD
         ) / len(df[df['is_alive']])
 
         return total_prev
