@@ -22,13 +22,13 @@ from tlo.analysis.utils import (
 )
 
 
-def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
+def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None, the_target_period: Tuple[Date, Date] = None):
     """Produce standard set of plots describing the effect of each TREATMENT_ID.
     - We estimate the epidemiological impact as the EXTRA deaths that would occur if that treatment did not occur.
     - We estimate the draw on healthcare system resources as the FEWER appointments when that treatment does not occur.
     """
 
-    TARGET_PERIOD = (Date(2017, 1, 1), Date(2024, 12, 31))
+    TARGET_PERIOD = the_target_period
 
     # Definitions of general helper functions
     make_graph_file_name = lambda stub: output_folder / f"{stub.replace('*', '_star_')}.png"  # noqa: E731
@@ -119,7 +119,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             ecolor='black',
             color=colors,
             capsize=10,
-            label=xticks.values()
+            label=xticks.values(),
+            zorder=100,
         )
         if annotations:
             for xpos, ypos, text in zip(xticks.keys(), _df['upper'].values, annotations):
@@ -151,6 +152,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # %% Define parameter names
     param_names = get_parameter_names_from_scenario_file()
+    counterfactual_scenario = 'Counterfactual (No Scale-up)'
+    actual_scenario = 'Actual (Scale-up)'
 
     # %% Quantify the health gains associated with all interventions combined.
 
@@ -180,7 +183,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.set_title(name_of_plot)
     ax.set_ylabel('(Millions)')
     fig.tight_layout()
-    # ax.axhline(num_deaths_summarized.loc['Baseline', 'mean']/1e6, color='black', alpha=0.5)
+    ax.axhline(num_deaths_summarized.loc[counterfactual_scenario, 'mean']/1e6, color='black', alpha=0.5)
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     fig.show()
     plt.close(fig)
@@ -189,7 +192,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig, ax = do_bar_plot_with_ci(num_dalys_summarized / 1e6, xticklabels_horizontal_and_wrapped=True, put_labels_in_legend=False)
     ax.set_title(name_of_plot)
     ax.set_ylabel('(Millions)')
-    # ax.axhline(num_dalys_summarized.loc['Baseline', 'mean']/1e6, color='black', alpha=0.5)
+    ax.axhline(num_dalys_summarized.loc[counterfactual_scenario, 'mean']/1e6, color='black', alpha=0.5)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     fig.show()
@@ -197,10 +200,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
 
     # %% Deaths and DALYS averted relative to Counterfactual
-
-    counterfactual_scenario = 'Counterfactual (No Scale-up)'
-    actual_scenario = 'Actual (Scale-up)'
-
     num_deaths_averted = summarize(
         -1.0 *
         pd.DataFrame(
@@ -240,16 +239,19 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ).iloc[0].unstack().reindex(param_names).drop([counterfactual_scenario])
 
     # DEATHS
-    name_of_plot = f'Additional Deaths Averted vs Counterfactual, {target_period()}'
+    name_of_plot = f'Deaths Averted vs Counterfactual, {target_period()}'
     fig, ax = do_bar_plot_with_ci(
         num_deaths_averted.clip(lower=0.0),
-        annotations=[
-            f"{round(row['mean'], 0)} ({round(row['lower'], 1)}-{round(row['upper'], 1)}) %"
-            for _, row in pc_deaths_averted.clip(lower=0.0).iterrows()
-        ]
+        annotations=None,
+        put_labels_in_legend=False,
+        xticklabels_horizontal_and_wrapped=True,
     )
-    ax.set_title(name_of_plot)
+    annotation = (f"{int(round(num_deaths_averted.loc[actual_scenario,'mean'], -3))} ({int(round(num_deaths_averted.loc[actual_scenario, 'lower'], -3))} - {int(round(num_deaths_averted.loc[actual_scenario,'upper'], -3))})\n"
+                  f"{round(pc_deaths_averted.loc[actual_scenario, 'mean'])} ({round(pc_deaths_averted.loc[actual_scenario,'lower'], 1)} - {round(pc_deaths_averted.loc[actual_scenario, 'upper'], 1)})% of that in Counterfactual"
+                  )
+    ax.set_title(f"{name_of_plot}\n{annotation}")
     ax.set_ylabel('Deaths Averted vs Counterfactual')
+    fig.set_figwidth(5)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     fig.show()
@@ -259,21 +261,22 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     name_of_plot = f'DALYs Averted vs Counterfactual, {target_period()}'
     fig, ax = do_bar_plot_with_ci(
         (num_dalys_averted / 1e6).clip(lower=0.0),
-        annotations=[
-            f"{round(row['mean'])} ({round(row['lower'], 1)}-{round(row['upper'], 1)}) %"
-            for _, row in pc_dalys_averted.clip(lower=0.0).iterrows()
-        ]
+        annotations=None,
+        put_labels_in_legend=False,
+        xticklabels_horizontal_and_wrapped=True,
     )
-    ax.set_title(name_of_plot)
+    annotation = (f"{int(round(num_dalys_averted.loc[actual_scenario,'mean'], -4))} ({int(round(num_dalys_averted.loc[actual_scenario, 'lower'], -4))} - {int(round(num_dalys_averted.loc[actual_scenario,'upper'], -4))})\n"
+                  f"{round(pc_dalys_averted.loc[actual_scenario, 'mean'])} ({round(pc_dalys_averted.loc[actual_scenario,'lower'], 1)} - {round(pc_dalys_averted.loc[actual_scenario, 'upper'], 1)})% of that in Counterfactual"
+                  )
+    ax.set_title(f"{name_of_plot}\n{annotation}")
     ax.set_ylabel('DALYS Averted \n(Millions)')
+    fig.set_figwidth(5)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     fig.show()
     plt.close(fig)
 
-
     # Graphs showing difference by disease (HTM/OTHER and split by age/sex)
-
     def get_total_num_dalys_by_label(_df):
         """Return the total number of DALYS in the TARGET_PERIOD by wealth and cause label."""
         y = _df \
@@ -315,67 +318,76 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
          ) < 1e-6
     ).all()
 
-    # Make a separate plot for the scale-up of each program/programs
-    name_of_plot = f'DALYS Averted: Actual vs Counterfactual, {target_period()}'
-    fig, ax = plt.subplots()
-
     yerr = np.array([
         (num_dalys_averted['mean'].values - num_dalys_averted['lower']).values,
         (num_dalys_averted['upper'].values - num_dalys_averted['mean']).values,
     ])/1e6
 
-    (total_num_dalys_by_label_results_averted_vs_baseline.iloc[::-1] /1e6).T.plot.bar(
-        stacked=True,
-        ax=ax,
-        rot=0,
-        alpha=0.75,
-        zorder=3,
-        legend=False,
-    )
-    ax.errorbar(0, num_dalys_averted['mean'].values/1e6, yerr=yerr, fmt="o", color="black", zorder=4)
-
     make_string_number = lambda row: f"{round(row['mean']/1e6,1)} ({round(row['lower']/1e6, 1)}-{round(row['upper']/1e6, 1)}) Million"
-    str_num_dalys_averted = f'DALYS Averted: {make_string_number(num_dalys_averted.loc[actual_scenario])}'
+    str_num_dalys_averted = f'{make_string_number(num_dalys_averted.loc[actual_scenario])}'
 
     make_string_percent = lambda row: f"{round(row['mean'], 1)} ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
-    str_pc_dalys_averted = f'{make_string_percent(pc_dalys_averted.loc[actual_scenario])}% of Potential DALYS'
+    str_pc_dalys_averted = f'{make_string_percent(pc_dalys_averted.loc[actual_scenario])}% of DALYS in Counterfactual'
 
-    ax.text(0.03,
-            3.4,
-            str_num_dalys_averted + '\n' + str_pc_dalys_averted,
-            horizontalalignment='center',
-            backgroundcolor='white',
-            bbox=dict(boxstyle='round', ec='black', fc='white'),
-            )
+    def make_daly_split_by_cause_graph(df):
+        name_of_plot = f'DALYS Averted: Actual vs Counterfactual, {target_period()}'
+        fig, ax = plt.subplots()
+        (df.iloc[::-1] /1e6).T.plot.bar(
+            stacked=True,
+            ax=ax,
+            rot=0,
+            alpha=0.75,
+            zorder=3,
+            legend=False,
+            color=['orange', 'teal', 'purple', 'red']
+        )
+        ax.errorbar(0, num_dalys_averted['mean'].values/1e6, yerr=yerr, fmt="o", color="black", zorder=4)
+        ax.set_title(name_of_plot + '\n' + str_num_dalys_averted + '\n' + str_pc_dalys_averted)
+        ax.set_ylabel(f'DALYs Averted\n(Millions)')
+        ax.set_xlabel('')
+        ax.set_xlim(-0.5, 0.65)
+        ax.set_ylim(bottom=0)
+        ax.get_xaxis().set_ticks([])
+        wrapped_labs = ["\n".join(textwrap.wrap(_lab.get_text(), 20)) for _lab in ax.get_xticklabels()]
+        ax.set_xticklabels(wrapped_labs)
+        ax.grid(axis='y', zorder=0)
+        handles, labels = ax.get_legend_handles_labels()
+        ax.legend(handles[::-1], labels[::-1], title='Cause of DALYS', loc='center right')
+        fig.tight_layout()
+        fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+        fig.show()
+        plt.close(fig)
 
-    # ax.set_ylim([0, 1])
-    ax.set_title(name_of_plot)
-    ax.set_ylabel(f'DALYs Averted\n(Millions)')
-    ax.set_xlabel('')
-    ax.set_xlim(-0.5, 0.65)
-    ax.get_xaxis().set_ticks([])
-    wrapped_labs = ["\n".join(textwrap.wrap(_lab.get_text(), 20)) for _lab in ax.get_xticklabels()]
-    ax.set_xticklabels(wrapped_labs)
-    ax.grid(axis='y', zorder=0)
-    handles, labels = ax.get_legend_handles_labels()
-    ax.legend(handles[::-1], labels[::-1], title='Cause of DALYS', loc='center right')
-    fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-    fig.show()
-    plt.close(fig)
+    # Make graph - separating H/T/M/Other
+    make_daly_split_by_cause_graph(total_num_dalys_by_label_results_averted_vs_baseline)
+
+    # Make graph - separating HTM-Combined/Other
+    total_num_dalys_by_label_results_averted_vs_baseline_grouping_htm = total_num_dalys_by_label_results_averted_vs_baseline.groupby(
+        total_num_dalys_by_label_results_averted_vs_baseline.index == 'Other').sum().rename(
+        index={False: "H/T/M", True: "Other"})
+    make_daly_split_by_cause_graph(total_num_dalys_by_label_results_averted_vs_baseline_grouping_htm)
 
     # percent of DALYS averted in HTM
     1.0 - (total_num_dalys_by_label_results_averted_vs_baseline.loc['Other'] / total_num_dalys_by_label_results_averted_vs_baseline.sum())
 
-    # todo repeat for different target periods
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("results_folder", type=Path)  # outputs/horizontal_and_vertical_programs-2024-05-16
     args = parser.parse_args()
 
+    # Produce results for short-term analysis
     apply(
         results_folder=args.results_folder,
         output_folder=args.results_folder,
-        resourcefilepath=Path('./resources')
+        resourcefilepath=Path('./resources'),
+        the_target_period=(Date(2017, 1, 1), Date(2024, 12, 31))
+    )
+
+    # Produce results for long-term analysis
+    apply(
+        results_folder=args.results_folder,
+        output_folder=args.results_folder,
+        resourcefilepath=Path('./resources'),
+        the_target_period=(Date(2020, 1, 1), Date(2030, 12, 31))
     )
