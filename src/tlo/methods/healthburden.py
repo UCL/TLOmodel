@@ -686,7 +686,7 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
         prevalence_from_each_disease_module = pd.DataFrame()
 
         for disease_module_name in self.module.recognised_modules_names:
-            if disease_module_name in ['NewbornOutcomes', 'PostnatalSupervisor']:
+            if disease_module_name in ['NewbornOutcomes', 'PostnatalSupervisor', 'Mockitis']:
                 continue
 
             disease_module = self.sim.modules[disease_module_name]
