@@ -14,11 +14,7 @@ from scripts.impact_of_historical_changes_in_hr.scenario_historical_changes_in_h
     HistoricalChangesInHRH,
 )
 from tlo import Date
-from tlo.analysis.utils import (
-    extract_results,
-    make_age_grp_lookup,
-    summarize,
-)
+from tlo.analysis.utils import extract_results, make_age_grp_lookup, summarize
 
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None, the_target_period: Tuple[Date, Date] = None):
