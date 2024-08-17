@@ -322,7 +322,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         (num_dalys_averted['upper'].values - num_dalys_averted['mean']).values,
     ])/1e6
 
-    make_string_number = lambda row: f"{round(row['mean']/1e6,1)} ({round(row['lower']/1e6, 1)}-{round(row['upper']/1e6, 1)}) Million"
+    make_string_number = lambda row: f"{round(row['mean']/1e6,1)} ({round(row['lower']/1e6, 1)}-{round(row['upper']/1e6, 1)}) Million"  # noqa: E731
     str_num_dalys_averted = f'{make_string_number(num_dalys_averted.loc[actual_scenario])}'
 
     make_string_percent = lambda row: f"{round(row['mean'], 1)} ({round(row['lower'], 1)}-{round(row['upper'], 1)})"  # noqa: E731
