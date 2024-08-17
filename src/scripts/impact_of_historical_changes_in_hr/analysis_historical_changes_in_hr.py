@@ -329,7 +329,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     make_string_percent = lambda row: f"{round(row['mean'], 1)} ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
     str_pc_dalys_averted = f'{make_string_percent(pc_dalys_averted.loc[actual_scenario])}% of DALYS in Counterfactual'
 
-    def make_daly_split_by_cause_graph(df):
+    def make_daly_split_by_cause_graph(df: pd.DataFrame, filename_suffix: str):
         name_of_plot = f'DALYS Averted: Actual vs Counterfactual, {target_period()}'
         fig, ax = plt.subplots()
         (df.iloc[::-1] /1e6).T.plot.bar(
@@ -354,21 +354,22 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         handles, labels = ax.get_legend_handles_labels()
         ax.legend(handles[::-1], labels[::-1], title='Cause of DALYS', loc='center right')
         fig.tight_layout()
-        fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+        fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '') + filename_suffix))
         fig.show()
         plt.close(fig)
 
     # Make graph - separating H/T/M/Other
-    make_daly_split_by_cause_graph(total_num_dalys_by_label_results_averted_vs_baseline)
+    make_daly_split_by_cause_graph(total_num_dalys_by_label_results_averted_vs_baseline, filename_suffix='_by_htm')
 
     # Make graph - separating HTM-Combined/Other
     total_num_dalys_by_label_results_averted_vs_baseline_grouping_htm = total_num_dalys_by_label_results_averted_vs_baseline.groupby(
         total_num_dalys_by_label_results_averted_vs_baseline.index == 'Other').sum().rename(
         index={False: "H/T/M", True: "Other"})
-    make_daly_split_by_cause_graph(total_num_dalys_by_label_results_averted_vs_baseline_grouping_htm)
+    make_daly_split_by_cause_graph(total_num_dalys_by_label_results_averted_vs_baseline_grouping_htm, filename_suffix='_broad')
 
     # percent of DALYS averted in HTM
-    1.0 - (total_num_dalys_by_label_results_averted_vs_baseline.loc['Other'] / total_num_dalys_by_label_results_averted_vs_baseline.sum())
+    pc_dalys_averted_in_htm = 1.0 - (total_num_dalys_by_label_results_averted_vs_baseline.loc['Other'] / total_num_dalys_by_label_results_averted_vs_baseline.sum())
+    print(f'pc_dalys_averted_in_htm ({the_target_period}): {pc_dalys_averted_in_htm[actual_scenario]}')
 
 
 if __name__ == "__main__":
@@ -381,7 +382,7 @@ if __name__ == "__main__":
         results_folder=args.results_folder,
         output_folder=args.results_folder,
         resourcefilepath=Path('./resources'),
-        the_target_period=(Date(2017, 1, 1), Date(2024, 12, 31))
+        the_target_period=(Date(2020, 1, 1), Date(2024, 12, 31))
     )
 
     # Produce results for long-term analysis

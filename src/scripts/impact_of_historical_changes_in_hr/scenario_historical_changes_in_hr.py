@@ -91,10 +91,11 @@ class HistoricalChangesInHRH(BaseScenario):
                     "year_mode_switch": 2020,    # <-- transition happens at start of 2020 when HRH starts to grow
 
                     # Normalize the behaviour of Mode 2
-                    "policy_name": "EHP_III",
+                    "policy_name": "EHP_III",   # -- *For the alternative scenario of efficient implementation of EHP, otherwise use 'naive'* --
                     "tclose_overwrite": 1,
                     "tclose_days_offset_overwrite": 7,
                 },
+                # -- *For the alternative scenario of increased demand and improved clinician performance* --
                 'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
                     'max_healthcare_seeking': [False, True],  # <-- switch from False to True mid-way
                     'max_healthsystem_function': [False, True],
