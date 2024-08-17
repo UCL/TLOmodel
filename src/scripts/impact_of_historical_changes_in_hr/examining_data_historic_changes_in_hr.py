@@ -1,6 +1,7 @@
 import calendar
 import datetime
 from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -66,6 +67,7 @@ fig.show()
 # %% Curve-fitting to the scale-up
 
 from scipy.optimize import curve_fit
+
 
 def func(y, beta, ystart):
     return np.exp(beta * (y - ystart - 2017).clip(0.0))
