@@ -1,10 +1,10 @@
-import calendar
 import datetime
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from scipy.optimize import curve_fit
 
 from tlo.analysis.utils import get_root_path
 
@@ -12,9 +12,6 @@ from tlo.analysis.utils import get_root_path
 path_to_share = Path(  # <-- point to the shared folder
     '/Users/tbh03/Library/CloudStorage/OneDrive-SharedLibraries-ImperialCollegeLondon/TLOModel - WP - Documents/'
 )
-
-
-
 
 
 #%% Numbers employed in HRH (As provided by Dominic Nkhoma: Email 13/8/14)
@@ -65,9 +62,6 @@ fig.show()
 
 
 # %% Curve-fitting to the scale-up
-
-from scipy.optimize import curve_fit
-
 
 def func(y, beta, ystart):
     return np.exp(beta * (y - ystart - 2017).clip(0.0))
