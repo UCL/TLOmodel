@@ -52,7 +52,7 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
 
     # Maternal deaths
     #maternal_deaths_function = prevalence['maternal_deaths']
-    death_df = output['tlo.methods.demography']['death']
+    #death_df = output['tlo.methods.demography']['death']
     #properties_deceased = output['tlo.methods.demography.detail']["properties_of_deceased_persons"]
 
    #direct_deaths = len(death_df[death_df['cause'] == 'Maternal Disorders'])
