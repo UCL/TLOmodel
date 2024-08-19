@@ -389,9 +389,21 @@ class BitsetArray(ExtensionArray):
         self, other: CastableForPandasOps
     ) -> BitsetArray:
         """
-        Element-wise union, delegates to ``__or__``.
+        Entry-wise union with other.
+
+        - If other is ``NodeType`` or ``Iterable[NodeType]``, perform entry-wise OR with the set
+        representing the passed element values.
+        - If other is ``BitsetArray`` of compatible shape, take entry-wise union.
+        - If other is compatible ``np.ndarray``, take entry-wise union.
+
+        Under the hood this is bitwise OR with other; self OR other.
         """
-        return self.__or__(other)
+        return BitsetArray(
+            self.__operate_bitwise(
+                lambda A, B: A | B, other, return_as_bytestring=True
+            ),
+            dtype=self.dtype,
+        )
 
     def __and__(self,other: CastableForPandasOps
     ) -> BitsetArray:
@@ -466,6 +478,8 @@ class BitsetArray(ExtensionArray):
         BitsetArrays
             Return their ``_uint8_view`` attribute.
         """
+        if isinstance(other, np.ndarray) and (other == other[0]).all():
+            other = other[0]
         if isinstance(other, ElementType):
             # Treat single-elements as single-element sets
             other = set(other)
@@ -481,7 +495,13 @@ class BitsetArray(ExtensionArray):
             elif other.dtype == self.dtype.np_array_dtype:
                 # An array of compatible fixed-width bytestrings
                 cast = other.view(self._uint8_view_format)
-            raise ValueError(f"Cannot convert {other} to an array of uint8s representing a bitset")
+            elif other.dtype == object and all(isinstance(s, (ElementType, set)) for s in other):
+                # We might have been passed an object array, where each object is a set or singleton that
+                # we need to convert.
+                as_bytes = np.array([self.dtype.as_bytes(s) for s in other], dtype=self.dtype.np_array_dtype)
+                cast = as_bytes.view(self._uint8_view_format)
+            else:
+                raise ValueError(f"Cannot convert {other} to an array of uint8s representing a bitset")
         else:
             # Must be a collection of elements (or will error), so cast.
             cast = self.dtype.as_uint8_array(other)
@@ -598,21 +618,11 @@ class BitsetArray(ExtensionArray):
         self, other: CastableForPandasOps
     ) -> BitsetArray:
         """
-        Entry-wise union with other.
+        Entry-wise union with other, delegating to ``self.__add__``.
 
-        - If other is ``NodeType`` or ``Iterable[NodeType]``, perform entry-wise OR with the set
-        representing the passed element values.
-        - If other is ``BitsetArray`` of compatible shape, take entry-wise union.
-        - If other is compatible ``np.ndarray``, take entry-wise union.
-
-        Under the hood this is bitwise OR with other; self OR other.
+        np.ndarrays of objects will attempt to interpret their elements as bitsets.
         """
-        return BitsetArray(
-            self.__operate_bitwise(
-                lambda A, B: A | B, other, return_as_bytestring=True
-            ),
-            dtype=self.dtype,
-        )
+        return self.__add__(other)
 
     def __setitem__(
         self,
@@ -718,17 +728,15 @@ if __name__ == "__main__":
     g = big_s + {"1"}
 
     print(f)
-    # Bug the first - __or__ seems to undergo a cast before being passed in
-    # since += here works but |= (which should be equivalent) fails...
-    # Examining debugger shows that | {"c", "b"} is actually passing in
-    # np.array([{"c", "b"}, {"c", "b"}], dtype=object) is the r value for some reason!?
     f += {"c", "b"}
+    print(f)
+
     f | {"c"}
     f | {"c", "b"}
-    print(f)
-    # Same bug as above down here too - weird cast that happens when using and
     f & {"a"}
+
     f &= {"a", "d"}
+    print(f)
 
     print(g)
     print(g <= {"8"})
