@@ -28,11 +28,6 @@ from pandas.core.dtypes.base import ExtensionDtype
 if TYPE_CHECKING:
     from pandas._typing import type_t
 
-# Assume nodes are strings, else we can't construct from string when passed the name!
-# We can likely get around this with some careful planning, but we'd have to figure out how
-# to pass type-metadata for the elements from inside the output of self.name, so that casting
-# was successful.
-ALLOWABLE_ELEMENT_TYPES = (str,)
 BYTE_WIDTH = 8
 BooleanArray: TypeAlias = np.ndarray[bool]
 CastableForPandasOps: TypeAlias = (
@@ -43,6 +38,10 @@ CastableForPandasOps: TypeAlias = (
     | "BitsetArray"
 )
 SingletonForPandasOps: TypeAlias = "ElementType" | Iterable["ElementType"]
+# Assume nodes are strings, else we can't construct from string when passed the name!
+# We can likely get around this with some careful planning, but we'd have to figure out how
+# to pass type-metadata for the elements from inside the output of self.name, so that casting
+# was successful.
 ElementType: TypeAlias = str
 
 
@@ -146,9 +145,9 @@ class BitsetDtype(ExtensionDtype):
         # metadata about the type of each element.
         provided_elements = sorted([e for e in elements])
         if not all(
-            isinstance(e, ALLOWABLE_ELEMENT_TYPES) for e in provided_elements
+            isinstance(e, ElementType) for e in provided_elements
         ):
-            raise TypeError(f"BitSet elements must be one of type: {ALLOWABLE_ELEMENT_TYPES}")
+            raise TypeError(f"BitSet elements must type {ElementType}")
         self._elements = tuple(
             sorted(set(provided_elements), key=lambda x: provided_elements.index(x))
         )
@@ -197,7 +196,7 @@ class BitsetDtype(ExtensionDtype):
 
         A single element will be broadcast to a (1,) numpy array.
         """
-        if isinstance(collection, ALLOWABLE_ELEMENT_TYPES):
+        if isinstance(collection, ElementType):
             collection = set(collection)
 
         output = np.zeros((self.fixed_width, 1), dtype=np.uint8)
@@ -302,7 +301,7 @@ class BitsetArray(ExtensionArray):
         # Check that we have only been passed sets as scalars. Implicitly convert single-items to sets.
         for i, s in enumerate(scalars):
             if not isinstance(s, set):
-                if isinstance(s, ALLOWABLE_ELEMENT_TYPES):
+                if isinstance(s, ElementType):
                     scalars[i] = set(s)
                 else:
                     raise ValueError(f"{s} cannot be cast to an element of a bitset.")
@@ -425,7 +424,7 @@ class BitsetArray(ExtensionArray):
         Return values are the converted value, and whether this value should be considered
         a scalar-set (False) or a collection of sets (True).
         """
-        if isinstance(value, ALLOWABLE_ELEMENT_TYPES):
+        if isinstance(value, ElementType):
             return set(value), False
         elif isinstance(value, set):
             return value, False
@@ -439,7 +438,7 @@ class BitsetArray(ExtensionArray):
         # Last ditch attempt - we might have been given a list of sets, for example...
         try:
             value = set(value)
-            if all([isinstance(item, ALLOWABLE_ELEMENT_TYPES) for item in value]):
+            if all([isinstance(item, ElementType) for item in value]):
                 return value, False
             elif all([isinstance(item, set) for item in value]):
                 return value, True
@@ -467,7 +466,7 @@ class BitsetArray(ExtensionArray):
         BitsetArrays
             Return their ``_uint8_view`` attribute.
         """
-        if isinstance(other, ALLOWABLE_ELEMENT_TYPES):
+        if isinstance(other, ElementType):
             # Treat single-elements as single-element sets
             other = set(other)
         if isinstance(other, BitsetArray):
@@ -515,7 +514,7 @@ class BitsetArray(ExtensionArray):
             return np.array([op(s, other) for s in self.as_sets], dtype=bool)
 
     def __contains__(self, item: SingletonForPandasOps | Any) -> BooleanArray | bool:
-        if isinstance(item, ALLOWABLE_ELEMENT_TYPES):
+        if isinstance(item, ElementType):
             item = set(item)
         if isinstance(item, set):
             return item in self.as_sets
@@ -525,7 +524,7 @@ class BitsetArray(ExtensionArray):
     def __eq__(self, other) -> bool:
         if isinstance(other, (pd.Series, pd.DataFrame, pd.Index)):
             return NotImplemented
-        elif isinstance(other, ALLOWABLE_ELEMENT_TYPES):
+        elif isinstance(other, ElementType):
             other = set(other)
 
         if isinstance(other, set):
@@ -625,7 +624,7 @@ class BitsetArray(ExtensionArray):
             | Sequence[np.bytes_ | ElementType| Set[ElementType]]
         ),
     ) -> None:
-        if isinstance(value, ALLOWABLE_ELEMENT_TYPES + (set,)):
+        if isinstance(value, ElementType) or isinstance(value, set):
             # Interpret this as a "scalar" set that we want to set all values to
             value = self.dtype.as_bytes(value)
         elif isinstance(value, np.bytes_):
