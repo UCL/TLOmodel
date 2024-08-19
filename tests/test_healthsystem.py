@@ -2600,14 +2600,14 @@ def test_HR_expansion_by_officer_type(seed, tmpdir):
 
         )
         params = sim.modules['HealthSystem'].parameters
-        params['start_year_HR_expansion_by_officer_type'] = 2011
-        params['end_year_HR_expansion_by_officer_type'] = end_year
+        params['start_year_HR_expansion_by_officer_type'] = 2011  # first update happens on 1 Jan 2011
+        params['end_year_HR_expansion_by_officer_type'] = end_year  # last update happens on 1 Jan (end_year - 1)
         params['HR_expansion_by_officer_type'] = HR_expansion_by_officer_type
 
         popsize = 100
         sim.make_initial_population(n=popsize)
 
-        sim.simulate(end_date=Date(end_year, 1, 2))
+        sim.simulate(end_date=Date(end_year, 1, 1))
 
         caps = pd.DataFrame(sim.modules['HealthSystem'].capabilities_today)
         caps = caps[caps != 0]
@@ -2615,6 +2615,7 @@ def test_HR_expansion_by_officer_type(seed, tmpdir):
         return caps
 
     initial_caps = get_initial_capabilities()
+    caps_clinical_no_update = get_capabilities_after_update(2012, [0, 0, 0, 0])
     caps_clinical_one_update = get_capabilities_after_update(2012, [1, 0, 0, 0])
     caps_clinical_dcsa_one_update = get_capabilities_after_update(2012, [0.5, 0.5, 0, 0])
     caps_clinical_two_updates = get_capabilities_after_update(2013, [1, 0, 0, 0])
@@ -2628,6 +2629,10 @@ def test_HR_expansion_by_officer_type(seed, tmpdir):
         ratio = (comp_caps_0.iloc[:, 1] / comp_caps_0.iloc[:, 0]).dropna()
 
         return (ratio > 1).all(), (abs(ratio - ratio.unique()[0]) < 1e-6).all()
+
+    # initial_caps vs caps_clinical_no_update
+    # check if the clinical cadre of each facility id is not expanded
+    assert not compare('Clinical', initial_caps, caps_clinical_no_update)[0]
 
     # initial_caps vs caps_clinical_one_update
     # check if the clinical cadre of each facility id is expanded
