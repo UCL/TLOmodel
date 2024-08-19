@@ -398,8 +398,7 @@ class Demography(Module):
                 maternal_deaths = 0
             else:
                 neonatal_deaths = (len(df[(df['age_days'] < 29) & (df['age_years'] == 0) & ~(df['is_alive']) & (
-                        df['date_of_death'] >= (self.sim.date - DateOffset(months=1)))]) / len(
-                    df[df['age_days'] < 29])) * 1000
+                        df['date_of_death'] >= (self.sim.date - DateOffset(months=1)))])
                 number_births = len(df[df['age_days'] < 29])
                 maternal_direct_deaths = len(df.loc[
                                                  (df['cause_of_death'] == 'Maternal Disorders') &
@@ -419,7 +418,6 @@ class Demography(Module):
                                                 ])
                 direct_deaths_non_hiv = direct_deaths_non_hiv * 0.3  # https://www.who.int/publications/i/item/9789240068759
                 maternal_deaths = maternal_direct_deaths + indirect_deaths_non_hiv + direct_deaths_non_hiv
-                maternal_deaths = (maternal_deaths / number_births) * 1000
 
         health_values_df = pd.DataFrame({
             'neonatal': [neonatal_deaths],
