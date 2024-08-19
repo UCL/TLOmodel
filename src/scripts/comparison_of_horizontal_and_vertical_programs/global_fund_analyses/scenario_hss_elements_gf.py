@@ -87,7 +87,7 @@ class HSSElements(BaseScenario):
             "HRH Increases at GDP Growth":
                 mix_scenarios(
                     scenario_definitions.baseline(),
-                    scenario_definitions.hrh_at_grp_growth(),
+                    scenario_definitions.hrh_at_gdp_growth(),
                 ),
 
             "HRH Increases above GDP Growth":
