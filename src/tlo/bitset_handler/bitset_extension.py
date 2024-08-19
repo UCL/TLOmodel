@@ -93,13 +93,13 @@ class BitsetDtype(ExtensionDtype):
             # Remove prefix
             string = string.removeprefix(prefix)
             # Extract number of elements if provided though
-            n_elements = re.search("(\d+)", prefix).group(0)
+            n_elements = int(re.search("(\d+)", prefix).group(0))
         if "," not in string:
             raise TypeError(
                 "Need at least 2 (comma-separated) elements in string to construct bitset."
             )
         else:
-            iterable_values = (s.strip() for s in string.split(","))
+            iterable_values = tuple(s.strip() for s in string.split(","))
         if n_elements is not None and len(iterable_values) != n_elements:
             raise ValueError(
                 f"Requested bitset with {n_elements} elements, but provided {len(iterable_values)} elements: {iterable_values}"
