@@ -1,10 +1,9 @@
 """This Scenario file run the model under different assumptions for the HealthSystem and Vertical Program Scale-up
 
 Run on the batch system using:
-```
+
 tlo batch-submit
- src/scripts/comparison_of_horizontal_and_vertical_programs/scenario_hss_elements.py
-```
+src/scripts/comparison_of_horizontal_and_vertical_programs/global_fund_analyses/scenario_hss_elements_gf.py
 
 """
 
@@ -82,13 +81,13 @@ class HSSElements(BaseScenario):
             "HRH Keeps Pace with Population Growth":
                 mix_scenarios(
                     scenario_definitions.baseline(),
-                    scenario_definitions._hrh_at_pop_growth(),
+                    scenario_definitions.hrh_at_pop_growth(),
                 ),
 
             "HRH Increases at GDP Growth":
                 mix_scenarios(
                     scenario_definitions.baseline(),
-                    scenario_definitions._hrh_at_grp_growth(),
+                    scenario_definitions.hrh_at_grp_growth(),
                 ),
 
             "HRH Increases above GDP Growth":

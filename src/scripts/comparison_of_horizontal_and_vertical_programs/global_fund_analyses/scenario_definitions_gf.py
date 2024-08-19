@@ -52,7 +52,7 @@ class ScenarioDefinitions:
             }
         }
 
-    def hrh_at_pop_grwoth(self) -> Dict:
+    def hrh_at_pop_growth(self) -> Dict:
         return {
             'HealthSystem': {
                 'yearly_HR_scaling_mode': 'scaling_by_population_growth',
