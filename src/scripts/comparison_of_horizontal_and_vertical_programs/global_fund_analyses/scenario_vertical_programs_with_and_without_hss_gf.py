@@ -1,9 +1,14 @@
 """This Scenario file run the model under different assumptions for the HealthSystem and Vertical Program Scale-up
 
+check scenarios are generated correctly:
+tlo scenario-run --draw-only
+src/scripts/comparison_of_horizontal_and_vertical_programs/global_fund_analyses/scenario_vertical_programs_with_and_without_hss_gf.py
+
+
 Run on the batch system using:
 ```
 tlo batch-submit
- src/scripts/comparison_of_horizontal_and_vertical_programs/scenario_vertical_programs_with_and_without_hss.py
+ src/scripts/comparison_of_horizontal_and_vertical_programs/global_fund_analyses/scenario_vertical_programs_with_and_without_hss_gf.py
 ```
 
 """
@@ -11,7 +16,7 @@ tlo batch-submit
 from pathlib import Path
 from typing import Dict
 
-from scripts.comparison_of_horizontal_and_vertical_programs.scenario_definitions import (
+from scripts.comparison_of_horizontal_and_vertical_programs.global_fund_analyses.scenario_definitions_gf import (
     ScenarioDefinitions,
 )
 from tlo import Date, logging
