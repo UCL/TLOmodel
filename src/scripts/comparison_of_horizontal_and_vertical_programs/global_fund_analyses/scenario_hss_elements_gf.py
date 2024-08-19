@@ -13,7 +13,7 @@ src/scripts/comparison_of_horizontal_and_vertical_programs/global_fund_analyses/
 from pathlib import Path
 from typing import Dict
 
-from scripts.comparison_of_horizontal_and_vertical_programs.global_fund_analyses.scenario_definitions import (
+from scripts.comparison_of_horizontal_and_vertical_programs.global_fund_analyses.scenario_definitions_gf import (
     ScenarioDefinitions,
 )
 from tlo import Date, logging
@@ -84,7 +84,7 @@ class HSSElements(BaseScenario):
             "HRH Keeps Pace with Population Growth":
                 mix_scenarios(
                     scenario_definitions.baseline(),
-                    scenario_definitions.(),
+                    scenario_definitions.hrh_at_pop_growth(),
                 ),
 
             "HRH Increases at GDP Growth":
