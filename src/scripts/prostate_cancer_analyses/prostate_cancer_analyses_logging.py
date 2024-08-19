@@ -9,18 +9,18 @@ from tlo.methods import (
     contraception,
     demography,
     enhanced_lifestyle,
+    epi,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
+    hiv,
     labour,
     newborn_outcomes,
     postnatal_supervisor,
     pregnancy_supervisor,
     prostate_cancer,
     symptommanager,
-    hiv,
     tb,
-    epi,
 )
 
 # Where will outputs go

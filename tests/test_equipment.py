@@ -196,7 +196,7 @@ def run_simulation_and_return_log(
             self.essential_equipment = essential_equipment
             self.other_equipment = other_equipment
 
-        def read_parameters(self, data_folder):
+        def read_parameters(self, resourcefilepath=None):
             pass
 
         def initialise_population(self, population):
@@ -219,10 +219,11 @@ def run_simulation_and_return_log(
             )
 
     log_config = {"filename": "log", "directory": tmpdir}
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, log_config=log_config)
+    sim = Simulation(start_date=Date(2010, 1, 1),
+                     seed=seed, log_config=log_config, resourcefilepath=resourcefilepath)
     sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        demography.Demography(),
+        healthsystem.HealthSystem(),
         DummyModule(
             essential_equipment=equipment_in_init, other_equipment=equipment_in_apply
         ),
@@ -396,10 +397,10 @@ def test_change_equipment_availability(seed):
                 priority=0,
             )
 
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, resourcefilepath=resourcefilepath)
     sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        demography.Demography(),
+        healthsystem.HealthSystem(),
         DummyModule(),
     )
     # Modify the parameters of the healthsystem to effect a change in the availability of equipment
@@ -444,7 +445,7 @@ def test_logging_of_equipment_from_multiple_hsi(seed, tmpdir):
     class DummyModule(Module):
         METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHSYSTEM}
 
-        def read_parameters(self, data_folder):
+        def read_parameters(self, resourcefilepath=None):
             pass
 
         def initialise_population(self, population):
@@ -462,10 +463,11 @@ def test_logging_of_equipment_from_multiple_hsi(seed, tmpdir):
                 )
 
     log_config = {"filename": "log", "directory": tmpdir}
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, log_config=log_config)
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed,
+                     log_config=log_config, resourcefilepath=resourcefilepath)
     sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        demography.Demography(),
+        healthsystem.HealthSystem(),
         DummyModule(),
     )
     sim.make_initial_population(n=100)
