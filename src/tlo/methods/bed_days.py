@@ -357,9 +357,9 @@ class BedDays:
         for priority, bed_type in enumerate(self.bed_types):
             # Bed type priority is dictated by list order, so it is safe to loop here.
             # We will start with the highest-priority bed type and work to the lowest
-            fp1_priority[fp1_at:fp1[bed_type]] = priority
+            fp1_priority[fp1_at:fp1_at + fp1[bed_type]] = priority
             fp1_at += fp1[bed_type]
-            fp2_priority[fp2_at:fp2[bed_type]] = priority
+            fp2_priority[fp2_at:fp2_at + fp2[bed_type]] = priority
             fp2_at += fp2[bed_type]
 
         # Element-wise minimum of the two priority arrays is then the bed to assign
