@@ -386,9 +386,8 @@ class Demography(Module):
                 neonatal_deaths = 0
                 maternal_deaths = 0
             else:
-                neonatal_deaths = (len(df[(df['age_days'] < 29) & (df['age_years'] == 0) & ~(df['is_alive']) & (
+                neonatal_deaths = len(df[(df['age_days'] < 29) & (df['age_years'] == 0) & ~(df['is_alive']) & (
                         df['date_of_death'] >= (self.sim.date - DateOffset(months=1)))])
-                number_births = len(df[df['age_days'] < 29])
                 maternal_direct_deaths = len(df.loc[
                                                  (df['cause_of_death'] == 'Maternal Disorders') &
                                                  (df['date_of_death'] >= (self.sim.date - DateOffset(months=1)))
