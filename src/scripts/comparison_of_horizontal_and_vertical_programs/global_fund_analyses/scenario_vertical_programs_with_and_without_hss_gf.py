@@ -26,11 +26,11 @@ class HTMWithAndWithoutHSS(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2031, 1, 1)
-        self.pop_size = 50_000  # <--- todo: N.B. very small population size
+        self.end_date = Date(2035, 1, 1)
+        self.pop_size = 150_000  # <--- todo: N.B. very small population size
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 1  # <--- todo: N.B. Very small number of repeated run, to be efficient for now
+        self.runs_per_draw = 5  # <--- todo: N.B. Very small number of repeated run, to be efficient for now
 
     def log_configuration(self):
         return {
