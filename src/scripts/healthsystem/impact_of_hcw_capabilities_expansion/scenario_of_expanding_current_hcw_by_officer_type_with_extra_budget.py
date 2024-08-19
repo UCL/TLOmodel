@@ -4,12 +4,12 @@ It's used for analysis of impact of expanding funded hcw, assuming all other set
 
 Run on the batch system using:
 ```
-tlo batch-submit src/scripts/healthsystem/impact_of_hcw_capabilities_expansion/scenario_of_expanding_current_hcw_with_extra_budget.py
+tlo batch-submit src/scripts/healthsystem/impact_of_hcw_capabilities_expansion/scenario_of_expanding_current_hcw_by_officer_type_with_extra_budget.py
 ```
 
 or locally using:
 ```
-tlo scenario-run src/scripts/healthsystem/impact_of_hcw_capabilities_expansion/scenario_of_expanding_current_hcw_with_extra_budget.py
+tlo scenario-run src/scripts/healthsystem/impact_of_hcw_capabilities_expansion/scenario_of_expanding_current_hcw_by_officer_type_with_extra_budget.py
 ```
 """
 
