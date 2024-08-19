@@ -1,7 +1,8 @@
 """This Scenario file run the model under different assumptions for the HealthSystem and Vertical Program Scale-up
 
 check scenarios are generated correctly:
-tlo scenario-run --draw-only src/scripts/comparison_of_horizontal_and_vertical_programs/global_fund_analyses/scenario_hss_elements_gf.py
+tlo scenario-run --draw-only
+src/scripts/comparison_of_horizontal_and_vertical_programs/global_fund_analyses/scenario_hss_elements_gf.py
 
 Run on the batch system using:
 
