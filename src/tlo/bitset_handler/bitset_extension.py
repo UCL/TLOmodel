@@ -77,16 +77,32 @@ class BitsetDtype(ExtensionDtype):
         bitset(#elements): e1, e2, e3, ...
 
         this method will return a BitsetDtype with elements e1, e2, e3, ... etc.
+
+        The bitset(#elements): prefix is not required, simply passing a comma-separated
+        string of values will suffice to construct a bitset with those elements.
+        The prefix is typically supplied when constructing an implicit instance as part of
+        a call to `pd.Series` with the `dtype` parameter set to a string,
         """
         if not isinstance(string, str):
             raise TypeError(f"'construct_from_string' expects a string, got {type(string)}")
 
         string_has_bitset_prefix = re.match("bitset\((\d+)\):", string)
+        n_elements = None
         if string_has_bitset_prefix:
-            string = string.removeprefix(string_has_bitset_prefix.group(0))
+            prefix = string_has_bitset_prefix.group(0)
+            # Remove prefix
+            string = string.removeprefix(prefix)
+            # Extract number of elements if provided though
+            n_elements = re.search("(\d+)", prefix).group(0)
         if "," not in string:
             raise TypeError(
                 "Need at least 2 (comma-separated) elements in string to construct bitset."
+            )
+        else:
+            iterable_values = (s.strip() for s in string.split(","))
+        if n_elements is not None and len(iterable_values) != n_elements:
+            raise ValueError(
+                f"Requested bitset with {n_elements} elements, but provided {len(iterable_values)} elements: {iterable_values}"
             )
         return BitsetDtype(s.strip() for s in string.split(","))
 
@@ -182,7 +198,7 @@ class BitsetDtype(ExtensionDtype):
         """
         if isinstance(collection, ALLOWABLE_ELEMENT_TYPES):
             collection = set(collection)
-        
+
         output = np.zeros((self.fixed_width, 1), dtype=np.uint8)
         for element in collection:
             char, bin_repr = self._element_map[element]
