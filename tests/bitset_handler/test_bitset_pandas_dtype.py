@@ -7,7 +7,7 @@ from numpy.dtypes import BytesDType
 from numpy.random import PCG64, Generator
 from pandas.tests.extension.base import BaseDtypeTests
 
-from tlo.bitset_handler.bitset_extension import BitsetArray, BitsetDtype, NodeType
+from tlo.bitset_handler.bitset_extension import BitsetArray, BitsetDtype, ElementType
 
 
 @pytest.fixture(scope="session")
@@ -16,18 +16,18 @@ def _rng() -> Generator:
 
 
 @pytest.fixture(scope="session")
-def _set_elements() -> Set[NodeType]:
+def _set_elements() -> Set[ElementType]:
     return {"1", "2", "3", "4", "5", "a", "b", "c", "d", "e"}
 
 
 @pytest.fixture(scope="session")
-def dtype(_set_elements: Set[NodeType]) -> BitsetDtype:
+def dtype(_set_elements: Set[ElementType]) -> BitsetDtype:
     return BitsetDtype(_set_elements)
 
 
 @pytest.fixture(scope="session")
 def data(
-    _rng: Generator, _set_elements: Set[NodeType], dtype: BitsetDtype
+    _rng: Generator, _set_elements: Set[ElementType], dtype: BitsetDtype
 ) -> BitsetArray:
     elements = list(_set_elements)
     data = np.zeros((100,), dtype=dtype.np_array_dtype)

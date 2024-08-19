@@ -33,16 +33,17 @@ if TYPE_CHECKING:
 # to pass type-metadata for the elements from inside the output of self.name, so that casting
 # was successful.
 ALLOWABLE_ELEMENT_TYPES = (str,)
+BYTE_WIDTH = 8
 BooleanArray: TypeAlias = np.ndarray[bool]
 CastableForPandasOps: TypeAlias = (
-    "NodeType"
-    | Iterable["NodeType"]
+    "ElementType"
+    | Iterable["ElementType"]
     | NDArray[np.uint8]
     | NDArray[np.bytes_]
     | "BitsetArray"
 )
-SingletonForPandasOps: TypeAlias = "NodeType" | Iterable["NodeType"]
-NodeType: TypeAlias = str
+SingletonForPandasOps: TypeAlias = "ElementType" | Iterable["ElementType"]
+ElementType: TypeAlias = str
 
 
 class BitsetDtype(ExtensionDtype):
@@ -58,9 +59,9 @@ class BitsetDtype(ExtensionDtype):
     corresponding string-character index, and the latter the uint8 representation of the element within that
     string character.
     """
-    _element_map: Dict[NodeType, Tuple[int, np.uint8]]
-    _elements: Tuple[NodeType]
-    _index_map: Dict[Tuple[int, np.uint8], NodeType]
+    _element_map: Dict[ElementType, Tuple[int, np.uint8]]
+    _elements: Tuple[ElementType]
+    _index_map: Dict[Tuple[int, np.uint8], ElementType]
     _metadata = ("_elements",)
 
     @classmethod
@@ -107,7 +108,7 @@ class BitsetDtype(ExtensionDtype):
         return BitsetDtype(s.strip() for s in string.split(","))
 
     @property
-    def elements(self) -> Tuple[NodeType]:
+    def elements(self) -> Tuple[ElementType]:
         return self._elements
 
     @property
@@ -115,7 +116,7 @@ class BitsetDtype(ExtensionDtype):
         """
         Fixed-length of the character string that represents this bitset.
         """
-        return int(np.ceil(self.n_elements / 8.0))
+        return (self.n_elements - 1) // BYTE_WIDTH + 1
 
     @property
     def n_elements(self) -> int:
@@ -137,7 +138,7 @@ class BitsetDtype(ExtensionDtype):
     def type(self) -> Type[np.bytes_]:
         return self.np_array_dtype.type
 
-    def __init__(self, elements: Iterable[NodeType]) -> None:
+    def __init__(self, elements: Iterable[ElementType]) -> None:
         # Take only unique elements.
         # Sort elements alphabetically for consistency when constructing Bitsets that
         # represent the same items.
@@ -157,7 +158,7 @@ class BitsetDtype(ExtensionDtype):
 
         # Setup the element map and its inverse, one-time initialisation cost.
         self._element_map = {
-            e: (index // 8, np.uint8(2 ** (index % 8)))
+            e: (index // BYTE_WIDTH, np.uint8(2 ** (index % BYTE_WIDTH)))
             for index, e in enumerate(self._elements)
         }
         self._index_map = {loc: element for element, loc in self._element_map.items()}
@@ -168,13 +169,13 @@ class BitsetDtype(ExtensionDtype):
     def __str__(self) -> str:
         return self.__repr__()
 
-    def as_bytes(self, collection: Iterable[NodeType] | NodeType) -> np.bytes_:
+    def as_bytes(self, collection: Iterable[ElementType] | ElementType) -> np.bytes_:
         """
         Return the bytes representation of this set or single element.
         """
         return np.bytes_(self.as_uint8_array(collection))
 
-    def as_set(self, binary_repr: np.bytes_) -> Set[NodeType]:
+    def as_set(self, binary_repr: np.bytes_) -> Set[ElementType]:
         """
         Return the set corresponding to the binary representation provided.
         """
@@ -188,7 +189,7 @@ class BitsetDtype(ExtensionDtype):
             }
         return elements_in_set
 
-    def as_uint8_array(self, collection: Iterable[NodeType] | NodeType) -> NDArray[np.uint8]:
+    def as_uint8_array(self, collection: Iterable[ElementType] | ElementType) -> NDArray[np.uint8]:
         """
         Return the collection of elements as a 1D array of ``self.fixed_width`` uint8s.
         Each uint8 corresponds to the bitwise representation of a single character
@@ -205,7 +206,7 @@ class BitsetDtype(ExtensionDtype):
             output[char] |= bin_repr
         return output.squeeze(axis=1)
 
-    def element_loc(self, element: NodeType) -> Tuple[int, np.uint8]:
+    def element_loc(self, element: ElementType) -> Tuple[int, np.uint8]:
         """
         Location in of the bit corresponding to the element in this bitset.
 
@@ -288,37 +289,28 @@ class BitsetArray(ExtensionArray):
 
     @classmethod
     def _from_sequence(
-        cls, scalars: Iterable[Set[NodeType]], *, dtype: BitsetDtype | None = None, copy: bool = False
+        cls, scalars: Iterable[Set[ElementType] | ElementType], *, dtype: BitsetDtype | None = None, copy: bool = False
     ) -> BitsetArray:
         """
         Construct a new BitSetArray from a sequence of scalars.
 
-        Parameters
-        ----------
-        scalars : Sequence[Set[NodeType] | NodeType]
-            Sequence of sets of elements (or single-values to be interpreted as single-element sets)
-        dtype : dtype, optional
-            Cast to this datatype, only BitsetDtype is supported if not None. If None, an attempt will be made to
-            construct an appropriate BitsetDtype using the scalar values provided.
-        copy : bool, default False
-            If True, copy the underlying data.
+        :param scalars: Sequence of sets of elements (or single-values to be interpreted as single-element sets).
+        :param dtype: Cast to this datatype, only BitsetDtype is supported if not None.
+        If None, an attempt will be made to construct an appropriate BitsetDtype using the scalar values provided.
+        :param copy: If True, copy the underlying data. Default False.
         """
         # Check that we have only been passed sets as scalars. Implicitly convert single-items to sets.
-        for s in scalars:
+        for i, s in enumerate(scalars):
             if not isinstance(s, set):
                 if isinstance(s, ALLOWABLE_ELEMENT_TYPES):
-                    s = set(s)
+                    scalars[i] = set(s)
                 else:
                     raise ValueError(f"{s} cannot be cast to an element of a bitset.")
-        assert all(isinstance(s, set) for s in scalars), "Not all scalars have been cast correctly."
 
         # If no dtype has been provided, attempt to construct an appropriate BitsetDtype.
         if dtype is None:
             # Determine the elements in the bitset by looking through the scalars
-            all_elements = set()
-            for s in scalars:
-                # Take union of sets to form list of all possible Bitset elements
-                all_elements |= s
+            all_elements = set().union(scalars)
             dtype = BitsetDtype(all_elements)
         elif not isinstance(dtype, BitsetDtype):
             raise TypeError(f"BitsetArray cannot be constructed with dtype {dtype}")
@@ -366,7 +358,7 @@ class BitsetArray(ExtensionArray):
         return self._data.view(self._uint8_view_format)
 
     @property
-    def as_sets(self) -> List[Set[NodeType]]:
+    def as_sets(self) -> List[Set[ElementType]]:
         """
         Return a list whose entry i is the set representation of the
         bitset in entry i of this array.
@@ -423,7 +415,7 @@ class BitsetArray(ExtensionArray):
 
     def __cast_before_comparison_op(
         self, value: CastableForPandasOps
-    ) -> Set[NodeType] | bool:
+    ) -> Set[ElementType] | bool:
         """
         Common steps taken before employing comparison operations on this class.
 
@@ -496,7 +488,7 @@ class BitsetArray(ExtensionArray):
             cast = self.dtype.as_uint8_array(other)
         return cast
 
-    def __comparison_op(self, other: CastableForPandasOps, op: Callable[[Set[NodeType], Set[NodeType]], bool]) -> BooleanArray:
+    def __comparison_op(self, other: CastableForPandasOps, op: Callable[[Set[ElementType], Set[ElementType]], bool]) -> BooleanArray:
         """
         Abstract method for strict and non-strict comparison operations.
 
@@ -628,9 +620,9 @@ class BitsetArray(ExtensionArray):
         key: int | slice | NDArray,
         value: (
             np.bytes_
-            | NodeType
-            | Set[NodeType]
-            | Sequence[np.bytes_ | NodeType| Set[NodeType]]
+            | ElementType
+            | Set[ElementType]
+            | Sequence[np.bytes_ | ElementType| Set[ElementType]]
         ),
     ) -> None:
         if isinstance(value, ALLOWABLE_ELEMENT_TYPES + (set,)):
@@ -685,7 +677,7 @@ class BitsetArray(ExtensionArray):
         indices: TakeIndexer,
         *,
         allow_fill: bool = False,
-        fill_value: Optional[BytesDType | Set[NodeType]] = None,
+        fill_value: Optional[BytesDType | Set[ElementType]] = None,
     ) -> BitsetArray:
         if allow_fill:
             if isinstance(fill_value, set):
