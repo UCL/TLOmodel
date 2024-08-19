@@ -1,62 +1,9 @@
 import re
-from typing import Set
 
-import numpy as np
 import pytest
-from numpy.dtypes import BytesDType
-from numpy.random import PCG64, Generator
 from pandas.tests.extension.base import BaseDtypeTests
 
-from tlo.bitset_handler.bitset_extension import BitsetArray, BitsetDtype, ElementType
-
-
-@pytest.fixture(scope="session")
-def _rng() -> Generator:
-    return Generator(PCG64(seed=0))
-
-
-@pytest.fixture(scope="session")
-def _set_elements() -> Set[ElementType]:
-    return {"1", "2", "3", "4", "5", "a", "b", "c", "d", "e"}
-
-
-@pytest.fixture(scope="session")
-def dtype(_set_elements: Set[ElementType]) -> BitsetDtype:
-    return BitsetDtype(_set_elements)
-
-
-@pytest.fixture(scope="session")
-def data(
-    _rng: Generator, _set_elements: Set[ElementType], dtype: BitsetDtype
-) -> BitsetArray:
-    elements = list(_set_elements)
-    data = np.zeros((100,), dtype=dtype.np_array_dtype)
-    data[0] = dtype.as_bytes({"1", "e"})
-    data[1] = dtype.as_bytes({"a", "d"})
-    data[2] = dtype.as_bytes({"2", "4", "5"})
-    for i in range(3, data.shape[0]):
-        data[i] = dtype.as_bytes(
-            {
-                elements[i]
-                for i in _rng.integers(
-                    0, len(elements), size=_rng.integers(0, len(elements))
-                )
-            }
-        )
-    return BitsetArray(data, dtype=dtype, copy=True)
-
-
-@pytest.fixture
-def data_for_twos(dtype: BitsetDtype) -> None:
-    pytest.skip(f"{dtype} does not support divmod")
-
-
-@pytest.fixture
-def data_missing(dtype: BitsetDtype) -> np.ndarray[BytesDType]:
-    data = np.zeros((2,), dtype=dtype.np_array_dtype)
-    data[0] = dtype.na_value
-    data[1] = dtype.as_bytes({"a"})
-    return data
+from tlo.bitset_handler.bitset_extension import BitsetDtype
 
 
 class TestMyDtype(BaseDtypeTests):

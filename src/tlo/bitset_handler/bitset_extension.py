@@ -405,7 +405,7 @@ class BitsetArray(ExtensionArray):
             dtype=self.dtype,
         )
 
-    def __and__(self,other: CastableForPandasOps
+    def __and__(self, other: CastableForPandasOps
     ) -> BitsetArray:
         """
         Entry-wise intersection with other.
@@ -478,8 +478,6 @@ class BitsetArray(ExtensionArray):
         BitsetArrays
             Return their ``_uint8_view`` attribute.
         """
-        if isinstance(other, np.ndarray) and (other == other[0]).all():
-            other = other[0]
         if isinstance(other, ElementType):
             # Treat single-elements as single-element sets
             other = set(other)
@@ -489,7 +487,11 @@ class BitsetArray(ExtensionArray):
             else:
                 cast = other._uint8_view
         elif isinstance(other, np.ndarray):
-            if other.dtype == np.uint8 and other.shape[0] == self._uint8_view.shape[0]:
+            if other.size == 0:
+                cast = self.dtype.as_uint8_array({})
+            elif (other == other[0]).all():
+                cast = self.dtype.as_uint8_array(other[0])
+            elif other.dtype == np.uint8 and other.shape[0] == self._uint8_view.shape[0]:
                 # Compatible uint8s, possibly a view of another fixed-width bytestring array
                 cast = other
             elif other.dtype == self.dtype.np_array_dtype:
@@ -703,43 +705,3 @@ class BitsetArray(ExtensionArray):
         else:
             scalars = np.take(self._data, indices)
         return self._from_sequence(scalars)
-
-
-if __name__ == "__main__":
-
-    normal = pd.Series([1, 2, 3, 4, 5])
-
-    bdt = BitsetDtype.construct_from_string("a, b, c, d")
-    big_bdt = BitsetDtype.construct_from_string("0, 1, 2, 3, 4, 5, 6, 7, 8")
-
-    small_instance = bdt.as_bytes({"a", "d"})
-    small_set_from_instance = bdt.as_set(small_instance)
-
-    big_instance = big_bdt.as_bytes({"4", "8"})
-    set_from_big_instance = big_bdt.as_set(big_instance)
-
-    small_s = pd.Series([{"a"}, {"b", "c"}, {"d", "a"}], dtype=bdt)
-    big_s = pd.Series([{"1"}, {"4", "8"}], dtype=big_bdt)
-
-    small_s == {"a"}
-    big_s == {"4", "8"}
-
-    f = small_s + {"a"}
-    g = big_s + {"1"}
-
-    print(f)
-    f += {"c", "b"}
-    print(f)
-
-    f | {"c"}
-    f | {"c", "b"}
-    f & {"a"}
-
-    f &= {"a", "d"}
-    print(f)
-
-    print(g)
-    print(g <= {"8"})
-    print(g > {"8"})
-    print(g < g)
-    pass
