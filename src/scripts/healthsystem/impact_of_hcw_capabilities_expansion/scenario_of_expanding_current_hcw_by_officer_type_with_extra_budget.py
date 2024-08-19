@@ -25,7 +25,7 @@ from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScen
 from tlo.scenario import BaseScenario
 
 
-class LongRun(BaseScenario):
+class HRHExpansionByCadreWithExtraBudget(BaseScenario):
     def __init__(self):
         super().__init__()
         self.seed = 0
