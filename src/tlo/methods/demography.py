@@ -422,8 +422,8 @@ class Demography(Module):
                 maternal_mortality_rate = maternal_deaths/live_births * 1000
 
         health_values_df = pd.DataFrame({
-            'neonatal': [neonatal_mortality_rate],
-            'maternal_deaths': [maternal_mortality_rate],
+            'NMR': [neonatal_mortality_rate],
+            'MMR': [maternal_mortality_rate],
         })
 
         return health_values_df
