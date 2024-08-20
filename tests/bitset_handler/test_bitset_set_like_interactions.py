@@ -1,7 +1,8 @@
 """
 Tests for set-like interactions with a pd.Series object of BitsetDtype.
 """
-from typing import Iterable, List, Set
+import operator
+from typing import Any, Callable, Iterable, List, Set
 
 import pandas as pd
 import pytest
@@ -22,85 +23,71 @@ def small_series(_1st_3_entries: List[Set[ElementType]], dtype: BitsetDtype):
 
 
 # METHODS:
-# add
 # and
 # eq
 # ge, gt, le, lt
-# or
 # sub(tract)
 
-
 @pytest.mark.parametrize(
-    ["to_add", "where", "expected"],
+    ["op", "r_value", "where", "expected"],
     [
         pytest.param(
+            [operator.or_, operator.add],
             set(),
             None,
             [{"1", "e"}, {"a", "d"}, {"2", "4", "5"}],
-            id="Adding nothing does nothing.",
+            id="ADD, OR : Series w/ empty set (adding nothing does nothing)",
         ),
         pytest.param(
-            set(),
-            0,
-            [{"1", "e"}],
-            id="Adding nothing does nothing, even when selecting a single element",
-        ),
-        pytest.param(
+            [operator.or_, operator.add],
             {"a"},
             None,
             [{"1", "a", "e"}, {"a", "d"}, {"2", "4", "5", "a"}],
-            id="Adding a single element to all sets.",
+            id="ADD, OR : Series w/ single element set",
         ),
         pytest.param(
-            {"a"},
-            slice(2),
-            [{"1", "a", "e"}, {"a", "d"}],
-            id="Manipulate only the first 2 entries.",
-        ),
-        pytest.param(
-            {"1", "2", "d"},
-            1,
-            [{"1", "2", "a", "d"}],
-            id="Manipulate only a single entry.",
-        ),
-        pytest.param(
+            [operator.or_, operator.add],
             {"1", "2", "a", "d"},
-            slice(2),
+            None,
             [
                 {"1", "2", "a", "d", "e"},
                 {"1", "2", "a", "d"},
+                {"1", "2", "4", "5", "a", "d"},
             ],
-            id="Add sets of multiple elements to a slice of the series.",
+            id="ADD, OR : Series w/ multiple-entry set",
+        ),
+        pytest.param(
+            operator.or_,
+            set(),
+            0,
+            [{"1", "e"}],
+            id="OR : Single entry w/ empty set (adding nothing does nothing)",
+        ),
+        pytest.param(
+            operator.or_,
+            {"1", "2", "d"},
+            1,
+            [{"1", "2", "a", "d"}],
+            id="OR : Single entry w/ multiple-entry set",
         ),
     ],
 )
-def test_or(
+def test_operation(
     small_series: pd.Series,
     dtype: BitsetDtype,
-    to_add: CastableForPandasOps,
-    where: int | slice | Iterable[int] | None,
+    op: List[Callable[[Any, Any], Any]] | Callable[[Any, Any], Any],
+    r_value: CastableForPandasOps,
+    where: int | None,
     expected: List[Set[ElementType]]
-):
-    # Note that expected will be compared against
-    # small_series[where] so should only contain the
-    # entries it expects to see!
+) -> None:
     expected = seq_of_sets_to_series(expected, dtype)
+    l_value = small_series[where] if where is not None else small_series
 
-    # Assume index "None" to mean "whole series"
-    result = (
-        small_series[where] | to_add if where is not None else small_series | to_add
-    )
-
-    assert (expected == result).all(), f"Series do not match after adding {to_add}"
-
-    # Using _add__ should give the same result, since
-    # __or__ delegates to __add__.
-    if not isinstance(where, int):
-        # Sets do not have + defined on them, so we do not have a
-        # delegation method for when we extract a single value from
-        # the series.
-        result_from_adding = (
-            small_series[where] + to_add if where is not None else small_series + to_add
-        )
-
-        assert (result_from_adding == result).all(), "Using + in place of | returned different values, despite delegation!"
+    if not isinstance(op, list):
+        op = [op]
+    for operation in op:
+        # Assume index "None" to mean "whole series"
+        result = operation(l_value, r_value)
+        assert (
+            expected == result
+        ).all(), f"Series do not match after operation {operation.__name__} with {r_value} on the right."
