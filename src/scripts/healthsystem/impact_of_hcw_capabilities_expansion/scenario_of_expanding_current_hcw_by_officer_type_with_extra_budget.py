@@ -34,7 +34,7 @@ class HRHExpansionByCadreWithExtraBudget(BaseScenario):
         self.pop_size = 20_000  # todo: TBC
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 5  # todo: TBC
+        self.runs_per_draw = 10  # todo: TBC
 
     def log_configuration(self):
         return {
