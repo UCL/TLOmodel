@@ -393,12 +393,14 @@ class Demography(Module):
             maternal_deaths = None
         else:
             df = self.sim.population.props
-            if len(df[(df['age_days'] < 29) & (df['date_of_death'] >= (self.sim.date - DateOffset(months=1)))]) == 0:
-                neonatal_deaths = 0
-                maternal_deaths = 0
+            if len(df[(df['age_days'] < 29)]) == 0:
+                neonatal_mortality_rate = 0
+                maternal_mortality_rate = 0
             else:
                 neonatal_deaths = len(df[(df['age_days'] < 29) & (df['age_years'] == 0) & ~(df['is_alive']) & (
                         df['date_of_death'] >= (self.sim.date - DateOffset(months=1)))])
+                live_births = len(df[(df['age_days'] < 29) & (df['age_years'] == 0)])
+                neonatal_mortality_rate = neonatal_deaths/live_births * 1000
                 maternal_direct_deaths = len(df.loc[
                                                  (df['cause_of_death'] == 'Maternal Disorders') &
                                                  (df['date_of_death'] >= (self.sim.date - DateOffset(months=1)))
@@ -417,10 +419,11 @@ class Demography(Module):
                                                 ])
                 direct_deaths_non_hiv = direct_deaths_non_hiv * 0.3  # https://www.who.int/publications/i/item/9789240068759
                 maternal_deaths = maternal_direct_deaths + indirect_deaths_non_hiv + direct_deaths_non_hiv
+                maternal_mortality_rate = maternal_deaths/live_births * 1000
 
         health_values_df = pd.DataFrame({
-            'neonatal': [neonatal_deaths],
-            'maternal_deaths': [maternal_deaths],
+            'neonatal': [neonatal_mortality_rate],
+            'maternal_deaths': [maternal_mortality_rate],
         })
 
         return health_values_df
