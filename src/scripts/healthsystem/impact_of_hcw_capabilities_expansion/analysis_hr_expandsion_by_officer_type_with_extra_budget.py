@@ -43,11 +43,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         return tuple(e._scenarios.keys())
 
     def get_num_appts(_df):
-        """Return the number of appointments (total within the TARGET_PERIOD)"""
-        return _df \
-            .loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD), 'Number_By_Appt_Type_Code'] \
-            .apply(pd.Series) \
-            .sum()
+        """Return the number of appointments per appt type (total within the TARGET_PERIOD)"""
+        return (_df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD), 'Number_By_Appt_Type_Code']
+                .apply(pd.Series).sum())
+
+    def get_num_services(_df):
+        """Return the number of appointments in total of all appt types (total within the TARGET_PERIOD)"""
+        return pd.Series(
+            data=_df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD), 'Number_By_Appt_Type_Code']
+            .apply(pd.Series).sum().sum()
+        )
 
     def get_num_deaths(_df):
         """Return total number of Deaths (total within the TARGET_PERIOD)"""
@@ -125,9 +130,18 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         do_scaling=True
         ).pipe(set_param_names_as_column_index_level_0)
 
+    num_services = extract_results(
+        results_folder,
+        module='tlo.methods.healthsystem.summary',
+        key='HSI_Event',
+        custom_generate_series=get_num_services,
+        do_scaling=True
+    ).pipe(set_param_names_as_column_index_level_0)
+
     num_dalys_summarized = summarize(num_dalys).loc[0].unstack().reindex(param_names)
     num_deaths_summarized = summarize(num_deaths).loc[0].unstack().reindex(param_names)
     num_appts_summarized = summarize(num_appts).T.unstack().reindex(param_names)
+    num_services_summarize = summarize(num_services).loc[0].unstack().reindex(param_names)
 
 
 if __name__ == "__main__":
@@ -135,7 +149,17 @@ if __name__ == "__main__":
     parser.add_argument("results_folder", type=Path)  # outputs/bshe@ic.ac.uk/scenario_run_for_hcw_expansion_analysis-2024-08-16T160132Z
     args = parser.parse_args()
 
-    # Produce results for short-term analysis
+    # Produce results for short-term analysis: 5 years
+
+    # 2015-2019
+    apply(
+        results_folder=args.results_folder,
+        output_folder=args.results_folder,
+        resourcefilepath=Path('./resources'),
+        the_target_period=(Date(2015, 1, 1), Date(2019, 12, 31))
+    )
+
+    # 2020-2024
     apply(
         results_folder=args.results_folder,
         output_folder=args.results_folder,
@@ -143,7 +167,8 @@ if __name__ == "__main__":
         the_target_period=(Date(2020, 1, 1), Date(2024, 12, 31))
     )
 
-    # Produce results for long-term analysis
+    # Produce results for long-term analysis: 10 years
+    # 2020-2029
     apply(
         results_folder=args.results_folder,
         output_folder=args.results_folder,
