@@ -686,17 +686,25 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
         prevalence_from_each_disease_module = pd.DataFrame()
 
         for disease_module_name in self.module.recognised_modules_names:
-            if disease_module_name in ['NewbornOutcomes', 'PostnatalSupervisor', 'Mockitis', 'DiseaseThatCausesA', 'ChronicSyndrome']:
+            # Skip the modules that should not be included
+            if disease_module_name in ['NewbornOutcomes', 'PostnatalSupervisor', 'Mockitis', 'DiseaseThatCausesA',
+                                       'ChronicSyndrome']:
                 continue
 
             disease_module = self.sim.modules[disease_module_name]
             prevalence_from_disease_module = disease_module.report_prevalence()
 
+            # Skip specific columns that should not be included
+            columns_to_include = [col for col in prevalence_from_disease_module.columns
+                                  if col not in ['NewbornOutcomes', 'PostnatalSupervisor', 'Mockitis',
+                                                 'DiseaseThatCausesA', 'ChronicSyndrome']]
+
             if disease_module_name == "CardioMetabolicDisorders":
-                for i, column_name in enumerate(prevalence_from_disease_module.columns):
-                    prevalence_from_each_disease_module[column_name] = prevalence_from_disease_module.iloc[:, i]
+                for column_name in columns_to_include:
+                    prevalence_from_each_disease_module[column_name] = prevalence_from_disease_module[column_name]
             else:
-                prevalence_from_disease_module = pd.DataFrame([[prevalence_from_disease_module]])
+                filtered_prevalence = prevalence_from_disease_module[columns_to_include]
+                prevalence_from_disease_module = pd.DataFrame([[filtered_prevalence]])
 
                 column_name = ("Intrapartum stillbirth" if disease_module_name == "Labour" else
                                "Antenatal stillbirth" if disease_module_name == "PregnancySupervisor" else
