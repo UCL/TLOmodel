@@ -68,8 +68,8 @@ class Simulation:
         if log_config is None:
             log_config = {}
         self._custom_log_levels = None
-        self._log_filepath = None
-        self.configure_logging(**log_config)
+        self._log_filepath = self._configure_logging(**log_config)
+        
 
         # random number generator
         seed_from = 'auto' if seed is None else 'user'
@@ -81,8 +81,8 @@ class Simulation:
         )
         self.rng = np.random.RandomState(np.random.MT19937(self._seed_seq))
 
-    def configure_logging(self, filename: str = None, directory: Union[Path, str] = "./outputs",
-                          custom_levels: Dict[str, int] = None, suppress_stdout: bool = False):
+    def _configure_logging(self, filename: str = None, directory: Union[Path, str] = "./outputs",
+                           custom_levels: Dict[str, int] = None, suppress_stdout: bool = False):
         """Configure logging, can write logging to a logfile in addition the default of stdout.
 
         Minimum custom levels for each logger can be specified for filtering out messages
@@ -99,8 +99,10 @@ class Simulation:
         # clear logging environment
         # if using progress bar we do not print log messages to stdout to avoid
         # clashes between progress bar and log output
-        logging.init_logging(add_stdout_handler=not (self.show_progress_bar or suppress_stdout))
-        logging.set_simulation(self)
+        logging.initialise(
+            add_stdout_handler=not (self.show_progress_bar or suppress_stdout),
+            simulation_date_getter=lambda: self.date.isoformat(),
+        )
 
         if custom_levels:
             # if modules have already been registered
@@ -115,7 +117,6 @@ class Simulation:
             log_path = Path(directory) / f"{filename}__{timestamp}.log"
             self.output_file = logging.set_output_file(log_path)
             logger.info(key='info', data=f'Log output: {log_path}')
-            self._log_filepath = log_path
             return log_path
 
         return None
@@ -183,7 +184,12 @@ class Simulation:
             module.pre_initialise_population()
 
         # Make the initial population
-        self.population = Population(self, n)
+        properties = {
+            name: prop
+            for module in self.modules.values()
+            for name, prop in module.PROPERTIES.items()
+        }
+        self.population = Population(properties, n)
         for module in self.modules.values():
             start1 = time.time()
             module.initialise_population(self.population)

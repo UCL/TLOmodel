@@ -18,7 +18,6 @@ from tlo import (
     logging,
     util,
 )
-from tlo.core import IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel
 from tlo.methods import Metadata, labour, pregnancy_helper_functions, pregnancy_supervisor_lm
@@ -27,16 +26,18 @@ from tlo.methods.care_of_women_during_pregnancy import (
     HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy,
 )
 from tlo.methods.causes import Cause
+from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.util import BitsetHandler
 
 if TYPE_CHECKING:
-    from tlo.population import PatientDetails
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
+    from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class PregnancySupervisor(Module):
+class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
     """This module is responsible for simulating the antenatal period of pregnancy (the period from conception until
      the termination of pregnancy). A number of outcomes are managed by this module including early pregnancy loss
      (induced/spontaneous abortion, ectopic pregnancy and antenatal stillbirth) and pregnancy complications of the
@@ -403,7 +404,7 @@ class PregnancySupervisor(Module):
 
         'ps_anc4': Property(Types.BOOL, 'Whether this woman is predicted to attend 4 or more antenatal care visits '
                                         'during her pregnancy'),
-        'ps_abortion_complications': Property(Types.INT, 'Bitset column holding types of abortion complication'),
+        'ps_abortion_complications': Property(Types.BITSET, 'Bitset column holding types of abortion complication'),
         'ps_prev_spont_abortion': Property(Types.BOOL, 'Whether this woman has had any previous pregnancies end in '
                                                        'spontaneous abortion'),
         'ps_prev_stillbirth': Property(Types.BOOL, 'Whether this woman has had any previous pregnancies end in '
@@ -1673,10 +1674,11 @@ class PregnancySupervisor(Module):
 
     def do_at_generic_first_appt_emergency(
         self,
-        patient_id: int,
-        patient_details: PatientDetails,
+        person_id: int,
+        individual_properties: IndividualProperties,
+        schedule_hsi_event: HSIEventScheduler,
         **kwargs,
-    ) -> IndividualPropertyUpdates:
+    ) -> None:
         scheduling_options = {
                 "priority": 0,
                 "topen": self.sim.date,
@@ -1684,25 +1686,25 @@ class PregnancySupervisor(Module):
             }
 
         # -----  ECTOPIC PREGNANCY  -----
-        if patient_details.ps_ectopic_pregnancy != 'none':
+        if individual_properties["ps_ectopic_pregnancy"] != 'none':
             event = HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(
                 module=self.sim.modules["CareOfWomenDuringPregnancy"],
-                person_id=patient_id,
+                person_id=person_id,
             )
-            self.healthsystem.schedule_hsi_event(event, **scheduling_options)
+            schedule_hsi_event(event, **scheduling_options)
 
         # -----  COMPLICATIONS OF ABORTION  -----
         abortion_complications = self.sim.modules[
             "PregnancySupervisor"
         ].abortion_complications
         if abortion_complications.has_any(
-            [patient_id], "sepsis", "injury", "haemorrhage", first=True
+            [person_id], "sepsis", "injury", "haemorrhage", first=True
         ):
             event = HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(
                 module=self.sim.modules["CareOfWomenDuringPregnancy"],
-                person_id=patient_id,
+                person_id=person_id,
             )
-            self.healthsystem.schedule_hsi_event(event, **scheduling_options)
+            schedule_hsi_event(event, **scheduling_options)
 
 class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
     """ This is the PregnancySupervisorEvent, it is a weekly event which has four primary functions.

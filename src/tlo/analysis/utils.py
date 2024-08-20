@@ -254,13 +254,11 @@ def extract_results(results_folder: Path,
     """
 
     def get_multiplier(_draw, _run):
-        """Helper function to get the multiplier from the simulation, if do_scaling=True.
+        """Helper function to get the multiplier from the simulation.
         Note that if the scaling factor cannot be found a `KeyError` is thrown."""
-        if not do_scaling:
-            return 1.0
-        else:
-            return load_pickled_dataframes(results_folder, _draw, _run, 'tlo.methods.population'
-                                           )['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
+        return load_pickled_dataframes(
+            results_folder, _draw, _run, 'tlo.methods.population'
+        )['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
 
     if custom_generate_series is None:
         # If there is no `custom_generate_series` provided, it implies that function required selects the specified
@@ -293,7 +291,10 @@ def extract_results(results_folder: Path,
                 df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
                 output_from_eval: pd.Series = generate_series(df)
                 assert pd.Series == type(output_from_eval), 'Custom command does not generate a pd.Series'
-                res[draw_run] = output_from_eval * get_multiplier(draw, run)
+                if do_scaling:
+                    res[draw_run] = output_from_eval * get_multiplier(draw, run)
+                else:
+                    res[draw_run] = output_from_eval
 
             except KeyError:
                 # Some logs could not be found - probably because this run failed.
@@ -1125,6 +1126,42 @@ def get_parameters_for_status_quo() -> Dict:
             "mode_appt_constraints": 1,
             "cons_availability": "default",
             "beds_availability": "default",
+            "equip_availability": "all",  # <--- NB. Existing calibration is assuming all equipment is available
+        },
+    }
+    
+def get_parameters_for_standard_mode2_runs() -> Dict:
+    """
+    Returns a dictionary of parameters and their updated values to indicate
+    the "standard mode 2" scenario.
+
+    The return dict is in the form:
+    e.g. {
+            'Depression': {
+                'pr_assessed_for_depression_for_perinatal_female': 1.0,
+                'pr_assessed_for_depression_in_generic_appt_level1': 1.0,
+                },
+            'Hiv': {
+                'prob_start_art_or_vs': 1.0,
+                }
+         }
+    """
+
+    return {
+        "SymptomManager": {
+            "spurious_symptoms": True,
+        },
+        "HealthSystem": {
+            'Service_Availability': ['*'],
+            "use_funded_or_actual_staffing": "actual",
+            "mode_appt_constraints": 1,
+            "mode_appt_constraints_postSwitch": 2, # <-- Include a transition to mode 2, to pick up any issues with this
+            "year_mode_switch": 2012, # <-- Could make this quite soon, but I'd say >1 year
+            "tclose_overwrite": 1, # <-- In most of our runs in mode 2, we chose to overwrite tclose
+            "tclose_days_offset_overwrite": 7, # <-- and usually set it to 7.
+            "cons_availability": "default",
+            "beds_availability": "default",
+            "equip_availability": "all",  # <--- NB. Existing calibration is assuming all equipment is available
         },
     }
 
