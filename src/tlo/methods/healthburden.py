@@ -686,25 +686,17 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
         prevalence_from_each_disease_module = pd.DataFrame()
 
         for disease_module_name in self.module.recognised_modules_names:
-            # Skip the modules that should not be included
-            if disease_module_name in ['NewbornOutcomes', 'PostnatalSupervisor', 'Mockitis', 'DiseaseThatCausesA',
-                                       'ChronicSyndrome']:
+            if disease_module_name in ['NewbornOutcomes', 'PostnatalSupervisor', 'Mockitis', 'DiseaseThatCausesA', 'ChronicSyndrome']:
                 continue
 
             disease_module = self.sim.modules[disease_module_name]
             prevalence_from_disease_module = disease_module.report_prevalence()
 
-            # Skip specific columns that should not be included
-            columns_to_include = [col for col in prevalence_from_disease_module.columns
-                                  if col not in ['NewbornOutcomes', 'PostnatalSupervisor', 'Mockitis',
-                                                 'DiseaseThatCausesA', 'ChronicSyndrome']]
-
             if disease_module_name == "CardioMetabolicDisorders":
-                for column_name in columns_to_include:
-                    prevalence_from_each_disease_module[column_name] = prevalence_from_disease_module[column_name]
+                for i, column_name in enumerate(prevalence_from_disease_module.columns):
+                    prevalence_from_each_disease_module[column_name] = prevalence_from_disease_module.iloc[:, i]
             else:
-                filtered_prevalence = prevalence_from_disease_module[columns_to_include]
-                prevalence_from_disease_module = pd.DataFrame([[filtered_prevalence]])
+                prevalence_from_disease_module = pd.DataFrame([[prevalence_from_disease_module]])
 
                 column_name = ("Intrapartum stillbirth" if disease_module_name == "Labour" else
                                "Antenatal stillbirth" if disease_module_name == "PregnancySupervisor" else
@@ -712,10 +704,16 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
 
                 # Add the prevalence data as a new column to the DataFrame
                 prevalence_from_each_disease_module[column_name] = prevalence_from_disease_module.iloc[:, 0]
+
         maternal_mortality = pd.DataFrame(self.sim.modules['Demography'].report_prevalence()) # Already a dataframe
         prevalence_from_each_disease_module['newborn_deaths'] = maternal_mortality.iloc[:,0]
         prevalence_from_each_disease_module['maternal_deaths'] = maternal_mortality.iloc[:,1]
-
+        prevalence_from_each_disease_module.drop(
+            prevalence_from_each_disease_module.index.intersection(
+                ['NewbornOutcomes', 'PostnatalSupervisor', 'Mockitis', 'DiseaseThatCausesA', 'ChronicSyndrome']
+            ),
+            axis=0, inplace=True
+        )
         # (Nb. this will add columns that are not otherwise present and add values to columns where they are.)
 
         self.module.prevalence_of_diseases = prevalence_from_each_disease_module
