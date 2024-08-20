@@ -22,7 +22,6 @@ from tlo.analysis.utils import (
     APPT_TYPE_TO_COARSE_APPT_TYPE_MAP,
     COARSE_APPT_TYPE_TO_COLOR_MAP,
     extract_results,
-    make_age_grp_lookup,
     summarize,
 )
 
