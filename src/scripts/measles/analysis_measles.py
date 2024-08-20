@@ -41,28 +41,28 @@ start_date = Date(2010, 1, 1)
 end_date = Date(2012, 12, 31)
 pop_size = 500
 
+# Path to the resource files used by the disease and intervention methods
+# resourcefilepath = "./resources"
+resourcefilepath = './resources'
+
 # This creates the Simulation instance for this run. Because we've passed the `seed` and
 # `log_config` arguments, these will override the default behaviour.
-sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
-
-# Path to the resource files used by the disease and intervention methods
-# resources = "./resources"
-resources = Path('./resources')
+sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, resourcefilepath=resourcefilepath)
 
 # Used to configure health system behaviour
 service_availability = ["*"]
 
 sim.register(
-    demography.Demography(resourcefilepath=resources),
-    simplified_births.SimplifiedBirths(resourcefilepath=resources),
-    enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
-    symptommanager.SymptomManager(resourcefilepath=resources),
+    demography.Demography(),
+    simplified_births.SimplifiedBirths(),
+    enhanced_lifestyle.Lifestyle(),
+    symptommanager.SymptomManager(),
 
-    healthsystem.HealthSystem(resourcefilepath=resources, disable=True),
-    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
+    healthsystem.HealthSystem(disable=True),
+    healthseekingbehaviour.HealthSeekingBehaviour(),
 
-    epi.Epi(resourcefilepath=resources),
-    measles.Measles(resourcefilepath=resources),
+    epi.Epi(),
+    measles.Measles(),
 )
 
 # create and run the simulation
