@@ -105,7 +105,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # --- Core Properties
         "hv_inf": Property(
             Types.BOOL,
-            "Is person currently infected with HIV (NB. AIDS status is determined by prescence of the AIDS Symptom.",
+            "Is person currently infected with HIV (NB. AIDS status is determined by presence of the AIDS Symptom.",
         ),
         "hv_art": Property(
             Types.CATEGORICAL,
@@ -1519,7 +1519,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         df = self.sim.population.props
 
         # get number of tests performed in last time period
-        if self.sim.date.year == 2011:
+        if self.sim.date.year <= 2011:
             number_tests_new = df.hv_number_tests.sum()
             previous_test_numbers = 0
 
@@ -2504,6 +2504,10 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
         self.number_of_occurrences += 1  # The current appointment is included in the count.
         df = self.sim.population.props  # shortcut to the dataframe
 
+        # todo remove for intervention scenarios
+        if self.sim.date.year >= 2025:
+            return
+
         person = df.loc[person_id]
 
         # Do not run if the person is not alive
@@ -3149,6 +3153,13 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         N_VLS_15_UP_F = len(df[df.hv_inf & (df.hv_art == 'on_VL_suppressed') & df.is_alive &
                                 (df.age_years >= 15) & (df.sex == 'F')])
 
+        N_PLHIV_15_UP_AIDS = len(df[df.hv_inf & (df.sy_aids_symptoms > 0) & df.is_alive &
+                                (df.age_years >= 15)])
+
+        N_PLHIV_15_UP_NO_AIDS = len(df[df.hv_inf & (df.sy_aids_symptoms == 0) & df.is_alive &
+                                (df.age_years >= 15)])
+
+
         logger.info(
             key="stock_variables",
             description="Stock variables",
@@ -3175,6 +3186,8 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 "N_ART_15_UP_F": N_ART_15_UP_F,
                 "N_VLS_15_UP_M": N_VLS_15_UP_M,
                 "N_VLS_15_UP_F": N_VLS_15_UP_F,
+                "N_PLHIV_15_UP_AIDS": N_PLHIV_15_UP_AIDS,
+                "N_PLHIV_15_UP_NO_AIDS": N_PLHIV_15_UP_NO_AIDS,
             },
         )
 
