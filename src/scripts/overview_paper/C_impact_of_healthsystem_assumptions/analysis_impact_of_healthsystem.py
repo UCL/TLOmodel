@@ -87,7 +87,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             .drop(columns=([comparison] if drop_comparison else [])) \
             .stack()
 
-    def do_bar_plot_with_ci(_df, annotations=None, xticklabels_horizontal_and_wrapped=False):
+    def do_bar_plot_with_ci(_df, annotations=None, xticklabels_horizontal_and_wrapped=False, circles=False):
         """Make a vertical bar plot for each row of _df, using the columns to identify the height of the bar and the
          extent of the error bar."""
         yerr = np.array([
@@ -102,11 +102,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             xticks.keys(),
             _df['mean'].values,
             yerr=yerr,
-            alpha=0.5,
+            alpha=0.5 if not circles else 0.0,
             ecolor='black',
             capsize=10,
             label=xticks.values()
         )
+        if circles:
+            ax.plot(xticks.keys(), _df['mean'].values, marker='o', color='black', markersize=10, linestyle='')
+
         if annotations:
             for xpos, ypos, text in zip(xticks.keys(), _df['upper'].values, annotations):
                 ax.text(xpos, ypos*1.05, text, horizontalalignment='center')
@@ -316,6 +319,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             for _, row in pc_dalys_averted.clip(lower=0.0).iterrows()
         ],
         xticklabels_horizontal_and_wrapped=True,
+        circles=True,
     )
     ax.set_title(name_of_plot)
     ax.set_ylim(0, 16)
