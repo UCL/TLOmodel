@@ -287,7 +287,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             comparison='s_1',
         ),
         only_mean=True
-    )
+    ).T
 
     num_appts_increased = summarize(
         find_difference_relative_to_comparison_dataframe(
@@ -295,21 +295,30 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             comparison='s_1',
         ),
         only_mean=True
-    )
+    ).T
 
     # Check that when we sum across the causes/appt types,
     # we get the same total as calculated when we didn't split by cause/appt type.
     assert (
-        (num_appts_increased.sum(axis=0).sort_index()
+        (num_appts_increased.sum(axis=1).sort_index()
          - num_services_increased['mean'].sort_index()
          ) < 1e-6
     ).all()
 
     assert (
-        (num_dalys_by_cause_averted.sum(axis=0).sort_index()
+        (num_dalys_by_cause_averted.sum(axis=1).sort_index()
          - num_dalys_averted['mean'].sort_index()
          ) < 1e-6
     ).all()
+
+    # prepare colors for plots
+    appt_color = {
+        appt: COARSE_APPT_TYPE_TO_COLOR_MAP.get(appt, np.nan) for appt in num_appts_summarized.columns
+    }
+    cause_color = {
+        cause: CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.get(cause, np.nan)
+        for cause in num_dalys_by_cause_summarized.columns
+    }
 
     # plot absolute numbers for scenarios
 
@@ -345,9 +354,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     name_of_plot = f'Services by appointment type, {target_period()}'
     num_appts_summarized_in_millions = num_appts_summarized / 1e6
-    appt_color = {
-        appt: COARSE_APPT_TYPE_TO_COLOR_MAP.get(appt, np.nan) for appt in num_appts_summarized_in_millions.columns
-    }
     yerr_services = np.array([
         (num_services_summarized['mean'].values - num_services_summarized['lower']).values,
         (num_services_summarized['upper'].values - num_services_summarized['mean']).values,
@@ -370,10 +376,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     name_of_plot = f'DALYs by cause, {target_period()}'
     num_dalys_by_cause_summarized_in_millions = num_dalys_by_cause_summarized / 1e6
-    cause_color = {
-        cause: CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.get(cause, np.nan)
-        for cause in num_dalys_by_cause_summarized_in_millions.columns
-    }
     yerr_dalys = np.array([
         (num_dalys_summarized['mean'].values - num_dalys_summarized['lower']).values,
         (num_dalys_summarized['upper'].values - num_dalys_summarized['mean']).values,
@@ -403,11 +405,67 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
+    # plot relative numbers for scenarios
+
+    name_of_plot = f'Services increased by appointment type, {target_period()}'
+    num_appts_increased_in_millions = num_appts_increased / 1e6
+    yerr_services = np.array([
+        (num_services_increased['mean'].values - num_services_increased['lower']).values,
+        (num_services_increased['upper'].values - num_services_increased['mean']).values,
+    ]) / 1e6
+    fig, ax = plt.subplots()
+    num_appts_increased_in_millions.plot(kind='bar', stacked=True, color=appt_color, rot=0, ax=ax)
+    ax.errorbar(0, num_services_increased['mean'].values / 1e6, yerr=yerr_services,
+                fmt=".", color="black", zorder=100)
+    ax.set_ylabel('Millions', fontsize='small')
+    ax.set(xlabel=None)
+    xtick_labels = [substitute_labels[v] for v in num_appts_increased_in_millions.index]
+    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
+    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Appointment type', title_fontsize='small',
+               fontsize='small')
+    plt.title(name_of_plot)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
+    name_of_plot = f'DALYs averted by cause, {target_period()}'
+    num_dalys_by_cause_averted_in_millions = num_dalys_by_cause_averted / 1e6
+    yerr_dalys = np.array([
+        (num_dalys_averted['mean'].values - num_dalys_averted['lower']).values,
+        (num_dalys_averted['upper'].values - num_dalys_averted['mean']).values,
+    ]) / 1e6
+    fig, ax = plt.subplots()
+    num_dalys_by_cause_averted_in_millions.plot(kind='bar', stacked=True, color=cause_color, rot=0, ax=ax)
+    ax.errorbar(0, num_dalys_averted['mean'].values / 1e6, yerr=yerr_dalys,
+                fmt=".", color="black", zorder=100)
+    ax.set_ylabel('Millions', fontsize='small')
+    ax.set(xlabel=None)
+    xtick_labels = [substitute_labels[v] for v in num_dalys_by_cause_averted.index]
+    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
+    fig.subplots_adjust(right=0.7)
+    ax.legend(
+        loc="center left",
+        bbox_to_anchor=(0.705, 0.520),
+        bbox_transform=fig.transFigure,
+        title='Cause of death or injury',
+        title_fontsize='x-small',
+        fontsize='x-small',
+        ncol=1
+    )
+    plt.title(name_of_plot)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
     # todo
     # get data of extra budget, extra staff
     # calculate return on investment
     # get and plot services by short treatment id
-    # plot comparison results
+    # plot comparison results: there are negative changes of some appts and causes, try increase runs and see
+    # as we have 17 scenarios in total, \
+    # design comparison groups of scenarios to examine marginal/combined productivity of cadres
 
 
 if __name__ == "__main__":
