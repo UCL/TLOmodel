@@ -424,6 +424,7 @@ class Demography(Module):
         health_values_df = pd.DataFrame({
             'NMR': [neonatal_mortality_rate],
             'MMR': [maternal_mortality_rate],
+            'live_births': [live_births]
         })
 
         return health_values_df
