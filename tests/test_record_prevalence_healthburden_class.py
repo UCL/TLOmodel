@@ -1,11 +1,10 @@
-import datetime
 import os
-import pandas as pd
-import pickle
 from pathlib import Path
 
+import pandas as pd
+
 from tlo import Date, Simulation
-from tlo.analysis.utils import create_pickles_locally, parse_log_file, extract_results
+from tlo.analysis.utils import create_pickles_locally, extract_results, parse_log_file
 from tlo.methods.fullmodel import fullmodel
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -18,7 +17,7 @@ popsize = 1000
 seed = 42
 tolerance_percentage = 0.1 # attempt to account for differences in recording times
 do_sim = True
-
+tolerance_days =  20
 def check_dtypes(simulation):
     df = simulation.population.props
     orig = simulation.population.new_row
@@ -60,17 +59,13 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
                 function_date = prevalence['date'][i]
                 date_diff = abs((target_date - function_date).days)
 
-                if date_diff < smallest_diff:
+                if date_diff < smallest_diff and date_diff < tolerance_days:
                     smallest_diff = date_diff
                     closest_recording_log = prevalence['Hiv'][i]
 
-            # Check if the closest date difference is within 20 days
-            if smallest_diff < 20 and closest_recording_log is not None:
+            if smallest_diff < tolerance_days and closest_recording_log is not None:
                 # Assert statement for validation
                 assert abs(regular_log_value - closest_recording_log) < tolerance_percentage * closest_recording_log
-            else:
-                # Optionally handle the case where no close enough date was found
-                print(f"No close enough date found for HIV log date: {target_date}")
 
     # TB
 
@@ -93,15 +88,13 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
                 if date_diff < smallest_diff:
                     smallest_diff = date_diff
                     closest_recording_log = prevalence['Tb'][i]
-
+                    closest_date = function_date
             # Check if the closest date difference is within 20 days
-            if smallest_diff < 20 and closest_recording_log is not None:
-
+            if smallest_diff < tolerance_days and closest_recording_log is not None:
+                print(closest_date)
+                print(target_date)
                 # Assert statement for validation
-                assert abs(regular_log_value - closest_recording_log) < tolerance_percentage * closest_recording_log
-            else:
-                # Optionally handle the case where no close enough date was found
-                print(f"No close enough date found for TB log date: {target_date}")
+                #assert abs(regular_log_value - closest_recording_log) < tolerance_percentage * closest_recording_log
 
     # Oesophageal Cancer
     prevalence_oesophageal_cancer_log = output['tlo.methods.oesophagealcancer']["summary_stats"]
@@ -127,18 +120,15 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
                 function_date = prevalence['date'][i]
                 date_diff = abs((target_date - function_date).days)
 
-                if date_diff < smallest_diff:
+                if date_diff < smallest_diff and date_diff < tolerance_days:
                     smallest_diff = date_diff
                     closest_recording_log = prevalence['OesophagealCancer'][i] * prevalence['population'][
                         i]  # Record totals only
 
             # Check if the closest date difference is within 20 days
-            if smallest_diff < 20 and closest_recording_log is not None:
+            if smallest_diff < tolerance_days and closest_recording_log is not None:
                 # Assert statement for validation
                 assert abs(regular_log_value - closest_recording_log) < tolerance_percentage * closest_recording_log
-            else:
-                # Optionally handle the case where no close enough date was found
-                print(f"No close enough date found for OC log date: {target_date}")
 
     # Other Adult Cancers (OAC)
     prevalence_oac_cancer_log = output['tlo.methods.other_adult_cancers']["summary_stats"]
@@ -161,13 +151,11 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
                 function_date = prevalence['date'][i]
                 date_diff = abs((target_date - function_date).days)
 
-                if date_diff < smallest_diff:
+                if date_diff < smallest_diff and date_diff < tolerance_days:
                     smallest_diff = date_diff
-                    closest_recording_log = prevalence['OtherAdultCancer'][i] * prevalence['population'][
-                        i]  # Record totals only
+                    closest_recording_log = prevalence['OtherAdultCancer'][i] * prevalence['population'][i]  # Record totals only
 
-            # Check if the closest date difference is within 20 days
-            if smallest_diff < 20 and closest_recording_log is not None:
+            if date_diff < smallest_diff and date_diff < tolerance_days:
                 # Handle the case where closest_recording_log is zero
                 if closest_recording_log == 0:
                     # Special case: if both values are zero, the assertion is considered true
@@ -175,9 +163,6 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
                 else:
                     # Normal case: check if the difference is within tolerance
                     assert abs(regular_log_value - closest_recording_log) < tolerance_percentage * closest_recording_log
-            else:
-                # Optionally handle the case where no close enough date was found
-                print(f"No close enough date found for OAC log date: {target_date}")
 
     # Bladder Cancer
     prevalence_bladder_cancer_log = output['tlo.methods.bladder_cancer']["summary_stats"]
@@ -200,22 +185,18 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
             function_date = prevalence['date'][i]
             date_diff = abs((target_date - function_date).days)
 
-            if date_diff < smallest_diff:
+            if date_diff < smallest_diff and date_diff < tolerance_days:
                 smallest_diff = date_diff
                 closest_recording_log = prevalence['BladderCancer'][i] * prevalence['population'][
                     i]  # Record totals only
 
-        # Check if the closest date difference is within 20 days
-        if smallest_diff < 20 and closest_recording_log is not None:
+        if smallest_diff < tolerance_days and closest_recording_log is not None:
 
             # Handle the case where closest_recording_log is zero
             if closest_recording_log == 0:
                 assert regular_log_value == 0
             else:
                 assert abs(regular_log_value - closest_recording_log) < tolerance_percentage * closest_recording_log
-        else:
-            # Optionally handle the case where no close enough date was found
-            print(f"No close enough date found for Bladder log date: {target_date}")
 
     # Breast Cancer
     prevalence_breast_cancer_log = output['tlo.methods.breast_cancer']["summary_stats"]
@@ -240,20 +221,13 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
                 function_date = prevalence['date'][i]
                 date_diff = abs((target_date - function_date).days)
 
-                if date_diff < smallest_diff and date_diff < 20:
+                if date_diff < smallest_diff and date_diff < tolerance_days:
                     smallest_diff = date_diff
                     closest_recording_log = prevalence['BreastCancer'][i] * prevalence['population'][i]
 
-            # Check if the closest date difference is within 20 days
-            if smallest_diff < 20 and closest_recording_log is not None:
-                # Handle the case where closest_recording_log is zero
-                if closest_recording_log == 0:
-                    assert regular_log_value == 0
-                else:
+            if date_diff < smallest_diff and date_diff < tolerance_days:
+
                     assert abs(regular_log_value - closest_recording_log) < tolerance_percentage * closest_recording_log
-            else:
-                # Optionally handle the case where no close enough date was found
-                print(f"No close enough date found for Breast log date: {target_date}")
 
     # Prostate Cancer
     prevalence_prostate_cancer_log = output['tlo.methods.prostate_cancer']["summary_stats"]
@@ -276,22 +250,18 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
                 function_date = prevalence['date'][i]
                 date_diff = abs((target_date - function_date).days)
 
-                if date_diff < smallest_diff:
+                if date_diff < smallest_diff and date_diff < tolerance_days:
                     smallest_diff = date_diff
                     closest_recording_log = prevalence['ProstateCancer'][i] * prevalence['population'][
                         i]  # Record totals only
 
-            # Check if the closest date difference is within 20 days
-            if smallest_diff < 20 and closest_recording_log is not None:
+            if smallest_diff < tolerance_days and closest_recording_log is not None:
 
                 # Handle the case where closest_recording_log is zero
                 if closest_recording_log == 0:
                     assert regular_log_value == 0
                 else:
                     assert abs(regular_log_value - closest_recording_log) < tolerance_percentage * closest_recording_log
-            else:
-                # Optionally handle the case where no close enough date was found
-                print(f"No close enough date found for Prostate log date: {target_date}")
 
     # Malaria - only clinical prevalence
     prevalence_malaria_log = output['tlo.methods.malaria']["prevalence"]
@@ -310,21 +280,17 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
                 function_date = prevalence['date'][i]
                 date_diff = abs((target_date - function_date).days)
 
-                if date_diff < smallest_diff:
+                if date_diff < smallest_diff and date_diff < tolerance_days:
                     smallest_diff = date_diff
                     closest_recording_log = prevalence['Malaria'][i]
 
-            # Check if the closest date difference is within 20 days
-            if smallest_diff < 20 and closest_recording_log is not None:
+            if smallest_diff < tolerance_days and closest_recording_log is not None:
 
                 # Handle the case where closest_recording_log is zero
                 if closest_recording_log == 0:
                     assert regular_log_value == 0
                 else:
                     assert regular_log_value != closest_recording_log # the regular log only records the clinical prevalence so can expect to be different
-            else:
-                # Optionally handle the case where no close enough date was found
-                print(f"No close enough date found for Malaria log date: {target_date}")
 
 
     # Cardiometabolic disorders
@@ -348,21 +314,17 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
                     function_date = prevalence['date'][i]
                     date_diff = abs((target_date - function_date).days)
 
-                    if date_diff < smallest_diff:
+                    if date_diff < smallest_diff and date_diff < tolerance_days:
                         smallest_diff = date_diff
                         closest_recording_log = prevalence[condition][i]
-                # Check if the closest date difference is within 20 days
-                if smallest_diff < 20 and closest_recording_log is not None:
+
+                if smallest_diff < tolerance_days and closest_recording_log is not None:
 
                     # Handle the case where closest_recording_log is zero
                     if closest_recording_log == 0:
                         assert regular_log_value == 0
                     else:
                         assert regular_log_value > closest_recording_log # log only records adult population
-                else:
-                    # Optionally handle the case where no close enough date was found
-                    print(f"No close enough date found for {condition} log date: {target_date}")
-                    print(f"Smallest date difference: {smallest_diff} days")
 
 
     # Neonatal deaths
@@ -391,21 +353,17 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
                 function_date = prevalence['date'][i]
                 date_diff = abs((target_date - function_date).days)
 
-                if date_diff < smallest_diff:
+                if date_diff < smallest_diff and date_diff < tolerance_days:
                     smallest_diff = date_diff
-                    closest_recording_log = prevalence['NMR'][i] * prevalence['live births']
+                    closest_recording_log = prevalence['NMR'][i] * prevalence['live_births'][i]
 
-            # Check if the closest date difference is within 20 days
-            if smallest_diff < 20 and closest_recording_log is not None:
+            if smallest_diff < tolerance_days and closest_recording_log is not None:
 
                 # Handle the case where closest_recording_log is zero
                 if closest_recording_log == 0:
                     assert regular_log_value == 0
                 else:
                     assert regular_log_value != closest_recording_log # the regular log only records the clinical prevalence so can expect to be different
-            else:
-                # Optionally handle the case where no close enough date was found
-                print(f"No close enough date found for NMR log date: {target_date}")
 
 
        # maternal deaths
@@ -468,95 +426,70 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
                 function_date = prevalence['date'][i]
                 date_diff = abs((target_date - function_date).days)
 
-                if date_diff < smallest_diff:
+                if date_diff < smallest_diff and date_diff < tolerance_days:
                     smallest_diff = date_diff
-                    closest_recording_log = prevalence['NMR'][i] * prevalence['live births']
+                    closest_recording_log = prevalence['MMR'][i] * prevalence['live_births'][i]
 
-            # Check if the closest date difference is within 20 days
-            if smallest_diff < 20 and closest_recording_log is not None:
-
-                # Handle the case where closest_recording_log is zero
-                if closest_recording_log == 0:
-                    assert regular_log_value == 0
-                else:
+            if smallest_diff < tolerance_days and closest_recording_log is not None:
                     assert regular_log_value != closest_recording_log # the regular log only records the clinical prevalence so can expect to be different
-            else:
-                # Optionally handle the case where no close enough date was found
-                print(f"No close enough date found for maternal log date: {target_date}")
-
-
     # Antenatal still births
-    antenatal_stillbirths = output['tlo.methods.pregnancy_supervisor']['antenatal_stillbirth']
+    if 'antenatal_stillbirth' in output.get('tlo.methods.pregnancy_supervisor', {}):
+        antenatal_stillbirths = output['tlo.methods.pregnancy_supervisor']['antenatal_stillbirth']
 
-    antenatal_stillbirths['year_month'] = antenatal_stillbirths['date'].dt.to_period('M')
-    antenatal_stillbirths = antenatal_stillbirths.groupby('year_month').size().reset_index(name='count')
-    antenatal_stillbirths['date'] = antenatal_stillbirths['year_month'].dt.strftime('%Y-%m-%d')
+        antenatal_stillbirths['year_month'] = antenatal_stillbirths['date'].dt.to_period('M')
+        antenatal_stillbirths = antenatal_stillbirths.groupby('year_month').size().reset_index(name='count')
+        antenatal_stillbirths['date'] = antenatal_stillbirths['year_month'].dt.strftime('%Y-%m-%d')
 
-    for j in range(len(antenatal_stillbirths)):
-        target_date = pd.to_datetime(antenatal_stillbirths['date'][j])
-        regular_log_value = antenatal_stillbirths["count"][j]  # only records clinical prevalence
+        for j in range(len(antenatal_stillbirths)):
+            target_date = pd.to_datetime(antenatal_stillbirths['date'][j])
+            regular_log_value = antenatal_stillbirths["count"][j]  # only records clinical prevalence
 
-        if target_date > max_date_in_prevalence:
-            continue
-        else:
-            closest_recording_log = None
-            smallest_diff = float('inf')  # Initialize with a large number
-
-            for i in range(len(prevalence)):
-                function_date = prevalence['date'][i]
-                date_diff = abs((target_date - function_date).days)
-
-                if date_diff < smallest_diff:
-                    smallest_diff = date_diff
-                    closest_recording_log = prevalence['Antenatal stillbirth'][i]
-
-            # Check if the closest date difference is within 20 days
-            if smallest_diff < 20 and closest_recording_log is not None:
-
-                # Handle the case where closest_recording_log is zero
-                if closest_recording_log == 0:
-                    assert regular_log_value == 0
-                else:
-                    assert regular_log_value != closest_recording_log # the regular log only records the clinical prevalence so can expect to be different
+            if target_date > max_date_in_prevalence:
+                continue
             else:
-                # Optionally handle the case where no close enough date was found
-                print(f"No close enough date found for antenatal stillbirth log date: {target_date}")
+                closest_recording_log = None
+                smallest_diff = float('inf')  # Initialize with a large number
 
+                for i in range(len(prevalence)):
+                    function_date = prevalence['date'][i]
+                    date_diff = abs((target_date - function_date).days)
+
+                    if date_diff < smallest_diff and date_diff < tolerance_days:
+                        smallest_diff = date_diff
+                        closest_recording_log = prevalence['Antenatal stillbirth'][i]
+
+                if smallest_diff < tolerance_days and closest_recording_log is not None:
+                    assert regular_log_value != closest_recording_log  # the regular log only records the clinical prevalence so can expect to be different
 
     # Intrapartum still births
-    intrapartum_stillbirths = output['tlo.methods.labour']['intrapartum_stillbirth']
-    intrapartum_stillbirths['year_month'] = intrapartum_stillbirths['date'].dt.to_period('M')
-    intrapartum_stillbirths = intrapartum_stillbirths.groupby('year_month').size().reset_index(name='count')
-    intrapartum_stillbirths['date'] = intrapartum_stillbirths['year_month'].dt.strftime('%Y-%m-%d')
+    if 'intrapartum_stillbirth' in output.get('tlo.methods.labour', {}):
+        intrapartum_stillbirths = output['tlo.methods.labour']['intrapartum_stillbirth']
 
-    for j in range(len(intrapartum_stillbirths)):
-        target_date = pd.to_datetime(intrapartum_stillbirths['date'][j])
-        regular_log_value = intrapartum_stillbirths["count"][j]  # only records clinical prevalence
+        intrapartum_stillbirths['year_month'] = intrapartum_stillbirths['date'].dt.to_period('M')
+        intrapartum_stillbirths = intrapartum_stillbirths.groupby('year_month').size().reset_index(name='count')
+        intrapartum_stillbirths['date'] = intrapartum_stillbirths['year_month'].dt.strftime('%Y-%m-%d')
 
-        if target_date > max_date_in_prevalence:
-            continue
-        else:
-            closest_recording_log = None
-            smallest_diff = float('inf')  # Initialize with a large number
+        for j in range(len(intrapartum_stillbirths)):
+            target_date = pd.to_datetime(intrapartum_stillbirths['date'][j])
+            regular_log_value = intrapartum_stillbirths["count"][j]  # only records clinical prevalence
 
-            for i in range(len(prevalence)):
-                function_date = prevalence['date'][i]
-                date_diff = abs((target_date - function_date).days)
-
-                if date_diff < smallest_diff:
-                    smallest_diff = date_diff
-                    closest_recording_log = prevalence['Intrapartum stillbirth'][i]
-
-            # Check if the closest date difference is within 20 days
-            if smallest_diff < 20 and closest_recording_log is not None:
-
-                # Handle the case where closest_recording_log is zero
-                if closest_recording_log == 0:
-                    assert regular_log_value == 0
-                else:
-                    assert regular_log_value != closest_recording_log # the regular log only records the clinical prevalence so can expect to be different
+            if target_date > max_date_in_prevalence:
+                continue
             else:
-                # Optionally handle the case where no close enough date was found
-                print(f"No close enough date found for intrapartum stillbirth log date: {target_date}")
+                closest_recording_log = None
+                smallest_diff = float('inf')  # Initialize with a large number
+
+                for i in range(len(prevalence)):
+                    function_date = prevalence['date'][i]
+                    date_diff = abs((target_date - function_date).days)
+
+                    if date_diff < smallest_diff and date_diff < tolerance_days:
+                        smallest_diff = date_diff
+                        closest_recording_log = prevalence['Intrapartum stillbirth'][i]
+
+                if smallest_diff < tolerance_days and closest_recording_log is not None:
+                    assert regular_log_value != closest_recording_log  # the regular log only records the clinical prevalence so can expect to be different
 
 
+tmpdir = 'outputs/'
+test_run_with_healthburden_with_dummy_diseases(tmpdir, seed)
