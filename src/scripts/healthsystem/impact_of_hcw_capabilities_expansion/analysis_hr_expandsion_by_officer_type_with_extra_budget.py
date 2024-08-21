@@ -20,6 +20,7 @@ from scripts.healthsystem.impact_of_hcw_capabilities_expansion.scenario_of_expan
 from tlo import Date
 from tlo.analysis.utils import (
     APPT_TYPE_TO_COARSE_APPT_TYPE_MAP,
+    CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP,
     COARSE_APPT_TYPE_TO_COLOR_MAP,
     extract_results,
     summarize,
@@ -88,9 +89,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         return pd.Series(data=len(_df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)]))
 
     def get_num_dalys(_df):
-        """Return total number of DALYS (Stacked) by label (total within the TARGET_PERIOD).
+        """Return total number of DALYS (Stacked) (total within the TARGET_PERIOD).
         Throw error if not a record for every year in the TARGET PERIOD (to guard against inadvertently using
-        results from runs that crashed mid-way through the simulation.
+        results from runs that crashed mid-way through the simulation).
         """
         years_needed = [i.year for i in TARGET_PERIOD]
         assert set(_df.year.unique()).issuperset(years_needed), "Some years are not recorded."
@@ -100,6 +101,18 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             .drop(columns=['date', 'sex', 'age_range', 'year'])
             .sum().sum()
         )
+
+    def get_num_dalys_by_cause(_df):
+        """Return total number of DALYS by cause (Stacked) (total within the TARGET_PERIOD).
+        Throw error if not a record for every year in the TARGET PERIOD (to guard against inadvertently using
+        results from runs that crashed mid-way through the simulation).
+        """
+        years_needed = [i.year for i in TARGET_PERIOD]
+        assert set(_df.year.unique()).issuperset(years_needed), "Some years are not recorded."
+        return (_df
+                .loc[_df.year.between(*years_needed)].drop(columns=['date', 'year', 'li_wealth'])
+                .sum(axis=0)
+                )
 
     def set_param_names_as_column_index_level_0(_df):
         """Set the columns index (level 0) as the param_names."""
@@ -207,6 +220,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         do_scaling=True
     ).pipe(set_param_names_as_column_index_level_0)
 
+    num_dalys_by_cause = extract_results(
+        results_folder,
+        module="tlo.methods.healthburden",
+        key="dalys_by_wealth_stacked_by_age_and_time",
+        custom_generate_series=get_num_dalys_by_cause,
+        do_scaling=True,
+    ).pipe(set_param_names_as_column_index_level_0)
+
     num_appts = extract_results(
         results_folder,
         module='tlo.methods.healthsystem.summary',
@@ -224,6 +245,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ).pipe(set_param_names_as_column_index_level_0)
 
     num_dalys_summarized = summarize(num_dalys).loc[0].unstack().reindex(param_names)
+    num_dalys_by_cause_summarized = summarize(num_dalys_by_cause, only_mean=True).T.reindex(param_names)
     num_deaths_summarized = summarize(num_deaths).loc[0].unstack().reindex(param_names)
     num_appts_summarized = summarize(num_appts, only_mean=True).T.reindex(param_names)
     num_services_summarized = summarize(num_services).loc[0].unstack().reindex(param_names)
@@ -285,10 +307,46 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
+    name_of_plot = f'DALYs by cause, {target_period()}'
+    num_dalys_by_cause_summarized_in_millions = num_dalys_by_cause_summarized / 1e6
+    cause_color = {
+        cause: CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.get(cause, np.nan)
+        for cause in num_dalys_by_cause_summarized_in_millions.columns
+    }
+    yerr_dalys = np.array([
+        (num_dalys_summarized['mean'].values - num_dalys_summarized['lower']).values,
+        (num_dalys_summarized['upper'].values - num_dalys_summarized['mean']).values,
+    ])/1e6
+    fig, ax = plt.subplots()
+    num_dalys_by_cause_summarized_in_millions.plot(kind='bar', stacked=True, color=cause_color, rot=0, ax=ax)
+    ax.errorbar([0, 1], num_dalys_summarized['mean'].values / 1e6, yerr=yerr_dalys,
+                fmt=".", color="black", zorder=100)
+    ax.set_ylabel('Millions', fontsize='small')
+    ax.set(xlabel=None)
+    xtick_labels = [substitute_labels[v] for v in num_dalys_by_cause_summarized_in_millions.index]
+    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
+    fig.subplots_adjust(right=0.7)
+    ax.legend(
+        loc="center left",
+        bbox_to_anchor=(0.705, 0.520),
+        bbox_transform=fig.transFigure,
+        title='Cause of death or injury',
+        title_fontsize='x-small',
+        fontsize='x-small',
+        reverse=True,
+        ncol=1
+    )
+    plt.title(name_of_plot)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
     # todo
     # get data of extra budget, extra staff
     # calculate return on investment
-    # plot DALYS by causes
+    # get and plot services by short treatment id
+    # get and plot comparison results
 
 
 if __name__ == "__main__":
