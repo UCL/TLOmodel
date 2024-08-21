@@ -351,8 +351,6 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
                     if date_diff < smallest_diff:
                         smallest_diff = date_diff
                         closest_recording_log = prevalence[condition][i]
-                        closest_date = function_date
-
                 # Check if the closest date difference is within 20 days
                 if smallest_diff < 20 and closest_recording_log is not None:
 
