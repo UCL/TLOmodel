@@ -26,19 +26,15 @@ def check_dtypes(simulation):
 def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
     """Check that everything runs in the simple cases of Mockitis and Chronic Syndrome and that outputs are as expected."""
 
-    if do_sim:
-
-        sim = Simulation(start_date=start_date, seed=seed, log_config={'filename': 'test_log', 'directory': outputpath})
-        sim.register(*fullmodel(
+    sim = Simulation(start_date=start_date, seed=seed, log_config={'filename': 'test_log', 'directory': outputpath})
+    sim.register(*fullmodel(
             resourcefilepath=resourcefilepath,
             use_simplified_births=False,))
-        sim.make_initial_population(n=popsize)
-        sim.simulate(end_date=end_date)
-        check_dtypes(sim)
-        output = parse_log_file(sim.log_filepath)
-    else:
-        log_filepath = 'outputs/test_record_prevalence/0/0/test_log__2024-08-21T133028.log'
-        output = parse_log_file(log_filepath)
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=end_date)
+    check_dtypes(sim)
+    output = parse_log_file(sim.log_filepath)
+
     prevalence = output['tlo.methods.healthburden']['prevalence_of_diseases']
     max_date_in_prevalence = max(prevalence['date'])
     # HIV
