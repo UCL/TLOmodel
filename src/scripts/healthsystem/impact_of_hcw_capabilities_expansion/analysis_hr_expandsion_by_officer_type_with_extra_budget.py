@@ -70,7 +70,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         return tuple(e._scenarios.keys())
 
     def get_num_appts(_df):
-        """Return the number of appointments per appt type (total within the TARGET_PERIOD)"""
+        """Return the number of services by appt type (total within the TARGET_PERIOD)"""
         return (_df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD), 'Number_By_Appt_Type_Code']
                 .apply(pd.Series)
                 .rename(columns=APPT_TYPE_TO_COARSE_APPT_TYPE_MAP)
@@ -78,7 +78,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 .sum())
 
     def get_num_services(_df):
-        """Return the number of appointments in total of all appt types (total within the TARGET_PERIOD)"""
+        """Return the number of services in total of all appt types (total within the TARGET_PERIOD)"""
         return pd.Series(
             data=_df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD), 'Number_By_Appt_Type_Code']
             .apply(pd.Series).sum().sum()
@@ -131,13 +131,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         """Find the difference in the values in a pd.Series with a multi-index, between the draws (level 0)
         within the runs (level 1), relative to where draw = `comparison`.
         The comparison is `X - COMPARISON`."""
-        return _ser \
-            .unstack(level=0) \
-            .apply(lambda x: (x - x[comparison]) / (x[comparison] if scaled else 1.0), axis=1) \
-            .drop(columns=([comparison] if drop_comparison else [])) \
-            .stack()
+        return (_ser
+                .unstack(level=0)
+                .apply(lambda x: (x - x[comparison]) / (x[comparison] if scaled else 1.0), axis=1)
+                .drop(columns=([comparison] if drop_comparison else []))
+                .stack()
+                )
 
-    def find_difference_relative_to_comparison_series_dataframe(_df: pd.DataFrame, **kwargs):
+    def find_difference_relative_to_comparison_dataframe(_df: pd.DataFrame, **kwargs):
         """Apply `find_difference_relative_to_comparison_series` to each row in a dataframe"""
         return pd.concat({
             _idx: find_difference_relative_to_comparison_series(row, **kwargs)
@@ -244,11 +245,71 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         do_scaling=True
     ).pipe(set_param_names_as_column_index_level_0)
 
+    # get absolute numbers for scenarios
     num_dalys_summarized = summarize(num_dalys).loc[0].unstack().reindex(param_names)
     num_dalys_by_cause_summarized = summarize(num_dalys_by_cause, only_mean=True).T.reindex(param_names)
+
     num_deaths_summarized = summarize(num_deaths).loc[0].unstack().reindex(param_names)
-    num_appts_summarized = summarize(num_appts, only_mean=True).T.reindex(param_names)
+
     num_services_summarized = summarize(num_services).loc[0].unstack().reindex(param_names)
+    num_appts_summarized = summarize(num_appts, only_mean=True).T.reindex(param_names)
+
+    # get relative numbers for scenarios, compared to no_expansion scenario: s_1
+    num_services_increased = summarize(
+        pd.DataFrame(
+            find_difference_relative_to_comparison_series(
+                num_services.loc[0],
+                comparison='s_1')
+        ).T
+    ).iloc[0].unstack().reindex(param_names).drop(['s_1'])
+
+    num_deaths_averted = summarize(
+        -1.0 *
+        pd.DataFrame(
+            find_difference_relative_to_comparison_series(
+                num_deaths.loc[0],
+                comparison='s_1')
+        ).T
+    ).iloc[0].unstack().reindex(param_names).drop(['s_1'])
+
+    num_dalys_averted = summarize(
+        -1.0 *
+        pd.DataFrame(
+            find_difference_relative_to_comparison_series(
+                num_dalys.loc[0],
+                comparison='s_1')
+        ).T
+    ).iloc[0].unstack().reindex(param_names).drop(['s_1'])
+
+    num_dalys_by_cause_averted = summarize(
+        -1.0 * find_difference_relative_to_comparison_dataframe(
+            num_dalys_by_cause,
+            comparison='s_1',
+        ),
+        only_mean=True
+    )
+
+    num_appts_increased = summarize(
+        find_difference_relative_to_comparison_dataframe(
+            num_appts,
+            comparison='s_1',
+        ),
+        only_mean=True
+    )
+
+    # Check that when we sum across the causes/appt types,
+    # we get the same total as calculated when we didn't split by cause/appt type.
+    assert (
+        (num_appts_increased.sum(axis=0).sort_index()
+         - num_services_increased['mean'].sort_index()
+         ) < 1e-6
+    ).all()
+
+    assert (
+        (num_dalys_by_cause_averted.sum(axis=0).sort_index()
+         - num_dalys_averted['mean'].sort_index()
+         ) < 1e-6
+    ).all()
 
     # plot absolute numbers for scenarios
 
@@ -346,7 +407,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # get data of extra budget, extra staff
     # calculate return on investment
     # get and plot services by short treatment id
-    # get and plot comparison results
+    # plot comparison results
 
 
 if __name__ == "__main__":
