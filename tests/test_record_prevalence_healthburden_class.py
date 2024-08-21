@@ -94,7 +94,7 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
                 print(closest_date)
                 print(target_date)
                 # Assert statement for validation
-                #assert abs(regular_log_value - closest_recording_log) < tolerance_percentage * closest_recording_log
+                assert abs(regular_log_value - closest_recording_log) < tolerance_percentage * closest_recording_log
 
     # Oesophageal Cancer
     prevalence_oesophageal_cancer_log = output['tlo.methods.oesophagealcancer']["summary_stats"]
