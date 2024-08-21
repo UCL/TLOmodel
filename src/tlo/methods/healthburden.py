@@ -714,7 +714,7 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
         neonatal_maternal_mortality = pd.DataFrame(self.sim.modules['Demography'].report_prevalence()) # Already a dataframe
         prevalence_from_each_disease_module['NMR'] = neonatal_maternal_mortality.iloc[:,0]
         prevalence_from_each_disease_module['MMR'] = neonatal_maternal_mortality.iloc[:,1]
-        prevalence_from_each_disease_module['live births'] = neonatal_maternal_mortality.iloc[:,2]
+        prevalence_from_each_disease_module['live_births'] = neonatal_maternal_mortality.iloc[:,2]
 
         prevalence_from_each_disease_module.drop(
             prevalence_from_each_disease_module.index.intersection(
