@@ -385,6 +385,7 @@ class Demography(Module):
             if len(df[(df['age_days'] < 29)]) == 0:
                 neonatal_mortality_rate = 0
                 maternal_mortality_rate = 0
+                live_births = 0
             else:
                 neonatal_deaths = len(df[(df['age_days'] < 29) & (df['age_years'] == 0) & ~(df['is_alive']) & (
                         df['date_of_death'] >= (self.sim.date - DateOffset(months=1)))])
