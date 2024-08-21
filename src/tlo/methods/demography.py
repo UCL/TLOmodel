@@ -389,8 +389,9 @@ class Demography(Module):
         Returns a dataframe with these values.
         """
         if 'SimplifiedBirths' in self.sim.modules:
-            neonatal_deaths = None
-            maternal_deaths = None
+            neonatal_mortality_rate = None
+            maternal_mortality_rate = None
+            live_births = None
         else:
             df = self.sim.population.props
             if len(df[(df['age_days'] < 29)]) == 0:
