@@ -684,7 +684,13 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
             return
 
         prevalence_from_each_disease_module = pd.DataFrame()
+        # Calculate the population size
+        population_size = len(self.sim.population.props[self.sim.population.props['is_alive']])
 
+        # Create a DataFrame with one row and assign the population size
+        prevalence_from_each_disease_module = pd.DataFrame({'population': [population_size]})
+        print("population",len(self.sim.population.props[self.sim.population.props['is_alive']]))
+        print(prevalence_from_each_disease_module['population'])
         for disease_module_name in self.module.recognised_modules_names:
             if disease_module_name in ['NewbornOutcomes', 'PostnatalSupervisor', 'Mockitis', 'DiseaseThatCausesA', 'ChronicSyndrome']:
                 continue
