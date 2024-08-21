@@ -93,10 +93,6 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
 
         # Check if the closest date difference is within 20 days
         if smallest_diff < 20 and closest_recording_log is not None:
-            print("TB log date:", target_date)
-            print("Closest function date:", function_date)
-            print("Closest recording log value:", closest_recording_log)
-            print("Regular log value:", regular_log_value)
 
             # Assert statement for validation
             assert abs(regular_log_value - closest_recording_log) < tolerance_percentage * closest_recording_log
@@ -136,11 +132,6 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
 
         # Check if the closest date difference is within 20 days
         if smallest_diff < 20 and closest_recording_log is not None:
-            print("OC log date:", target_date)
-            print("Closest function date:", function_date)
-            print("Function OC:", closest_recording_log)
-            print("Log OC:", regular_log_value)
-
             # Assert statement for validation
             assert abs(regular_log_value - closest_recording_log) < tolerance_percentage * closest_recording_log
         else:
@@ -175,11 +166,6 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
 
         # Check if the closest date difference is within 20 days
         if smallest_diff < 20 and closest_recording_log is not None:
-            print("OAC log date:", target_date)
-            print("Closest function date:", function_date)
-            print("Log OAC:", regular_log_value)
-            print("Function OAC:", round(closest_recording_log, 7))
-
             # Handle the case where closest_recording_log is zero
             if closest_recording_log == 0:
                 # Special case: if both values are zero, the assertion is considered true
@@ -219,10 +205,6 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
 
         # Check if the closest date difference is within 20 days
         if smallest_diff < 20 and closest_recording_log is not None:
-            print("Bladder log date:", target_date)
-            print("Closest function date:", function_date)
-            print("Log Bladder:", regular_log_value)
-            print("Function Bladder:", round(closest_recording_log, 7))
 
             # Handle the case where closest_recording_log is zero
             if closest_recording_log == 0:
@@ -262,11 +244,6 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
 
         # Check if the closest date difference is within 20 days
         if smallest_diff < 20 and closest_recording_log is not None:
-            print("Breast log date:", target_date)
-            print("Closest function date:", function_date)
-            print("Log Breast:", regular_log_value)
-            print("Function Breast:", round(closest_recording_log, 7))
-
             # Handle the case where closest_recording_log is zero
             if closest_recording_log == 0:
                 assert regular_log_value == 0
@@ -304,10 +281,6 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
 
         # Check if the closest date difference is within 20 days
         if smallest_diff < 20 and closest_recording_log is not None:
-            print("Prostate log date:", target_date)
-            print("Closest function date:", function_date)
-            print("Log Prostate:", regular_log_value)
-            print("Function Prostate:", round(closest_recording_log, 7))
 
             # Handle the case where closest_recording_log is zero
             if closest_recording_log == 0:
@@ -341,10 +314,6 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
 
         # Check if the closest date difference is within 20 days
         if smallest_diff < 20 and closest_recording_log is not None:
-            print("Malaria log date:", target_date)
-            print("Closest function date:", function_date)
-            print("Log Malaria:", regular_log_value)
-            print("Function Malaria:", round(closest_recording_log, 7))
 
             # Handle the case where closest_recording_log is zero
             if closest_recording_log == 0:
@@ -384,10 +353,6 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
 
             # Check if the closest date difference is within 20 days
             if smallest_diff < 20 and closest_recording_log is not None:
-                print(f"{condition} log date:", target_date)
-                print(f"Closest function date:", closest_date)
-                print(f"Log {condition}:", regular_log_value)
-                print(f"Function {condition}:", round(closest_recording_log, 7))
 
                 # Handle the case where closest_recording_log is zero
                 if closest_recording_log == 0:
