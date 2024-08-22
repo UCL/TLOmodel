@@ -18,22 +18,22 @@ from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     breast_cancer,
+    care_of_women_during_pregnancy,
+    contraception,
     demography,
     enhanced_lifestyle,
+    epi,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    oesophagealcancer,
-    symptommanager,
     hiv,
-    tb,
-    epi,
+    labour,
     newborn_outcomes,
+    oesophagealcancer,
     postnatal_supervisor,
     pregnancy_supervisor,
-    labour,
-    care_of_women_during_pregnancy,
-    contraception
+    symptommanager,
+    tb,
 )
 
 # Where will outputs go
