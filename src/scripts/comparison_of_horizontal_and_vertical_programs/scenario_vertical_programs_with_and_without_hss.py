@@ -107,22 +107,6 @@ class HTMWithAndWithoutHSS(BaseScenario):
                     scenario_definitions.hss_package(),
                 ),
 
-            # - - - HIV & TB SCALE-UP WITHOUT HSS PACKAGE- - -
-            "Hiv/Tb Programs Scale-up WITHOUT HSS PACKAGE":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.hiv_scaleup(),
-                    scenario_definitions.tb_scaleup(),
-                ),
-            # - - - HIV & TB SCALE-UP *WITH* HSS PACKAGE- - -
-            "Hiv/Tb Programs Scale-up WITH HSS PACKAGE":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.hiv_scaleup(),
-                    scenario_definitions.tb_scaleup(),
-                    scenario_definitions.hss_package(),
-                ),
-
             # - - - MALARIA SCALE-UP WITHOUT HSS PACKAGE- - -
             "Malaria Programs Scale-up WITHOUT HSS PACKAGE":
                 mix_scenarios(
