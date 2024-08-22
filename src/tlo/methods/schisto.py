@@ -105,6 +105,13 @@ class Schisto(Module):
         'reset_calibration': Parameter(Types.BOOL,
                                        'if True, will reset the prevalence and mean worm burden in 2022 to'
                                        'match 2022 reported data'),
+        'scaling_factor_baseline_risk': Parameter(Types.REAL,
+                                                  'scaling factor controls how the background risk of '
+                                                  'infection is adjusted based on the deviation of current prevalence '
+                                                  'from baseline prevalence'),
+        'baseline_risk': Parameter(Types.REAL,
+                                  'number of worms applied as a baseline risk across districts to prevent '
+                                  'fadeout, number is scaled by scaling_factor_baseline_risk'),
         'MDA_coverage_historical': Parameter(Types.DATA_FRAME,
                                              'Probability of getting PZQ in the MDA for PSAC, SAC and Adults '
                                              'in historic rounds'),
@@ -150,7 +157,7 @@ class Schisto(Module):
             [['mansoni', 'haematobium'], ['PSAC', 'SAC', 'Adults'], ['Low-infection', 'Moderate-infection', 'High-infection']],
             names=['species', 'age_group', 'infection_level']
         )
-        self.log_person_days = pd.DataFrame(0, index=index, columns=['person_days'])
+        self.log_person_days = pd.DataFrame(0, index=index, columns=['person_days']).sort_index()
 
     def read_parameters(self, data_folder):
         """Read parameters and register symptoms."""
@@ -332,6 +339,8 @@ class Schisto(Module):
                             'mda_target_group',
                             'mda_frequency_months',
                             'reset_calibration',
+                            'scaling_factor_baseline_risk',
+                            'baseline_risk',
                             ):
             # parameters[_param_name] = float(param_list[_param_name])
             parameters[_param_name] = param_list[_param_name]
@@ -684,7 +693,9 @@ class SchistoSpecies:
             'high_intensity_threshold_PSAC': Parameter(Types.REAL,
                                                        'Worm burden threshold for high intensity infection in PSAC'),
             'PZQ_efficacy': Parameter(Types.REAL,
-                                      ' Efficacy of praziquantel in reducing worm burden'),
+                                      'Efficacy of praziquantel in reducing worm burden'),
+            'baseline_prevalence': Parameter(Types.REAL,
+                                      'Baseline prevalence of species across all districts in 2010'),
             'mean_worm_burden2010': Parameter(Types.DATA_FRAME,
                                               'Mean worm burden per infected person per district in 2010'),
             'prop_susceptible': Parameter(Types.DATA_FRAME,
@@ -738,7 +749,8 @@ class SchistoSpecies:
                             'high_intensity_threshold',
                             'low_intensity_threshold',
                             'high_intensity_threshold_PSAC',
-                            'PZQ_efficacy'
+                            'PZQ_efficacy',
+                            'baseline_prevalence',
                             ):
             parameters[_param_name] = param_list[f'{_param_name}_{self.name}']
 
@@ -1186,6 +1198,7 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         df = population.props
         params = self.species.params
+        global_params = self.module.parameters
         rng = self.module.rng
         # prop calls the property starting with the prefix species property, i.e. ss_sm or ss_sh
         prop = self.species.prefix_species_property
@@ -1222,6 +1235,21 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
         # sum all contributions to district reservoir of infection
         reservoir = age_worm_burden.groupby(['district_of_residence'], observed=False).sum()
 
+        # --------------------- estimate background risk of infection ---------------------
+
+
+        current_prevalence = len(df[df['is_alive'] & (df[prop('infection_status')] != 'Non-infected')]
+                         ) / len(df[df.is_alive])
+        baseline_prevalence = params['baseline_prevalence']  # baseline prevalence for species in 2010
+
+        # this returns positive value if current_prevalence lower than baseline_prevalence and
+        # increases baseline_risk value
+        # if current_prevalence > baseline_prevalence, value returned is 0 and no additional risk applied
+        background_risk = max(0, global_params['baseline_risk'] * (1 + global_params['scaling_factor_baseline_risk'] *
+                                                           (current_prevalence - baseline_prevalence)))
+
+        reservoir += background_risk  # add the background reservoir to every district
+
         # --------------------- harbouring new worms ---------------------
 
         # the harbouring rates are randomly assigned to each individual
@@ -1234,6 +1262,7 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
         harbouring_rates = df.loc[where, prop('harbouring_rate')]
         rates = harbouring_rates * contact_rates
         worms_total = reservoir * R0
+
         draw_worms = pd.Series(
             rng.poisson(
                 (df.loc[where, 'district_of_residence'].map(worms_total) * rates).fillna(0.0)
@@ -1441,21 +1470,6 @@ class SchistoWashScaleUp(RegularEvent, PopulationScopeEventMixin):
         # set the properties to False for everyone
         df['li_unimproved_sanitation'] = False
         df['li_date_acquire_improved_sanitation'] = self.sim.date
-
-
-# class SchistoResetCalibration(RegularEvent, PopulationScopeEventMixin):
-#     """
-#     if parameter reset_calibration is set to True,
-#     reset the calibration to match reported prevalence in 2022
-#     """
-#
-#     def __init__(self, module):
-#         super().__init__(
-#             module, frequency=DateOffset(years=100)
-#         )
-#
-#     def apply(self, population):
-#         df = population.props
 
 
 class HSI_Schisto_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin):
@@ -1709,43 +1723,14 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             description='Counts of treatment occurring in timeperiod'
         )
 
-        # person-days infected
-        species = ['mansoni', 'haematobium']
-        age_groups = ['PSAC', 'SAC', 'Adults']
-        infection_levels = ['Low-infection', 'Moderate-infection', 'High-infection']
-        infection_counts = {}
-
-        # Loop through each combination of species, age group, and infection level
-        # for species in species:
-        #     for age_group in age_groups:
-        #         for infection_level in infection_levels:
-        #             # Dynamically build the attribute name and add the count to it
-        #             attr_name = f'log_person_days_{species}_{infection_level.lower().replace("-infection", "")}_{age_group}'
-        #             current_value = getattr(self.module, attr_name, 0)
-        #             # Add the attribute name and value to the dictionary
-        #             infection_counts[attr_name] = current_value
-        #
-        # person_days_infected = {
-        #     'person_days_infected': infection_counts,
-        # }
-
-        monthly_series = self.module.log_person_days['person_days']
-
-        # Log the series (for example, print it or save it to a file/database)
-        print(monthly_series)
-
-        # todo log person-years of infection by low, moderate and high for all, SAC and PSAC separately
+        # log person-years of infection by low, moderate and high for all, SAC and PSAC separately
         logger.info(
             key='Schisto_person_days_infected',
-            data=flatten_multi_index_series_into_dict_for_logging(monthly_series),
+            data=flatten_multi_index_series_into_dict_for_logging(self.module.log_person_days['person_days']),
             description='Counts of person-days infected by any species'
         )
         # Reset the daily counts for the next month
         self.module.log_person_days.loc[:, 'person_days'] = 0
-
-        # todo reset this: clear the logger ready for the next year
-        # self.log_person_days_any_infection = 0
-        # self.log_person_days_high_infection = 0
 
         # WASH properties
         unimproved_sanitation = len(
