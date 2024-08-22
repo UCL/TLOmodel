@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, List, Sequence, Optional, Union
 
 import numpy as np
 import pandas as pd
+from itertools import product
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
@@ -145,20 +146,11 @@ class Schisto(Module):
         self.age_group_mapper = s.to_dict()
 
         # create container for logging person-days infected
-        species = ['mansoni', 'haematobium']
-        age_groups = ['PSAC', 'SAC', 'Adults']
-        infection_levels = ['Low-infection', 'Moderate-infection', 'High-infection']
-
-        # Loop through each combination of species, age group, and infection level
-        for species in species:
-            for age_group in age_groups:
-                for infection_level in infection_levels:
-                    # Dynamically build the attribute name and initialise it with 0
-                    attr_name = f'log_person_days_{species}_{infection_level.lower().replace("-infection", "")}_{age_group}'
-                    setattr(self, attr_name, 0)
-
-        # self.log_person_days_any_infection = 0
-        # self.log_person_days_high_infection = 0
+        index = pd.MultiIndex.from_product(
+            [['mansoni', 'haematobium'], ['PSAC', 'SAC', 'Adults'], ['Low-infection', 'Moderate-infection', 'High-infection']],
+            names=['species', 'age_group', 'infection_level']
+        )
+        self.log_person_days = pd.DataFrame(0, index=index, columns=['person_days'])
 
     def read_parameters(self, data_folder):
         """Read parameters and register symptoms."""
@@ -656,7 +648,7 @@ class Schisto(Module):
 
         if n_to_reduce > 0:
             selected_change_susceptibility = np.random.choice(susceptible_no_sanitation, size=n_to_reduce,
-                                                      replace=False)
+                                                              replace=False)
             df.loc[selected_change_susceptibility, species_column] = 0
 
 
@@ -835,11 +827,11 @@ class SchistoSpecies:
 
         # WASH in action
         if global_params['scaleup_WASH'] and (
-                self.schisto_module.sim.date >= Date(global_params['scaleup_WASH_start_year'], 1, 1)):
+            self.schisto_module.sim.date >= Date(global_params['scaleup_WASH_start_year'], 1, 1)):
 
             # if the child has sanitation, apply risk mitigated by rr_WASH
             if not df.at[child_id, 'li_unimproved_sanitation']:
-                if rng.random_sample() < (prop_susceptible * (1-global_params['rr_WASH'])):
+                if rng.random_sample() < (prop_susceptible * (1 - global_params['rr_WASH'])):
                     df.at[child_id, prop('susceptibility')] = 1
             # if no sanitation, apply full risk
             elif df.at[child_id, 'li_unimproved_sanitation']:
@@ -860,9 +852,6 @@ class SchistoSpecies:
             else:
                 susceptibility_probability = p_no_san
             df.at[child_id, prop('susceptibility')] = 1 if rng.random_sample() < susceptibility_probability else 0
-
-
-
 
     def update_infectious_status_and_symptoms(self, idx: pd.Index) -> None:
         """Updates the infection status and symptoms based on the current aggregate worm burden of this species.
@@ -1139,7 +1128,7 @@ class SchistoSpecies:
             description='Counts of infection status with this species by age-group and district.'
         )
 
-        # Group by district and calculate counts
+        #  Group by district and calculate counts
         grouped_data = df.loc[df.is_alive].groupby('district_of_residence')[prop('susceptibility')].agg(
             total_count='count',
             susceptible_count=lambda x: (x == 1).sum()
@@ -1469,8 +1458,6 @@ class SchistoWashScaleUp(RegularEvent, PopulationScopeEventMixin):
 #         df = population.props
 
 
-
-
 class HSI_Schisto_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin):
     """This is a Health System Interaction Event for a person with symptoms who has been referred from the FirstAppt
     for testing at the clinic."""
@@ -1665,45 +1652,25 @@ class SchistoPersonDaysLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         df = self.sim.population.props
 
         # _AGE_GROUPS = {'PSAC': (0, 4), 'SAC': (5, 14), 'Adults': (15, 120), 'All': (0, 120)}
-        species = ['mansoni', 'haematobium']
+        species_list = ['mansoni', 'haematobium']
         age_groups = ['PSAC', 'SAC', 'Adults']
         infection_levels = ['Low-infection', 'Moderate-infection', 'High-infection']
 
         def log_infection_counts(df, species, age_group, infection_level):
             age_bands = df.loc[df.is_alive].age_years.map(self.module.age_group_mapper)
-
             species_prefix = 'sm' if species == 'mansoni' else 'sh'
-            person_days = df[
+
+            return df[
                 (df[f'ss_{species_prefix}_infection_status'] == infection_level) &
                 (age_bands == age_group)
                 ].shape[0]
 
-            return person_days
-
-        # Loop through each combination of species, age group, and infection level
-        for species in species:
-            species_prefix = 'sm' if species == 'mansoni' else 'sh'
-            for age_group in age_groups:
-                for infection_level in infection_levels:
-                    # Calculate person_days for the current combination
-                    person_days = log_infection_counts(df, species, age_group, infection_level)
-
-                    # Dynamically build the attribute name and add the count to it
-                    attr_name = f'log_person_days_{species}_{infection_level.lower().replace("-infection", "")}_{age_group}'
-                    current_value = getattr(self.module, attr_name, 0)
-                    setattr(self.module, attr_name, current_value + person_days)
-
-
-        # each day this runs, sum the number of people with each type of infection and add to logger
-        # Count rows where person has either mansoni or haematobium infection, any infection intensity
-        # count_any_infection = df[~((df['ss_sh_infection_status'] == 'Non-infected') &
-        #                            (df['ss_sm_infection_status'] == 'Non-infected'))].shape[0]
-        #
-        # count_high_infection = df[((df['ss_sh_infection_status'] == 'High-infection') |
-        #                            (df['ss_sm_infection_status'] == 'High-infection'))].shape[0]
-        #
-        # self.module.log_person_days_any_infection += count_any_infection
-        # self.module.log_person_days_high_infection += count_high_infection
+        for species, age_group, infection_level in product(
+                self.module.log_person_days.index.get_level_values('species').unique(),
+                self.module.log_person_days.index.get_level_values('age_group').unique(),
+                self.module.log_person_days.index.get_level_values('infection_level').unique()):
+            person_days = log_infection_counts(df, species, age_group, infection_level)
+            self.module.log_person_days.loc[(species, age_group, infection_level), 'person_days'] += person_days
 
 
 class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -1749,25 +1716,32 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         infection_counts = {}
 
         # Loop through each combination of species, age group, and infection level
-        for species in species:
-            for age_group in age_groups:
-                for infection_level in infection_levels:
-                    # Dynamically build the attribute name and add the count to it
-                    attr_name = f'log_person_days_{species}_{infection_level.lower().replace("-infection", "")}_{age_group}'
-                    current_value = getattr(self.module, attr_name, 0)
-                    # Add the attribute name and value to the dictionary
-                    infection_counts[attr_name] = current_value
+        # for species in species:
+        #     for age_group in age_groups:
+        #         for infection_level in infection_levels:
+        #             # Dynamically build the attribute name and add the count to it
+        #             attr_name = f'log_person_days_{species}_{infection_level.lower().replace("-infection", "")}_{age_group}'
+        #             current_value = getattr(self.module, attr_name, 0)
+        #             # Add the attribute name and value to the dictionary
+        #             infection_counts[attr_name] = current_value
+        #
+        # person_days_infected = {
+        #     'person_days_infected': infection_counts,
+        # }
 
-        person_days_infected = {
-            'person_days_infected': infection_counts,
-        }
+        monthly_series = self.module.log_person_days['person_days']
+
+        # Log the series (for example, print it or save it to a file/database)
+        print(monthly_series)
 
         # todo log person-years of infection by low, moderate and high for all, SAC and PSAC separately
         logger.info(
             key='Schisto_person_days_infected',
-            data=person_days_infected,
+            data=flatten_multi_index_series_into_dict_for_logging(monthly_series),
             description='Counts of person-days infected by any species'
         )
+        # Reset the daily counts for the next month
+        self.module.log_person_days.loc[:, 'person_days'] = 0
 
         # todo reset this: clear the logger ready for the next year
         # self.log_person_days_any_infection = 0
