@@ -223,11 +223,23 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         curr_hr.drop(['Total_Mins_Per_Day'], axis=1, inplace=True)
         return curr_hr.loc[curr_hr['Officer_Category'].isin(cadres), ['Officer_Category', 'Staff_Count']]
 
+    def get_hr_salary(cadres):
+        """
+        Return annual salary for the cadres specified.
+        """
+        salary_path = Path(resourcefilepath
+                           / 'costing' / 'ResourceFile_Annual_Salary_Per_Cadre.csv')
+        salary = pd.read_csv(salary_path, index_col=False)
+        return salary.loc[salary['Officer_Category'].isin(cadres), ['Officer_Category', 'Annual_Salary_USD']]
+
     # Get parameter/scenario names
     param_names = get_parameter_names_from_scenario_file()
 
     # Get current (year of 2019) hr counts
     curr_hr = get_current_hr(['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy'])
+
+    # Get salary
+    salary = get_hr_salary(['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy'])
 
     # Get scale up factors for all scenarios
     scale_up_factors = extract_results(
@@ -240,7 +252,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # check that the scale up factors are the same between each run within each draw
     assert scale_up_factors.eq(scale_up_factors.iloc[:, 0], axis=0).all().all()
     # keep scale up factors of only one run within each draw
-    scale_up_factors = scale_up_factors.iloc[:, 0].unstack()
+    scale_up_factors = scale_up_factors.iloc[:, 0].unstack().reset_index().melt(id_vars='Year of scaling up')
+    scale_up_factors[['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy']] = scale_up_factors.value.tolist()
+    scale_up_factors.drop(columns='value', inplace=True)
 
     # Absolute Number of Deaths and DALYs and Services
     num_deaths = extract_results(
