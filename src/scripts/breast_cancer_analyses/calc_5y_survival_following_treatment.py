@@ -25,6 +25,15 @@ from tlo.methods import (
     healthsystem,
     oesophagealcancer,
     symptommanager,
+    hiv,
+    tb,
+    epi,
+    newborn_outcomes,
+    postnatal_supervisor,
+    pregnancy_supervisor,
+    labour,
+    care_of_women_during_pregnancy,
+    contraception
 )
 
 # Where will outputs go
@@ -34,11 +43,11 @@ outputpath = Path("./outputs")  # folder for convenience of storing outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource files
-resourcefilepath = Path("./resources")
+resourcefilepath = './resources'
 
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2025, 1, 1)
+end_date = Date(2015, 1, 1)
 popsize = 10000
 
 
@@ -52,19 +61,26 @@ log_config = {
     }
 
 # Establish the simulation object and set the seed
-sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
+sim = Simulation(start_date=start_date, seed=0, log_config=log_config, resourcefilepath=resourcefilepath)
 
 # Register the appropriate modules
-sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-             enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-             healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                       disable=True),
-             symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-             healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-             oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
-             breast_cancer.BreastCancer(resourcefilepath=resourcefilepath)
-             )
+sim.register(demography.Demography(),
+             enhanced_lifestyle.Lifestyle(),
+             healthsystem.HealthSystem(disable=True),
+             symptommanager.SymptomManager(),
+             healthseekingbehaviour.HealthSeekingBehaviour(),
+             healthburden.HealthBurden(),
+             oesophagealcancer.OesophagealCancer(),
+             breast_cancer.BreastCancer(),
+             hiv.Hiv(),
+             tb.Tb(),
+             epi.Epi(),
+             newborn_outcomes.NewbornOutcomes(),
+             postnatal_supervisor.PostnatalSupervisor(),
+             pregnancy_supervisor.PregnancySupervisor(),
+             labour.Labour(),
+             care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(),
+             contraception.Contraception())
 
 # Make there be a very high initial prevalence in the first stage and no on-going new incidence and no treatment to
 # begin with:
