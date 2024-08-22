@@ -272,7 +272,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     plt.close(fig)
 
     # Graphs showing difference by disease (HTM/OTHER and split by age/sex)
-    def get_total_num_dalys_by_label(_df):
+    def get_total_num_dalys_by_label_htm(_df):
         """Return the total number of DALYS in the TARGET_PERIOD by wealth and cause label."""
         y = _df \
             .loc[_df['year'].between(*[d.year for d in TARGET_PERIOD])] \
@@ -294,7 +294,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         results_folder,
         module="tlo.methods.healthburden",
         key="dalys_by_wealth_stacked_by_age_and_time",
-        custom_generate_series=get_total_num_dalys_by_label,
+        custom_generate_series=get_total_num_dalys_by_label_htm,
         do_scaling=True,
     ).pipe(set_param_names_as_column_index_level_0)
 
@@ -382,23 +382,71 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     print(f'pc_dalys_averted_in_htm ({the_target_period}): {pc_dalys_averted_in_htm[actual_scenario]}')
 
 
+    #%% Breakdown of causes: Find the top 5 causes averted other than HTM
+    def get_total_num_dalys_by_label_all_causes(_df):
+        """Return the total number of DALYS in the TARGET_PERIOD cause label."""
+        return _df \
+            .loc[_df['year'].between(*[d.year for d in TARGET_PERIOD])] \
+            .drop(columns=['date', 'year', 'age_range', 'sex']) \
+            .sum(axis=0)
+
+    total_num_dalys_by_label_results_all_causes = extract_results(
+        results_folder,
+        module="tlo.methods.healthburden",
+        key="dalys_stacked_by_age_and_time",
+        custom_generate_series=get_total_num_dalys_by_label_all_causes,
+        do_scaling=True,
+    ).pipe(set_param_names_as_column_index_level_0)
+
+    total_num_dalys_by_label_results_averted_vs_baseline_all_causes = summarize(
+        -1.0 * find_difference_relative_to_comparison_series_dataframe(
+            total_num_dalys_by_label_results_all_causes,
+            comparison=counterfactual_scenario,
+        ),
+        only_mean=True
+    )
+
+    list(
+        total_num_dalys_by_label_results_averted_vs_baseline_all_causes[actual_scenario]
+        .drop(index={'AIDS', 'TB (non-AIDS)', 'Malaria', 'Other'})
+        .sort_values(ascending=False).head(4).keys()
+    )
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("results_folder", type=Path)  # outputs/horizontal_and_vertical_programs-2024-05-16
     args = parser.parse_args()
 
-    # Produce results for short-term analysis
+    # Produce results for short-term analysis - beginning 2020
+    # apply(
+    #     results_folder=args.results_folder,
+    #     output_folder=args.results_folder,
+    #     resourcefilepath=Path('./resources'),
+    #     the_target_period=(Date(2020, 1, 1), Date(2024, 12, 31))
+    # )
+    #
+    # # Produce results for long-term analysis - beginning 2020
+    # apply(
+    #     results_folder=args.results_folder,
+    #     output_folder=args.results_folder,
+    #     resourcefilepath=Path('./resources'),
+    #     the_target_period=(Date(2020, 1, 1), Date(2030, 12, 31))
+    # )
+
+    # Produce results for short-term analysis - beginning 2021 (additional results per GF request)
     apply(
         results_folder=args.results_folder,
         output_folder=args.results_folder,
         resourcefilepath=Path('./resources'),
-        the_target_period=(Date(2020, 1, 1), Date(2024, 12, 31))
+        the_target_period=(Date(2021, 1, 1), Date(2024, 12, 31))
     )
 
-    # Produce results for long-term analysis
+    # Produce results for long-term analysis - beginning 2021 (additional results per GF request)
     apply(
         results_folder=args.results_folder,
         output_folder=args.results_folder,
         resourcefilepath=Path('./resources'),
-        the_target_period=(Date(2020, 1, 1), Date(2030, 12, 31))
+        the_target_period=(Date(2021, 1, 1), Date(2030, 12, 31))
     )
+
