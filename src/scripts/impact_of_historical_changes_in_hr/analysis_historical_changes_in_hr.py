@@ -406,11 +406,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         only_mean=True
     )
 
-    list(
-        total_num_dalys_by_label_results_averted_vs_baseline_all_causes[actual_scenario]
-        .drop(index={'AIDS', 'TB (non-AIDS)', 'Malaria', 'Other'})
-        .sort_values(ascending=False).head(4).keys()
-    )
+    top_three_causes = list(total_num_dalys_by_label_results_averted_vs_baseline_all_causes[actual_scenario]
+                            .drop(index={'AIDS', 'TB (non-AIDS)', 'Malaria', 'Other'})
+                            .sort_values(ascending=False).head(3).keys())
+    print(f"Top 3 causes of DALYS Averted in Other during {TARGET_PERIOD}: {top_three_causes}")
 
 
 if __name__ == "__main__":
