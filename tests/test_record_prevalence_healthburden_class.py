@@ -8,7 +8,7 @@ from tlo.analysis.utils import parse_log_file
 from tlo.methods.fullmodel import fullmodel
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-outputpath = Path("./outputs/test_record_prevalence/0/0")
+outputpath = Path("./outputs/")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 12)
