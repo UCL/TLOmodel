@@ -10,6 +10,7 @@ import textwrap
 from pathlib import Path
 from typing import Tuple
 
+import numpy
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
@@ -221,7 +222,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             {'Staff_Count': 'sum', 'Total_Mins_Per_Day': 'sum'}).reset_index()
         curr_hr['Total_Minutes_Per_Year'] = curr_hr['Total_Mins_Per_Day'] * 365.25
         curr_hr.drop(['Total_Mins_Per_Day'], axis=1, inplace=True)
-        return curr_hr.loc[curr_hr['Officer_Category'].isin(cadres), ['Officer_Category', 'Staff_Count']]
+        curr_hr = curr_hr.loc[
+            curr_hr['Officer_Category'].isin(cadres), ['Officer_Category', 'Staff_Count']
+        ].set_index('Officer_Category').T
+        return curr_hr[cadres]
 
     def get_hr_salary(cadres):
         """
@@ -230,16 +234,20 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         salary_path = Path(resourcefilepath
                            / 'costing' / 'ResourceFile_Annual_Salary_Per_Cadre.csv')
         salary = pd.read_csv(salary_path, index_col=False)
-        return salary.loc[salary['Officer_Category'].isin(cadres), ['Officer_Category', 'Annual_Salary_USD']]
+        salary = salary.loc[
+            salary['Officer_Category'].isin(cadres), ['Officer_Category', 'Annual_Salary_USD']
+        ].set_index('Officer_Category').T
+        return salary[cadres]
 
     # Get parameter/scenario names
     param_names = get_parameter_names_from_scenario_file()
 
     # Get current (year of 2019) hr counts
-    curr_hr = get_current_hr(['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy'])
+    cadres = ['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy']
+    curr_hr = get_current_hr(cadres)
 
     # Get salary
-    salary = get_hr_salary(['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy'])
+    salary = get_hr_salary(cadres)
 
     # Get scale up factors for all scenarios
     scale_up_factors = extract_results(
@@ -253,8 +261,21 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     assert scale_up_factors.eq(scale_up_factors.iloc[:, 0], axis=0).all().all()
     # keep scale up factors of only one run within each draw
     scale_up_factors = scale_up_factors.iloc[:, 0].unstack().reset_index().melt(id_vars='Year of scaling up')
-    scale_up_factors[['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy']] = scale_up_factors.value.tolist()
+    scale_up_factors[cadres] = scale_up_factors.value.tolist()
     scale_up_factors.drop(columns='value', inplace=True)
+
+    # Get total extra staff counts by officer type and total extra budget within the target period for all scenarios
+    years = range(2020, the_target_period[1].year + 1)
+    integrated_scale_up_factor = pd.DataFrame(index=list(param_names), columns=cadres)
+    for s in integrated_scale_up_factor.index:
+        integrated_scale_up_factor.loc[s] = scale_up_factors.loc[
+            (scale_up_factors['Year of scaling up'].isin(years)) & (scale_up_factors['draw'] == s), cadres
+        ].product()
+
+    total_staff = pd.DataFrame(integrated_scale_up_factor.mul(curr_hr.values, axis=1))
+    total_cost = pd.DataFrame(total_staff.mul(salary.values, axis=1))
+    extra_staff = pd.DataFrame(total_staff.subtract(total_staff.loc['s_1'], axis=1))
+    extra_cost = pd.DataFrame(total_cost.subtract(total_cost.loc['s_1'], axis=1))
 
     # Absolute Number of Deaths and DALYs and Services
     num_deaths = extract_results(
@@ -512,7 +533,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     plt.close(fig)
 
     # todo
-    # get data of extra budget, extra staff
     # calculate return on investment
     # get and plot services by short treatment id
     # plot comparison results: there are negative changes of some appts and causes, try increase runs and see
