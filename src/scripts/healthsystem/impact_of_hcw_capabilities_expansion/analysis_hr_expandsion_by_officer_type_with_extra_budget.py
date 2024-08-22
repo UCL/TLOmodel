@@ -211,8 +211,23 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             _df['Scale up factor'].values, index=_df['Year of scaling up']
         )
 
+    def get_current_hr(cadres):
+        """
+        Return current (year of 2019) staff counts and capabilities for the cadres specified.
+        """
+        curr_hr_path = Path(resourcefilepath
+                            / 'healthsystem' / 'human_resources' / 'actual' / 'ResourceFile_Daily_Capabilities.csv')
+        curr_hr = pd.read_csv(curr_hr_path).groupby('Officer_Category').agg(
+            {'Staff_Count': 'sum', 'Total_Mins_Per_Day': 'sum'}).reset_index()
+        curr_hr['Total_Minutes_Per_Year'] = curr_hr['Total_Mins_Per_Day'] * 365.25
+        curr_hr.drop(['Total_Mins_Per_Day'], axis=1, inplace=True)
+        return curr_hr.loc[curr_hr['Officer_Category'].isin(cadres), ['Officer_Category', 'Staff_Count']]
+
     # Get parameter/scenario names
     param_names = get_parameter_names_from_scenario_file()
+
+    # Get current (year of 2019) hr counts
+    curr_hr = get_current_hr(['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy'])
 
     # Get scale up factors for all scenarios
     scale_up_factors = extract_results(
