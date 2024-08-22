@@ -362,7 +362,22 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         index={False: "H/T/M", True: "Other"})
     make_daly_split_by_cause_graph(total_num_dalys_by_label_results_averted_vs_baseline_grouping_htm, filename_suffix='_broad')
 
-    # percent of DALYS averted in HTM
+    # percent of DALYS averted in H/T/M
+    pc_dalys_averted_in_h_t_m = (100 * (total_num_dalys_by_label_results_averted_vs_baseline / total_num_dalys_by_label_results_averted_vs_baseline.sum())).round(0)
+
+    def plot_table(df, name_of_plot):
+        fig, ax = plt.subplots(dpi=600)
+        ax.axis('off')
+        pd.plotting.table(ax, df, loc='center', cellLoc='center', colWidths=list([.2, .2]))
+        ax.set_title(name_of_plot)
+        fig.tight_layout()
+        fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+        fig.show()
+        plt.close(fig)
+
+    plot_table(pc_dalys_averted_in_h_t_m, name_of_plot=f'Breakdown of DALYS Averted: {target_period()}')
+
+    # percent of DALYS averted in HTM (combined)
     pc_dalys_averted_in_htm = 1.0 - (total_num_dalys_by_label_results_averted_vs_baseline.loc['Other'] / total_num_dalys_by_label_results_averted_vs_baseline.sum())
     print(f'pc_dalys_averted_in_htm ({the_target_period}): {pc_dalys_averted_in_htm[actual_scenario]}')
 
