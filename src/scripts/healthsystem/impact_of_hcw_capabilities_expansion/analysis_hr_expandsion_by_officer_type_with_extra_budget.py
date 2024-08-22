@@ -201,8 +201,31 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         return fig, ax
 
+    def get_scale_up_factor(_df):
+        """
+        Return a series of yearly scale up factors for four cadres - Clinical, DCSA, Nursing_and_Midwifery, Pharmacy,
+        with index of year and value of list of the four scale up factors.
+        """
+        _df = _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD), ['Year of scaling up', 'Scale up factor']]
+        return pd.Series(
+            _df['Scale up factor'].values, index=_df['Year of scaling up']
+        )
+
     # Get parameter/scenario names
     param_names = get_parameter_names_from_scenario_file()
+
+    # Get scale up factors for all scenarios
+    scale_up_factors = extract_results(
+        results_folder,
+        module='tlo.methods.healthsystem.summary',
+        key='HRScaling',
+        custom_generate_series=get_scale_up_factor,
+        do_scaling=False
+    ).pipe(set_param_names_as_column_index_level_0).stack(level=0)
+    # check that the scale up factors are the same between each run within each draw
+    assert scale_up_factors.eq(scale_up_factors.iloc[:, 0], axis=0).all().all()
+    # keep scale up factors of only one run within each draw
+    scale_up_factors = scale_up_factors.iloc[:, 0].unstack()
 
     # Absolute Number of Deaths and DALYs and Services
     num_deaths = extract_results(
@@ -466,6 +489,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # plot comparison results: there are negative changes of some appts and causes, try increase runs and see
     # as we have 17 scenarios in total, \
     # design comparison groups of scenarios to examine marginal/combined productivity of cadres
+    # do update HRScaling logger: year_of_scale_up, scale_up_factor, and get_scale_up_factor function
 
 
 if __name__ == "__main__":
