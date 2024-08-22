@@ -83,7 +83,7 @@ class HRHExpansionByCadreWithExtraBudget(BaseScenario):
             {'HealthSystem': {
                 'mode_appt_constraints': 1,
                 'mode_appt_constraints_postSwitch': 2,
-                "scale_to_effective_capabilities": True,  # todo: TBC
+                "scale_to_effective_capabilities": True,  # todo: TBC; will this change the capabilities of 2019?
                 "year_mode_switch": self.YEAR_OF_CHANGE,
                 'cons_availability': 'default',
                 'cons_availability_postSwitch': 'all',
