@@ -276,7 +276,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         """Return the total number of DALYS in the TARGET_PERIOD by wealth and cause label."""
         y = _df \
             .loc[_df['year'].between(*[d.year for d in TARGET_PERIOD])] \
-            .drop(columns=['date', 'year', 'li_wealth']) \
+            .drop(columns=['date', 'year', 'sex', 'age_range']) \
             .sum(axis=0)
 
         # define course cause mapper for HIV, TB, MALARIA and OTHER
@@ -293,7 +293,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     total_num_dalys_by_label_results = extract_results(
         results_folder,
         module="tlo.methods.healthburden",
-        key="dalys_by_wealth_stacked_by_age_and_time",
+        key="dalys_stacked_by_age_and_time",
         custom_generate_series=get_total_num_dalys_by_label_htm,
         do_scaling=True,
     ).pipe(set_param_names_as_column_index_level_0)
