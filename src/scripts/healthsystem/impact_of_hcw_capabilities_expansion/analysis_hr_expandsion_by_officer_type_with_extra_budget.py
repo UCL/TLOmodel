@@ -274,8 +274,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     total_staff = pd.DataFrame(integrated_scale_up_factor.mul(curr_hr.values, axis=1))
     total_cost = pd.DataFrame(total_staff.mul(salary.values, axis=1))
+    total_staff['all_four_cadres'] = total_staff.sum(axis=1)
+    total_cost['all_four_cadres'] = total_cost.sum(axis=1)
+
     extra_staff = pd.DataFrame(total_staff.subtract(total_staff.loc['s_1'], axis=1))
     extra_cost = pd.DataFrame(total_cost.subtract(total_cost.loc['s_1'], axis=1))
+
+    # check total cost calculated is increased as expected - approximate float of a fraction can sacrifice some budget
+    # for s in param_names[1:]:
+    #     assert abs(total_cost.loc[s, 'all_four_cadres'] -
+    #                (1 + 0.042) ** (len(years)) * total_cost.loc['s_1', 'all_four_cadres']) < 1e6
 
     # Absolute Number of Deaths and DALYs and Services
     num_deaths = extract_results(
@@ -539,6 +547,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # as we have 17 scenarios in total, \
     # design comparison groups of scenarios to examine marginal/combined productivity of cadres
     # do update HRScaling logger: year_of_scale_up, scale_up_factor, and get_scale_up_factor function
+    # update the extra budget fraction file so that floats have more digits, more close to the expected fractions.
 
 
 if __name__ == "__main__":
