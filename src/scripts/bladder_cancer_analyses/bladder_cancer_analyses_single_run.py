@@ -13,14 +13,17 @@ from tlo.methods import (
     contraception,
     demography,
     enhanced_lifestyle,
+    epi,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
+    hiv,
     labour,
     newborn_outcomes,
     postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
+    tb,
 )
 
 # import numpy as np
@@ -55,22 +58,26 @@ log_config = {
         'tlo.methods.pregnancy_supervisor': logging.CRITICAL
     }
 }
-sim = Simulation(start_date=start_date, seed=4, log_config=log_config)
+sim = Simulation(start_date=start_date, seed=4, log_config=log_config, resourcefilepath=resourcefilepath)
 
 # Register the appropriate modules
-sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-             care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-             contraception.Contraception(resourcefilepath=resourcefilepath),
-             enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-             healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
-             symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-             healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-             labour.Labour(resourcefilepath=resourcefilepath),
-             newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-             pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-             postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-             bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath)
+sim.register(demography.Demography(),
+             care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(),
+             contraception.Contraception(),
+             enhanced_lifestyle.Lifestyle(),
+             healthsystem.HealthSystem(),
+             symptommanager.SymptomManager(),
+             healthseekingbehaviour.HealthSeekingBehaviour(),
+             healthburden.HealthBurden(),
+             labour.Labour(),
+             newborn_outcomes.NewbornOutcomes(),
+             pregnancy_supervisor.PregnancySupervisor(),
+             postnatal_supervisor.PostnatalSupervisor(),
+             bladder_cancer.BladderCancer(),
+             hiv.Hiv(),
+             tb.Tb(),
+             epi.Epi()
+
              )
 
 # Run the simulation and flush the logger

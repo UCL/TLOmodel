@@ -81,7 +81,7 @@ class Simulation:
             data=f'Simulation RNG {seed_from} entropy = {self._seed_seq.entropy}'
         )
         self.rng = np.random.RandomState(np.random.MT19937(self._seed_seq))
-        self.resourcefilepath = resourcefilepath
+        self.resourcefilepath = Path(resourcefilepath)
 
     def _configure_logging(self, filename: str = None, directory: Union[Path, str] = "./outputs",
                            custom_levels: Dict[str, int] = None, suppress_stdout: bool = False):
