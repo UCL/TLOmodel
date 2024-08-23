@@ -781,7 +781,6 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
     for target_year in target_year_sequence:
         TARGET_PERIOD = (
         Date(target_year, 1, 1), Date(target_year + 4, 12, 31))  # Corrected the year range to cover 5 years.
-        #print(TARGET_PERIOD)
 
         result_data = summarize(
             extract_results(
@@ -798,22 +797,38 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
 
     # Convert the accumulated data into a DataFrame for plotting
     df_all_years = pd.DataFrame(all_years_data)
-    print(df_all_years.head())
+    num_colors = len(df_all_years.index)
+    colors = plt.cm.get_cmap('tab20', num_colors)
+    # Normalizing by the first column (first year in the sequence)
+    df_normalized = df_all_years.div(df_all_years.iloc[:, 0], axis=0)
 
     # Plotting
-    fig, ax = plt.subplots(figsize=(20, 10))
-    name_of_plot = f'Trend HSI Events by TREATMENT_ID (Short) All Years'
+    fig, axes = plt.subplots(1, 2, figsize=(25, 10))  # Two panels side by side
 
-    for treatment_id in df_all_years.index:
-        ax.plot(df_all_years.columns, df_all_years.loc[treatment_id], marker='o', label=treatment_id)
+    # Panel A: Raw counts
+    for i, treatment_id in enumerate(df_all_years.index):
+        axes[0].plot(df_all_years.columns, df_all_years.loc[treatment_id], marker='o',
+                     label=treatment_id, color=colors(i / num_colors))
+    axes[0].set_title('Panel A: HSI Events by TREATMENT_ID (Short) All Years Trend')
+    axes[0].set_xlabel('Year')
+    axes[0].set_ylabel('Counts of HSI Events')
+    #axes[0].legend(title='Treatment ID', bbox_to_anchor=(1.05, 1), loc='upper left')
+    axes[0].grid(True)
 
-    ax.set_title('HSI Events by TREATMENT_ID (Short) All Years Trend')
-    ax.set_xlabel('Year')
-    ax.set_ylabel('Counts of HSI Events')
-    ax.legend(title='Treatment ID', bbox_to_anchor=(1.05, 1), loc='upper left')
-    ax.grid(True)
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
+    # Panel B: Normalized counts
+    for i, treatment_id in enumerate(df_normalized.index):
+        axes[1].plot(df_normalized.columns, df_normalized.loc[treatment_id], marker='o', label=treatment_id,
+                     color=colors(i / num_colors))
+    axes[1].set_title('Panel B: Normalized HSI Events by TREATMENT_ID (Short) All Years Trend')
+    axes[1].set_xlabel('Year')
+    axes[1].set_ylabel('Normalized Counts (First Year = 1)')
+    axes[1].legend(title='Treatment ID', bbox_to_anchor=(1.05, 1), loc='upper left')
+    axes[1].grid(True)
+
+    # Save the figure with both panels
+    fig.savefig(make_graph_file_name('Trend_HSI_Events_by_TREATMENT_ID_All_Years_Panel_A_and_B'))
     plt.close(fig)
+
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Description of the usage of healthcare system resources."""
