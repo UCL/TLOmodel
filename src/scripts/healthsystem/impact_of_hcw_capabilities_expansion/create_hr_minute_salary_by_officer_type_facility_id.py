@@ -42,7 +42,8 @@ staff_cost = staff_count.merge(hr_salary, on=['Officer_Category'], how='outer')
 staff_cost['annual_cost'] = staff_cost['Staff_Count'] * staff_cost['Annual_Salary_USD']
 four_cadres_cost = staff_cost.loc[
     staff_cost.Officer_Category.isin(['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy'])].reset_index(drop=True)
-four_cadres_cost['cost_frac'] = four_cadres_cost['annual_cost'] / four_cadres_cost['annual_cost'].sum()
+four_cadres_cost['cost_frac'] = (four_cadres_cost['annual_cost'] / four_cadres_cost['annual_cost'].sum())
+# x = four_cadres_cost.loc[0, 'cost_frac'].as_integer_ratio()
 assert four_cadres_cost.cost_frac.sum() == 1
 
 
@@ -88,6 +89,15 @@ for s in extra_budget_frac_data.columns:
     # for the years with scaled up hr
     for y in range(2020, 2030):
         scale_up_factor_dict[s][y] = calculate_hr_scale_up_factor(list(extra_budget_frac_data[s]), y, s)
+
+# get the total cost and staff count for each year between 2020-2030 and each scenario
+total_cost = pd.DataFrame(index=range(2020, 2030), columns=extra_budget_frac_data.columns)
+total_staff = pd.DataFrame(index=range(2020, 2030), columns=extra_budget_frac_data.columns)
+for y in total_cost.index:
+    for s in extra_budget_frac_data.columns:
+        total_cost.loc[y, s] = scale_up_factor_dict[s][y].annual_cost.sum()
+        total_staff.loc[y, s] = scale_up_factor_dict[s][y].Staff_Count.sum()
+
 
 # save and read pickle file
 pickle_file_path = Path(resourcefilepath / 'healthsystem' / 'human_resources' / 'scaling_capabilities' /
