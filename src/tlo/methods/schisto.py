@@ -312,10 +312,6 @@ class Schisto(Module):
             mask = df.loc[person_id, f'{self.module_prefix}_{spec_prefix}_aggregate_worm_burden'] == 0
             df.loc[mask.index[mask], f'{self.module_prefix}_{spec_prefix}_infection_status'] = 'Non-infected'
 
-            # df.loc[person_id, f'{self.module_prefix}_{spec_prefix}_infection_status'] = 'Non-infected'
-            # df.loc[person_id, f'{self.module_prefix}_{spec_prefix}_start_of_prevalent_period'] = pd.NaT
-            # df.loc[person_id, f'{self.module_prefix}_{spec_prefix}_start_of_high_infection'] = pd.NaT
-
     def _load_parameters_from_workbook(self, workbook) -> dict:
         """Load parameters from ResourceFile (loaded by pd.read_excel as `workbook`) that are general (i.e., not
         specific to a particular species)."""

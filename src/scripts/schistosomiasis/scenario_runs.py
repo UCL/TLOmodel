@@ -49,17 +49,16 @@ class TestScenario(BaseScenario):
         self.start_date = Date(2010, 1, 1)
 
         # todo reset
-        self.end_date = Date(2023, 12, 31)
-        self.pop_size = 15_000  # todo if equal_allocation_by_district, 64,000=2k per district
+        self.end_date = Date(2035, 12, 31)
+        self.pop_size = 5_000  # todo if equal_allocation_by_district, 64,000=2k per district
         self.runs_per_draw = 1
 
         # self.coverage_options = [0.6, 0.7, 0.8]
-        # self.target_group_options = ['SAC', 'PSAC', 'All']
+        self.target_group_options = ['SAC', 'PSAC', 'All']
         self.coverage_options = [0.0, 0.8]
-        self.target_group_options = ['All']
         self.wash_options = [0, 1]  # although this is BOOL, python changes type when reading in from Excel
 
-        self.mda_execute = True
+        self.mda_execute = True  # todo reset
         self.single_district = True
         self.equal_allocation_by_district = True
 
@@ -118,9 +117,9 @@ class TestScenario(BaseScenario):
             'Schisto': {
                 'mda_coverage': self.coverage_options[coverage_index],
                 'mda_target_group': self.target_group_options[target_group_index],
-                'mda_frequency_months': 6,
+                'mda_frequency_months': 12,
                 'scaleup_WASH': self.wash_options[wash_index],
-                'scaleup_WASH_start_year': 2024,
+                'scaleup_WASH_start_year': 2025,
             },
         }
 
