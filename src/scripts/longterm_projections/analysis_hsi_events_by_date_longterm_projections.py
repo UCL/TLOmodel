@@ -29,31 +29,11 @@ PREFIX_ON_FILENAME = '3'
 
 # Declare period for which the results will be generated (defined inclusively)
 min_year = 2010
-max_year = 2039
-#TARGET_PERIOD = (Date(min_year, 1, 1), Date(max_year, 12, 31))
-
-#year_range = f"{TARGET_PERIOD[0].year}-{TARGET_PERIOD[1].year}"
+max_year = 2030
 
 def drop_outside_period(_df, target_period):
     """Return a dataframe which only includes for which the date is within the limits defined by TARGET_PERIOD"""
     return _df.drop(index=_df.index[~_df['date'].between(*target_period)])
-
-
-def formatting_hsi_df(_df, TARGET_PERIOD):
-    """Standard formatting for the HSI_Event log."""
-    _df = _df.pipe(drop_outside_period(target_period = TARGET_PERIOD)) \
-        .drop(_df.index[~_df.did_run]) \
-        .reset_index(drop=True) \
-        .drop(columns=['Person_ID', 'Squeeze_Factor', 'Facility_ID', 'did_run'])
-
-    # Unpack the dictionary in `Number_By_Appt_Type_Code`.
-    _df = _df.join(_df['Number_By_Appt_Type_Code'].apply(pd.Series).fillna(0.0)).drop(
-        columns='Number_By_Appt_Type_Code')
-
-    # Produce coarse version of TREATMENT_ID (just first level, which is the module)
-    _df['TREATMENT_ID_SHORT'] = _df['TREATMENT_ID'].str.split('_').apply(lambda x: x[0])
-
-    return _df
 
 
 def table1_description_of_hsi_events(
@@ -183,6 +163,7 @@ def figure1_distribution_of_hsi_event_by_treatment_id(results_folder: Path, outp
     ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     plt.close(fig)
+
 
 
 def figure2_appointments_used(results_folder: Path, output_folder: Path, resourcefilepath: Path, year_range, target_period):
@@ -725,10 +706,123 @@ def figure7_squeeze_factors(results_folder: Path, output_folder: Path, resourcef
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     plt.close(fig)
 
+def figure8_distribution_of_hsi_event_all_years(results_folder: Path, output_folder: Path, resourcefilepath: Path, target_period):
+    """ 'Figure 8': The Distribution of HSI_Events that occur by date."""
+
+    make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_Fig8_{stub}.png"  # noqa: E731
+    def get_counts_of_hsi_by_treatment_id(_df):
+        """Get the counts of the short TREATMENT_IDs occurring"""
+        _counts_by_treatment_id = _df \
+            .loc[pd.to_datetime(_df['date']).between(*target_period), 'TREATMENT_ID'] \
+            .apply(pd.Series) \
+            .sum() \
+            .astype(int)
+        return _counts_by_treatment_id.groupby(level=0).sum()
+
+    def get_counts_of_hsi_by_short_treatment_id(_df):
+        """Get the counts of the short TREATMENT_IDs occurring (shortened, up to first underscore)"""
+        _counts_by_treatment_id = get_counts_of_hsi_by_treatment_id(_df)
+        _short_treatment_id = _counts_by_treatment_id.index.map(lambda x: x.split('_')[0] + "*")
+        return _counts_by_treatment_id.groupby(by=_short_treatment_id).sum()
+
+
+    fig, ax = plt.subplots()
+    name_of_plot = f'HSI Events by TREATMENT_ID (Short) All Years'
+
+    counts_of_hsi_by_treatment_id_short = summarize(
+        extract_results(
+            results_folder,
+            module='tlo.methods.healthsystem.summary',
+            key='HSI_Event',
+            custom_generate_series=get_counts_of_hsi_by_short_treatment_id,
+            do_scaling=True
+        ),
+        only_mean=True,
+        collapse_columns=True,
+    )
+    squarify_neat(
+        sizes=counts_of_hsi_by_treatment_id_short.values,
+        label=counts_of_hsi_by_treatment_id_short.index,
+        colormap=get_color_short_treatment_id,
+        alpha=1,
+        pad=True,
+        ax=ax,
+        text_kwargs={'color': 'black', 'size': 8}
+    )
+    ax.set_axis_off()
+    ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
+    plt.close(fig)
+
+
+def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path, output_folder: Path,
+                                                           resourcefilepath: Path, min_year, max_year):
+    """ 'Figure 9': The Trend of HSI_Events that occur by date."""
+    target_year_sequence = range(min_year, max_year, 5)
+    make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_Fig9_{stub}.png"  # noqa: E731
+
+    def get_counts_of_hsi_by_treatment_id(_df):
+        """Get the counts of the short TREATMENT_IDs occurring"""
+        _counts_by_treatment_id = _df \
+            .loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), 'TREATMENT_ID'] \
+            .apply(pd.Series) \
+            .sum() \
+            .astype(int)
+        return _counts_by_treatment_id.groupby(level=0).sum()
+
+    def get_counts_of_hsi_by_short_treatment_id(_df):
+        """Get the counts of the short TREATMENT_IDs occurring (shortened, up to first underscore)"""
+        _counts_by_treatment_id = get_counts_of_hsi_by_treatment_id(_df)
+        _short_treatment_id = _counts_by_treatment_id.index.map(lambda x: x.split('_')[0] + "*")
+        return _counts_by_treatment_id.groupby(by=_short_treatment_id).sum()
+
+    all_years_data = {}
+
+    for target_year in target_year_sequence:
+        TARGET_PERIOD = (
+        Date(target_year, 1, 1), Date(target_year + 4, 12, 31))  # Corrected the year range to cover 5 years.
+        #print(TARGET_PERIOD)
+
+        result_data = summarize(
+            extract_results(
+                results_folder,
+                module='tlo.methods.healthsystem.summary',
+                key='HSI_Event',
+                custom_generate_series=get_counts_of_hsi_by_short_treatment_id,
+                do_scaling=True
+            ),
+            only_mean=True,
+            collapse_columns=True,
+        )
+        all_years_data[target_year] = result_data
+
+    # Convert the accumulated data into a DataFrame for plotting
+    df_all_years = pd.DataFrame(all_years_data)
+    print(df_all_years.head())
+
+    # Plotting
+    fig, ax = plt.subplots(figsize=(20, 10))
+    name_of_plot = f'Trend HSI Events by TREATMENT_ID (Short) All Years'
+
+    for treatment_id in df_all_years.index:
+        ax.plot(df_all_years.columns, df_all_years.loc[treatment_id], marker='o', label=treatment_id)
+
+    ax.set_title('HSI Events by TREATMENT_ID (Short) All Years Trend')
+    ax.set_xlabel('Year')
+    ax.set_ylabel('Counts of HSI Events')
+    ax.legend(title='Treatment ID', bbox_to_anchor=(1.05, 1), loc='upper left')
+    ax.grid(True)
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
+    plt.close(fig)
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Description of the usage of healthcare system resources."""
     target_year_sequence = range(min_year, max_year , 5)
+    figure8_distribution_of_hsi_event_all_years(
+            results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath, target_period = (Date(min_year, 1, 1), Date(max_year + 5, 12, 31))
+        )
+    figure9_distribution_of_hsi_event_all_years_line_graph(
+            results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath, min_year = min_year, max_year = max_year)
     for target_year in target_year_sequence:
         TARGET_PERIOD = (Date(target_year, 1, 1), Date(target_year + 5, 12, 31))
         print(TARGET_PERIOD)
@@ -755,10 +849,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         )
 
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("results_folder", type=Path)
     args = parser.parse_args()
+    #results_folder = '/Users/rem76/PycharmProjects/TLOmodel/outputs/tbh03@ic.ac.uk/long_run_all_diseases-2024-05-31T160939Z'
 
     apply(
         results_folder=args.results_folder,
