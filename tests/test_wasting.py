@@ -186,7 +186,7 @@ def test_wasting_incidence(tmpdir):
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=start_date + dur)
 
-    # reset properties of all individuals so that they are don't have wasting
+    # reset properties of all individuals so that they are not wasted
     df = sim.population.props
     df.loc[df.is_alive, 'un_WHZ_category'] = 'WHZ>=-2'  # not undernourished
     df.loc[df.is_alive, 'un_ever_wasted'] = False
@@ -350,7 +350,10 @@ def test_recovery_moderate_wasting(tmpdir):
     # Check properties of this individual
     person = df.loc[person_id]
     assert person['un_WHZ_category'] == 'WHZ>=-2'
-    assert person['un_am_recovery_date'] == sim.date
+    if df.at[person_id, 'un_clinical_acute_malnutrition'] == 'well':
+        assert person['un_am_recovery_date'] == sim.date
+    else:
+        assert pd.isnull(df.at[person_id, 'un_am_recovery_date'])
     assert pd.isnull(person['un_sam_death_date'])
 
 
@@ -746,9 +749,7 @@ def test_nat_hist_cure_if_death_scheduled(tmpdir):
     df = sim.population.props
     under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
     person_id = under5s.index[0]
-    # Let this person have severe wasting
     df.loc[person_id, 'un_WHZ_category'] = 'WHZ>=-2'
-    assert df.loc[person_id, 'un_WHZ_category'] == 'WHZ>=-2'
 
     # Run Wasting Polling event to get new incident cases:
     polling = IncidenceWastingPollingEvent(module=sim.modules['Wasting'])
