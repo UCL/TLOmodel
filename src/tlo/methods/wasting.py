@@ -161,6 +161,15 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             Types.REAL, 'probability of recovery from wasting following treatment with CSB++'),
         'recovery_rate_with_inpatient_care': Parameter(
             Types.REAL, 'probability of recovery from wasting following treatment with inpatient care'),
+        'tx_length_weeks_SuppFeedingMAM': Parameter(
+            Types.REAL, 'number of weeks the patient receives treatment in the Supplementary Feeding '
+                        'Programme for MAM before being discharged'),
+        'tx_length_weeks_OutpatientSAM': Parameter(
+            Types.REAL, 'number of weeks the patient receives treatment in the Outpatient Therapeutic '
+                        'Programme for SAM before being discharged if they do not die beforehand'),
+        'tx_length_weeks_InpatientSAM': Parameter(
+            Types.REAL, 'number of weeks the patient receives treatment in the Inpatient Care for complicated'
+                        ' SAM before being discharged if they do not die beforehand'),
     }
 
     PROPERTIES = {
@@ -278,7 +287,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         """
 
         # schedule wasting pool event
-        sim.schedule_event(IncidenceWastingPollingEvent(self), sim.date + DateOffset(months=3))
+        sim.schedule_event(WastingIncidencePollingEvent(self), sim.date + DateOffset(months=3))
 
         # schedule wasting logging event
         sim.schedule_event(WastingLoggingEvent(self), sim.date + DateOffset(months=12))
@@ -613,71 +622,62 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         :param intervention:
         """
         df = self.sim.population.props
+        p = self.parameters
         # Set the date when the treatment is provided:
         df.at[person_id, 'un_am_tx_start_date'] = self.sim.date
 
         if intervention == 'SFP':
-            mam_recovery = self.wasting_models.acute_malnutrition_recovery_mam_lm.predict(
-                df.loc[[person_id]], self.rng)
+            mam_full_recovery = self.wasting_models.acute_malnutrition_recovery_mam_lm.predict(
+                df.loc[[person_id]], self.rng
+            )
 
-            if mam_recovery:
+            if mam_full_recovery:
                 # schedule recovery date
-                self.sim.schedule_event(event=ClinicalAcuteMalnutritionRecoveryEvent(
-                    module=self, person_id=person_id),
-                    date=df.at[person_id, 'un_am_tx_start_date'] + DateOffset(weeks=3))
+                self.sim.schedule_event(
+                    event=WastingClinicalAcuteMalnutritionRecoveryEvent(module=self, person_id=person_id),
+                    date=(df.at[person_id, 'un_am_tx_start_date'] +
+                          DateOffset(weeks=p['tx_length_weeks_SuppFeedingMAM']))
+                )
                 # cancel progression date (in ProgressionEvent)
             else:
                 # remained MAM
                 return
 
-        if intervention == 'OTC':
-            sam_recovery = self.wasting_models.acute_malnutrition_recovery_sam_lm.predict(
-                df.loc[[person_id]], self.rng)
-            if sam_recovery:
-                # schedule recovery date
-                self.sim.schedule_event(event=ClinicalAcuteMalnutritionRecoveryEvent(
-                    module=self, person_id=person_id),
-                    date=df.at[person_id, 'un_am_tx_start_date'] + DateOffset(weeks=3))
+        elif (intervention == 'OTC') or (intervention == 'ITC'):
+            if intervention == 'OTC':
+                outcome_date = (df.at[person_id, 'un_am_tx_start_date'] +
+                                DateOffset(weeks=p['tx_length_weeks_OutpatientSAM']))
+            else:
+                outcome_date = (df.at[person_id, 'un_am_tx_start_date'] +
+                                DateOffset(weeks=p['tx_length_weeks_InpatientSAM']))
+
+            sam_full_recovery = self.wasting_models.acute_malnutrition_recovery_sam_lm.predict(
+                df.loc[[person_id]], self.rng
+            )
+            if sam_full_recovery:
+                # schedule full recovery
+                self.sim.schedule_event(
+                    event=WastingClinicalAcuteMalnutritionRecoveryEvent(module=self, person_id=person_id),
+                    date=outcome_date
+                )
                 # cancel death date
                 df.at[person_id, 'un_sam_death_date'] = pd.NaT
             else:
-                outcome = self.rng.choice(['remained_mam', 'death'], p=[self.parameters['prob_mam_after_care'],
-                                                                        self.parameters['prob_death_after_care']])
+                outcome = self.rng.choice(['recovery_to_mam', 'death'], p=[self.parameters['prob_mam_after_care'],
+                                                                           self.parameters['prob_death_after_care']])
                 if outcome == 'death':
-                    self.sim.schedule_event(event=SevereAcuteMalnutritionDeathEvent(
-                        module=self, person_id=person_id),
-                        date=df.at[person_id, 'un_am_tx_start_date'] + DateOffset(weeks=3))
-
-                else:
-                    self.sim.schedule_event(event=UpdateToMAM(module=self, person_id=person_id),
-                                            date=df.at[person_id, 'un_am_tx_start_date'] +
-                                                 DateOffset(weeks=3))
-
-        if intervention == 'ITC':
-            sam_recovery = self.wasting_models.acute_malnutrition_recovery_sam_lm.predict(
-                df.loc[[person_id]], self.rng)
-            if sam_recovery:
-                # schedule recovery date
-                self.sim.schedule_event(event=ClinicalAcuteMalnutritionRecoveryEvent(
-                    module=self, person_id=person_id),
-                    date=df.at[person_id, 'un_am_tx_start_date'] + DateOffset(weeks=4))
-                # cancel death date
-                df.at[person_id, 'un_sam_death_date'] = pd.NaT
-            else:
-                outcome = self.rng.choice(['remained_mam', 'death'],
-                                          p=[self.parameters['prob_mam_after_care'], self.parameters[
-                                              'prob_death_after_care']])
-                if outcome == 'death':
-                    self.sim.schedule_event(event=SevereAcuteMalnutritionDeathEvent(
-                        module=self, person_id=person_id),
-                        date=df.at[person_id, 'un_am_tx_start_date'] + DateOffset(weeks=4))
-                else:
                     self.sim.schedule_event(
-                        event=UpdateToMAM(module=self, person_id=person_id),
-                        date=df.at[person_id, 'un_am_tx_start_date'] + DateOffset(weeks=4))
+                        event=WastingSevereAcuteMalnutritionDeathEvent(module=self, person_id=person_id),
+                        date=outcome_date
+                    )
+                else:
+                    self.sim.schedule_event(event=WastingUpdateToMAM(module=self, person_id=person_id),
+                                            date=outcome_date)
+                    # cancel death date
+                    df.at[person_id, 'un_sam_death_date'] = pd.NaT
 
 
-class IncidenceWastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
+class WastingIncidencePollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
     Regular event that determines new cases of wasting (WHZ < -2) to the under-5 population, and schedules
     individual incident cases to represent onset. It determines those who will progress to severe wasting
@@ -718,7 +718,7 @@ class IncidenceWastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # Add these incident cases to the tracker
         for person in not_wasted_idx:
             wasting_severity = df.at[person, 'un_WHZ_category']
-            age_group = IncidenceWastingPollingEvent.AGE_GROUPS.get(df.loc[person].age_years, '5+y')
+            age_group = WastingIncidencePollingEvent.AGE_GROUPS.get(df.loc[person].age_years, '5+y')
             # if wasting_severity != 'WHZ>=-2':
             self.module.wasting_incident_case_tracker[age_group][wasting_severity].append(self.sim.date)
         # Update properties related to clinical acute malnutrition
@@ -740,12 +740,12 @@ class IncidenceWastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
             # schedule severe wasting WHZ < -3 onset
             if outcome_date <= self.sim.date:
                 # schedule severe wasting (WHZ < -3) onset today
-                self.sim.schedule_event(event=ProgressionSevereWastingEvent(
+                self.sim.schedule_event(event=WastingProgressionToSevereEvent(
                     module=self.module, person_id=person), date=self.sim.date)
             else:
                 # schedule severe wasting WHZ < -3 onset according to duration
                 self.sim.schedule_event(
-                    event=ProgressionSevereWastingEvent(
+                    event=WastingProgressionToSevereEvent(
                         module=self.module, person_id=person), date=outcome_date)
 
         # # # MODERATE WASTING NATURAL RECOVERY # # # # # # # # # # # # # #
@@ -762,7 +762,7 @@ class IncidenceWastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
                     module=self.module, person_id=person), date=outcome_date)
 
 
-class ProgressionSevereWastingEvent(Event, IndividualScopeEventMixin):
+class WastingProgressionToSevereEvent(Event, IndividualScopeEventMixin):
     """
     This Event is for the onset of severe wasting (WHZ < -3).
      * Refreshes all the properties so that they pertain to this current episode of wasting
@@ -795,14 +795,12 @@ class ProgressionSevereWastingEvent(Event, IndividualScopeEventMixin):
             self.module.clinical_signs_acute_malnutrition(person_id)
 
             # -------------------------------------------------------------------------------------------
-            # Add this incident case to the tracker
-            wasting_severity = df.at[person_id, 'un_WHZ_category']
-            age_group = IncidenceWastingPollingEvent.AGE_GROUPS.get(df.loc[person_id].age_years, '5+y')
-            if wasting_severity != 'WHZ>=-2':
-                m.wasting_incident_case_tracker[age_group][wasting_severity].append(self.sim.date)
+            # Add this severe wasting incident case to the tracker
+            age_group = WastingIncidencePollingEvent.AGE_GROUPS.get(df.loc[person_id].age_years, '5+y')
+            m.wasting_incident_case_tracker[age_group]['WHZ<-3'].append(self.sim.date)
 
 
-class SevereAcuteMalnutritionDeathEvent(Event, IndividualScopeEventMixin):
+class WastingSevereAcuteMalnutritionDeathEvent(Event, IndividualScopeEventMixin):
     """
     This event applies the death function
     """
@@ -861,7 +859,7 @@ class WastingNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
             df.at[person_id, 'un_am_recovery_date'] = self.sim.date
 
 
-class ClinicalAcuteMalnutritionRecoveryEvent(Event, IndividualScopeEventMixin):
+class WastingClinicalAcuteMalnutritionRecoveryEvent(Event, IndividualScopeEventMixin):
     """
     This event sets wasting properties back to normal state.
     """
@@ -891,7 +889,7 @@ class ClinicalAcuteMalnutritionRecoveryEvent(Event, IndividualScopeEventMixin):
         )
 
 
-class UpdateToMAM(Event, IndividualScopeEventMixin):
+class WastingUpdateToMAM(Event, IndividualScopeEventMixin):
     """
     This event updates the properties for those cases that remained/improved from SAM to MAM following
     treatment

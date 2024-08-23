@@ -25,14 +25,14 @@ from tlo.methods import (
 )
 from tlo.methods.healthseekingbehaviour import HealthSeekingBehaviourPoll
 from tlo.methods.wasting import (
-    ClinicalAcuteMalnutritionRecoveryEvent,
     HSI_Wasting_InpatientCareForComplicated_SAM,
     HSI_Wasting_OutpatientTherapeuticProgramme_SAM,
-    IncidenceWastingPollingEvent,
-    ProgressionSevereWastingEvent,
-    SevereAcuteMalnutritionDeathEvent,
-    UpdateToMAM,
+    WastingClinicalAcuteMalnutritionRecoveryEvent,
+    WastingIncidencePollingEvent,
     WastingNaturalRecoveryEvent,
+    WastingProgressionToSevereEvent,
+    WastingSevereAcuteMalnutritionDeathEvent,
+    WastingUpdateToMAM,
 )
 
 # Path to the resource files used by the disease and intervention methods
@@ -196,7 +196,7 @@ def test_wasting_incidence(tmpdir):
     sim.modules['Wasting'].wasting_models.wasting_incidence_lm = LinearModel.multiplicative()
 
     # Run polling event: check that all children should now have moderate wasting:
-    polling = IncidenceWastingPollingEvent(sim.modules['Wasting'])
+    polling = WastingIncidencePollingEvent(sim.modules['Wasting'])
     polling.apply(sim.population)
 
     # Check properties of individuals: should now be moderately wasted
@@ -323,7 +323,7 @@ def test_recovery_moderate_wasting(tmpdir):
     sim.modules['Wasting'].wasting_models.wasting_incidence_lm = LinearModel.multiplicative()
 
     # Run Wasting Polling event: This event should cause all young children to be moderate wasting
-    polling = IncidenceWastingPollingEvent(module=sim.modules['Wasting'])
+    polling = WastingIncidencePollingEvent(module=sim.modules['Wasting'])
     polling.apply(sim.population)
 
     # Check properties of this individual: should now be moderately wasted
@@ -394,16 +394,16 @@ def test_recovery_severe_wasting_without_complications(tmpdir):
     wmodule.parameters['prob_mam_after_care'] = 1.0
 
     # Run Wasting Polling event to get new incident cases:
-    polling = IncidenceWastingPollingEvent(module=sim.modules['Wasting'])
+    polling = WastingIncidencePollingEvent(module=sim.modules['Wasting'])
     polling.apply(sim.population)
 
     # Check properties of this individual: should now be moderately wasted
     person = df.loc[person_id]
     assert person['un_WHZ_category'] == '-3<=WHZ<-2'
 
-    # Check that there is a ProgressionSevereWastingEvent scheduled for this person:
+    # Check that there is a WastingProgressionToSevereEvent scheduled for this person:
     progression_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id)
-                               if isinstance(event_tuple[1], ProgressionSevereWastingEvent)][0]
+                               if isinstance(event_tuple[1], WastingProgressionToSevereEvent)][0]
     date_of_scheduled_progression = progression_event_tuple[0]
     progression_event = progression_event_tuple[1]
     assert date_of_scheduled_progression > sim.date
@@ -450,11 +450,11 @@ def test_recovery_severe_wasting_without_complications(tmpdir):
     sam_ev.run(squeeze_factor=0.0)
 
     # check recovery event is scheduled
-    assert isinstance(sim.find_events_for_person(person_id)[1][1], UpdateToMAM)
+    assert isinstance(sim.find_events_for_person(person_id)[1][1], WastingUpdateToMAM)
 
     # Run the recovery event and check the individual has recovered from SAM:
     sam_recovery_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
-                                isinstance(event_tuple[1], UpdateToMAM)][0]
+                                isinstance(event_tuple[1], WastingUpdateToMAM)][0]
 
     date_of_scheduled_recovery_to_mam = sam_recovery_event_tuple[0]
     sam_recovery_event = sam_recovery_event_tuple[1]
@@ -544,11 +544,11 @@ def test_recovery_severe_wasting_with_complications(tmpdir):
     sam_ev.run(squeeze_factor=0.0)
 
     # check recovery event is scheduled
-    assert isinstance(sim.find_events_for_person(person_id)[0][1], ClinicalAcuteMalnutritionRecoveryEvent)
+    assert isinstance(sim.find_events_for_person(person_id)[0][1], WastingClinicalAcuteMalnutritionRecoveryEvent)
 
     # Run the recovery event and check the individual has recovered from SAM:
     sam_recovery_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id)
-                                if isinstance(event_tuple[1], ClinicalAcuteMalnutritionRecoveryEvent)][0]
+                                if isinstance(event_tuple[1], WastingClinicalAcuteMalnutritionRecoveryEvent)][0]
 
     date_of_scheduled_recovery_to_mam = sam_recovery_event_tuple[0]
     sam_recovery_event = sam_recovery_event_tuple[1]
@@ -636,11 +636,11 @@ def test_nat_hist_death(tmpdir):
     sam_ev.run(squeeze_factor=0.0)
 
     # since there is zero recovery rate, check death event is scheduled
-    assert isinstance(sim.find_events_for_person(person_id)[0][1], SevereAcuteMalnutritionDeathEvent)
+    assert isinstance(sim.find_events_for_person(person_id)[0][1], WastingSevereAcuteMalnutritionDeathEvent)
 
     # # Run the acute death event and ensure the person is now dead:
     death_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id)
-                         if isinstance(event_tuple[1], SevereAcuteMalnutritionDeathEvent)][0]
+                         if isinstance(event_tuple[1], WastingSevereAcuteMalnutritionDeathEvent)][0]
     date_of_scheduled_death = death_event_tuple[0]
     death_event = death_event_tuple[1]
     assert date_of_scheduled_death > sim.date
@@ -683,7 +683,7 @@ def test_nat_hist_cure_if_recovery_scheduled(tmpdir):
     assert df.loc[person_id, 'un_WHZ_category'] == 'WHZ>=-2'
 
     # Run Wasting Polling event to get new incident cases:
-    polling = IncidenceWastingPollingEvent(module=sim.modules['Wasting'])
+    polling = WastingIncidencePollingEvent(module=sim.modules['Wasting'])
     polling.apply(sim.population)
 
     # Check properties of this individual: (should now be moderately wasted without progression to severe)
@@ -703,7 +703,7 @@ def test_nat_hist_cure_if_recovery_scheduled(tmpdir):
     assert date_of_scheduled_recov > sim.date
 
     # Run a Cure Event
-    cure_event = ClinicalAcuteMalnutritionRecoveryEvent(person_id=person_id, module=sim.modules['Wasting'])
+    cure_event = WastingClinicalAcuteMalnutritionRecoveryEvent(person_id=person_id, module=sim.modules['Wasting'])
     cure_event.apply(person_id=person_id)
 
     # Check that the person is not wasted and is alive still:
@@ -752,7 +752,7 @@ def test_nat_hist_cure_if_death_scheduled(tmpdir):
     df.loc[person_id, 'un_WHZ_category'] = 'WHZ>=-2'
 
     # Run Wasting Polling event to get new incident cases:
-    polling = IncidenceWastingPollingEvent(module=sim.modules['Wasting'])
+    polling = WastingIncidencePollingEvent(module=sim.modules['Wasting'])
     polling.apply(sim.population)
 
     # Check properties of this individual: (should now be moderately wasted with a scheduled progression to severe date)
@@ -764,9 +764,10 @@ def test_nat_hist_cure_if_death_scheduled(tmpdir):
     assert pd.isnull(person['un_am_recovery_date'])
     assert pd.isnull(person['un_sam_death_date'])
 
-    # Check that there is a ProgressionSevereWastingEvent scheduled for this person:
+    # Check that there is a WastingProgressionToSevereEvent scheduled for this person and if the person is scheduled for
+    # death due to SAM, the death happens after the progression to severe wasting:
     progression_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id)
-                               if isinstance(event_tuple[1], ProgressionSevereWastingEvent)][0]
+                               if isinstance(event_tuple[1], WastingProgressionToSevereEvent)][0]
     date_of_scheduled_progression = progression_event_tuple[0]
     progression_event = progression_event_tuple[1]
     assert date_of_scheduled_progression > sim.date
@@ -811,17 +812,17 @@ def test_nat_hist_cure_if_death_scheduled(tmpdir):
     sam_ev.run(squeeze_factor=0.0)
 
     # since there is zero recovery rate, check death event is scheduled
-    assert isinstance(sim.find_events_for_person(person_id)[1][1], SevereAcuteMalnutritionDeathEvent)
+    assert isinstance(sim.find_events_for_person(person_id)[1][1], WastingSevereAcuteMalnutritionDeathEvent)
 
     # Check a date of death is scheduled. it should be any date in the future:
     death_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id)
-                         if isinstance(event_tuple[1], SevereAcuteMalnutritionDeathEvent)][0]
+                         if isinstance(event_tuple[1], WastingSevereAcuteMalnutritionDeathEvent)][0]
     date_of_scheduled_death = death_event_tuple[0]
     death_event = death_event_tuple[1]
     assert date_of_scheduled_death > sim.date
 
     # Run a Cure Event now
-    cure_event = ClinicalAcuteMalnutritionRecoveryEvent(person_id=person_id, module=sim.modules['Wasting'])
+    cure_event = WastingClinicalAcuteMalnutritionRecoveryEvent(person_id=person_id, module=sim.modules['Wasting'])
     cure_event.apply(person_id=person_id)
 
     # Check that the person is not wasted and is alive still:
