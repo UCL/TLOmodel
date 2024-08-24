@@ -716,10 +716,9 @@ class WastingIncidencePollingEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[not_wasted_idx[incidence_of_wasting], 'un_am_treatment_type'] = 'none'
         # -------------------------------------------------------------------------------------------
         # Add these incident cases to the tracker
-        for person in not_wasted_idx:
-            wasting_severity = df.at[person, 'un_WHZ_category']
-            age_group = WastingIncidencePollingEvent.AGE_GROUPS.get(df.loc[person].age_years, '5+y')
-            # if wasting_severity != 'WHZ>=-2':
+        for person_id in not_wasted_idx[incidence_of_wasting]:
+            wasting_severity = df.at[person_id, 'un_WHZ_category']
+            age_group = WastingIncidencePollingEvent.AGE_GROUPS.get(df.loc[person_id].age_years, '5+y')
             self.module.wasting_incident_case_tracker[age_group][wasting_severity].append(self.sim.date)
         # Update properties related to clinical acute malnutrition
         # (MUAC, oedema, clinical state of acute malnutrition and if SAM complications; clear symptoms if not SAM)
