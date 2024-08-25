@@ -1,0 +1,154 @@
+{
+  "scenario_script_path": "src/scripts/schistosomiasis/scenario_runs.py",
+  "scenario_seed": 478,
+  "arguments": [],
+  "runs_per_draw": 1,
+  "draws": [
+    {
+      "draw_number": 0,
+      "parameters": {
+        "Schisto": {
+          "mda_coverage": 0.0,
+          "mda_target_group": "SAC",
+          "mda_frequency_months": 12,
+          "scaleup_WASH": 0,
+          "scaleup_WASH_start_year": 2025
+        }
+      }
+    },
+    {
+      "draw_number": 1,
+      "parameters": {
+        "Schisto": {
+          "mda_coverage": 0.8,
+          "mda_target_group": "SAC",
+          "mda_frequency_months": 12,
+          "scaleup_WASH": 0,
+          "scaleup_WASH_start_year": 2025
+        }
+      }
+    },
+    {
+      "draw_number": 2,
+      "parameters": {
+        "Schisto": {
+          "mda_coverage": 0.0,
+          "mda_target_group": "PSAC",
+          "mda_frequency_months": 12,
+          "scaleup_WASH": 0,
+          "scaleup_WASH_start_year": 2025
+        }
+      }
+    },
+    {
+      "draw_number": 3,
+      "parameters": {
+        "Schisto": {
+          "mda_coverage": 0.8,
+          "mda_target_group": "PSAC",
+          "mda_frequency_months": 12,
+          "scaleup_WASH": 0,
+          "scaleup_WASH_start_year": 2025
+        }
+      }
+    },
+    {
+      "draw_number": 4,
+      "parameters": {
+        "Schisto": {
+          "mda_coverage": 0.0,
+          "mda_target_group": "All",
+          "mda_frequency_months": 12,
+          "scaleup_WASH": 0,
+          "scaleup_WASH_start_year": 2025
+        }
+      }
+    },
+    {
+      "draw_number": 5,
+      "parameters": {
+        "Schisto": {
+          "mda_coverage": 0.8,
+          "mda_target_group": "All",
+          "mda_frequency_months": 12,
+          "scaleup_WASH": 0,
+          "scaleup_WASH_start_year": 2025
+        }
+      }
+    },
+    {
+      "draw_number": 6,
+      "parameters": {
+        "Schisto": {
+          "mda_coverage": 0.0,
+          "mda_target_group": "SAC",
+          "mda_frequency_months": 12,
+          "scaleup_WASH": 1,
+          "scaleup_WASH_start_year": 2025
+        }
+      }
+    },
+    {
+      "draw_number": 7,
+      "parameters": {
+        "Schisto": {
+          "mda_coverage": 0.8,
+          "mda_target_group": "SAC",
+          "mda_frequency_months": 12,
+          "scaleup_WASH": 1,
+          "scaleup_WASH_start_year": 2025
+        }
+      }
+    },
+    {
+      "draw_number": 8,
+      "parameters": {
+        "Schisto": {
+          "mda_coverage": 0.0,
+          "mda_target_group": "PSAC",
+          "mda_frequency_months": 12,
+          "scaleup_WASH": 1,
+          "scaleup_WASH_start_year": 2025
+        }
+      }
+    },
+    {
+      "draw_number": 9,
+      "parameters": {
+        "Schisto": {
+          "mda_coverage": 0.8,
+          "mda_target_group": "PSAC",
+          "mda_frequency_months": 12,
+          "scaleup_WASH": 1,
+          "scaleup_WASH_start_year": 2025
+        }
+      }
+    },
+    {
+      "draw_number": 10,
+      "parameters": {
+        "Schisto": {
+          "mda_coverage": 0.0,
+          "mda_target_group": "All",
+          "mda_frequency_months": 12,
+          "scaleup_WASH": 1,
+          "scaleup_WASH_start_year": 2025
+        }
+      }
+    },
+    {
+      "draw_number": 11,
+      "parameters": {
+        "Schisto": {
+          "mda_coverage": 0.8,
+          "mda_target_group": "All",
+          "mda_frequency_months": 12,
+          "scaleup_WASH": 1,
+          "scaleup_WASH_start_year": 2025
+        }
+      }
+    }
+  ],
+  "commit": "a0107b439eee847c7c41a85e5afb7add7c1b0209",
+  "github": "https://github.com/UCL/TLOmodel/tree/a0107b439eee847c7c41a85e5afb7add7c1b0209"
+}
