@@ -213,10 +213,9 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
                   'nc_risk_score': Property(Types.INT, 'score to represent number of risk conditions the person has')
                   }
 
-    def __init__(self, name=None, resourcefilepath=None, do_log_df: bool = False, do_condition_combos: bool = False):
+    def __init__(self, name=None, do_log_df: bool = False, do_condition_combos: bool = False):
 
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
 
         self.conditions = CardioMetabolicDisorders.conditions
         self.events = CardioMetabolicDisorders.events
@@ -256,7 +255,7 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
         self.lms_event_death = dict()
         self.lms_event_symptoms = dict()
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath=None):
         """Read parameter values from files for condition onset, removal, deaths, and initial prevalence.
 
         ResourceFile_cmd_condition_onset.xlsx = parameters for onset of conditions
@@ -273,7 +272,7 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
         ResourceFile_cmd_events_hsi.xlsx  = HSI parameters for events
 
         """
-        cmd_path = Path(self.resourcefilepath) / "cmd"
+        cmd_path = Path(resourcefilepath) / "cmd"
         cond_onset = pd.read_excel(cmd_path / "ResourceFile_cmd_condition_onset.xlsx", sheet_name=None)
         cond_removal = pd.read_excel(cmd_path / "ResourceFile_cmd_condition_removal.xlsx", sheet_name=None)
         cond_death = pd.read_excel(cmd_path / "ResourceFile_cmd_condition_death.xlsx", sheet_name=None)
