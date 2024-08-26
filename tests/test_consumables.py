@@ -299,11 +299,11 @@ def get_sim_with_dummy_module_registered(tmpdir=None, run=True, data=None):
         _log_config = None
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=0, log_config=_log_config)
+    sim = Simulation(start_date=start_date, seed=0, log_config=_log_config, resourcefilepath=resourcefilepath)
 
     sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        demography.Demography(),
+        healthsystem.HealthSystem(),
         DummyModule(),
         # Disable sorting + checks to avoid error due to missing dependencies
         sort_modules=False,
@@ -562,12 +562,13 @@ def test_consumables_availability_modes_that_depend_on_designations(seed):
     sim = Simulation(
         start_date=Date(2010, 1, 1),
         seed=seed,
+        resourcefilepath=resourcefilepath
     )
 
     # Register the core modules
     sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        demography.Demography(),
+        healthsystem.HealthSystem(),
     )
     sim.make_initial_population(n=100)
     sim.simulate(end_date=sim.start_date)

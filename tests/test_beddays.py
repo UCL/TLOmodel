@@ -33,10 +33,10 @@ def test_bed_days_resourcefile_defines_non_bed_space():
 
 def test_beddays_in_isolation(tmpdir, seed):
     """Test the functionalities of BedDays class in the absence of HSI_Events"""
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        demography.Demography(),
+        healthsystem.HealthSystem(),
     )
 
     # Update BedCapacity data with a simple table:
@@ -140,10 +140,10 @@ def test_bed_days_basics(tmpdir, seed):
         'directory': tmpdir,
         'custom_levels': {
             'tlo.methods.healthsystem': logging.INFO}
-    })
+    }, resourcefilepath=resourcefilepath)
     sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        demography.Demography(),
+        healthsystem.HealthSystem(),
         DummyModule()
     )
     sim.make_initial_population(n=100)
@@ -340,10 +340,10 @@ def test_bed_days_property_is_inpatient(tmpdir, seed):
         'custom_levels': {
             'tlo.methods.healthsystem': logging.INFO,
         }
-    })
+    }, resourcefilepath=resourcefilepath)
     sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, beds_availability='all'),
+        demography.Demography(),
+        healthsystem.HealthSystem(beds_availability='all'),
         DummyModule()
     )
     sim.make_initial_population(n=100)
@@ -464,10 +464,10 @@ def test_bed_days_released_on_death(tmpdir, seed):
         'custom_levels': {
             'tlo.methods.healthsystem': logging.INFO,
         }
-    })
+    }, resourcefilepath=resourcefilepath)
     sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, beds_availability='all'),
+        demography.Demography(),
+        healthsystem.HealthSystem(beds_availability='all'),
         DummyModule()
     )
     sim.make_initial_population(n=100)
@@ -546,11 +546,10 @@ def test_bed_days_basics_with_healthsystem_disabled(seed):
             print(f'Bed-days allocated to this event: {self.bed_days_allocated_to_this_event}')
 
     # Create simulation:
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                  disable=True),
+        demography.Demography(),
+        healthsystem.HealthSystem(disable=True),
         DummyModule(),
     )
 
@@ -579,10 +578,10 @@ def test_bed_days_basics_with_healthsystem_disabled(seed):
 
 def test_the_use_of_beds_from_multiple_facilities(seed):
     """Test the functionalities of BedDays class when multiple facilities are defined"""
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        demography.Demography(),
+        healthsystem.HealthSystem(),
     )
 
     # get shortcut to HealthSystem Module
@@ -653,10 +652,10 @@ def test_bed_days_allocation_to_HSI(seed):
 
     def prepare_sim():
         """Create and run simulation"""
-        sim = Simulation(start_date=start_date, seed=seed)
+        sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
         sim.register(
-            demography.Demography(resourcefilepath=resourcefilepath),
-            healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+            demography.Demography(),
+            healthsystem.HealthSystem(),
         )
 
         # Update BedCapacity parameter with a simple table:
@@ -827,11 +826,11 @@ def test_bed_days_allocation_information_is_provided_to_HSI(seed):
         def apply(self, person_id, squeeze_factor):
             pass
 
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
 
     sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        demography.Demography(),
+        healthsystem.HealthSystem(),
         DummyModule(),
     )
 
@@ -938,10 +937,10 @@ def test_in_patient_appt_included_and_logged(tmpdir, seed):
         'custom_levels': {
             "tlo.methods.healthsystem": logging.DEBUG,
         }
-    })
+    }, resourcefilepath=resourcefilepath)
     sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        demography.Demography(),
+        healthsystem.HealthSystem(),
         DummyModule()
     )
     sim.make_initial_population(n=100)
