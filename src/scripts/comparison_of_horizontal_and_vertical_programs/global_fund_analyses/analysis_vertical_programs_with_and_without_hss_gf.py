@@ -20,7 +20,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     - We estimate the draw on healthcare system resources as the FEWER appointments when that treatment does not occur.
     """
 
-    TARGET_PERIOD = (Date(2020, 1, 1), Date(2030, 12, 31))
+    TARGET_PERIOD = (Date(2025, 1, 1), Date(2035, 12, 31))
 
     # Definitions of general helper functions
     make_graph_file_name = lambda stub: output_folder / f"{stub.replace('*', '_star_')}.png"  # noqa: E731
@@ -33,8 +33,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     def get_parameter_names_from_scenario_file() -> Tuple[str]:
         """Get the tuple of names of the scenarios from `Scenario` class used to create the results."""
-        # todo update this
-        from scripts.comparison_of_horizontal_and_vertical_programs.scenario_vertical_programs_with_and_without_hss import (
+        from scripts.comparison_of_horizontal_and_vertical_programs.global_fund_analyses.scenario_vertical_programs_with_and_without_hss_gf import (
             HTMWithAndWithoutHSS,
         )
         e = HTMWithAndWithoutHSS()
@@ -236,7 +235,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig, ax = do_bar_plot_with_ci(
         num_deaths_averted.clip(lower=0.0),
         annotations=[
-            f"{round(row['mean'], 0)} ({round(row['lower'], 1)}-{round(row['upper'], 1)}) %"
+            f"{round(row['mean'], 0)}% ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
             for _, row in pc_deaths_averted.clip(lower=0.0).iterrows()
         ]
     )
@@ -252,7 +251,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig, ax = do_bar_plot_with_ci(
         (num_dalys_averted / 1e6).clip(lower=0.0),
         annotations=[
-            f"{round(row['mean'])} ({round(row['lower'], 1)}-{round(row['upper'], 1)}) %"
+            f"{round(row['mean'])}% ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
             for _, row in pc_dalys_averted.clip(lower=0.0).iterrows()
         ]
     )

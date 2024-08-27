@@ -113,9 +113,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             capsize=10,
             label=xticks.values()
         )
+        # if annotations:
+        #     for xpos, ypos, text in zip(xticks.keys(), _df['upper'].values, annotations):
+        #         ax.text(xpos, ypos*1.15, text, horizontalalignment='center', rotation='vertical', fontsize='x-small')
+
         if annotations:
             for xpos, ypos, text in zip(xticks.keys(), _df['upper'].values, annotations):
-                ax.text(xpos, ypos*1.15, text, horizontalalignment='center', rotation='vertical', fontsize='x-small')
+                ax.text(xpos, ypos * 1.15, '\n'.join(text.split(' ', 1)),
+                        horizontalalignment='center', rotation='horizontal', fontsize='x-small')
+
         ax.set_xticks(list(xticks.keys()))
 
         if put_labels_in_legend:
@@ -167,21 +173,40 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     num_dalys_summarized = summarize(num_dalys).loc[0].unstack().reindex(param_names)
     num_deaths_summarized = summarize(num_deaths).loc[0].unstack().reindex(param_names)
 
-    HRH_scenario_names = [
-        'Baseline',
-        'Double Capacity at Primary Care',
-        'HRH Keeps Pace with Population Growth',
-        'HRH Increases at GDP Growth',
-        'HRH Increases above GDP Growth',
-        'FULL PACKAGE'
-    ]
-    cons_scenario_names = [
-        'Baseline',
-         'Perfect Availability of Vital Items',
-         'Perfect Availability of Medicines',
-         'Perfect Availability of All Consumables',
-         'FULL PACKAGE'
-    ]
+    # Make a separate plot for the scale-up of each program/programs
+    plots = {
+        'HRH scenarios': [
+            'Baseline',
+            'Double Capacity at Primary Care',
+            'HRH Keeps Pace with Population Growth',
+            'HRH Increases at GDP Growth',
+            'HRH Increases above GDP Growth',
+            'FULL PACKAGE'
+        ],
+        'Supply chain scenarios': [
+            'Baseline',
+            'Perfect Availability of Vital Items',
+            'Perfect Availability of Medicines',
+            'Perfect Availability of All Consumables',
+            'FULL PACKAGE'
+        ],
+    }
+
+    # HRH_scenario_names = [
+    #     'Baseline',
+    #     'Double Capacity at Primary Care',
+    #     'HRH Keeps Pace with Population Growth',
+    #     'HRH Increases at GDP Growth',
+    #     'HRH Increases above GDP Growth',
+    #     'FULL PACKAGE'
+    # ]
+    # cons_scenario_names = [
+    #     'Baseline',
+    #      'Perfect Availability of Vital Items',
+    #      'Perfect Availability of Medicines',
+    #      'Perfect Availability of All Consumables',
+    #      'FULL PACKAGE'
+    # ]
 
     # DEATHS: all scenarios
     name_of_plot = f'Deaths, {target_period()}'
@@ -194,29 +219,18 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    # DEATHS: HRH scenarios only
-    HRH_scenarios = num_deaths_summarized.loc[HRH_scenario_names]
-    name_of_plot = f'Deaths, {target_period()}'
-    fig, ax = do_bar_plot_with_ci(HRH_scenarios / 1e6)
-    ax.set_title(name_of_plot)
-    ax.set_ylabel('(Millions)')
-    fig.tight_layout()
-    ax.axhline(num_deaths_summarized.loc['Baseline', 'mean']/1e6, color='black', alpha=0.5)
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-    fig.show()
-    plt.close(fig)
-
-    # DEATHS: consumables scenarios only
-    cons_scenarios = num_deaths_summarized.loc[cons_scenario_names]
-    name_of_plot = f'Deaths, {target_period()}'
-    fig, ax = do_bar_plot_with_ci(cons_scenarios / 1e6)
-    ax.set_title(name_of_plot)
-    ax.set_ylabel('(Millions)')
-    fig.tight_layout()
-    ax.axhline(num_deaths_summarized.loc['Baseline', 'mean']/1e6, color='black', alpha=0.5)
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-    fig.show()
-    plt.close(fig)
+    # DEATHS: Split by HRH scenarios and supply chain scenarios
+    for plot_name, scenario_names in plots.items():
+        name_of_plot = f'Deaths, {target_period()}, {plot_name}'
+        fig, ax = do_bar_plot_with_ci(num_deaths_summarized.loc[scenario_names] / 1e6)
+        # do_bar_plot_with_ci(num_deaths_summarized.loc[scenario_names] / 1e6)
+        ax.set_title(name_of_plot)
+        ax.set_ylabel('Deaths, (Millions)')
+        fig.tight_layout()
+        ax.axhline(num_deaths_summarized.loc['Baseline', 'mean'] / 1e6, color='black', alpha=0.5)
+        fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+        fig.show()
+        plt.close(fig)
 
     # DALYS: all scenarios
     name_of_plot = f'All Scenarios: DALYs, {target_period()}'
@@ -229,29 +243,18 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    # DALYS: HRH scenarios only
-    HRH_scenarios = num_dalys_summarized.loc[HRH_scenario_names]
-    name_of_plot = f'DALYs, {target_period()}'
-    fig, ax = do_bar_plot_with_ci(HRH_scenarios / 1e6)
-    ax.set_title(name_of_plot)
-    ax.set_ylabel('(Millions)')
-    ax.axhline(num_dalys_summarized.loc['Baseline', 'mean']/1e6, color='black', alpha=0.5)
-    fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-    fig.show()
-    plt.close(fig)
-
-    # DALYS: Consumables scenarios only
-    cons_scenarios = num_dalys_summarized.loc[cons_scenario_names]
-    name_of_plot = f'DALYs, {target_period()}'
-    fig, ax = do_bar_plot_with_ci(cons_scenarios / 1e6)
-    ax.set_title(name_of_plot)
-    ax.set_ylabel('(Millions)')
-    ax.axhline(num_dalys_summarized.loc['Baseline', 'mean']/1e6, color='black', alpha=0.5)
-    fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-    fig.show()
-    plt.close(fig)
+    # DALYS: Split by HRH scenarios and supply chain scenarios
+    for plot_name, scenario_names in plots.items():
+        name_of_plot = f'DALYS, {target_period()}, {plot_name}'
+        fig, ax = do_bar_plot_with_ci(num_deaths_summarized.loc[scenario_names] / 1e6)
+        # do_bar_plot_with_ci(num_deaths_summarized.loc[scenario_names] / 1e6)
+        ax.set_title(name_of_plot)
+        ax.set_ylabel('DALYS, (Millions)')
+        fig.tight_layout()
+        ax.axhline(num_deaths_summarized.loc['Baseline', 'mean'] / 1e6, color='black', alpha=0.5)
+        fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+        fig.show()
+        plt.close(fig)
 
     # %% Deaths and DALYS averted relative to Status Quo
     num_deaths_averted = summarize(
@@ -297,7 +300,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig, ax = do_bar_plot_with_ci(
         num_deaths_averted.clip(lower=0.0),
         annotations=[
-            f"{round(row['mean'], 0)} ({round(row['lower'], 1)}-{round(row['upper'], 1)}) %"
+            f"{round(row['mean'], 0)}% ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
             for _, row in pc_deaths_averted.clip(lower=0.0).iterrows()
         ]
     )
@@ -308,46 +311,32 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    # DEATHS AVERTED: HRH scenarios only
-    HRH_scenarios = num_deaths_averted.loc[[name for name in HRH_scenario_names if name != 'Baseline']]
-    name_of_plot = f'Additional Deaths Averted vs Baseline, {target_period()}'
-    fig, ax = do_bar_plot_with_ci(
-        HRH_scenarios.clip(lower=0.0),
+    # DEATHS AVERTED: HRH scenarios and supply chain scenarios separately
+    for plot_name, scenario_names in plots.items():
+        filtered_scenario_names = [name for name in scenario_names if name != 'Baseline']
+        name_of_plot = f'Additional Deaths Averted vs Baseline, {target_period()}, {plot_name}'
+        data = num_deaths_averted.loc[filtered_scenario_names]
+        data_pc = pc_deaths_averted.loc[filtered_scenario_names]
+        fig, ax = do_bar_plot_with_ci(
+        data.clip(lower=0.0),
         annotations=[
-            f"{round(row['mean'], 0)} ({round(row['lower'], 1)}-{round(row['upper'], 1)}) %"
-            for _, row in pc_deaths_averted.clip(lower=0.0).iterrows()
+            f"{round(row['mean'], 0)}% ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
+            for _, row in data_pc.clip(lower=0.0).iterrows()
         ]
-    )
-    ax.set_title(name_of_plot)
-    ax.set_ylabel('Additional Deaths Averted')
-    fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-    fig.show()
-    plt.close(fig)
-
-    # DEATHS AVERTED: Cons scenarios only
-    cons_scenarios = num_deaths_averted.loc[[name for name in cons_scenario_names if name != 'Baseline']]
-    name_of_plot = f'Additional Deaths Averted vs Baseline, {target_period()}'
-    fig, ax = do_bar_plot_with_ci(
-        cons_scenarios.clip(lower=0.0),
-        annotations=[
-            f"{round(row['mean'], 0)} ({round(row['lower'], 1)}-{round(row['upper'], 1)}) %"
-            for _, row in pc_deaths_averted.clip(lower=0.0).iterrows()
-        ]
-    )
-    ax.set_title(name_of_plot)
-    ax.set_ylabel('Additional Deaths Averted')
-    fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-    fig.show()
-    plt.close(fig)
+        )
+        ax.set_title(name_of_plot)
+        ax.set_ylabel('Additional Deaths Averted')
+        fig.tight_layout()
+        fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+        fig.show()
+        plt.close(fig)
 
     # DALYS AVERTED
     name_of_plot = f'Additional DALYs Averted vs Baseline, {target_period()}'
     fig, ax = do_bar_plot_with_ci(
         (num_dalys_averted / 1e6).clip(lower=0.0),
         annotations=[
-            f"{round(row['mean'])} ({round(row['lower'], 1)}-{round(row['upper'], 1)}) %"
+            f"{round(row['mean'])}% ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
             for _, row in pc_dalys_averted.clip(lower=0.0).iterrows()
         ]
     )
@@ -358,45 +347,119 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    # DALYS AVERTED: HRH scenarios only
-    HRH_scenarios = num_dalys_averted.loc[[name for name in HRH_scenario_names if name != 'Baseline']]
-    name_of_plot = f'Additional DALYs Averted vs Baseline, {target_period()}'
-    fig, ax = do_bar_plot_with_ci(
-        HRH_scenarios.clip(lower=0.0),
-        annotations=[
-            f"{round(row['mean'], 0)} ({round(row['lower'], 1)}-{round(row['upper'], 1)}) %"
-            for _, row in pc_deaths_averted.clip(lower=0.0).iterrows()
-        ]
-    )
-    ax.set_title(name_of_plot)
-    ax.set_ylabel('Additional DALYS Averted \n(Millions)')
-    fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-    fig.show()
-    plt.close(fig)
+    # DALYS AVERTED: HRH scenarios and supply chain scenarios separately
+    for plot_name, scenario_names in plots.items():
+        filtered_scenario_names = [name for name in scenario_names if name != 'Baseline']
+        name_of_plot = f'Additional DALYS Averted vs Baseline, {target_period()}, {plot_name}'
+        data = num_dalys_averted.loc[filtered_scenario_names]
+        data_pc = pc_dalys_averted.loc[filtered_scenario_names]
+        fig, ax = do_bar_plot_with_ci(
+            (data / 1e6).clip(lower=0.0),
+            annotations=[
+                f"{round(row['mean'], 0)}% ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
+                for _, row in data_pc.clip(lower=0.0).iterrows()
+            ]
+        )
+        ax.set_title(name_of_plot)
+        ax.set_ylabel('Additional DALYS Averted \n (Millions)')
+        fig.tight_layout()
+        fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+        fig.show()
+        plt.close(fig)
 
-    # DALYS AVERTED: Cons scenarios only
-    cons_scenarios = num_dalys_averted.loc[[name for name in cons_scenario_names if name != 'Baseline']]
-    name_of_plot = f'Additional DALYs Averted vs Baseline, {target_period()}'
-    fig, ax = do_bar_plot_with_ci(
-        cons_scenarios.clip(lower=0.0),
-        annotations=[
-            f"{round(row['mean'], 0)} ({round(row['lower'], 1)}-{round(row['upper'], 1)}) %"
-            for _, row in pc_deaths_averted.clip(lower=0.0).iterrows()
-        ]
+    # %% DALYS averted relative to Baseline - broken down by major cause (HIV, TB, MALARIA)
+
+    def find_difference_relative_to_comparison_series(
+        _ser: pd.Series,
+        comparison: str,
+        scaled: bool = False,
+        drop_comparison: bool = True,
+    ):
+        """Find the difference in the values in a pd.Series with a multi-index, between the draws (level 0)
+        within the runs (level 1), relative to where draw = `comparison`.
+        The comparison is `X - COMPARISON`."""
+        return _ser \
+            .unstack(level=0) \
+            .apply(lambda x: (x - x[comparison]) / (x[comparison] if scaled else 1.0), axis=1) \
+            .drop(columns=([comparison] if drop_comparison else [])) \
+            .stack()
+
+    def find_difference_relative_to_comparison_series_dataframe(_df: pd.DataFrame, **kwargs):
+        """Apply `find_difference_relative_to_comparison_series` to each row in a dataframe"""
+        return pd.concat({
+            _idx: find_difference_relative_to_comparison_series(row, **kwargs)
+            for _idx, row in _df.iterrows()
+        }, axis=1).T
+
+    def get_total_num_dalys_by_label(_df):
+        """Return the total number of DALYS in the TARGET_PERIOD by wealth and cause label."""
+        y = _df \
+            .loc[_df['year'].between(*[d.year for d in TARGET_PERIOD])] \
+            .drop(columns=['date', 'year', 'li_wealth']) \
+            .sum(axis=0)
+
+        # define course cause mapper for HIV, TB, MALARIA and OTHER
+        causes = {
+            'AIDS': 'HIV/AIDS',
+            'TB (non-AIDS)': 'TB',
+            'Malaria': 'Malaria',
+            '': 'Other',  # defined in order to use this dict to determine ordering of the causes in output
+        }
+        causes_relabels = y.index.map(causes).fillna('Other')
+
+        return y.groupby(by=causes_relabels).sum()[list(causes.values())]
+
+    total_num_dalys_by_label_results = extract_results(
+        results_folder,
+        module="tlo.methods.healthburden",
+        key="dalys_by_wealth_stacked_by_age_and_time",
+        custom_generate_series=get_total_num_dalys_by_label,
+        do_scaling=True,
+    ).pipe(set_param_names_as_column_index_level_0)
+
+    total_num_dalys_by_label_results_averted_vs_baseline = summarize(
+        -1.0 * find_difference_relative_to_comparison_series_dataframe(
+            total_num_dalys_by_label_results,
+            comparison='Baseline'
+        ),
+        only_mean=True
     )
-    ax.set_title(name_of_plot)
-    ax.set_ylabel('Additional DALYS Averted \n(Millions)')
-    fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-    fig.show()
-    plt.close(fig)
+
+    # Check that when we sum across the causes, we get the same total as calculated when we didn't split by cause.
+    assert (
+        (total_num_dalys_by_label_results_averted_vs_baseline.sum(axis=0).sort_index()
+         - num_dalys_averted['mean'].sort_index()
+         ) < 1e-6
+    ).all()
+
+    # DALYS averted by cause, HRH and supply chain scenarios separately
+    for plot_name, scenario_names in plots.items():
+        filtered_scenario_names = [name for name in scenario_names if name != 'Baseline']
+        name_of_plot = f'DALYS Averted vs Baseline, {target_period()}, {plot_name}'
+        fig, ax = plt.subplots()
+        total_num_dalys_by_label_results_averted_vs_baseline[filtered_scenario_names].T.plot.bar(
+            stacked=True,
+            ax=ax,
+            rot=0,
+            alpha=0.75
+        )
+        ax.set_ylim([0, 10e7])
+        ax.set_title(name_of_plot)
+        ax.set_ylabel(f'DALYs Averted vs Baseline, (Millions)')
+        wrapped_labs = ["\n".join(textwrap.wrap(_lab.get_text(), 20)) for _lab in ax.get_xticklabels()]
+        ax.set_xticklabels(wrapped_labs)
+        ax.set_xlabel('')
+        fig.tight_layout()
+        fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+        fig.show()
+        plt.close(fig)
 
     # todo: Neaten graphs
     # todo: Graph showing difference broken down by disease (this can be cribbed from the calcs about wealth from the
     #  third set of analyses in the overview paper).
     # todo: other metrics of health
     # todo: other graphs, broken down by age/sex (this can also be cribbed from overview paper stuff)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
