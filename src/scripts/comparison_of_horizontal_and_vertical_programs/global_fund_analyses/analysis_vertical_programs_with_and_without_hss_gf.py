@@ -1,5 +1,9 @@
 """Produce plots to show the impact each the healthcare system (overall health impact) when running under different
-scenarios (scenario_impact_of_healthsystem.py)"""
+scenarios (scenario_impact_of_healthsystem.py)
+
+htm_with_and_without_hss-2024-08-19T105753Z
+
+"""
 
 import argparse
 import textwrap

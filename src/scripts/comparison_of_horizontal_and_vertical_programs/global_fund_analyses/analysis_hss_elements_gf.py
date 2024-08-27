@@ -4,6 +4,9 @@ scenarios (scenario_impact_of_healthsystem.py)
 test run for developing plots:
 outputs/hss_elements-2024-08-21T125348Z
 
+full run:
+hss_elements-2024-08-19T105018Z
+
 """
 
 import argparse
@@ -191,22 +194,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             'FULL PACKAGE'
         ],
     }
-
-    # HRH_scenario_names = [
-    #     'Baseline',
-    #     'Double Capacity at Primary Care',
-    #     'HRH Keeps Pace with Population Growth',
-    #     'HRH Increases at GDP Growth',
-    #     'HRH Increases above GDP Growth',
-    #     'FULL PACKAGE'
-    # ]
-    # cons_scenario_names = [
-    #     'Baseline',
-    #      'Perfect Availability of Vital Items',
-    #      'Perfect Availability of Medicines',
-    #      'Perfect Availability of All Consumables',
-    #      'FULL PACKAGE'
-    # ]
 
     # DEATHS: all scenarios
     name_of_plot = f'Deaths, {target_period()}'
