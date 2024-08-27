@@ -282,7 +282,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     extra_cost = pd.DataFrame(total_cost.subtract(total_cost.loc['s_1'], axis=1).drop(index='s_1').all_four_cadres)
 
     # check total cost calculated is increased as expected - approximate float of a fraction can sacrifice some budget
-    # to run the following checks once the approximate float issue is solved
+    # todo: to run the following checks once the scenarios are confirmed and re-run
     # for s in param_names[1:]:
     #     assert abs(total_cost.loc[s, 'all_four_cadres'] -
     #                (1 + 0.042) ** (len(years)) * total_cost.loc['s_1', 'all_four_cadres']) < 1e6
