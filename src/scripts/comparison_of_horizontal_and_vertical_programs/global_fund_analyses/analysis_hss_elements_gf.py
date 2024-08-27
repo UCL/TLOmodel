@@ -13,6 +13,7 @@ import argparse
 import textwrap
 from pathlib import Path
 from typing import Tuple
+import seaborn as sns
 
 import numpy as np
 import pandas as pd
@@ -101,7 +102,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         xticks = {(i + 0.5): k for i, k in enumerate(_df.index)}
 
         # Define colormap (used only with option `put_labels_in_legend=True`)
-        cmap = plt.get_cmap("tab20")
+        # cmap = plt.get_cmap("tab20")
+        cmap = sns.color_palette('Spectral', as_cmap=True)
         rescale = lambda y: (y - np.min(y)) / (np.max(y) - np.min(y))  # noqa: E731
         colors = list(map(cmap, rescale(np.array(list(xticks.keys()))))) if put_labels_in_legend else None
 
@@ -150,6 +152,65 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         return fig, ax
 
+    def do_line_plot_with_ci(_df, xticklabels_horizontal_and_wrapped=False, put_labels_in_legend=True):
+        """Make a line plot with median values and shaded confidence intervals using a DataFrame with MultiIndex columns."""
+
+        # Extract median, lower, and upper values from the MultiIndex columns
+        median_df = _df.xs('median', level=0, axis=1)
+        lower_df = _df.xs('lower', level=0, axis=1)
+        upper_df = _df.xs('upper', level=0, axis=1)
+
+        # Ensure that the x-axis is the row index (years)
+        xticks = {i: k for i, k in enumerate(median_df.index)}
+
+        # Define colormap
+        cmap = sns.color_palette('Spectral', as_cmap=True)
+        rescale = lambda y: (y - np.min(y)) / (np.max(y) - np.min(y))  # noqa: E731
+        colors = list(map(cmap, rescale(np.arange(len(median_df.columns))))) if put_labels_in_legend else None
+
+        fig, ax = plt.subplots(figsize=(10, 5))
+
+        lines = []
+        for i, column in enumerate(median_df.columns):
+            # Plot the median line
+            line, = ax.plot(
+                xticks.keys(),
+                median_df[column],
+                color=colors[i] if colors is not None else 'black',  # Line color
+                marker='o',  # Marker at each point
+                label=f'{column}'
+            )
+            lines.append(line)
+
+            # Fill the confidence intervals
+            ax.fill_between(
+                xticks.keys(),
+                lower_df[column],
+                upper_df[column],
+                color=colors[i] if colors is not None else 'gray',  # Shaded area color
+                alpha=0.3,  # Transparency of the shaded area
+                label=f'{column} - CI'
+            )
+
+        if put_labels_in_legend:
+            # Update legend to only include median lines
+            ax.legend(handles=lines, loc='center left', fontsize='small', bbox_to_anchor=(1, 0.5))
+
+        if not xticklabels_horizontal_and_wrapped:
+            ax.set_xticks(list(xticks.keys()))
+            ax.set_xticklabels(list(xticks.values()), rotation=90)
+        else:
+            wrapped_labs = ["\n".join(textwrap.wrap(_lab, 20)) for _lab in xticks.values()]
+            ax.set_xticks(list(xticks.keys()))
+            ax.set_xticklabels(wrapped_labs)
+
+        ax.grid(axis="y")
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        fig.tight_layout()
+
+        return fig, ax
+
     # %% Define parameter names
     param_names = get_parameter_names_from_scenario_file()
 
@@ -171,6 +232,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         custom_generate_series=get_num_dalys,
         do_scaling=True
     ).pipe(set_param_names_as_column_index_level_0)
+
+
 
     # %% Charts of total numbers of deaths / DALYS
     num_dalys_summarized = summarize(num_dalys).loc[0].unstack().reindex(param_names)
@@ -201,7 +264,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.set_title(name_of_plot)
     ax.set_ylabel('(Millions)')
     fig.tight_layout()
-    ax.axhline(num_deaths_summarized.loc['Baseline', 'mean']/1e6, color='black', alpha=0.5)
+    ax.axhline(num_deaths_summarized.loc['Baseline', 'mean']/1e6, color='black', linestyle='--', alpha=0.5)
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     fig.show()
     plt.close(fig)
@@ -214,7 +277,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.set_title(name_of_plot)
         ax.set_ylabel('Deaths, (Millions)')
         fig.tight_layout()
-        ax.axhline(num_deaths_summarized.loc['Baseline', 'mean'] / 1e6, color='black', alpha=0.5)
+        ax.axhline(num_deaths_summarized.loc['Baseline', 'mean'] / 1e6, color='black',  linestyle='--', alpha=0.5)
         fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
         fig.show()
         plt.close(fig)
@@ -354,6 +417,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig.show()
         plt.close(fig)
 
+
     # %% DALYS averted relative to Baseline - broken down by major cause (HIV, TB, MALARIA)
 
     def find_difference_relative_to_comparison_series(
@@ -446,6 +510,76 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     #  third set of analyses in the overview paper).
     # todo: other metrics of health
     # todo: other graphs, broken down by age/sex (this can also be cribbed from overview paper stuff)
+
+    def get_num_dalys_by_year(_df):
+        """Return total number of DALYS (Stacked) by label (total within the TARGET_PERIOD).
+        Throw error if not a record for every year in the TARGET PERIOD (to guard against inadvertently using
+        results from runs that crashed mid-way through the simulation.
+        """
+        years_needed = [i.year for i in TARGET_PERIOD]
+        assert set(_df.year.unique()).issuperset(years_needed), "Some years are not recorded."
+        return pd.Series(
+            data=_df
+            .loc[_df.year.between(*years_needed)]
+            .drop(columns=['date', 'sex', 'age_range'])
+            .groupby(['year']).sum().stack()
+        )
+
+    num_dalys_by_year = extract_results(
+        results_folder,
+        module='tlo.methods.healthburden',
+        key='dalys_stacked',
+        custom_generate_series=get_num_dalys_by_year,
+        do_scaling=True
+    ).pipe(set_param_names_as_column_index_level_0)
+
+    summed_by_year = num_dalys_by_year.groupby('year').sum()
+
+    median_dalys = summed_by_year.groupby(level=0, axis=1).median(0.5)
+    lower_dalys = summed_by_year.groupby(level=0, axis=1).quantile(0.025)
+    upper_dalys = summed_by_year.groupby(level=0, axis=1).quantile(0.975)
+
+    result_df = pd.concat(
+        {
+            'median': median_dalys,
+            'lower': lower_dalys,
+            'upper': upper_dalys
+        },
+        axis=1
+    )
+
+
+
+
+    # PLOT DALYS over target period with CI
+    name_of_plot = f'DALYS, {target_period()}'
+    fig, ax = do_line_plot_with_ci(
+        result_df / 1e6,
+        put_labels_in_legend=True
+    )
+    ax.set_title(name_of_plot)
+    ax.set_ylabel('(Millions)')
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
+    # DALYS over time: Split by HRH scenarios and supply chain scenarios
+    for plot_name, scenario_names in plots.items():
+        # filtered_df = result_df.xs(key=scenario_names, level=1, axis=1) / 1e6
+
+        name_of_plot = f'DALYS, {target_period()}, {plot_name}'
+        fig, ax = do_line_plot_with_ci(
+            result_df.loc[:, pd.IndexSlice[:, scenario_names]] / 1e6,
+            put_labels_in_legend=True)
+        ax.set_title(name_of_plot)
+        ax.set_ylabel('DALYS, (Millions)')
+        fig.tight_layout()
+        fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+        fig.show()
+        plt.close(fig)
+
+
 
 
 if __name__ == "__main__":
