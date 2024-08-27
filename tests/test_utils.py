@@ -191,10 +191,10 @@ def test_logs_parsing(tmpdir):
     sim = Simulation(start_date=start_date, seed=0, log_config={
         'filename': 'logs_dict_class',
         'directory': tmpdir,
-    })
+    }, resourcefilepath=resourcefilepath)
 
     sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath)
+        demography.Demography()
     )
 
     # Create a simulation

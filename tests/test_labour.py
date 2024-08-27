@@ -73,20 +73,19 @@ def register_modules(sim):
     """Defines sim variable and registers all modules that can be called when running the full suite of pregnancy
     modules"""
 
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           service_availability=['*'],
+    sim.register(demography.Demography(),
+                 contraception.Contraception(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthburden.HealthBurden(),
+                 symptommanager.SymptomManager(),
+                 healthsystem.HealthSystem(service_availability=['*'],
                                            cons_availability='all'),  # went set disable=true, cant check HSI queue
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(),
+                 pregnancy_supervisor.PregnancySupervisor(),
+                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(),
+                 labour.Labour(),
+                 postnatal_supervisor.PostnatalSupervisor(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
 
                  hiv.DummyHivModule(),
                  )
@@ -96,7 +95,8 @@ def register_modules(sim):
 def test_run_no_constraints(tmpdir, seed):
     """This test runs a simulation with a functioning health system with full service availability and no set
     constraints"""
-    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
+    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir},
+                     resourcefilepath=resourcefilepath)
 
     register_modules(sim)
     sim.make_initial_population(n=1000)
@@ -113,7 +113,7 @@ def test_run_no_constraints(tmpdir, seed):
 def test_event_scheduling_for_labour_onset_and_home_birth_no_care_seeking(seed):
     """This test checks that women who choose to give birth at home will correctly deliver at home and the scheduling
     events if she chooses not to seek care following a complication"""
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     register_modules(sim)
 
     mother_id = run_sim_for_0_days_get_mother_id(sim)
@@ -175,7 +175,7 @@ def test_event_scheduling_for_labour_onset_and_home_birth_no_care_seeking(seed):
 def test_event_scheduling_for_care_seeking_during_home_birth(seed):
     """This test checks that women who choose to give birth at home will correctly deliver at home and the scheduling
     events if shes chooses to seek care following a complication"""
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     register_modules(sim)
 
     mother_id = run_sim_for_0_days_get_mother_id(sim)
@@ -245,7 +245,7 @@ def test_event_scheduling_for_care_seeking_during_home_birth(seed):
 def test_event_scheduling_for_labour_onset_and_facility_delivery(seed):
     """This test checks that women who choose to give birth at a facility will correctly seek care and the scheduling
     of the events is correct"""
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     register_modules(sim)
 
     mother_id = run_sim_for_0_days_get_mother_id(sim)
@@ -282,7 +282,7 @@ def test_event_scheduling_for_labour_onset_and_facility_delivery(seed):
 def test_event_scheduling_for_admissions_from_antenatal_inpatient_ward_for_caesarean_section(seed):
     """This test checks that women who have been admitted from antenatal care to delivery via caesarean have the correct
      care and event scheduled"""
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     register_modules(sim)
 
     mother_id = run_sim_for_0_days_get_mother_id(sim)
@@ -345,7 +345,7 @@ def test_event_scheduling_for_admissions_from_antenatal_inpatient_ward_for_caesa
 def test_application_of_risk_of_complications_in_intrapartum_and_postpartum_phases(seed):
     """This test checks that risk of complication in the intrapartum and postpartum phase are applied to women as
     expected """
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     register_modules(sim)
 
     mother_id = run_sim_for_0_days_get_mother_id(sim)
@@ -402,7 +402,7 @@ def test_application_of_risk_of_complications_in_intrapartum_and_postpartum_phas
 
 def test_logic_within_death_and_still_birth_events(seed):
     """This test checks that risk of death and stillbirth during labour are applied as expected"""
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     register_modules(sim)
 
     mother_id = run_sim_for_0_days_get_mother_id(sim)
@@ -494,7 +494,7 @@ def test_logic_within_death_and_still_birth_events(seed):
 def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_constraints_via_functions(seed):
     """This test checks that interventions delivered during the primary delivery HSI are correctly administered and
     effect death/outcome in the way that is expected """
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     register_modules(sim)
 
     sim.make_initial_population(n=100)
@@ -646,7 +646,7 @@ def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_const
 def test_cemonc_event_and_treatments_are_delivered_correct_with_no_cons_or_quality_constraints(seed):
     """This test checks that interventions delivered during the CEmONC HSI are correctly administered and
     effect death/outcome in the way that is expected """
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     register_modules(sim)
 
     mother_id = run_sim_for_0_days_get_mother_id(sim)
