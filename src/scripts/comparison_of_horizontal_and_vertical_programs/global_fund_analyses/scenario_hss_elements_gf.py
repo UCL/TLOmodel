@@ -50,9 +50,9 @@ class HSSElements(BaseScenario):
                 'tlo.methods.healthburden': logging.INFO,
                 'tlo.methods.healthsystem': logging.WARNING,
                 'tlo.methods.healthsystem.summary': logging.INFO,
-                'tlo.methods.hiv': logging.INFO,
-                'tlo.methods.tb': logging.INFO,
-                'tlo.methods.malaria': logging.INFO,
+                # 'tlo.methods.hiv': logging.INFO,
+                # 'tlo.methods.tb': logging.INFO,
+                # 'tlo.methods.malaria': logging.INFO,
             }
         }
 
