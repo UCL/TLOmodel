@@ -16,8 +16,9 @@ tlo scenario-run src/scripts/healthsystem/impact_of_hcw_capabilities_expansion/s
 from pathlib import Path
 from typing import Dict
 
-import pandas as pd
-
+from scripts.healthsystem.impact_of_hcw_capabilities_expansion.create_hr_minute_salary_by_officer_type_facility_id import (
+    extra_budget_fracs,
+)
 from tlo import Date, logging
 from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios
 from tlo.methods.fullmodel import fullmodel
@@ -61,10 +62,7 @@ class HRHExpansionByCadreWithExtraBudget(BaseScenario):
 
         self.YEAR_OF_CHANGE = 2020  # This is the year to change run settings and to start hr expansion.
 
-        self.scenarios = pd.read_csv(Path('./resources')
-                                     / 'healthsystem' / 'human_resources' / 'scaling_capabilities'
-                                     / 'ResourceFile_HR_expansion_by_officer_type_given_extra_budget.csv'
-                                     ).set_index('Officer_Category')  # do we need 'self' or not?
+        self.scenarios = extra_budget_fracs
 
         return {
             self.scenarios.columns[i]:
@@ -74,7 +72,7 @@ class HRHExpansionByCadreWithExtraBudget(BaseScenario):
                         'HR_expansion_by_officer_type': list(self.scenarios.iloc[:, i])
                     }
                     }
-                ) for i in range(len(self.scenarios.columns) - 15)
+                ) for i in range(len(self.scenarios.columns))
         }
 
     def _baseline(self) -> Dict:
@@ -83,7 +81,7 @@ class HRHExpansionByCadreWithExtraBudget(BaseScenario):
             {'HealthSystem': {
                 'mode_appt_constraints': 1,
                 'mode_appt_constraints_postSwitch': 2,
-                "scale_to_effective_capabilities": True,  # todo: TBC; will this change the capabilities of 2019?
+                # "scale_to_effective_capabilities": True,  # todo: TBC; will this change the capabilities of 2019?
                 "year_mode_switch": self.YEAR_OF_CHANGE,
                 'cons_availability': 'default',
                 'cons_availability_postSwitch': 'all',

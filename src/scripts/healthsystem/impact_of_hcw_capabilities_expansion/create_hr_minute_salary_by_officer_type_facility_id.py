@@ -68,16 +68,16 @@ for c in cadres:
         if c in i:
             cadre_to_expand.loc[c, i] = staff_cost.loc[staff_cost.Officer_Category == c, 'annual_cost'].values[0]
 
-extra_budget_frac = pd.DataFrame(index=cadre_to_expand.index, columns=cadre_to_expand.columns).fillna(0)
-for i in extra_budget_frac.columns[1:]:
-    extra_budget_frac.loc[:, i] = cadre_to_expand.loc[:, i] / cadre_to_expand.loc[:, i].sum()
+extra_budget_fracs = pd.DataFrame(index=cadre_to_expand.index, columns=cadre_to_expand.columns).fillna(0)
+for i in extra_budget_fracs.columns[1:]:
+    extra_budget_fracs.loc[:, i] = cadre_to_expand.loc[:, i] / cadre_to_expand.loc[:, i].sum()
 
-assert (abs(extra_budget_frac.iloc[:, 1:len(extra_budget_frac.columns)].sum(axis=0) - 1.0) < 1/1e10).all()
+assert (abs(extra_budget_fracs.iloc[:, 1:len(extra_budget_fracs.columns)].sum(axis=0) - 1.0) < 1/1e10).all()
 
 simple_scenario_name = {}
-for i in range(len(extra_budget_frac.columns)):
-    simple_scenario_name[extra_budget_frac.columns[i]] = 's_' + str(i+1)  # name scenario from s_1
-extra_budget_frac.rename(columns=simple_scenario_name, inplace=True)
+for i in range(len(extra_budget_fracs.columns)):
+    simple_scenario_name[extra_budget_fracs.columns[i]] = 's_' + str(i+1)  # name scenario from s_1
+extra_budget_fracs.rename(columns=simple_scenario_name, inplace=True)
 
 
 # calculate hr scale up factor for years 2020-2030 (10 years in total) outside the healthsystem module
@@ -110,25 +110,20 @@ def calculate_hr_scale_up_factor(extra_budget_frac, yr, scenario) -> pd.DataFram
 
 
 # calculate scale up factors for all defined scenarios and years
-# extra_budget_frac_data = pd.read_csv(resourcefilepath
-#                                      / 'healthsystem' / 'human_resources' / 'scaling_capabilities'
-#                                      / 'ResourceFile_HR_expansion_by_officer_type_given_extra_budget.csv'
-#                                      ).set_index('Officer_Category')
-extra_budget_frac_data = extra_budget_frac.copy()
 four_cadres_cost['scale_up_factor'] = 1
-scale_up_factor_dict = {s: {y: {} for y in range(2019, 2030)} for s in extra_budget_frac_data.columns}
-for s in extra_budget_frac_data.columns:
+scale_up_factor_dict = {s: {y: {} for y in range(2019, 2030)} for s in extra_budget_fracs.columns}
+for s in extra_budget_fracs.columns:
     # for the initial/current year of 2019
     scale_up_factor_dict[s][2019] = four_cadres_cost.drop(columns='cost_frac').copy()
     # for the years with scaled up hr
     for y in range(2020, 2030):
-        scale_up_factor_dict[s][y] = calculate_hr_scale_up_factor(list(extra_budget_frac_data[s]), y, s)
+        scale_up_factor_dict[s][y] = calculate_hr_scale_up_factor(list(extra_budget_fracs[s]), y, s)
 
 # get the total cost and staff count for each year between 2020-2030 and each scenario
-total_cost = pd.DataFrame(index=range(2020, 2030), columns=extra_budget_frac_data.columns)
-total_staff = pd.DataFrame(index=range(2020, 2030), columns=extra_budget_frac_data.columns)
+total_cost = pd.DataFrame(index=range(2020, 2030), columns=extra_budget_fracs.columns)
+total_staff = pd.DataFrame(index=range(2020, 2030), columns=extra_budget_fracs.columns)
 for y in total_cost.index:
-    for s in extra_budget_frac_data.columns:
+    for s in extra_budget_fracs.columns:
         total_cost.loc[y, s] = scale_up_factor_dict[s][y].annual_cost.sum()
         total_staff.loc[y, s] = scale_up_factor_dict[s][y].Staff_Count.sum()
 
