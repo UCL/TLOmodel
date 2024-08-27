@@ -10,7 +10,6 @@ import textwrap
 from pathlib import Path
 from typing import Tuple
 
-import numpy
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
@@ -275,10 +274,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     total_staff = pd.DataFrame(integrated_scale_up_factor.mul(curr_hr.values, axis=1))
     total_cost = pd.DataFrame(total_staff.mul(salary.values, axis=1))
-    total_staff['all_four_cadres'] = total_staff.sum(axis=1)
+    # total_staff['all_four_cadres'] = total_staff.sum(axis=1)
     total_cost['all_four_cadres'] = total_cost.sum(axis=1)
 
-    extra_staff = pd.DataFrame(total_staff.subtract(total_staff.loc['s_1'], axis=1).drop(index='s_1').all_four_cadres)
+    # extra_staff = pd.DataFrame(total_staff.subtract(total_staff.loc['s_1'], axis=1).drop(index='s_1').all_four_cadres)
     extra_cost = pd.DataFrame(total_cost.subtract(total_cost.loc['s_1'], axis=1).drop(index='s_1').all_four_cadres)
 
     # check total cost calculated is increased as expected - approximate float of a fraction can sacrifice some budget
@@ -492,6 +491,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # plot relative numbers for scenarios
     name_of_plot = f'DALYs averted, {target_period()}'
     fig, ax = do_bar_plot_with_ci(num_dalys_averted / 1e6, xticklabels_horizontal_and_wrapped=True,
+                                  put_labels_in_legend=True)
+    ax.set_title(name_of_plot)
+    ax.set_ylabel('(Millions)')
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
+    name_of_plot = f'Deaths averted, {target_period()}'
+    fig, ax = do_bar_plot_with_ci(num_deaths_averted / 1e6, xticklabels_horizontal_and_wrapped=True,
                                   put_labels_in_legend=True)
     ax.set_title(name_of_plot)
     ax.set_ylabel('(Millions)')
