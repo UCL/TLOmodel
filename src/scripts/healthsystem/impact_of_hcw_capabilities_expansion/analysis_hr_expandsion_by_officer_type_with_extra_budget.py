@@ -27,6 +27,7 @@ from tlo.analysis.utils import (
 )
 
 # rename scenarios
+# todo: to update once scenarios confirmed
 substitute_labels = {
     's_1': 'no_expansion',
     's_2': 'CDNP_expansion_current',
