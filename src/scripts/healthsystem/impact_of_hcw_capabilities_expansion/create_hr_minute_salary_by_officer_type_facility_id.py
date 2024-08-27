@@ -1,9 +1,11 @@
 """
 We calculate the salar cost of current and funded plus HCW.
 """
+import itertools
 import pickle
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 resourcefilepath = Path('./resources')
@@ -46,6 +48,37 @@ four_cadres_cost['cost_frac'] = (four_cadres_cost['annual_cost'] / four_cadres_c
 # x = four_cadres_cost.loc[0, 'cost_frac'].as_integer_ratio()
 assert four_cadres_cost.cost_frac.sum() == 1
 
+# Calculate the current cost distribution of one/two/three/four cadres and define them as scenarios
+# We confirmed/can prove that in such expansion scenarios of two/three/four cadres,
+# the annual scale up factors are actually equal for cadres,
+# equal to 1 + annual extra cost / total current cost of two/three/four cadres.
+# One possible issue is that Pharmacy cost has only small fractions in all multi-cadre scenarios,
+# as its current fraction is small; we have estimated that Pharmacy cadre is extremely in shortage,
+# thus these scenarios might still face huge shortages.
+cadres = ['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy']
+combination_list = ['']
+for n in range(1, len(cadres)+1):
+    for subset in itertools.combinations(cadres, n):
+        combination_list.append(str(subset))
+
+cadre_to_expand = pd.DataFrame(index=cadres, columns=combination_list).fillna(0)
+cadre_to_expand.loc[:, ''] = 0  # no_expansion scenario
+for c in cadres:
+    for i in cadre_to_expand.columns:
+        if c in i:
+            cadre_to_expand.loc[c, i] = staff_cost.loc[staff_cost.Officer_Category == c, 'annual_cost'].values[0]
+
+extra_budget_frac = pd.DataFrame(index=cadre_to_expand.index, columns=cadre_to_expand.columns).fillna(0)
+for i in extra_budget_frac.columns[1:]:
+    extra_budget_frac.loc[:, i] = cadre_to_expand.loc[:, i] / cadre_to_expand.loc[:, i].sum()
+
+assert (abs(extra_budget_frac.iloc[:, 1:len(extra_budget_frac.columns)].sum(axis=0) - 1.0) < 1/1e10).all()
+
+simple_scenario_name = {}
+for i in range(len(extra_budget_frac.columns)):
+    simple_scenario_name[extra_budget_frac.columns[i]] = 's_' + str(i+1)  # name scenario from s_1
+extra_budget_frac.rename(columns=simple_scenario_name, inplace=True)
+
 
 # calculate hr scale up factor for years 2020-2030 (10 years in total) outside the healthsystem module
 
@@ -77,10 +110,11 @@ def calculate_hr_scale_up_factor(extra_budget_frac, yr, scenario) -> pd.DataFram
 
 
 # calculate scale up factors for all defined scenarios and years
-extra_budget_frac_data = pd.read_csv(resourcefilepath
-                                     / 'healthsystem' / 'human_resources' / 'scaling_capabilities'
-                                     / 'ResourceFile_HR_expansion_by_officer_type_given_extra_budget.csv'
-                                     ).set_index('Officer_Category')
+# extra_budget_frac_data = pd.read_csv(resourcefilepath
+#                                      / 'healthsystem' / 'human_resources' / 'scaling_capabilities'
+#                                      / 'ResourceFile_HR_expansion_by_officer_type_given_extra_budget.csv'
+#                                      ).set_index('Officer_Category')
+extra_budget_frac_data = extra_budget_frac.copy()
 four_cadres_cost['scale_up_factor'] = 1
 scale_up_factor_dict = {s: {y: {} for y in range(2019, 2030)} for s in extra_budget_frac_data.columns}
 for s in extra_budget_frac_data.columns:
@@ -98,13 +132,26 @@ for y in total_cost.index:
         total_cost.loc[y, s] = scale_up_factor_dict[s][y].annual_cost.sum()
         total_staff.loc[y, s] = scale_up_factor_dict[s][y].Staff_Count.sum()
 
+# check the total cost after 10 years are increased as expected
+assert (
+    abs(total_cost.loc[2029, total_cost.columns[1:]] - (1 + 0.042) ** 10 * total_cost.loc[2029, 's_1']) < 1/1e6
+).all()
 
-# save and read pickle file
-pickle_file_path = Path(resourcefilepath / 'healthsystem' / 'human_resources' / 'scaling_capabilities' /
-                        'ResourceFile_HR_expansion_by_officer_type_yearly_scale_up_factors.pickle')
+# get the integrated scale up factors for year 2029 and each scenario
+integrated_scale_up_factor = pd.DataFrame(index=cadres, columns=total_cost.columns).fillna(1.0)
+for s in total_cost.columns[1:]:
+    for yr in range(2020, 2030):
+        integrated_scale_up_factor.loc[:, s] = np.multiply(
+            integrated_scale_up_factor.loc[:, s].values,
+            scale_up_factor_dict[s][yr].loc[:, 'scale_up_factor'].values
+        )
 
-with open(pickle_file_path, 'wb') as f:
-    pickle.dump(scale_up_factor_dict, f)
-
-with open(pickle_file_path, 'rb') as f:
-    x = pickle.load(f)
+# # save and read pickle file
+# pickle_file_path = Path(resourcefilepath / 'healthsystem' / 'human_resources' / 'scaling_capabilities' /
+#                         'ResourceFile_HR_expansion_by_officer_type_yearly_scale_up_factors.pickle')
+#
+# with open(pickle_file_path, 'wb') as f:
+#     pickle.dump(scale_up_factor_dict, f)
+#
+# with open(pickle_file_path, 'rb') as f:
+#     x = pickle.load(f)
