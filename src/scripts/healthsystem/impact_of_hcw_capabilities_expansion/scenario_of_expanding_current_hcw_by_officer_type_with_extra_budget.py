@@ -16,7 +16,7 @@ tlo scenario-run src/scripts/healthsystem/impact_of_hcw_capabilities_expansion/s
 from pathlib import Path
 from typing import Dict
 
-from scripts.healthsystem.impact_of_hcw_capabilities_expansion.create_hr_minute_salary_by_officer_type_facility_id import (
+from scripts.healthsystem.impact_of_hcw_capabilities_expansion.prepare_minute_salary_and_extra_budget_frac_data import (
     extra_budget_fracs,
 )
 from tlo import Date, logging
