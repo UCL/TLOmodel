@@ -158,9 +158,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         xticks = {(i + 0.5): k for i, k in enumerate(_df.index)}
 
         # Define colormap (used only with option `put_labels_in_legend=True`)
+        # todo: could refine colors for each scenario once scenarios are confirmed
         cmap = plt.get_cmap("tab20")
         rescale = lambda y: (y - np.min(y)) / (np.max(y) - np.min(y))  # noqa: E731
-        colors = list(map(cmap, rescale(np.array(list(xticks.keys()))))) if put_labels_in_legend else None
+        colors = list(map(cmap, rescale(np.array(list(xticks.keys()))))) if put_labels_in_legend and len(xticks) > 1 \
+            else None
 
         fig, ax = plt.subplots(figsize=(10, 5))
         ax.bar(
@@ -180,13 +182,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.set_xticks(list(xticks.keys()))
 
         if put_labels_in_legend:
-            # Update xticks label with substitute labels
-            # Insert legend with updated labels that shows correspondence between substitute label and original label
-            xtick_values = [substitute_labels[v] for v in xticks.values()]
+            # Set x-axis labels as simple scenario names
+            # Insert legend to explain scenarios
             xtick_legend = [f'{v}: {substitute_labels[v]}' for v in xticks.values()]
             h, _ = ax.get_legend_handles_labels()
             ax.legend(h, xtick_legend, loc='center left', fontsize='small', bbox_to_anchor=(1, 0.5))
-            ax.set_xticklabels(list(xtick_values))
+            ax.set_xticklabels(list(xticks.values()))
         else:
             if not xticklabels_horizontal_and_wrapped:
                 # xticklabels will be vertical and not wrapped
@@ -277,10 +278,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     total_staff['all_four_cadres'] = total_staff.sum(axis=1)
     total_cost['all_four_cadres'] = total_cost.sum(axis=1)
 
-    extra_staff = pd.DataFrame(total_staff.subtract(total_staff.loc['s_1'], axis=1))
-    extra_cost = pd.DataFrame(total_cost.subtract(total_cost.loc['s_1'], axis=1))
+    extra_staff = pd.DataFrame(total_staff.subtract(total_staff.loc['s_1'], axis=1).drop(index='s_1').all_four_cadres)
+    extra_cost = pd.DataFrame(total_cost.subtract(total_cost.loc['s_1'], axis=1).drop(index='s_1').all_four_cadres)
 
     # check total cost calculated is increased as expected - approximate float of a fraction can sacrifice some budget
+    # to run the following checks once the approximate float issue is solved
     # for s in param_names[1:]:
     #     assert abs(total_cost.loc[s, 'all_four_cadres'] -
     #                (1 + 0.042) ** (len(years)) * total_cost.loc['s_1', 'all_four_cadres']) < 1e6
@@ -392,6 +394,17 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
          ) < 1e-6
     ).all()
 
+    # get Return (in terms of DALYs averted) On Investment (extra cost) for all expansion scenarios, excluding s_1
+    # get Cost-Effectiveness, i.e., cost of every daly averted, for all expansion scenarios
+    ROI = pd.DataFrame(index=num_deaths_averted.index, columns=num_dalys_averted.columns)
+    CE = pd.DataFrame(index=num_deaths_averted.index, columns=num_dalys_averted.columns)
+    assert (ROI.index == extra_cost.index).all()
+    for i in ROI.index:
+        ROI.loc[i, :] = num_dalys_averted.loc[i, :] / extra_cost.loc[i, 'all_four_cadres']
+        CE.loc[i, 'mean'] = extra_cost.loc[i, 'all_four_cadres'] / num_dalys_averted.loc[i, 'mean']
+        CE.loc[i, 'lower'] = extra_cost.loc[i, 'all_four_cadres'] / num_dalys_averted.loc[i, 'upper']
+        CE.loc[i, 'upper'] = extra_cost.loc[i, 'all_four_cadres'] / num_dalys_averted.loc[i, 'lower']
+
     # prepare colors for plots
     appt_color = {
         appt: COARSE_APPT_TYPE_TO_COLOR_MAP.get(appt, np.nan) for appt in num_appts_summarized.columns
@@ -402,16 +415,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     }
 
     # plot absolute numbers for scenarios
-
-    name_of_plot = f'Services, {target_period()}'
-    fig, ax = do_bar_plot_with_ci(num_services_summarized / 1e6, xticklabels_horizontal_and_wrapped=True,
-                                  put_labels_in_legend=True)
-    ax.set_title(name_of_plot)
-    ax.set_ylabel('(Millions)')
-    fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-    fig.show()
-    plt.close(fig)
 
     name_of_plot = f'Deaths, {target_period()}'
     fig, ax = do_bar_plot_with_ci(num_deaths_summarized / 1e6, xticklabels_horizontal_and_wrapped=True,
@@ -487,6 +490,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     plt.close(fig)
 
     # plot relative numbers for scenarios
+    name_of_plot = f'DALYs averted, {target_period()}'
+    fig, ax = do_bar_plot_with_ci(num_dalys_averted / 1e6, xticklabels_horizontal_and_wrapped=True,
+                                  put_labels_in_legend=True)
+    ax.set_title(name_of_plot)
+    ax.set_ylabel('(Millions)')
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
 
     name_of_plot = f'Services increased by appointment type, {target_period()}'
     num_appts_increased_in_millions = num_appts_increased / 1e6
@@ -540,14 +552,36 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
+    # plot ROI and CE for all expansion scenarios
+
+    name_of_plot = f'DALYs averted per extra USD dollar invested, {target_period()}'
+    fig, ax = do_bar_plot_with_ci(ROI, xticklabels_horizontal_and_wrapped=True,
+                                  put_labels_in_legend=True)
+    ax.set_title(name_of_plot)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
+    name_of_plot = f'Cost per every DALYs averted, {target_period()}'
+    fig, ax = do_bar_plot_with_ci(CE, xticklabels_horizontal_and_wrapped=True,
+                                  put_labels_in_legend=True)
+    ax.set_title(name_of_plot)
+    ax.set_ylabel('USD dollars')
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
     # todo
-    # calculate return on investment
-    # get and plot services by short treatment id
-    # plot comparison results: there are negative changes of some appts and causes, try increase runs and see
-    # as we have 17 scenarios in total, \
+    # Get and plot services by short treatment id?
+    # Plot comparison results: there are negative changes of some appts and causes, try increase runs and see
+    # As we have 17 scenarios in total, \
     # design comparison groups of scenarios to examine marginal/combined productivity of cadres
-    # do update HRScaling logger: year_of_scale_up, scale_up_factor, and get_scale_up_factor function
-    # update the extra budget fraction file so that floats have more digits, more close to the expected fractions.
+    # Do update HRScaling logger: year_of_scale_up, scale_up_factor, and get_scale_up_factor function
+    # Update extra budget fraction scenarios so that floats have more digits, more close to the expected fractions?
+    # Update extra budget fraction scenarios so that fractions always reflect cost distributions among two/three/four cadres?
+    # As it is analysis of 10 year results, it would be better to consider increasing annual/minute salary?
 
 
 if __name__ == "__main__":
