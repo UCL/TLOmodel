@@ -10,7 +10,7 @@ tlo scenario-run src/scripts/comparison_of_horizontal_and_vertical_programs/glob
 
 Run on the batch system using:
 
-tlo batch-submit
+tlo batch-submit --more-memory
 src/scripts/comparison_of_horizontal_and_vertical_programs/global_fund_analyses/scenario_hss_elements_gf.py
 
 """
