@@ -158,7 +158,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         xticks = {(i + 0.5): k for i, k in enumerate(_df.index)}
 
         # Define colormap (used only with option `put_labels_in_legend=True`)
-        # todo: could refine colors for each scenario once scenarios are confirmed
+        # todo: could re-define colors for each scenario once scenarios are confirmed
         cmap = plt.get_cmap("tab20")
         rescale = lambda y: (y - np.min(y)) / (np.max(y) - np.min(y))  # noqa: E731
         colors = list(map(cmap, rescale(np.array(list(xticks.keys()))))) if put_labels_in_legend and len(xticks) > 1 \
@@ -584,14 +584,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     plt.close(fig)
 
     # todo
-    # Get and plot services by short treatment id?
+    # Do update healthsystem HRScaling logger: year_of_scale_up, scale_up_factor, and get_scale_up_factor function here
     # Plot comparison results: there are negative changes of some appts and causes, try increase runs and see
-    # As we have 17 scenarios in total, \
+    # As we have 16 scenarios in total, \
     # design comparison groups of scenarios to examine marginal/combined productivity of cadres
-    # Do update HRScaling logger: year_of_scale_up, scale_up_factor, and get_scale_up_factor function
-    # Update extra budget fraction scenarios so that floats have more digits, more close to the expected fractions?
-    # Update extra budget fraction scenarios so that fractions always reflect cost distributions among two/three/four cadres?
+    # To design more scenarios so that Pharmacy cadre can be expanded more than the 16 scenarios?
     # As it is analysis of 10 year results, it would be better to consider increasing annual/minute salary?
+    # Get and plot services by short treatment id?
 
 
 if __name__ == "__main__":
