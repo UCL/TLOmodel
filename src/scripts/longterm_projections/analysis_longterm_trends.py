@@ -593,7 +593,163 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     plt.savefig(make_graph_file_name("Deaths_OverTime"))
     plt.close(fig)
 
-    # 2) Plots by sex and age-group for selected period:
+
+    # 2) Plots by age-group for selected period:
+
+    # Summarize model results (with breakdown by age/sex/period) and process into desired format:
+    deaths_model_by_ageperiod = summarize(results_deaths, collapse_columns=True).reset_index()
+    deaths_model_by_ageperiod = deaths_model_by_ageperiod.melt(
+        id_vars=['Period',  'Age_Grp'], value_vars=['mean', 'lower', 'upper'], var_name='Variant',
+        value_name='Count')
+    deaths_model_by_ageperiod['Variant'] = 'Model_' + deaths_model_by_ageperiod['Variant']
+
+    # Combine into one large dataframe
+    deaths_by_ageperiod = pd.concat(
+        [deaths_model_by_ageperiod,
+         wpp_deaths,
+         gbd_deaths
+         ],
+        ignore_index=True, sort=False
+    )
+
+    # Deaths by age, during in selection periods
+    calperiods_selected = list()
+    for cal in calperiods:
+        if cal != '2100+':
+            if (2010 <= int(cal.split('-')[0])) and (int(cal.split('-')[1]) < 2040):
+                calperiods_selected.append(cal)
+
+    for period in calperiods_selected:
+
+            fig, ax = plt.subplots()
+            tot_deaths_byage = pd.DataFrame(
+                deaths_by_ageperiod.loc[
+                    (deaths_by_ageperiod['Period'] == period)].groupby(
+                    by=['Variant', 'Age_Grp'])['Count'].sum()).unstack()
+            tot_deaths_byage.columns = pd.Index([label[1] for label in tot_deaths_byage.columns.tolist()])
+            tot_deaths_byage = tot_deaths_byage.transpose()
+
+            if 'WPP_Medium variant' in tot_deaths_byage.columns:
+                ax.plot(
+                    tot_deaths_byage.index,
+                    tot_deaths_byage['WPP_Medium variant'] / 1e3,
+                    label='WPP',
+                    color=colors['WPP'])
+                ax.fill_between(
+                    (tot_deaths_byage.index).to_numpy(),
+                    (tot_deaths_byage['WPP_Low variant'] / 1e3).to_numpy(),
+                    (tot_deaths_byage['WPP_High variant'] / 1e3).to_numpy(),
+                    facecolor=colors['WPP'], alpha=0.2)
+            else:
+                ax.plot(
+                    tot_deaths_byage.index,
+                    tot_deaths_byage['WPP_Estimates'] / 1e3,
+                    label='WPP',
+                    color=colors['WPP'])
+
+            if 'GBD_Est' in tot_deaths_byage.columns:
+                ax.plot(
+                    tot_deaths_byage.index,
+                    tot_deaths_byage['GBD_Est'] / 1e3,
+                    label='GBD',
+                    color=colors['GBD'])
+                ax.fill_between(
+                    (tot_deaths_byage.index).to_numpy(),
+                    (tot_deaths_byage['GBD_Lower'] / 1e3).to_numpy(),
+                    (tot_deaths_byage['GBD_Upper'] / 1e3).to_numpy(),
+                    facecolor=colors['GBD'], alpha=0.2)
+
+            ax.plot(
+                tot_deaths_byage.index,
+                tot_deaths_byage['Model_mean'] / 1e3,
+                label='Model',
+                color=colors['Model'])
+            ax.fill_between(
+                (tot_deaths_byage.index).to_numpy(),
+                (tot_deaths_byage['Model_lower'] / 1e3).to_numpy(),
+                (tot_deaths_byage['Model_upper'] / 1e3).to_numpy(),
+                facecolor=colors['Model'], alpha=0.2)
+
+            ax.set_xticks(np.arange(len(tot_deaths_byage.index)))
+            ax.set_xticklabels(tot_deaths_byage.index, rotation=90)
+            ax.set_title(f"Number of Deaths {period}")
+            ax.legend(loc='upper right')
+            ax.set_xlabel('Age Group')
+            ax.set_ylabel('Deaths per period (thousands)')
+            ax.set_ylim(0, 120)
+
+            fig.tight_layout()
+            fig.savefig(make_graph_file_name(f"Deaths_By_Age_{period}"))
+            plt.close(fig)
+
+
+    # 2b) All on one graph
+    # Create a figure and axis for plotting
+    fig, ax = plt.subplots()
+
+    # Loop over each selected period and plot them on the same axis
+    for period in calperiods_selected:
+            tot_deaths_byage = pd.DataFrame(
+                deaths_by_ageperiod.loc[
+                    (deaths_by_ageperiod['Period'] == period)].groupby(
+                    by=['Variant', 'Age_Grp'])['Count'].sum()).unstack()
+            tot_deaths_byage.columns = pd.Index([label[1] for label in tot_deaths_byage.columns.tolist()])
+            tot_deaths_byage = tot_deaths_byage.transpose()
+
+            if 'WPP_Medium variant' in tot_deaths_byage.columns:
+                ax.plot(
+                    tot_deaths_byage.index,
+                    tot_deaths_byage['WPP_Medium variant'] / 1e3,
+                    label=f'WPP {period}',
+                    color=colors['WPP'])
+                ax.fill_between(
+                    tot_deaths_byage.index.to_numpy(),
+                    tot_deaths_byage['WPP_Low variant'] / 1e3,
+                    tot_deaths_byage['WPP_High variant'] / 1e3,
+                    facecolor=colors['WPP'], alpha=0.2)
+            else:
+                ax.plot(
+                    tot_deaths_byage.index,
+                    tot_deaths_byage['WPP_Estimates'] / 1e3,
+                    label=f'WPP {period}',
+                    color=colors['WPP'])
+
+            if 'GBD_Est' in tot_deaths_byage.columns:
+                ax.plot(
+                    tot_deaths_byage.index,
+                    tot_deaths_byage['GBD_Est'] / 1e3,
+                    label=f'GBD {period}',
+                    color=colors['GBD'])
+                ax.fill_between(
+                    tot_deaths_byage.index.to_numpy(),
+                    tot_deaths_byage['GBD_Lower'] / 1e3,
+                    tot_deaths_byage['GBD_Upper'] / 1e3,
+                    facecolor=colors['GBD'], alpha=0.2)
+
+            ax.plot(
+                tot_deaths_byage.index,
+                tot_deaths_byage['Model_mean'] / 1e3,
+                label=f'Model {period}',
+                color=colors['Model'])
+            ax.fill_between(
+                tot_deaths_byage.index.to_numpy(),
+                tot_deaths_byage['Model_lower'] / 1e3,
+                tot_deaths_byage['Model_upper'] / 1e3,
+                facecolor=colors['Model'], alpha=0.2)
+
+    # Set labels and titles
+    ax.set_xticks(np.arange(len(tot_deaths_byage.index)))
+    ax.set_xticklabels(tot_deaths_byage.index, rotation=90)
+    ax.set_title("Number of Deaths by Age Group for Selected Periods")
+    ax.legend(loc='upper right')
+    ax.set_xlabel('Age Group')
+    ax.set_ylabel('Deaths per period (thousands)')
+    ax.set_ylim(0, 120)
+
+        # Adjust layout and save figure
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name("Deaths_By_Age_All_Periods"))
+    # 3) Plots by sex and age-group for selected period:
 
     # Summarize model results (with breakdown by age/sex/period) and process into desired format:
     deaths_model_by_agesexperiod = summarize(results_deaths, collapse_columns=True).reset_index()
@@ -683,6 +839,43 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             fig.savefig(make_graph_file_name(f"Deaths_By_Age_{sex}_{period}"))
             plt.close(fig)
 
+# 4) Life expectancy
+    fig, ax = plt.subplots()
+    dataframes = []
+
+    for year in range(2010, int(max_year) -5):
+        df = get_life_expectancy_estimates(
+            results_folder=args.results_folder,
+            target_period=(datetime.date(year, 1, 1), datetime.date(year, 12, 31)),
+            summary=True,
+        )
+        print(df)
+        df['Year'] = year  # Add a new column for the year
+        dataframes.append(df)
+
+    # Concatenate all dataframes
+    rtn_all_years = pd.concat(dataframes, ignore_index=True)
+
+    # Optionally, set the 'Year' column as the index if it exists
+    #rtn_all_years.set_index('Year', inplace=True)
+
+    # Save the DataFrame to a CSV file
+    rtn_all_years.to_csv(args.results_folder / 'life_expectancy_estimates.csv', index=True)
+
+    # Plot odd indices (for "F")
+    ax.plot(rtn_all_years.index[1::2], rtn_all_years.iloc[1::2, 0], marker='o', color='blue', label="F")
+
+    # Plot even indices (for "M")
+    ax.plot(rtn_all_years.index[0::2], rtn_all_years.iloc[0::2, 0], marker='o', color='green', label="M")
+
+    ax.legend(loc='lower right')
+    ax.xlabel('Year')
+    ax.ylim(0,75)
+    ax.ylabel('Life Expectancy')
+    ax.title('Life Expectancy Over Years')
+    fig.tight_layout()
+    plt.savefig(make_graph_file_name("Life_expectancy_over_years"))
+    plt.close(fig)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -695,43 +888,3 @@ if __name__ == "__main__":
         resourcefilepath=Path('./resources')
     )
 
-
-dataframes = []
-
-for year in range(2010, int(max_year) -1):
-    df = get_life_expectancy_estimates(
-        results_folder=args.results_folder,
-        target_period=(datetime.date(year, 1, 1), datetime.date(year, 12, 31)),
-        summary=True,
-    )
-    print(df)
-    df['Year'] = year  # Add a new column for the year
-    dataframes.append(df)
-
-# Concatenate all dataframes
-rtn_all_years = pd.concat(dataframes, ignore_index=True)
-
-# Optionally, set the 'Year' column as the index if it exists
-#rtn_all_years.set_index('Year', inplace=True)
-
-# Save the DataFrame to a CSV file
-rtn_all_years.to_csv(args.results_folder / 'life_expectancy_estimates.csv', index=True)
-
-print(rtn_all_years.columns)
-
-# Assuming 'life_expectancy' is the column of interest
-plt.figure(figsize=(10, 6))
-
-# Plot odd indices (for "F")
-plt.plot(rtn_all_years.index[1::2], rtn_all_years.iloc[1::2, 0], marker='o', color='blue', label="F")
-
-# Plot even indices (for "M")
-plt.plot(rtn_all_years.index[0::2], rtn_all_years.iloc[0::2, 0], marker='o', color='green', label="M")
-
-plt.legend(loc='lower right')
-plt.xlabel('Year')
-plt.ylim(0,75)
-plt.ylabel('Life Expectancy')
-plt.title('Life Expectancy Over Years')
-plt.grid(True)
-plt.savefig(args.results_folder /'life_expectancy_over_years.png')
