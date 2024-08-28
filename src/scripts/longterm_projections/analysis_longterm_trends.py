@@ -1,13 +1,4 @@
 """
-Plot to demonstrate correspondence between model and data outputs wrt births, population size and total deaths.
-
-This uses the results of the Scenario defined in:
-
-src/scripts/calibration_analyses/scenarios/long_run_no_diseases.py
-
-or
-
-src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py
 
 """
 import argparse
@@ -116,7 +107,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.set_ylabel("Population Size (millions)")
     ax.set_xlim(2010, int(max_year))
     ax.xaxis.set_major_formatter(FormatStrFormatter('%.0f'))
-    ax.set_ylim(0, 30)
+    ax.set_ylim(0, 40)
     ax.legend()
     fig.tight_layout()
     plt.savefig(make_graph_file_name("Pop_Over_Time"))
