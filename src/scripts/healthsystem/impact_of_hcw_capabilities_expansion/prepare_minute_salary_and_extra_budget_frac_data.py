@@ -52,9 +52,9 @@ assert four_cadres_cost.cost_frac.sum() == 1
 # We confirmed/can prove that in such expansion scenarios of two/three/four cadres,
 # the annual scale up factors are actually equal for cadres,
 # equal to 1 + annual extra cost / total current cost of two/three/four cadres.
-# One possible issue is that Pharmacy cost has only small fractions in all multi-cadre scenarios,
+# todo: One possible issue is that Pharmacy cost has only small fractions in all multi-cadre scenarios,
 # as its current fraction is small; we have estimated that Pharmacy cadre is extremely in shortage,
-# thus these scenarios might still face huge shortages.
+# thus these scenarios might still face huge shortages (However, we can not estimate hcw shortage in mode 2?).
 cadres = ['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy']
 combination_list = ['']
 for n in range(1, len(cadres)+1):

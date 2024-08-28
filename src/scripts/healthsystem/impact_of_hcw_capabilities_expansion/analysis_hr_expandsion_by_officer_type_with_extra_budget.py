@@ -208,6 +208,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         Return a series of yearly scale up factors for four cadres - Clinical, DCSA, Nursing_and_Midwifery, Pharmacy,
         with index of year and value of list of the four scale up factors.
         """
+        # todo: once job re-run, update columns name as the logger recorded: year_of_scale_up, scale_up_factor
         _df = _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD), ['Year of scaling up', 'Scale up factor']]
         return pd.Series(
             _df['Scale up factor'].values, index=_df['Year of scaling up']
@@ -584,7 +585,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     plt.close(fig)
 
     # todo
-    # Do update healthsystem HRScaling logger: year_of_scale_up, scale_up_factor, and get_scale_up_factor function here
     # Plot comparison results: there are negative changes of some appts and causes, try increase runs and see
     # As we have 16 scenarios in total, \
     # design comparison groups of scenarios to examine marginal/combined productivity of cadres
