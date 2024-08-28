@@ -548,9 +548,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         axis=1
     )
 
-
-
-
     # PLOT DALYS over target period with CI
     name_of_plot = f'DALYS, {target_period()}'
     fig, ax = do_line_plot_with_ci(
@@ -578,8 +575,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
         fig.show()
         plt.close(fig)
-
-
 
 
 if __name__ == "__main__":
