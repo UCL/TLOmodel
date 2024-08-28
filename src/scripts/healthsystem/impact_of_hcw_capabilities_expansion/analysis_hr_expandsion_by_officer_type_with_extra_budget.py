@@ -574,7 +574,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    name_of_plot = f'Cost per every DALYs averted, {target_period()}'
+    name_of_plot = f'Cost per DALY averted, {target_period()}'
     fig, ax = do_bar_plot_with_ci(CE, xticklabels_horizontal_and_wrapped=True,
                                   put_labels_in_legend=True)
     ax.set_title(name_of_plot)
