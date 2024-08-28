@@ -84,7 +84,7 @@ class HRHExpansionByCadreWithExtraBudget(BaseScenario):
                 # "scale_to_effective_capabilities": True,  # todo: TBC; will this change the capabilities of 2019?
                 "year_mode_switch": self.YEAR_OF_CHANGE,
                 'cons_availability': 'default',
-                'cons_availability_postSwitch': 'all',
+                'cons_availability_postSwitch': 'all',  # todo: how to argue for this setting?
                 'year_cons_availability_switch': self.YEAR_OF_CHANGE,
                 'yearly_HR_scaling_mode': 'no_scaling',
                 'start_year_HR_expansion_by_officer_type': self.YEAR_OF_CHANGE,
