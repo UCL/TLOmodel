@@ -29,7 +29,7 @@ from tlo.analysis.utils import (
 
 PREFIX_ON_FILENAME = '2'
 
-max_year = "2040"
+max_year = 2019
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     # Declare path for output graphs from this script
     make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}.png"  # noqa: E731
@@ -399,7 +399,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         plt.close(fig)
 
         # Describe the burden with respect to wealth quintile:
-        TARGET_PERIOD = (Date(2015, 1, 1), Date(max_year, 12, 31))
+        TARGET_PERIOD = (Date(2015, 1, 1), Date(2019, 12, 31))
 
         def get_total_num_dalys_by_wealth_and_label(_df):
             """Return the total number of DALYS in the TARGET_PERIOD by wealth and cause label."""
@@ -455,12 +455,50 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
         plt.close(fig)
 
+        # Overall deaths and DALYs
+        all_causes = gbd \
+            .loc[(period == period) & (gbd['measure_name'] == what)] \
+            .assign(frac_cause=lambda df: df['mean'] / df['mean'].sum()) \
+            .groupby(by=['cause_name', 'label'])['frac_cause'].sum() \
+            .sort_values(ascending=False)
+
+
+        outcomes = outcome_by_age_pt['GBD'][("mean")]
+        causes_modelled_overall = (outcomes.sum().sum())
+        causes_modelled_by_sex_and_age = (outcomes.sum(axis=1))
+        fig, ax = plt.subplots()
+        for sex in sexes:
+            causes_modelled_by_sex_and_age.loc[(sex, slice(None))].plot(
+                ax=ax,
+                color=get_color_cause_of_death_or_daly_label('Other'),
+                linestyle=':' if sex == 'F' else '-',
+                label=sexname(sex),
+                lw=5,
+            )
+        ax.axhline(causes_modelled_overall, color='b',
+                   label=f'Overall: {round(100 * causes_modelled_overall)}%')
+        ax.legend(loc='upper right')
+        ax.set_ylim(0, 1.0)
+        xticks = causes_modelled_by_sex_and_age.index.levels[1]
+        ax.set_xticks(range(len(xticks)))
+        ax.set_xticklabels(xticks, rotation=90)
+        ax.grid(axis='y')
+        ax.set_xlabel('Age-Group')
+        ax.set_ylabel('Causes')
+        ax.set_title(f"{what} Represented in the Model")
+        fig.tight_layout()
+        plt.savefig(make_graph_file_name(f"Overall_death_DALYs_{what}_{period}_coverage"))
+        plt.close(fig)
+
     # %% Make graphs for each of Deaths and DALYS for a specific period
     # make_std_graphs(what='Deaths', period='2010-2014')
     # make_std_graphs(what='DALYs', period='2010-2014')
 
+
     make_std_graphs(what='DALYs', period=f'2015-{max_year}')
     make_std_graphs(what='Deaths', period=f'2015-{max_year}')
+
+
 
 
 if __name__ == "__main__":
@@ -470,6 +508,6 @@ if __name__ == "__main__":
 
     apply(
         results_folder=args.results_folder,
-        outpug_folder=args.results_folder,
+        output_folder=args.results_folder,
         resourcefilepath=Path('./resources')
     )
