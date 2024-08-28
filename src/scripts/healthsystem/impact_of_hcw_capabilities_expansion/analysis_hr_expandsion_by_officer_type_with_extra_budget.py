@@ -276,11 +276,28 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     total_staff = pd.DataFrame(integrated_scale_up_factor.mul(curr_hr.values, axis=1))
     total_cost = pd.DataFrame(total_staff.mul(salary.values, axis=1))
-    # total_staff['all_four_cadres'] = total_staff.sum(axis=1)
+    total_staff['all_four_cadres'] = total_staff.sum(axis=1)
     total_cost['all_four_cadres'] = total_cost.sum(axis=1)
 
-    # extra_staff = pd.DataFrame(total_staff.subtract(total_staff.loc['s_1'], axis=1).drop(index='s_1').all_four_cadres)
     extra_cost = pd.DataFrame(total_cost.subtract(total_cost.loc['s_1'], axis=1).drop(index='s_1').all_four_cadres)
+
+    extra_staff_by_cadre = pd.DataFrame(
+        total_staff.subtract(total_staff.loc['s_1'], axis=1).drop(index='s_1').drop(columns='all_four_cadres')
+    )
+    extra_cost_by_cadre = pd.DataFrame(
+        total_cost.subtract(total_cost.loc['s_1'], axis=1).drop(index='s_1').drop(columns='all_four_cadres')
+    )
+
+    # As checked below, the increase percentages per cadre should be equal to each other and to the overall percentage
+    # because we set the extra budget fractions the same as the current cost distribution. Especially, in the scenario
+    # of expanding all four cadres, the yearly percentage increase if 4.2%, which is exactly the budget increasing rate.
+    # staff_increase_percents = pd.DataFrame(
+    #     total_staff.subtract(
+    #         total_staff.loc['s_1'], axis=1
+    #     ).divide(
+    #         total_staff.loc['s_1'], axis=1
+    #     ).multiply(100).drop(index='s_1')
+    # )
 
     # check total cost calculated is increased as expected - approximate float of a fraction can sacrifice some budget
     # todo: to run the following checks once the scenarios are confirmed and re-run
@@ -414,6 +431,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         cause: CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.get(cause, np.nan)
         for cause in num_dalys_by_cause_summarized.columns
     }
+    officer_category_color = {
+        'Clinical': 'blue',
+        'DCSA': 'orange',
+        'Nursing_and_Midwifery': 'red',
+        'Pharmacy': 'green'
+    }
 
     # plot absolute numbers for scenarios
 
@@ -452,6 +475,38 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     xtick_labels = [substitute_labels[v] for v in num_appts_summarized_in_millions.index]
     ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
     plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Appointment type', title_fontsize='small',
+               fontsize='small', reverse=True)
+    plt.title(name_of_plot)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
+    name_of_plot = f'Number of staff by cadre, {target_period()}'
+    total_staff_to_plot = (total_staff / 1000).drop(columns='all_four_cadres')
+    fig, ax = plt.subplots()
+    total_staff_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
+    ax.set_ylabel('Thousands', fontsize='small')
+    ax.set(xlabel=None)
+    xtick_labels = [substitute_labels[v] for v in total_staff_to_plot.index]
+    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
+    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
+               fontsize='small', reverse=True)
+    plt.title(name_of_plot)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
+    name_of_plot = f'Total budget in USD dollars by cadre, {target_period()}'
+    total_cost_to_plot = (total_cost / 1e6).drop(columns='all_four_cadres')
+    fig, ax = plt.subplots()
+    total_cost_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
+    ax.set_ylabel('Millions', fontsize='small')
+    ax.set(xlabel=None)
+    xtick_labels = [substitute_labels[v] for v in total_cost_to_plot.index]
+    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
+    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
                fontsize='small', reverse=True)
     plt.title(name_of_plot)
     fig.tight_layout()
@@ -506,6 +561,38 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                                   put_labels_in_legend=True)
     ax.set_title(name_of_plot)
     ax.set_ylabel('(Millions)')
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
+    name_of_plot = f'Extra staff by cadre, {target_period()}'
+    extra_staff_by_cadre_to_plot = extra_staff_by_cadre / 1e3
+    fig, ax = plt.subplots()
+    extra_staff_by_cadre_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
+    ax.set_ylabel('Thousands', fontsize='small')
+    ax.set(xlabel=None)
+    xtick_labels = [substitute_labels[v] for v in extra_staff_by_cadre_to_plot.index]
+    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
+    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
+               fontsize='small')
+    plt.title(name_of_plot)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
+    name_of_plot = f'Extra budget by cadre, {target_period()}'
+    extra_cost_by_cadre_to_plot = extra_cost_by_cadre / 1e6
+    fig, ax = plt.subplots()
+    extra_cost_by_cadre_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
+    ax.set_ylabel('Millions', fontsize='small')
+    ax.set(xlabel=None)
+    xtick_labels = [substitute_labels[v] for v in extra_cost_by_cadre_to_plot.index]
+    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
+    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
+               fontsize='small')
+    plt.title(name_of_plot)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     fig.show()
@@ -590,7 +677,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # design comparison groups of scenarios to examine marginal/combined productivity of cadres
     # To design more scenarios so that Pharmacy cadre can be expanded more than the 16 scenarios?
     # As it is analysis of 10 year results, it would be better to consider increasing annual/minute salary?
+    # To plot time series of staff and budget in the target period to show \
+    # how many staff and how much budget to increase yearly?
     # Get and plot services by short treatment id?
+    # Later, to explain the cause of differences in scenarios, might consider hcw time flow?
 
 
 if __name__ == "__main__":
