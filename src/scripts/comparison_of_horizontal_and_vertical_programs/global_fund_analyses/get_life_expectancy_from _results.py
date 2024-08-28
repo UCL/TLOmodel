@@ -1,23 +1,23 @@
+"""
+this script uses outputs from scenario_hss_elements_gf or
+scenario_vertical_programs_with_and_without_hss_gf
+and produces a series of life expectancy estimates for three time periods
+results are output into an excel file in results_folder
+
+call function in terminal using:
+python
+src/scripts/comparison_of_horizontal_and_vertical_programs/global_fund_analyses/get_life_expectancy_from _results.py
+results HSS
+
+"""
+
 
 from pathlib import Path
 import pandas as pd
 import datetime
 import argparse
 from typing import Tuple
-
-from tlo import Date
-from tlo.analysis.utils import get_scenario_outputs
 from tlo.analysis.life_expectancy import get_life_expectancy_estimates
-
-
-outputspath = Path("./outputs")
-
-# Find results_folder associated with a given batch_file (and get most recent [-1])
-results_folder = get_scenario_outputs("scenario_hss_elements_gf.py", outputspath)
-
-results_folder = Path('/Users/tmangal/PycharmProjects/TLOmodel/outputs/hss_elements-2024-08-21T125348Z')
-
-results_folder = Path('/Users/tmangal/PycharmProjects/TLOmodel/outputs/t.mangal@imperial.ac.uk/hss_elements-2024-08-19T105018Z')
 
 
 def apply(results_folder: Path, output_folder: Path, HSS_or_HTM: str):
@@ -26,6 +26,7 @@ def apply(results_folder: Path, output_folder: Path, HSS_or_HTM: str):
 
     :param results_folder: Path to stored results
     :param output_folder: set to store outputs in same folder as results_folder
+    :param HSS_or_HTM: select either 'HTM' or 'HSS' to determine which param_names to import
     :return: an excel workbook with multiple sheet containing life expectancy estimates across each draw
     for men and women separately
     """
@@ -45,9 +46,7 @@ def apply(results_folder: Path, output_folder: Path, HSS_or_HTM: str):
 
         return tuple(e._scenarios.keys())
 
-
     param_names = get_parameter_names_from_scenario_file()
-
 
     # Define the target periods
     periods = {
@@ -85,10 +84,13 @@ def apply(results_folder: Path, output_folder: Path, HSS_or_HTM: str):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("results_folder", type=Path)
+    parser.add_argument("HSS_or_HTM", type=str, choices=['HSS', 'HTM'], help="Specify either 'HSS' or 'HTM'")
     args = parser.parse_args()
 
     apply(
         results_folder=args.results_folder,
         output_folder=args.results_folder,
-        resourcefilepath=Path('./resources')
+        HSS_or_HTM=args.HSS_or_HTM
     )
+
+
