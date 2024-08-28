@@ -3043,8 +3043,8 @@ class HRExpansionByOfficerType(Event, PopulationScopeEventMixin):
                                         'Clinical, DCSA, Nursing_and_Midwifery, Pharmacy - '
                                         'given fractions of an extra budget',
                             data={
-                                'Scale up factor': [sf_clinical, sf_dcsa, sf_nursing, sf_pharmacy],
-                                'Year of scaling up': self.sim.date.year,
+                                'scale_up_factor': [sf_clinical, sf_dcsa, sf_nursing, sf_pharmacy],
+                                'year_of_scale_up': self.sim.date.year,
                             }
                             )
 
