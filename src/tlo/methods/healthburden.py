@@ -675,22 +675,22 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
     This event runs every month and asks each disease module to report the prevalence of each disease
     during the previous month.
     """
-
+    test = True
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))
+        if self.test:
+            super().__init__(module, frequency=DateOffset(days=1))
+        else:
+            super().__init__(module, frequency=DateOffset(months=1))
 
     def apply(self, population):
         if not self.module.recognised_modules_names or not self.module.causes_of_disability:
             return
 
-        prevalence_from_each_disease_module = pd.DataFrame()
         # Calculate the population size
         population_size = len(self.sim.population.props[self.sim.population.props['is_alive']])
 
         # Create a DataFrame with one row and assign the population size
         prevalence_from_each_disease_module = pd.DataFrame({'population': [population_size]})
-        print("population",len(self.sim.population.props[self.sim.population.props['is_alive']]))
-        print(prevalence_from_each_disease_module['population'])
         for disease_module_name in self.module.recognised_modules_names:
             if disease_module_name in ['NewbornOutcomes', 'PostnatalSupervisor', 'Mockitis', 'DiseaseThatCausesA', 'ChronicSyndrome']:
                 continue
