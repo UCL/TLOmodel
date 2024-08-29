@@ -284,8 +284,6 @@ def test_arithmetic_of_disability_aggregation_calcs(seed):
 def test_arithmetic_of_dalys_calcs(seed):
     """Check that life-years lost are being computed and combined with years lived with disability correctly"""
 
-    rfp = Path(os.path.dirname(__file__)) / '../resources'
-
     class DiseaseThatCausesA(Module):
         """Disease that will:
           * impose disability on person_id=0 at the point 25% through the year;
@@ -356,8 +354,6 @@ def test_airthmetic_of_lifeyearslost(seed, tmpdir):
     """Check that a death causes the right number of life-years-lost to be logged and in the right age-groups (when
     there is no stacking by age or time)."""
 
-    rfp = Path(os.path.dirname(__file__)) / '../resources'
-
     start_date = Date(2010, 1, 1)
     sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     sim.register(
@@ -400,8 +396,6 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
     """Check that the computation of 'stacked' LifeYearsLost and DALYS is done correctly (i.e., when all the
     future life-years lost are allocated to the year of death (stacked by time); or when all future life-year lost are
     allocated to the year of death and age of death (stacked by age and time)."""
-
-    rfp = Path(os.path.dirname(__file__)) / '../resources'
 
     class DiseaseThatCausesA(Module):
         """Disease that will:

@@ -6,14 +6,17 @@ from tlo.methods import (
     demography,
     depression,
     enhanced_lifestyle,
+    epi,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
+    hiv,
     labour,
     newborn_outcomes,
     postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
+    tb,
 )
 
 
@@ -35,15 +38,16 @@ def run():
 
     # Basic arguments required for the simulation
     start_date = Date(2010, 1, 1)
-    end_date = Date(2014, 7, 1)
-    pop_size = 10000
+    end_date = Date(2011, 7, 1)
+    pop_size = 1000
+
+
+    # Path to the resource files used by the disease and intervention methods
+    resourcefilepath = "./resources"
 
     # This creates the Simulation instance for this run. Because we"ve passed the `seed` and
     # `log_config` arguments, these will override the default behaviour.
-    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
-
-    # Path to the resource files used by the disease and intervention methods
-    resources = "./resources"
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, resourcefilepath=resourcefilepath)
 
     # We register all modules in a single call to the register method, calling once with multiple
     # objects. This is preferred to registering each module in multiple calls because we will be
@@ -51,19 +55,22 @@ def run():
     # Register the appropriate modules
 
     sim.register(
-        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resources),
-        demography.Demography(resourcefilepath=resources),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
-        healthsystem.HealthSystem(resourcefilepath=resources, disable=True),
-        symptommanager.SymptomManager(resourcefilepath=resources),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
-        healthburden.HealthBurden(resourcefilepath=resources),
-        contraception.Contraception(resourcefilepath=resources),
-        labour.Labour(resourcefilepath=resources),
-        newborn_outcomes.NewbornOutcomes(resourcefilepath=resources),
-        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resources),
-        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resources),
-        depression.Depression(resourcefilepath=resources),
+        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(),
+        demography.Demography(),
+        enhanced_lifestyle.Lifestyle(),
+        healthsystem.HealthSystem(disable=True),
+        symptommanager.SymptomManager(),
+        healthseekingbehaviour.HealthSeekingBehaviour(),
+        healthburden.HealthBurden(),
+        contraception.Contraception(),
+        labour.Labour(),
+        newborn_outcomes.NewbornOutcomes(),
+        pregnancy_supervisor.PregnancySupervisor(),
+        postnatal_supervisor.PostnatalSupervisor(),
+        depression.Depression(),
+        hiv.Hiv(),
+        tb.Tb(),
+        epi.Epi()
     )
 
     sim.make_initial_population(n=pop_size)
