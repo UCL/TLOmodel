@@ -59,7 +59,8 @@ class HealthBurden(Module):
         'Age_Limit_For_YLL': Parameter(
             Types.REAL, 'The age up to which deaths are recorded as having induced a lost of life years'),
         'gbd_causes_of_disability': Parameter(
-            Types.LIST, 'List of the strings of causes of disability defined in the GBD data')
+            Types.LIST, 'List of the strings of causes of disability defined in the GBD data'),
+        'test': Parameter(Types.BOOL,'Set to True if this is testing the calculations of the prevalence logger')
     }
 
     PROPERTIES = {}
@@ -72,6 +73,7 @@ class HealthBurden(Module):
         #                       ghe2019_daly-methods.pdf?sfvrsn=31b25009_7
         p['gbd_causes_of_disability'] = set(pd.read_csv(
             Path(self.resourcefilepath) / 'gbd' / 'ResourceFile_CausesOfDALYS_GBD2019.csv', header=None)[0].values)
+        p['test'] = False
 
     def initialise_population(self, population):
         pass
@@ -91,7 +93,6 @@ class HealthBurden(Module):
         age_index = self.sim.modules['Demography'].AGE_RANGE_CATEGORIES
         wealth_index = sim.modules['Lifestyle'].PROPERTIES['li_wealth'].categories
         year_index = list(range(self.sim.start_date.year, self.sim.end_date.year + 1))
-
         self.multi_index_for_age_and_wealth_and_time = pd.MultiIndex.from_product(
             [sex_index, age_index, wealth_index, year_index], names=['sex', 'age_range', 'li_wealth', 'year'])
 
@@ -120,11 +121,17 @@ class HealthBurden(Module):
 
         # 4) Launch the DALY and Prevalence Logger to run every month, starting with the end of the first month of simulation
         sim.schedule_event(Get_Current_DALYS(self), sim.date + DateOffset(months=1))
-        sim.schedule_event(Get_Current_Prevalence(self), sim.date + DateOffset(months=1))
+        test = self.parameters['test']
+        if test:
+            sim.schedule_event(Get_Current_Prevalence(self), sim.date + DateOffset(days=0))
+            print("daily")
+        else:
+            sim.schedule_event(Get_Current_Prevalence(self), sim.date + DateOffset(months=1))
 
         # 5) Schedule `Healthburden_WriteToLog` that will write to log annually
         last_day_of_the_year = Date(sim.date.year, 12, 31)
         sim.schedule_event(Healthburden_WriteToLog(self), last_day_of_the_year)
+
 
     def process_causes_of_disability(self):
         """
@@ -675,12 +682,13 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
     This event runs every month and asks each disease module to report the prevalence of each disease
     during the previous month.
     """
-    test = True
     def __init__(self, module):
-        if self.test:
-            super().__init__(module, frequency=DateOffset(days=1))
+        test = module.parameters['test']
+        if test:
+            super().__init__(module, frequency=DateOffset(days=0))
+            print("daily 2")
         else:
-            super().__init__(module, frequency=DateOffset(months=1))
+            super().__init__(module, frequency=DateOffset(months=0))
 
     def apply(self, population):
         if not self.module.recognised_modules_names or not self.module.causes_of_disability:
@@ -725,7 +733,6 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
         # (Nb. this will add columns that are not otherwise present and add values to columns where they are.)
 
         self.module.prevalence_of_diseases = prevalence_from_each_disease_module
-        print(self.module.prevalence_of_diseases)
 
 class Healthburden_WriteToLog(RegularEvent, PopulationScopeEventMixin):
     """ This event runs every year, as the last event on the last day of the year, and writes to the log the YLD, YLL
