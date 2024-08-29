@@ -1073,10 +1073,11 @@ def get_mappers_in_fullmodel(resourcefilepath: Path, outputpath: Path):
     fullmodel."""
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=0, log_config={'filename': 'test_log', 'directory': outputpath})
+    sim = Simulation(start_date=start_date, seed=0,
+                     log_config={'filename': 'test_log', 'directory': outputpath}, resourcefilepath=resourcefilepath)
 
     from tlo.methods.fullmodel import fullmodel
-    sim.register(*fullmodel(resourcefilepath=resourcefilepath))
+    sim.register(*fullmodel())
 
     sim.make_initial_population(n=10_000)
     sim.simulate(end_date=start_date)
@@ -1129,7 +1130,7 @@ def get_parameters_for_status_quo() -> Dict:
             "equip_availability": "all",  # <--- NB. Existing calibration is assuming all equipment is available
         },
     }
-    
+
 def get_parameters_for_standard_mode2_runs() -> Dict:
     """
     Returns a dictionary of parameters and their updated values to indicate
