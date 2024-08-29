@@ -4,10 +4,13 @@ import argparse
 import textwrap
 from pathlib import Path
 from typing import Tuple
-
+import colorcet as cc
+import matplotlib.pyplot as plt
+import seaborn as sns
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
+import matplotlib.colors as mcolors
 
 from tlo import Date
 from tlo.analysis.utils import (
@@ -39,6 +42,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         """Return total number of Deaths (total within the TARGET_PERIOD)
         """
         return pd.Series(data=len(_df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)]))
+
 
     def get_num_dalys(_df):
         """Return total number of DALYS (Stacked) by label (total within the TARGET_PERIOD).
@@ -88,7 +92,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             results_folder,
             module='tlo.methods.demography',
             key='death',
-            custom_generate_series=get_num_deaths,
+            custom_generate_series=get_num_deaths_by_cause_label,
             do_scaling=True
         ),
             only_mean=True,
@@ -114,15 +118,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     df_all_years_deaths = pd.DataFrame(all_years_data_deaths)
 
     num_colors = len(df_all_years_DALYS.index)
-    colors = plt.cm.get_cmap('tab20', num_colors)
-
+    colours1 = plt.cm.get_cmap('tab20b', num_colors)(np.linspace(0, 1, 15))
+    colours2 = plt.cm.get_cmap('tab20c', num_colors)(np.linspace(0, 1, 10))
+    colours = np.vstack((colours1, colours2))
     # Plotting
     fig, axes = plt.subplots(1, 2, figsize=(25, 10))  # Two panels side by side
 
     # Panel A: Deaths
     for i, condition in enumerate(df_all_years_deaths.index):
         axes[0].plot(df_all_years_deaths.columns, df_all_years_deaths.loc[condition], marker='o',
-                     label=condition, color=colors(i / num_colors))
+                     label=condition, color=colours[i])
     axes[0].set_title('Panel A: Deaths by Cause')
     axes[0].set_xlabel('Year')
     axes[0].set_ylabel('Number of deaths')
@@ -131,7 +136,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # Panel B: DALYs
     for i, condition in enumerate(df_all_years_DALYS.index):
         axes[1].plot(df_all_years_DALYS.columns, df_all_years_DALYS.loc[condition], marker='o', label=condition,
-                     color=colors(i / num_colors))
+                     color=colours[i])
     axes[1].set_title('Panel B: DALYs by cause')
     axes[1].set_xlabel('Year')
     axes[1].set_ylabel('Number of DALYs')
@@ -140,6 +145,34 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # Save the figure with both panels
     fig.savefig(make_graph_file_name('Trend_Deaths_and_DALYs_by_condition_All_Years_Panel_A_and_B'))
+    plt.close(fig)
+
+    # make normalized figrues
+    fig, axes = plt.subplots(1, 2, figsize=(25, 10))  # Two panels side by side
+
+    df_death_normalized = df_all_years_deaths.div(df_all_years_deaths.iloc[:, 0], axis=0)
+    df_DALY_normalized = df_all_years_DALYS.div(df_all_years_DALYS.iloc[:, 0], axis=0)
+
+    for i, condition in enumerate(df_death_normalized.index):
+        axes[0].plot(df_death_normalized.columns, df_death_normalized.loc[condition], marker='o',
+                     label=condition, color=colours[i])
+    axes[0].set_title('Panel A: Deaths by Cause')
+    axes[0].set_xlabel('Year')
+    axes[0].set_ylabel('Fold change in deaths compared to 2010')
+    axes[0].grid(True)
+
+    # Panel B: DALYs
+    for i, condition in enumerate(df_DALY_normalized.index):
+        axes[1].plot(df_DALY_normalized.columns, df_DALY_normalized.loc[condition], marker='o', label=condition,
+                     color=colours[i])
+    axes[1].set_title('Panel B: DALYs by cause')
+    axes[1].set_xlabel('Year')
+    axes[1].set_ylabel('Fold change in DALYs compared to 2010')
+    axes[1].legend(title='Condition', bbox_to_anchor=(1.05, 1), loc='upper left')
+    axes[1].grid(True)
+
+    # Save the figure with both panels
+    fig.savefig(make_graph_file_name('Trend_Deaths_and_DALYs_by_condition_All_Years_Normalized_Panel_A_and_B'))
     plt.close(fig)
 
 
