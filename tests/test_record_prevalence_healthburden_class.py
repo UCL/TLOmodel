@@ -11,18 +11,44 @@ resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 outputpath = Path("./outputs/")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 12)
+end_date = Date(2011, 1, 12)
 
 popsize = 1000
 seed = 42
-tolerance_percentage = 0.15 # attempt to account for differences in recording times
 do_sim = True
-tolerance_days =  10
 def check_dtypes(simulation):
     df = simulation.population.props
     orig = simulation.population.new_row
     assert (df.dtypes == orig.dtypes).all()
 
+
+def find_closest_recording(prevalence, target_date, log_value, column_name):
+    """
+    Finds the closest recording log in the prevalence DataFrame based on the target date.
+
+    Parameters:
+    prevalence (DataFrame): The DataFrame containing the records.
+    target_date (datetime): The date to find the closest log for.
+    log_value (any): The value to validate against the closest log.
+    column_name (str): The name of the column to compare.
+
+    Returns:
+    None
+    """
+    closest_recording_log = None
+    smallest_diff = float('inf')  # Initialize with a large number
+
+    for i in range(len(prevalence)):
+        function_date = prevalence['date'][i]
+        date_diff = abs((target_date - function_date).days)
+
+        if date_diff < smallest_diff:
+            smallest_diff = date_diff
+            closest_recording_log = prevalence[column_name][i]
+
+    if closest_recording_log is not None:
+        # Assert statement for validation
+        assert log_value == closest_recording_log
 def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
     """Check that everything runs in the simple cases of Mockitis and Chronic Syndrome and that outputs are as expected."""
 
@@ -31,13 +57,14 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
             resourcefilepath=resourcefilepath,
             use_simplified_births=False,))
     sim.make_initial_population(n=popsize)
+    sim.modules['HealthBurden'].parameters['test'] = True
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
     output = parse_log_file(sim.log_filepath)
 
     prevalence = output['tlo.methods.healthburden']['prevalence_of_diseases']
     max_date_in_prevalence = max(prevalence['date'])
-    # HIV
+    assert len(prevalence['date'])
     # HIV
     prevalence_HIV_log = output['tlo.methods.hiv']['summary_inc_and_prev_for_adults_and_children_and_fsw']
 
@@ -55,13 +82,13 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
                 function_date = prevalence['date'][i]
                 date_diff = abs((target_date - function_date).days)
 
-                if date_diff < smallest_diff and date_diff < tolerance_days:
+                if date_diff < smallest_diff:
                     smallest_diff = date_diff
                     closest_recording_log = prevalence['Hiv'][i]
-
-            if smallest_diff < tolerance_days and closest_recording_log is not None:
+            assert smallest_diff == 0
+            if closest_recording_log is not None:
                 # Assert statement for validation
-                assert abs(regular_log_value - closest_recording_log) < tolerance_percentage * regular_log_value
+                assert regular_log_value == closest_recording_log
 
     # TB
 
@@ -84,14 +111,9 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
                 if date_diff < smallest_diff:
                     smallest_diff = date_diff
                     closest_recording_log = prevalence['Tb'][i]
-                    closest_date = function_date
             # Check if the closest date difference is within 20 days
-            if smallest_diff < tolerance_days and closest_recording_log is not None:
-                print(closest_date)
-                print(target_date)
-                # Assert statement for validation
-
-                #assert abs(regular_log_value - closest_recording_log) < tolerance_percentage * regular_log_value
+            if closest_recording_log is not None:
+                assert regular_log_value == closest_recording_log
 
     # Oesophageal Cancer
     prevalence_oesophageal_cancer_log = output['tlo.methods.oesophagealcancer']["summary_stats"]
@@ -107,9 +129,8 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
             prevalence_oesophageal_cancer_log["total_stage4"][j]
         )
 
-        if target_date > max_date_in_prevalence:
-            continue
-        else:
+        if target_date <= max_date_in_prevalence:
+
             closest_recording_log = None
             smallest_diff = float('inf')  # Initialize with a large number
 
@@ -117,30 +138,26 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
                 function_date = prevalence['date'][i]
                 date_diff = abs((target_date - function_date).days)
 
-                if date_diff < smallest_diff and date_diff < tolerance_days:
+                if date_diff < smallest_diff:
                     smallest_diff = date_diff
                     closest_recording_log = prevalence['OesophagealCancer'][i] * prevalence['population'][
                         i]  # Record totals only
 
+        assert smallest_diff == 0
             # Check if the closest date difference is within 20 days
-            if smallest_diff < tolerance_days and closest_recording_log is not None:
-                # Assert statement for validation
-                assert abs(regular_log_value - closest_recording_log) < tolerance_percentage * regular_log_value
+        if closest_recording_log is not None:
+            # Assert statement for validation
+            assert regular_log_value == closest_recording_log
 
     # Other Adult Cancers (OAC)
     prevalence_oac_cancer_log = output['tlo.methods.other_adult_cancers']["summary_stats"]
 
     for j in range(len(prevalence_oac_cancer_log)):
         target_date = prevalence_oac_cancer_log['date'][j]
-        regular_log_value = (
-            prevalence_oac_cancer_log["total_site_confined"][j] +
-            prevalence_oac_cancer_log["total_local_ln"][j] +
-            prevalence_oac_cancer_log["total_metastatic"][j]
-        )
+        regular_log_value = prevalence_oac_cancer_log["n_diagnosed"][j]
 
-        if target_date > max_date_in_prevalence:
-            continue
-        else:
+        if target_date <= max_date_in_prevalence:
+
             closest_recording_log = None
             smallest_diff = float('inf')  # Initialize with a large number
 
@@ -148,19 +165,19 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
                 function_date = prevalence['date'][i]
                 date_diff = abs((target_date - function_date).days)
 
-                if date_diff < smallest_diff and date_diff < tolerance_days:
+                if date_diff < smallest_diff:
                     smallest_diff = date_diff
-                    closest_recording_log = prevalence['OtherAdultCancer'][i] * prevalence['population'][i]  # Record totals only
+                    closest_recording_log = prevalence['OtherAdultCancer'][i] * prevalence['population'][
+                        i]  # Record totals only
 
-            if date_diff < smallest_diff and date_diff < tolerance_days:
-                # Handle the case where closest_recording_log is zero
-                if closest_recording_log == 0:
-                    # Special case: if both values are zero, the assertion is considered true
-                    assert regular_log_value == 0
-                else:
-                    # Normal case: check if the difference is within tolerance
-                    assert abs(regular_log_value - closest_recording_log) < tolerance_percentage * regular_log_value
+            assert function_date == target_date
 
+        assert smallest_diff == 0
+        assert function_date == target_date
+
+            # Check if the closest date difference is within 20 days
+        if closest_recording_log is not None:
+            assert regular_log_value == closest_recording_log
     # Bladder Cancer
     prevalence_bladder_cancer_log = output['tlo.methods.bladder_cancer']["summary_stats"]
 
@@ -182,18 +199,13 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
             function_date = prevalence['date'][i]
             date_diff = abs((target_date - function_date).days)
 
-            if date_diff < smallest_diff and date_diff < tolerance_days:
+            if date_diff < smallest_diff:
                 smallest_diff = date_diff
                 closest_recording_log = prevalence['BladderCancer'][i] * prevalence['population'][
                     i]  # Record totals only
 
-        if smallest_diff < tolerance_days and closest_recording_log is not None:
-
-            # Handle the case where closest_recording_log is zero
-            if closest_recording_log == 0:
-                assert regular_log_value == 0
-            else:
-                assert abs(regular_log_value - closest_recording_log) < tolerance_percentage * regular_log_value
+        if closest_recording_log is not None:
+            assert regular_log_value == closest_recording_log
 
     # Breast Cancer
     prevalence_breast_cancer_log = output['tlo.methods.breast_cancer']["summary_stats"]
@@ -218,13 +230,12 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
                 function_date = prevalence['date'][i]
                 date_diff = abs((target_date - function_date).days)
 
-                if date_diff < smallest_diff and date_diff < tolerance_days:
+                if date_diff < smallest_diff:
                     smallest_diff = date_diff
                     closest_recording_log = prevalence['BreastCancer'][i] * prevalence['population'][i]
 
-            if date_diff < smallest_diff and date_diff < tolerance_days:
-
-                    assert abs(regular_log_value - closest_recording_log) < tolerance_percentage * regular_log_value
+            if closest_recording_log is not None:
+                assert regular_log_value == closest_recording_log
 
     # Prostate Cancer
     prevalence_prostate_cancer_log = output['tlo.methods.prostate_cancer']["summary_stats"]
@@ -247,18 +258,13 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
                 function_date = prevalence['date'][i]
                 date_diff = abs((target_date - function_date).days)
 
-                if date_diff < smallest_diff and date_diff < tolerance_days:
+                if date_diff < smallest_diff:
                     smallest_diff = date_diff
                     closest_recording_log = prevalence['ProstateCancer'][i] * prevalence['population'][
                         i]  # Record totals only
 
-            if smallest_diff < tolerance_days and closest_recording_log is not None:
-
-                # Handle the case where closest_recording_log is zero
-                if closest_recording_log == 0:
-                    assert regular_log_value == 0
-                else:
-                    assert abs(regular_log_value - closest_recording_log) < tolerance_percentage * regular_log_value
+            if closest_recording_log is not None:
+                    assert regular_log_value == closest_recording_log
 
     # Malaria - only clinical prevalence
     prevalence_malaria_log = output['tlo.methods.malaria']["prevalence"]
@@ -277,18 +283,12 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
                 function_date = prevalence['date'][i]
                 date_diff = abs((target_date - function_date).days)
 
-                if date_diff < smallest_diff and date_diff < tolerance_days:
+                if date_diff < smallest_diff:
                     smallest_diff = date_diff
                     closest_recording_log = prevalence['Malaria'][i]
 
-            if smallest_diff < tolerance_days and closest_recording_log is not None:
-
-                # Handle the case where closest_recording_log is zero
-                if closest_recording_log == 0:
-                    assert regular_log_value == 0
-                else:
-                    assert regular_log_value != closest_recording_log # the regular log only records the clinical prevalence so can expect to be different
-
+            if closest_recording_log is not None:
+                assert regular_log_value == closest_recording_log
 
     # Cardiometabolic disorders
     conditions =  ['diabetes','hypertension', 'chronic_kidney_disease', 'chronic_lower_back_pain',
@@ -311,18 +311,12 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
                     function_date = prevalence['date'][i]
                     date_diff = abs((target_date - function_date).days)
 
-                    if date_diff < smallest_diff and date_diff < tolerance_days:
+                    if date_diff < smallest_diff:
                         smallest_diff = date_diff
                         closest_recording_log = prevalence[condition][i]
 
-                if smallest_diff < tolerance_days and closest_recording_log is not None:
-
-                    # Handle the case where closest_recording_log is zero
-                    if closest_recording_log == 0:
-                        assert regular_log_value == 0
-                    else:
-                        assert regular_log_value > closest_recording_log # log only records adult population
-
+                if closest_recording_log is not None:
+                    assert regular_log_value == closest_recording_log
 
     # Neonatal deaths
 
@@ -350,18 +344,12 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
                 function_date = prevalence['date'][i]
                 date_diff = abs((target_date - function_date).days)
 
-                if date_diff < smallest_diff and date_diff < tolerance_days:
+                if date_diff < smallest_diff:
                     smallest_diff = date_diff
                     closest_recording_log = prevalence['NMR'][i] * prevalence['live_births'][i]
 
-            if smallest_diff < tolerance_days and closest_recording_log is not None:
-
-                # Handle the case where closest_recording_log is zero
-                if closest_recording_log == 0:
-                    assert regular_log_value == 0
-                else:
-                    assert regular_log_value != closest_recording_log # the regular log only records the clinical prevalence so can expect to be different
-
+            if closest_recording_log is not None:
+                assert regular_log_value == closest_recording_log
 
        # maternal deaths
         properties_dead = output['tlo.methods.demography.detail']['properties_of_deceased_persons']
@@ -423,12 +411,12 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
                 function_date = prevalence['date'][i]
                 date_diff = abs((target_date - function_date).days)
 
-                if date_diff < smallest_diff and date_diff < tolerance_days:
+                if date_diff < smallest_diff:
                     smallest_diff = date_diff
                     closest_recording_log = prevalence['MMR'][i] * prevalence['live_births'][i]
 
-            if smallest_diff < tolerance_days and closest_recording_log is not None:
-                    assert regular_log_value != closest_recording_log # the regular log only records the clinical prevalence so can expect to be different
+            if closest_recording_log is not None:
+                assert regular_log_value != closest_recording_log # the regular log only records the clinical prevalence so can expect to be different
     # Antenatal still births
     if 'antenatal_stillbirth' in output.get('tlo.methods.pregnancy_supervisor', {}):
         antenatal_stillbirths = output['tlo.methods.pregnancy_supervisor']['antenatal_stillbirth']
@@ -451,12 +439,12 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
                     function_date = prevalence['date'][i]
                     date_diff = abs((target_date - function_date).days)
 
-                    if date_diff < smallest_diff and date_diff < tolerance_days:
+                    if date_diff < smallest_diff:
                         smallest_diff = date_diff
                         closest_recording_log = prevalence['Antenatal stillbirth'][i]
 
-                if smallest_diff < tolerance_days and closest_recording_log is not None:
-                    assert regular_log_value != closest_recording_log  # the regular log only records the clinical prevalence so can expect to be different
+                if closest_recording_log is not None:
+                    assert regular_log_value == closest_recording_log
 
     # Intrapartum still births
     if 'intrapartum_stillbirth' in output.get('tlo.methods.labour', {}):
@@ -480,13 +468,13 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
                     function_date = prevalence['date'][i]
                     date_diff = abs((target_date - function_date).days)
 
-                    if date_diff < smallest_diff and date_diff < tolerance_days:
+                    if date_diff < smallest_diff:
                         smallest_diff = date_diff
                         closest_recording_log = prevalence['Intrapartum stillbirth'][i]
 
-                if smallest_diff < tolerance_days and closest_recording_log is not None:
-                    assert regular_log_value != closest_recording_log  # the regular log only records the clinical prevalence so can expect to be different
+                if closest_recording_log is not None:
+                    assert regular_log_value == closest_recording_log
 
 
-tmpdir = 'outputs/'
-test_run_with_healthburden_with_dummy_diseases(tmpdir, seed)
+#tmpdir = 'outputs/'
+#test_run_with_healthburden_with_dummy_diseases(tmpdir, seed)
