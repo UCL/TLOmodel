@@ -46,7 +46,7 @@ if not os.path.exists(figurespath):
     os.makedirs(figurespath)
 
 # Declare period for which the results will be generated (defined inclusively)
-TARGET_PERIOD = (Date(2015, 1, 1), Date(2015, 12, 31))
+TARGET_PERIOD = (Date(2015, 1, 1), Date(2015, 12, 31)) # TODO allow for multi-year costing
 def drop_outside_period(_df):
     """Return a dataframe which only includes for which the date is within the limits defined by TARGET_PERIOD"""
     return _df.drop(index=_df.index[~_df['date'].between(*TARGET_PERIOD)])
@@ -58,6 +58,8 @@ def drop_outside_period(_df):
 results_folder = get_scenario_outputs('long_run_all_diseases.py', outputfilepath)[0] # impact_of_cons_regression_scenarios
 #results_folder = get_scenario_outputs('scenario_impact_of_consumables_availability.py', outputfilepath)[0] # impact_of_cons_regression_scenarios
 equipment_results_folder = Path('./outputs/sakshi.mohan@york.ac.uk/021_long_run_all_diseases_run')
+consumables_results_folder = Path('./outputs/sakshi.mohan@york.ac.uk/impact_of_consumables_scenarios-2024-06-11T204007Z/')
+# TODO When the costing module is ready the above results_folder should be the same for the calculation of all costs
 
 # check can read results from draw=0, run=0
 log_equipment = load_pickled_dataframes(equipment_results_folder, 0, 0)
@@ -272,37 +274,44 @@ def plot_components_of_cost_category(_df, cost_category, figname_suffix):
 
 plot_components_of_cost_category(_df = scenario_cost, cost_category = 'Human Resources for Health', figname_suffix = "all_staff")
 
+# %%
 # 2. Consumables cost
-def get_counts_of_items_requested(_df):
-    _df = drop_outside_period(_df)
-    counts_of_available = defaultdict(int)
-    counts_of_not_available = defaultdict(int)
-    for _, row in _df.iterrows():
-        for item, num in row['Item_Available'].items():
-            counts_of_available[item] += num
-        for item, num in row['Item_NotAvailable'].items():
-            counts_of_not_available[item] += num
-    return pd.concat(
-        {'Available': pd.Series(counts_of_available), 'Not_Available': pd.Series(counts_of_not_available)},
-        axis=1
-    ).fillna(0).astype(int).stack()
+def get_quantity_of_consumables_dispensed(results_folder):
+    def get_counts_of_items_requested(_df):
+        _df = drop_outside_period(_df)
+        counts_of_available = defaultdict(int)
+        counts_of_not_available = defaultdict(int)
+        for _, row in _df.iterrows():
+            for item, num in row['Item_Available'].items():
+                counts_of_available[item] += num
+            for item, num in row['Item_NotAvailable'].items():
+                counts_of_not_available[item] += num
+        return pd.concat(
+            {'Available': pd.Series(counts_of_available), 'Not_Available': pd.Series(counts_of_not_available)},
+            axis=1
+        ).fillna(0).astype(int).stack()
 
-cons_req = extract_results(
-        results_folder,
-        module='tlo.methods.healthsystem.summary',
-        key='Consumables',
-        custom_generate_series=get_counts_of_items_requested,
-        do_scaling=True)
+    cons_req = summarize(
+        extract_results(
+            results_folder,
+            module='tlo.methods.healthsystem.summary',
+            key='Consumables',
+            custom_generate_series=get_counts_of_items_requested,
+            do_scaling=True)
+    )
 
-# Mean of results across the runs
-summarized_cons_req = summarize(cons_req, only_mean=True, collapse_columns=True)
+    cons_dispensed = cons_req.xs("Available", level=1) # only keep actual dispensed amount, i.e. when available
+    return cons_dispensed
 
-# Consumables to be costed (only available, i.e. dispensed)
-cons_dispensed = summarized_cons_req.xs("Available", level=1)
-cons_dispensed = cons_dispensed.to_dict()
-cons_dispensed = defaultdict(int, {int(key): value for key, value in cons_dispensed.items()}) # Convert string keys to integer
+consumables_dispensed_under_perfect_availability = get_quantity_of_consumables_dispensed(consumables_results_folder)[9]
+consumables_dispensed_under_perfect_availability = consumables_dispensed_under_perfect_availability['mean'].to_dict() # TODO incorporate uncertainty in estimates
+consumables_dispensed_under_perfect_availability = defaultdict(int, {int(key): value for key, value in
+                                   consumables_dispensed_under_perfect_availability.items()})  # Convert string keys to integer
+consumables_dispensed_under_default_availability = get_quantity_of_consumables_dispensed(consumables_results_folder)[0]
+consumables_dispensed_under_default_availability = consumables_dispensed_under_default_availability['mean'].to_dict()
+consumables_dispensed_under_default_availability = defaultdict(int, {int(key): value for key, value in
+                                   consumables_dispensed_under_default_availability.items()})  # Convert string keys to integer
 
-# 2.1 Cost of consumables dispensed
 # Load consumables cost data
 unit_price_consumable = workbook_cost["consumables"]
 unit_price_consumable = unit_price_consumable.rename(columns=unit_price_consumable.iloc[0])
@@ -310,12 +319,108 @@ unit_price_consumable = unit_price_consumable[['Item_Code', 'Final_price_per_cho
 unit_price_consumable = unit_price_consumable[unit_price_consumable['Item_Code'].notna()]
 unit_price_consumable = unit_price_consumable.set_index('Item_Code').to_dict(orient='index')
 
+# 2.1 Cost of consumables dispensed
+#---------------------------------------------------------------------------------------------------------------
 # Multiply number of items needed by cost of consumable
-cost_of_consumables_dispensed = dict(zip(unit_price_consumable, (unit_price_consumable[key]['Final_price_per_chosen_unit (USD, 2023)'] *
-                                                cons_dispensed[key] for key in cons_dispensed)))
-total_cost_of_consumables_dispensed = sum(value for value in cost_of_consumables_dispensed.values() if not np.isnan(value))
+cost_of_consumables_dispensed_under_perfect_availability = {key: unit_price_consumable[key]['Final_price_per_chosen_unit (USD, 2023)'] * consumables_dispensed_under_perfect_availability[key] for
+                                                            key in unit_price_consumable if key in consumables_dispensed_under_perfect_availability}
+total_cost_of_consumables_dispensed_under_perfect_availability = sum(value for value in cost_of_consumables_dispensed_under_perfect_availability.values() if not np.isnan(value))
+
+cost_of_consumables_dispensed_under_default_availability = {key: unit_price_consumable[key]['Final_price_per_chosen_unit (USD, 2023)'] * consumables_dispensed_under_default_availability[key] for
+                                                            key in unit_price_consumable if key in consumables_dispensed_under_default_availability}
+total_cost_of_consumables_dispensed_under_default_availability = sum(value for value in cost_of_consumables_dispensed_under_default_availability.values() if not np.isnan(value))
+
+# Extract cost to .csv
+def convert_dict_to_dataframe(_dict):
+    data = {key: [value] for key, value in _dict.items()}
+    _df = pd.DataFrame(data)
+    return _df
+
+cost_perfect_df = convert_dict_to_dataframe(cost_of_consumables_dispensed_under_perfect_availability).T.rename(columns = {0:"cost_perfect_availability"}).round(2)
+cost_default_df = convert_dict_to_dataframe(cost_of_consumables_dispensed_under_default_availability).T.rename(columns = {0:"cost_default_availability"}).round(2)
+unit_cost_df = convert_dict_to_dataframe(unit_price_consumable).T.rename(columns = {0:"unit_cost"})
+dispensed_default_df = convert_dict_to_dataframe(consumables_dispensed_under_default_availability).T.rename(columns = {0:"dispensed_default_availability"}).round(2)
+dispensed_perfect_df = convert_dict_to_dataframe(consumables_dispensed_under_perfect_availability).T.rename(columns = {0:"dispensed_perfect_availability"}).round(2)
+
+full_cons_cost_df = pd.merge(cost_perfect_df, cost_default_df, left_index=True, right_index=True)
+full_cons_cost_df = pd.merge(full_cons_cost_df, unit_cost_df, left_index=True, right_index=True)
+full_cons_cost_df = pd.merge(full_cons_cost_df, dispensed_default_df, left_index=True, right_index=True)
+full_cons_cost_df = pd.merge(full_cons_cost_df, dispensed_perfect_df, left_index=True, right_index=True)
+full_cons_cost_df = full_cons_cost_df.reset_index().rename(columns = {'index' : 'item_code'})
+full_cons_cost_df.to_csv(figurespath / 'consumables_cost_220824.csv')
+
+# Import data for plotting
+tlo_lmis_mapping = pd.read_csv(path_for_new_resourcefiles / 'ResourceFile_consumables_matched.csv', low_memory=False, encoding="ISO-8859-1")[['item_code', 'module_name']]
+tlo_lmis_mapping = tlo_lmis_mapping[~tlo_lmis_mapping['item_code'].duplicated(keep='first')]
+full_cons_cost_df = pd.merge(full_cons_cost_df, tlo_lmis_mapping, on = 'item_code', how = 'left', validate = "1:1")
+
+def recategorize_modules_into_consumable_categories(_df):
+    _df['category'] = _df['module_name'].str.lower()
+    cond_RH = (_df['category'].str.contains('care_of_women_during_pregnancy')) | \
+              (_df['category'].str.contains('labour'))
+    cond_newborn = (_df['category'].str.contains('newborn'))
+    cond_newborn[cond_newborn.isna()] = False
+    cond_childhood = (_df['category'] == 'acute lower respiratory infections') | \
+                     (_df['category'] == 'measles') | \
+                     (_df['category'] == 'diarrhoea')
+    cond_rti = _df['category'] == 'road traffic injuries'
+    cond_cancer = _df['category'].str.contains('cancer')
+    cond_cancer[cond_cancer.isna()] = False
+    cond_ncds = (_df['category'] == 'epilepsy') | \
+                (_df['category'] == 'depression')
+    _df.loc[cond_RH, 'category'] = 'reproductive_health'
+    _df.loc[cond_cancer, 'category'] = 'cancer'
+    _df.loc[cond_newborn, 'category'] = 'neonatal_health'
+    _df.loc[cond_childhood, 'category'] = 'other_childhood_illnesses'
+    _df.loc[cond_rti, 'category'] = 'road_traffic_injuries'
+    _df.loc[cond_ncds, 'category'] = 'ncds'
+    cond_condom = _df['item_code'] == 2
+    _df.loc[cond_condom, 'category'] = 'contraception'
+
+    # Create a general consumables category
+    general_cons_list = [300, 33, 57, 58, 141, 5, 6, 10, 21, 23, 127, 24, 80, 93, 144, 149, 154, 40, 67, 73, 76,
+                         82, 101, 103, 88, 126, 135, 71, 98, 171, 133, 134, 244, 247, 49, 112, 1933, 1960]
+    cond_general = _df['item_code'].isin(general_cons_list)
+    _df.loc[cond_general, 'category'] = 'general'
+
+    return _df
+
+full_cons_cost_df = recategorize_modules_into_consumable_categories(full_cons_cost_df)
+# Fill gaps in categories
+dict_for_missing_categories =  {292: 'acute lower respiratory infections',  293: 'acute lower respiratory infections',
+                                307: 'reproductive_health', 2019: 'reproductive_health',
+                                2678: 'tb', 1171: 'other_childhood_illnesses', 1237: 'cancer', 1239: 'cancer'}
+# Use map to create a new series from item_code to fill missing values in category
+mapped_categories = full_cons_cost_df['item_code'].map(dict_for_missing_categories)
+# Use fillna on the 'category' column to fill missing values using the mapped_categories
+full_cons_cost_df['category'] = full_cons_cost_df['category'].fillna(mapped_categories)
+
+# Bar plot of cost by category
+def plot_cost_by_consumable_category(_df, suffix):
+    pivot_df = _df.groupby('category')['cost_' + suffix].sum().reset_index()
+    pivot_df['cost_' + suffix] = pivot_df['cost_' + suffix]/1e6
+    total_cost = round(_df['cost_' + suffix].sum(), 0)
+    total_cost = f"{total_cost:,.0f}"
+    ax  = pivot_df.plot(kind='bar', stacked=False, title='Consumables cost by Category/Program')
+    # Setting x-ticks explicitly
+    #ax.set_xticks(range(len(pivot_df['category'])))
+    ax.set_xticklabels(pivot_df['category'], rotation=45)
+    plt.ylabel(f'US Dollars (millions)')
+    plt.title(f"Annual consumables cost by category (assuming {suffix})")
+    plt.xticks(rotation=90)
+    plt.yticks(rotation=0)
+    plt.text(x=0.5, y=-0.8, s=f"Total consumables cost =\n USD {total_cost}", transform=ax.transAxes,
+             horizontalalignment='center', fontsize=12, weight='bold', color='black')
+    plt.savefig(figurespath / f'consumables_cost_by_category_{suffix}.png', dpi=100,
+                bbox_inches='tight')
+    plt.close()
+
+plot_cost_by_consumable_category(full_cons_cost_df, 'perfect_availability')
+plot_cost_by_consumable_category(full_cons_cost_df, 'default_availability')
 
 # 2.2 Cost of consumables stocked (quantity needed for what is dispensed)
+#---------------------------------------------------------------------------------------------------------------
+# Stocked amount should be higher than dispensed because of i. excess capacity, ii. theft, iii. expiry
 # Estimate the stock to dispensed ratio from OpenLMIS data
 lmis_consumable_usage = pd.read_csv(path_for_new_resourcefiles / "ResourceFile_Consumables_availability_and_usage.csv")
 # Collapse individual facilities
