@@ -3008,6 +3008,8 @@ class HRExpansionByOfficerType(Event, PopulationScopeEventMixin):
         total_cost_pharmacy = daily_cost.loc[daily_cost.Officer_Type_Code == 'Pharmacy', 'Total_Cost_Per_Day'].sum()
 
         # get daily extra budget for this year = 4.2% * total cost
+        # todo: could make the default growth rate 0.042 as an explicit variable
+        #  so that we can also analyse impacts of different budget growth rates
         daily_extra_budget = 0.042*(total_cost_clinical + total_cost_dcsa + total_cost_nursing + total_cost_pharmacy)
 
         # get proportional daily extra budget for each of the four cadres
