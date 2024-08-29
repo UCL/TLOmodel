@@ -673,9 +673,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # todo
     # Plot comparison results: there are negative changes of some appts and causes, try increase runs and see.
+    # To design more scenarios so that Pharmacy cadre can be expanded more than the 16 scenarios
+    # and so that each cadre has different scale up factor (the one in more shortage will need to be scaled up more)?
     # As we have 16 scenarios in total, \
     # design comparison groups of scenarios to examine marginal/combined productivity of cadres.
-    # To design more scenarios so that Pharmacy cadre can be expanded more than the 16 scenarios?
     # As it is analysis of 10 year results, it would be better to consider increasing annual/minute salary?
     # To plot time series of staff and budget in the target period to show \
     # how many staff and how much budget to increase yearly (choose the best scenario to illustrate)?
