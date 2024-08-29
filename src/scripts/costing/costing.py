@@ -350,7 +350,7 @@ full_cons_cost_df = full_cons_cost_df.reset_index().rename(columns = {'index' : 
 full_cons_cost_df.to_csv(figurespath / 'consumables_cost_220824.csv')
 
 # Import data for plotting
-tlo_lmis_mapping = pd.read_csv(path_for_new_resourcefiles / 'ResourceFile_consumables_matched.csv', low_memory=False, encoding="ISO-8859-1")[['item_code', 'module_name']]
+tlo_lmis_mapping = pd.read_csv(path_for_new_resourcefiles / 'ResourceFile_consumables_matched.csv', low_memory=False, encoding="ISO-8859-1")[['item_code', 'module_name', 'consumable_name_tlo']]
 tlo_lmis_mapping = tlo_lmis_mapping[~tlo_lmis_mapping['item_code'].duplicated(keep='first')]
 full_cons_cost_df = pd.merge(full_cons_cost_df, tlo_lmis_mapping, on = 'item_code', how = 'left', validate = "1:1")
 
@@ -396,27 +396,36 @@ mapped_categories = full_cons_cost_df['item_code'].map(dict_for_missing_categori
 full_cons_cost_df['category'] = full_cons_cost_df['category'].fillna(mapped_categories)
 
 # Bar plot of cost by category
-def plot_cost_by_consumable_category(_df, suffix):
-    pivot_df = _df.groupby('category')['cost_' + suffix].sum().reset_index()
+def plot_consumable_cost(_df, suffix, groupby_var, top_x_values =  float('nan')):
+    pivot_df = _df.groupby(groupby_var)['cost_' + suffix].sum().reset_index()
     pivot_df['cost_' + suffix] = pivot_df['cost_' + suffix]/1e6
+    if math.isnan(top_x_values):
+        pass
+    else:
+        pivot_df = pivot_df.sort_values('cost_' + suffix, ascending = False)[1:top_x_values]
     total_cost = round(_df['cost_' + suffix].sum(), 0)
     total_cost = f"{total_cost:,.0f}"
-    ax  = pivot_df.plot(kind='bar', stacked=False, title='Consumables cost by Category/Program')
+    ax  = pivot_df['cost_' + suffix].plot(kind='bar', stacked=False, title=f'Consumables cost by {groupby_var}')
     # Setting x-ticks explicitly
     #ax.set_xticks(range(len(pivot_df['category'])))
-    ax.set_xticklabels(pivot_df['category'], rotation=45)
+    ax.set_xticklabels(pivot_df[groupby_var], rotation=45)
     plt.ylabel(f'US Dollars (millions)')
-    plt.title(f"Annual consumables cost by category (assuming {suffix})")
+    plt.title(f"Annual consumables cost by {groupby_var} (assuming {suffix})")
     plt.xticks(rotation=90)
     plt.yticks(rotation=0)
     plt.text(x=0.5, y=-0.8, s=f"Total consumables cost =\n USD {total_cost}", transform=ax.transAxes,
              horizontalalignment='center', fontsize=12, weight='bold', color='black')
-    plt.savefig(figurespath / f'consumables_cost_by_category_{suffix}.png', dpi=100,
+    plt.savefig(figurespath / f'consumables_cost_by_{groupby_var}_{suffix}.png', dpi=100,
                 bbox_inches='tight')
     plt.close()
 
-plot_cost_by_consumable_category(full_cons_cost_df, 'perfect_availability')
-plot_cost_by_consumable_category(full_cons_cost_df, 'default_availability')
+plot_consumable_cost(_df = full_cons_cost_df,suffix =  'perfect_availability', groupby_var = 'category')
+plot_consumable_cost(_df = full_cons_cost_df, suffix =  'default_availability', groupby_var = 'category')
+
+# Plot the 10 consumables with the highest cost
+plot_consumable_cost(_df = full_cons_cost_df,suffix =  'perfect_availability', groupby_var = 'consumable_name_tlo', top_x_values = 10)
+plot_consumable_cost(_df = full_cons_cost_df,suffix =  'default_availability', groupby_var = 'consumable_name_tlo', top_x_values = 10)
+
 
 # 2.2 Cost of consumables stocked (quantity needed for what is dispensed)
 #---------------------------------------------------------------------------------------------------------------
