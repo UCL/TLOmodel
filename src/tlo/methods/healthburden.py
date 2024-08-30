@@ -60,7 +60,7 @@ class HealthBurden(Module):
             Types.REAL, 'The age up to which deaths are recorded as having induced a lost of life years'),
         'gbd_causes_of_disability': Parameter(
             Types.LIST, 'List of the strings of causes of disability defined in the GBD data'),
-        'test': Parameter(Types.BOOL,'Set to True if this is testing the calculations of the prevalence logger')
+        'test': Parameter(Types.BOOL, 'Set to True if this is testing the calculations of the prevalence logger')
     }
 
     PROPERTIES = {}
@@ -120,18 +120,15 @@ class HealthBurden(Module):
         self.process_causes_of_dalys()
 
         # 4) Launch the DALY and Prevalence Logger to run every month, starting with the end of the first month of simulation
+        # 5) Schedule `Healthburden_WriteToLog` that will write to log annually
         sim.schedule_event(Get_Current_DALYS(self), sim.date + DateOffset(months=1))
-        test = self.parameters['test']
-        print(test)
-        if test == True:
+        if self.parameters['test']:
             sim.schedule_event(Get_Current_Prevalence(self), sim.date + DateOffset(days=1))
-            sim.schedule_event(Healthburden_WriteToLog(self), sim.date+ DateOffset(days=1))
+            sim.schedule_event(Healthburden_WriteToLog(self), sim.date + DateOffset(days=1))
         else:
             sim.schedule_event(Get_Current_Prevalence(self), sim.date + DateOffset(months=1))
-            # 5) Schedule `Healthburden_WriteToLog` that will write to log annually
             last_day_of_the_year = Date(sim.date.year, 12, 31)
             sim.schedule_event(Healthburden_WriteToLog(self), last_day_of_the_year)
-
 
     def process_causes_of_disability(self):
         """
@@ -179,6 +176,7 @@ class HealthBurden(Module):
         3) Output to the log mappers for causes of disability to the label
         """
         ...
+
         # 1) Collect causes of death and disability that are reported by each disease module,
         #    merging the gbd_causes declared for deaths or disabilities under the same label,
 
@@ -203,13 +201,13 @@ class HealthBurden(Module):
             return merged_causes
 
         causes_of_death = collect_causes_from_disease_modules(
-                all_modules=self.sim.modules.values(),
-                collect='CAUSES_OF_DEATH',
-                acceptable_causes=self.sim.modules['Demography'].gbd_causes_of_death)
+            all_modules=self.sim.modules.values(),
+            collect='CAUSES_OF_DEATH',
+            acceptable_causes=self.sim.modules['Demography'].gbd_causes_of_death)
         causes_of_disability = collect_causes_from_disease_modules(
-                all_modules=self.sim.modules.values(),
-                collect='CAUSES_OF_DISABILITY',
-                acceptable_causes=set(self.parameters['gbd_causes_of_disability']))
+            all_modules=self.sim.modules.values(),
+            collect='CAUSES_OF_DISABILITY',
+            acceptable_causes=set(self.parameters['gbd_causes_of_disability']))
 
         causes_of_death_and_disability = merge_dicts_of_causes(
             causes_of_death,
@@ -325,10 +323,10 @@ class HealthBurden(Module):
             """Returns pd.Series which is the same as in the argument `_yll` except that the multi-index has been
             expanded to include sex and li_wealth and rearranged so that it matched the expected multi-index format
             (sex/age_range/li_wealth/year)."""
-            return pd.DataFrame(_yll)\
-                     .assign(sex=sex, li_wealth=wealth)\
-                     .set_index(['sex', 'li_wealth'], append=True)\
-                     .reorder_levels(['sex', 'age_range', 'li_wealth', 'year'])[_yll.name]
+            return pd.DataFrame(_yll) \
+                .assign(sex=sex, li_wealth=wealth) \
+                .set_index(['sex', 'li_wealth'], append=True) \
+                .reorder_levels(['sex', 'age_range', 'li_wealth', 'year'])[_yll.name]
 
         assert self.years_life_lost.index.equals(self.multi_index_for_age_and_wealth_and_time)
         assert self.years_life_lost_stacked_time.index.equals(self.multi_index_for_age_and_wealth_and_time)
@@ -356,19 +354,19 @@ class HealthBurden(Module):
                 end_date=(
                     date_of_birth + pd.DateOffset(years=self.parameters['Age_Limit_For_YLL']) - pd.DateOffset(days=1)),
                 date_of_birth=date_of_birth
-            ).groupby(level=1).sum()\
-             .assign(year=date_of_death.year)\
-             .set_index(['year'], append=True)['person_years']\
-             .pipe(_format_for_multi_index)
+            ).groupby(level=1).sum() \
+                .assign(year=date_of_death.year) \
+                .set_index(['year'], append=True)['person_years'] \
+                .pipe(_format_for_multi_index)
 
         # Get the years of live lost "stacked by age and time", whereby all the life-years lost up to the age_limit are
         # ascribed to the age of death and to the year of death. This is computed by collapsing the age-dimension of
         # `yll_stacked_by_time` onto the age(-range) of death.
         age_range_to_stack_to = age_range
-        yll_stacked_by_age_and_time = pd.DataFrame(yll_stacked_by_time.groupby(level=[0, 2, 3]).sum())\
-                                        .assign(age_range=age_range_to_stack_to)\
-                                        .set_index(['age_range'], append=True)['person_years']\
-                                        .reorder_levels(['sex', 'age_range', 'li_wealth', 'year'])
+        yll_stacked_by_age_and_time = pd.DataFrame(yll_stacked_by_time.groupby(level=[0, 2, 3]).sum()) \
+            .assign(age_range=age_range_to_stack_to) \
+            .set_index(['age_range'], append=True)['person_years'] \
+            .reorder_levels(['sex', 'age_range', 'li_wealth', 'year'])
 
         # Add the years-of-life-lost from this death to the overall YLL dataframe keeping track
         if cause_of_death not in self.years_life_lost.columns:
@@ -421,9 +419,9 @@ class HealthBurden(Module):
         """Write to the log the YLL, YLD and DALYS for a specific year.
         N.B. This is called at the end of the simulation as well as at the end of each year, so we need to check that
         the year is not being written to the log more than once."""
-
-        if year in self._years_written_to_log:
-            return  # Skip if the year has already been logged.
+        if not self.parameters['test']:
+            if year in self._years_written_to_log:
+                return  # Skip if the year has already been logged
 
         def summarise_results_for_this_year(df, level=[0, 1]) -> pd.DataFrame:
             """Return pd.DataFrame that gives the summary of the `df` for the `year` by certain levels in the df's
@@ -434,16 +432,6 @@ class HealthBurden(Module):
                 .sum() \
                 .reset_index() \
                 .assign(year=year)
-
-        def summarise_results_for_this_year_prevalence(df, level=[0, 1]) -> pd.DataFrame:
-            """Return pd.DataFrame that gives the summary of the `df` for the `year` by certain levels in the df's
-            multi-index. The `level` argument gives a list of levels to use in `groupby`: e.g., level=[0,1] gives a
-            summary of sex/age-group; and level=[2] gives a summary only by wealth category."""
-            return df.loc[(year)] \
-                     .groupby(level=level) \
-                     .sum() \
-                     .reset_index() \
-                     .assign(year=year)
 
         def log_df_line_by_line(key, description, df, force_cols=None) -> None:
             """Log each line of a dataframe to `logger.info`. Each row of the dataframe is one logged entry.
@@ -553,8 +541,8 @@ class HealthBurden(Module):
         log_df_line_by_line(
             key='prevalence_of_diseases',
             description='Prevalence of each disease.',
-            df=(self.prevalence_of_diseases),
-            force_cols= self.recognised_modules_names,
+            df=self.prevalence_of_diseases,
+            force_cols=self.recognised_modules_names,
         )
         self._years_written_to_log += [year]
 
@@ -657,7 +645,7 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
             ['sex', 'age_range', 'li_wealth', 'year'])
 
         # 5) Add the monthly summary to the overall dataframe for YearsLivedWithDisability
-        dalys_to_add = disability_monthly_summary.sum().sum()     # for checking
+        dalys_to_add = disability_monthly_summary.sum().sum()  # for checking
         dalys_current = self.module.years_lived_with_disability.sum().sum()  # for checking
 
         # (Nb. this will add columns that are not otherwise present and add values to columns where they are.)
@@ -669,24 +657,24 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
 
         # Merge into a dataframe with the correct multi-index (the multi-index from combine is subtly different)
         self.module.years_lived_with_disability = \
-            pd.DataFrame(index=self.module.multi_index_for_age_and_wealth_and_time)\
-              .merge(combined, left_index=True, right_index=True, how='left')
+            pd.DataFrame(index=self.module.multi_index_for_age_and_wealth_and_time) \
+                .merge(combined, left_index=True, right_index=True, how='left')
 
         # Check multi-index is in check and that the addition of DALYS has worked
         assert self.module.years_lived_with_disability.index.equals(self.module.multi_index_for_age_and_wealth_and_time)
         assert abs(self.module.years_lived_with_disability.sum().sum() - (dalys_to_add + dalys_current)) < 1e-5
         self.module.check_multi_index()
 
+
 class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
     """
     This event runs every month and asks each disease module to report the prevalence of each disease
     during the previous month.
     """
+
     def __init__(self, module):
-        test = module.parameters['test']
-        if test == True:
-            print(True)
-            super().__init__(module, frequency=DateOffset(days=0), priority=Priority.END_OF_DAY)
+        if module.parameters['test']:
+            super().__init__(module, frequency=DateOffset(days=1))
         else:
             super().__init__(module, frequency=DateOffset(months=1))
 
@@ -700,7 +688,8 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
         # Create a DataFrame with one row and assign the population size
         prevalence_from_each_disease_module = pd.DataFrame({'population': [population_size]})
         for disease_module_name in self.module.recognised_modules_names:
-            if disease_module_name in ['NewbornOutcomes', 'PostnatalSupervisor', 'Mockitis', 'DiseaseThatCausesA', 'ChronicSyndrome']:
+            if disease_module_name in ['NewbornOutcomes', 'PostnatalSupervisor', 'Mockitis', 'DiseaseThatCausesA',
+                                       'ChronicSyndrome']:
                 continue
 
             disease_module = self.sim.modules[disease_module_name]
@@ -719,10 +708,11 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
                 # Add the prevalence data as a new column to the DataFrame
                 prevalence_from_each_disease_module[column_name] = prevalence_from_disease_module.iloc[:, 0]
 
-        neonatal_maternal_mortality = pd.DataFrame(self.sim.modules['Demography'].report_prevalence()) # Already a dataframe
-        prevalence_from_each_disease_module['NMR'] = neonatal_maternal_mortality.iloc[:,0]
-        prevalence_from_each_disease_module['MMR'] = neonatal_maternal_mortality.iloc[:,1]
-        prevalence_from_each_disease_module['live_births'] = neonatal_maternal_mortality.iloc[:,2]
+        neonatal_maternal_mortality = pd.DataFrame(
+            self.sim.modules['Demography'].report_prevalence())  # Already a dataframe
+        prevalence_from_each_disease_module['NMR'] = neonatal_maternal_mortality.iloc[:, 0]
+        prevalence_from_each_disease_module['MMR'] = neonatal_maternal_mortality.iloc[:, 1]
+        prevalence_from_each_disease_module['live_births'] = neonatal_maternal_mortality.iloc[:, 2]
 
         prevalence_from_each_disease_module.drop(
             prevalence_from_each_disease_module.index.intersection(
@@ -732,12 +722,17 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
         )
         self.module.prevalence_of_diseases = prevalence_from_each_disease_module
 
+
 class Healthburden_WriteToLog(RegularEvent, PopulationScopeEventMixin):
     """ This event runs every year, as the last event on the last day of the year, and writes to the log the YLD, YLL
-    and DALYS accrued in that year."""
+    and DALYS accrued in that year.
+    Added test to log daily if it is a test"""
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(years=1), priority=Priority.END_OF_DAY)
+        if module.parameters['test']:
+            super().__init__(module, frequency=DateOffset(days=1))
+        else:
+            super().__init__(module, frequency=DateOffset(years=1), priority=Priority.END_OF_DAY)
 
     def apply(self, population):
         self.module.write_to_log(year=self.sim.date.year)
