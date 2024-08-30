@@ -122,15 +122,15 @@ class HealthBurden(Module):
         # 4) Launch the DALY and Prevalence Logger to run every month, starting with the end of the first month of simulation
         sim.schedule_event(Get_Current_DALYS(self), sim.date + DateOffset(months=1))
         test = self.parameters['test']
-        if test:
-            sim.schedule_event(Get_Current_Prevalence(self), sim.date + DateOffset(days=0))
-            print("daily")
+        print(test)
+        if test == True:
+            sim.schedule_event(Get_Current_Prevalence(self), sim.date + DateOffset(days=1))
+            sim.schedule_event(Healthburden_WriteToLog(self), sim.date+ DateOffset(days=1))
         else:
             sim.schedule_event(Get_Current_Prevalence(self), sim.date + DateOffset(months=1))
-
-        # 5) Schedule `Healthburden_WriteToLog` that will write to log annually
-        last_day_of_the_year = Date(sim.date.year, 12, 31)
-        sim.schedule_event(Healthburden_WriteToLog(self), last_day_of_the_year)
+            # 5) Schedule `Healthburden_WriteToLog` that will write to log annually
+            last_day_of_the_year = Date(sim.date.year, 12, 31)
+            sim.schedule_event(Healthburden_WriteToLog(self), last_day_of_the_year)
 
 
     def process_causes_of_disability(self):
@@ -684,11 +684,11 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
     """
     def __init__(self, module):
         test = module.parameters['test']
-        if test:
-            super().__init__(module, frequency=DateOffset(days=0))
-            print("daily 2")
+        if test == True:
+            print(True)
+            super().__init__(module, frequency=DateOffset(days=0), priority=Priority.END_OF_DAY)
         else:
-            super().__init__(module, frequency=DateOffset(months=0))
+            super().__init__(module, frequency=DateOffset(months=1))
 
     def apply(self, population):
         if not self.module.recognised_modules_names or not self.module.causes_of_disability:
@@ -730,8 +730,6 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
             ),
             axis=0, inplace=True
         )
-        # (Nb. this will add columns that are not otherwise present and add values to columns where they are.)
-
         self.module.prevalence_of_diseases = prevalence_from_each_disease_module
 
 class Healthburden_WriteToLog(RegularEvent, PopulationScopeEventMixin):
