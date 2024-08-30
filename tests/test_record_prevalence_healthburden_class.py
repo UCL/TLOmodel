@@ -76,7 +76,7 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
     output = parse_log_file(sim.log_filepath)
 
     prevalence = output['tlo.methods.healthburden']['prevalence_of_diseases']
-    max_date_in_prevalence = max(prevalence['date'])
+    #max_date_in_prevalence = max(prevalence['date'])
     log_prevalences_from_sim = log_prevalences_from_sim_func(sim)
 
     print(prevalence)
