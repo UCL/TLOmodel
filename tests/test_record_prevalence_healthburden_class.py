@@ -1,8 +1,5 @@
 import os
 from pathlib import Path
-
-#import pandas as pd
-
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods.fullmodel import fullmodel
