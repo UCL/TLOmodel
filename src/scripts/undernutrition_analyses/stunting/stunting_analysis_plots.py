@@ -13,7 +13,7 @@ from tlo.methods import demography, enhanced_lifestyle, healthsystem, simplified
 
 scenario_filename = 'stunting_analysis_scenario.py'
 outputspath = Path('./outputs/tbh03@ic.ac.uk')
-rfp = Path('./resources')
+resourcefilepath = './resources'
 
 # Find results folder (most recent run generated using that scenario_filename)
 results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
@@ -37,14 +37,14 @@ def __process(x):
 def __get_sim():
     """Return simulation object with Stunting and other necessary modules registered"""
     start_date = Date(2010, 1, 1)
-    resourcefilepath = Path('resources')
-    _sim = Simulation(start_date=start_date, seed=0)
+
+    _sim = Simulation(start_date=start_date, seed=0, resourcefilepath=resourcefilepath)
     _sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, ignore_cons_constraints=True),
-        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-        stunting.Stunting(resourcefilepath=resourcefilepath),
+        demography.Demography(),
+        enhanced_lifestyle.Lifestyle(),
+        healthsystem.HealthSystem(ignore_cons_constraints=True),
+        simplified_births.SimplifiedBirths(),
+        stunting.Stunting(),
         stunting.StuntingPropertiesOfOtherModules()
     )
     return _sim

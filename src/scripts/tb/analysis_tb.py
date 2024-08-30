@@ -41,7 +41,7 @@ This file to be updated in full when TB module is completed.
 # popsize = 500
 #
 # # Establish the simulation object
-# sim = Simulation(start_date=start_date, seed=0)
+# sim = Simulation(start_date=start_date, seed=0, resourcefilepath=resourcefilepath)
 #
 # # ----- Control over the types of intervention that can occur -----
 # # Make a list that contains the treatment_id that will be allowed. Empty list means nothing allowed.
@@ -49,24 +49,21 @@ This file to be updated in full when TB module is completed.
 # service_availability = ["*"]
 #
 # # Register the appropriate modules
-# sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+# sim.register(demography.Demography())
 # sim.register(
-#     healthsystem.HealthSystem(
-#         resourcefilepath=resourcefilepath,
-#         service_availability=service_availability,
-#         mode_appt_constraints=0,
+#     healthsystem.HealthSystem(service_availability=service_availability, mode_appt_constraints=0,
 #         ignore_cons_constraints=True,
 #         ignore_priority=True,
 #         capabilities_coefficient=1.0,
 #         disable=True,
 #     )
 # )  # disables the health system constraints so all HSI events run
-# sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-# sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-# sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-# sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-# sim.register(hiv.Hiv(resourcefilepath=resourcefilepath))
-# sim.register(tb.Tb(resourcefilepath=resourcefilepath))
+# sim.register(symptommanager.SymptomManager())
+# sim.register(healthburden.HealthBurden())
+# sim.register(contraception.Contraception())
+# sim.register(enhanced_lifestyle.Lifestyle())
+# sim.register(hiv.Hiv())
+# sim.register(tb.Tb())
 #
 # # Sets all modules to WARNING threshold, then alters hiv and tb to INFO
 # custom_levels = {
