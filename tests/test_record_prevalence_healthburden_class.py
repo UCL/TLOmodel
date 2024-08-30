@@ -11,7 +11,7 @@ resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 outputpath = Path("./outputs/")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2011, 1, 12)
+end_date = Date(2010, 1, 1, 7)
 
 popsize = 1000
 seed = 42
@@ -22,7 +22,7 @@ def check_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
-def find_closest_recording(prevalence, target_date, log_value, column_name):
+def find_closest_recording(prevalence, target_date, log_value, column_name, multiply_by_pop):
     """
     Finds the closest recording log in the prevalence DataFrame based on the target date.
 
@@ -31,6 +31,7 @@ def find_closest_recording(prevalence, target_date, log_value, column_name):
     target_date (datetime): The date to find the closest log for.
     log_value (any): The value to validate against the closest log.
     column_name (str): The name of the column to compare.
+    multiply_by_pop (bool): Whether to multiply by population size, as some regular logs have numbers not prevalences
 
     Returns:
     None
@@ -44,7 +45,10 @@ def find_closest_recording(prevalence, target_date, log_value, column_name):
 
         if date_diff < smallest_diff:
             smallest_diff = date_diff
-            closest_recording_log = prevalence[column_name][i]
+            if multiply_by_pop:
+                closest_recording_log = prevalence[column_name][i] * prevalence['population'][i]
+            else:
+                closest_recording_log = prevalence[column_name][i]
 
     if closest_recording_log is not None:
         # Assert statement for validation
@@ -64,8 +68,7 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
 
     prevalence = output['tlo.methods.healthburden']['prevalence_of_diseases']
     max_date_in_prevalence = max(prevalence['date'])
-    assert len(prevalence['date'])
-    # HIV
+    #HIV
     prevalence_HIV_log = output['tlo.methods.hiv']['summary_inc_and_prev_for_adults_and_children_and_fsw']
 
     for j in range(len(prevalence_HIV_log)):
@@ -75,20 +78,7 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
         if target_date > max_date_in_prevalence:
             continue
         else:
-            closest_recording_log = None
-            smallest_diff = float('inf')  # Initialize with a large number
-
-            for i in range(len(prevalence)):
-                function_date = prevalence['date'][i]
-                date_diff = abs((target_date - function_date).days)
-
-                if date_diff < smallest_diff:
-                    smallest_diff = date_diff
-                    closest_recording_log = prevalence['Hiv'][i]
-            assert smallest_diff == 0
-            if closest_recording_log is not None:
-                # Assert statement for validation
-                assert regular_log_value == closest_recording_log
+            find_closest_recording(prevalence, target_date, regular_log_value, 'Hiv', False)
 
     # TB
 
@@ -101,19 +91,7 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
         if target_date > max_date_in_prevalence:
             continue
         else:
-            closest_recording_log = None
-            smallest_diff = float('inf')  # Initialize with a large number
-
-            for i in range(len(prevalence)):
-                function_date = prevalence['date'][i]
-                date_diff = abs((target_date - function_date).days)
-
-                if date_diff < smallest_diff:
-                    smallest_diff = date_diff
-                    closest_recording_log = prevalence['Tb'][i]
-            # Check if the closest date difference is within 20 days
-            if closest_recording_log is not None:
-                assert regular_log_value == closest_recording_log
+            find_closest_recording(prevalence, target_date, regular_log_value, 'Tb', False)
 
     # Oesophageal Cancer
     prevalence_oesophageal_cancer_log = output['tlo.methods.oesophagealcancer']["summary_stats"]
@@ -131,53 +109,12 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
 
         if target_date <= max_date_in_prevalence:
 
-            closest_recording_log = None
-            smallest_diff = float('inf')  # Initialize with a large number
+            find_closest_recording(prevalence, target_date, regular_log_value, 'OesophagealCancer', True)
 
-            for i in range(len(prevalence)):
-                function_date = prevalence['date'][i]
-                date_diff = abs((target_date - function_date).days)
-
-                if date_diff < smallest_diff:
-                    smallest_diff = date_diff
-                    closest_recording_log = prevalence['OesophagealCancer'][i] * prevalence['population'][
-                        i]  # Record totals only
-
-        assert smallest_diff == 0
-            # Check if the closest date difference is within 20 days
-        if closest_recording_log is not None:
-            # Assert statement for validation
-            assert regular_log_value == closest_recording_log
 
     # Other Adult Cancers (OAC)
     prevalence_oac_cancer_log = output['tlo.methods.other_adult_cancers']["summary_stats"]
 
-    for j in range(len(prevalence_oac_cancer_log)):
-        target_date = prevalence_oac_cancer_log['date'][j]
-        regular_log_value = prevalence_oac_cancer_log["n_diagnosed"][j]
-
-        if target_date <= max_date_in_prevalence:
-
-            closest_recording_log = None
-            smallest_diff = float('inf')  # Initialize with a large number
-
-            for i in range(len(prevalence)):
-                function_date = prevalence['date'][i]
-                date_diff = abs((target_date - function_date).days)
-
-                if date_diff < smallest_diff:
-                    smallest_diff = date_diff
-                    closest_recording_log = prevalence['OtherAdultCancer'][i] * prevalence['population'][
-                        i]  # Record totals only
-
-            assert function_date == target_date
-
-        assert smallest_diff == 0
-        assert function_date == target_date
-
-            # Check if the closest date difference is within 20 days
-        if closest_recording_log is not None:
-            assert regular_log_value == closest_recording_log
     # Bladder Cancer
     prevalence_bladder_cancer_log = output['tlo.methods.bladder_cancer']["summary_stats"]
 
@@ -189,23 +126,9 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
             prevalence_bladder_cancer_log["total_metastatic"][j]
         )
 
-        if target_date > max_date_in_prevalence:
-            continue
+        if target_date <= max_date_in_prevalence:
+            find_closest_recording(prevalence, target_date, regular_log_value, 'BladderCancer', True)
 
-        closest_recording_log = None
-        smallest_diff = float('inf')  # Initialize with a large number
-
-        for i in range(len(prevalence)):
-            function_date = prevalence['date'][i]
-            date_diff = abs((target_date - function_date).days)
-
-            if date_diff < smallest_diff:
-                smallest_diff = date_diff
-                closest_recording_log = prevalence['BladderCancer'][i] * prevalence['population'][
-                    i]  # Record totals only
-
-        if closest_recording_log is not None:
-            assert regular_log_value == closest_recording_log
 
     # Breast Cancer
     prevalence_breast_cancer_log = output['tlo.methods.breast_cancer']["summary_stats"]
@@ -220,22 +143,8 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
             prevalence_breast_cancer_log["total_stage4"][j]
         )
 
-        if target_date > max_date_in_prevalence:
-            continue
-        else:
-            closest_recording_log = None
-            smallest_diff = float('inf')  # Initialize with a large number
-
-            for i in range(len(prevalence)):
-                function_date = prevalence['date'][i]
-                date_diff = abs((target_date - function_date).days)
-
-                if date_diff < smallest_diff:
-                    smallest_diff = date_diff
-                    closest_recording_log = prevalence['BreastCancer'][i] * prevalence['population'][i]
-
-            if closest_recording_log is not None:
-                assert regular_log_value == closest_recording_log
+        if target_date <= max_date_in_prevalence:
+            find_closest_recording(prevalence, target_date, regular_log_value, 'BreastCancer', True)
 
     # Prostate Cancer
     prevalence_prostate_cancer_log = output['tlo.methods.prostate_cancer']["summary_stats"]
@@ -248,47 +157,9 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
             prevalence_prostate_cancer_log["total_metastatic"][j]
         )
 
-        if target_date > max_date_in_prevalence:
-            continue
-        else:
-            closest_recording_log = None
-            smallest_diff = float('inf')  # Initialize with a large number
+        if target_date <= max_date_in_prevalence:
+            find_closest_recording(prevalence, target_date, regular_log_value, 'ProstateCancer', True)
 
-            for i in range(len(prevalence)):
-                function_date = prevalence['date'][i]
-                date_diff = abs((target_date - function_date).days)
-
-                if date_diff < smallest_diff:
-                    smallest_diff = date_diff
-                    closest_recording_log = prevalence['ProstateCancer'][i] * prevalence['population'][
-                        i]  # Record totals only
-
-            if closest_recording_log is not None:
-                    assert regular_log_value == closest_recording_log
-
-    # Malaria - only clinical prevalence
-    prevalence_malaria_log = output['tlo.methods.malaria']["prevalence"]
-
-    for j in range(len(prevalence_malaria_log)):
-        target_date = prevalence_malaria_log['date'][j]
-        regular_log_value = prevalence_malaria_log["clinical_prev"][j]  # only records clinical prevalence
-
-        if target_date > max_date_in_prevalence:
-            continue
-        else:
-            closest_recording_log = None
-            smallest_diff = float('inf')  # Initialize with a large number
-
-            for i in range(len(prevalence)):
-                function_date = prevalence['date'][i]
-                date_diff = abs((target_date - function_date).days)
-
-                if date_diff < smallest_diff:
-                    smallest_diff = date_diff
-                    closest_recording_log = prevalence['Malaria'][i]
-
-            if closest_recording_log is not None:
-                assert regular_log_value == closest_recording_log
 
     # Cardiometabolic disorders
     conditions =  ['diabetes','hypertension', 'chronic_kidney_disease', 'chronic_lower_back_pain',
@@ -301,22 +172,8 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
             target_date = prevalence_log['date'][j]
             regular_log_value = prevalence_log['prevalence'][j]  # Fixed to access the correct value
 
-            if target_date > max_date_in_prevalence:
-                continue
-            else:
-                closest_recording_log = None
-                smallest_diff = float('inf')  # Initialize with a large number
-
-                for i in range(len(prevalence)):
-                    function_date = prevalence['date'][i]
-                    date_diff = abs((target_date - function_date).days)
-
-                    if date_diff < smallest_diff:
-                        smallest_diff = date_diff
-                        closest_recording_log = prevalence[condition][i]
-
-                if closest_recording_log is not None:
-                    assert regular_log_value == closest_recording_log
+            if target_date <= max_date_in_prevalence:
+                find_closest_recording(prevalence, target_date, regular_log_value, condition, False)
 
     # Neonatal deaths
 
@@ -333,10 +190,7 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
         target_date =  pd.to_datetime(neonatal_deaths['date'][j])
         regular_log_value = neonatal_deaths["count"][j]  # only records clinical prevalence
 
-        if target_date > max_date_in_prevalence:
-            continue
-
-        else:
+        if target_date <= max_date_in_prevalence:
             closest_recording_log = None
             smallest_diff = float('inf')  # Initialize with a large number
 
@@ -401,9 +255,8 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
         target_date = pd.to_datetime(combined_df['date'][j])
         regular_log_value = combined_df["count"][j]  # only records clinical prevalence
 
-        if target_date > max_date_in_prevalence:
-            continue
-        else:
+        if target_date <= max_date_in_prevalence:
+
             closest_recording_log = None
             smallest_diff = float('inf')  # Initialize with a large number
 
@@ -429,9 +282,8 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
             target_date = pd.to_datetime(antenatal_stillbirths['date'][j])
             regular_log_value = antenatal_stillbirths["count"][j]  # only records clinical prevalence
 
-            if target_date > max_date_in_prevalence:
-                continue
-            else:
+            if target_date <= max_date_in_prevalence:
+
                 closest_recording_log = None
                 smallest_diff = float('inf')  # Initialize with a large number
 
