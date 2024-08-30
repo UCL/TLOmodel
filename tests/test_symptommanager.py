@@ -98,7 +98,7 @@ def test_register_duplicate_symptoms():
     symp_with_different_properties = Symptom.emergency(name='symptom')
     symp_with_different_name = Symptom(name='symptom_a')
 
-    sm = symptommanager.SymptomManager(resourcefilepath=resourcefilepath)
+    sm = symptommanager.SymptomManager()
 
     # register original
     sm.register_symptom(symp)
@@ -126,15 +126,14 @@ def test_register_duplicate_symptoms():
 
 
 def test_no_symptoms_if_no_diseases(seed):
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
 
     # Register the core modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           disable=True),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+    sim.register(demography.Demography(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(disable=True),
+                 symptommanager.SymptomManager(spurious_symptoms=False),
+                 simplified_births.SimplifiedBirths(),
                  )
 
     # Run the simulation
@@ -147,16 +146,15 @@ def test_no_symptoms_if_no_diseases(seed):
 
 
 def test_adding_quering_and_removing_symptoms(seed):
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
 
     # Register the core modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           disable=True),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+    sim.register(demography.Demography(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(disable=True),
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 simplified_births.SimplifiedBirths(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome()
                  )
@@ -204,15 +202,14 @@ def test_adding_quering_and_removing_symptoms(seed):
 
 
 def test_baby_born_has_no_symptoms(seed):
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
 
     # Register the core modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           disable=True),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+    sim.register(demography.Demography(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(disable=True),
+                 symptommanager.SymptomManager(spurious_symptoms=False),
+                 simplified_births.SimplifiedBirths(),
                  )
 
     # Run the simulation
@@ -234,9 +231,9 @@ def test_auto_onset_symptom(seed):
     """Test to check that symptoms that are delayed in onset work as expected.
     """
     # Generate a simulation:
-    sim = Simulation(start_date=start_date, seed=seed)
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    sim.register(demography.Demography(),
+                 symptommanager.SymptomManager(spurious_symptoms=True),
                  mockitis.Mockitis()
                  )
     sim.make_initial_population(n=popsize)
@@ -302,14 +299,13 @@ def test_nonemergency_spurious_symptoms_during_simulation(seed):
     """Test on the functionality of a generic non-emergency spurious symptom"""
     the_generic_symptom = 'fever'
 
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
 
     # Register the core modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           disable_and_reject_all=True),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
+    sim.register(demography.Demography(),
+                 simplified_births.SimplifiedBirths(),
+                 healthsystem.HealthSystem(disable_and_reject_all=True),
+                 symptommanager.SymptomManager(spurious_symptoms=True),
                  )
 
     # Make the probability of onset of one of the generic symptoms be 1.0 and duration of one day
@@ -350,14 +346,13 @@ def test_emergency_spurious_symptom_during_simulation(seed):
     """Test on the functionality of the spurious emergency symptom"""
     emergency_spurious_symptom = 'spurious_emergency_symptom'
 
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
 
     # Register the core modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           disable_and_reject_all=True),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
+    sim.register(demography.Demography(),
+                 simplified_births.SimplifiedBirths(),
+                 healthsystem.HealthSystem(disable_and_reject_all=True),
+                 symptommanager.SymptomManager(spurious_symptoms=True),
                  )
 
     # Make the probability of onset of the spurious emergency symptom be 1.0 and duration of one day
@@ -396,12 +391,12 @@ def test_emergency_spurious_symptom_during_simulation(seed):
 
 @pytest.fixture
 def symptom_manager():
-    return symptommanager.SymptomManager(resourcefilepath=resourcefilepath)
+    return symptommanager.SymptomManager()
 
 
 @pytest.fixture
 def disease_module():
-    return mockitis.Mockitis(resourcefilepath=resourcefilepath)
+    return mockitis.Mockitis()
 
 
 @pytest.fixture()
@@ -413,15 +408,15 @@ def disease_module_symptoms():
 
 @pytest.fixture
 def simulation(seed):
-    return Simulation(start_date=start_date, seed=seed)
+    return Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
 
 
 def register_modules_and_initialise(simulation, *modules):
     simulation.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
-        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+        demography.Demography(),
+        enhanced_lifestyle.Lifestyle(),
+        healthsystem.HealthSystem(),
+        simplified_births.SimplifiedBirths(),
         *modules
     )
     simulation.make_initial_population(n=popsize)

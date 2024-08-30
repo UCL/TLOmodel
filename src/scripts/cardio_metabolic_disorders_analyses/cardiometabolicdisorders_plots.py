@@ -37,23 +37,22 @@ def runsim(seed=0):
     # add file handler for the purpose of logging
 
     start_date = Date(2010, 1, 1)
-    end_date = Date(2019, 12, 31)
-    popsize = 500000
+    end_date = Date(2011, 12, 31)
+    popsize = 5000
 
-    sim = Simulation(start_date=start_date, seed=0, log_config=log_config, show_progress_bar=True)
+    sim = Simulation(start_date=start_date, seed=0, log_config=log_config,
+                     show_progress_bar=True, resourcefilepath=resourcefilepath)
 
     # run the simulation
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=False,
-                                           cons_availability='all'),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath,
-                                                                     do_condition_combos=True),
-                 depression.Depression(resourcefilepath=resourcefilepath),
+    sim.register(demography.Demography(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(disable=False, cons_availability='all'),
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthburden.HealthBurden(),
+                 simplified_births.SimplifiedBirths(),
+                 cardio_metabolic_disorders.CardioMetabolicDisorders(do_condition_combos=True),
+                 depression.Depression(),
                  )
 
     sim.make_initial_population(n=popsize)
