@@ -53,23 +53,21 @@ if not os.path.exists(log_filename):
     seed = random.randint(0, 50000)
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config,
+                     show_progress_bar=True, resourcefilepath=resourcefilepath)
 
     # run the simulation
     sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                  service_availability=['*'],
-                                  mode_appt_constraints=0,
-                                  ignore_priority=True,
+        demography.Demography(),
+        enhanced_lifestyle.Lifestyle(),
+        symptommanager.SymptomManager(),
+        healthseekingbehaviour.HealthSeekingBehaviour(),
+        healthburden.HealthBurden(),
+        simplified_births.SimplifiedBirths(),
+        healthsystem.HealthSystem(service_availability=['*'], mode_appt_constraints=0, ignore_priority=True,
                                   capabilities_coefficient=1.0,
                                   disable=True),
-        alri.Alri(resourcefilepath=resourcefilepath),
+        alri.Alri(),
         alri.AlriPropertiesOfOtherModules()
     )
 

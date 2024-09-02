@@ -39,20 +39,17 @@ def run_sim():
                 "*": logging.WARNING,
                 'tlo.methods.demography': logging.INFO
                 }
-        }
+        }, resourcefilepath=resourcefilepath
     )
 
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           disable=True),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-
-                 epi.Epi(resourcefilepath=resourcefilepath),
-                 measles.Measles(resourcefilepath=resourcefilepath),
-
+    sim.register(demography.Demography(),
+                 simplified_births.SimplifiedBirths(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(disable=True),
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 epi.Epi(),
+                 measles.Measles(),
                  hiv.DummyHivModule(),
                  )
 

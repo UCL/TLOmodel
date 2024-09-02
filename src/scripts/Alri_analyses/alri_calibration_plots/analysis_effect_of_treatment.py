@@ -39,22 +39,19 @@ def get_sim(popsize):
     """Return a simulation (composed of only <5 years old) that has run for 0 days."""
     resourcefilepath = Path('./resources')
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=0, resourcefilepath=resourcefilepath)
 
     sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        demography.Demography(),
+        simplified_births.SimplifiedBirths(),
+        enhanced_lifestyle.Lifestyle(),
+        symptommanager.SymptomManager(),
         healthseekingbehaviour.HealthSeekingBehaviour(
-            resourcefilepath=resourcefilepath,
             force_any_symptom_to_lead_to_healthcareseeking=True,
         ),
-        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                  cons_availability='all',
-                                  ),
-        alri.Alri(resourcefilepath=resourcefilepath),
+        healthburden.HealthBurden(),
+        healthsystem.HealthSystem(cons_availability='all'),
+        alri.Alri(),
         AlriPropertiesOfOtherModules(),
     )
     sim.modules['Demography'].parameters['max_age_initial'] = 5

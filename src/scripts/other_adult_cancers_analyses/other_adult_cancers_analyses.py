@@ -49,19 +49,18 @@ def run_sim(allow_hsi):
         'directory': outputpath
     }
     # Establish the simulation object and set the seed
-    sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
+    sim = Simulation(start_date=start_date, seed=0, log_config=log_config, resourcefilepath=resourcefilepath)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           disable=(allow_hsi is True),
+    sim.register(demography.Demography(),
+                 simplified_births.SimplifiedBirths(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(disable=(allow_hsi is True),
                                            disable_and_reject_all=(allow_hsi is False)),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 other_adult_cancers.OtherAdultCancer(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthburden.HealthBurden(),
+                 other_adult_cancers.OtherAdultCancer(),
                  )
 
     # Run the simulation
@@ -105,7 +104,7 @@ def get_summary_stats(logfile):
     # get the deaths dataframe
     deaths = output['tlo.methods.demography']['death']
     # sort deaths by age group
-    deaths['age_group'] = deaths['age'].map(demography.Demography(resourcefilepath=resourcefilepath).AGE_RANGE_LOOKUP)
+    deaths['age_group'] = deaths['age'].map(demography.Demography().AGE_RANGE_LOOKUP)
     # isolate other adult cancer deaths
     deaths = deaths.loc[deaths.cause == 'OtherAdultCancer']
     # group deaths by age group
@@ -185,7 +184,7 @@ plt.show()
 deaths = results_no_healthsystem['other_adult_cancer_deaths']
 deaths.reindex(pd.Index.intersection(make_age_grp_types().categories, deaths.index))
 # # make a series with the right categories and zero so formats nicely in the grapsh:
-agegrps = demography.Demography(resourcefilepath=resourcefilepath).AGE_RANGE_CATEGORIES
+agegrps = demography.Demography().AGE_RANGE_CATEGORIES
 totdeaths = pd.Series(index=pd.Index.intersection(make_age_grp_types().categories, deaths.index), data=np.nan)
 totdeaths = totdeaths.combine_first(deaths).fillna(0.0)
 totdeaths.plot.bar()

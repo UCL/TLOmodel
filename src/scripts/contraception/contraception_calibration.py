@@ -21,16 +21,16 @@ from tlo.methods.hiv import DummyHivModule
 # %% Create dummy simulation object
 resourcefilepath = Path('resources')
 start_date = Date(2010, 1, 1)
-sim = Simulation(start_date=start_date, seed=0)
+sim = Simulation(start_date=start_date, seed=0, resourcefilepath=resourcefilepath)
 
 sim.register(
     # - core modules:
-    demography.Demography(resourcefilepath=resourcefilepath),
-    enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-    symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-    healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+    demography.Demography(),
+    enhanced_lifestyle.Lifestyle(),
+    symptommanager.SymptomManager(),
+    healthsystem.HealthSystem(disable=True),
 
-    contraception.Contraception(resourcefilepath=resourcefilepath, use_healthsystem=False),
+    contraception.Contraception(use_healthsystem=False),
     contraception.SimplifiedPregnancyAndLabour(),
 
     # - Dummy HIV module (as contraception requires the property hv_inf)

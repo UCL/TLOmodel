@@ -18,10 +18,10 @@ days_sim = 1000
 default_facility_id = 0
 cap_bedtype1 = popsize
 
-sim = Simulation(start_date=start_date)
+sim = Simulation(start_date=start_date, resourcefilepath=resourcefilepath)
 sim.register(
-    demography.Demography(resourcefilepath=resourcefilepath),
-    healthsystem.HealthSystem(resourcefilepath=resourcefilepath)
+    demography.Demography(),
+    healthsystem.HealthSystem()
 )
 hs = sim.modules['HealthSystem']
 
