@@ -219,7 +219,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     HSI_never_ran_by_year = HSI_never_ran_by_year.fillna(0)
     HSI_ran_by_year = HSI_ran_by_year.fillna(0)
     HSI_total_by_year = HSI_ran_by_year.add(HSI_never_ran_by_year, fill_value=0)
-    HSI_ran_by_year.to_csv('ConvertedOutputs/HSIs_delivered_by_type_and_level_with_time.csv', index=True)
+    HSI_ran_by_year.to_csv('ConvertedOutputs/HSIs_delivered_by_type_and_facility_level_with_time.csv', index=True)
     HSI_total_by_year.to_csv('ConvertedOutputs/HSIs_requested_by_type_and_facility_level_with_time.csv', index=True)
     
 if __name__ == "__main__":
