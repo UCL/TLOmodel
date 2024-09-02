@@ -1,5 +1,4 @@
-"""This Scenario file run the model under different assumptions for the HealthSystem Mode in order to estimate the
-impact that is achieved under each (relative to there being no health system).
+"""This Scenario file runs the model under different prioritisation policies.
 
 Run on the batch system using:
 ```
@@ -76,10 +75,10 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     get_parameters_for_status_quo(),
                     {
                      'HealthSystem': {
-                        "use_funded_or_actual_staffing": "actual",
+                        'use_funded_or_actual_staffing': "actual",
                         'year_mode_switch': 2023,
                         'mode_appt_constraints_postSwitch': 2,
-                        "policy_name": "Naive",
+                        'policy_name': "Naive",
                         'tclose_overwrite': 1,
                         'tclose_days_offset_overwrite': 7,
                       },
@@ -91,10 +90,10 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     get_parameters_for_status_quo(),
                     {
                      'HealthSystem': {
-                        "use_funded_or_actual_staffing": "actual",
+                        'use_funded_or_actual_staffing': "actual",
                         'year_mode_switch': 2023,
                         'mode_appt_constraints_postSwitch': 2,
-                        "policy_name": "RMNCH",
+                        'policy_name': "RMNCH",
                         'tclose_overwrite': 1,
                         'tclose_days_offset_overwrite': 7,
                       },
@@ -106,10 +105,10 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     get_parameters_for_status_quo(),
                     {
                      'HealthSystem': {
-                        "use_funded_or_actual_staffing": "actual",
+                        'use_funded_or_actual_staffing': "actual",
                         'year_mode_switch': 2023,
                         'mode_appt_constraints_postSwitch': 2,
-                        "policy_name": "ClinicallyVulnerable",
+                        'policy_name': "ClinicallyVulnerable",
                         'tclose_overwrite': 1,
                         'tclose_days_offset_overwrite': 7,
                      },
@@ -120,10 +119,10 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     get_parameters_for_status_quo(),
                     {
                      'HealthSystem': {
-                        "use_funded_or_actual_staffing": "actual",
+                        'use_funded_or_actual_staffing': "actual",
                         'year_mode_switch': 2023,
                         'mode_appt_constraints_postSwitch': 2,
-                        "policy_name": "VerticalProgrammes",
+                        'policy_name': "VerticalProgrammes",
                         'tclose_overwrite': 1,
                         'tclose_days_offset_overwrite': 7,
                      },
@@ -134,10 +133,10 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     get_parameters_for_status_quo(),
                     {
                      'HealthSystem': {
-                        "use_funded_or_actual_staffing": "actual",
+                        'use_funded_or_actual_staffing': "actual",
                         'year_mode_switch': 2023,
                         'mode_appt_constraints_postSwitch': 2,
-                        "policy_name": "CVD",
+                        'policy_name': "CVD",
                         'tclose_overwrite': 1,
                         'tclose_days_offset_overwrite': 7,
                      },
@@ -148,10 +147,10 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     get_parameters_for_status_quo(),
                     {
                      'HealthSystem': {
-                        "use_funded_or_actual_staffing": "actual",
+                        'use_funded_or_actual_staffing': "actual",
                         'year_mode_switch': 2023,
                         'mode_appt_constraints_postSwitch': 2,
-                        "policy_name": "EHP_III",
+                        'policy_name': "EHP_III",
                         'tclose_overwrite': 1,
                         'tclose_days_offset_overwrite': 7,
                      },
@@ -162,10 +161,10 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     get_parameters_for_status_quo(),
                     {
                      'HealthSystem': {
-                        "use_funded_or_actual_staffing": "actual",
+                        'use_funded_or_actual_staffing': "actual",
                         'year_mode_switch': 2023,
                         'mode_appt_constraints_postSwitch': 2,
-                        "policy_name": "LCOA_EHP",
+                        'policy_name': "LCOA_EHP",
                         'tclose_overwrite': 1,
                         'tclose_days_offset_overwrite': 7,
                      },
