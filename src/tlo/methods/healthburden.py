@@ -257,6 +257,7 @@ class HealthBurden(Module):
         """Write to the log anything that has not already been logged (i.e., if simulation terminating mid-way through
         a year when the WriteToLog event has not run."""
         self.write_to_log(year=self.sim.date.year)
+        self.write_to_log_prevalence_monthly()
 
     def get_dalys(self, yld: pd.DataFrame, yll: pd.DataFrame) -> pd.DataFrame:
         """Returns pd.DataFrame of DALYS that is the sum of the 'Years Lived with Disability' (`yld`) and the 'Years
@@ -545,6 +546,32 @@ class HealthBurden(Module):
             force_cols=self.recognised_modules_names,
         )
         self._years_written_to_log += [year]
+    def write_to_log_prevalence_monthly(self):
+        """Write to the log the prevalence of conditions .
+        N.B. This is called at the end of the simulation as well as at the end of each month, so we need to check that
+        the year is not being written to the log more than once."""
+        def log_df_line_by_line(key, description, df, force_cols=None) -> None:
+            """Log each line of a dataframe to `logger.info`. Each row of the dataframe is one logged entry.
+            `force_cols` is the names of the colums that must be included in each logging line (As the parsing of the
+            log requires the name of the format of each row to be uniform.)."""
+            df[sorted(set(force_cols) - set(df.columns))] = 0.0  # Force the addition of any missing causes
+            df = df[sorted(df.columns)]  # sort the columns so that they are always in same order
+            for _, row in df.iterrows():
+                logger.info(
+                    key=key,
+                    data=row.to_dict(),
+                    description=description,
+                )
+
+        # Check that the format of the internal storage is as expected.
+        self.check_multi_index()
+
+        log_df_line_by_line(
+            key='prevalence_of_diseases',
+            description='Prevalence of each disease.',
+            df=self.prevalence_of_diseases,
+            force_cols=self.recognised_modules_names,
+        )
 
     def check_multi_index(self):
         """Check that the multi-index of the dataframes are as expected"""
@@ -736,3 +763,4 @@ class Healthburden_WriteToLog(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         self.module.write_to_log(year=self.sim.date.year)
+        self.module.write_to_log_prevalence_monthly()
