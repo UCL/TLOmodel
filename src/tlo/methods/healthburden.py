@@ -123,8 +123,8 @@ class HealthBurden(Module):
         # 5) Schedule `Healthburden_WriteToLog` that will write to log annually
         sim.schedule_event(Get_Current_DALYS(self), sim.date + DateOffset(months=1))
         if self.parameters['test']:
-            sim.schedule_event(Get_Current_Prevalence(self), sim.date + DateOffset(days=1))
-            sim.schedule_event(Healthburden_WriteToLog(self), sim.date + DateOffset(days=1))
+            sim.schedule_event(Get_Current_Prevalence(self), sim.date + DateOffset(months=1))
+            sim.schedule_event(Healthburden_WriteToLog(self), sim.date + DateOffset(months=1))
         else:
             sim.schedule_event(Get_Current_Prevalence(self), sim.date + DateOffset(months=1))
             last_day_of_the_year = Date(sim.date.year, 12, 31)
@@ -257,7 +257,6 @@ class HealthBurden(Module):
         """Write to the log anything that has not already been logged (i.e., if simulation terminating mid-way through
         a year when the WriteToLog event has not run."""
         self.write_to_log(year=self.sim.date.year)
-        self.write_to_log_prevalence_monthly()
 
     def get_dalys(self, yld: pd.DataFrame, yll: pd.DataFrame) -> pd.DataFrame:
         """Returns pd.DataFrame of DALYS that is the sum of the 'Years Lived with Disability' (`yld`) and the 'Years
@@ -420,8 +419,7 @@ class HealthBurden(Module):
         """Write to the log the YLL, YLD and DALYS for a specific year.
         N.B. This is called at the end of the simulation as well as at the end of each year, so we need to check that
         the year is not being written to the log more than once."""
-        if not self.parameters['test']:
-            if year in self._years_written_to_log:
+        if year in self._years_written_to_log:
                 return  # Skip if the year has already been logged
 
         def summarise_results_for_this_year(df, level=[0, 1]) -> pd.DataFrame:
@@ -700,9 +698,6 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        if module.parameters['test']:
-            super().__init__(module, frequency=DateOffset(days=1))
-        else:
             super().__init__(module, frequency=DateOffset(months=1))
 
     def apply(self, population):
@@ -757,7 +752,7 @@ class Healthburden_WriteToLog(RegularEvent, PopulationScopeEventMixin):
 
     def __init__(self, module):
         if module.parameters['test']:
-            super().__init__(module, frequency=DateOffset(days=1))
+            super().__init__(module, frequency=DateOffset(months=1))
         else:
             super().__init__(module, frequency=DateOffset(years=1), priority=Priority.END_OF_DAY)
 
