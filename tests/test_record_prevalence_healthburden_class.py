@@ -68,7 +68,7 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
             resourcefilepath=resourcefilepath,
             use_simplified_births=False,))
     sim.make_initial_population(n=popsize)
-    sim.modules['HealthBurden'].parameters['test'] = False
+    sim.modules['HealthBurden'].parameters['test'] = True
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
     output = parse_log_file(sim.log_filepath)
@@ -77,12 +77,6 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
     #max_date_in_prevalence = max(prevalence['date'])
     log_prevalences_from_sim = log_prevalences_from_sim_func(sim)
 
-    print(prevalence)
-    print(prevalence['Hiv'])
-    print(log_prevalences_from_sim['Hiv'])
-    print(log_prevalences_from_sim['date'])
-
-    print(log_prevalences_from_sim)
     for log_date in log_prevalences_from_sim['date']:
         # Check if the current date from log_prevalencesfrom_sim exists in the prevalence DataFrame
         if log_date in prevalence['date'].values:
