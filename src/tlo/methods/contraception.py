@@ -1344,8 +1344,8 @@ class SimplifiedPregnancyAndLabour(Module):
     def __init__(self, *args):
         super().__init__(name='Labour')
 
-    def read_parameters(self, *args):
-        parameter_dataframe = pd.read_excel(self.sim.modules['Contraception'].resourcefilepath /
+    def read_parameters(self, resourcefilepath=None):
+        parameter_dataframe = pd.read_excel(resourcefilepath /
                                             'contraception' /
                                             'ResourceFile_Contraception.xlsx',
                                             sheet_name='simplified_labour_parameters')

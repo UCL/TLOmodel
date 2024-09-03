@@ -26,10 +26,10 @@ def save_arguments_to_json(arguments_dict: dict, output_path: Path):
     with open(output_path, "w") as f:
         json.dump(
             {
-                k: str(v) if isinstance(v, Path) else v 
+                k: str(v) if isinstance(v, Path) else v
                 for k, v in arguments_dict.items()
-            }, 
-            f, 
+            },
+            f,
             indent=4
         )
 
@@ -79,12 +79,12 @@ def scale_run(
         seed=seed,
         log_config=log_config,
         show_progress_bar=show_progress_bar,
+        resourcefilepath=resources_dir,
     )
 
     # Register the appropriate modules with the arguments passed through
     sim.register(
         *fullmodel(
-            resourcefilepath=resources_dir,
             use_simplified_births=False,
             module_kwargs={
                 "HealthSystem": {

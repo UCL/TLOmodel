@@ -89,7 +89,7 @@ class Mockitis(Module, GenericFirstAppointmentsMixin):
 
         super().__init__(name)
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath=None):
         """Read in parameters and do the registration of this module and its symptoms"""
 
         p = self.parameters

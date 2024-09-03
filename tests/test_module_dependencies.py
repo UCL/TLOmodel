@@ -46,7 +46,7 @@ def parameterize_module_class(test_function):
 
 @pytest.fixture
 def sim(seed):
-    return Simulation(start_date=simulation_start_date, seed=seed)
+    return Simulation(start_date=simulation_start_date, seed=seed, resourcefilepath=resourcefilepath)
 
 
 @pytest.fixture
