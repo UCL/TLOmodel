@@ -23,7 +23,7 @@ from tlo.analysis.utils import (
 )
 
 PREFIX_ON_FILENAME = '1'
-max_year = "2040"
+max_year = "2030"
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
 
@@ -857,8 +857,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     rtn_all_years = pd.concat(dataframes, ignore_index=True)
 
     # Optionally, set the 'Year' column as the index if it exists
-    #rtn_all_years.set_index('Year', inplace=True)
-
+    rtn_all_years.set_index('Year', inplace=True)
     # Save the DataFrame to a CSV file
     rtn_all_years.to_csv(args.results_folder / 'life_expectancy_estimates.csv', index=True)
 
@@ -869,10 +868,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.plot(rtn_all_years.index[0::2], rtn_all_years.iloc[0::2, 0], marker='o', color='green', label="M")
 
     ax.legend(loc='lower right')
-    ax.xlabel('Year')
-    ax.ylim(0,75)
-    ax.ylabel('Life Expectancy')
-    ax.title('Life Expectancy Over Years')
+    ax.set_xlabel('Year')
+    ax.set_ylim(0, 75)  # Corrected set_ylimylim to set_ylim
+    ax.set_ylabel('Life Expectancy')
+    ax.set_title('Life Expectancy Over Years')  # Corrected ax.title to ax.set_title
     fig.tight_layout()
     plt.savefig(make_graph_file_name("Life_expectancy_over_years"))
     plt.close(fig)
