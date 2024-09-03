@@ -12,6 +12,7 @@ from matplotlib.ticker import FuncFormatter
 import numpy as np
 import pandas as pd
 import ast
+import math
 
 from tlo.analysis.utils import (
     extract_params,
@@ -327,8 +328,6 @@ total_cost_of_consumables_dispensed_under_perfect_availability = sum(value for v
 cost_of_consumables_dispensed_under_default_availability = {key: unit_price_consumable[key]['Final_price_per_chosen_unit (USD, 2023)'] * consumables_dispensed_under_default_availability[key] for
                                                             key in unit_price_consumable if key in consumables_dispensed_under_default_availability}
 total_cost_of_consumables_dispensed_under_default_availability = sum(value for value in cost_of_consumables_dispensed_under_default_availability.values() if not np.isnan(value))
-
-# Extract cost to .csv
 def convert_dict_to_dataframe(_dict):
     data = {key: [value] for key, value in _dict.items()}
     _df = pd.DataFrame(data)
@@ -468,12 +467,12 @@ def plot_consumable_cost(_df, suffix, groupby_var, top_x_values =  float('nan'))
                 bbox_inches='tight')
     plt.close()
 
-plot_consumable_cost(_df = full_cons_cost_df,suffix =  'perfect_availability', groupby_var = 'category')
-plot_consumable_cost(_df = full_cons_cost_df, suffix =  'default_availability', groupby_var = 'category')
+plot_consumable_cost(_df = full_cons_cost_df,suffix =  'dispensed_stock_perfect_availability', groupby_var = 'category')
+plot_consumable_cost(_df = full_cons_cost_df, suffix =  'dispensed_stock_default_availability', groupby_var = 'category')
 
 # Plot the 10 consumables with the highest cost
-plot_consumable_cost(_df = full_cons_cost_df,suffix =  'perfect_availability', groupby_var = 'consumable_name_tlo', top_x_values = 10)
-plot_consumable_cost(_df = full_cons_cost_df,suffix =  'default_availability', groupby_var = 'consumable_name_tlo', top_x_values = 10)
+plot_consumable_cost(_df = full_cons_cost_df,suffix =  'dispensed_stock_perfect_availability', groupby_var = 'consumable_name_tlo', top_x_values = 10)
+plot_consumable_cost(_df = full_cons_cost_df,suffix =  'dispensed_stock_default_availability', groupby_var = 'consumable_name_tlo', top_x_values = 10)
 
 def plot_cost_by_category(_df, suffix , figname_prefix = 'Consumables'):
     pivot_df = full_cons_cost_df[['category', 'cost_dispensed_stock_' + suffix, 'cost_excess_stock_' + suffix]]
@@ -495,14 +494,14 @@ plot_cost_by_category(full_cons_cost_df, suffix = 'perfect_availability' , figna
 plot_cost_by_category(full_cons_cost_df, suffix = 'default_availability' , figname_prefix = 'Consumables')
 
 # Add consumable costs to the financial cost dataframe
-consumable_cost_subcategories = ['total_cost_of_consumables_dispensed', 'total_cost_of_consumables_stocked']
+consumable_cost_subcategories = ['total_cost_of_consumables_dispensed', 'total_cost_of_excess_consumables_stocked']
 consumable_costs = pd.DataFrame({
     'Cost_Category': ['Consumables'] * len(consumable_cost_subcategories),
     'Cost_Sub-category': consumable_cost_subcategories,
-    'Value_2023USD': [total_cost_of_consumables_dispensed, total_cost_of_consumables_stocked]
+    'Cost': [total_cost_of_consumables_dispensed_under_default_availability, total_cost_of_excess_consumables_stocked_under_default_availability]
 })
 # Append new_data to scenario_cost_financial
-scenario_cost_financial = pd.concat([scenario_cost_financial, consumable_costs], ignore_index=True)
+scenario_cost = pd.concat([scenario_cost, consumable_costs], ignore_index=True)
 
 # %%
 # 3. Equipment cost
