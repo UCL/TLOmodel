@@ -29,7 +29,7 @@ PREFIX_ON_FILENAME = '3'
 
 # Declare period for which the results will be generated (defined inclusively)
 min_year = 2010
-max_year = 2030
+max_year = 2060
 
 def drop_outside_period(_df, target_period):
     """Return a dataframe which only includes for which the date is within the limits defined by TARGET_PERIOD"""
