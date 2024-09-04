@@ -710,7 +710,7 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
         # Create a DataFrame with one row and assign the population size
         prevalence_from_each_disease_module = pd.DataFrame({'population': [population_size]})
         for disease_module_name in self.module.recognised_modules_names:
-            if disease_module_name in ['NewbornOutcomes', 'PostnatalSupervisor', 'Mockitis', 'DiseaseThatCausesA',
+            if disease_module_name in ['NewbornOutcomes', 'PostnatalSupervisor', 'DiseaseThatCausesA',
                                        'ChronicSyndrome']:
                 continue
 
