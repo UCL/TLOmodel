@@ -100,49 +100,6 @@ def _aggregate_person_years_by_age(results_folder, target_period) -> pd.DataFram
 
     return py_by_sex_and_agegroup
 
-def _calculate_mortality_metrics(
-    _person_years_at_risk: pd.Series,
-    _number_of_deaths_in_interval: pd.Series,
-    fraction_of_last_age_survived: pd.Series,
-    interval_width: list
-) -> Dict[str, pd.Series]:
-    """
-    Calculate death rate, probability of dying in interval, and number alive at start of each interval.
-    """
-    mortality_metrics = dict()
-
-    for sex in ['M', 'F']:
-        person_years_by_sex = _person_years_at_risk.xs(key=sex, level='sex')
-        number_of_deaths_by_sex = _number_of_deaths_in_interval.xs(key=sex, level='sex')
-
-        death_rate_in_interval = number_of_deaths_by_sex / person_years_by_sex
-        death_rate_in_interval = death_rate_in_interval.fillna(0)
-        if death_rate_in_interval.loc['90'] == 0:
-            death_rate_in_interval.loc['90'] = death_rate_in_interval.loc['85-89']
-
-        condition = number_of_deaths_by_sex > (
-            person_years_by_sex / interval_width / fraction_of_last_age_survived)
-        probability_of_dying_in_interval = pd.Series(index=number_of_deaths_by_sex.index, dtype=float)
-        probability_of_dying_in_interval[condition] = 1
-        probability_of_dying_in_interval[~condition] = interval_width * death_rate_in_interval / (
-            1 + interval_width * (1 - fraction_of_last_age_survived) * death_rate_in_interval)
-        probability_of_dying_in_interval.at['90'] = 1
-
-        number_alive_at_start_of_interval = pd.Series(index=range(len(interval_width)), dtype=float)
-        number_alive_at_start_of_interval[0] = 100_000  # hypothetical cohort
-        for i in range(1, len(interval_width)):
-            number_alive_at_start_of_interval[i] = (1 - probability_of_dying_in_interval[i - 1]) * \
-                                                   number_alive_at_start_of_interval[i - 1]
-
-        mortality_metrics[sex] = {
-            'death_rate_in_interval': death_rate_in_interval,
-            'probability_of_dying_in_interval': probability_of_dying_in_interval,
-            'number_alive_at_start_of_interval': number_alive_at_start_of_interval
-        }
-
-    return mortality_metrics
-
-
 def _estimate_life_expectancy(
     _person_years_at_risk: pd.Series,
     _number_of_deaths_in_interval: pd.Series
@@ -330,13 +287,13 @@ def _calculate_probability_of_premature_death(
 
         # Calculate cumulative probability of dying before the defined premature age
         cumulative_probability_of_dying = 0
-        number_alive_at_start_of_interval = 1.0
+        proportion_alive_at_start_of_interval = 1.0
 
         for age_group, prob in probability_of_dying_in_interval.items():
             if int(age_group.split('-')[0]) >= AGE_BEFORE_WHICH_DEATH_IS_DEFINED_AS_PREMATURE:
                 break
-            cumulative_probability_of_dying += number_alive_at_start_of_interval * prob
-            number_alive_at_start_of_interval *= (1 - prob)
+            cumulative_probability_of_dying += proportion_alive_at_start_of_interval * prob
+            proportion_alive_at_start_of_interval *= (1 - prob)
 
         probability_of_premature_death[sex] = cumulative_probability_of_dying
 
