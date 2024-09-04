@@ -374,40 +374,20 @@ def summarize(
 
     Finds mean value and 95% interval across the runs for each draw.
 
-    NOTE: This is the legacy version of `summarize` that is hard-wired to use `means` (the kwarg is `only_mean` and the
-     name of the column is `mean`). Please move to using the new and more flexible version of `summarize` that allows
-     the use of medians and is flexible to allow other forms of summary measure in the future.
+    NOTE: This provides the legacy functionality of `summarize` that is hard-wired to use `means` (the kwarg is
+     `only_mean` and the name of the column in the output is `mean`). Please move to using the new and more flexible
+     version of `summarize` that allows the use of medians and is flexible to allow other forms of summary measure in
+     the future.
     """
-
-    summary = pd.concat(
-        {
-            'mean': results.groupby(axis=1, by='draw', sort=False).mean(),
-            'lower': results.groupby(axis=1, by='draw', sort=False).quantile(0.025),
-            'upper': results.groupby(axis=1, by='draw', sort=False).quantile(0.975),
-        },
-        axis=1
+    output = summarise(
+        results=results,
+        central_measure='mean',
+        only_central=only_mean,
+        collapse_columns=collapse_columns,
     )
-    summary.columns = summary.columns.swaplevel(1, 0)
-    summary.columns.names = ['draw', 'stat']
-    summary = summary.sort_index(axis=1)
-
-    if only_mean and (not collapse_columns):
-        # Remove other metrics and simplify if 'only_mean' across runs for each draw is required:
-        om: pd.DataFrame = summary.loc[:, (slice(None), "mean")]
-        om.columns = [c[0] for c in om.columns.to_flat_index()]
-        om.columns.name = 'draw'
-        return om
-
-    elif collapse_columns and (len(summary.columns.levels[0]) == 1):
-        # With 'collapse_columns', if number of draws is 1, then collapse columns multi-index:
-        summary_droppedlevel = summary.droplevel('draw', axis=1)
-        if only_mean:
-            return summary_droppedlevel['mean']
-        else:
-            return summary_droppedlevel
-
-    else:
-        return summary
+    if output.columns.nlevels > 1:
+        output = output.rename(columns={'central': 'mean'}, level=1)  # rename 'central' to 'mean'
+    return output
 
 
 def get_grid(params: pd.DataFrame, res: pd.Series):

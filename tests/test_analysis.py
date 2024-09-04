@@ -23,6 +23,7 @@ from tlo.analysis.utils import (
     order_of_short_treatment_ids,
     parse_log_file,
     summarise,
+    summarize,
     unflatten_flattened_multi_index_in_logging,
 )
 from tlo.events import PopulationScopeEventMixin, RegularEvent
@@ -641,6 +642,19 @@ def test_summarise():
         summarise(results_one_draw, central_measure='mean', collapse_columns=True),
     )
 
+    # Check that summarize() produces legacy behaviour:
+    pd.testing.assert_frame_equal(
+        summarise(results_multiple_draws, central_measure='mean').rename(columns={'central': 'mean'}, level=1),
+        summarize(results_multiple_draws)
+    )
+    pd.testing.assert_frame_equal(
+        summarise(results_multiple_draws, central_measure='mean', only_central=True),
+        summarize(results_multiple_draws, only_mean=True)
+    )
+    pd.testing.assert_frame_equal(
+        summarise(results_one_draw, central_measure='mean', collapse_columns=True),
+        summarize(results_one_draw, collapse_columns=True)
+    )
 
 def test_control_loggers_from_same_module_independently(seed, tmpdir):
     """Check that detailed/summary loggers in the same module can configured independently."""
