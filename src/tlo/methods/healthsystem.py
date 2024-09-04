@@ -1711,7 +1711,6 @@ class HealthSystem(Module):
                 priority=priority,
             )
 
-
     def write_to_hsi_log(
         self,
         event_details: HSIEventDetails,
@@ -1756,7 +1755,6 @@ class HealthSystem(Module):
                 level=event_details.facility_level,
             )
 
-
     def call_and_record_never_ran_hsi_event(self, hsi_event, priority=None):
         """
         Record the fact that an HSI event was never ran.
@@ -1781,7 +1779,6 @@ class HealthSystem(Module):
                  facility_id=-1,
                  priority=priority,
                  )
-
 
     def write_to_never_ran_hsi_log(
         self,
@@ -1939,8 +1936,6 @@ class HealthSystem(Module):
         )
         self._never_ran_hsi_event_counts_cumulative += self._never_ran_hsi_event_counts_log_period
         self._never_ran_hsi_event_counts_log_period.clear()
-
-
 
     def on_end_of_day(self) -> None:
         """Do jobs to be done at the end of the day (after all HSI run)"""
@@ -2749,7 +2744,6 @@ class HealthSystemSummaryCounter:
         for appt_type, number in appt_footprint:
             self._never_ran_appts[appt_type] += number
             self._never_ran_appts_by_level[level][appt_type] += number
-
 
     def record_hs_status(
         self,
