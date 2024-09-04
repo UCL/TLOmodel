@@ -388,7 +388,7 @@ class Demography(Module):
         This function reports the prevalence of maternal death and neonatal deaths for this module generated in the previous month.
         Returns a dataframe with these values.
         """
-        if 'SimplifiedBirths' in self.sim.modules:
+        if 'SimplifiedBirths' not in self.sim.modules or 'Contraception' not in self.sim.modules:
             neonatal_mortality_rate = None
             maternal_mortality_rate = None
             live_births = None

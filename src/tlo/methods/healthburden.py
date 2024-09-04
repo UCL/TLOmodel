@@ -123,11 +123,17 @@ class HealthBurden(Module):
         # 5) Schedule `Healthburden_WriteToLog` that will write to log annually
         sim.schedule_event(Get_Current_DALYS(self), sim.date + DateOffset(months=1))
         if self.parameters['logging_frequency_prevalence'] == 'day':
-            sim.schedule_event(Get_Current_Prevalence(self), sim.date + DateOffset(days=1))
+            sim.schedule_event(Get_Current_Prevalence(self), sim.date + DateOffset(days=0))
+            sim.schedule_event(Healthburden_WriteToLog_Prevalences(self), sim.date + DateOffset(days=0))
+
         elif self.parameters['logging_frequency_prevalence'] == 'month':
             sim.schedule_event(Get_Current_Prevalence(self), sim.date + DateOffset(months=1))
+            sim.schedule_event(Healthburden_WriteToLog_Prevalences(self), sim.date + DateOffset(months=1))
+
         else:
             sim.schedule_event(Get_Current_Prevalence(self), sim.date + DateOffset(year=1))
+            sim.schedule_event(Healthburden_WriteToLog_Prevalences(self), sim.date + DateOffset(year=1))
+
         last_day_of_the_year = Date(sim.date.year, 12, 31)
         sim.schedule_event(Healthburden_WriteToLog(self), last_day_of_the_year)
 
@@ -545,7 +551,7 @@ class HealthBurden(Module):
             force_cols=self.recognised_modules_names,
         )
         self._years_written_to_log += [year]
-    def write_to_log_prevalence_monthly(self):
+    def write_to_log_prevalence(self):
         """Write to the log the prevalence of conditions .
         N.B. This is called at the end of the simulation as well as at the end of each month, so we need to check that
         the year is not being written to the log more than once."""
@@ -769,12 +775,24 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
 
 class Healthburden_WriteToLog(RegularEvent, PopulationScopeEventMixin):
     """ This event runs every year, as the last event on the last day of the year, and writes to the log the YLD, YLL
-    and DALYS accrued in that year.
-    Added test to log daily if it is a test"""
+    and DALYS accrued in that year."""
 
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(years=1), priority=Priority.END_OF_DAY)
 
     def apply(self, population):
         self.module.write_to_log(year=self.sim.date.year)
-        self.module.write_to_log_prevalence_monthly()
+
+class Healthburden_WriteToLog_Prevalences(RegularEvent, PopulationScopeEventMixin):
+    """ This event with a specified frequency to record the prevalence logger
+    Added test to log daily if it is a test"""
+    def __init__(self, module):
+        if module.parameters['logging_frequency_prevalence'] == 'day':
+            super().__init__(module, frequency=DateOffset(days=1), priority=Priority.END_OF_DAY)
+        elif module.parameters['logging_frequency_prevalence'] == 'month':
+            super().__init__(module, frequency=DateOffset(months=1), priority=Priority.END_OF_DAY)
+        else:
+            super().__init__(module, frequency=DateOffset(years=1), priority=Priority.END_OF_DAY)
+    def apply(self, population):
+        self.module.write_to_log_prevalence()
+
