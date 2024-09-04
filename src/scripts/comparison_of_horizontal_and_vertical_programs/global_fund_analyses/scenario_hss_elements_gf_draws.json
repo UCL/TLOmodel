@@ -22,7 +22,7 @@
           "mode_appt_constraints_postSwitch": 2,
           "scale_to_effective_capabilities": true,
           "year_mode_switch": 2024,
-          "policy_name": "Naive",
+          "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7
         }
@@ -46,7 +46,7 @@
           "mode_appt_constraints_postSwitch": 2,
           "scale_to_effective_capabilities": true,
           "year_mode_switch": 2024,
-          "policy_name": "Naive",
+          "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
           "year_HR_scaling_by_level_and_officer_type": 2024,
@@ -72,7 +72,7 @@
           "mode_appt_constraints_postSwitch": 2,
           "scale_to_effective_capabilities": true,
           "year_mode_switch": 2024,
-          "policy_name": "Naive",
+          "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
           "yearly_HR_scaling_mode": "scaling_by_population_growth"
@@ -97,7 +97,7 @@
           "mode_appt_constraints_postSwitch": 2,
           "scale_to_effective_capabilities": true,
           "year_mode_switch": 2024,
-          "policy_name": "Naive",
+          "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
           "yearly_HR_scaling_mode": "GDP_growth"
@@ -122,7 +122,7 @@
           "mode_appt_constraints_postSwitch": 2,
           "scale_to_effective_capabilities": true,
           "year_mode_switch": 2024,
-          "policy_name": "Naive",
+          "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
           "yearly_HR_scaling_mode": "GDP_growth_fHE_case5"
@@ -147,7 +147,7 @@
           "mode_appt_constraints_postSwitch": 2,
           "scale_to_effective_capabilities": true,
           "year_mode_switch": 2024,
-          "policy_name": "Naive",
+          "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
           "year_cons_availability_switch": 2024,
@@ -173,7 +173,7 @@
           "mode_appt_constraints_postSwitch": 2,
           "scale_to_effective_capabilities": true,
           "year_mode_switch": 2024,
-          "policy_name": "Naive",
+          "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
           "year_cons_availability_switch": 2024,
@@ -199,7 +199,7 @@
           "mode_appt_constraints_postSwitch": 2,
           "scale_to_effective_capabilities": true,
           "year_mode_switch": 2024,
-          "policy_name": "Naive",
+          "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
           "year_cons_availability_switch": 2024,
@@ -225,7 +225,7 @@
           "mode_appt_constraints_postSwitch": 2,
           "scale_to_effective_capabilities": true,
           "year_mode_switch": 2024,
-          "policy_name": "Naive",
+          "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
           "year_HR_scaling_by_level_and_officer_type": 2024,
@@ -235,19 +235,15 @@
           "cons_availability_postSwitch": "all"
         },
         "ImprovedHealthSystemAndCareSeekingScenarioSwitcher": {
-          "max_healthsystem_function": [
-            false,
-            true
-          ],
-          "year_of_switch": 2024,
           "max_healthcare_seeking": [
             false,
             true
-          ]
+          ],
+          "year_of_switch": 2024
         }
       }
     }
   ],
-  "commit": "9a2178a813ecb5e1b6d80851fea8eb1ae50e5858",
-  "github": "https://github.com/UCL/TLOmodel/tree/9a2178a813ecb5e1b6d80851fea8eb1ae50e5858"
+  "commit": "88d443d123b5917e8b37245eab07466430258895",
+  "github": "https://github.com/UCL/TLOmodel/tree/88d443d123b5917e8b37245eab07466430258895"
 }
