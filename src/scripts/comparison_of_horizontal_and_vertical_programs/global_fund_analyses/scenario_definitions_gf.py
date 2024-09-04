@@ -122,7 +122,7 @@ class ScenarioDefinitions:
             self.double_capacity_at_primary_care(),  #  }
             self.hrh_above_gdp_growth(),             #  } <-- confirmed that these two do build on one another under
             # mode 2 rescaling: see `test_scaling_up_HRH_using_yearly_scaling_and_scaling_by_level_together`.
-            self.perfect_clinical_practices(),
+            # self.perfect_clinical_practices(),
             self.perfect_healthcare_seeking(),
             self.all_consumables_available(),
         )
