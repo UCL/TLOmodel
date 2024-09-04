@@ -265,15 +265,26 @@ class Consumables:
         return avail
 
     def on_simulation_end(self):
-        """Do tasks at the end of the simulation: Raise warnings and enter to log about item_codes not recognised."""
+        """Do tasks at the end of the simulation.
+         
+        Raise warnings and enter to log about item_codes not recognised.
+        """
         if self._not_recognised_item_codes:
-            warnings.warn(UserWarning(f"Item_Codes were not recognised./n"
-                                      f"{self._not_recognised_item_codes}"))
-            for _treatment_id, _item_codes in self._not_recognised_item_codes:
-                logger.info(
-                    key="item_codes_not_recognised",
-                    data={_treatment_id if _treatment_id is not None else "": list(_item_codes)}
+            warnings.warn(
+                UserWarning(
+                    f"Item_Codes were not recognised./n"
+                    f"{self._not_recognised_item_codes}"
                 )
+            )
+            logger.info(
+                key="item_codes_not_recognised",
+                data={
+                    _treatment_id if _treatment_id is not None else "": list(
+                        _item_codes
+                    )
+                    for _treatment_id, _item_codes in self._not_recognised_item_codes
+                },
+            )
 
     def on_end_of_year(self):
         self._summary_counter.write_to_log_and_reset_counters()
