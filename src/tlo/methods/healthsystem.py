@@ -516,14 +516,6 @@ class HealthSystem(Module):
             # Dictionary mapping from HSI event details to unique integer keys
             self._never_ran_hsi_event_details = dict()
 
-            # Counters for binning HSI events that have no empty footprints (by unique integer keys) over
-            # simulation period specified by hsi_event_count_log_period and cumulative
-            # counts over previous log periods
-            self._hsi_event_no_blank_counts_log_period = Counter()
-            self._hsi_event_no_blank_counts_cumulative = Counter()
-            # Dictionary mapping from HSI event details to unique integer keys
-            self._hsi_event_no_blank_details = dict()
-
         elif hsi_event_count_log_period is not None:
             raise ValueError(
                 "hsi_event_count_log_period argument should be one of 'day', 'month' "
