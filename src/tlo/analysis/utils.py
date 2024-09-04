@@ -10,7 +10,7 @@ from collections import Counter, defaultdict
 from collections.abc import Mapping
 from pathlib import Path
 from types import MappingProxyType
-from typing import Callable, Dict, Iterable, List, Optional, TextIO, Tuple, Union
+from typing import Callable, Dict, Iterable, List, Optional, TextIO, Tuple, Union, Literal
 
 import git
 import matplotlib.colors as mcolors
@@ -306,10 +306,77 @@ def extract_results(results_folder: Path,
     return _concat
 
 
-def summarize(results: pd.DataFrame, only_mean: bool = False, collapse_columns: bool = False) -> pd.DataFrame:
+def summarise(
+    results: pd.DataFrame,
+    central_measure: Literal["mean", "median"] = "median",
+    width_of_range: float = 0.95,
+    only_central: bool = False,
+    collapse_columns: bool = False,
+) -> pd.DataFrame:
+    """Utility function to compute summary statistics
+
+    Finds a central value and a specified interval across the runs for each draw. By default, this uses a central
+     measure of the median and a 95% interval range.
+
+    :Param: results: The pd.DataFame of results.
+    :Param: central_measure: The name of the central measure to use - either 'mean' or 'median'.
+    :Param: width_of_range: The width of the range to compute the statistics (e.g. 0.95 for the 95% interval).
+    :Param: collapse_columns: Whether to simplify the columnar index if there is only one run (cannot be done otherwise)
+    :Param: only_central: Whether to only report the central value (dropping the range).
+
+    """
+    stats = dict()
+
+    if central_measure == 'mean':
+        stats.update({'central': results.groupby(axis=1, by='draw', sort=False).mean()})
+    elif central_measure == 'median':
+        stats.update({'central': results.groupby(axis=1, by='draw', sort=False).median()})
+    else:
+        raise ValueError(f"Unknown stat: {central_measure}")
+
+    stats.update(
+        {
+            'lower': results.groupby(axis=1, by='draw', sort=False).quantile((1.-width_of_range)/2),
+            'upper': results.groupby(axis=1, by='draw', sort=False).quantile(1.-(1.-width_of_range)/2),
+        }
+    )
+
+    summary = pd.concat(stats, axis=1)
+    summary.columns = summary.columns.swaplevel(1, 0)
+    summary.columns.names = ['draw', 'stat']
+    summary = summary.sort_index(axis=1)
+
+    if only_central and (not collapse_columns):
+        # Remove other metrics and simplify if 'only_mean' across runs for each draw is required:
+        om: pd.DataFrame = summary.loc[:, (slice(None), "central")]
+        om.columns = [c[0] for c in om.columns.to_flat_index()]
+        om.columns.name = 'draw'
+        return om
+
+    elif collapse_columns and (len(summary.columns.levels[0]) == 1):
+        # With 'collapse_columns', if number of draws is 1, then collapse columns multi-index:
+        summary_droppedlevel = summary.droplevel('draw', axis=1)
+        if only_central:
+            return summary_droppedlevel['central']
+        else:
+            return summary_droppedlevel
+
+    else:
+        return summary
+
+
+def summarize(
+    results: pd.DataFrame,
+    only_mean: bool = False,
+    collapse_columns: bool = False
+):
     """Utility function to compute summary statistics
 
     Finds mean value and 95% interval across the runs for each draw.
+
+    NOTE: This is the legacy version of `summarize` that is hard-wired to use `means` (the kwarg is `only_mean` and the
+     name of the column is `mean`). Please move to using the new and more flexible version of `summarize` that allows
+     the use of medians and is flexible to allow other forms of summary measure in the future.
     """
 
     summary = pd.concat(
@@ -1129,7 +1196,7 @@ def get_parameters_for_status_quo() -> Dict:
             "equip_availability": "all",  # <--- NB. Existing calibration is assuming all equipment is available
         },
     }
-    
+
 def get_parameters_for_standard_mode2_runs() -> Dict:
     """
     Returns a dictionary of parameters and their updated values to indicate
