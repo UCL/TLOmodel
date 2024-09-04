@@ -2723,7 +2723,7 @@ class HealthSystemSummaryCounter:
             self._appts_by_level[level][appt_type] += number
 
         # Count the blank appointment footprints
-        if len(appt_footprint) != 0 and not all(x == 0 for x in appt_footprint):
+        if len(appt_footprint) and not any(x > 0.0 for x in appt_footprint.values()):
             self._no_blank_appt_treatment_ids[treatment_id] += 1
             for appt_type, number in appt_footprint:
                 self._no_blank_appt_appts[appt_type] += number
