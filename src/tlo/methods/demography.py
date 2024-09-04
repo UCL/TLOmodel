@@ -134,7 +134,7 @@ class Demography(Module):
         ),
 
         'district_num_of_residence': Property(
-            Types.CATEGORICAL, 
+            Types.CATEGORICAL,
             'The district number in which the person is resident',
             categories=['SET_AT_RUNTIME']
         ),
@@ -414,13 +414,13 @@ class Demography(Module):
                                                    (df['cause_of_death'] == 'TB')) &
                                                   (df['date_of_death'] >= (self.sim.date - DateOffset(months=1)))
                                                   ])
-                direct_deaths_non_hiv = len(df.loc[
+                indirect_deaths_hiv = len(df.loc[
                                                 (df['is_pregnant'] | df['la_is_postpartum']) &
                                                 df['cause_of_death'].str.contains('AIDS_non_TB|AIDS_TB') &
                                                 (df['date_of_death'] >= (self.sim.date - DateOffset(months=1)))
                                                 ])
-                direct_deaths_non_hiv = direct_deaths_non_hiv * 0.3  # https://www.who.int/publications/i/item/9789240068759
-                maternal_deaths = maternal_direct_deaths + indirect_deaths_non_hiv + direct_deaths_non_hiv
+                indirect_deaths_hiv = indirect_deaths_hiv * 0.3  # https://www.who.int/publications/i/item/9789240068759
+                maternal_deaths = maternal_direct_deaths + indirect_deaths_non_hiv + indirect_deaths_hiv
                 maternal_mortality_rate = maternal_deaths/live_births * 1000
 
         health_values_df = pd.DataFrame({
