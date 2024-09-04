@@ -336,15 +336,15 @@ def summarise(
 
     stats.update(
         {
-            'lower': results.groupby(axis=1, by='draw', sort=False).quantile((1.-width_of_range)/2),
-            'upper': results.groupby(axis=1, by='draw', sort=False).quantile(1.-(1.-width_of_range)/2),
+            'lower': results.groupby(axis=1, by='draw', sort=False).quantile((1.-width_of_range)/2.),
+            'upper': results.groupby(axis=1, by='draw', sort=False).quantile(1.-(1.-width_of_range)/2.),
         }
     )
 
     summary = pd.concat(stats, axis=1)
     summary.columns = summary.columns.swaplevel(1, 0)
     summary.columns.names = ['draw', 'stat']
-    summary = summary.sort_index(axis=1)
+    summary = summary.sort_index(axis=1).reindex(columns=['lower', 'central', 'upper'], level=1)
 
     if only_central and (not collapse_columns):
         # Remove other metrics and simplify if 'only_mean' across runs for each draw is required:
