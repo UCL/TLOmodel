@@ -5,6 +5,7 @@
 """
 
 import os
+from functools import reduce
 
 import pandas as pd
 
@@ -65,7 +66,7 @@ class Tb(Module):
     }
 
     CAUSES_OF_DISABILITY = {
-        "TB": Cause(gbd_causes="Tuberculosis", label="non_AIDS_TB"),
+        "TB": Cause(gbd_causes="Tuberculosis", label="TB (non-AIDS)"),
     }
 
     # Declaration of the specific symptoms that this module will use
@@ -1351,16 +1352,19 @@ class Tb(Module):
             ].index
 
         # join indices of failing cases together
-        tx_failure = (
-            list(ds_tx_failure0_4_idx)
-            + list(ds_tx_failure5_14_idx)
-            + list(ds_tx_failure_shorter_idx)
-            + list(ds_tx_failure_adult_idx)
-            + list(failure_in_mdr_with_ds_tx_idx)
-            + list(failure_due_to_mdr_idx)
+        tx_failure = reduce(
+            pd.Index.union,
+            (
+                ds_tx_failure0_4_idx,
+                ds_tx_failure5_14_idx,
+                ds_tx_failure_shorter_idx,
+                ds_tx_failure_adult_idx,
+                failure_in_mdr_with_ds_tx_idx,
+                failure_due_to_mdr_idx,
+            )
         )
 
-        if tx_failure:
+        if not tx_failure.empty:
             df.loc[tx_failure, "tb_treatment_failure"] = True
             df.loc[
                 tx_failure, "tb_ever_treated"
@@ -1375,7 +1379,7 @@ class Tb(Module):
                 )
 
         # remove any treatment failure indices from the treatment end indices
-        cure_idx = list(set(end_tx_idx) - set(tx_failure))
+        cure_idx = end_tx_idx.difference(tx_failure)
 
         # change individual properties for all to off treatment
         df.loc[end_tx_idx, "tb_diagnosed"] = False
@@ -1397,7 +1401,7 @@ class Tb(Module):
         )
 
         # if HIV+ and on ART (virally suppressed), remove AIDS symptoms if cured of TB
-        hiv_tb_infected = set(cure_idx).intersection(
+        hiv_tb_infected = cure_idx.intersection(
             df.loc[
                 df.is_alive
                 & df.hv_inf
