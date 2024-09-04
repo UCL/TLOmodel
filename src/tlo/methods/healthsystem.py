@@ -2158,29 +2158,6 @@ class HealthSystem(Module):
                 }
             )
 
-    def hsi_no_blank_footprint_event_counts(self) -> Counter:
-        """Counts of details of HSI events with no blank footprint which have run so far in simulation.
-        Returns a ``Counter`` instance with keys ``HSIEventDetail`` named tuples
-        corresponding to details of HSI events with no blank footprint that have run over simulation so far.
-        """
-        if self._hsi_event_count_log_period is None:
-            return Counter()
-        else:
-            # If in middle of log period _hsi_event_counts_log_period will not be empty
-            # and so overall total counts is sums of counts in both
-            total_hsi_event_no_blank_counts = (
-                self._hsi_event_no_blank_counts_cumulative +
-                self._hsi_event_no_blank_counts_log_period
-            )
-            return Counter(
-                {
-                    event_details: total_hsi_event_no_blank_counts[event_details_key]
-                    for event_details, event_details_key
-                    in self._hsi_event_no_blank_details.items()
-                }
-            )
-
-
 
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     """
