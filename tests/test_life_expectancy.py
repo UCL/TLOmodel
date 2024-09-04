@@ -1,10 +1,14 @@
 import datetime
 import os
-from pathlib import Path
 import pickle
+from pathlib import Path
+
 import pandas as pd
 
-from tlo.analysis.life_expectancy import get_life_expectancy_estimates, get_probability_of_premature_death
+from tlo.analysis.life_expectancy import (
+    get_life_expectancy_estimates,
+    get_probability_of_premature_death,
+)
 from tlo.analysis.utils import extract_results
 
 
@@ -42,6 +46,7 @@ def test_probability_premature_death(tmpdir, age_before_which_death_is_defined_a
 
     This function loads results from a dummy cohort (N = 100, with 37 F and 63 M) simulation where all individuals start at age 0.
     The simulation was then run for 70 years (2010 - 2080), during which individuals could die but nobody could be born.
+    In this dummy data set, 7 F die and 24 M die, giving a probability of premature death as 0.189 and 0.381 respectively.
     The premature deaths amongst these individuals is then the number that have died before the age of 70 (default value).
     This test uses the calculates the probability of premature death separately for males and females using the
     data from this simulated run and the function get_probability_of_premature_death.
@@ -83,7 +88,6 @@ def test_probability_premature_death(tmpdir, age_before_which_death_is_defined_a
     probability_premature_death_sim_M = len(deaths_total[(deaths_total['Sex'] == 'M') & (
             deaths_total['Age'].astype(int) <= age_before_which_death_is_defined_as_premature)]) / initial_male
 
-     #Summary measure: Should have row ('M', 'F') and columns ('mean', 'lower', 'upper')
     probability_premature_death_summary = get_probability_of_premature_death(
         results_folder=results_folder_dummy_results,
         target_period=target_period,
