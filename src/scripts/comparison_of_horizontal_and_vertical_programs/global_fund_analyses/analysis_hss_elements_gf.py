@@ -112,7 +112,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             xticks.keys(),
             _df['mean'].values,
             yerr=yerr,
-            alpha=0.8,
+            alpha=0.8,  # todo remove?
             ecolor='black',
             color=colors,
             capsize=10,
