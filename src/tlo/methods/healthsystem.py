@@ -2684,15 +2684,15 @@ class HealthSystemSummaryCounter:
         self._appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
         # <--Same as `self._appts` but also split by facility_level
 
-        # Log HSI_Events that never ran to monitor shortcoming of Health System
-        self._never_ran_treatment_ids = defaultdict(int)  # As above, but for `HSI_Event`s that never ran
-        self._never_ran_appts = defaultdict(int)  # As above, but for `HSI_Event`s that have never ran
-        self._never_ran_appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
-
         # Log HSI_Events that have a non-blank appointment footprint
         self._no_blank_appt_treatment_ids = defaultdict(int)  # As above, but for `HSI_Event`s that never ran
         self._no_blank_appt_appts = defaultdict(int)  # As above, but for `HSI_Event`s that have never ran
         self._no_blank_appt_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
+
+        # Log HSI_Events that never ran to monitor shortcoming of Health System
+        self._never_ran_treatment_ids = defaultdict(int)  # As above, but for `HSI_Event`s that never ran
+        self._never_ran_appts = defaultdict(int)  # As above, but for `HSI_Event`s that have never ran
+        self._never_ran_appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
 
         self._frac_time_used_overall = []  # Running record of the usage of the healthcare system
         self._sum_of_daily_frac_time_used_by_officer_type_and_level = Counter()
