@@ -32,6 +32,7 @@ class Skeleton(Module):
         - `on_birth(mother, child)`
         - `on_hsi_alert(person_id, treatment_id)` [If this is disease module]
         -  `report_daly_values()` [If this is disease module]
+        - `report_prevalence()` [If this is disease module]
     """
 
     # Declares modules that need to be registered in simulation and initialised before
@@ -145,6 +146,16 @@ class Skeleton(Module):
         To return a value of 0.0 (fully health) for everyone, use:
         df = self.sim.population.props
         return pd.Series(index=df.index[df.is_alive],data=0.0)
+        """
+        raise NotImplementedError
+
+    def report_prevalence(self):
+        """
+        This must send back a pd.Series or pd.DataFrame that reports on the prevalence of a diseas/condition or the monthly
+        rate of certain events.
+        If multiple conditions in a module are defined, a pd.DataFrame must be returned with a column
+        corresponding to each cause (but if only one cause in module is defined, the pd.Series does not
+        need to be given a specific name).
         """
         raise NotImplementedError
 
