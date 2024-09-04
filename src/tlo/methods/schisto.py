@@ -217,7 +217,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
     def report_prevalence(self):
         # This returns dataframe that reports on the prevalence of schisto for all individuals
         df = self.sim.population.props
-        is_infected = (df[self.cols_of_infection_status] == 'Non-infected').any()
+        is_infected = (df[self.cols_of_infection_status].isin(['Low-infection', 'High-infection'])).any()
         total_prev = len(is_infected)/ len(df[df['is_alive']])
 
         return total_prev
