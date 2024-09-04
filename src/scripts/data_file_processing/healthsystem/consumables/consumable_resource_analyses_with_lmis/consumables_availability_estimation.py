@@ -30,14 +30,12 @@ import pandas as pd
 
 from tlo.methods.consumables import check_format_of_consumables_file
 
-# Set local Dropbox source
-path_to_dropbox = Path(  # <-- point to the TLO dropbox locally
-    '/Users/sm2511/Dropbox/Thanzi la Onse'
-    # '/Users/sejjj49/Dropbox/Thanzi la Onse'
-    # 'C:/Users/tmangal/Dropbox/Thanzi la Onse'
+# Set local shared folder source
+path_to_share = Path(  # <-- point to the shared folder
+    '/Users/sm2511/Library/CloudStorage/OneDrive-SharedLibraries-ImperialCollegeLondon/TLOModel - WP - Documents/'
 )
 
-path_to_files_in_the_tlo_dropbox = path_to_dropbox / "05 - Resources/Module-healthsystem/consumables raw files/"
+path_to_files_in_the_tlo_shared_drive = path_to_share / "07 - Data/Consumables data/"
 
 # define a timestamp for script outputs
 timestamp = datetime.datetime.now().strftime("_%Y_%m_%d_%H_%M")
@@ -68,7 +66,7 @@ def change_colnames(df, NameChangeList):  # Change column names
 #########################################################################################
 
 # Import 2018 data
-lmis_df = pd.read_csv(path_to_files_in_the_tlo_dropbox / 'ResourceFile_LMIS_2018.csv', low_memory=False)
+lmis_df = pd.read_csv(path_to_files_in_the_tlo_shared_drive / 'OpenLMIS/2018/ResourceFile_LMIS_2018.csv', low_memory=False)
 
 # 1. BASIC CLEANING ##
 # Rename columns
@@ -515,7 +513,7 @@ unmatched_consumables = pd.merge(unmatched_consumables, matched_consumables[['it
 unmatched_consumables = unmatched_consumables[unmatched_consumables['item_y'].isna()]
 
 # ** Extract stock availability data from HHFA and clean data **
-hhfa_df = pd.read_excel(path_to_files_in_the_tlo_dropbox / 'ResourceFile_hhfa_consumables.xlsx', sheet_name='hhfa_data')
+hhfa_df = pd.read_excel(path_to_files_in_the_tlo_shared_drive / 'ResourceFile_hhfa_consumables.xlsx', sheet_name='hhfa_data')
 
 # Use the ratio of availability rates between levels 1b on one hand and levels 2 and 3 on the other to extrapolate
 # availability rates for levels 2 and 3 from the HHFA data
@@ -541,7 +539,7 @@ for var in ['available_prop_hhfa_Facility_level_2', 'available_prop_hhfa_Facilit
     hhfa_df.loc[cond, var] = 1
 
 # Add further assumptions on consumable availability from other sources
-assumptions_df = pd.read_excel(open(path_to_files_in_the_tlo_dropbox / 'ResourceFile_hhfa_consumables.xlsx', 'rb'),
+assumptions_df = pd.read_excel(open(path_to_files_in_the_tlo_shared_drive / 'ResourceFile_hhfa_consumables.xlsx', 'rb'),
                                sheet_name='availability_assumptions')
 assumptions_df = assumptions_df[['item_code', 'available_prop_Facility_level_0',
                                  'available_prop_Facility_level_1a', 'available_prop_Facility_level_1b',
