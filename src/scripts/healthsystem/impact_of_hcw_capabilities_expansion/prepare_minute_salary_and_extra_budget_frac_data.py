@@ -38,56 +38,83 @@ Minute_Salary.rename(columns={'Officer_Category': 'Officer_Type_Code'}, inplace=
 
 Minute_Salary.to_csv(resourcefilepath / 'costing' / 'Minute_Salary_HR.csv', index=False)
 
-# calculate the current cost distribution of the four cadres
+# calculate the current cost distribution of all cadres
+cadre_all = ['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy',
+             'Dental', 'Laboratory', 'Mental', 'Nutrition', 'Radiography']
 staff_count = hr_current.groupby('Officer_Category')['Staff_Count'].sum().reset_index()
 staff_cost = staff_count.merge(hr_salary, on=['Officer_Category'], how='outer')
 staff_cost['annual_cost'] = staff_cost['Staff_Count'] * staff_cost['Annual_Salary_USD']
-four_cadres_cost = staff_cost.loc[
-    staff_cost.Officer_Category.isin(['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy'])].reset_index(drop=True)
-four_cadres_cost['cost_frac'] = (four_cadres_cost['annual_cost'] / four_cadres_cost['annual_cost'].sum())
-# x = four_cadres_cost.loc[0, 'cost_frac'].as_integer_ratio()
-assert four_cadres_cost.cost_frac.sum() == 1
+staff_cost['cost_frac'] = (staff_cost['annual_cost'] / staff_cost['annual_cost'].sum())
+assert staff_cost.cost_frac.sum() == 1
+staff_cost.set_index('Officer_Category', inplace=True)
+staff_cost = staff_cost.reindex(index=cadre_all)
 
-# Calculate the current cost distribution of one/two/three/four cadres and define them as scenarios
-# We confirmed/can prove that in such expansion scenarios of two/three/four cadres,
-# the annual scale up factors are actually equal for cadres,
-# equal to 1 + annual extra cost / total current cost of two/three/four cadres.
-# todo: One possible issue is that Pharmacy cost has only small fractions in all multi-cadre scenarios,
-# as its current fraction is small; we have estimated that Pharmacy cadre is extremely in shortage,
-# thus these scenarios might still face huge shortages (However, we can not estimate hcw shortage in mode 2?).
-cadres = ['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy']
-combination_list = ['']
-for n in range(1, len(cadres)+1):
-    for subset in itertools.combinations(cadres, n):
-        combination_list.append(str(subset))
+# No expansion scenario, or zero-extra-budget-fraction scenario, "s_1"
+# Define the current cost fractions among all cadres as extra-budget-fraction scenario "s_2" \
+# to be matched with Margherita's 4.2% scenario.
+# Define all other scenarios so that the extra budget fraction of each cadre, \
+# i.e., four main cadres and the "Other" cadre that groups up all other cadres, is the same (fair allocation)
 
-cadre_to_expand = pd.DataFrame(index=cadres, columns=combination_list).fillna(0)
-cadre_to_expand.loc[:, ''] = 0  # no_expansion scenario
-for c in cadres:
-    for i in cadre_to_expand.columns:
+cadre_group = ['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy', 'Other']  # main cadres
+
+# create scenarios
+combination_list = ['s_1', 's_2']  # two baseline scenarios
+for n in range(1, len(cadre_group)+1):
+    for subset in itertools.combinations(cadre_group, n):
+        combination_list.append(str(subset))  # other equal-fraction scenarios
+
+# cadre groups to expand
+cadre_to_expand = pd.DataFrame(index=cadre_group, columns=combination_list).fillna(0.0)
+for c in cadre_group:
+    for i in cadre_to_expand.columns[2:]:
         if c in i:
-            cadre_to_expand.loc[c, i] = staff_cost.loc[staff_cost.Officer_Category == c, 'annual_cost'].values[0]
+            cadre_to_expand.loc[c, i] = 1  # value 1 indicate the cadre group will be expanded
 
-extra_budget_fracs = pd.DataFrame(index=cadre_to_expand.index, columns=cadre_to_expand.columns).fillna(0)
-for i in extra_budget_fracs.columns[1:]:
-    extra_budget_fracs.loc[:, i] = cadre_to_expand.loc[:, i] / cadre_to_expand.loc[:, i].sum()
+# prepare auxiliary dataframe for equal extra budget fractions scenarios
+auxiliary = cadre_to_expand.copy()
+for i in auxiliary.columns[2:]:
+    auxiliary.loc[:, i] = auxiliary.loc[:, i] / auxiliary.loc[:, i].sum()
+
+
+# define extra budget fracs for each cadre
+extra_budget_fracs = pd.DataFrame(index=cadre_all, columns=combination_list)
+assert (extra_budget_fracs.columns == auxiliary.columns).all()
+assert (extra_budget_fracs.index[0:4] == auxiliary.index[0:4]).all()
+
+extra_budget_fracs.loc[:, 's_1'] = 0
+assert (staff_cost.index == extra_budget_fracs.index).all()
+extra_budget_fracs.loc[:, 's_2'] = staff_cost.loc[:, 'cost_frac'].values
+
+for i in extra_budget_fracs.columns[2:]:
+    for c in extra_budget_fracs.index:
+        if c in auxiliary.index:  # the four main cadres
+            extra_budget_fracs.loc[c, i] = auxiliary.loc[c, i]
+        else:  # the other 5 cadres
+            extra_budget_fracs.loc[c, i] = auxiliary.loc['Other', i] / 5  # equal fracs among the 5 other cadres; could
+            # set non-equal fracs
 
 assert (abs(extra_budget_fracs.iloc[:, 1:len(extra_budget_fracs.columns)].sum(axis=0) - 1.0) < 1/1e10).all()
 
-simple_scenario_name = {}
-for i in range(len(extra_budget_fracs.columns)):
-    simple_scenario_name[extra_budget_fracs.columns[i]] = 's_' + str(i+1)  # name scenario from s_1
+# rename scenarios
+# make the scenario of equal fracs for all five cadre groups (i.e., the last column) to be s_3
+simple_scenario_name = {extra_budget_fracs.columns[-1]: 's_3'}
+for i in range(2, len(extra_budget_fracs.columns)-1):
+    simple_scenario_name[extra_budget_fracs.columns[i]] = 's_' + str(i+2)  # name scenario from s_4
 extra_budget_fracs.rename(columns=simple_scenario_name, inplace=True)
+
+# reorder columns
+col_order = ['s_' + str(i) for i in range(1, len(extra_budget_fracs.columns)+1)]
+assert len(col_order) == len(extra_budget_fracs.columns)
+extra_budget_fracs = extra_budget_fracs.reindex(columns=col_order)
 
 
 # calculate hr scale up factor for years 2020-2030 (10 years in total) outside the healthsystem module
 
 def calculate_hr_scale_up_factor(extra_budget_frac, yr, scenario) -> pd.DataFrame:
-    """This function calculates the yearly hr scale up factor for Clinical, DCSA, Nursing_and_Midwifery,
-    and Pharmacy cadres for a year yr, given a fraction of an extra budget allocated to each cadre and
-    a yearly budget growth rate of 4.2%.
-    Parameter extra_budget_frac (list) is a list of four floats, representing the fractions.
-    Parameter yr (int) is a year between 2020 and 2030.
+    """This function calculates the yearly hr scale up factor for cadres for a year yr,
+    given a fraction of an extra budget allocated to each cadre and a yearly budget growth rate of 4.2%.
+    Parameter extra_budget_frac (list) is a list of 9 floats, representing the fractions.
+    Parameter yr (int) is a year between 2019 and 2030.
     Parameter scenario (string) is a column name in the extra budget fractions resource file.
     Output dataframe stores scale up factors and relevant for the year yr.
     """
@@ -102,7 +129,7 @@ def calculate_hr_scale_up_factor(extra_budget_frac, yr, scenario) -> pd.DataFram
     prev_data['scale_up_factor'] = (prev_data.Staff_Count + prev_data.extra_staff) / prev_data.Staff_Count
 
     # store the updated data for the year yr
-    new_data = prev_data[['Officer_Category', 'Annual_Salary_USD', 'scale_up_factor']].copy()
+    new_data = prev_data[['Annual_Salary_USD', 'scale_up_factor']].copy()
     new_data['Staff_Count'] = prev_data.Staff_Count + prev_data.extra_staff
     new_data['annual_cost'] = prev_data.annual_cost + prev_data.extra_budget
 
@@ -110,32 +137,32 @@ def calculate_hr_scale_up_factor(extra_budget_frac, yr, scenario) -> pd.DataFram
 
 
 # calculate scale up factors for all defined scenarios and years
-four_cadres_cost['scale_up_factor'] = 1
-scale_up_factor_dict = {s: {y: {} for y in range(2019, 2030)} for s in extra_budget_fracs.columns}
+staff_cost['scale_up_factor'] = 1
+scale_up_factor_dict = {s: {y: {} for y in range(2018, 2030)} for s in extra_budget_fracs.columns}
 for s in extra_budget_fracs.columns:
-    # for the initial/current year of 2019
-    scale_up_factor_dict[s][2019] = four_cadres_cost.drop(columns='cost_frac').copy()
+    # for the initial/current year of 2018
+    scale_up_factor_dict[s][2018] = staff_cost.drop(columns='cost_frac').copy()
     # for the years with scaled up hr
-    for y in range(2020, 2030):
+    for y in range(2019, 2030):
         scale_up_factor_dict[s][y] = calculate_hr_scale_up_factor(list(extra_budget_fracs[s]), y, s)
 
 # get the total cost and staff count for each year between 2020-2030 and each scenario
-total_cost = pd.DataFrame(index=range(2020, 2030), columns=extra_budget_fracs.columns)
-total_staff = pd.DataFrame(index=range(2020, 2030), columns=extra_budget_fracs.columns)
+total_cost = pd.DataFrame(index=range(2018, 2030), columns=extra_budget_fracs.columns)
+total_staff = pd.DataFrame(index=range(2018, 2030), columns=extra_budget_fracs.columns)
 for y in total_cost.index:
     for s in extra_budget_fracs.columns:
         total_cost.loc[y, s] = scale_up_factor_dict[s][y].annual_cost.sum()
         total_staff.loc[y, s] = scale_up_factor_dict[s][y].Staff_Count.sum()
 
-# check the total cost after 10 years are increased as expected
+# check the total cost after 11 years are increased as expected
 assert (
-    abs(total_cost.loc[2029, total_cost.columns[1:]] - (1 + 0.042) ** 10 * total_cost.loc[2029, 's_1']) < 1/1e6
+    abs(total_cost.loc[2029, total_cost.columns[1:]] - (1 + 0.042) ** 11 * total_cost.loc[2029, 's_1']) < 1/1e7
 ).all()
 
-# get the integrated scale up factors for year 2029 and each scenario
-integrated_scale_up_factor = pd.DataFrame(index=cadres, columns=total_cost.columns).fillna(1.0)
+# get the integrated scale up factors by the end of year 2029 and each scenario
+integrated_scale_up_factor = pd.DataFrame(index=cadre_all, columns=total_cost.columns).fillna(1.0)
 for s in total_cost.columns[1:]:
-    for yr in range(2020, 2030):
+    for yr in range(2019, 2030):
         integrated_scale_up_factor.loc[:, s] = np.multiply(
             integrated_scale_up_factor.loc[:, s].values,
             scale_up_factor_dict[s][yr].loc[:, 'scale_up_factor'].values
