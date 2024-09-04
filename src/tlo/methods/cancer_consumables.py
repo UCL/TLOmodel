@@ -15,15 +15,15 @@ def get_consumable_item_codes_cancers(self) -> Dict[str, int]:
     cons_dict = dict()
 
     # Add items that are needed for all cancer modules
-    cons_dict['screening_biopsy_core'] = \
-        {get_item_code("Biopsy needle"): 1}
-
-    cons_dict['screening_biopsy_optional'] = \
+    cons_dict['screening_biopsy_endoscopy_cystoscopy_optional'] = \
         {get_item_code("Specimen container"): 1,
          get_item_code("Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml"): 1,
          get_item_code("Gauze, absorbent 90cm x 40m_each_CMST"): 30,
          get_item_code("Disposables gloves, powder free, 100 pieces per box"): 1,
          get_item_code("Syringe, needle + swab"): 1}
+
+    cons_dict['screening_biopsy_core'] = \
+        {get_item_code("Biopsy needle"): 1}
 
     cons_dict['treatment_surgery_core'] = \
         {get_item_code("Halothane (fluothane)_250ml_CMST"): 100,
@@ -69,23 +69,9 @@ def get_consumable_item_codes_cancers(self) -> Dict[str, int]:
         cons_dict['screening_cystoscopy_core'] = \
             {get_item_code("Cystoscope"): 1}
 
-        cons_dict['screening_cystoscope_optional'] = \
-            {get_item_code("Specimen container"): 1,
-             get_item_code("Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml"): 1,
-             get_item_code("Gauze, absorbent 90cm x 40m_each_CMST"): 30,
-             get_item_code("Disposables gloves, powder free, 100 pieces per box"): 1,
-             get_item_code("Syringe, needle + swab"): 1}
-
     elif 'OesophagealCancer' == self.name:
 
-        cons_dict['screening_endoscope_core'] = \
+        cons_dict['screening_endoscopy_core'] = \
             {get_item_code("Endoscope"): 1}
-
-        cons_dict['screening_endoscope_optional'] = \
-            {get_item_code("Specimen container"): 1,
-             get_item_code("Gauze, absorbent 90cm x 40m_each_CMST"): 30,
-             get_item_code("Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml"): 1,
-             get_item_code("Disposables gloves, powder free, 100 pieces per box"): 1,
-             get_item_code("Syringe, needle + swab"): 1}
 
     return cons_dict

@@ -1212,8 +1212,13 @@ class HealthSystem(Module):
             ].iloc[0]
 
             # Convert policy dataframe into dictionary to speed-up look-up process.
-            self.priority_rank_dict = \
-                Policy_df.set_index("Treatment", drop=True).to_dict(orient="index")
+            self.priority_rank_dict = (
+                Policy_df.set_index("Treatment", drop=True)
+                # Standardize dtypes to ensure any integers represented as floats are
+                # converted to integer dtypes
+                .convert_dtypes()
+                .to_dict(orient="index")
+            )
             del self.priority_rank_dict["lowest_priority_considered"]
 
     def schedule_hsi_event(
@@ -1787,7 +1792,7 @@ class HealthSystem(Module):
                 'Number_By_Appt_Type_Code': dict(event_details.appt_footprint),
                 'Person_ID': person_id,
                 'priority': priority,
-                'Facility_Level': event_details.facility_level if event_details.facility_level is not None else -99,
+                'Facility_Level': event_details.facility_level if event_details.facility_level is not None else "-99",
                 'Facility_ID': facility_id if facility_id is not None else -99,
             },
             description="record of each HSI event that never ran"
@@ -2824,7 +2829,11 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
             self.module.consumables.availability = self._parameters['cons_availability']
 
         if 'beds_availability' in self._parameters:
-            self.module.bed_days.availability = self._parameters['beds_availability']
+            self.module.bed_days.switch_beddays_availability(
+                new_availability=self._parameters["beds_availability"],
+                effective_on_and_from=self.sim.date,
+                model_to_data_popsize_ratio=self.sim.modules["Demography"].initial_model_to_data_popsize_ratio
+            )
 
         if 'equip_availability' in self._parameters:
             self.module.equipment.availability = self._parameters['equip_availability']
