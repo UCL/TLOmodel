@@ -32,7 +32,7 @@ from tlo.methods.diarrhoea import (
     increase_risk_of_death,
     make_treatment_perfect,
 )
-from tlo.methods.hsi_generic_first_appts import HSI_GenericFirstApptAtFacilityLevel0
+from tlo.methods.hsi_generic_first_appts import HSI_GenericNonEmergencyFirstAppt
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
@@ -70,7 +70,7 @@ def test_basic_run_of_diarrhoea_module_with_default_params(tmpdir, seed):
     log_config = {'filename': 'tmpfile',
                   'directory': tmpdir,
                   'custom_levels': {
-                      "Diarrhoea": logging.INFO}
+                      "tlo.methods.diarrhoea": logging.INFO}
                   }
 
     sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
@@ -163,7 +163,7 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_zero_death(tmpdir
     log_config = {'filename': 'tmpfile',
                   'directory': tmpdir,
                   'custom_levels': {
-                      "Diarrhoea": logging.INFO}
+                      "tlo.methods.diarrhoea": logging.INFO}
                   }
 
     sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
@@ -215,7 +215,7 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_no
     log_config = {'filename': 'tmpfile',
                   'directory': tmpdir,
                   'custom_levels': {
-                      "Diarrhoea": logging.INFO}
+                      "tlo.methods.diarrhoea": logging.INFO}
                   }
 
     sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
@@ -278,7 +278,7 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
         log_config = {'filename': 'tmpfile',
                       'directory': tmpdir,
                       'custom_levels': {
-                          "Diarrhoea": logging.INFO}
+                          "tlo.methods.diarrhoea": logging.INFO}
                       }
 
         sim = Simulation(start_date=start_date, seed=seed, show_progress_bar=True, log_config=log_config)
@@ -305,9 +305,9 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
                      )
         # Edit rate of spurious symptoms to be limited to additional cases of diarrhoea:
         sp_symps = sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence']
-        for symp in sp_symps['generic_symptom_name']:
+        for symp in sp_symps['name']:
             sp_symps.loc[
-                sp_symps['generic_symptom_name'] == symp,
+                sp_symps['name'] == symp,
                 ['prob_spurious_occurrence_in_adults_per_day', 'prob_spurious_occurrence_in_children_per_day']
             ] = 5.0 / 1000 if symp == 'diarrhoea' else 0.0
 
@@ -400,14 +400,29 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration(seed):
         'gi_treatment_date': pd.NaT,
     }
     df.loc[person_id, props_new.keys()] = props_new.values()
-    generic_hsi = HSI_GenericFirstApptAtFacilityLevel0(
-        module=sim.modules['HealthSeekingBehaviour'], person_id=person_id)
+    generic_hsi = HSI_GenericNonEmergencyFirstAppt(
+        module=sim.modules["HealthSeekingBehaviour"], person_id=person_id
+    )
+    symptoms = {"diarrhoea"}
 
-    # 1) If DxTest of danger signs perfect and 100% chance of referral --> Inpatient HSI should be created
+    def diagnosis_fn(tests, use_dict: bool = False, report_tried: bool = False):
+        return generic_hsi.healthcare_system.dx_manager.run_dx_test(
+            tests,
+            hsi_event=generic_hsi,
+            use_dict_for_single=use_dict,
+            report_dxtest_tried=report_tried,
+        )
+
     sim.modules['HealthSystem'].reset_queue()
     sim.modules['Diarrhoea'].parameters['prob_hospitalization_on_danger_signs'] = 1.0
-    sim.modules['Diarrhoea'].do_when_presentation_with_diarrhoea(
-        person_id=person_id, hsi_event=generic_hsi)
+    with sim.population.individual_properties(person_id) as individual_properties:
+        sim.modules["Diarrhoea"].do_at_generic_first_appt(
+            person_id=person_id,
+            individual_properties=individual_properties,
+            schedule_hsi_event=sim.modules["HealthSystem"].schedule_hsi_event,
+            diagnosis_function=diagnosis_fn,
+            symptoms=symptoms,
+        )
     evs = sim.modules['HealthSystem'].find_events_for_person(person_id)
 
     assert 1 == len(evs)
@@ -416,8 +431,14 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration(seed):
     # 2) If DxTest of danger signs perfect but 0% chance of referral --> Inpatient HSI should not be created
     sim.modules['HealthSystem'].reset_queue()
     sim.modules['Diarrhoea'].parameters['prob_hospitalization_on_danger_signs'] = 0.0
-    sim.modules['Diarrhoea'].do_when_presentation_with_diarrhoea(
-        person_id=person_id, hsi_event=generic_hsi)
+    with sim.population.individual_properties(person_id) as individual_properties:
+        sim.modules["Diarrhoea"].do_at_generic_first_appt(
+            person_id=person_id,
+            individual_properties=individual_properties,
+            schedule_hsi_event=sim.modules["HealthSystem"].schedule_hsi_event,
+            diagnosis_function=diagnosis_fn,
+            symptoms=symptoms,
+        )
     evs = sim.modules['HealthSystem'].find_events_for_person(person_id)
     assert 1 == len(evs)
     assert isinstance(evs[0][1], HSI_Diarrhoea_Treatment_Outpatient)
@@ -475,14 +496,29 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration_dxtest_notfuncti
         'gi_treatment_date': pd.NaT,
     }
     df.loc[person_id, props_new.keys()] = props_new.values()
-    generic_hsi = HSI_GenericFirstApptAtFacilityLevel0(
+    generic_hsi = HSI_GenericNonEmergencyFirstAppt(
         module=sim.modules['HealthSeekingBehaviour'], person_id=person_id)
+    symptoms = {"diarrhoea"}
+
+    def diagnosis_fn(tests, use_dict: bool = False, report_tried: bool = False):
+        return generic_hsi.healthcare_system.dx_manager.run_dx_test(
+            tests,
+            hsi_event=generic_hsi,
+            use_dict_for_single=use_dict,
+            report_dxtest_tried=report_tried,
+        )
 
     # Only an out-patient appointment should be created as the DxTest for danger signs is not functional.
     sim.modules['Diarrhoea'].parameters['prob_hospitalization_on_danger_signs'] = 0.0
     sim.modules['HealthSystem'].reset_queue()
-    sim.modules['Diarrhoea'].do_when_presentation_with_diarrhoea(
-        person_id=person_id, hsi_event=generic_hsi)
+    with sim.population.individual_properties(person_id) as individual_properties:
+        sim.modules["Diarrhoea"].do_at_generic_first_appt(
+            person_id=person_id,
+            individual_properties=individual_properties,
+            schedule_hsi_event=sim.modules["HealthSystem"].schedule_hsi_event,
+            diagnosis_function=diagnosis_fn,
+            symptoms=symptoms,
+        )
     evs = sim.modules['HealthSystem'].find_events_for_person(person_id)
     assert 1 == len(evs)
     assert isinstance(evs[0][1], HSI_Diarrhoea_Treatment_Outpatient)
@@ -539,14 +575,28 @@ def test_do_when_presentation_with_diarrhoea_non_severe_dehydration(seed):
         'gi_treatment_date': pd.NaT,
     }
     df.loc[person_id, props_new.keys()] = props_new.values()
-    generic_hsi = HSI_GenericFirstApptAtFacilityLevel0(
+    generic_hsi = HSI_GenericNonEmergencyFirstAppt(
         module=sim.modules['HealthSeekingBehaviour'], person_id=person_id)
+    symptoms = {"diarrhoea"}
 
+    def diagnosis_fn(tests, use_dict: bool = False, report_tried: bool = False):
+        return generic_hsi.healthcare_system.dx_manager.run_dx_test(
+            tests,
+            hsi_event=generic_hsi,
+            use_dict_for_single=use_dict,
+            report_dxtest_tried=report_tried,
+        )
     # 1) Outpatient HSI should be created
-    sim.modules['HealthSystem'].reset_queue()
-    sim.modules['Diarrhoea'].do_when_presentation_with_diarrhoea(
-        person_id=person_id, hsi_event=generic_hsi)
-    evs = sim.modules['HealthSystem'].find_events_for_person(person_id)
+    sim.modules["HealthSystem"].reset_queue()
+    with sim.population.individual_properties(person_id) as individual_properties:
+        sim.modules["Diarrhoea"].do_at_generic_first_appt(
+            person_id=person_id,
+            individual_properties=individual_properties,
+            schedule_hsi_event=sim.modules["HealthSystem"].schedule_hsi_event,
+            diagnosis_function=diagnosis_fn,
+            symptoms=symptoms,
+        )
+    evs = sim.modules["HealthSystem"].find_events_for_person(person_id)
 
     assert 1 == len(evs)
     assert isinstance(evs[0][1], HSI_Diarrhoea_Treatment_Outpatient)
@@ -914,6 +964,10 @@ def test_effect_of_vaccine(seed):
     # Get the method that determines dehydration
     get_dehydration = sim.modules['Diarrhoea'].models.get_dehydration
 
+    # increase probability to ensure at least one case of severe dehydration when vaccine is imperfect
+    sim.modules['Diarrhoea'].parameters['prob_dehydration_by_rotavirus'] = 1.0
+    sim.modules['Diarrhoea'].parameters['prob_dehydration_by_shigella'] = 1.0
+
     # 1) Make effect of vaccine perfect
     sim.modules['Diarrhoea'].parameters['rr_severe_dehydration_due_to_rotavirus_with_R1_under1yo'] = 0.0
     sim.modules['Diarrhoea'].parameters['rr_severe_dehydration_due_to_rotavirus_with_R1_over1yo'] = 0.0
@@ -931,8 +985,8 @@ def test_effect_of_vaccine(seed):
                         for _ in range(100)]
 
     # 2) Make effect of vaccine imperfect
-    sim.modules['Diarrhoea'].parameters['rr_severe_dehydration_due_to_rotavirus_with_R1_under1yo'] = 1.0
-    sim.modules['Diarrhoea'].parameters['rr_severe_dehydration_due_to_rotavirus_with_R1_over1yo'] = 1.0
+    sim.modules['Diarrhoea'].parameters['rr_severe_dehydration_due_to_rotavirus_with_R1_under1yo'] = 0.5
+    sim.modules['Diarrhoea'].parameters['rr_severe_dehydration_due_to_rotavirus_with_R1_over1yo'] = 0.5
 
     # Check that if the vaccine is imperfect and the person is infected with rotavirus, then there sometimes is severe
     # dehydration.

@@ -1,7 +1,7 @@
 import os
-from datetime import datetime
 from pathlib import Path
 
+import pandas as pd
 import pytest
 from pandas import DateOffset
 
@@ -18,9 +18,10 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
 )
+from tlo.methods.epi import HSI_BcgVaccine, HSI_HpvVaccine, HSI_RotaVaccine
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2025, 1, 1)
+end_date = Date(2021, 1, 1)
 popsize = 500
 
 try:
@@ -37,56 +38,10 @@ def check_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
-# checking no vaccines administered through health system
-# only hpv should stay at zero, other vaccines start as individual events (year=2010-2018)
-# coverage should gradually decline for all after 2018
-# hard constraints (mode=2) and zero capabilities
-@pytest.mark.slow
-@pytest.mark.group2
-def test_no_health_system(tmpdir, seed):
-    log_config = {
-        'filename': 'test_log',
-        'directory': tmpdir,
-        'custom_levels': {"*": logging.FATAL, "tlo.methods.epi": logging.INFO}
-    }
-
-    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
-    sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(
-            resourcefilepath=resourcefilepath,
-            disable_and_reject_all=True
-        ),
-        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-        epi.Epi(resourcefilepath=resourcefilepath),
-    )
-
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=end_date)
-    check_dtypes(sim)
-
-    # check we can read the results
-    parse_log_file(sim.log_filepath)
-    df = sim.population.props
-
-    # check no vaccines being administered through health system
-    # only hpv currently, all others start as individual events
-    assert (df.va_hpv == 0).all()
-
-    # check all infants born after Jan 2019 have no bcg / penta etc. through HSIs
-    assert not ((df.va_bcg > 0) & (df.date_of_birth > datetime(2019, 1, 1))).any()
-    assert not ((df.va_dtp > 0) & (df.date_of_birth > datetime(2019, 1, 1))).any()
-
-
 # check epi module does schedule hsi events
 @pytest.mark.slow
 @pytest.mark.group2
 def test_epi_scheduling_hsi_events(tmpdir, seed):
-
     log_config = {
         'filename': 'test_log',
         'directory': tmpdir,
@@ -117,8 +72,7 @@ def test_epi_scheduling_hsi_events(tmpdir, seed):
     output = parse_log_file(sim.log_filepath)
     df = sim.population.props
 
-    # check vaccine coverage is above zero for all vaccine types post 2019
-    # 2010-2018 vaccines administered through individual events
+    # check vaccine coverage is above zero for all vaccine types
     ep_out = output["tlo.methods.epi"]["ep_vaccine_coverage"]
 
     # check vaccine coverage is above 0 for all vaccine types
@@ -130,8 +84,8 @@ def test_epi_scheduling_hsi_events(tmpdir, seed):
     assert (ep_out.epPneumo3Coverage > 0).any()
     assert (ep_out.epRota2Coverage > 0).any()
     assert (ep_out.epMeaslesCoverage > 0).any()
-    assert (ep_out.epRubellaCoverage > 0).any()
-    assert (ep_out.epHpvCoverage > 0).any()
+    assert (ep_out.epRubellaCoverage > 0).any()  # begins in 2018
+    assert (ep_out.epHpvCoverage > 0).any()  # begins in 2019
 
     # check only 3 doses max of dtp/pneumo
     assert (df.va_dtp <= 3).all()
@@ -190,3 +144,127 @@ def test_all_doses_properties(seed):
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
+
+
+# check distribution of facility levels for vaccines
+def test_facility_level_distribution(tmpdir, seed):
+    log_config = {
+        'filename': 'test_log',
+        'directory': tmpdir,
+        'custom_levels': {"*": logging.FATAL,
+                          "tlo.methods.epi": logging.INFO,
+                          "tlo.methods.healthsystem.summary": logging.INFO}
+    }
+
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
+
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(
+            resourcefilepath=resourcefilepath,
+            service_availability=["*"],  # all treatment allowed
+            mode_appt_constraints=1,  # mode of constraints to do with officer numbers and time
+            cons_availability="default",  # mode for consumable constraints (if ignored, all consumables available)
+            ignore_priority=False,  # do not use the priority information in HSI event to schedule
+            capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
+            use_funded_or_actual_staffing="funded_plus",
+        ),
+        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        epi.Epi(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+    )
+
+    # change distribution of vaccine delivery
+    # make all vaccines occur at level 3
+    sim.modules['Epi'].parameters['prob_facility_level_for_vaccine'] = [0, 0, 0, 1.0]
+
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=Date(2014, 1, 1))
+    check_dtypes(sim)
+
+    # check we can read the results
+    output = parse_log_file(sim.log_filepath)
+
+    facilities = output["tlo.methods.healthsystem.summary"]["HSI_Event"]
+
+    tmp = facilities.Number_By_Appt_Type_Code_And_Level
+
+    t1 = pd.DataFrame(tmp.values.tolist())
+    t2 = t1.set_axis(["level0", "level1a", "level1b", "level2", "level3", "level4"], axis=1)
+
+    epi_levels = pd.DataFrame(columns=["level0", "level1a", "level1b", "level2", "level3", "level4"])
+
+    for i in range(len(t2.index)):
+        out = [d.get('EPI') for d in t2.iloc[i]]
+        epi_levels.loc[i] = out
+    epi_levels = epi_levels.fillna(0.0)
+
+    assert epi_levels.level0.sum() == 0
+    assert epi_levels.level1a.sum() == 0
+    assert epi_levels.level1b.sum() == 0
+
+    # assert all epi appts that have occurred are at level 2
+    assert epi_levels.level2.sum() == epi_levels.sum().sum()
+
+    assert epi_levels.level3.sum() == 0
+    assert epi_levels.level4.sum() == 0
+
+
+def test_hsi_epi_footprint(seed):
+    """
+    Test that the HSI for vaccine delivery is returning the correct footprint
+    * as an example, test BCG and rota - both are given in bundles at different time-points
+    and should have a footprint of 0.5 EPI
+    * test HPV vaccine, should have full EPI footprint
+    """
+
+    popsize = 10
+    sim = Simulation(start_date=start_date, seed=seed)
+
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, cons_availability='default'),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 epi.Epi(resourcefilepath=resourcefilepath),
+                 )
+
+    # set up initial population
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+
+    df = sim.population.props
+
+    # Get target person and eligible for a childhood vaccine
+    person_id = 0
+    df.at[person_id, "age_years"] = 0
+
+    # Run the BCG vaccine event
+    t = HSI_BcgVaccine(module=sim.modules['Epi'], person_id=person_id)
+    t.apply(person_id=person_id, squeeze_factor=0.0)
+
+    # Check the footprint returned by this event
+    assert t.EXPECTED_APPT_FOOTPRINT.get('EPI') == 0.5
+
+    # Run the Rotavirus vaccine event
+    t = HSI_RotaVaccine(module=sim.modules['Epi'], person_id=person_id)
+    t.apply(person_id=person_id, squeeze_factor=0.0)
+
+    # Check the footprint returned by this event
+    assert t.EXPECTED_APPT_FOOTPRINT.get('EPI') == 0.5
+
+    # Run the HPV vaccine event - this should have one full EPI appt as footprint
+    # Get target person and eligible for a childhood vaccine
+    person_id = 1
+    df.at[person_id, "age_years"] = 9
+
+    t = HSI_HpvVaccine(module=sim.modules['Epi'], person_id=person_id)
+    t.apply(person_id=person_id, squeeze_factor=0.0)
+
+    # Check the footprint returned by this event
+    assert t.EXPECTED_APPT_FOOTPRINT.get('EPI') == 1

@@ -3,7 +3,7 @@ The is the Diagnostic Tests Manager (DxManager). It simplifies the process of co
 See https://github.com/UCL/TLOmodel/wiki/Diagnostic-Tests-(DxTest)-and-the-Diagnostic-Tests-Manager-(DxManager)
 """
 import json
-from typing import Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, TypeAlias, Union
 
 import numpy as np
 import pandas as pd
@@ -11,6 +11,8 @@ from pandas.api.types import is_bool_dtype, is_categorical_dtype, is_float_dtype
 
 from tlo import logging
 from tlo.events import IndividualScopeEventMixin
+
+DiagnosisTestReturnType: TypeAlias = Tuple[Union[Any, Dict[str, Any]]]
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -89,8 +91,14 @@ class DxManager:
         for dx_test in self.dx_tests:
             self.print_info_about_dx_test(dx_test)
 
-    def run_dx_test(self, dx_tests_to_run, hsi_event, use_dict_for_single=False, report_dxtest_tried=False):
-        from tlo.methods.healthsystem import HSI_Event
+    def run_dx_test(
+        self,
+        dx_tests_to_run,
+        hsi_event,
+        use_dict_for_single=False,
+        report_dxtest_tried=False,
+    ) -> DiagnosisTestReturnType:
+        from tlo.methods.hsi_event import HSI_Event
 
         # Check that the thing passed to hsi_event is usable as an hsi_event
         assert isinstance(hsi_event, HSI_Event)
@@ -113,7 +121,7 @@ class DxManager:
 
             # Loop through the list of DxTests that are registered under this name:
             for i, test in enumerate(self.dx_tests[dx_test]):
-                test_result = test.apply(hsi_event, self.hs_module)
+                test_result = test.apply(hsi_event=hsi_event, rng=self.hs_module.rng_for_dx)
 
                 if test_result is not None:
                     # The DxTest was successful. Log the use of that DxTest
@@ -231,7 +239,7 @@ class DxTest:
             return self.__hash_key() == other.__hash_key()
         return NotImplemented
 
-    def apply(self, hsi_event, hs_module):
+    def apply(self, hsi_event, rng):
         """
         This is where the test is applied.
         If this test returns None this means the test has failed due to there not being the required consumables.
@@ -246,7 +254,7 @@ class DxTest:
         person_id = hsi_event.target
 
         # Get the "true value" of the property being examined
-        df: pd.DataFrame = hs_module.sim.population.props
+        df: pd.DataFrame = hsi_event.sim.population.props
         assert self.property in df.columns, \
             f'The property "{self.property}" is not found in the population dataframe'
         true_value = df.at[person_id, self.property]
@@ -260,14 +268,14 @@ class DxTest:
         if is_bool_dtype(df[self.property]):
             if true_value:
                 # Apply the sensitivity:
-                test_value = hs_module.rng.rand() < self.sensitivity
+                test_value = rng.rand() < self.sensitivity
             else:
                 # Apply the specificity:
-                test_value = not (hs_module.rng.rand() < self.specificity)
+                test_value = not (rng.rand() < self.specificity)
 
         elif is_float_dtype(df[self.property]):
             # Apply the normally distributed zero-mean error
-            reading = true_value + hs_module.rng.normal(0.0, self.measure_error_stdev)
+            reading = true_value + rng.normal(0.0, self.measure_error_stdev)
 
             # If no threshold value is provided, then return the reading; otherwise apply the threshold
             if self.threshold is None:
@@ -281,10 +289,10 @@ class DxTest:
 
             if is_match_to_cat:
                 # Apply the sensitivity:
-                test_value = hs_module.rng.rand() < self.sensitivity
+                test_value = rng.rand() < self.sensitivity
             else:
                 # Apply the specificity:
-                test_value = not (hs_module.rng.rand() < self.specificity)
+                test_value = not (rng.rand() < self.specificity)
 
         else:
             test_value = true_value

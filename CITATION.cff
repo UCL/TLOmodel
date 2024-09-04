@@ -1,0 +1,134 @@
+# Author list automatically generated from contributors.yaml by running
+#     python src/scripts/automation/update_citation.py
+# Any manual updates to author list here may be overwritten
+cff-version: 1.2.0
+title: The Thanzi La Onse Model
+doi: 10.5281/zenodo.10144015
+message: If you use this software, please cite it using the metadata from this file.
+type: software
+authors:
+- given-names: Timothy
+  family-names: Hallett
+  orcid: https://orcid.org/0000-0002-9681-0424
+  affiliation: Imperial College London
+  website: https://www.imperial.ac.uk/people/timothy.hallett
+- given-names: Andrew
+  family-names: Phillips
+  orcid: https://orcid.org/0000-0003-2384-4807
+  affiliation: University College London
+  website: https://profiles.ucl.ac.uk/5430
+- given-names: Asif
+  family-names: Tamuri
+  orcid: https://orcid.org/0000-0001-6633-3789
+  affiliation: University College London
+  website: https://www.homepages.ucl.ac.uk/~ucbtaut/
+- given-names: Tim
+  family-names: Colbourn
+  orcid: https://orcid.org/0000-0002-6917-6552
+  affiliation: University College London
+  website: https://profiles.ucl.ac.uk/3084
+- given-names: Joseph
+  family-names: Collins
+  orcid: https://orcid.org/0000-0003-4801-7218
+  affiliation: University College London
+  website: https://profiles.ucl.ac.uk/70734
+- given-names: Iwona
+  family-names: Hawryluk
+  orcid: https://orcid.org/0000-0001-6919-4366
+  affiliation: Imperial College London
+  website: https://www.imperial.ac.uk/people/i.hawryluk19
+- given-names: Britta
+  family-names: Jewell
+  orcid: https://orcid.org/0000-0003-4275-8509
+  website: https://www.imperial.ac.uk/people/b.jewell
+- given-names: Ines
+  family-names: Li Lin
+  orcid: https://orcid.org/0000-0002-1945-3208
+  affiliation: University College London
+- given-names: Tara
+  family-names: Mangal
+  orcid: https://orcid.org/0000-0001-9222-8632
+  affiliation: Imperial College London
+  website: https://www.imperial.ac.uk/people/t.mangal
+- given-names: Robbie
+  family-names: Manning-Smith
+  orcid: https://orcid.org/0000-0002-9457-2821
+  affiliation: University College London
+- given-names: Sakshi
+  family-names: Mohan
+  orcid: https://orcid.org/0000-0002-1268-1769
+  affiliation: University of York
+  website: https://www.york.ac.uk/che/staff/research/sakshi-mohan/
+- given-names: Wingston
+  family-names: Ng'ambi
+  orcid: https://orcid.org/0000-0003-3967-905X
+  affiliation: Kamuzu University of Health Sciences
+  website: https://www.linkedin.com/in/wingston-ng-ambi-7950707b
+- given-names: Bingling
+  family-names: She
+  orcid: https://orcid.org/0000-0001-5976-8987
+  affiliation: Imperial College London
+  website: https://www.imperial.ac.uk/people/b.she
+- given-names: Matthew
+  family-names: Gillman
+- given-names: Mosè
+  family-names: Giordano
+  orcid: https://orcid.org/0000-0002-7218-2873
+  affiliation: University College London
+  website: https://giordano.github.io/
+- given-names: Matthew
+  family-names: Graham
+  orcid: https://orcid.org/0000-0001-9104-7960
+  affiliation: University College London
+  website: https://matt-graham.github.io
+- given-names: Emmanuel
+  family-names: Mnjowe
+  affiliation: Kamuzu University of Health Sciences
+  website: https://www.linkedin.com/in/emmanuel-mnjowe-067481162
+- given-names: Stefan
+  family-names: Piatek
+  orcid: https://orcid.org/0000-0002-3028-5292
+  affiliation: University College London
+  website: https://profiles.ucl.ac.uk/67238
+- given-names: Jonathan
+  family-names: Cooper
+  orcid: https://orcid.org/0000-0001-6009-3542
+  affiliation: University College London
+  website: https://profiles.ucl.ac.uk/59377
+- given-names: Dimitra
+  family-names: Salmanidou
+  orcid: https://orcid.org/0000-0002-2147-0787
+  affiliation: University College London
+  website: https://www.researchgate.net/profile/Dimitra-Salmanidou
+- given-names: William
+  family-names: Graham
+  orcid: https://orcid.org/0000-0003-0058-263X
+  affiliation: University College London
+  website: https://willgraham01.github.io/
+- given-names: Margherita
+  family-names: Molaro
+  orcid: https://orcid.org/0000-0002-1841-4274
+  affiliation: Imperial College London
+- given-names: Eva
+  family-names: Janoušková
+  orcid: https://orcid.org/0000-0002-4104-0119
+  affiliation: University College London
+- given-names: Rachel
+  family-names: Murray-Watson
+  affiliation: Imperial College London
+  orcid: https://orcid.org/0000-0001-9079-5975
+repository-code: https://github.com/UCL/TLOmodel
+url: https://tlomodel.org
+abstract: Our fundamental aim is to develop the use of epidemiological and economic
+  science to effect a step-change in the way that health priorities are addressed
+  through policy interventions in low-income countries. We are doing this by developing
+  a model that represents explicitly the generation of health gains in a population,
+  which can be used to examine the effect of resource allocation, management and clinical
+  practice, in order to contribute to informing decision-making.
+keywords:
+- Epidemiology
+- Healthcare Systems
+- Health-Economics
+- Simulation Modelling
+- Individual-based Modelling
+license: MIT

@@ -4,7 +4,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from tlo import Date, Simulation
+from tlo import DAYS_IN_YEAR, Date, Simulation
 from tlo.methods import (
     breast_cancer,
     demography,
@@ -171,7 +171,7 @@ def check_configuration_of_population(sim):
     # check that date diagnosed is consistent with the age of the person (ie. not before they were 15.0
     age_at_dx = (df.loc[~pd.isnull(df.brc_date_diagnosis)].brc_date_diagnosis - df.loc[
         ~pd.isnull(df.brc_date_diagnosis)].date_of_birth)
-    assert all([int(x.days / 365.25) >= 15 for x in age_at_dx])
+    assert all([int(x.days / DAYS_IN_YEAR) >= 15 for x in age_at_dx])
 
     # check that those treated are a subset of those diagnosed (and that the order of dates makes sense):
     assert set(df.index[~pd.isnull(df.brc_date_treatment)]).issubset(df.index[~pd.isnull(df.brc_date_diagnosis)])
@@ -264,7 +264,7 @@ def test_check_progression_through_stages_is_happening(seed):
 
     # check that there are now some people in each of the later stages:
     df = sim.population.props
-    assert not pd.isnull(df.brc_status[~pd.isna(df.date_of_birth)]).any()
+    assert not pd.isnull(df.brc_status[~pd.isna(df.date_of_birth)]).any()  # pylint: disable=E1130
     # debugging on this line below and there are women alive with breast cancer so not sure why assert is not working
     # Create variable for the condition
     # condition = df.is_alive & (df.age_years >= 15) & (df.sex == 'F')

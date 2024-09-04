@@ -11,9 +11,11 @@ Outstanding issues
 * The probability of spurious symptoms is not informed by data.
 
 """
+from __future__ import annotations
+
 from collections import defaultdict
 from pathlib import Path
-from typing import Sequence, Union
+from typing import TYPE_CHECKING, List, Optional, Sequence, Union
 
 import numpy as np
 import pandas as pd
@@ -22,6 +24,9 @@ from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.util import BitsetHandler
+
+if TYPE_CHECKING:
+    from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -33,24 +38,30 @@ logger.setLevel(logging.INFO)
 
 class Symptom:
     """Data structure to hold the information about a symptom.
-    Adult is peron aged 15+
-    Child is someone aged <15
 
-    The assumption is that symptom tend to cause health-care seeking. This can be modified by specifying that the
-    healthcare seeking is an emergency, or is more/less likely than the 'average symptom', or that the symptom does not
-    cause healthcare seeking at all.
-    The default behaviour is that a symptom causes health care seeking in the same manner as does the 'average symptom'.
+    The assumption is that a symptom tends to cause health-care seeking. This can be modified by specifying:
+     * if the symptom does not cause healthcare-seeking at all (`no_healthcareseeking_in_`);
+     * if the symptom is more or less likely to cause healthcare-seeking compared the "average symptom";
+      (`odds_ratio_health_seeking_in_`)
+     * the probability that emergency care is sought, if care is sought at all (`prob_seeks_emergency_appt_in_`).
 
+    The default behaviour is for a symptom that causes healthcare-seeking for non-emergency care with the same
+    probability as the "average symptom".
+
+    The in-built method `emergency_symptom_with_automatic_healthcareseeking` produces another common type of symptom,
+    which gives a very high probability that emergency care is sought.
+
+    The characteristics of Symptoms is separate for adults (peron aged 15+) and children (those aged aged <15).
     """
 
     def __init__(self,
                  name: str = None,
                  no_healthcareseeking_in_adults: bool = False,
                  no_healthcareseeking_in_children: bool = False,
-                 emergency_in_adults: bool = False,
-                 emergency_in_children: bool = False,
                  odds_ratio_health_seeking_in_adults: float = None,
-                 odds_ratio_health_seeking_in_children: float = None
+                 odds_ratio_health_seeking_in_children: float = None,
+                 prob_seeks_emergency_appt_in_adults: float = None,
+                 prob_seeks_emergency_appt_in_children: float = None,
                  ):
 
         # Check that the types are correct and not nonsensical
@@ -60,65 +71,76 @@ class Symptom:
         assert isinstance(no_healthcareseeking_in_adults, bool)
         assert isinstance(no_healthcareseeking_in_children, bool)
 
-        assert isinstance(emergency_in_adults, bool)
-        assert isinstance(emergency_in_children, bool)
-
-        # Check logic of the arguments that are provided:
-        # 1) if the symptom does not cause healthseeking behaviour, it should not be emergency or associated with an
-        # odds ratio
+        # Check logic of the arguments: if the symptom does not cause healthcare-seeking behaviour then the other
+        # arguments should not be provided.
         if no_healthcareseeking_in_children:
-            assert emergency_in_children is False
+            assert prob_seeks_emergency_appt_in_children is None
             assert odds_ratio_health_seeking_in_children is None
 
         if no_healthcareseeking_in_adults:
-            assert emergency_in_adults is False
+            assert prob_seeks_emergency_appt_in_adults is None
             assert odds_ratio_health_seeking_in_adults is None
 
-        # 2) if the symptom is declared as an emergency, it cannot also have an odds ratio for health seeking
-        if emergency_in_children:
-            assert no_healthcareseeking_in_children is False
-            assert odds_ratio_health_seeking_in_children is None
+        # Define the default behaviour:
+        if prob_seeks_emergency_appt_in_adults is None:
+            prob_seeks_emergency_appt_in_adults = 0.0  # i.e. Symptom will not cause h.c.s. for emergency care.
 
-        if emergency_in_adults:
-            assert no_healthcareseeking_in_adults is False
-            assert odds_ratio_health_seeking_in_adults is None
+        if prob_seeks_emergency_appt_in_children is None:
+            prob_seeks_emergency_appt_in_children = 0.0  # i.e. Symptom will not cause h.c.s. for emergency care.
 
-        # 3) if an odds-ratio is specified, it cannot have the emergency or the no-seeking flags
-        if odds_ratio_health_seeking_in_children is not None:
-            assert emergency_in_children is False
-            assert no_healthcareseeking_in_children is False
-            assert isinstance(odds_ratio_health_seeking_in_children, float)
-            assert 0 < odds_ratio_health_seeking_in_children
+        if odds_ratio_health_seeking_in_adults is None:
+            odds_ratio_health_seeking_in_adults = 1.0  # i.e. Symptom has same odds of h.c.s. as the 'default'
 
-        if odds_ratio_health_seeking_in_adults is not None:
-            assert emergency_in_adults is False
-            assert no_healthcareseeking_in_adults is False
-            assert isinstance(odds_ratio_health_seeking_in_adults, float)
-            assert 0 < odds_ratio_health_seeking_in_adults
+        if odds_ratio_health_seeking_in_children is None:
+            odds_ratio_health_seeking_in_children = 1.0  # i.e. Symptom has same odds of h.c.s. as the 'default'
 
-        # If odds-ratios are not provided (and no other flags provided), default to values of 1.0
-        if (
-            (odds_ratio_health_seeking_in_children is None) &
-            (emergency_in_children is False) &
-            (no_healthcareseeking_in_children is False)
-        ):
-            odds_ratio_health_seeking_in_children = 1.0
+        # Check that the odds-ratio of healthcare seeking is greater than or equal to 0.0
+        assert isinstance(odds_ratio_health_seeking_in_adults, float)
+        assert isinstance(odds_ratio_health_seeking_in_children, float)
+        assert 0.0 <= odds_ratio_health_seeking_in_adults
+        assert 0.0 <= odds_ratio_health_seeking_in_children
 
-        if (
-            (odds_ratio_health_seeking_in_adults is None) &
-            (emergency_in_adults is False) &
-            (no_healthcareseeking_in_adults is False)
-        ):
-            odds_ratio_health_seeking_in_adults = 1.0
+        # Check that probability of seeking an emergency appointment must be between 0.0 and 1.0
+        assert isinstance(prob_seeks_emergency_appt_in_adults, float)
+        assert isinstance(prob_seeks_emergency_appt_in_children, float)
+        assert 0.0 <= prob_seeks_emergency_appt_in_adults <= 1.0
+        assert 0.0 <= prob_seeks_emergency_appt_in_children <= 1.0
 
         # Store properties:
         self.name = name
         self.no_healthcareseeking_in_children = no_healthcareseeking_in_children
         self.no_healthcareseeking_in_adults = no_healthcareseeking_in_adults
-        self.emergency_in_adults = emergency_in_adults
-        self.emergency_in_children = emergency_in_children
+        self.prob_seeks_emergency_appt_in_adults = prob_seeks_emergency_appt_in_adults
+        self.prob_seeks_emergency_appt_in_children = prob_seeks_emergency_appt_in_children
         self.odds_ratio_health_seeking_in_adults = odds_ratio_health_seeking_in_adults
         self.odds_ratio_health_seeking_in_children = odds_ratio_health_seeking_in_children
+
+    @staticmethod
+    def emergency(name: str, which: str = "both"):
+        """Return an instance of `Symptom` that will guarantee healthcare-seeking for an Emergency Appointment."""
+        from tlo.methods.healthseekingbehaviour import HIGH_ODDS_RATIO
+
+        if name is None:
+            raise ValueError('No name given.')
+
+        if which not in ("adults", "children", "both"):
+            raise ValueError('Argument not recognised.')
+
+        emergency_in_adults = which in ("adults", "both")
+        emergency_in_children = which in ("children", "both")
+
+        return Symptom(
+            name=name,
+            no_healthcareseeking_in_adults=False,
+            no_healthcareseeking_in_children=False,
+            prob_seeks_emergency_appt_in_adults=1.0 if emergency_in_adults else 0.0,
+            prob_seeks_emergency_appt_in_children=1.0 if emergency_in_children else 0.0,
+            odds_ratio_health_seeking_in_adults=HIGH_ODDS_RATIO if emergency_in_adults else 0.0,
+            odds_ratio_health_seeking_in_children=HIGH_ODDS_RATIO if emergency_in_children else 0.0,
+            #                                      10_000 is an arbitrarily large odds ratio that will practically
+            #                                       ensure that there is healthcare-seeking. `np.inf` might have been
+            #                                       used but this is not does not work within the LinearModel.
+        )
 
     def __eq__(self, other):
         """Define the basis upon which tests of equivalence are made for Symptom objects.
@@ -130,8 +152,8 @@ class Symptom:
                 'name',
                 'no_healthcareseeking_in_children',
                 'no_healthcareseeking_in_adults',
-                'emergency_in_adults',
-                'emergency_in_children',
+                'prob_seeks_emergency_appt_in_adults',
+                'prob_seeks_emergency_appt_in_children',
                 'odds_ratio_health_seeking_in_adults',
                 'odds_ratio_health_seeking_in_children']
              ])
@@ -162,13 +184,17 @@ class SymptomManager(Module):
 
     PARAMETERS = {
         'generic_symptoms_spurious_occurrence': Parameter(
-            Types.DATA_FRAME, 'probability and duration of spurious occureneces of generic symptoms')
+            Types.DATA_FRAME, 'probability and duration of spurious occureneces of generic symptoms'),
+        'spurious_symptoms': Parameter(
+            Types.BOOL, 'whether or not there will be the spontaneous occurrence of generic symptoms. '
+                        'NB. This is over-ridden if a module key-word argument is provided.'),
     }
 
-    def __init__(self, name=None, resourcefilepath=None, spurious_symptoms=False):
+    def __init__(self, name=None, resourcefilepath=None, spurious_symptoms=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
-        self.spurious_symptoms = spurious_symptoms
+        self.spurious_symptoms = None
+        self.arg_spurious_symptoms = spurious_symptoms
         self._persons_with_newly_onset_symptoms = set()
 
         self.generic_symptoms = {
@@ -183,7 +209,8 @@ class SymptomManager(Module):
             'backache',
             'injury',
             'eye_complaint',
-            'diarrhoea'
+            'diarrhoea',
+            'spurious_emergency_symptom'
         }
 
         self.all_registered_symptoms = set()
@@ -201,6 +228,8 @@ class SymptomManager(Module):
         """Read in the generic symptoms and register them"""
         self.parameters['generic_symptoms_spurious_occurrence'] = \
             pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_GenericSymptoms_and_HealthSeeking.csv')
+        self.load_parameters_from_dataframe(
+            pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_SymptomManager.csv'))
 
     def register_symptom(self, *symptoms_to_register: Symptom):
         """
@@ -220,27 +249,23 @@ class SymptomManager(Module):
 
     def register_generic_symptoms(self):
         """Register the genric symptoms, using information read in from the ResourceFile."""
+        df = self.parameters['generic_symptoms_spurious_occurrence']
 
         # Check that information is contained in the ResourceFile for every generic symptom that must be defined
-        assert self.generic_symptoms == set(
-            self.parameters['generic_symptoms_spurious_occurrence']['generic_symptom_name'].to_list())
+        assert self.generic_symptoms == set(df['name'].to_list())
 
-        odds_ratio_health_seeking_in_children = self.parameters['generic_symptoms_spurious_occurrence'].set_index(
-            'generic_symptom_name')['odds_ratio_for_health_seeking_in_children'].to_dict()
-        odds_ratio_health_seeking_in_adults = self.parameters['generic_symptoms_spurious_occurrence'].set_index(
-            'generic_symptom_name')['odds_ratio_for_health_seeking_in_adults'].to_dict()
+        symptoms_to_register = df[
+            [
+                'name',
+                'odds_ratio_health_seeking_in_children',
+                'odds_ratio_health_seeking_in_adults',
+                'prob_seeks_emergency_appt_in_adults',
+                'prob_seeks_emergency_appt_in_children',
+            ]
+        ].set_index('name').loc[sorted(self.generic_symptoms)].reset_index()  # order as `sorted(self.generic_symptoms)`
 
-        # Register the Generic Symptoms
-        for generic_symptom_name in sorted(self.generic_symptoms):
-            self.register_symptom(
-                Symptom(
-                    name=generic_symptom_name,
-                    odds_ratio_health_seeking_in_adults=odds_ratio_health_seeking_in_adults[generic_symptom_name],
-                    odds_ratio_health_seeking_in_children=odds_ratio_health_seeking_in_children[generic_symptom_name],
-                    emergency_in_adults=False,
-                    emergency_in_children=False
-                )
-            )
+        for _, _r in symptoms_to_register.iterrows():
+            self.register_symptom(Symptom(**_r.to_dict()))
 
     def pre_initialise_population(self):
         """Register the generic symptoms and define the properties for each symptom"""
@@ -252,7 +277,8 @@ class SymptomManager(Module):
         SymptomManager.PROPERTIES = dict()
         for symptom_name in sorted(self.symptom_names):
             symptom_column_name = self.get_column_name_for_symptom(symptom_name)
-            SymptomManager.PROPERTIES[symptom_column_name] = Property(Types.INT, f'Presence of symptom {symptom_name}')
+            SymptomManager.PROPERTIES[symptom_column_name] = Property(Types.BITSET,
+                                                                      f'Presence of symptom {symptom_name}')
 
     def initialise_population(self, population):
         """
@@ -276,6 +302,10 @@ class SymptomManager(Module):
         #     assert key in symptom_col_names
         #     assert set(u.columns) == set(modules_that_can_impose_symptoms)
         #     assert not u.any().any()
+
+        # Determine whether there will be spurious symptoms. Use parameter value, unless a module kwarg provided.
+        self.spurious_symptoms = self.parameters['spurious_symptoms'] \
+            if self.arg_spurious_symptoms is None else self.arg_spurious_symptoms
 
     def initialise_simulation(self, sim):
         """Schedule SpuriousSymptomsOnset/Resolve if the parameter 'spurious_symptoms' is True"""
@@ -343,7 +373,7 @@ class SymptomManager(Module):
 
         # Check that a sensible or no date_of_onset is provided
         assert (date_of_onset is None) or (
-            (type(date_of_onset) == pd.Timestamp)
+            (isinstance(date_of_onset, pd.Timestamp))
             and (date_of_onset >= self.sim.date)
         )
 
@@ -424,7 +454,7 @@ class SymptomManager(Module):
         df = self.sim.population.props
 
         # Check that symptom string is OK
-        assert type(symptom_string) == str
+        assert isinstance(symptom_string, str)
         assert symptom_string in self.symptom_names, 'Symptom not registered'
 
         # Does not have symptom:
@@ -435,32 +465,81 @@ class SymptomManager(Module):
             )
         ]
 
-    def has_what(self, person_id, disease_module: Module = None):
+    def has_what(
+        self,
+        person_id: Optional[int] = None,
+        individual_details: Optional[IndividualProperties] = None,
+        disease_module: Optional[Module] = None,
+    ) -> List[str]:
         """
         This is a helper function that will give a list of strings for the symptoms that a _single_ person
         is currently experiencing.
-        Optionally can specify disease_module_name to limit to the symptoms caused by that disease module
 
-        :param person_id: the person_of of interest
-        :param disease_module: (optional) disease module of interest
-        :return: list of strings for the symptoms that are currently being experienced
+        If working in a `tlo.population.IndividualProperties` context, one can pass the context object
+        instead of supplying the person's DataFrame index.
+        Note that at least one of these inputs must be passed as a keyword argument however.
+        In the event that both arguments are passed, the individual_details argument takes precedence over the person_id.
+
+        Optionally can specify disease_module_name to limit to the symptoms caused by that disease module.
+
+        :param person_id: the person_of of interest.
+        :param individual_details: `tlo.population.IndividualProperties` object for the person of interest.
+        :param disease_module: (optional) disease module of interest.
+        :return: list of strings for the symptoms that are currently being experienced.
         """
+        assert (
+            disease_module.name in ([self.name] + self.recognised_module_names)
+            if disease_module is not None
+            else True
+        ), "Disease Module Name is not recognised"
 
-        assert isinstance(person_id, (int, np.integer)), 'person_id must be a single integer for one particular person'
+        if individual_details is not None:
+            # We are working in an IndividualDetails context, avoid lookups to the
+            # population DataFrame as we have this context stored already.
+            assert individual_details["is_alive"], "The person is not alive"
 
-        df = self.sim.population.props
-        assert df.at[person_id, 'is_alive'], "The person is not alive"
-
-        if disease_module is not None:
-            assert disease_module.name in ([self.name] + self.recognised_module_names), \
-                "Disease Module Name is not recognised"
-            sy_columns = [self.get_column_name_for_symptom(s) for s in self.symptom_names]
-            person_has = self.bsh.has(
-                [person_id], disease_module.name, first=True, columns=sy_columns
-            )
-            return [s for s in self.symptom_names if person_has[f'sy_{s}']]
+            if disease_module is not None:
+                int_repr = self.bsh._element_to_int_map[disease_module.name]
+                return [
+                    symptom
+                    for symptom in self.symptom_names
+                    if individual_details[
+                        self.bsh._get_columns(self.get_column_name_for_symptom(symptom))
+                    ]
+                    & int_repr
+                    != 0
+                ]
+            else:
+                return [
+                    symptom
+                    for symptom in self.symptom_names
+                    if individual_details[self.get_column_name_for_symptom(symptom)] > 0
+                ]
         else:
-            return [s for s in self.symptom_names if df.loc[person_id, f'sy_{s}'] > 0]
+            assert isinstance(
+                person_id, (int, np.integer)
+            ), "person_id must be a single integer for one particular person"
+
+            df = self.sim.population.props
+            assert df.at[person_id, "is_alive"], "The person is not alive"
+
+            if disease_module is not None:
+                sy_columns = [
+                    self.get_column_name_for_symptom(s) for s in self.symptom_names
+                ]
+                person_has = self.bsh.has(
+                    [person_id], disease_module.name, first=True, columns=sy_columns
+                )
+                return [s for s in self.symptom_names if person_has[f"sy_{s}"]]
+            else:
+                symptom_cols = df.loc[
+                    person_id, [f"sy_{s}" for s in self.symptom_names]
+                ]
+                return (
+                    symptom_cols.index[symptom_cols > 0]
+                    .str.removeprefix("sy_")
+                    .to_list()
+                )
 
     def have_what(self, person_ids: Sequence[int]):
         """Find the set of symptoms for a list of person_ids.
@@ -598,7 +677,7 @@ class SymptomManager_SpuriousSymptomOnset(RegularEvent, PopulationScopeEventMixi
 
     def get_generic_symptoms_dict(self, generic_sympoms_df):
         """Helper function to store contents of the generic_symptoms dataframe as dicts"""
-        df = generic_sympoms_df.set_index('generic_symptom_name')
+        df = generic_sympoms_df.set_index('name')
 
         return {
             'prob_per_day': {
@@ -678,7 +757,7 @@ class SymptomManager_SpuriousSymptomResolve(RegularEvent, PopulationScopeEventMi
         for symp in self.to_resolve.keys():
             if date_today in self.to_resolve[symp]:
                 person_ids = self.to_resolve[symp].pop(date_today)
-                persons = df.loc[person_ids]
+                persons = df.loc[sorted(person_ids)]
                 person_ids_alive = persons[persons.is_alive].index
                 self.module.change_symptom(
                     person_id=person_ids_alive,

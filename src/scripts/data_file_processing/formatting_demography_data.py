@@ -69,7 +69,7 @@ a1.loc[region_names, 'Region'] = region_names
 a1['Region'] = a1['Region'].ffill()
 a1 = a1.drop(region_names)
 
-# Check that the everything is ok:
+# Check that everything is ok:
 # Sum of districts = Total for Nation
 assert a1.drop(columns='Region').sum().astype(int).equals(national_total.astype(int))
 
@@ -343,7 +343,7 @@ pop_2010['Age'] = pop_2010['Age'].astype(int)
 pop_2010.sum()  # 14M
 district_breakdown = table[['District', 'Count']].groupby(['District']).sum() / table['Count'].sum()
 
-# There will be a a neater way to do this, but....
+# There will be a neater way to do this, but....
 init_pop_list = list()
 
 for Sex in ['M', 'F']:
@@ -560,7 +560,7 @@ reformat_date_period_for_wpp(lt)
 lt[['Variant', 'Period', 'Sex', 'Age_Grp', 'death_rate']].to_csv(
     path_for_saved_files / 'ResourceFile_Pop_DeathRates_WPP.csv', index=False)
 
-# Expand the the life-table to create a row for each age year, for ease of indexing in the simulation
+# Expand the life-table to create a row for each age year, for ease of indexing in the simulation
 mort_sched = lt.copy()
 
 mort_sched['low_age'], mort_sched['high_age'] = mort_sched['Age_Grp'].str.split('-', 1).str

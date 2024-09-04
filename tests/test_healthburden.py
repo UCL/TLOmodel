@@ -6,8 +6,8 @@ import pandas as pd
 import pytest
 from pytest import approx
 
-from tlo import Date, Module, Simulation, logging
-from tlo.analysis.utils import parse_log_file
+from tlo import DAYS_IN_YEAR, Date, Module, Simulation, logging
+from tlo.analysis.utils import get_mappers_in_fullmodel, parse_log_file
 from tlo.events import Event, IndividualScopeEventMixin
 from tlo.methods import (
     Metadata,
@@ -20,7 +20,7 @@ from tlo.methods import (
     symptommanager,
 )
 from tlo.methods.causes import Cause
-from tlo.methods.demography import InstantaneousDeath
+from tlo.methods.demography import InstantaneousDeath, age_at_date
 from tlo.methods.diarrhoea import increase_risk_of_death, make_treatment_perfect
 from tlo.methods.fullmodel import fullmodel
 from tlo.methods.healthburden import Get_Current_DALYS
@@ -34,6 +34,10 @@ except NameError:
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
 popsize = 100
+
+
+def extract_mapper(key):
+    return pd.Series(key.drop(columns={'date'}).loc[0]).to_dict()
 
 
 def check_dtypes(simulation):
@@ -87,14 +91,14 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
 
 
 @pytest.mark.slow
-def test_cause_of_disability_being_registered(seed):
+def test_cause_of_disability_being_registered(seed, tmpdir):
     """Test that the modules can declare causes of disability, and that the mappers between tlo causes of disability
     and gbd causes of disability can be created correctly and that these make sense with respect to the corresponding
     mappers for deaths."""
 
     rfp = Path(os.path.dirname(__file__)) / '../resources'
 
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, log_config={'filename': 'test_log', 'directory': tmpdir})
     sim.register(
         *fullmodel(
             resourcefilepath=rfp,
@@ -110,19 +114,29 @@ def test_cause_of_disability_being_registered(seed):
     sim.simulate(end_date=Date(2010, 1, 2))
     check_dtypes(sim)
 
-    mapper_from_tlo_causes, mapper_from_gbd_causes = \
-        sim.modules['HealthBurden'].create_mappers_from_causes_of_death_to_label()
+    hblog = parse_log_file(sim.log_filepath)['tlo.methods.healthburden']
+    disability_mapper_from_gbd_causes = extract_mapper(hblog['disability_mapper_from_gbd_cause_to_common_label'])
+    disability_mapper_from_tlo_causes = extract_mapper(hblog['disability_mapper_from_tlo_cause_to_common_label'])
 
-    assert set(mapper_from_tlo_causes.keys()) == set(sim.modules['HealthBurden'].causes_of_disability.keys())
-    assert set(mapper_from_gbd_causes.keys()) == set(sim.modules['HealthBurden'].parameters['gbd_causes_of_disability'])
-    assert set(mapper_from_gbd_causes.values()) == set(mapper_from_tlo_causes.values())
+    assert set(disability_mapper_from_tlo_causes.keys()) == \
+           set(sim.modules['HealthBurden'].causes_of_disability.keys())
+    assert set(disability_mapper_from_gbd_causes .keys()) == \
+           set(sim.modules['HealthBurden'].parameters['gbd_causes_of_disability'])
+    assert set(disability_mapper_from_gbd_causes .values()) == \
+           set(disability_mapper_from_tlo_causes.values())
 
 
 def test_arithmetic_of_disability_aggregation_calcs(seed):
     """Check that disability from different modules are being combined and computed in the correct way"""
     rfp = Path(os.path.dirname(__file__)) / '../resources'
 
-    class DiseaseThatCausesA(Module):
+    class ModuleWithPersonsAffected(Module):
+        
+        def __init__(self, persons_affected, name=None):
+            super().__init__(name=name)
+            self.persons_affected = persons_affected
+
+    class DiseaseThatCausesA(ModuleWithPersonsAffected):
         METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHBURDEN}
         CAUSES_OF_DEATH = {'A': Cause(label='A')}
         CAUSES_OF_DISABILITY = {'A': Cause(label='A')}
@@ -143,7 +157,7 @@ def test_arithmetic_of_disability_aggregation_calcs(seed):
             disability.loc[self.persons_affected] = self.daly_wt
             return disability
 
-    class DiseaseThatCausesB(Module):
+    class DiseaseThatCausesB(ModuleWithPersonsAffected):
         METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHBURDEN}
         CAUSES_OF_DEATH = {'B': Cause(label='B')}
         CAUSES_OF_DISABILITY = {'B': Cause(label='B')}
@@ -164,7 +178,7 @@ def test_arithmetic_of_disability_aggregation_calcs(seed):
             disability.loc[self.persons_affected] = self.daly_wt
             return disability
 
-    class DiseaseThatCausesAandB(Module):
+    class DiseaseThatCausesAandB(ModuleWithPersonsAffected):
         METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHBURDEN}
         CAUSES_OF_DEATH = {'A': Cause(label='A'), 'B': Cause(label='B')}
         CAUSES_OF_DISABILITY = {'A': Cause(label='A'), 'B': Cause(label='B')}
@@ -182,12 +196,12 @@ def test_arithmetic_of_disability_aggregation_calcs(seed):
 
         def report_daly_values(self):
             df = self.sim.population.props
-            disability = pd.DataFrame(index=df.loc[df.is_alive].index, columns={'A', 'B'}, data=0.0)
+            disability = pd.DataFrame(index=df.loc[df.is_alive].index, columns=['A', 'B'], data=0.0)
             disability.loc[self.persons_affected, 'A'] = self.daly_wt_A
             disability.loc[self.persons_affected, 'B'] = self.daly_wt_B
             return disability
 
-    class DiseaseThatCausesC(Module):
+    class DiseaseThatCausesC(ModuleWithPersonsAffected):
         METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHBURDEN}
         CAUSES_OF_DEATH = {'C': Cause(label='A')}
         CAUSES_OF_DISABILITY = {'C': Cause(label='C')}
@@ -231,24 +245,18 @@ def test_arithmetic_of_disability_aggregation_calcs(seed):
         demography.Demography(resourcefilepath=rfp),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=rfp),
-        DiseaseThatCausesA(),
-        DiseaseThatCausesB(),
-        DiseaseThatCausesAandB(),
-        DiseaseThatCausesC(name='DiseaseThatCausesC1'),  # intentionally two instances of DiseaseThatCausesC
-        DiseaseThatCausesC(name='DiseaseThatCausesC2'),
+        DiseaseThatCausesA(persons_affected=0),
+        DiseaseThatCausesB(persons_affected=1),
+        DiseaseThatCausesAandB(persons_affected=2),
+        # intentionally two instances of DiseaseThatCausesC
+        DiseaseThatCausesC(persons_affected=3, name='DiseaseThatCausesC1'),  
+        DiseaseThatCausesC(persons_affected=3, name='DiseaseThatCausesC2'),
         DiseaseThatCausesNothing(),
         # Disable sorting to allow registering multiple instances of DiseaseThatCausesC
         sort_modules=False
     )
     sim.make_initial_population(n=4)
     sim.simulate(end_date=start_date)
-
-    # determine who is affected by what:
-    sim.modules['DiseaseThatCausesA'].persons_affected = 0
-    sim.modules['DiseaseThatCausesB'].persons_affected = 1
-    sim.modules['DiseaseThatCausesAandB'].persons_affected = 2
-    sim.modules['DiseaseThatCausesC1'].persons_affected = 3
-    sim.modules['DiseaseThatCausesC2'].persons_affected = 3
 
     # get the dalys report:
     hb = sim.modules['HealthBurden']
@@ -335,16 +343,16 @@ def test_arithmetic_of_dalys_calcs(seed):
 
     # Examine YLL, YLD and DALYS for 'A' recorded at the end of the simulation
     hb = sim.modules['HealthBurden']
-    yld = hb.years_lived_with_disability.sum()
-    yll = hb.years_life_lost.sum()
-    dalys = hb.compute_dalys()[0].sum()
+    yld = hb.years_lived_with_disability.reset_index()
+    yll = hb.years_life_lost.reset_index()
+    dalys = hb.get_dalys(yld=yld, yll=yll)
 
     daly_wt = sim.modules['DiseaseThatCausesA'].daly_wt
 
-    # Check record of YLD and YLLL (accurate to within a day (due to odd number of days in a year))
-    assert yld['cause_of_disability_A'] == approx(daly_wt * 0.25, abs=(daly_wt / 365))
-    assert yll['cause_of_death_A'] == approx(0.5, abs=1 / 365)
-    assert dalys['Label_A'] == approx(0.5 + 0.25 * daly_wt, abs=1 / 365)
+    # Check record of YLD and YLL (accurate to within a day (due to odd number of days in a year))
+    assert yld['cause_of_disability_A'].sum() == approx(daly_wt * 0.25, abs=(daly_wt / 365))
+    assert yll['cause_of_death_A'].sum() == approx(0.5, abs=1 / 365)
+    assert dalys['Label_A'].sum() == approx(0.5 + 0.25 * daly_wt, abs=1 / 365)
 
 
 def test_airthmetic_of_lifeyearslost(seed, tmpdir):
@@ -364,7 +372,7 @@ def test_airthmetic_of_lifeyearslost(seed, tmpdir):
 
     # Set the date_of_birth of the person_id=0, such that the person is 4.5 years-old on 1st Jan 2010 (so that life-
     #  years lost span 0-4 and 5-9 age-groups)
-    dob = start_date - pd.DateOffset(days=int(4.5 * 365.25))
+    dob = start_date - pd.DateOffset(days=int(4.5 * DAYS_IN_YEAR))
     df = sim.population.props
     df.loc[0, ['sex', 'is_alive', 'date_of_birth']] = ('F', True, dob)
     sim.simulate(end_date=Date(2010, 12, 31))
@@ -385,9 +393,9 @@ def test_airthmetic_of_lifeyearslost(seed, tmpdir):
     assert yll.sum().sum() == approx(1.0)
 
     # check that age-range is correct (0.5 ly lost among 0-4 year-olds; 0.5 ly lost to 5-9 year-olds)
-    assert yll.loc[('F', '0-4', slice(None), 2010)].sum().sum() == approx(0.5, abs=2.0 / 365.25)
-    assert yll.loc[('F', '5-9', slice(None), 2010)].sum().sum() == approx(0.5, abs=2.0 / 365.25)
-    assert yll.loc[('F', ['0-4', '5-9'], slice(None), 2010)].sum().sum() == approx(1.0, abs=0.5 / 365.25)
+    assert yll.loc[('F', '0-4', slice(None), 2010)].sum().sum() == approx(0.5, abs=2.0 / DAYS_IN_YEAR)
+    assert yll.loc[('F', '5-9', slice(None), 2010)].sum().sum() == approx(0.5, abs=2.0 / DAYS_IN_YEAR)
+    assert yll.loc[('F', ['0-4', '5-9'], slice(None), 2010)].sum().sum() == approx(1.0, abs=0.5 / DAYS_IN_YEAR)
 
 
 @pytest.mark.slow
@@ -462,10 +470,12 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
     daly_wt = sim.modules['DiseaseThatCausesA'].daly_wt
     death_date = sim.modules['DiseaseThatCausesA'].death_date
     disability_onset_date = sim.modules['DiseaseThatCausesA'].disability_onset_date
+    age_limit_for_yll = sim.modules['HealthBurden'].parameters['Age_Limit_For_YLL']
 
     age_range_at_disability_onset = AGE_RANGE_LOOKUP[
-        int(np.round((disability_onset_date - date_of_birth) / np.timedelta64(1, 'Y')))]
-    age_at_death = int(np.round((death_date - date_of_birth) / np.timedelta64(1, 'Y')))
+        int(np.round(age_at_date(disability_onset_date, date_of_birth)))
+    ]
+    age_at_death = int(np.round(age_at_date(death_date, date_of_birth)))
     age_range_at_death = AGE_RANGE_LOOKUP[age_at_death]
 
     age_groups_where_yll_are_accrued = set(
@@ -509,13 +519,13 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
     ].groupby(['year', 'age_range'])['cause_of_death_A'].sum().unstack()
     assert 0.0 == yll_stacked_by_time.loc[
         yll_stacked_by_time.index != death_date.year].sum().sum()  # No Yll for years other than year of death
-    assert approx(68.0, 1 / 364) == yll_stacked_by_time.loc[
-        death_date.year].sum()  # In year of death, 68 years of lost life.
+    assert approx(age_limit_for_yll - 2.0, 1 / 364) == yll_stacked_by_time.loc[
+        death_date.year].sum()  # In year of death, (age_limit_for_yll - 2)    years of lost life.
     assert (yll_stacked_by_time.loc[death_date.year, yll_stacked_by_time.columns[
         yll_stacked_by_time.columns.isin(age_groups_where_yll_are_accrued)]] > 0).all()
-    assert 0.0 == yll_stacked_by_time[age_groups_where_yll_are_not_accrued].sum().sum()  # There should be no yll for
-    #                                                                                      ages above 70 because that
-    #                                                                                      is the definition
+    assert 0.0 == yll_stacked_by_time[
+        sorted(age_groups_where_yll_are_not_accrued)
+    ].sum().sum()  # There should be no yll for ages above `age_limit_for_yll` because that is the definition
 
     # -- YLL (Stacked by age and time)
     yll_stacked_by_age_and_time = log['yll_by_causes_of_death_stacked_by_age_and_time']
@@ -548,7 +558,7 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
     ].groupby(['year', 'age_range'])['Label_A'].sum().unstack()
     assert dalys_by_year_stacked_by_time.loc[sim.start_date.year].sum() == 0.0
     assert dalys_by_year_stacked_by_time.loc[disability_onset_date.year].sum() == approx(0.5, 1 / 364)
-    assert dalys_by_year_stacked_by_time.loc[death_date.year].sum() == approx(68.0, 1 / 364)
+    assert dalys_by_year_stacked_by_time.loc[death_date.year].sum() == approx(age_limit_for_yll - 2.0, 1 / 364)
     assert all([dalys_by_year_stacked_by_time.loc[year].sum() == (approx(0.0, 1 / 364)) for year in
                 range(death_date.year + 1, sim.end_date.year + 1)])
 
@@ -570,4 +580,68 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
 
     ser = fn(log['dalys_stacked'])
     assert ser.loc[(slice(None), 'Label_A')].at[disability_onset_date.year] == approx(0.5, 1 / 364)
-    assert ser.loc[(slice(None), 'Label_A')].at[death_date.year] == approx(68.0, 1 / 364)
+    assert ser.loc[(slice(None), 'Label_A')].at[death_date.year] == approx(age_limit_for_yll - 2.0, 1 / 364)
+
+
+def test_mapper_for_dalys_created(tmpdir, seed):
+    """Check that causes of DALYS can be mapped between TLO cause and GBD cause in the case of a cause causing
+    deaths but not disability (e.g. 'Congenital birth defects')."""
+
+    class DiseaseThatCausesDeathOnly(Module):
+        METADATA = {Metadata.DISEASE_MODULE}
+        CAUSES_OF_DEATH = {
+            'TLOCauseNameFor_CBD': Cause(gbd_causes='Congenital birth defects', label='Chosen_Label_For_CBD')
+        }
+        CAUSES_OF_DISABILITY = {}
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            pass
+
+    start_date = Date(2010, 1, 1)
+    sim = Simulation(start_date=start_date, seed=seed, log_config={'filename': 'test_log', 'directory': tmpdir})
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+        DiseaseThatCausesDeathOnly(),
+        sort_modules=False
+    )
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=start_date)
+
+    hblog = parse_log_file(sim.log_filepath)['tlo.methods.healthburden']
+    disability_mapper_from_gbd_causes = extract_mapper(hblog['disability_mapper_from_gbd_cause_to_common_label'])
+    disability_mapper_from_tlo_causes = extract_mapper(hblog['disability_mapper_from_tlo_cause_to_common_label'])
+    daly_mapper_from_gbd_causes = extract_mapper(hblog['daly_mapper_from_gbd_cause_to_common_label'])
+    daly_mapper_from_tlo_causes = extract_mapper(hblog['daly_mapper_from_tlo_cause_to_common_label'])
+
+    demog = sim.modules['Demography']
+    hb = sim.modules['HealthBurden']
+
+    # 'Congenital birth defects' is a recognised cause of death and disability
+    assert 'Congenital birth defects' in set(demog.parameters['gbd_causes_of_death_data'].columns)
+    assert 'Congenital birth defects' in set(hb.parameters['gbd_causes_of_disability'])
+
+    # As 'Congenital birth defects' is not defined as a disability per se, it does not need to feature in the
+    # mappers for disabilities.
+    assert disability_mapper_from_gbd_causes['Congenital birth defects'] == 'Other'
+    assert 'TLOCauseNameFor_CBD' not in disability_mapper_from_tlo_causes
+
+    # But... as 'Congenital birth defects' is defined as a cause of death by the TLO module, which can therefore cause a
+    # loss of DALYS, the mappers for DALYS should attach it to the chosen label.
+    assert daly_mapper_from_tlo_causes['TLOCauseNameFor_CBD'] == 'Chosen_Label_For_CBD'
+    assert daly_mapper_from_gbd_causes['Congenital birth defects'] == 'Chosen_Label_For_CBD'
+
+
+def test_get_mappers_in_fullmodel(tmpdir):
+    """Check that `get_mappers_in_fullmodel` works as expected; and, in particular that things that cause death but not
+    disability are captured correctly as a cause of DALYS (i.e., 'Congenital birth defects'). """
+
+    mappers = get_mappers_in_fullmodel(resourcefilepath=resourcefilepath, outputpath=tmpdir)
+    assert mappers['daly_mapper_from_gbd_cause_to_common_label']['Congenital birth defects'] != 'Other'

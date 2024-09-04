@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import math
 import os
+from typing import TYPE_CHECKING, List
 
 import pandas as pd
 
@@ -7,15 +10,19 @@ from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
-from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.hsi_event import HSI_Event
+from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date
+
+if TYPE_CHECKING:
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class Measles(Module):
+class Measles(Module, GenericFirstAppointmentsMixin):
     """This module represents measles infections and disease."""
 
     INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
@@ -130,13 +137,7 @@ class Measles(Module):
                     odds_ratio_health_seeking_in_adults=2.5)  # non-emergencies
         )
 
-        self.sim.modules['SymptomManager'].register_symptom(
-            Symptom(
-                name='encephalitis',
-                emergency_in_adults=True,
-                emergency_in_children=True
-            )
-        )
+        self.sim.modules['SymptomManager'].register_symptom(Symptom.emergency('encephalitis'))
 
     def pre_initialise_population(self):
         self.process_parameters()
@@ -208,6 +209,17 @@ class Measles(Module):
         for _age in range(30 + 1):
             assert set(self.symptoms) == set(self.symptom_probs.get(_age).keys())
             assert all([0.0 <= x <= 1.0 for x in self.symptom_probs.get(_age).values()])
+
+    def do_at_generic_first_appt(
+        self,
+        person_id: int,
+        symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
+        **kwargs,
+    ) -> None:
+        if "rash" in symptoms:
+            event = HSI_Measles_Treatment(person_id=person_id, module=self)
+            schedule_hsi_event(event, priority=0, topen=self.sim.date)
 
 
 class MeaslesEvent(RegularEvent, PopulationScopeEventMixin):
@@ -381,9 +393,14 @@ class MeaslesDeathEvent(Event, IndividualScopeEventMixin):
         if df.at[person_id, "me_has_measles"]:
 
             if df.at[person_id, "me_on_treatment"]:
-                reduction_in_death_risk = 0.4
 
-                if self.module.rng.random_sample() < reduction_in_death_risk:
+                reduction_in_death_risk = 0.6
+
+                # Certain death (100%) is reduced by specified amount
+                p_death_with_treatment = 1. - reduction_in_death_risk
+
+                # If below that probability, death goes ahead
+                if self.module.rng.random_sample() < p_death_with_treatment:
                     logger.debug(key="MeaslesDeathEvent",
                                  data=f"MeaslesDeathEvent: scheduling death for treated {person_id} on {self.sim.date}")
 
@@ -416,7 +433,8 @@ class HSI_Measles_Treatment(HSI_Event, IndividualScopeEventMixin):
         assert isinstance(module, Measles)
 
         self.TREATMENT_ID = "Measles_Treatment"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
+            ('Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD'): 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
 
     def apply(self, person_id, squeeze_factor):
@@ -424,7 +442,7 @@ class HSI_Measles_Treatment(HSI_Event, IndividualScopeEventMixin):
                      data=f"HSI_Measles_Treatment: treat person {person_id} for measles")
 
         df = self.sim.population.props
-        symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
+        symptoms = self.sim.modules["SymptomManager"].has_what(person_id=person_id)
 
         # for non-complicated measles
         item_codes = [self.module.consumables['vit_A']]
@@ -441,6 +459,9 @@ class HSI_Measles_Treatment(HSI_Event, IndividualScopeEventMixin):
         if self.get_consumables(item_codes):
             logger.debug(key="HSI_Measles_Treatment",
                          data=f"HSI_Measles_Treatment: giving required measles treatment to person {person_id}")
+
+            if "respiratory_symptoms" in symptoms:
+                self.add_equipment({'Oxygen concentrator', 'Oxygen cylinder, with regulator'})
 
             # modify person property which is checked when scheduled death occurs (or shouldn't occur)
             df.at[person_id, "me_on_treatment"] = True
@@ -527,7 +548,7 @@ class MeaslesLoggingFortnightEvent(RegularEvent, PopulationScopeEventMixin):
             if tmp:
                 proportion_with_symptom = number_with_symptom / tmp
             else:
-                proportion_with_symptom = 0
+                proportion_with_symptom = 0.0
             symptom_output[symptom] = proportion_with_symptom
 
         logger.info(key="measles_symptoms",
@@ -565,7 +586,7 @@ class MeaslesLoggingAnnualEvent(RegularEvent, PopulationScopeEventMixin):
         if total_infected:
             prop_infected_by_age = infected_age_counts / total_infected
         else:
-            prop_infected_by_age = infected_age_counts  # just output the series of zeros by age group
+            prop_infected_by_age = infected_age_counts.astype("float")  # just output the series of zeros by age group
 
         logger.info(key='measles_incidence_age_range', data=prop_infected_by_age.to_dict(),
                     description="measles incidence by age group")

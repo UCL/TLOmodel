@@ -8,7 +8,7 @@ from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMix
 from tlo.lm import LinearModel
 from tlo.methods import Metadata, postnatal_supervisor_lm, pregnancy_helper_functions
 from tlo.methods.causes import Cause
-from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.hsi_event import HSI_Event
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -88,8 +88,6 @@ class PostnatalSupervisor(Module):
             Types.LIST, 'probability of mild, moderate or severe secondary PPH'),
         'cfr_secondary_postpartum_haemorrhage': Parameter(
             Types.LIST, 'case fatality rate for secondary pph'),
-        'rr_death_from_pph_with_anaemia': Parameter(
-            Types.LIST, 'relative risk of death from PPH in women with anaemia'),
 
         # HYPERTENSIVE DISORDERS
         'prob_htn_resolves': Parameter(
@@ -225,12 +223,6 @@ class PostnatalSupervisor(Module):
                                                          ' sepsis during week one of life'),
         'pn_sepsis_late_neonatal': Property(Types.BOOL, 'Whether this neonate has developed late neonatal sepsis '
                                                         'following discharge'),
-        'pn_neonatal_sepsis_disab': Property(Types.CATEGORICAL, 'Level of disability experience from a neonate post '
-                                                                'sepsis', categories=['none', 'mild_motor_and_cog',
-                                                                                      'mild_motor', 'moderate_motor',
-                                                                                      'severe_motor']),
-        'pn_deficiencies_following_pregnancy': Property(Types.INT, 'bitset column, stores types of anaemia causing '
-                                                                   'deficiencies following pregnancy'),
         'pn_anaemia_following_pregnancy': Property(Types.CATEGORICAL, 'severity of anaemia following pregnancy',
                                                    categories=['none', 'mild', 'moderate', 'severe']),
         'pn_emergency_event_mother': Property(Types.BOOL, 'Whether a mother is experiencing an emergency complication'
@@ -249,7 +241,6 @@ class PostnatalSupervisor(Module):
         df.loc[df.is_alive, 'pn_htn_disorders'] = 'none'
         df.loc[df.is_alive, 'pn_postpartum_haem_secondary'] = False
         df.loc[df.is_alive, 'pn_sepsis_late_postpartum'] = False
-        df.loc[df.is_alive, 'pn_neonatal_sepsis_disab'] = 'none'
         df.loc[df.is_alive, 'pn_sepsis_early_neonatal'] = False
         df.loc[df.is_alive, 'pn_sepsis_late_neonatal'] = False
         df.loc[df.is_alive, 'pn_sepsis_late_neonatal'] = False
@@ -331,7 +322,6 @@ class PostnatalSupervisor(Module):
         df.at[child_id, 'pn_sepsis_late_postpartum'] = False
         df.at[child_id, 'pn_sepsis_early_neonatal'] = False
         df.at[child_id, 'pn_sepsis_late_neonatal'] = False
-        df.at[child_id, 'pn_neonatal_sepsis_disab'] = 'none'
         df.at[child_id, 'pn_obstetric_fistula'] = 'none'
         df.at[child_id, 'pn_anaemia_following_pregnancy'] = 'none'
         df.at[child_id, 'pn_emergency_event_mother'] = False
@@ -566,7 +556,7 @@ class PostnatalSupervisor(Module):
 
         df.loc[resolvers.loc[resolvers].index, 'pn_htn_disorders'] = 'resolved'
 
-        # And for the women who's hypertension doesnt resolve we now see if it will progress to a worsened state
+        # And for the women whose hypertension doesn't resolve we now see if it will progress to a worsened state
 
         def apply_risk(selected, risk_of_gest_htn_progression):
             # This function uses the transition_states function to move women between states based on the
@@ -699,17 +689,13 @@ class PostnatalSupervisor(Module):
         for person in care_seekers.loc[care_seekers].index:
             from tlo.methods.labour import HSI_Labour_ReceivesPostnatalCheck
 
-            # check if care seeking is delayed
-            if self.rng.random_sample() < self.sim.modules['Labour'].current_parameters['prob_delay_one_two_fd']:
-                mni[person]['delay_one_two'] = True
-
             postnatal_check = HSI_Labour_ReceivesPostnatalCheck(
                 self.sim.modules['Labour'], person_id=person)
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(postnatal_check,
                                                                 priority=0,
                                                                 topen=self.sim.date,
-                                                                tclose=self.sim.date + DateOffset(days=1))
+                                                                tclose=self.sim.date + DateOffset(days=2))
 
         # For women who do not seek care we immediately apply risk of death due to complications
         for person in care_seekers.loc[~care_seekers].index:
@@ -838,7 +824,7 @@ class PostnatalSupervisor(Module):
             # Function checks df for any potential cause of death, uses CFR parameters to determine risk of death
             # (either from one or multiple causes) and if death occurs returns the cause
             potential_cause_of_death = pregnancy_helper_functions.check_for_risk_of_death_from_cause_maternal(
-                self, individual_id=individual_id)
+                self, individual_id=individual_id, timing='postnatal')
 
             # If a cause is returned death is scheduled
             if potential_cause_of_death:
@@ -888,10 +874,10 @@ class PostnatalSupervisor(Module):
 
 class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
     """
-    This is the PostnatalSupervisorEvent. This event runs every week and is responsible for apply risk of complications
-    to mothers and newborns in the postnatal and neonatal periods. Risk is applied after the first week of life as this
-    is managed via PostnatalWeekOneMaternalEvent and PostnatalWeekOneNeonatalEvent. In addition this event ensures that
-    the relevant postnatal/neonatal variables are reset for those who survive.
+    This is the PostnatalSupervisorEvent. This event runs every week and is responsible for applying risk of
+    complications to mothers and newborns in the postnatal and neonatal periods. Risk is applied after the first week of
+     life as this is managed via PostnatalWeekOneMaternalEvent and PostnatalWeekOneNeonatalEvent. In addition this
+      event ensures that the relevant postnatal/neonatal variables are reset for those who survive.
     """
     def __init__(self, module, ):
         super().__init__(module, frequency=DateOffset(weeks=1))
@@ -1110,7 +1096,7 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
                 prob_matrix['eclampsia'] = params['probs_for_ec_matrix_pn']
 
                 # We modify the probability of progressing from mild to severe gestational hypertension for women
-                # who are on anti hypertensives
+                # who are on antihypertensives
                 if df.at[individual_id, 'la_gest_htn_on_treatment']:
                     treatment_reduced_risk = prob_matrix['gest_htn']['severe_gest_htn'] * \
                                              params['treatment_effect_anti_htns_progression_pn']
@@ -1185,11 +1171,8 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
             if (mni[individual_id]['will_receive_pnc'] == 'late') or (self.module.rng.random_sample() <
                                                                       params['prob_care_seeking_postnatal_emergency']):
 
-                # If care will be sought, check if they experience delay seeking care
-                pregnancy_helper_functions.check_if_delayed_careseeking(self.module, individual_id)
-
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    pnc_one_maternal, priority=0, topen=self.sim.date, tclose=self.sim.date + pd.DateOffset(days=1))
+                    pnc_one_maternal, priority=0, topen=self.sim.date, tclose=self.sim.date + pd.DateOffset(days=2))
 
             # If she will not receive treatment for her complications we apply risk of death now
             else:
@@ -1200,15 +1183,15 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
             if mni[individual_id]['will_receive_pnc'] == 'late':
                 appt_date = self.sim.date + pd.DateOffset(self.module.rng.randint(0, 35))
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    pnc_one_maternal, priority=0, topen=appt_date, tclose=appt_date + pd.DateOffset(days=1))
+                    pnc_one_maternal, priority=0, topen=appt_date, tclose=appt_date + pd.DateOffset(days=2))
 
 
 class PostnatalWeekOneNeonatalEvent(Event, IndividualScopeEventMixin):
     """
-    This is PostnatalWeekOneEvent. It is scheduled for all newborns who survive labour and the first 48 hours after
-    birth. This event applies risk of key complications that can occur in the first week after birth. This event also
-    schedules postnatal care for those newborns predicted to attend after 48 hours or in the situation where they have
-    developed a complication. For newborns who dont seek care for themselves risk of death is applied.
+    This is PostnatalWeekOneNeonatalEvent. It is scheduled for all newborns who survive labour and the first 48 hours
+     after birth. This event applies risk of key complications that can occur in the first week after birth. This event
+     also schedules postnatal care for those newborns predicted to attend after 48 hours or in the situation where they
+      have developed a complication. For newborns who don't seek care for themselves risk of death is applied.
     """
 
     def __init__(self, module, individual_id):
@@ -1290,8 +1273,33 @@ class HSI_PostnatalSupervisor_TreatmentForObstetricFistula(HSI_Event, Individual
         if not mother.is_alive:
             return
 
+        # Define the consumables
+        ic = self.sim.modules['HealthSystem'].get_item_code_from_item_name
+
+        of_repair_cons = \
+            {ic('Scalpel blade size 22 (individually wrapped)_100_CMST'): 1,
+             ic('Halothane (fluothane)_250ml_CMST'): 100,
+             ic('Ceftriaxone 1g, PFR_each_CMST'): 2,
+             ic('Metronidazole 200mg_1000_CMST'): 6000,
+             ic('Cannula iv  (winged with injection pot) 18_each_CMST'): 1,
+             ic('Paracetamol, tablet, 500 mg'): 8000,
+             ic('Declofenac injection_each_CMST'): 1,
+             ic('Foley catheter'): 1,
+             ic('Bag, urine, collecting, 2000 ml'): 1,
+             ic("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 2000,
+             ic('Sodium chloride, injectable solution, 0,9 %, 500 ml'): 2000,
+             ic('Giving set iv administration + needle 15 drops/ml_each_CMST'): 1,
+             ic('Chlorhexidine 1.5% solution_5_CMST'): 50,
+             }
+
+        self.get_consumables(item_codes=of_repair_cons)
+
+        self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
+
+        # Log the end of disability in the MNI
         pregnancy_helper_functions.store_dalys_in_mni(
             person_id, self.sim.modules['PregnancySupervisor'].mother_and_newborn_info,
             f'{df.at[person_id, "pn_obstetric_fistula"]}_fistula_resolution', self.sim.date)
 
+        # Reset property
         df.at[person_id, 'pn_obstetric_fistula'] = 'none'

@@ -5,12 +5,12 @@ It maintains a current record of the availability and usage of beds in the healt
 
 """
 from collections import defaultdict
-from typing import Dict, Tuple
+from typing import Dict, Literal, Tuple
 
 import numpy as np
 import pandas as pd
 
-from tlo import Property, Types, logging
+from tlo import Date, Property, Types, logging
 
 # ---------------------------------------------------------------------------------------------------------
 #   CLASS DEFINITIONS
@@ -26,7 +26,11 @@ IN_PATIENT_ADMISSION = {'IPAdmission': 2}
 # in-patient require discharging). The limitation is that the discharge appointment occurs on the same day as the
 # admission. See: https://github.com/UCL/TLOmodel/issues/530
 
-IN_PATIENT_DAY = {'InpatientDays': 1}
+IN_PATIENT_DAY_FIRST_DAY = {'InpatientDays': 0}
+# There is no in-patient appointment day needed on the first day, as the care is covered under the admission.
+
+IN_PATIENT_DAY_SUBSEQUENT_DAYS = {'InpatientDays': 1}
+# Care required on days after the day of admission (including the day of discharge).
 
 
 class BedDays:
@@ -141,6 +145,40 @@ class BedDays:
             assert not df.isna().any().any()
             self.bed_tracker[bed_type] = df
 
+    def switch_beddays_availability(
+        self,
+        new_availability: Literal["all", "none", "default"],
+        effective_on_and_from: Date,
+        model_to_data_popsize_ratio: float = 1.0,
+    ) -> None:
+        """
+        Action to be taken if the beddays availability changes in the middle
+        of the simulation.
+
+        If bed capacities are reduced below the currently scheduled occupancy,
+        inpatients are not evicted from beds and are allowed to remain in the
+        bed until they are scheduled to leave. Obviously, no new patients will
+        be admitted if there is no room in the new capacities.
+
+        :param new_availability: The new bed availability. See __init__ for details.
+        :param effective_on_and_from: First day from which the new capacities will be imposed.
+        :param model_to_data_popsize_ratio: As in initialise_population.
+        """
+        # Store new bed availability
+        self.availability = new_availability
+        # Before we update the bed capacity, we need to store its old values
+        # This is because we will need to update the trackers to reflect the new#
+        # maximum capacities for each bed type.
+        old_max_capacities: pd.DataFrame = self._scaled_capacity.copy()
+        # Set the new capacity for beds
+        self.set_scaled_capacity(model_to_data_popsize_ratio)
+        # Compute the difference between the new max capacities and the old max capacities
+        difference_in_max = self._scaled_capacity - old_max_capacities
+        # For each tracker, after the effective date, impose the difference on the max
+        # number of beds
+        for bed_type, tracker in self.bed_tracker.items():
+            tracker.loc[effective_on_and_from:] += difference_in_max[bed_type]
+
     def on_start_of_day(self):
         """Things to do at the start of each new day:
         * Refresh inpatient status
@@ -216,10 +254,10 @@ class BedDays:
 
     def check_beddays_footprint_format(self, beddays_footprint):
         """Check that the format of the beddays footprint is correct"""
-        assert type(beddays_footprint) is dict
+        assert isinstance(beddays_footprint, dict)
         assert len(self.bed_types) == len(beddays_footprint)
         assert all([(bed_type in beddays_footprint) for bed_type in self.bed_types])
-        assert all([((v >= 0) and (type(v) is int)) for v in beddays_footprint.values()])
+        assert all([((v >= 0) and isinstance(v, int)) for v in beddays_footprint.values()])
         if 'non_bed_space' in self.bed_types:
             assert beddays_footprint['non_bed_space'] == 0, "A request cannot be made for a non-bed space"
 
@@ -267,7 +305,7 @@ class BedDays:
             if not available.all():
                 # If the bed is not available on all days, assume it cannot be used after the first day
                 # that it is not available.
-                available.loc[available.idxmin(~available):] = False
+                available.loc[available[~available].index[0]:] = False
 
                 # Add any days for which a bed of this type is not available to the footprint for next bed-type:
                 hold_over_dates_for_next_bed_type = list(available.loc[~available].index)
@@ -279,6 +317,60 @@ class BedDays:
             available_footprint[_bed_type] = int(available.sum())
 
         return available_footprint
+
+    def combine_footprints_for_same_patient(
+        self, fp1: Dict[str, int], fp2: Dict[str, int]
+    ) -> Dict[str, int]:
+        """
+        Given two footprints that are due to start on the same day, combine the two footprints by
+        overlaying the higher-priority bed over the lower-priority beds.
+
+        As an example, given the footprints,
+        fp1 = {"bedtype1": 2, "bedtype2": 0}
+        fp2 = {"bedtype1": 1, "bedtype2": 6}
+
+        where bedtype1 is higher priority than bedtype2, we expect the combined allocation to be
+        {"bedtype1": 2, "bedtype2": 5}.
+
+        This is because footprints are assumed to run in the order of the bedtypes priority; so
+        fp2's second day of being allocated to bedtype2 is overwritten by the higher-priority
+        allocation to bedtype1 from fp1. The remaining 5 days are allocated to bedtype2 since
+        fp1 does not require a bed after the first 2 days, but fp2 does.
+
+        :param fp1: Footprint, to be combined with the other argument.
+        :param pf2: Footprint, to be combined with the other argument.
+        """
+        fp1_length = sum(days for days in fp1.values())
+        fp2_length = sum(days for days in fp2.values())
+        max_length = max(fp1_length, fp2_length)
+
+        # np arrays where each entry is the priority of bed allocated by the footprint
+        # on that day. fp_priority[i] = priority of the bed allocated by the footprint on
+        # day i (where the current day is day 0).
+        # By default, fill with priority equal to the lowest bed priority; though all
+        # the values will have been explicitly overwritten after the next loop completes.
+        fp1_priority = np.ones((max_length,), dtype=int) * (len(self.bed_types) - 1)
+        fp2_priority = fp1_priority.copy()
+
+        fp1_at = 0
+        fp2_at = 0
+        for priority, bed_type in enumerate(self.bed_types):
+            # Bed type priority is dictated by list order, so it is safe to loop here.
+            # We will start with the highest-priority bed type and work to the lowest
+            fp1_priority[fp1_at:fp1_at + fp1[bed_type]] = priority
+            fp1_at += fp1[bed_type]
+            fp2_priority[fp2_at:fp2_at + fp2[bed_type]] = priority
+            fp2_at += fp2[bed_type]
+
+        # Element-wise minimum of the two priority arrays is then the bed to assign
+        final_priorities = np.minimum(fp1_priority, fp2_priority)
+        # Final footprint is then formed by converting the priorities into blocks of days
+        return {
+            # Cast to int here since pd.datetime.timedelta doesn't know what to do with
+            # np.int64 types
+            bed_type: int(sum(final_priorities == priority))
+            for priority, bed_type in enumerate(self.bed_types)
+        }
 
     def impose_beddays_footprint(self, person_id, footprint):
         """This is called to reflect that a new occupancy of bed-days should be recorded:
@@ -307,9 +399,7 @@ class BedDays:
             remaining_footprint = self.get_remaining_footprint(person_id)
 
             # combine the remaining footprint with the new footprint, with days in each bed-type running concurrently:
-            combo_footprint = {bed_type: max(footprint[bed_type], remaining_footprint[bed_type])
-                               for bed_type in self.bed_types
-                               }
+            combo_footprint = self.combine_footprints_for_same_patient(footprint, remaining_footprint)
 
             # remove the old footprint and apply the combined footprint
             self.remove_beddays_footprint(person_id)
@@ -449,7 +539,7 @@ class BedDays:
     def add_first_day_inpatient_appts_to_footprint(appt_footprint):
         """Return an APPT_FOOTPRINT with the addition (if not already present) of the in-patient admission appointment
         and the in-patient day appointment type (for the first day of the in-patient stay)."""
-        return {**appt_footprint, **IN_PATIENT_ADMISSION, **IN_PATIENT_DAY}
+        return {**appt_footprint, **IN_PATIENT_ADMISSION, **IN_PATIENT_DAY_FIRST_DAY}
 
     def get_inpatient_appts(self) -> dict:
         """Return a dict of the form {<facility_id>: APPT_FOOTPRINT} giving the total APPT_FOOTPRINT required for the
@@ -465,7 +555,7 @@ class BedDays:
             return {appt_type: num_needed * _num for appt_type, num_needed in _footprint.items()}
 
         return {
-            fac_id: multiply_footprint(IN_PATIENT_DAY, num_inpatients)
+            fac_id: multiply_footprint(IN_PATIENT_DAY_SUBSEQUENT_DAYS, num_inpatients)
             for fac_id, num_inpatients in total_inpatients[total_inpatients > 0].to_dict().items()
         }
         # NB. As we haven't got a record of which person is in which bed, we cannot associate a person with a particular

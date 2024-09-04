@@ -60,12 +60,14 @@ In summary:
 """
 
 import abc
+import argparse
 import datetime
 import json
 import pickle
+from collections.abc import Iterable
 from itertools import product
 from pathlib import Path, PurePosixPath
-from typing import Optional
+from typing import List, Optional
 
 import numpy as np
 
@@ -125,6 +127,47 @@ class BaseScenario(abc.ABC):
         self.resources = resources_path
         self.rng = None
         self.scenario_path = None
+        self.arguments = []
+
+    def parse_arguments(self, extra_arguments: List[str]) -> None:
+        """Base class command line arguments handling for scenarios. This should not be overridden by subclasses.
+        Subclasses can add argument handling to their classes by implementing the `add_arguments` method."""
+
+        if extra_arguments is None:
+            return
+
+        assert isinstance(extra_arguments, Iterable), "Arguments must be a list of strings"
+
+        self.arguments = extra_arguments
+
+        parser = argparse.ArgumentParser()
+
+        # add arguments from the subclass
+        self.add_arguments(parser)
+
+        arguments = parser.parse_args(self.arguments)
+
+        # set the arguments as attributes of the scenario
+        for key, value in vars(arguments).items():
+            if value is not None:
+                if hasattr(self, key):
+                    logger.info(key="message", data=f"Overriding attribute: {key}: {getattr(self, key)} -> {value}")
+                setattr(self, key, value)
+
+    def add_arguments(self, parser: argparse.ArgumentParser) -> None:
+        """Add scenario-specific arguments that can be passed to scenario from the command line.
+
+        This method is called to add scenario-specific arguments to the command line parser. The method should add
+        arguments to the parser using the `add_argument` method. Arguments that have a value of None are not set or
+        overridden.
+
+        :param parser: An instance of `argparse.ArgumentParser` to which arguments should be added.
+
+        Example::
+
+            parser.add_argument('--pop-size', type=int, default=20_000, help='Population size')
+        """
+        pass
 
     @abc.abstractmethod
     def log_configuration(self, **kwargs):
@@ -191,6 +234,23 @@ class BaseScenario(abc.ABC):
         """
         return None
 
+    def get_log_config(self, override_output_directory=None):
+        """Returns the log configuration for the scenario, with some post_processing."""
+        log_config = self.log_configuration()
+
+        # If scenario doesn't have log filename specified, we used the scenario script name
+        if "filename" not in log_config or log_config["filename"] is None:
+            log_config["filename"] = Path(self.scenario_path).stem
+
+        if override_output_directory is not None:
+            log_config["directory"] = override_output_directory
+
+        # If directory is specified, we always write log files - so don't print to stdout
+        if "directory" in log_config and log_config["directory"] is not None:
+            log_config["suppress_stdout"] = True
+
+        return log_config
+
     def save_draws(self, return_config=False, **kwargs):
         generator = DrawGenerator(self, self.number_of_draws, self.runs_per_draw)
         output_path = self.scenario_path.parent / f"{self.scenario_path.stem}_draws.json"
@@ -249,7 +309,7 @@ class DrawGenerator:
         self.draws = self.setup_draws()
 
     def setup_draws(self):
-        assert self.scenario.number_of_draws > 0, "Number of draws must be greater than one"
+        assert self.scenario.number_of_draws > 0, "Number of draws must be greater than 0"
         assert self.scenario.runs_per_draw > 0, "Number of samples/draw must be greater than 0"
         if self.scenario.draw_parameters(1, self.scenario.rng) is None:
             assert self.scenario.number_of_draws == 1, "Number of draws should equal one if no variable parameters"
@@ -258,7 +318,6 @@ class DrawGenerator:
     def get_draw(self, draw_number):
         return {
             "draw_number": draw_number,
-            "draw_seed": self.scenario.rng.randint(MAX_INT),
             "parameters": self.scenario.draw_parameters(draw_number, self.scenario.rng),
         }
 
@@ -266,11 +325,13 @@ class DrawGenerator:
         return {
             "scenario_script_path": str(PurePosixPath(scenario_path)),
             "scenario_seed": self.scenario.seed,
+            "arguments": self.scenario.arguments,
             "runs_per_draw": self.runs_per_draw,
             "draws": self.draws,
         }
 
-    def save_config(self, config, output_path):
+    @staticmethod
+    def save_config(config, output_path):
         with open(output_path, "w") as f:
             f.write(json.dumps(config, indent=2))
 
@@ -281,6 +342,8 @@ class SampleRunner:
         with open(run_configuration_path, "r") as f:
             self.run_config = json.load(f)
         self.scenario = ScenarioLoader(self.run_config["scenario_script_path"]).get_scenario()
+        if self.run_config["arguments"] is not None:
+            self.scenario.parse_arguments(self.run_config["arguments"])
         logger.info(key="message", data=f"Loaded scenario using {run_configuration_path}")
         logger.info(key="message", data=f"Found {self.number_of_draws} draws; {self.runs_per_draw} runs/draw")
 
@@ -308,25 +371,19 @@ class SampleRunner:
         sample["sample_number"] = sample_number
 
         # Instead of using the random number generator to create a seed for the simulation, we use an integer hash
-        # function to create an integer based on the sum of the draw_number and sample_number. This means the
+        # function to get an integer based on the sum of the scenario seed and sample_number. This means the
         # seed can be created independently and out-of-order (i.e. instead of sampling a seed for each sample in order)
-        sample["simulation_seed"] = SampleRunner.low_bias_32(sample["draw_seed"] + sample_number)
+        sample["simulation_seed"] = SampleRunner.low_bias_32(self.run_config["scenario_seed"] + sample_number)
         return sample
 
     def run_sample_by_number(self, output_directory, draw_number, sample_number):
+        """Runs a single sample from a draw, saving the output to the given directory"""
         draw = self.get_draw(draw_number)
         sample = self.get_sample(draw, sample_number)
-        self.run_sample(sample, output_directory)
-
-    def run_sample(self, sample, output_directory=None):
-        log_config = self.scenario.log_configuration()
-
-        if output_directory is not None:
-            log_config["directory"] = output_directory
-            # suppress stdout when saving output to directory (either user specified, or set by batch-run process)
-            log_config["suppress_stdout"] = True
+        log_config = self.scenario.get_log_config(output_directory)
 
         logger.info(key="message", data=f"Running draw {sample['draw_number']}, sample {sample['sample_number']}")
+
         sim = Simulation(
             start_date=self.scenario.start_date,
             seed=sample["simulation_seed"],
@@ -348,13 +405,15 @@ class SampleRunner:
                         pickle.dump(output, f)
 
     def run(self):
-        # this method will execute all runs of each draw, so we save output in directory
-        log_config = self.scenario.log_configuration()
+        """Run all samples for the scenario. Used by `tlo scenario-run` to run the scenario locally"""
+        log_config = self.scenario.get_log_config()
+
         root_dir = draw_dir = None
-        if log_config["filename"] and log_config["directory"]:  # i.e. save output?
+        if log_config["directory"]:  # i.e. write output files
             timestamp = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%SZ")
             root_dir = Path(log_config["directory"]) / (Path(log_config["filename"]).stem + "-" + timestamp)
 
+        # loop over draws and samples
         for draw in range(0, self.scenario.number_of_draws):
             for sample in range(0, self.runs_per_draw):
                 if root_dir is not None:
@@ -373,7 +432,7 @@ class SampleRunner:
                     #  f"Parameter value '{param_val}' is not scalar type (float, int, str)"
 
                     old_value = module.parameters[param_name]
-                    assert type(old_value) == type(param_val), f"Cannot override parameter '{param_name}' - wrong type"
+                    assert type(old_value) is type(param_val), f"Cannot override parameter '{param_name}' - wrong type"
 
                     module.parameters[param_name] = param_val
                     logger.info(

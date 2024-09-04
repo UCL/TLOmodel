@@ -1,7 +1,5 @@
 import pandas as pd
 
-from tlo.methods import pregnancy_helper_functions
-
 
 def preterm_labour(self, df, rng=None, **externals):
     """
@@ -84,10 +82,7 @@ def induced_abortion_death(self, df, rng=None, **externals):
     result = params['prob_induced_abortion_death']
 
     if person['ac_received_post_abortion_care']:
-        treatment_effect = pregnancy_helper_functions.get_treatment_effect(
-            externals['delay_one_two'], externals['delay_three'], 'treatment_effect_post_abortion_care', params)
-
-        result *= treatment_effect
+        result *= params['treatment_effect_post_abortion_care']
 
     return pd.Series(data=[result], index=df.index)
 
@@ -127,10 +122,7 @@ def spontaneous_abortion_death(self, df, rng=None, **externals):
     result = params['prob_spontaneous_abortion_death']
 
     if person['ac_received_post_abortion_care']:
-        treatment_effect = pregnancy_helper_functions.get_treatment_effect(
-            externals['delay_one_two'], externals['delay_three'], 'treatment_effect_post_abortion_care', params)
-
-        result *= treatment_effect
+        result *= params['treatment_effect_post_abortion_care']
 
     return pd.Series(data=[result], index=df.index)
 
@@ -284,15 +276,9 @@ def early_initiation_anc4(self, df, rng=None, **externals):
     result[(df.la_parity > 3) & (df.la_parity < 6)] *= params['aor_early_anc4_parity_4_5']
     result[df.la_parity > 5] *= params['aor_early_anc4_parity_6+']
 
-    result[df.li_ed_lev == 2] *= params['aor_early_anc4_primary_edu']
     result[df.li_ed_lev == 3] *= params['aor_early_anc4_secondary_edu']
 
     result[df.li_wealth == 1] *= params['aor_early_anc4_richest_wealth']
-    result[df.li_wealth == 2] *= params['aor_early_anc4_richer_wealth']
-    result[df.li_wealth == 3] *= params['aor_early_anc4_middle_wealth']
-
-    result[df.li_mar_stat == 2] *= params['aor_early_anc4_married']
-    result[df.li_mar_stat == 3] *= params['aor_early_anc4_previously_married']
 
     result = result / (1 + result)
     return result

@@ -5,24 +5,29 @@ Overview
 --------
 The Stunting module determines the prevalence of stunting for children under 5 years old. A polling event runs
 every month and determines the risk of onset of non-severe stunting, progression to severe stunting or natural
-recovery. The Generic HSI calls `do_routine_assessment_for_chronic_undernutrition` for any HSI with a child under
-5 years old: if they have any stunting they are provided with an intervention - `HSI_Stunting_ComplementaryFeeding`.
-
+recovery. The Generic HSI calls do_at_generic_first_appt for any HSI with a child under 5 years old:
+if they have any stunting they are provided with an intervention - `HSI_Stunting_ComplementaryFeeding`.
 """
+from __future__ import annotations
 
 from collections import namedtuple
 from pathlib import Path
-from typing import Union
+from typing import TYPE_CHECKING, Union
 
 import numpy as np
 import pandas as pd
 from scipy.stats import norm
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
-from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.hsi_event import HSI_Event
+from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
+
+if TYPE_CHECKING:
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
+    from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -32,7 +37,7 @@ logger.setLevel(logging.INFO)
 #   MODULE DEFINITION
 # ---------------------------------------------------------------------------------------------------------
 
-class Stunting(Module):
+class Stunting(Module, GenericFirstAppointmentsMixin):
     """This is the disease module for Stunting"""
 
     INIT_DEPENDENCIES = {'Demography', 'Wasting', 'NewbornOutcomes', 'Diarrhoea', 'Hiv'}
@@ -120,6 +125,11 @@ class Stunting(Module):
         'effectiveness_of_food_supplementation_in_stunting_reduction': Parameter(
             Types.REAL,
             'Probability of stunting being reduced by one standard deviation (category) by supplementary feeding.'),
+
+        # The probability of a (severe) stunting person being checked and correctly diagnosed
+        'prob_stunting_diagnosed_at_generic_appt': Parameter(
+            Types.REAL,
+            'Probability of a stunted or severely stunted person being checked and correctly diagnosed'),
     }
 
     PROPERTIES = {
@@ -208,15 +218,18 @@ class Stunting(Module):
             low_bound_age_in_years = agegp[0] / 12.0
             high_bound_age_in_years = (1 + agegp[1]) / 12.0
 
-            mask = df.is_alive & df.age_exact_years.between(low_bound_age_in_years, high_bound_age_in_years,
-                                                            inclusive='left')
+            mask = (
+                df.is_alive
+                & (df.age_exact_years >= low_bound_age_in_years)
+                & (df.age_exact_years < high_bound_age_in_years)
+            )
 
             stunted = make_scaled_linear_model_stunting(target_prob=p_stunting.prob_stunting, mask=mask).predict(
                 df.loc[mask], self.rng, squeeze_single_row_output=False)
 
             severely_stunted_idx = stunted.loc[
                 stunted & (self.rng.random_sample(len(stunted)) < p_stunting.prob_severe_given_stunting)].index
-            stunted_but_not_severe_idx = set(stunted[stunted].index) - set(severely_stunted_idx)
+            stunted_but_not_severe_idx = stunted[stunted].index.difference(severely_stunted_idx)
 
             df.loc[stunted_but_not_severe_idx, "un_HAZ_category"] = '-3<=HAZ<-2'
             df.loc[severely_stunted_idx, "un_HAZ_category"] = 'HAZ<-3'
@@ -267,29 +280,43 @@ class Stunting(Module):
             '-3<=HAZ<-2': 'HAZ>=-2'
         })
 
-    def do_routine_assessment_for_chronic_undernutrition(self, person_id):
-        """This is called by the a generic HSI event for every child aged less than 5 years. It assesses stunting
-        and schedules an HSI as needed."""
-
-        df = self.sim.population.props
-        person = df.loc[person_id]
-        is_stunted = person.un_HAZ_category in ('HAZ<-3', '-3<=HAZ<-2')
-
-        if not is_stunted:
-            return
-
-        # Schedule the HSI for provision of treatment
-        self.sim.modules['HealthSystem'].schedule_hsi_event(
-            hsi_event=HSI_Stunting_ComplementaryFeeding(module=self, person_id=person_id),
-            priority=2,  # <-- lower priority that for wasting and most other HSI
-            topen=self.sim.date)
-
     def do_treatment(self, person_id, prob_success):
         """Represent the treatment with supplementary feeding. If treatment is successful, effect the recovery
         of the person immediately."""
         if prob_success > self.rng.random_sample():
             self.do_recovery([person_id])
 
+    def do_at_generic_first_appt(
+        self,
+        person_id: int,
+        individual_properties: IndividualProperties,
+        schedule_hsi_event: HSIEventScheduler,
+        **kwargs,
+    ) -> None:
+        # This is called by the a generic HSI event for every child aged less than 5
+        # years. It assesses stunting and schedules an HSI as needed.
+        is_stunted = individual_properties["un_HAZ_category"] in (
+            "HAZ<-3",
+            "-3<=HAZ<-2",
+        )
+        p_stunting_diagnosed = self.parameters[
+            "prob_stunting_diagnosed_at_generic_appt"
+        ]
+
+        # Schedule the HSI for provision of treatment based on the probability of
+        # stunting diagnosis, provided the necessary symptoms are there.
+        if individual_properties["age_years"] <= 5 and is_stunted:
+            # Schedule the HSI for provision of treatment based on the probability of
+            # stunting diagnosis
+            if p_stunting_diagnosed > self.rng.random_sample():
+                event = HSI_Stunting_ComplementaryFeeding(
+                    module=self, person_id=person_id
+                )
+                schedule_hsi_event(
+                    event,
+                    priority=2,  # <-- lower priority that for wasting and most other HSI
+                    topen=self.sim.date,
+                )
 
 class Models:
     def __init__(self, module):
@@ -305,21 +332,23 @@ class Models:
         p = self.p
 
         return LinearModel.multiplicative(
-            Predictor('age_exact_years',
-                      conditions_are_exhaustive=True,
-                      conditions_are_mutually_exclusive=True).when('< 0.5',
-                                                                   p['base_inc_rate_stunting_by_agegp'][0])
-                                                             .when('.between(0.5, 1.0, inclusive="left")',
-                                                                   p['base_inc_rate_stunting_by_agegp'][1])
-                                                             .when('.between(1.0, 2.0, inclusive="left")',
-                                                                   p['base_inc_rate_stunting_by_agegp'][2])
-                                                             .when('.between(2.0, 3.0, inclusive="left")',
-                                                                   p['base_inc_rate_stunting_by_agegp'][3])
-                                                             .when('.between(3.0, 4.0, inclusive="left")',
-                                                                   p['base_inc_rate_stunting_by_agegp'][4])
-                                                             .when('.between(4.0, 5.0, inclusive="left")',
-                                                                   p['base_inc_rate_stunting_by_agegp'][5])
-                                                             .when('> 5.0', 0.0),
+            Predictor(
+                conditions_are_exhaustive=True, conditions_are_mutually_exclusive=True
+            ).when(
+                "age_exact_years < 0.5", p["base_inc_rate_stunting_by_agegp"][0]
+            ).when(
+                "0.5 <= age_exact_years < 1", p["base_inc_rate_stunting_by_agegp"][1]
+            ).when(
+                "1 <= age_exact_years < 2", p["base_inc_rate_stunting_by_agegp"][2]
+            ).when(
+                "2 <= age_exact_years < 3", p["base_inc_rate_stunting_by_agegp"][3]
+            ).when(
+                "3 <= age_exact_years < 4", p["base_inc_rate_stunting_by_agegp"][4]
+            ).when(
+                "4 <= age_exact_years < 5", p["base_inc_rate_stunting_by_agegp"][5]
+            ).when(
+                "age_exact_years >= 5", 0.0
+            ),
             Predictor('li_wealth',
                       conditions_are_mutually_exclusive=True).when(1, 1.0)
                                                              .otherwise(p['rr_stunting_wealth_level']),
@@ -342,8 +371,9 @@ class Models:
                              '(nb_breastfeeding_status == "none")) & (age_exact_years < 0.5)',
                              p['rr_stunting_no_exclusive_breastfeeding']),
             Predictor().when(
-                '(nb_breastfeeding_status == "none") & (age_exact_years.between(0.5, 2.0, inclusive="left"))',
-                p['rr_stunting_no_continued_breastfeeding']),
+                '(nb_breastfeeding_status == "none") & (0.5 <= age_exact_years < 2.0)',
+                p['rr_stunting_no_continued_breastfeeding']
+            ),
         )
 
     def make_lm_prob_progression_to_severe_stunting(self):
@@ -352,21 +382,34 @@ class Models:
         p = self.p
 
         return LinearModel.multiplicative(
-            Predictor('age_exact_years',
-                      conditions_are_exhaustive=True,
-                      conditions_are_mutually_exclusive=True).when('< 0.5',
-                                                                   p['r_progression_severe_stunting_by_agegp'][0])
-                                                             .when('.between(0.5, 1.0, inclusive="left")',
-                                                                   p['r_progression_severe_stunting_by_agegp'][1])
-                                                             .when('.between(1.0, 2.0, inclusive="left")',
-                                                                   p['r_progression_severe_stunting_by_agegp'][2])
-                                                             .when('.between(2.0, 3.0, inclusive="left")',
-                                                                   p['r_progression_severe_stunting_by_agegp'][3])
-                                                             .when('.between(3.0, 4.0, inclusive="left")',
-                                                                   p['r_progression_severe_stunting_by_agegp'][4])
-                                                             .when('.between(4.0, 5.0, inclusive="left")',
-                                                                   p['r_progression_severe_stunting_by_agegp'][5])
-                                                             .when('> 5.0', 1.0),
+            Predictor(
+                conditions_are_exhaustive=True, conditions_are_mutually_exclusive=True
+            ).when(
+                'age_exact_years < 0.5', p['r_progression_severe_stunting_by_agegp'][0]
+            )
+            .when(
+                '0.5 <= age_exact_years < 1.0',
+                p['r_progression_severe_stunting_by_agegp'][1]
+            )
+            .when(
+                '1.0 <= age_exact_years < 2.0',
+                p['r_progression_severe_stunting_by_agegp'][2]
+            )
+            .when(
+                '2.0 <= age_exact_years < 3.0',
+                p['r_progression_severe_stunting_by_agegp'][3]
+            )
+            .when(
+                '3.0 <= age_exact_years < 4.0',
+                p['r_progression_severe_stunting_by_agegp'][4]
+            )
+            .when(
+                '4.0 <= age_exact_years < 5.0',
+                p['r_progression_severe_stunting_by_agegp'][5]
+            )
+            .when(
+                'age_exact_years >= 5.0', 1.0
+            ),
             Predictor('un_ever_wasted',
                       conditions_are_exhaustive=True,
                       conditions_are_mutually_exclusive=True
@@ -459,7 +502,7 @@ class StuntingPollingEvent(RegularEvent, PopulationScopeEventMixin):
         rng = self.module.rng
 
         annual_prob = model.predict(df.loc[mask]).clip(upper=1.0)
-        cum_prob_over_days_exposed = 1.0 - np.exp(np.log(1.0 - annual_prob) * days_exposed_to_risk / 365.25)
+        cum_prob_over_days_exposed = 1.0 - (1.0 - annual_prob) ** (days_exposed_to_risk / DAYS_IN_YEAR)
 
         assert pd.notnull(cum_prob_over_days_exposed).all()
         return mask[mask].index[cum_prob_over_days_exposed > rng.random_sample(mask.sum())]
@@ -481,7 +524,9 @@ class StuntingLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         """Log the current distribution of stunting classification by age"""
         df = population.props
 
-        d_to_log = df.loc[df.is_alive & (df.age_years < 5)].groupby(
+        subset = df.loc[df.is_alive & (df.age_years < 5)].copy()
+        subset["age_years"] = pd.Categorical(subset["age_years"], categories=range(5))
+        d_to_log = subset.groupby(
             by=['age_years', 'un_HAZ_category']).size().sort_index().to_dict()
 
         def convert_keys_to_string(d):

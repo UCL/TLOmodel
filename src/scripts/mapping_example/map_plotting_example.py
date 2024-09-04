@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import pandas as pd
@@ -10,11 +11,12 @@ from matplotlib import pyplot as plt
 # assume that the present working directory is the top level TLOmodel directory
 resourcefilepath = Path("./resources")
 outputfilepath = Path("./outputs")
+path_of_this_file = Path(os.path.dirname(__file__))
 
 # read in the shape file for district level maps
-sf = shp.Reader(shp=open(resourcefilepath / 'ResourceFile_mwi_admbnda_adm2_nso_20181016.shp', 'rb'),
-                dbf=open(resourcefilepath / 'ResourceFile_mwi_admbnda_adm2_nso_20181016.dbf', 'rb'),
-                shx=open(resourcefilepath / 'ResourceFile_mwi_admbnda_adm2_nso_20181016.shx', 'rb'))
+sf = shp.Reader(shp=open(resourcefilepath / 'mapping' / 'ResourceFile_mwi_admbnda_adm2_nso_20181016.shp', 'rb'),
+                dbf=open(resourcefilepath / 'mapping' / 'ResourceFile_mwi_admbnda_adm2_nso_20181016.dbf', 'rb'),
+                shx=open(resourcefilepath / 'mapping' / 'ResourceFile_mwi_admbnda_adm2_nso_20181016.shx', 'rb'))
 
 # create a figure
 plt.figure()
@@ -36,7 +38,7 @@ plt.axis('off')
 plt.gca().set_aspect('equal')
 
 # example of how to add data to the map using a colour map:
-paracetamol_df = pd.read_csv(resourcefilepath / 'ResourceFile_Example_Paracetamol_DataFrame.csv')
+paracetamol_df = pd.read_csv(path_of_this_file / 'Example_Paracetamol_DataFrame.csv')
 stock_out_days = paracetamol_df['Stock Out Days']
 eastings = paracetamol_df['Eastings']
 northings = paracetamol_df['Northings']

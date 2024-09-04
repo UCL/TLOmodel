@@ -1,16 +1,10 @@
-/* override table width restrictions
 
-From https://rackerlabs.github.io/docs-rackspace/tools/rtd-tables.html
+/*
+On wide format screens increase content width to avoid horizontal scroll bars on code
+blocks with 120 character line length
 */
-@media screen and (min-width: 767px) {
-
-   .wy-table-responsive table td {
-      /* !important prevents the common CSS stylesheets from overriding
-         this as on RTD they are loaded after this stylesheet */
-      white-space: normal !important;
-   }
-
-   .wy-table-responsive {
-      overflow: visible !important;
-   }
-}
+@media screen and (min-width: 1280px) {
+    div.wy-nav-content {
+      max-width: 960px;
+    }
+  }

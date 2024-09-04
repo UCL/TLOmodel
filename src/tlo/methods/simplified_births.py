@@ -4,6 +4,7 @@
  is that every pregnancy results in a birth."""
 
 import json
+from pathlib import Path
 
 import pandas as pd
 
@@ -105,12 +106,12 @@ class SimplifiedBirths(Module):
         """Load parameters for probability of pregnancy/birth and breastfeeding status for newborns"""
 
         self.parameters['age_specific_fertility_rates'] = \
-            pd.read_csv(self.resourcefilepath / 'demography' / 'ResourceFile_ASFR_WPP.csv')
+            pd.read_csv(Path(self.resourcefilepath) / 'demography' / 'ResourceFile_ASFR_WPP.csv')
 
         self.parameters['months_between_pregnancy_and_delivery'] = 9
 
         # Breastfeeding status for newborns (importing from the Newborn resourcefile)
-        rf = pd.read_excel(self.resourcefilepath / 'ResourceFile_NewbornOutcomes.xlsx')
+        rf = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_NewbornOutcomes.xlsx')
         param_as_string = rf.loc[rf.parameter_name == 'prob_breastfeeding_type']['value'].iloc[0]
         parameter = json.loads(param_as_string)[0]
         self.parameters['prob_breastfeeding_type'] = parameter
@@ -151,7 +152,7 @@ class SimplifiedBirths(Module):
                           'si_breastfeeding_status_6mo_to_23mo': breastfeeding_status_6mo_to_23mo,
                           }
                       }
-        df.at[child_id, properties.keys()] = properties.values()
+        df.loc[child_id, properties.keys()] = properties.values()
 
 
 class SimplifiedBirthsPoll(RegularEvent, PopulationScopeEventMixin):
