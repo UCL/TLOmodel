@@ -2774,17 +2774,6 @@ class HealthSystemSummaryCounter:
             },
         )
 
-        # Log summary of HSI_Events that never ran
-        logger_summary.info(
-            key="Never_ran_HSI_Event",
-            description="Counts of the HSI_Events that never ran in this calendar year by TREATMENT_ID, "
-                        "and the respective 'Appt_Type's that have not occurred in this calendar year.",
-            data={
-                "TREATMENT_ID": self._never_ran_treatment_ids,
-                "Number_By_Appt_Type_Code": self._never_ran_appts,
-                "Number_By_Appt_Type_Code_And_Level": self._never_ran_appts_by_level,
-            },
-        )
         # Log summary of HSI_Events that do not have a blank appointment footprint
         logger_summary.info(
             key="HSI_Event_non_blank_appt_footprint",
@@ -2794,6 +2783,18 @@ class HealthSystemSummaryCounter:
             "TREATMENT_ID": self._no_blank_appt_treatment_ids,
             "Number_By_Appt_Type_Code": self._no_blank_appt_appts,
             "Number_By_Appt_Type_Code_And_Level": self._no_blank_appt_by_level,
+            },
+        )
+
+        # Log summary of HSI_Events that never ran
+        logger_summary.info(
+            key="Never_ran_HSI_Event",
+            description="Counts of the HSI_Events that never ran in this calendar year by TREATMENT_ID, "
+                        "and the respective 'Appt_Type's that have not occurred in this calendar year.",
+            data={
+                "TREATMENT_ID": self._never_ran_treatment_ids,
+                "Number_By_Appt_Type_Code": self._never_ran_appts,
+                "Number_By_Appt_Type_Code_And_Level": self._never_ran_appts_by_level,
             },
         )
 
