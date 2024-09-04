@@ -594,6 +594,15 @@ class BladderCancer(Module, GenericFirstAppointmentsMixin):
 
         return disability_series_for_alive_persons
 
+    def report_prevalence(self):
+        # This reports on the prevalence of bladder cancer for all individuals
+
+        df = self.sim.population.props
+        total_prev = len(
+            df[(df.bc_status != 'none') & (df.is_alive)]
+        ) / len(df[df.is_alive])
+        return total_prev
+
     def do_at_generic_first_appt(
         self,
         person_id: int,

@@ -649,6 +649,13 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
         average_daly_weight_in_last_month = pd.Series(values, idx) / days_last_month
         return average_daly_weight_in_last_month.reindex(index=df.loc[df.is_alive].index, fill_value=0.0)
 
+    def report_prevalence(self):
+        df = self.sim.population.props
+        total_prev = len(
+            df[df.gi_has_diarrhoea & df.is_alive]
+        ) / len(df[df.is_alive])
+        return total_prev
+
     def look_up_consumables(self):
         """Look up and store the consumables item codes used in each of the HSI."""
         ic = self.sim.modules['HealthSystem'].get_item_code_from_item_name

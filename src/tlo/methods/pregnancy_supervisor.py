@@ -59,6 +59,11 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         # across the length of pregnancy and the postnatal period
         self.mother_and_newborn_info = dict()
 
+        # Dictionary that records stillbirths
+        self.stillbirth_dates = {
+             'stillbirth_date': pd.NaT
+         }
+
         # This variable will store a Bitset handler for the property ps_abortion_complications
         self.abortion_complications = None
 
@@ -825,7 +830,25 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         daly_series[monthly_daly.keys()] = list(monthly_daly.values())
 
         return daly_series
+    def report_prevalence(self):
+        """
+        This function reports the prevalence of intrapartum stillbirth for this module generated in the previous month
+        """
+        # Filter out non-dictionary values and entries where 'stillbirth_date' is None
+        stillbirths_happened = {
+            key: value for key, value in self.stillbirth_dates.items()
+            if isinstance(value, dict) and value.get('stillbirth_date') is not None
+        }
 
+        # Filter entries with valid 'stillbirth_date' that occurred in the last month
+        one_month_ago = self.sim.date - pd.DateOffset(months=1)
+        filtered_stillbirths = {
+            key: value for key, value in stillbirths_happened.items()
+            if isinstance(value.get('stillbirth_date'), pd.Timestamp) and value.get('stillbirth_date') >= one_month_ago
+        }
+
+        antenatal_stillbirth_for_month = len(filtered_stillbirths)
+        return antenatal_stillbirth_for_month
     def pregnancy_supervisor_property_reset(self, id_or_index):
         """
         This function is called when all properties housed in the PregnancySupervisorModule should be reset. For example
@@ -1441,6 +1464,8 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
 
         self.sim.modules['CareOfWomenDuringPregnancy'].care_of_women_in_pregnancy_property_reset(
             id_or_index=women.index)
+
+        self.stillbirth_dates['stillbirth_date'] =  self.sim.date
 
     def update_variables_post_still_birth_for_individual(self, individual_id):
         """

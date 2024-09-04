@@ -1009,6 +1009,16 @@ class Tb(Module):
 
         return health_values.loc[df.is_alive]
 
+    def report_prevalence(self):
+        # This returns dataframe that reports on the prevalence of malaria for all individuals
+
+        df = self.sim.population.props
+        df_tmp = df.loc[df.is_alive]
+        num_active_tb_cases = len(df_tmp[(df_tmp.tb_inf == "active") & df_tmp.is_alive])
+        num_latent_tb_cases = len(df_tmp[(df_tmp.tb_inf == "latent") & df_tmp.is_alive])
+        total_prev = (num_active_tb_cases + num_latent_tb_cases) / len(df_tmp)
+        return total_prev
+
     def calculate_untreated_proportion(self, population, strain):
         """
         calculate the proportion of active TB cases not on correct treatment
@@ -2752,9 +2762,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # ACTIVE
         num_active_tb_cases = len(df[(df.tb_inf == "active") & df.is_alive])
         prev_active = num_active_tb_cases / len(df[df.is_alive])
-
         assert prev_active <= 1
-
         # prevalence of active TB in adults
         num_active_adult = len(
             df[(df.tb_inf == "active") & (df.age_years >= 15) & df.is_alive]

@@ -197,6 +197,15 @@ class Measles(Module, GenericFirstAppointmentsMixin):
 
         return health_values
 
+    def report_prevalence(self):
+        # This returns dataframe that reports on the prevalence of measles for all individuals
+        df = self.sim.population.props
+        total_prev = len(
+            df[df.is_alive & df.me_has_measles]
+        ) / len(df[df.is_alive])
+
+        return total_prev
+
     def process_parameters(self):
         """Process the parameters (following being read-in) prior to the simulation starting.
         Make `self.symptom_probs` to be a dictionary keyed by age, with values of dictionaries keyed by symptoms and

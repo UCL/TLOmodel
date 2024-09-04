@@ -589,6 +589,14 @@ class ProstateCancer(Module, GenericFirstAppointmentsMixin):
 
         return disability_series_for_alive_persons
 
+    def report_prevalence(self):
+        # This returns dataframe that reports on the prevalence of prostate cancer for all individuals
+        df = self.sim.population.props
+        total_prev = len(
+            df[(df['is_alive']) & (df['pc_status'] != 'none')]
+        ) / len(df[df['is_alive']])
+
+        return total_prev
     def do_at_generic_first_appt(
         self,
         person_id: int,

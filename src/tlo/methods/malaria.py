@@ -755,6 +755,16 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
 
         return health_values.loc[df.is_alive]  # returns the series
 
+
+    def report_prevalence(self):
+        # This returns dataframe that reports on the prevalence of malaria for all individuals
+        df = self.sim.population.props
+        total_prev = len(
+            df[df.is_alive & df.ma_is_infected]
+        ) / len(df[df.is_alive])
+
+        return total_prev
+
     def check_if_fever_is_caused_by_malaria(
         self,
         true_malaria_infection_type: str,
