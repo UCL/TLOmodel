@@ -5,7 +5,7 @@ test run for developing plots:
 outputs/hss_elements-2024-08-21T125348Z
 
 full run:
-hss_elements-2024-08-19T105018Z
+hss_elements-2024-08-27T122317Z
 
 """
 
@@ -29,7 +29,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     - We estimate the draw on healthcare system resources as the FEWER appointments when that treatment does not occur.
     """
 
-    TARGET_PERIOD = (Date(2025, 1, 1), Date(2035, 12, 31))
+    TARGET_PERIOD = (Date(2025, 1, 1), Date(2030, 12, 31))
 
     # Definitions of general helper functions
     make_graph_file_name = lambda stub: output_folder / f"{stub.replace('*', '_star_')}.png"  # noqa: E731
@@ -296,12 +296,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # DALYS: Split by HRH scenarios and supply chain scenarios
     for plot_name, scenario_names in plots.items():
         name_of_plot = f'DALYS, {target_period()}, {plot_name}'
-        fig, ax = do_bar_plot_with_ci(num_deaths_summarized.loc[scenario_names] / 1e6)
+        fig, ax = do_bar_plot_with_ci(num_dalys_summarized.loc[scenario_names] / 1e6)
         # do_bar_plot_with_ci(num_deaths_summarized.loc[scenario_names] / 1e6)
         ax.set_title(name_of_plot)
         ax.set_ylabel('DALYS, (Millions)')
         fig.tight_layout()
-        ax.axhline(num_deaths_summarized.loc['Baseline', 'mean'] / 1e6, color='black', alpha=0.5)
+        ax.axhline(num_dalys_summarized.loc['Baseline', 'mean'] / 1e6, color='black', alpha=0.5)
         fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
         fig.show()
         plt.close(fig)
@@ -488,13 +488,19 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         filtered_scenario_names = [name for name in scenario_names if name != 'Baseline']
         name_of_plot = f'DALYS Averted vs Baseline, {target_period()}, {plot_name}'
         fig, ax = plt.subplots()
+
+        # Plot each bar stack with the specified color
+        num_categories = len(total_num_dalys_by_label_results_averted_vs_baseline.index)
+        colours = sns.color_palette('Set1', num_categories)
+
         total_num_dalys_by_label_results_averted_vs_baseline[filtered_scenario_names].T.plot.bar(
             stacked=True,
             ax=ax,
             rot=0,
-            alpha=0.75
+            # alpha=0.75,
+            color=colours
         )
-        ax.set_ylim([0, 10e7])
+        ax.set_ylim([0, 2e7])
         ax.set_title(name_of_plot)
         ax.set_ylabel(f'DALYs Averted vs Baseline, (Millions)')
         wrapped_labs = ["\n".join(textwrap.wrap(_lab.get_text(), 20)) for _lab in ax.get_xticklabels()]

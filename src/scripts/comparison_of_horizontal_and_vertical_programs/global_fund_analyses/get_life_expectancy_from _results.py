@@ -14,6 +14,7 @@ results HSS
 
 from pathlib import Path
 import pandas as pd
+import matplotlib.pyplot as plt
 import datetime
 import argparse
 from typing import Tuple
@@ -52,7 +53,7 @@ def apply(results_folder: Path, output_folder: Path, HSS_or_HTM: str):
     periods = {
         "2010": (datetime.date(2010, 1, 1), datetime.date(2010, 12, 31)),
         "2024": (datetime.date(2024, 1, 1), datetime.date(2024, 12, 31)),
-        "2034": (datetime.date(2034, 1, 1), datetime.date(2034, 12, 31)),
+        "2030": (datetime.date(2030, 1, 1), datetime.date(2030, 12, 31)),
     }
 
     summaries = {}
@@ -79,6 +80,83 @@ def apply(results_folder: Path, output_folder: Path, HSS_or_HTM: str):
     with pd.ExcelWriter(output_file) as writer:
         for year, df in summaries.items():
             df.to_excel(writer, sheet_name=f"Summary_{year}")
+
+    # todo figure showing LE for each draw, can be different sets depending on HSS or HTM scenarios
+    # use 2030 values, all others (2010/2024) should be the same (or similar)
+
+
+
+    def plot_le(df: pd.DataFrame):
+        """
+        Plots the 2030 summary data with points for means and error bars using lower and upper bounds.
+
+        Parameters:
+        df (pd.DataFrame): DataFrame with MultiIndex columns ('draw', 'stat') and rows (e.g., 'M', 'F').
+        """
+        # Define the draws (the unique values from level 'draw' of the column MultiIndex)
+        draws = df.columns.get_level_values('draw').unique()
+        # draw_indices = list(range(len(draws)))
+
+        fig, ax = plt.subplots(figsize=(12, 6))
+        substitute_labels = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+        # Create lists to hold custom legend entries for x-axis labels
+        xtick_labels = [f'{letter}' for letter in substitute_labels[:len(draws)]]
+        xtick_legend_entries = [f'{letter}: {draw}' for letter, draw in zip(substitute_labels[:len(draws)], draws)]
+
+        # Loop through the rows ('M' and 'F') and plot each with error bars
+        for sex in df.index:
+            # Extract the mean, lower, and upper values for this gender
+            means = df.loc[sex, (slice(None), 'mean')]
+            lower = df.loc[sex, (slice(None), 'lower')]
+            upper = df.loc[sex, (slice(None), 'upper')]
+
+            # Calculate the error bars (upper and lower differences from the mean)
+            yerr = [means.values - lower.values, upper.values - means.values]
+
+            # Plotting
+            ax.errorbar(draws, means, yerr=yerr, label=f'{sex}', fmt='o', capsize=5)
+
+        # Customize plot
+        ax.set_xlabel('')
+        ax.set_ylabel('Life expectancy estimate, years')
+        ax.set_title('2030 Life Expectancy Estimates')
+        ax.set_ylim(50, 80)
+
+        # Set custom x-tick labels
+        ax.set_xticklabels(xtick_labels)
+
+        # Adding legend for sex
+        # ax.legend(title='Sex', loc='upper left', bbox_to_anchor=(1, 1))
+        #
+        # # Creating custom legend for x-axis labels
+        # ax.legend(handles=[plt.Line2D([0], [0], marker='', color='w', markerfacecolor='black', markersize=10,
+        #                               linestyle='')] * len(xtick_legend_entries),
+        #           labels=xtick_legend_entries,
+        #           title='',
+        #           loc='upper left', bbox_to_anchor=(1, 0.5))
+
+        # Create and add the first legend for sex
+        sex_legend = ax.legend(title='Sex', loc='upper left', bbox_to_anchor=(0, 1))
+        ax.add_artist(sex_legend)  # Add the first legend manually
+
+        # Create the second legend for x-axis labels
+        xaxis_legend = ax.legend(handles=[plt.Line2D([0], [0], marker='', color='w', markerfacecolor='black',
+                                                     markersize=10, linestyle='')] * len(xtick_legend_entries),
+                                 labels=xtick_legend_entries,
+                                 title='Draws',
+                                 loc='upper left', bbox_to_anchor=(1, 0.5))
+        # ax.grid(True)
+        # Add vertical grey lines between each category
+        for i in range(1, len(draws)):
+            ax.axvline(x=i - 0.5, color='lightgrey', linestyle='--', linewidth=0.8)
+
+        # Show plot
+        plt.tight_layout()
+        plt.show()
+
+    # Plot life expectancy for 2030
+    plot_le(summaries['2030'])
 
 
 if __name__ == "__main__":

@@ -32,7 +32,7 @@ class ScenarioDefinitions:
                     "year_mode_switch": self.YEAR_OF_CHANGE_FOR_HSS,
 
                     # Normalize the behaviour of Mode 2
-                    "policy_name": "Naive",
+                    "policy_name": "HTM",  # use priority ranking 2 for HTM treatments only
                     "tclose_overwrite": 1,
                     "tclose_days_offset_overwrite": 7,
                 }
