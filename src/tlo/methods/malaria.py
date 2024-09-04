@@ -697,7 +697,8 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
             highrisk_distr_num)
 
         # IRS values can be 0 or 0.8 - no other value in lookup table
-        self.itn_irs['irs_rate'].loc[mask] = scaled_params["irs_district"]
+        # self.itn_irs['irs_rate'].loc[mask] = scaled_params["irs_district"]
+        self.itn_irs['irs_rate'] = scaled_params["irs_district"]
 
         # set ITN for all districts
         # Set these values to 0.7 - this is the max value possible in lookup table
