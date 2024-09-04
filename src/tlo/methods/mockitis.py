@@ -293,6 +293,14 @@ class Mockitis(Module, GenericFirstAppointmentsMixin):
 
         return health_values  # returns the series
 
+    def report_prevalence(self):
+        logger.debug(key='debug', data='This is mockitis reporting my prevalence ')
+
+        df = self.sim.population.props  # shortcut to population properties dataframe
+        total_prev = df.loc[df.is_alive, 'mi_is_infected'].sum()/ len(df[df['is_alive']])
+        print(total_prev)
+        return total_prev
+
     def do_at_generic_first_appt_emergency(
         self,
         person_id: int,

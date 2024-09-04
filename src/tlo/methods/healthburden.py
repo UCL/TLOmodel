@@ -738,7 +738,7 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
 
         prevalence_from_each_disease_module.drop(
             prevalence_from_each_disease_module.index.intersection(
-                ['NewbornOutcomes', 'PostnatalSupervisor', 'Mockitis', 'DiseaseThatCausesA', 'ChronicSyndrome']
+                ['NewbornOutcomes', 'PostnatalSupervisor', 'DiseaseThatCausesA', 'ChronicSyndrome']
             ),
             axis=0, inplace=True
         )
