@@ -1189,6 +1189,9 @@ def get_parameters_for_improved_healthsystem_and_healthcare_seeking(
          }
     """
 
+    if resourcefilepath is None:
+        resourcefilepath = get_root_path() / 'resources'
+
     def read_value(_value):
         """Returns the value, or a dataframe if the value point to a different sheet in the workbook, or a series if the
         value points to sheet in the workbook with only two columns (which become the index and the values)."""
@@ -1232,7 +1235,7 @@ def get_parameters_for_improved_healthsystem_and_healthcare_seeking(
         resourcefilepath / 'ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking.xlsx')
 
     # Load the ResourceFile for the list of parameters that may change
-    mainsheet = pd.read_excel(workbook, 'main').set_index(['Module', 'Parameter'])
+    mainsheet = pd.read_excel(workbook, sheet_name="main").set_index(['Module', 'Parameter'])
 
     # Select which columns for parameter changes to extract
     cols = []
