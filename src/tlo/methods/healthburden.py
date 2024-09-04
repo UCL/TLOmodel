@@ -60,7 +60,7 @@ class HealthBurden(Module):
             Types.REAL, 'The age up to which deaths are recorded as having induced a lost of life years'),
         'gbd_causes_of_disability': Parameter(
             Types.LIST, 'List of the strings of causes of disability defined in the GBD data'),
-        'test': Parameter(Types.BOOL, 'Set to True if this is testing the calculations of the prevalence logger')
+        'logging_frequency_prevalence': Parameter(Types.BOOL, 'Set to the frequency at which we want to make calculations of the prevalence logger')
     }
 
     PROPERTIES = {}
@@ -73,7 +73,7 @@ class HealthBurden(Module):
         #                       ghe2019_daly-methods.pdf?sfvrsn=31b25009_7
         p['gbd_causes_of_disability'] = set(pd.read_csv(
             Path(self.resourcefilepath) / 'gbd' / 'ResourceFile_CausesOfDALYS_GBD2019.csv', header=None)[0].values)
-        p['test'] = False
+        p['logging_frequency_prevalence'] = 'month'
 
     def initialise_population(self, population):
         pass
@@ -122,13 +122,14 @@ class HealthBurden(Module):
         # 4) Launch the DALY and Prevalence Logger to run every month, starting with the end of the first month of simulation
         # 5) Schedule `Healthburden_WriteToLog` that will write to log annually
         sim.schedule_event(Get_Current_DALYS(self), sim.date + DateOffset(months=1))
-        if self.parameters['test']:
+        if self.parameters['logging_frequency_prevalence'] == 'day':
+            sim.schedule_event(Get_Current_Prevalence(self), sim.date + DateOffset(days=1))
+        elif self.parameters['logging_frequency_prevalence'] == 'month':
             sim.schedule_event(Get_Current_Prevalence(self), sim.date + DateOffset(months=1))
-            sim.schedule_event(Healthburden_WriteToLog(self), sim.date + DateOffset(months=1))
         else:
-            sim.schedule_event(Get_Current_Prevalence(self), sim.date + DateOffset(months=1))
-            last_day_of_the_year = Date(sim.date.year, 12, 31)
-            sim.schedule_event(Healthburden_WriteToLog(self), last_day_of_the_year)
+            sim.schedule_event(Get_Current_Prevalence(self), sim.date + DateOffset(year=1))
+        last_day_of_the_year = Date(sim.date.year, 12, 31)
+        sim.schedule_event(Healthburden_WriteToLog(self), last_day_of_the_year)
 
     def process_causes_of_disability(self):
         """
@@ -566,7 +567,28 @@ class HealthBurden(Module):
 
         log_df_line_by_line(
             key='prevalence_of_diseases',
-            description='Prevalence of each disease.',
+            description='Prevalence of each disease. ALRI: '
+                        'Bladder_Cancer: individuals who have bc_status != none. '
+                        'Breast Cancer: individuals who have brc_stus != none'
+                        'chronic_ischemic_hd, chronic_kidney_disease, chronic_lower_back_pain, diabetes, hypertension (all in CMD): all individuals with nc_{condition} as True'
+                        'COPD: all individuals with ch_lungfuction > 3, which is defined as mild COPD'
+                        'MMR (Demography): sum of direct deaths (cause_of_death == Maternal Disorders), indirect, non-HIV deaths, and  indirect, non-HIV deaths * 0.3 https://www.who.int/publications/i/item/9789240068759, all in LAST MONTH'
+                        'NMR (Demography): sum of all individuals who died in the last logging period who were < 29 days old in LAST MONTH'
+                        'depression: individuals who had a depressive episode in the last logging period'
+                        'diarrhoea: individuals who are gi_has_diarrhoea = True'
+                        'epilepsy: individuals whose ep_seiz_stat != 0'
+                        'HIV: individals whose hv_inf = True'
+                        'instrapartum stillbirths (Labour): number of intrapartum stillbirths IN LAST MONTH'
+                        'malaria: individuals who have clinical or severe infections'
+                        'mealsea: individuals who have me_has_measles = True'
+                        'mockitis: inviduals who have mi_is_infected = True'
+                        'oesphageal cancer: individuals who have oc_status != none'
+                        'other adult cancer: individuals who have oac_status != none'
+                        'antenatal stillbirths (Preganancy Supervisor): number of stillbirths that has happened IN LAST MONTH'
+                        'prostate cancer: individuals who have pc_status != none'
+                        'RTI: individuals who have rt_inj_severity != none'
+                        'schisto: individuals who have Low-infection or High-infection, any parasite'
+                        'TB: individuals who have tb_inf = active',
             df=self.prevalence_of_diseases,
             force_cols=self.recognised_modules_names,
         )
@@ -751,10 +773,7 @@ class Healthburden_WriteToLog(RegularEvent, PopulationScopeEventMixin):
     Added test to log daily if it is a test"""
 
     def __init__(self, module):
-        if module.parameters['test']:
-            super().__init__(module, frequency=DateOffset(months=1))
-        else:
-            super().__init__(module, frequency=DateOffset(years=1), priority=Priority.END_OF_DAY)
+        super().__init__(module, frequency=DateOffset(years=1), priority=Priority.END_OF_DAY)
 
     def apply(self, population):
         self.module.write_to_log(year=self.sim.date.year)
