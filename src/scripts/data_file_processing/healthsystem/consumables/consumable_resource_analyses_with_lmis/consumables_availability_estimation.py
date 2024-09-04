@@ -604,35 +604,47 @@ stkout_df = stkout_df[~cond]
 stkout_df = pd.concat([stkout_df, hhfa_fac0], axis=0, ignore_index=True)
 
 # --- 6.4 Generate new category variable for analysis --- #
-stkout_df['category'] = stkout_df['module_name'].str.lower()
-cond_RH = (stkout_df['category'].str.contains('care_of_women_during_pregnancy')) | \
-          (stkout_df['category'].str.contains('labour'))
-cond_newborn = (stkout_df['category'].str.contains('newborn'))
-cond_childhood = (stkout_df['category'] == 'acute lower respiratory infections') | \
-                 (stkout_df['category'] == 'measles') | \
-                 (stkout_df['category'] == 'diarrhoea')
-cond_rti = stkout_df['category'] == 'road traffic injuries'
-cond_cancer = stkout_df['category'].str.contains('cancer')
-cond_ncds = (stkout_df['category'] == 'epilepsy') | \
-            (stkout_df['category'] == 'depression')
-stkout_df.loc[cond_RH, 'category'] = 'reproductive_health'
-stkout_df.loc[cond_cancer, 'category'] = 'cancer'
-stkout_df.loc[cond_newborn, 'category'] = 'neonatal_health'
-stkout_df.loc[cond_childhood, 'category'] = 'other_childhood_illnesses'
-stkout_df.loc[cond_rti, 'category'] = 'road_traffic_injuries'
-stkout_df.loc[cond_ncds, 'category'] = 'ncds'
+def recategorize_modules_into_consumable_categories(_df):
+    _df['category'] = _df['module_name'].str.lower()
+    cond_RH = (_df['category'].str.contains('care_of_women_during_pregnancy')) | \
+              (_df['category'].str.contains('labour'))
+    cond_newborn = (_df['category'].str.contains('newborn'))
+    cond_newborn[cond_newborn.isna()] = False
+    cond_childhood = (_df['category'] == 'acute lower respiratory infections') | \
+                     (_df['category'] == 'measles') | \
+                     (_df['category'] == 'diarrhoea')
+    cond_rti = _df['category'] == 'road traffic injuries'
+    cond_cancer = _df['category'].str.contains('cancer')
+    cond_cancer[cond_cancer.isna()] = False
+    cond_ncds = (_df['category'] == 'epilepsy') | \
+                (_df['category'] == 'depression')
+    _df.loc[cond_RH, 'category'] = 'reproductive_health'
+    _df.loc[cond_cancer, 'category'] = 'cancer'
+    _df.loc[cond_newborn, 'category'] = 'neonatal_health'
+    _df.loc[cond_childhood, 'category'] = 'other_childhood_illnesses'
+    _df.loc[cond_rti, 'category'] = 'road_traffic_injuries'
+    _df.loc[cond_ncds, 'category'] = 'ncds'
+    cond_condom = _df['item_code'] == 2
+    _df.loc[cond_condom, 'category'] = 'contraception'
 
-cond_condom = stkout_df['item_code'] == 2
-stkout_df.loc[cond_condom, 'category'] = 'contraception'
+    # Create a general consumables category
+    general_cons_list = [300, 33, 57, 58, 141, 5, 6, 10, 21, 23, 127, 24, 80, 93, 144, 149, 154, 40, 67, 73, 76,
+                         82, 101, 103, 88, 126, 135, 71, 98, 171, 133, 134, 244, 247, 49, 112, 1933, 1960]
+    cond_general = _df['item_code'].isin(general_cons_list)
+    _df.loc[cond_general, 'category'] = 'general'
 
-# Create a general consumables category
-general_cons_list = [300, 33, 57, 58, 141, 5, 6, 10, 21, 23, 127, 24, 80, 93, 144, 149, 154, 40, 67, 73, 76,
-                     82, 101, 103, 88, 126, 135, 71, 98, 171, 133, 134, 244, 247]
-diagnostics_cons_list = [41, 50, 128, 216, 2008, 47, 190, 191, 196, 206, 207, 163, 175, 184,
-                         187]  # for now these have not been applied because most diagnostics are program specific
+    # Fill gaps in categories
+    dict_for_missing_categories = {292: 'acute lower respiratory infections', 293: 'acute lower respiratory infections',
+                                   307: 'reproductive_health', 2019: 'reproductive_health',
+                                   2678: 'tb', 1171: 'other_childhood_illnesses', 1237: 'cancer', 1239: 'cancer'}
+    # Use map to create a new series from item_code to fill missing values in category
+    mapped_categories = _df['item_code'].map(dict_for_missing_categories)
+    # Use fillna on the 'category' column to fill missing values using the mapped_categories
+    _df['category'] = _df['category'].fillna(mapped_categories)
 
-cond_general = stkout_df['item_code'].isin(general_cons_list)
-stkout_df.loc[cond_general, 'category'] = 'general'
+    return _df
+
+stkout_df = recategorize_modules_into_consumable_categories(stkout_df)
 
 # --- 6.5 Replace district/fac_name/month entries where missing --- #
 for var in ['district', 'fac_name', 'month']:
