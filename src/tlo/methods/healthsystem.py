@@ -2654,8 +2654,8 @@ class HealthSystemSummaryCounter:
         # <--Same as `self._appts` but also split by facility_level
 
         # Log HSI_Events that have a non-blank appointment footprint
-        self._no_blank_appt_treatment_ids = defaultdict(int)  # As above, but for `HSI_Event`s that never ran
-        self._no_blank_appt_appts = defaultdict(int)  # As above, but for `HSI_Event`s that have never ran
+        self._no_blank_appt_treatment_ids = defaultdict(int)  # As above, but for `HSI_Event`s with non-blank footprint
+        self._no_blank_appt_appts = defaultdict(int)  # As above, but for `HSI_Event`s that with non-blank footprint
         self._no_blank_appt_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
 
         # Log HSI_Events that never ran to monitor shortcoming of Health System
