@@ -2742,12 +2742,9 @@ class HealthSystemSummaryCounter:
                 }
             },
         )
-
-        # Log summary of HSI_Events that do not have a blank appointment footprint
         logger_summary.info(
             key="HSI_Event_non_blank_appt_footprint",
-            description = "Counts of the HSI_Events that do not have a blank appointment footprint in this calendar year by TREATMENT_ID, "
-                      "and the respective 'Appt_Type's that have not occurred in this calendar year.",
+            description="Same as for key 'HSI_Event' but limited to HSI_Event that have non-blank footprints",
             data={
             "TREATMENT_ID": self._no_blank_appt_treatment_ids,
             "Number_By_Appt_Type_Code": self._no_blank_appt_appts,
