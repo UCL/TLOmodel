@@ -182,6 +182,8 @@ stock_variables = [
     "N_ART_15_UP_F",
     "N_VLS_15_UP_M",
     "N_VLS_15_UP_F",
+    "N_PLHIV_15_UP_AIDS",
+    "N_PLHIV_15_UP_NO_AIDS",
 ]
 
 flow_variables = [
@@ -247,7 +249,9 @@ stock2 = log2['tlo.methods.hiv']['stock_variables'].iloc[:, 1:]
 
 mean_values = ((stock0 + stock1 + stock2) / 3) * scaling_factor
 mean_values_rounded = mean_values.round().astype(int)
-mean_values_rounded.to_csv(outputspath / 'MIHPSA_May2024/mihpsa_stock_FULL.csv')
+mean_values_rounded.index = log0['tlo.methods.hiv']['stock_variables']['date']
+df = mean_values_rounded[stock_variables]  # reorder columns
+df.to_csv(outputspath / 'MIHPSA_Aug2024/mihpsa_stock_FULL.csv')
 
 
 flow0 = log0['tlo.methods.hiv']['flow_variables'].iloc[:, 1:]
@@ -256,7 +260,9 @@ flow2 = log2['tlo.methods.hiv']['flow_variables'].iloc[:, 1:]
 
 mean_values = ((flow0 + flow1 + flow2) / 3) * scaling_factor
 mean_values_rounded = mean_values.round().astype(int)
-mean_values_rounded.to_csv(outputspath / 'MIHPSA_May2024/mihpsa_flow_FULL.csv')
+mean_values_rounded.index = log0['tlo.methods.hiv']['stock_variables']['date']
+df = mean_values_rounded[flow_variables]  # reorder columns
+df.to_csv(outputspath / 'MIHPSA_Aug2024/mihpsa_flow_FULL.csv')
 
 
 
@@ -302,7 +308,7 @@ def mean_child_hiv_deaths(log0, log1, log2, scaling_factor):
 
 child_hiv_deaths = mean_child_hiv_deaths(log0, log1, log2, scaling_factor)
 child_hiv_deaths = child_hiv_deaths.round().astype(int)
-child_hiv_deaths.to_csv(outputspath / 'MIHPSA_May2024/mean_child_hiv_deaths.csv')
+child_hiv_deaths.to_csv(outputspath / 'MIHPSA_Aug2024/mean_child_hiv_deaths.csv')
 
 
 def get_adult_hiv_deaths(log, scaling_factor):
@@ -343,7 +349,7 @@ def mean_adult_hiv_deaths(log0, log1, log2, scaling_factor):
 
 adult_hiv_deaths = mean_adult_hiv_deaths(log0, log1, log2, scaling_factor)
 adult_hiv_deaths["mean_count"] = adult_hiv_deaths["mean_count"].round().astype(int)
-adult_hiv_deaths.to_csv(outputspath / 'MIHPSA_May2024/mean_adult_hiv_deaths.csv')
+adult_hiv_deaths.to_csv(outputspath / 'MIHPSA_Aug2024/mean_adult_hiv_deaths.csv')
 
 
 # ALL DEATHS
@@ -382,7 +388,7 @@ def mean_child_all_deaths(log0, log1, log2, scaling_factor):
 
 child_all_deaths = mean_child_all_deaths(log0, log1, log2, scaling_factor)
 child_all_deaths = child_all_deaths.round().astype(int)
-child_all_deaths.to_csv(outputspath / 'MIHPSA_May2024/mean_child_all_deaths.csv')
+child_all_deaths.to_csv(outputspath / 'MIHPSA_Aug2024/mean_child_all_deaths.csv')
 
 
 
@@ -421,7 +427,7 @@ def mean_adult_all_deaths(log0, log1, log2, scaling_factor):
 
 adult_all_deaths = mean_adult_all_deaths(log0, log1, log2, scaling_factor)
 adult_all_deaths["mean_count"] = adult_all_deaths["mean_count"].round().astype(int)
-adult_all_deaths.to_csv(outputspath / 'MIHPSA_May2024/mean_adult_all_deaths.csv')
+adult_all_deaths.to_csv(outputspath / 'MIHPSA_Aug2024/mean_adult_all_deaths.csv')
 
 
 # -----------------------------------------------------------------------------------
@@ -472,8 +478,8 @@ def mean_hiv_deaths_all_ages(log0, log1, log2, scaling_factor):
 
 hiv_deaths_all_ages = mean_hiv_deaths_all_ages(log0, log1, log2, scaling_factor)
 hiv_deaths_all_ages["mean_count"] = hiv_deaths_all_ages["mean_count"].round().astype(int)
-hiv_deaths_all_ages2021 = hiv_deaths_all_ages.loc[hiv_deaths_all_ages.year >= 2021]
-hiv_deaths_all_ages2021.to_csv(outputspath / 'MIHPSA_May2024/hiv_deaths_all_ages.csv')
+hiv_deaths_all_ages2021 = hiv_deaths_all_ages.loc[hiv_deaths_all_ages.year >= 2023]
+hiv_deaths_all_ages2021.to_csv(outputspath / 'MIHPSA_Aug2024/hiv_deaths_all_ages.csv')
 
 
 
@@ -519,4 +525,4 @@ def mean_hiv_tests(log0, log1, log2, scaling_factor):
 
 mean_tests_df = mean_hiv_tests(log0, log1, log2, scaling_factor)
 mean_tests_df["mean_count"] = mean_tests_df["mean_count"].round().astype(int)
-mean_tests_df.to_csv(outputspath / 'MIHPSA_May2024/mean_tests_df.csv')
+mean_tests_df.to_csv(outputspath / 'MIHPSA_Aug2024/mean_tests_df.csv')
