@@ -60,7 +60,7 @@ class HealthBurden(Module):
             Types.REAL, 'The age up to which deaths are recorded as having induced a lost of life years'),
         'gbd_causes_of_disability': Parameter(
             Types.LIST, 'List of the strings of causes of disability defined in the GBD data'),
-        'logging_frequency_prevalence': Parameter(Types.BOOL, 'Set to the frequency at which we want to make calculations of the prevalence logger')
+        'logging_frequency_prevalence': Parameter(Types.STRING, 'Set to the frequency at which we want to make calculations of the prevalence logger')
     }
 
     PROPERTIES = {}
