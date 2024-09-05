@@ -93,6 +93,8 @@ class HealthBurden(Module):
         age_index = self.sim.modules['Demography'].AGE_RANGE_CATEGORIES
         wealth_index = sim.modules['Lifestyle'].PROPERTIES['li_wealth'].categories
         year_index = list(range(self.sim.start_date.year, self.sim.end_date.year + 1))
+        month_index = list(range(self.sim.start_date.month, self.sim.end_date.month + 1))
+        day_index = list(range(self.sim.start_date.day, self.sim.end_date.day + 1))
 
         self.multi_index_for_age_and_wealth_and_time = pd.MultiIndex.from_product(
             [sex_index, age_index, wealth_index, year_index], names=['sex', 'age_range', 'li_wealth', 'year'])
@@ -102,7 +104,12 @@ class HealthBurden(Module):
         self.years_life_lost_stacked_time = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time)
         self.years_life_lost_stacked_age_and_time = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time)
         self.years_lived_with_disability = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time)
-        self.prevalence_of_diseases = pd.DataFrame(index=year_index)
+        if sim.parameters['logging_frequency_prevalence'] == 'day':
+            self.prevalence_of_diseases = pd.DataFrame(index=day_index)
+        elif sim.parameters['logging_frequency_prevalence'] == 'month':
+            self.prevalence_of_diseases = pd.DataFrame(index=month_index)
+        else:
+            self.prevalence_of_diseases = pd.DataFrame(index=year_index)
 
         # 2) Collect the module that will use this HealthBurden module
         self.recognised_modules_names = [
