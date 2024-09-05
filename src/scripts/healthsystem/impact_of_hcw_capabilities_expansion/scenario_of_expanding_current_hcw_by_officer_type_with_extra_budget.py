@@ -32,7 +32,7 @@ class HRHExpansionByCadreWithExtraBudget(BaseScenario):
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2030, 1, 1)
-        self.pop_size = 20_000  # todo: TBC
+        self.pop_size = 100_000  # todo: TBC
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 10  # todo: TBC
@@ -60,7 +60,7 @@ class HRHExpansionByCadreWithExtraBudget(BaseScenario):
     def _get_scenarios(self) -> Dict[str, Dict]:
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
 
-        self.YEAR_OF_CHANGE = 2020  # This is the year to change run settings and to start hr expansion.
+        self.YEAR_OF_CHANGE = 2019  # This is the year to change run settings and to start hr expansion.
 
         self.scenarios = extra_budget_fracs
 
@@ -69,10 +69,10 @@ class HRHExpansionByCadreWithExtraBudget(BaseScenario):
                 mix_scenarios(
                     self._baseline(),
                     {'HealthSystem': {
-                        'HR_expansion_by_officer_type': list(self.scenarios.iloc[:, i])
+                        'HR_expansion_by_officer_type': self.scenarios.iloc[:, i]
                     }
                     }
-                ) for i in range(len(self.scenarios.columns) - 14)
+                ) for i in range(len(self.scenarios.columns))
         }
 
     def _baseline(self) -> Dict:
@@ -81,7 +81,7 @@ class HRHExpansionByCadreWithExtraBudget(BaseScenario):
             {'HealthSystem': {
                 'mode_appt_constraints': 1,
                 'mode_appt_constraints_postSwitch': 2,
-                "scale_to_effective_capabilities": True,  # Will this change the capabilities of 2019?
+                "scale_to_effective_capabilities": True,  # todo: what if set it False?
                 "year_mode_switch": self.YEAR_OF_CHANGE,
                 'cons_availability': 'default',
                 'cons_availability_postSwitch': 'all',  # todo: how to argue for this setting?
@@ -89,7 +89,10 @@ class HRHExpansionByCadreWithExtraBudget(BaseScenario):
                 'yearly_HR_scaling_mode': 'no_scaling',
                 'start_year_HR_expansion_by_officer_type': self.YEAR_OF_CHANGE,
                 'end_year_HR_expansion_by_officer_type': self.end_date.year,
-            }  # as to expand current hr and analyse the impact, we keep using 'actual' hr capabilities
+                "policy_name": "Naive",
+                "tclose_overwrite": 1,
+                "tclose_days_offset_overwrite": 7,
+            }
             },
         )
 
