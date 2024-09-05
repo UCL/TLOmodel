@@ -605,33 +605,33 @@ stkout_df = pd.concat([stkout_df, hhfa_fac0], axis=0, ignore_index=True)
 
 # --- 6.4 Generate new category variable for analysis --- #
 def recategorize_modules_into_consumable_categories(_df):
-    _df['category'] = _df['module_name'].str.lower()
-    cond_RH = (_df['category'].str.contains('care_of_women_during_pregnancy')) | \
-              (_df['category'].str.contains('labour'))
-    cond_newborn = (_df['category'].str.contains('newborn'))
+    _df['item_category'] = _df['module_name'].str.lower()
+    cond_RH = (_df['item_category'].str.contains('care_of_women_during_pregnancy')) | \
+              (_df['item_category'].str.contains('labour'))
+    cond_newborn = (_df['item_category'].str.contains('newborn'))
     cond_newborn[cond_newborn.isna()] = False
-    cond_childhood = (_df['category'] == 'acute lower respiratory infections') | \
-                     (_df['category'] == 'measles') | \
-                     (_df['category'] == 'diarrhoea')
-    cond_rti = _df['category'] == 'road traffic injuries'
-    cond_cancer = _df['category'].str.contains('cancer')
+    cond_childhood = (_df['item_category'] == 'acute lower respiratory infections') | \
+                     (_df['item_category'] == 'measles') | \
+                     (_df['item_category'] == 'diarrhoea')
+    cond_rti = _df['item_category'] == 'road traffic injuries'
+    cond_cancer = _df['item_category'].str.contains('cancer')
     cond_cancer[cond_cancer.isna()] = False
-    cond_ncds = (_df['category'] == 'epilepsy') | \
-                (_df['category'] == 'depression')
-    _df.loc[cond_RH, 'category'] = 'reproductive_health'
-    _df.loc[cond_cancer, 'category'] = 'cancer'
-    _df.loc[cond_newborn, 'category'] = 'neonatal_health'
-    _df.loc[cond_childhood, 'category'] = 'other_childhood_illnesses'
-    _df.loc[cond_rti, 'category'] = 'road_traffic_injuries'
-    _df.loc[cond_ncds, 'category'] = 'ncds'
+    cond_ncds = (_df['item_category'] == 'epilepsy') | \
+                (_df['item_category'] == 'depression')
+    _df.loc[cond_RH, 'item_category'] = 'reproductive_health'
+    _df.loc[cond_cancer, 'item_category'] = 'cancer'
+    _df.loc[cond_newborn, 'item_category'] = 'neonatal_health'
+    _df.loc[cond_childhood, 'item_category'] = 'other_childhood_illnesses'
+    _df.loc[cond_rti, 'item_category'] = 'road_traffic_injuries'
+    _df.loc[cond_ncds, 'item_category'] = 'ncds'
     cond_condom = _df['item_code'] == 2
-    _df.loc[cond_condom, 'category'] = 'contraception'
+    _df.loc[cond_condom, 'item_category'] = 'contraception'
 
     # Create a general consumables category
     general_cons_list = [300, 33, 57, 58, 141, 5, 6, 10, 21, 23, 127, 24, 80, 93, 144, 149, 154, 40, 67, 73, 76,
                          82, 101, 103, 88, 126, 135, 71, 98, 171, 133, 134, 244, 247, 49, 112, 1933, 1960]
     cond_general = _df['item_code'].isin(general_cons_list)
-    _df.loc[cond_general, 'category'] = 'general'
+    _df.loc[cond_general, 'item_category'] = 'general'
 
     # Fill gaps in categories
     dict_for_missing_categories = {292: 'acute lower respiratory infections', 293: 'acute lower respiratory infections',
@@ -639,12 +639,13 @@ def recategorize_modules_into_consumable_categories(_df):
                                    2678: 'tb', 1171: 'other_childhood_illnesses', 1237: 'cancer', 1239: 'cancer'}
     # Use map to create a new series from item_code to fill missing values in category
     mapped_categories = _df['item_code'].map(dict_for_missing_categories)
-    # Use fillna on the 'category' column to fill missing values using the mapped_categories
-    _df['category'] = _df['category'].fillna(mapped_categories)
+    # Use fillna on the 'item_category' column to fill missing values using the mapped_categories
+    _df['item_category'] = _df['item_category'].fillna(mapped_categories)
 
     return _df
 
 stkout_df = recategorize_modules_into_consumable_categories(stkout_df)
+item_code_category_mapping = stkout_df[['item_category', 'item_code']].drop_duplicates()
 
 # --- 6.5 Replace district/fac_name/month entries where missing --- #
 for var in ['district', 'fac_name', 'month']:
@@ -835,9 +836,10 @@ assert not pd.isnull(full_set_interpolated).any().any()
 # --- Check that the exported file has the properties required of it by the model code. --- #
 check_format_of_consumables_file(df=full_set_interpolated.reset_index(), fac_ids=fac_ids)
 
+full_set_interpolated = full_set_interpolated.reset_index().merge(item_code_category_mapping, on = 'item_code', how = 'left', validate = 'm:1')
 # %%
 # Save
-full_set_interpolated.reset_index().to_csv(
+full_set_interpolated.to_csv(
     path_for_new_resourcefiles / "ResourceFile_Consumables_availability_small.csv",
     index=False
 )
