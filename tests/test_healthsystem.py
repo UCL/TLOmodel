@@ -2615,10 +2615,19 @@ def test_HR_expansion_by_officer_type(seed, tmpdir):
         return caps
 
     initial_caps = get_initial_capabilities()
-    caps_clinical_no_update = get_capabilities_after_update(2012, [0, 0, 0, 0])
-    caps_clinical_one_update = get_capabilities_after_update(2012, [1, 0, 0, 0])
-    caps_clinical_dcsa_one_update = get_capabilities_after_update(2012, [0.5, 0.5, 0, 0])
-    caps_clinical_two_updates = get_capabilities_after_update(2013, [1, 0, 0, 0])
+    test_fracs = pd.DataFrame(
+            index=['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy',
+                   'Dental', 'Laboratory', 'Mental', 'Nutrition', 'Radiography'],
+            data={'no_update': [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                  'clinical_one_update': [1, 0, 0, 0, 0, 0, 0, 0, 0],
+                  'clinical_dcsa_one_update': [0.5, 0.5, 0, 0, 0, 0, 0, 0, 0],
+                  'clinical_two_updates': [1, 0, 0, 0, 0, 0, 0, 0, 0]}
+        )
+    caps_clinical_no_update = get_capabilities_after_update(2012, test_fracs.no_update)
+    caps_clinical_one_update = get_capabilities_after_update(2012, test_fracs.clinical_one_update)
+    caps_clinical_dcsa_one_update = get_capabilities_after_update(2012,
+                                                                  test_fracs.clinical_dcsa_one_update)
+    caps_clinical_two_updates = get_capabilities_after_update(2013, test_fracs.clinical_two_updates)
 
     # check that the cadres are expanded as expected
     def compare(cadre, caps_1, caps_2) -> tuple:
