@@ -3029,12 +3029,15 @@ class HRExpansionByOfficerType(Event, PopulationScopeEventMixin):
             officer_type = matches.group(2)
             self.module._daily_capabilities[officer] *= daily_cost.loc[officer_type, 'scale_up_factor']
 
-        # save the scale up factor into logger
+        # save the scale up factor, updated cost and updated capabilities into logger
+        total_cost_this_year = 365.25 * (daily_cost.Total_Cost_Per_Day.sum() + daily_extra_budget)
         logger_summary.info(key='HRScaling',
                             description='The HR scale up factor by office type given fractions of an extra budget',
                             data={
                                 'scale_up_factor': daily_cost.scale_up_factor.to_dict(),
                                 'year_of_scale_up': self.sim.date.year,
+                                'total_hr_salary': total_cost_this_year,
+                                'daily_capabilities': self.module._daily_capabilities.to_dict()
                             }
                             )
 
