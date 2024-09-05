@@ -106,20 +106,22 @@ scenario_availability_df = scenario_availability_df.merge(mfl[['District', 'Faci
 scenario_availability_df = scenario_availability_df.rename({'_merge': 'merge_facid'}, axis=1)
 
 # Extract list of District X Facility Level combinations for which there is no HHFA data
-scenario_availability_df_test = scenario_availability_df.merge(mfl[['District', 'Facility_Level', 'Facility_ID']],
+df_to_check_prediction_completeness = scenario_availability_df.merge(mfl[['District', 'Facility_Level', 'Facility_ID']],
                     left_on=['District', 'Facility_Level'],
                     right_on=['District', 'Facility_Level'], how='right', indicator=True)
-cond_no_1b = (scenario_availability_df_test['Facility_Level'].isin(['1b'])) & (scenario_availability_df_test['_merge'] == 'right_only')
-cond_no_1a = (scenario_availability_df_test['Facility_Level'].isin(['1a'])) & (scenario_availability_df_test['_merge'] == 'right_only')
-districts_with_no_scenario_data_for_1b = scenario_availability_df_test[cond_no_1b]['District'].unique()
-districts_with_no_scenario_data_for_1a = scenario_availability_df_test[cond_no_1a]['District'].unique()
+cond_no_1b = (df_to_check_prediction_completeness['Facility_Level'].isin(['1b'])) & (df_to_check_prediction_completeness['_merge'] == 'right_only')
+cond_no_1a = (df_to_check_prediction_completeness['Facility_Level'].isin(['1a'])) & (df_to_check_prediction_completeness['_merge'] == 'right_only')
+districts_with_no_scenario_data_for_1b = df_to_check_prediction_completeness[cond_no_1b]['District'].unique()
+districts_with_no_scenario_data_for_1a = df_to_check_prediction_completeness[cond_no_1a]['District'].unique()
 districts_with_no_scenario_data_for_1b_only = np.setdiff1d(districts_with_no_scenario_data_for_1b, districts_with_no_scenario_data_for_1a)
 
 # According to HHFA data, Balaka, Machinga, Mwanza, Ntchisi and Salima do not have level 1b facilities
-# Likoma was not included in the regression because of the limited variation within the district - only 4 facilities
+# Likoma was not included in the regression because of the limited variation within the district - only 4 facilities - we have assumed that the change of consumable
+# availability in Likoma is equal to that predicted for Nkhata Bay
 
 # 1.2.4 Program
 #------------------------------------------------------
+scenario_availability_df.loc[scenario_availability_df.program_plot == 'infection_prev', 'program_plot'] = 'general' # there is no separate infection_prevention category in the TLO availability data
 map_model_programs_to_hhfa = {
     'contraception': 'contraception',
     'general': 'general',
@@ -136,23 +138,23 @@ map_model_programs_to_hhfa = {
     'cardiometabolicdisorders': 'ncds',
     'cancer': 'ncds',
 }
-# TODO Check if the above mapping is correct
-# TODO collapse infection_prev and general in the HHFA-based predicted dataframe
-
-scenario_availability_df['category_tlo'] = scenario_availability_df['program_plot'].replace(map_model_programs_to_hhfa)
+scenario_availability_df['category_tlo'] = scenario_availability_df['program_plot'].replace(map_model_programs_to_hhfa) # TODO this does not work
 
 # 1.2.5 Consumable/Item code and Category
 #------------------------------------------------------
 # Load TLO - HHFA consumable name crosswalk
 consumable_crosswalk_df = pd.read_csv(path_for_new_resourcefiles / 'ResourceFile_consumables_matched.csv', encoding='ISO-8859-1')[['module_name', 'item_code', 'consumable_name_tlo',
 'item_code_hhfa', 'item_hhfa', 'regression_application', 'notes_on_regression_application']]
+
+# Keep only item_codes in the availability dataframe
+consumable_crosswalk_df = consumable_crosswalk_df.merge(tlo_availability_df[['item_code']], how = 'right', on = 'item_code')
 # TODO Check that this crosswalk is complete
 # TODO is module_name used?
 # TODO add new consumables Rifapentine to this?
 
 # Now merge in TLO item codes
 scenario_availability_df = scenario_availability_df.reset_index(drop = True)
-scenario_availability_df = scenario_availability_df.merge(consumable_crosswalk_df[['item_code', 'item_hhfa', 'regression_application', 'module_name']],
+scenario_availability_df = scenario_availability_df.merge(consumable_crosswalk_df[['item_code', 'item_hhfa', 'regression_application', 'module_name', 'consumable_name_tlo']],
                     on = ['item_hhfa'], how='right', indicator=True, validate = "m:m")
 scenario_availability_df = scenario_availability_df.drop_duplicates(['Facility_ID', 'item_code'])
 scenario_availability_df = scenario_availability_df.rename({'_merge': 'merge_itemcode'}, axis=1)
