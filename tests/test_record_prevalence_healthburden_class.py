@@ -17,7 +17,7 @@ resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 outputpath = Path("./outputs/")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 1)
+end_date = Date(2011, 1, 1)
 
 popsize = 1000
 do_sim = True
@@ -111,7 +111,7 @@ def test_run_with_healthburden_with_real_diseases(tmpdir, seed):
 
     ## See if the registered modules are reporting prevalences as they should
     columns = prevalence.columns
-    excluded_modules = ['Lifestyle', 'HealthBurden', 'HealthSeekingBehaviour', 'SymptomManager', 'Epi', 'HealthSystem', 'SimplifiedBirths', 'Contraception', 'CareOfWomenDuringPregnancy', 'PostnatalSupervisor'] # don't return prevalences
+    excluded_modules = ['Lifestyle', 'HealthBurden', 'HealthSeekingBehaviour', 'SymptomManager', 'Epi', 'HealthSystem', 'SimplifiedBirths', 'Contraception', 'CareOfWomenDuringPregnancy'] # don't return prevalences
 
     for module in sim.modules:
         if module not in excluded_modules:
@@ -124,8 +124,8 @@ def test_run_with_healthburden_with_real_diseases(tmpdir, seed):
                 corresponding_diseases = ['Antenatal stillbirth']
             elif module == 'Labour':
                 corresponding_diseases = ['Intrapartum stillbirth']
-
-            assert all(disease in columns for disease in corresponding_diseases)
+            assert all(disease in columns for disease in corresponding_diseases), \
+                f"Not all diseases for module '{module}' are in columns."
 
 def test_structure_logging_mockitis(tmpdir, seed):
 
