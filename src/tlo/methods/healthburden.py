@@ -93,6 +93,7 @@ class HealthBurden(Module):
         age_index = self.sim.modules['Demography'].AGE_RANGE_CATEGORIES
         wealth_index = sim.modules['Lifestyle'].PROPERTIES['li_wealth'].categories
         year_index = list(range(self.sim.start_date.year, self.sim.end_date.year + 1))
+
         self.multi_index_for_age_and_wealth_and_time = pd.MultiIndex.from_product(
             [sex_index, age_index, wealth_index, year_index], names=['sex', 'age_range', 'li_wealth', 'year'])
 
@@ -740,10 +741,11 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
             if isinstance(prevalence_from_disease_module, pd.DataFrame):
                 for i, column_name in enumerate(prevalence_from_disease_module.columns):
                     prevalence_from_each_disease_module[column_name] = prevalence_from_disease_module.iloc[:, i]
+                    print(column_name)
             elif isinstance(prevalence_from_disease_module, pd.Series):
                 # Convert Series to DataFrame
                 prevalence_from_each_disease_module = pd.DataFrame([[prevalence_from_disease_module]])
-
+                print(column_name)
                 # Add the prevalence data as a new column to the DataFrame
                 prevalence_from_each_disease_module[column_name] = prevalence_from_disease_module.iloc[:, 0]
 
