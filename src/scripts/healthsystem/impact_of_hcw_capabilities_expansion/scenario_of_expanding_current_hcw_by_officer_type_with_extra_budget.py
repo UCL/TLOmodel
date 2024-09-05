@@ -35,7 +35,7 @@ class HRHExpansionByCadreWithExtraBudget(BaseScenario):
         self.pop_size = 100_000  # todo: TBC
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 10  # todo: TBC
+        self.runs_per_draw = 5  # todo: TBC
 
     def log_configuration(self):
         return {
@@ -69,10 +69,10 @@ class HRHExpansionByCadreWithExtraBudget(BaseScenario):
                 mix_scenarios(
                     self._baseline(),
                     {'HealthSystem': {
-                        'HR_expansion_by_officer_type': self.scenarios.iloc[:, i]
+                        'HR_expansion_by_officer_type': self.scenarios.iloc[:, i].to_dict()
                     }
                     }
-                ) for i in range(len(self.scenarios.columns))
+                ) for i in range(len(self.scenarios.columns) - 25)  # run first 8 scenarios
         }
 
     def _baseline(self) -> Dict:
