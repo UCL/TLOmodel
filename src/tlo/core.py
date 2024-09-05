@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 
     from tlo.simulation import Simulation
 
+
 class Types(Enum):
     """Possible types for parameters and properties.
 
@@ -241,7 +242,6 @@ class Module:
     # parameters created from the PARAMETERS specification.
     __slots__ = ('name', 'parameters', 'rng', 'sim')
 
-
     def __init__(self, name=None):
         """Construct a new disease module ready to be included in a simulation.
 
@@ -376,3 +376,9 @@ class Module:
     def on_simulation_end(self):
         """This is called after the simulation has ended.
         Modules do not need to declare this."""
+
+    def report_prevalence(self):
+        """This reports the prevalence of given conditions at set intervals.
+            Returns None if not overwritten
+        """
+        return None
