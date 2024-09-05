@@ -2490,11 +2490,11 @@ def test_scaling_up_HRH_using_yearly_scaling_and_scaling_by_level_together(seed)
 
     def get_capabilities(yearly_scaling: bool, scaling_by_level: bool, rescaling: bool) -> float:
         """Return total capabilities of HRH when optionally using 'yearly scaling' and/or 'scaling_by_level'"""
-        sim = Simulation(start_date=start_date, seed=seed)
+        sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
         sim.register(
-            demography.Demography(resourcefilepath=resourcefilepath),
-            healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
-            simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+            demography.Demography(),
+            healthsystem.HealthSystem(),
+            simplified_births.SimplifiedBirths(),
         )
         params = sim.modules['HealthSystem'].parameters
 

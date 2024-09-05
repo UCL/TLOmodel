@@ -235,21 +235,19 @@ def test_has_what_via_individual_properties(seed, supply_disease_module: bool):
     5     0           1           0
     6     0           0           1
     7     0           0           0
-    
+
     We will then assert that has_what returns the expected symptoms for the
     individuals, and that supplying either the person_id keyword or the
     individual_properties keyword gives the same answer.
     """
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
-        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(
-            resourcefilepath=resourcefilepath
-        ),
-        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+        demography.Demography(),
+        enhanced_lifestyle.Lifestyle(),
+        healthsystem.HealthSystem(disable=True),
+        symptommanager.SymptomManager(),
+        healthseekingbehaviour.HealthSeekingBehaviour(),
+        simplified_births.SimplifiedBirths(),
         mockitis.Mockitis(),
         chronicsyndrome.ChronicSyndrome(),
     )

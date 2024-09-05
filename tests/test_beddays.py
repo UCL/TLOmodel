@@ -85,10 +85,10 @@ def test_beddays_in_isolation(tmpdir, seed):
 
 
 def test_beddays_allocation_resolution(tmpdir, seed):
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        demography.Demography(),
+        healthsystem.HealthSystem(),
     )
 
     # Update BedCapacity data with a simple table:
@@ -1061,10 +1061,10 @@ def test_beddays_availability_switch(seed):
     Test that calling bed_days.switch_beddays_availability correctly updates the
     bed capacities and adjusts the existing trackers to reflect the new capacities.
     """
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        demography.Demography(),
+        healthsystem.HealthSystem(),
     )
 
     # get shortcut to HealthSystem Module
