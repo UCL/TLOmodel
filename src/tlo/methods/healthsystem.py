@@ -1065,6 +1065,11 @@ class HealthSystem(Module):
         # Note: Currently relying on module variable rather than parameter for
         # scale_to_effective_capabilities, in order to facilitate testing. However
         # this may eventually come into conflict with the Switcher functions.
+
+        # In addition, for Class HRExpansionByOfficerType,
+        # for the purpose of keep cost not scaled, need to scale down minute salary when capabilities are scaled up
+
+        minute_salary = self.parameters['minute_salary']
         pattern = r"FacilityID_(\w+)_Officer_(\w+)"
         for officer in self._daily_capabilities.keys():
             matches = re.match(pattern, officer)
@@ -1079,6 +1084,9 @@ class HealthSystem(Module):
             )
             if rescaling_factor > 1 and rescaling_factor != float("inf"):
                 self._daily_capabilities[officer] *= rescaling_factor
+                minute_salary.loc[(minute_salary.Facility_ID == facility_id)
+                                  & (minute_salary.Officer_Type_Code == officer_type),
+                                  'Minute_Salary_USD'] /= rescaling_factor
 
     def update_consumables_availability_to_represent_merging_of_levels_1b_and_2(self, df_original):
         """To represent that facility levels '1b' and '2' are merged together under the label '2', we replace the
