@@ -3035,7 +3035,7 @@ class HRExpansionByOfficerType(Event, PopulationScopeEventMixin):
         logger_summary.info(key='HRScaling',
                             description='The HR scale up factor by office type given fractions of an extra budget',
                             data={
-                                'scale_up_factor': daily_cost.scale_up_factor,
+                                'scale_up_factor': daily_cost.scale_up_factor.to_dict(),
                                 'year_of_scale_up': self.sim.date.year,
                             }
                             )
