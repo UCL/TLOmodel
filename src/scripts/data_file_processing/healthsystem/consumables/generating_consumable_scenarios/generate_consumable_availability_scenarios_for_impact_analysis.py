@@ -32,11 +32,6 @@ import pandas as pd
 
 from tlo.methods.consumables import check_format_of_consumables_file
 
-# Set local Dropbox source
-path_to_dropbox = Path(  # <-- point to the TLO dropbox locally
-    '/Users/sm2511/Dropbox/Thanzi la Onse'
-)
-
 # define a timestamp for script outputs
 timestamp = datetime.datetime.now().strftime("_%Y_%m_%d_%H_%M")
 
@@ -55,7 +50,7 @@ path_for_new_resourcefiles = resourcefilepath / "healthsystem/consumables"
 #------------------------------------------------------
 tlo_availability_df = pd.read_csv(path_for_new_resourcefiles / "ResourceFile_Consumables_availability_small.csv")
 # Drop any scenario data previously included in the resourcefile
-tlo_availability_df = tlo_availability_df[['Facility_ID', 'month', 'item_code', 'available_prop']]
+tlo_availability_df = tlo_availability_df[['Facility_ID', 'month', 'item_category', 'item_code', 'available_prop']]
 
 # 1.1.1 Attach district, facility level, program to this dataset
 #----------------------------------------------------------------
@@ -65,13 +60,6 @@ districts = set(pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_Popu
 fac_levels = {'0', '1a', '1b', '2', '3', '4'}
 tlo_availability_df = tlo_availability_df.merge(mfl[['District', 'Facility_Level', 'Facility_ID']],
                     on = ['Facility_ID'], how='left')
-
-# 1.1.2 Attach programs
-programs = pd.read_csv(path_for_new_resourcefiles / "ResourceFile_Consumables_availability_and_usage.csv")[['category', 'item_code', 'module_name']]
-# TODO See if programs can be extracted from a different location as ResourceFile_Consumables_availability_and_usage.csv is now deprecated in master
-programs = programs.drop_duplicates('item_code')
-# manually add category for the two consumables for which it is missing
-tlo_availability_df = tlo_availability_df.merge(programs, on = ['item_code'], how = 'left')
 
 # 1.2 Import scenario data
 #------------------------------------------------------
