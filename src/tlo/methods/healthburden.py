@@ -784,16 +784,9 @@ class Healthburden_WriteToLog(RegularEvent, PopulationScopeEventMixin):
 class Healthburden_WriteToLog_Prevalences(RegularEvent, PopulationScopeEventMixin):
     """ This event with a specified frequency to record the prevalence logger
     Added test to log daily if it is a test"""
-def __init__(self, module, frequency: pd.DateOffset):
-    super().__init__(
-            module, frequency=frequency
-        ) 
-        if module.parameters['logging_frequency_prevalence'] == 'day':
-            super().__init__(module, frequency=DateOffset(days=1), priority=Priority.END_OF_DAY)
-        elif module.parameters['logging_frequency_prevalence'] == 'month':
-            super().__init__(module, frequency=DateOffset(months=1), priority=Priority.END_OF_DAY)
-        else:
-            super().__init__(module, frequency=DateOffset(years=1), priority=Priority.END_OF_DAY)
+    def __init__(self, module, frequency: pd.DateOffset):
+
+        super().__init__(module, frequency=frequency)
     def apply(self, population):
-        self.module.write_to_log_prevalence()
+            self.module.write_to_log_prevalence()
 
