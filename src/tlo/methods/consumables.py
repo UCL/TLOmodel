@@ -277,7 +277,7 @@ class Consumables:
 
     def on_simulation_end(self):
         """Do tasks at the end of the simulation.
-         
+
         Raise warnings and enter to log about item_codes not recognised.
         """
         if self._not_recognised_item_codes:
@@ -354,7 +354,7 @@ def check_format_of_consumables_file(df, fac_ids):
                                       'available_prop_scenario3', 'available_prop_scenario4', 'available_prop_scenario5',
                                       'available_prop_scenario6', 'available_prop_scenario7', 'available_prop_scenario8']
 
-    assert set(df.columns) == {'Facility_ID', 'month', 'item_code'} | set(availability_columns)
+    assert set(df.columns) == {'Facility_ID', 'month', 'item_code', 'item_category'} | set(availability_columns)
 
     # Check that all permutations of Facility_ID, month and item_code are present
     pd.testing.assert_index_equal(
