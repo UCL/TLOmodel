@@ -680,7 +680,7 @@ class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, Individ
             return hs.get_blank_appt_footprint()
 
         # Check that this event has been called for someone with the symptom dysphagia
-        assert 'dysphagia' in self.sim.modules['SymptomManager'].has_what(person_id)
+        assert 'dysphagia' in self.sim.modules['SymptomManager'].has_what(person_id=person_id)
 
         # If the person is already diagnosed, then take no action:
         if not pd.isnull(df.at[person_id, "oc_date_diagnosis"]):

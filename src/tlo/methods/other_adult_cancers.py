@@ -684,7 +684,7 @@ class HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom(
             return hs.get_blank_appt_footprint()
 
         # Check that this event has been called for someone with the symptom other_adult_ca_symptom
-        assert 'early_other_adult_ca_symptom' in self.sim.modules['SymptomManager'].has_what(person_id)
+        assert 'early_other_adult_ca_symptom' in self.sim.modules['SymptomManager'].has_what(person_id=person_id)
 
         # If the person is already diagnosed, then take no action:
         if not pd.isnull(df.at[person_id, "oac_date_diagnosis"]):

@@ -2,6 +2,7 @@
 import copy
 import os
 from pathlib import Path
+from typing import Dict
 
 import pandas as pd
 import pytest
@@ -82,6 +83,88 @@ def test_beddays_in_isolation(tmpdir, seed):
     hs.bed_days.remove_beddays_footprint(2)
     assert ([cap_bedtype1] * days_sim == tracker.values).all()
 
+
+def test_beddays_allocation_resolution(tmpdir, seed):
+    sim = Simulation(start_date=start_date, seed=seed)
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+    )
+
+    # Update BedCapacity data with a simple table:
+    level2_facility_ids = [128, 129, 130]  # <-- the level 2 facilities for each region
+    # This ensures over-allocations have to be properly resolved
+    cap_bedtype1 = 10
+    cap_bedtype2 = 10
+    cap_bedtype3 = 10
+
+    # create a simple bed capacity dataframe
+    hs = sim.modules["HealthSystem"]
+    hs.parameters["BedCapacity"] = pd.DataFrame(
+        data={
+            "Facility_ID": level2_facility_ids,
+            "bedtype1": cap_bedtype1,
+            "bedtype2": cap_bedtype2,
+            "bedtype3": cap_bedtype3,
+        }
+    )
+
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=start_date)
+
+    # reset bed days tracker to the start_date of the simulation
+    hs.bed_days.initialise_beddays_tracker()
+
+    def assert_footprint_matches_expected(
+        footprint: Dict[str, int], expected_footprint: Dict[str, int]
+    ):
+        """
+        Asserts that two footprints are identical.
+        The footprint provided as the 2nd argument is assumed to be the footprint
+        that we want to match, and the 1st as the result of the program attempting
+        to resolve over-allocations.
+        """
+        assert len(footprint) == len(
+            expected_footprint
+        ), "Bed type footprints did not return same allocations."
+        for bed_type, expected_days in expected_footprint.items():
+            allocated_days = footprint[bed_type]
+            assert expected_days == allocated_days, (
+                f"Bed type {bed_type} was allocated {allocated_days} upon combining, "
+                f"but expected it to get {expected_days}."
+            )
+
+    # Check that combining footprints for a person returns the expected output
+
+    # SIMPLE 2-bed days case
+    # Test uses example fail case given in https://github.com/UCL/TLOmodel/issues/1399
+    # Person p has: bedtyp1 for 2 days, bedtype2 for 0 days.
+    # Person p then assigned: bedtype1 for 1 days, bedtype2 for 6 days.
+    # EXPECT: p's footprints are combined into bedtype1 for 2 days, bedtype2 for 5 days.
+    existing_footprint = {"bedtype1": 2, "bedtype2": 0, "bedtype3": 0}
+    incoming_footprint = {"bedtype1": 1, "bedtype2": 6, "bedtype3": 0}
+    expected_resolution = {"bedtype1": 2, "bedtype2": 5, "bedtype3": 0}
+    allocated_footprint = hs.bed_days.combine_footprints_for_same_patient(
+        existing_footprint, incoming_footprint
+    )
+    assert_footprint_matches_expected(allocated_footprint, expected_resolution)
+
+    # TEST case involve 3 different bed-types.
+    # Person p has: bedtype1 for 2 days, then bedtype3 for 4 days.
+    # p is assigned: bedtype1 for 1 day, bedtype2 for 3 days, and bedtype3 for 1 day.
+    # EXPECT: p spends 2 days in each bedtype;
+    # - Day 1 needs bedtype1 for both footprints
+    # - Day 2 existing footprint at bedtype1 overwrites incoming at bedtype2
+    # - Day 3 & 4 incoming footprint at bedtype2 overwrites existing allocation to bedtype3
+    # - Day 5 both footprints want bedtype3
+    # - Day 6 existing footprint needs bedtype3, whilst incoming footprint is over.s
+    existing_footprint = {"bedtype1": 2, "bedtype2": 0, "bedtype3": 4}
+    incoming_footprint = {"bedtype1": 1, "bedtype2": 3, "bedtype3": 1}
+    expected_resolution = {"bedtype1": 2, "bedtype2": 2, "bedtype3": 2}
+    allocated_footprint = hs.bed_days.combine_footprints_for_same_patient(
+        existing_footprint, incoming_footprint
+    )
+    assert_footprint_matches_expected(allocated_footprint, expected_resolution)
 
 def check_dtypes(simulation):
     # check types of columns
@@ -972,3 +1055,82 @@ def test_in_patient_appt_included_and_logged(tmpdir, seed):
     # Check that the facility_id is included for each entry in the `HSI_Events` log, including HSI Events for
     # in-patient appointments.
     assert not (log_hsi['Facility_ID'] == -99).any()
+
+def test_beddays_availability_switch(seed):
+    """
+    Test that calling bed_days.switch_beddays_availability correctly updates the
+    bed capacities and adjusts the existing trackers to reflect the new capacities.
+    """
+    sim = Simulation(start_date=start_date, seed=seed)
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+    )
+
+    # get shortcut to HealthSystem Module
+    hs: healthsystem.HealthSystem = sim.modules["HealthSystem"]
+
+    # As obtained from the resource file
+    facility_id_with_patient =  128
+    facility_id_without_patient = 129
+    bedtype1_init_capacity = 5
+    bedtype2_init_capacity = 10
+
+    # Create a simple bed capacity dataframe with capacity designated for two regions
+    hs.parameters["BedCapacity"] = pd.DataFrame(
+        data={
+            "Facility_ID": [
+                facility_id_with_patient, #<-- patient 0 is admitted here
+                facility_id_without_patient,
+            ],
+            "bedtype1": bedtype1_init_capacity,
+            "bedtype2": bedtype2_init_capacity,
+        }
+    )
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=start_date)
+
+    day_2 = start_date + pd.DateOffset(days=1)
+    day_3 = start_date + pd.DateOffset(days=2)
+    day_4 = start_date + pd.DateOffset(days=3)
+
+    bed_days = hs.bed_days
+    # Reset the bed occupancies
+    bed_days.initialise_beddays_tracker()
+    # Have a patient occupy a bed at the start of the simulation
+    bed_days.impose_beddays_footprint(person_id=0, footprint={"bedtype1": 3, "bedtype2": 0})
+
+    # Have the bed_days availability switch to "none" on the 2nd simulation day
+    bed_days.switch_beddays_availability("none", effective_on_and_from=day_2)
+
+    # We should now see that the scaled capacities are all zero
+    assert (
+        not bed_days._scaled_capacity.any().any()
+    ), "At least one bed capacity was not set to 0"
+    # We should also see that bedtype1 should have -1 beds available for days 2 and 3 of the simulation,
+    # due to the existing occupancy and the new capacity of 0.
+    # It should have 4 beds available on the first day (since the original capacity was 5 and the availability
+    # switch happens day 2).
+    # It should then have 0 beds available after (not including) day 3
+    bedtype1: pd.DataFrame = bed_days.bed_tracker["bedtype1"]
+    bedtype2: pd.DataFrame = bed_days.bed_tracker["bedtype2"]
+
+    assert (
+        bedtype1.loc[start_date, facility_id_with_patient] == bedtype1_init_capacity - 1
+        and bedtype1.loc[start_date, facility_id_without_patient]
+        == bedtype1_init_capacity
+    ), "Day 1 capacities were incorrectly affected"
+    assert (bedtype1.loc[day_2:day_3, facility_id_with_patient] == -1).all() and (
+        bedtype1.loc[day_2:day_3, facility_id_without_patient] == 0
+    ).all(), "Day 2 & 3 capacities were not updated correctly"
+    assert (
+        (bedtype1.loc[day_4:, :] == 0).all().all()
+    ), "Day 4 onwards did not have correct capacity"
+
+    # Bedtype 2 should have also have been updated, but there is no funny business here.
+    assert (
+        (bedtype2.loc[day_2:, :] == 0).all().all()
+    ), "Bedtype 2 was not updated correctly"
+    assert (
+        (bedtype2.loc[start_date, :] == bedtype2_init_capacity).all().all()
+    ), "Bedtype 2 had capacity updated on the incorrect dates"

@@ -765,7 +765,7 @@ def test_hsi_emergency_events(seed):
         assert pd.isnull(df.at[person_id, f'nc_{event}_scheduled_date_death'])
         assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[0].hsi_event,
                           HSI_CardioMetabolicDisorders_StartWeightLossAndMedication)
-        assert f"{event}_damage" not in sim.modules['SymptomManager'].has_what(person_id)
+        assert f"{event}_damage" not in sim.modules['SymptomManager'].has_what(person_id=person_id)
 
 
 def test_no_availability_of_consumables_for_conditions(seed):

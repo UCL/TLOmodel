@@ -1252,7 +1252,7 @@ class Alri(Module, GenericFirstAppointmentsMixin):
 
         # Gather underlying properties that will affect success of treatment
         SpO2_level = person.ri_SpO2_level
-        symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
+        symptoms = self.sim.modules['SymptomManager'].has_what(person_id=person_id)
         imci_symptom_based_classification = self.get_imci_classification_based_on_symptoms(
             child_is_younger_than_2_months=person.age_exact_years < (2.0 / 12.0),
             symptoms=symptoms,
@@ -2725,7 +2725,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                 return
 
             # Do nothing if the persons does not have indicating symptoms
-            symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
+            symptoms = self.sim.modules['SymptomManager'].has_what(person_id=person_id)
             if not {'cough', 'difficult_breathing'}.intersection(symptoms):
                 return self.make_appt_footprint({})
 
@@ -3008,7 +3008,7 @@ class AlriIncidentCase_Lethal_DangerSigns_Pneumonia(AlriIncidentCase):
 
         assert 'danger_signs_pneumonia' == self.module.get_imci_classification_based_on_symptoms(
             child_is_younger_than_2_months=df.at[person_id, 'age_exact_years'] < (2.0 / 12.0),
-            symptoms=self.sim.modules['SymptomManager'].has_what(person_id)
+            symptoms=self.sim.modules['SymptomManager'].has_what(person_id=person_id)
         )
 
 
@@ -3039,7 +3039,7 @@ class AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia(AlriIncidentCase):
 
         assert 'fast_breathing_pneumonia' == \
                self.module.get_imci_classification_based_on_symptoms(
-                   child_is_younger_than_2_months=False, symptoms=self.sim.modules['SymptomManager'].has_what(person_id)
+                   child_is_younger_than_2_months=False, symptoms=self.sim.modules['SymptomManager'].has_what(person_id=person_id)
                )
 
 

@@ -263,7 +263,7 @@ def test_dx_algorithm_for_malaria_outcomes_clinical(
             add_or_remove='+'
         )
 
-    assert "fever" in sim.modules["SymptomManager"].has_what(person_id)
+    assert "fever" in sim.modules["SymptomManager"].has_what(person_id=person_id)
 
     def diagnosis_function(tests, use_dict: bool = False, report_tried: bool = False):
         return hsi_event.healthcare_system.dx_manager.run_dx_test(
@@ -339,7 +339,7 @@ def test_dx_algorithm_for_non_malaria_outcomes(seed):
         add_or_remove='+'
     )
 
-    assert "fever" in sim.modules["SymptomManager"].has_what(person_id)
+    assert "fever" in sim.modules["SymptomManager"].has_what(person_id=person_id)
 
     def diagnosis_function(tests, use_dict: bool = False, report_tried: bool = False):
         return hsi_event.healthcare_system.dx_manager.run_dx_test(
@@ -506,7 +506,7 @@ def test_individual_testing_and_treatment(sim):
     pollevent.run()
 
     assert not pd.isnull(df.at[person_id, "ma_date_symptoms"])
-    assert set(sim.modules['SymptomManager'].has_what(person_id)) == {"fever", "headache", "vomiting", "stomachache"}
+    assert set(sim.modules['SymptomManager'].has_what(person_id=person_id)) == {"fever", "headache", "vomiting", "stomachache"}
 
     # check rdt is scheduled
     date_event, event = [
@@ -549,7 +549,7 @@ def test_individual_testing_and_treatment(sim):
     pollevent = malaria.MalariaUpdateEvent(module=sim.modules['Malaria'])
     pollevent.apply(sim.population)
 
-    assert sim.modules['SymptomManager'].has_what(person_id) == []
+    assert sim.modules['SymptomManager'].has_what(person_id=person_id) == []
 
     # check no rdt is scheduled
     assert "malaria.HSI_Malaria_rdt" not in sim.modules['HealthSystem'].find_events_for_person(person_id)

@@ -1305,7 +1305,7 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
                         df.age_years >= 20)]) / len(df[df[f'nc_{condition}'] & df.is_alive & (df.age_years >= 20)])
                 }
             else:
-                diagnosed = {0.0}
+                diagnosed = {f'{condition}_diagnosis_prevalence': float("nan")}
 
             logger.info(
                 key=f'{condition}_diagnosis_prevalence',
@@ -1319,7 +1319,7 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
                         df.age_years >= 20)]) / len(df[df[f'nc_{condition}'] & df.is_alive & (df.age_years >= 20)])
                 }
             else:
-                on_medication = {0.0}
+                on_medication = {f'{condition}_medication_prevalence': float("nan")}
 
             logger.info(
                 key=f'{condition}_medication_prevalence',
