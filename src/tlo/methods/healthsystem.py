@@ -308,17 +308,17 @@ class HealthSystem(Module):
         ),
 
         'HR_expansion_by_officer_type': Parameter(
-            Types.SERIES, "This series is indexed by nine officer types, each with a float value that "
-                          "specifies the proportion of extra budget allocated to that officer type."
-                          "The extra budget for this year is (100 * HR_budget_growth_rate) of the total salary "
-                          "of these officers in last year. Given the allocated extra budget and annual salary, "
-                          "we calculate the extra minutes for these staff of this year. The expansion is done "
-                          "on 1 Jan of every year from start_year_HR_expansion_by_officer_type."
+            Types.DICT, "This DICT has keys of nine officer types, each with a float value that "
+                        "specifies the proportion of extra budget allocated to that officer type."
+                        "The extra budget for this year is (100 * HR_budget_growth_rate) of the total salary "
+                        "of these officers in last year. Given the allocated extra budget and annual salary, "
+                        "we calculate the extra minutes for these staff of this year. The expansion is done "
+                        "on 1 Jan of every year from start_year_HR_expansion_by_officer_type."
         ),
         "HR_budget_growth_rate": Parameter(
             Types.REAL, "This number is the annual growth rate of HR budget. "
-                         "The default value is 0.042 (4.2%), assuming the annual GDP growth rate is 4.2% and "
-                         "the proportion of GDP expenditure on paying salaries of these staff is fixed "
+                        "The default value is 0.042 (4.2%), assuming the annual GDP growth rate is 4.2% and "
+                        "the proportion of GDP expenditure on paying salaries of these staff is fixed "
         ),
 
         'start_year_HR_expansion_by_officer_type': Parameter(
@@ -662,12 +662,10 @@ class HealthSystem(Module):
 
         # Set default values for HR_expansion_by_officer_type, start_year_HR_expansion_by_officer_type,
         # end_year_HR_expansion_by_officer_type
-        self.parameters['HR_expansion_by_officer_type'] = pd.Series(
-            index=['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy',
-                   'Dental', 'Laboratory', 'Mental', 'Nutrition', 'Radiography'],
-            data=[0, 0, 0, 0,
-                  0, 0, 0, 0, 0]
-        )
+        self.parameters['HR_expansion_by_officer_type'] = {
+            'Clinical': 0, 'DCSA': 0, 'Nursing_and_Midwifery': 0, 'Pharmacy': 0,
+            'Dental': 0, 'Laboratory': 0, 'Mental': 0, 'Nutrition': 0, 'Radiography': 0
+        }
         self.parameters['HR_budget_growth_rate'] = 0.042
         self.parameters['start_year_HR_expansion_by_officer_type'] = 2019
         self.parameters['end_year_HR_expansion_by_officer_type'] = 2030
@@ -3012,7 +3010,7 @@ class HRExpansionByOfficerType(Event, PopulationScopeEventMixin):
                               * daily_cost.Total_Cost_Per_Day.sum())
 
         # get proportional daily extra budget for each officer type
-        extra_budget_fraction = self.module.parameters['HR_expansion_by_officer_type']
+        extra_budget_fraction = pd.Series(self.module.parameters['HR_expansion_by_officer_type'])
         daily_cost = daily_cost.reindex(index=extra_budget_fraction.index)
         daily_cost['extra_budget_per_day'] = daily_extra_budget * extra_budget_fraction
 

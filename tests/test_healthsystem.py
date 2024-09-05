@@ -2602,7 +2602,7 @@ def test_HR_expansion_by_officer_type(seed, tmpdir):
         params = sim.modules['HealthSystem'].parameters
         params['start_year_HR_expansion_by_officer_type'] = 2011  # first update happens on 1 Jan 2011
         params['end_year_HR_expansion_by_officer_type'] = end_year  # last update happens on 1 Jan (end_year - 1)
-        params['HR_expansion_by_officer_type'] = HR_expansion_by_officer_type
+        params['HR_expansion_by_officer_type'] = HR_expansion_by_officer_type.to_dict()
 
         popsize = 100
         sim.make_initial_population(n=popsize)
