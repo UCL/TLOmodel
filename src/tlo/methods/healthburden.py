@@ -728,22 +728,23 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
 
         # Calculate the population size
         population_size = len(self.sim.population.props[self.sim.population.props['is_alive']])
-
+        for disease_module_name in self.module.recognised_modules_names:
+            if disease_module_name in ['DiseaseThatCausesA',]:
+                continue
         # Create a DataFrame with one row and assign the population size
         prevalence_from_each_disease_module = pd.DataFrame({'population': [population_size]})
         for disease_module_name in self.module.recognised_modules_names:
-            if disease_module_name in ['NewbornOutcomes', 'PostnatalSupervisor', 'DiseaseThatCausesA',
-                                       'ChronicSyndrome']:
-                continue
-
             disease_module = self.sim.modules[disease_module_name]
             prevalence_from_disease_module = disease_module.report_prevalence()
 
-            if disease_module_name == "CardioMetabolicDisorders":
+            if isinstance(prevalence_from_disease_module, pd.DataFrame):
                 for i, column_name in enumerate(prevalence_from_disease_module.columns):
                     prevalence_from_each_disease_module[column_name] = prevalence_from_disease_module.iloc[:, i]
-            else:
-                prevalence_from_disease_module = pd.DataFrame([[prevalence_from_disease_module]])
+            elif isinstance(prevalence_from_disease_module, pd.Series):
+                # Convert Series to DataFrame
+                prevalence_from_each_disease_module[
+                    prevalence_from_disease_module.name] = pd.DataFrame([[prevalence_from_disease_module]])
+
 
                 column_name = ("Intrapartum stillbirth" if disease_module_name == "Labour" else
                                "Antenatal stillbirth" if disease_module_name == "PregnancySupervisor" else
@@ -760,7 +761,7 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
 
         prevalence_from_each_disease_module.drop(
             prevalence_from_each_disease_module.index.intersection(
-                ['NewbornOutcomes', 'PostnatalSupervisor', 'DiseaseThatCausesA', 'ChronicSyndrome']
+                ['DiseaseThatCausesA', ]
             ),
             axis=0, inplace=True
         )
