@@ -862,7 +862,7 @@ hhfa_comparison_df['fac_type_tlo'] = hhfa_comparison_df['fac_type_tlo'].str.repl
 hhfa_comparison_df = hhfa_comparison_df.rename({'fac_type_tlo': 'Facility_Level'}, axis=1)
 
 # ii. Collapse final model availability data by facility level
-final_availability_df = full_set_interpolated.reset_index()
+final_availability_df = full_set_interpolated
 mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "ResourceFile_Master_Facilities_List.csv")
 final_availability_df = pd.merge(final_availability_df, mfl[['District', 'Facility_Level', 'Facility_ID']], how="left",
                                  on=['Facility_ID'],
@@ -883,7 +883,6 @@ comparison_df.groupby(['Facility_Level'])[['available_prop', 'available_prop_hhf
 # Plots
 size = 10
 comparison_df['consumable_labels'] = comparison_df['consumable_name_tlo'].str[:10]
-
 
 # Define function to draw calibration plots at different levels of disaggregation
 def comparison_plot(level_of_disaggregation, group_by_var, colour):
