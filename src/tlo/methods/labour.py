@@ -1105,7 +1105,30 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         }
 
         intrapartum_stillbirth_for_month = len(filtered_stillbirths)
-        return intrapartum_stillbirth_for_month
+
+        def report_prevalence(self):
+            """
+            This function reports the prevalence of intrapartum stillbirth for this module generated in the previous month
+            """
+            # Filter out non-dictionary values and entries where 'stillbirth_date' is None
+            stillbirths_happened = {
+                key: value for key, value in self.stillbirth_dates.items()
+                if isinstance(value, dict) and value.get('stillbirth_date') is not None
+            }
+
+            # Filter entries with valid 'stillbirth_date' that occurred in the last month
+            one_month_ago = self.sim.date - pd.DateOffset(months=1)
+            filtered_stillbirths = {
+                key: value for key, value in stillbirths_happened.items()
+                if
+                isinstance(value.get('stillbirth_date'), pd.Timestamp) and value.get('stillbirth_date') >= one_month_ago
+            }
+
+            intrapartum_stillbirth_for_month = len(filtered_stillbirths)
+            intrapartum_stillbirth_for_month = pd.DataFrame(
+                {'Intrapartum stillbirth': [intrapartum_stillbirth_for_month]}
+            )
+            return intrapartum_stillbirth_for_month
 
     # ===================================== HELPER AND TESTING FUNCTIONS ==============================================
     def set_date_of_labour(self, individual_id):

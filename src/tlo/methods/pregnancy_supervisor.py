@@ -848,6 +848,9 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         }
 
         antenatal_stillbirth_for_month = len(filtered_stillbirths)
+        antenatal_stillbirth_for_month = pd.DataFrame(
+            {'Antenatal stillbirth': [antenatal_stillbirth_for_month]}
+        )
         return antenatal_stillbirth_for_month
     def pregnancy_supervisor_property_reset(self, id_or_index):
         """

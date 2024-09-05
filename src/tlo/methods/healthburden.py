@@ -742,13 +742,7 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
                     prevalence_from_each_disease_module[column_name] = prevalence_from_disease_module.iloc[:, i]
             elif isinstance(prevalence_from_disease_module, pd.Series):
                 # Convert Series to DataFrame
-                prevalence_from_each_disease_module[
-                    prevalence_from_disease_module.name] = pd.DataFrame([[prevalence_from_disease_module]])
-
-
-                column_name = ("Intrapartum stillbirth" if disease_module_name == "Labour" else
-                               "Antenatal stillbirth" if disease_module_name == "PregnancySupervisor" else
-                               disease_module_name)
+                prevalence_from_each_disease_module = pd.DataFrame([[prevalence_from_disease_module]])
 
                 # Add the prevalence data as a new column to the DataFrame
                 prevalence_from_each_disease_module[column_name] = prevalence_from_disease_module.iloc[:, 0]
@@ -761,7 +755,7 @@ class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
 
         prevalence_from_each_disease_module.drop(
             prevalence_from_each_disease_module.index.intersection(
-                ['DiseaseThatCausesA', ]
+                ['DiseaseThatCausesA']
             ),
             axis=0, inplace=True
         )
