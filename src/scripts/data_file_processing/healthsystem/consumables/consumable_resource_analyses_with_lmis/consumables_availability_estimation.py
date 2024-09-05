@@ -833,10 +833,11 @@ for fac in fac_ids:
 # Check that there are not missing values
 assert not pd.isnull(full_set_interpolated).any().any()
 
-# --- Check that the exported file has the properties required of it by the model code. --- #
-check_format_of_consumables_file(df=full_set_interpolated.reset_index(), fac_ids=fac_ids)
-
 full_set_interpolated = full_set_interpolated.reset_index().merge(item_code_category_mapping, on = 'item_code', how = 'left', validate = 'm:1')
+
+# --- Check that the exported file has the properties required of it by the model code. --- #
+check_format_of_consumables_file(df=full_set_interpolated, fac_ids=fac_ids)
+
 # %%
 # Save
 full_set_interpolated.to_csv(
