@@ -308,14 +308,17 @@ class HealthSystem(Module):
         ),
 
         'HR_expansion_by_officer_type': Parameter(
-            Types.LIST, "This list comprises of four floats, which specifies the proportions of extra budget "
-                        "allocated to four cadres - Clinical, DCSA, Nursing_and_Midwifery and Pharmacy - in order, "
-                        "every year from start_year_HR_expansion_by_officer_type and onwards. "
-                        "The extra budget for this year is 4.2% of the total salary of these cadres in last year, "
-                        "assuming the annual GDP growth rate is 4.2% and the proportion of GDP expenditure on "
-                        "expanding these cadres is fixed. Given the allocated extra budget and annual salary, "
-                        "we calculate the extra staff and minutes for these cadres of this year. The expansion is done "
-                        "on 1 Jan of every year from start_year_HR_expansion_by_officer_type."
+            Types.SERIES, "This series is indexed by nine officer types, each with a float value that "
+                          "specifies the proportion of extra budget allocated to that officer type."
+                          "The extra budget for this year is (100 * HR_budget_growth_rate) of the total salary "
+                          "of these officers in last year. Given the allocated extra budget and annual salary, "
+                          "we calculate the extra minutes for these staff of this year. The expansion is done "
+                          "on 1 Jan of every year from start_year_HR_expansion_by_officer_type."
+        ),
+        "HR_budget_growth_rate": Parameter(
+            Types.REAL, "This number is the annual growth rate of HR budget. "
+                         "The default value is 0.042 (4.2%), assuming the annual GDP growth rate is 4.2% and "
+                         "the proportion of GDP expenditure on paying salaries of these staff is fixed "
         ),
 
         'start_year_HR_expansion_by_officer_type': Parameter(
@@ -659,8 +662,14 @@ class HealthSystem(Module):
 
         # Set default values for HR_expansion_by_officer_type, start_year_HR_expansion_by_officer_type,
         # end_year_HR_expansion_by_officer_type
-        self.parameters['HR_expansion_by_officer_type'] = [0, 0, 0, 0]
-        self.parameters['start_year_HR_expansion_by_officer_type'] = 2020
+        self.parameters['HR_expansion_by_officer_type'] = pd.Series(
+            index=['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy',
+                   'Dental', 'Laboratory', 'Mental', 'Nutrition', 'Radiography'],
+            data=[0, 0, 0, 0,
+                  0, 0, 0, 0, 0]
+        )
+        self.parameters['HR_budget_growth_rate'] = 0.042
+        self.parameters['start_year_HR_expansion_by_officer_type'] = 2019
         self.parameters['end_year_HR_expansion_by_officer_type'] = 2030
 
     def pre_initialise_population(self):
@@ -2980,7 +2989,7 @@ class HRExpansionByOfficerType(Event, PopulationScopeEventMixin):
 
     def apply(self, population):
 
-        # get minute salary for the four cadres
+        # get minute salary
         minute_salary_by_officer_facility_id = self.module.parameters['minute_salary']
 
         # get current daily minutes and format it to be consistent with minute salary
@@ -2990,37 +2999,29 @@ class HRExpansionByOfficerType(Event, PopulationScopeEventMixin):
             pat='_', n=3, expand=True)[[1, 3]]
         daily_minutes['Facility_ID'] = daily_minutes['Facility_ID'].astype(int)
 
-        # get daily cost per officer per facility id
+        # get daily cost per officer type per facility id
         daily_cost = minute_salary_by_officer_facility_id.merge(
             daily_minutes, on=['Facility_ID', 'Officer_Type_Code'], how='outer')
         daily_cost['Total_Cost_Per_Day'] = daily_cost['Minute_Salary_USD'] * daily_cost['Total_Minutes_Per_Day']
 
-        # get daily cost per officer type of the four cadres
-        daily_cost = daily_cost.groupby('Officer_Type_Code').agg({'Total_Cost_Per_Day': 'sum'}).reset_index()
-        daily_cost = daily_cost.loc[daily_cost.Officer_Type_Code.isin(
-            ['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy'])]
+        # get daily cost per officer type
+        daily_cost = daily_cost.groupby('Officer_Type_Code').agg({'Total_Cost_Per_Day': 'sum'})
 
-        # get total daily cost of each of the four cadres
-        total_cost_clinical = daily_cost.loc[daily_cost.Officer_Type_Code == 'Clinical', 'Total_Cost_Per_Day'].sum()
-        total_cost_dcsa = daily_cost.loc[daily_cost.Officer_Type_Code == 'DCSA', 'Total_Cost_Per_Day'].sum()
-        total_cost_nursing = daily_cost.loc[
-            daily_cost.Officer_Type_Code == 'Nursing_and_Midwifery', 'Total_Cost_Per_Day'].sum()
-        total_cost_pharmacy = daily_cost.loc[daily_cost.Officer_Type_Code == 'Pharmacy', 'Total_Cost_Per_Day'].sum()
+        # get daily extra budget for this year
+        daily_extra_budget = (self.module.parameters['HR_budget_growth_rate']
+                              * daily_cost.Total_Cost_Per_Day.sum())
 
-        # get daily extra budget for this year = 4.2% * total cost
-        # todo: could make the default growth rate 0.042 as an explicit variable
-        #  so that we can also analyse impacts of different budget growth rates
-        daily_extra_budget = 0.042*(total_cost_clinical + total_cost_dcsa + total_cost_nursing + total_cost_pharmacy)
+        # get proportional daily extra budget for each officer type
+        extra_budget_fraction = self.module.parameters['HR_expansion_by_officer_type']
+        daily_cost = daily_cost.reindex(index=extra_budget_fraction.index)
+        daily_cost['extra_budget_per_day'] = daily_extra_budget * extra_budget_fraction
 
-        # get proportional daily extra budget for each of the four cadres
-        daily_extra_budget_by_officer = [
-            daily_extra_budget * i for i in self.module.parameters['HR_expansion_by_officer_type']]
-
-        # get the scale up factor for each cadre, assumed to be the same for each facility id of that cadre
-        sf_clinical = (total_cost_clinical + daily_extra_budget_by_officer[0])/total_cost_clinical
-        sf_dcsa = (total_cost_dcsa + daily_extra_budget_by_officer[1]) / total_cost_dcsa
-        sf_nursing = (total_cost_nursing + daily_extra_budget_by_officer[2]) / total_cost_nursing
-        sf_pharmacy = (total_cost_pharmacy + daily_extra_budget_by_officer[3]) / total_cost_pharmacy
+        # get the scale up factor for each officer type, assumed to be the same for each facility id of that
+        # officer type (note "cost = available minutes * minute salary", thus we could directly calculate
+        # scale up factor using cost)
+        daily_cost['scale_up_factor'] = (
+            (daily_cost.extra_budget_per_day + daily_cost.Total_Cost_Per_Day) / daily_cost.Total_Cost_Per_Day
+        )
 
         # scale up the daily minutes per cadre per facility id
         pattern = r"FacilityID_(\w+)_Officer_(\w+)"
@@ -3028,24 +3029,13 @@ class HRExpansionByOfficerType(Event, PopulationScopeEventMixin):
             matches = re.match(pattern, officer)
             # Extract officer type
             officer_type = matches.group(2)
-            if officer_type == 'Clinical':
-                self.module._daily_capabilities[officer] *= sf_clinical
-            elif officer_type == 'DCSA':
-                self.module._daily_capabilities[officer] *= sf_dcsa
-            elif officer_type == 'Nursing_and_Midwifery':
-                self.module._daily_capabilities[officer] *= sf_nursing
-            elif officer_type == 'Pharmacy':
-                self.module._daily_capabilities[officer] *= sf_pharmacy
-            else:
-                self.module._daily_capabilities[officer] *= 1
+            self.module._daily_capabilities[officer] *= daily_cost.loc[officer_type, 'scale_up_factor']
 
         # save the scale up factor into logger
         logger_summary.info(key='HRScaling',
-                            description='The HR scale up factor by office type - '
-                                        'Clinical, DCSA, Nursing_and_Midwifery, Pharmacy - '
-                                        'given fractions of an extra budget',
+                            description='The HR scale up factor by office type given fractions of an extra budget',
                             data={
-                                'scale_up_factor': [sf_clinical, sf_dcsa, sf_nursing, sf_pharmacy],
+                                'scale_up_factor': daily_cost.scale_up_factor,
                                 'year_of_scale_up': self.sim.date.year,
                             }
                             )
