@@ -58,7 +58,9 @@ def test_probability_premature_death(tmpdir, age_before_which_death_is_defined_a
     target_period = (datetime.date(2010, 1, 1), datetime.date(2080, 12, 31))
 
     results_folder_dummy_results = Path(os.path.dirname(__file__)) / 'resources' / 'probability_premature_death'
-    with open('/Users/rem76/PycharmProjects/TLOmodel/tests/resources/probability_premature_death/0/0/tlo.methods.demography.pickle', 'rb') as file:
+    pickled_file = os.path.join(results_folder_dummy_results, '0', '0', 'tlo.methods.demography.pickle')
+
+    with open(pickled_file, 'rb') as file:
         demography_data = pickle.load(file)
                 # test parsing when log level is INFO
     initial_female = demography_data['population']['female'][0]
