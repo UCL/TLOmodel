@@ -543,13 +543,7 @@ class HealthBurden(Module):
             df=self.get_dalys(yld=yld_by_wealth, yll=yll_by_wealth),
             force_cols=self._causes_of_dalys,
         )
-        # 5) Log the prevalence of each disease
-        log_df_line_by_line(
-            key='prevalence_of_diseases',
-            description='Prevalence of each disease.',
-            df=self.prevalence_of_diseases,
-            force_cols=self.recognised_modules_names,
-        )
+
         self._years_written_to_log += [year]
     def write_to_log_prevalence(self):
         """Write to the log the prevalence of conditions .
