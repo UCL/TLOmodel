@@ -398,12 +398,12 @@ for scenario in list_of_scenario_suffixes:
     assert(sum(full_set_interpolated['available_prop_' + scenario].isna()) ==
            sum(full_set_interpolated['change_proportion_' + scenario].isna())) # make sure that there is an entry for every row in which there was previously data
 
-# 4. Generate best performing facility-based scenario data on consumable availablity
-#*********************************************************************************************
+# 4. Generate best performing facility-based scenario data on consumable availability
+#***************************************************************************************
 df = full_set_interpolated.reset_index().copy()
 
 # Try updating the avaiability to represent the 75th percentile by consumable
-facility_levels = ['1a', '1b']
+facility_levels = ['1a', '1b', '2']
 target_percentiles = [75, 90, 99]
 
 best_performing_facilities = {}
@@ -440,8 +440,9 @@ print("Reference facilities at each level for each item: ", best_performing_faci
 # Obtain the updated availability estimates for level 1a for scenarios 6-8
 updated_availability_1a = df[['item_code', 'month']].drop_duplicates()
 updated_availability_1b = df[['item_code', 'month']].drop_duplicates()
+updated_availability_2 = df[['item_code', 'month']].drop_duplicates()
 temporary_df = pd.DataFrame([])
-availability_dataframes = [updated_availability_1a, updated_availability_1b]
+availability_dataframes = [updated_availability_1a, updated_availability_1b, updated_availability_2]
 
 i = 6 # start scenario counter
 j = 0 # start level counter
@@ -468,29 +469,57 @@ for level in facility_levels:
     j = j + 1 # move to the next level
 
 # Merge the above scenario data to the full availability scenario dataframe
-# Scenario 6-8 availability data for level 1a
+# 75, 90 and 99th percentile availability data for level 1a
 df_new_1a = df[df['Facility_ID'].isin(facilities_by_level['1a'])].merge(availability_dataframes[0],on = ['item_code', 'month'],
                                       how = 'left',
                                       validate = "m:1")
-# Scenario 6-8 availability data for level 1b
+# 75, 90 and 99th percentile availability data for level 1b
 df_new_1b = df[df['Facility_ID'].isin(facilities_by_level['1b'])].merge(availability_dataframes[1],on = ['item_code', 'month'],
                                       how = 'left',
                                       validate = "m:1")
+# 75, 90 and 99th percentile availability data for level 2
+df_new_2 = df[df['Facility_ID'].isin(facilities_by_level['2'])].merge(availability_dataframes[2],on = ['item_code', 'month'],
+                                      how = 'left',
+                                      validate = "m:1")
+
+# Generate scenarios 6-8
+#------------------------
+# scenario 6: only levels 1a and 1b changed to availability at 75th percentile for the corresponding level
+# scenario 7: only levels 1a and 1b changed to availability at 90th percentile for the corresponding level
+# scenario 8: only levels 1a and 1b changed to availability at 99th percentile for the corresponding level
 # Scenario 6-8 availability data for other levels
 df_new_otherlevels = df[~df['Facility_ID'].isin(facilities_by_level['1a']|facilities_by_level['1b'])]
 new_scenario_columns = ['available_prop_scenario6', 'available_prop_scenario7', 'available_prop_scenario8']
 for col in new_scenario_columns:
     df_new_otherlevels[col] = df_new_otherlevels['available_prop']
-
 # Append the above dataframes
-df_new = pd.concat([df_new_1a, df_new_1b, df_new_otherlevels], ignore_index = True)
+df_new_scenarios6to8 = pd.concat([df_new_1a, df_new_1b, df_new_otherlevels], ignore_index = True)
+
+
+# Generate scenario 9
+#------------------------
+# scenario 9: levels 1a, 1b and 2 changed to availability at 99th percentile for the corresponding level
+df_new_otherlevels = df_new_scenarios6to8[~df_new_scenarios6to8['Facility_ID'].isin(facilities_by_level['1a']|facilities_by_level['1b']|facilities_by_level['2'])].reset_index(drop  = True)
+df_new_1a_scenario9 =  df_new_scenarios6to8[df_new_scenarios6to8['Facility_ID'].isin(facilities_by_level['1a'])].reset_index(drop  = True)
+df_new_1b_scenario9 =  df_new_scenarios6to8[df_new_scenarios6to8['Facility_ID'].isin(facilities_by_level['1b'])].reset_index(drop  = True)
+df_new_2_scenario9 =  df_new_2[df_new_2['Facility_ID'].isin(facilities_by_level['2'])].reset_index(drop  = True)
+new_scenario_columns = ['available_prop_scenario9']
+for col in new_scenario_columns:
+    df_new_otherlevels[col] = df_new_otherlevels['available_prop']
+    df_new_1a_scenario9[col] = df_new_1a_scenario9['available_prop_scenario8']
+    df_new_1b_scenario9[col] = df_new_1b_scenario9['available_prop_scenario8']
+    df_new_2_scenario9[col] = df_new_2_scenario9['available_prop_scenario8']
+# Append the above dataframes
+df_new_scenarios9 = pd.concat([df_new_1a_scenario9, df_new_1b_scenario9, df_new_2_scenario9, df_new_otherlevels], ignore_index = True)
 
 # Save dataframe
 #------------------------------------------------------
-list_of_scenario_suffixes = list_of_scenario_suffixes + ['scenario6', 'scenario7', 'scenario8']
+list_of_scenario_suffixes = list_of_scenario_suffixes + ['scenario6', 'scenario7', 'scenario8', 'scenario9']
 final_list_of_scenario_vars = ['available_prop_' + item for item in list_of_scenario_suffixes]
-old_vars = ['Facility_ID', 'month', 'item_code', 'available_prop']
-full_df_with_scenario = df_new[old_vars + final_list_of_scenario_vars].reset_index().drop('index', axis = 1)
+old_vars = ['Facility_ID', 'month', 'item_code', 'available_prop', 'item_category']
+full_df_with_scenario = df_new_scenarios6to8[old_vars + [col for col in final_list_of_scenario_vars if col != 'available_prop_scenario9']].reset_index().drop('index', axis = 1)
+full_df_with_scenario = full_df_with_scenario.merge(df_new_scenarios9[old_vars + ['available_prop_scenario9']], on = old_vars, how = 'left', validate = "1:1")
+full_df_with_scenario = full_df_with_scenario.merge(program_item_mapping, on = 'item_code', validate = 'm:1', how = 'left')
 
 # --- Check that the exported file has the properties required of it by the model code. --- #
 check_format_of_consumables_file(df=full_df_with_scenario, fac_ids=fac_ids)
@@ -505,8 +534,7 @@ full_df_with_scenario.to_csv(
 # 8. Plot new availability estimates by scenario
 #*********************************************************************************************
 # Creating the line plot with ggplot
-df_for_plots = full_df_with_scenario.merge(programs[['item_category', 'item_code']], on = 'item_code', how = "left", validate = "m:1")
-df_for_plots = df_for_plots.merge(mfl[['Facility_ID', 'Facility_Level']], on = 'Facility_ID', how = 'left', validate = "m:1")
+df_for_plots = full_df_with_scenario.merge(mfl[['Facility_ID', 'Facility_Level']], on = 'Facility_ID', how = 'left', validate = "m:1")
 def generate_barplot_of_scenarios(_df, _x_axis_var, _filename):
     df_for_line_plot = _df.groupby([_x_axis_var])[['available_prop'] + final_list_of_scenario_vars].mean()
     df_for_line_plot = df_for_line_plot.reset_index().melt(id_vars=[_x_axis_var], value_vars=['available_prop'] + final_list_of_scenario_vars,

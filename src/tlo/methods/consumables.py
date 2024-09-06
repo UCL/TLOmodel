@@ -352,7 +352,8 @@ def check_format_of_consumables_file(df, fac_ids):
 
     availability_columns = ['available_prop', 'available_prop_scenario1', 'available_prop_scenario2',
                                       'available_prop_scenario3', 'available_prop_scenario4', 'available_prop_scenario5',
-                                      'available_prop_scenario6', 'available_prop_scenario7', 'available_prop_scenario8']
+                                      'available_prop_scenario6', 'available_prop_scenario7', 'available_prop_scenario8',
+                                      'available_prop_scenario9']
 
     assert set(df.columns) == {'Facility_ID', 'month', 'item_code', 'item_category'} | set(availability_columns)
 
