@@ -1,16 +1,8 @@
-
-
 import argparse
-import textwrap
 from pathlib import Path
-from typing import Tuple
-import colorcet as cc
-import matplotlib.pyplot as plt
-import seaborn as sns
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
-import matplotlib.colors as mcolors
 
 from tlo import Date
 from tlo.analysis.utils import (
@@ -21,9 +13,11 @@ from tlo.analysis.utils import (
     order_of_cause_of_death_or_daly_label,
     summarize,
 )
+
 min_year = 2010
-max_year = 2060
+max_year = 2025  # have to censure for dummy runs
 PREFIX_ON_FILENAME = '1'
+
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Produce standard set of plots describing the effect of each TREATMENT_ID.
@@ -31,32 +25,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     - We estimate the draw on healthcare system resources as the FEWER appointments when that treatment does not occur.
     """
 
-    TARGET_PERIOD = (Date(2015, 1, 1), Date(2019, 12, 31))
+    TARGET_PERIOD = (Date(min_year, 1, 1), Date(max_year, 12, 31))
 
     # Definitions of general helper functions
     make_graph_file_name = lambda stub: output_folder / f"{stub.replace('*', '_star_')}.png"  # noqa: E731
 
     _, age_grp_lookup = make_age_grp_lookup()
-
-    def get_num_deaths(_df):
-        """Return total number of Deaths (total within the TARGET_PERIOD)
-        """
-        return pd.Series(data=len(_df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)]))
-
-
-    def get_num_dalys(_df):
-        """Return total number of DALYS (Stacked) by label (total within the TARGET_PERIOD).
-        Throw error if not a record for every year in the TARGET PERIOD (to guard against inadvertently using
-        results from runs that crashed mid-way through the simulation.
-        """
-        years_needed = [i.year for i in TARGET_PERIOD]
-        assert set(_df.year.unique()).issuperset(years_needed), "Some years are not recorded."
-        return pd.Series(
-            data=_df
-            .loc[_df.year.between(*years_needed)]
-            .drop(columns=['date', 'sex', 'age_range', 'year'])
-            .sum().sum()
-        )
 
     def get_num_deaths_by_cause_label(_df):
         """Return total number of Deaths by label (total by age-group within the TARGET_PERIOD)
@@ -74,18 +48,32 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             .drop(columns=['date', 'sex', 'age_range', 'year']) \
             .sum()
 
+    def get_population_for_year(_df):
+        """Returns the population in the year of interest"""
+        _df['date'] = pd.to_datetime(_df['date'])
+
+        # Filter the DataFrame based on the target period
+        filtered_df = _df.loc[_df['date'].between(*TARGET_PERIOD)]
+
+        # Drop non-numeric columns (assume 'female' and 'male' are non-numeric)
+        numeric_df = filtered_df.drop(columns=['female', 'male'], errors='ignore')
+
+        # Sum only numeric columns
+        population_sum = numeric_df.sum(numeric_only=True)
+
+        return population_sum
+
     target_year_sequence = range(min_year, max_year, 5)
     make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}.png"  # noqa: E731
 
-
     all_years_data_deaths = {}
     all_years_data_dalys = {}
-
+    all_years_data_population = {}
     for target_year in target_year_sequence:
         TARGET_PERIOD = (
-        Date(target_year, 1, 1), Date(target_year + 4, 12, 31))  # Corrected the year range to cover 5 years.
+            Date(target_year, 1, 1), Date(target_year + 4, 12, 31))  # Corrected the year range to cover 5 years.
 
-    # %% Quantify the health gains associated with all interventions combined.
+        # %% Quantify the health gains associated with all interventions combined.
 
         # Absolute Number of Deaths and DALYs
         result_data_deaths = summarize(extract_results(
@@ -112,22 +100,34 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             collapse_columns=True,
         )
         all_years_data_dalys[target_year] = result_data_dalys
-        # Convert the accumulated data into a DataFrame for plotting
+
+        result_data_population = summarize(extract_results(
+            results_folder,
+            module='tlo.methods.demography',
+            key='population',
+            custom_generate_series=get_population_for_year,
+            do_scaling=True
+        ),
+            only_mean=True,
+            collapse_columns=True,
+        )
+        all_years_data_population[target_year] = result_data_population
+
+    # Convert the accumulated data into a DataFrame for plotting
 
     df_all_years_DALYS = pd.DataFrame(all_years_data_dalys)
     df_all_years_deaths = pd.DataFrame(all_years_data_deaths)
+    df_all_years_data_population = pd.DataFrame(all_years_data_population)
+    # Extract total population
 
-    num_colors = len(df_all_years_DALYS.index)
-    colours1 = plt.cm.get_cmap('tab20b', num_colors)(np.linspace(0, 1, 15))
-    colours2 = plt.cm.get_cmap('tab20c', num_colors)(np.linspace(0, 1, 10))
-    colours = np.vstack((colours1, colours2))
     # Plotting
     fig, axes = plt.subplots(1, 2, figsize=(25, 10))  # Two panels side by side
 
     # Panel A: Deaths
     for i, condition in enumerate(df_all_years_deaths.index):
         axes[0].plot(df_all_years_deaths.columns, df_all_years_deaths.loc[condition], marker='o',
-                     label=condition, color=colours[i])
+                     label=condition, color=[get_color_cause_of_death_or_daly_label(_label) for _label in
+                                             df_all_years_deaths.index][i])
     axes[0].set_title('Panel A: Deaths by Cause')
     axes[0].set_xlabel('Year')
     axes[0].set_ylabel('Number of deaths')
@@ -136,18 +136,17 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # Panel B: DALYs
     for i, condition in enumerate(df_all_years_DALYS.index):
         axes[1].plot(df_all_years_DALYS.columns, df_all_years_DALYS.loc[condition], marker='o', label=condition,
-                     color=colours[i])
+                     color=[get_color_cause_of_death_or_daly_label(_label) for _label in
+                            df_all_years_DALYS.index][i])
     axes[1].set_title('Panel B: DALYs by cause')
     axes[1].set_xlabel('Year')
     axes[1].set_ylabel('Number of DALYs')
     axes[1].legend(title='Condition', bbox_to_anchor=(1.05, 1), loc='upper left')
     axes[1].grid(True)
-
-    # Save the figure with both panels
     fig.savefig(make_graph_file_name('Trend_Deaths_and_DALYs_by_condition_All_Years_Panel_A_and_B'))
     plt.close(fig)
 
-    # make normalized figrues
+    # NORMALIZED DEATHS AND DALYS - TO 2010
     fig, axes = plt.subplots(1, 2, figsize=(25, 10))  # Two panels side by side
 
     df_death_normalized = df_all_years_deaths.div(df_all_years_deaths.iloc[:, 0], axis=0)
@@ -155,7 +154,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     for i, condition in enumerate(df_death_normalized.index):
         axes[0].plot(df_death_normalized.columns, df_death_normalized.loc[condition], marker='o',
-                     label=condition, color=colours[i])
+                     label=condition, color=[get_color_cause_of_death_or_daly_label(_label) for _label in
+                                             df_all_years_deaths.index][i])
     axes[0].set_title('Panel A: Deaths by Cause')
     axes[0].set_xlabel('Year')
     axes[0].set_ylabel('Fold change in deaths compared to 2010')
@@ -164,22 +164,112 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # Panel B: DALYs
     for i, condition in enumerate(df_DALY_normalized.index):
         axes[1].plot(df_DALY_normalized.columns, df_DALY_normalized.loc[condition], marker='o', label=condition,
-                     color=colours[i])
+                     color=[get_color_cause_of_death_or_daly_label(_label) for _label in
+                            df_DALY_normalized.index][i])
     axes[1].set_title('Panel B: DALYs by cause')
     axes[1].set_xlabel('Year')
     axes[1].set_ylabel('Fold change in DALYs compared to 2010')
     axes[1].legend(title='Condition', bbox_to_anchor=(1.05, 1), loc='upper left')
     axes[1].grid(True)
-
-    # Save the figure with both panels
     fig.savefig(make_graph_file_name('Trend_Deaths_and_DALYs_by_condition_All_Years_Normalized_Panel_A_and_B'))
     plt.close(fig)
 
+    # BARPLOT STACKED DEATHS AND DALYS OVER TIME
+    fig, axes = plt.subplots(1, 2, figsize=(25, 10))  # Two panels side by side
+    df_all_years_deaths.T.plot.bar(stacked=True, ax=axes[1],
+                                   color=[get_color_cause_of_death_or_daly_label(_label) for _label in
+                                          df_all_years_deaths.index])
+
+    axes[0].set_title('Panel A: Deaths by Cause')
+    axes[0].set_xlabel('Year')
+    axes[0].set_ylabel('Number of deaths')
+    axes[0].grid(True)
+    axes[0].spines['top'].set_visible(False)
+    axes[0].spines['right'].set_visible(False)
+    axes[0].legend(title='Cause', bbox_to_anchor=(1.05, 1), loc='upper left')
 
 
+    # Panel B: DALYs (Stacked bar plot)
+    df_all_years_DALYS.T.plot.bar(stacked=True, ax=axes[1],
+                                  color=[get_color_cause_of_death_or_daly_label(_label) for _label in
+                                         df_all_years_DALYS.index])
+    axes[1].axhline(0.0, color='black')
+    axes[1].set_title('Panel B: DALYs')
+    axes[1].set_ylabel('Number of DALYs')
+    axes[1].set_xlabel('Year')
+    axes[1].grid()
+    axes[1].spines['top'].set_visible(False)
+    axes[1].spines['right'].set_visible(False)
+    axes[1].legend(ncol=3, fontsize=8, loc='upper right')
+    axes[1].legend(title='Condition', bbox_to_anchor=(1.05, 1), loc='upper left')
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name('Trend_Deaths_and_DALYs_by_condition_All_Years_Panel_A_and_B_Stacked'))
 
+    # Stacked area graph for DALYS and Deaths
+    fig, axes = plt.subplots(1, 2, figsize=(25, 10))  # Two panels side by side
 
+    # Panel A: Deaths (Stacked area plot)
+    years_deaths = df_all_years_deaths.columns
+    conditions_deaths = df_all_years_deaths.index
+    data_deaths = df_all_years_deaths.values
 
+    axes[0].stackplot(years_deaths, data_deaths, labels=conditions_deaths,
+                      colors=[get_color_cause_of_death_or_daly_label(_label) for _label in
+                              df_all_years_deaths.index])
+    axes[0].set_title('Panel A: Deaths by Cause')
+    axes[0].set_xlabel('Year')
+    axes[0].set_ylabel('Number of deaths')
+    axes[0].grid(True)
+
+    # Panel B: DALYs (Stacked area plot)
+    years_dalys = df_all_years_DALYS.columns
+    conditions_dalys = df_all_years_DALYS.index
+    data_dalys = df_all_years_DALYS.values
+
+    axes[1].stackplot(years_dalys, data_dalys, labels=conditions_dalys,
+                      colors=[get_color_cause_of_death_or_daly_label(_label) for _label in
+                              df_all_years_DALYS.index])
+    axes[1].set_title('Panel B: DALYs by Cause')
+    axes[1].set_xlabel('Year')
+    axes[1].set_ylabel('Number of DALYs')
+    axes[1].legend(title='Condition', bbox_to_anchor=(1.05, 1), loc='upper left')
+    axes[1].grid(True)
+
+    fig.savefig(make_graph_file_name('Trend_Deaths_and_DALYs_by_condition_All_Years_Panel_A_and_B_Area'))
+
+    ## BARPLOTS STACKED PER 1000
+    fig, axes = plt.subplots(1, 2, figsize=(25, 10))  # Two panels side by side
+
+    df_death_per_1000 = df_all_years_deaths.div(df_all_years_data_population.iloc[0, 0], axis=0) * 1000
+    df_daly_per_1000 = df_all_years_DALYS.div(df_all_years_data_population.iloc[0, 0], axis=0) * 1000
+    # Panel A: Deaths (Stacked bar plot)
+    df_death_per_1000.T.plot.bar(stacked=True, ax=axes[0],
+                                 color=[get_color_cause_of_death_or_daly_label(_label) for _label in
+                                        df_death_per_1000.index])
+    axes[0].set_title('Panel A: Deaths by Cause')
+    axes[0].set_xlabel('Year')
+    axes[0].set_ylabel('Number of deaths')
+    axes[0].grid(True)
+    axes[0].spines['top'].set_visible(False)
+    axes[0].spines['right'].set_visible(False)
+    axes[0].legend(title='Cause', bbox_to_anchor=(1.05, 1), loc='upper left')
+
+    # Panel B: DALYs (Stacked bar plot)
+    df_daly_per_1000.T.plot.bar(stacked=True, ax=axes[1],
+                                color=[get_color_cause_of_death_or_daly_label(_label) for _label in
+                                       df_daly_per_1000.index])
+    axes[1].axhline(0.0, color='black')
+    axes[1].set_title('Panel B: DALYs')
+    axes[1].set_ylabel('Number of DALYs')
+    axes[1].set_xlabel('Year')
+    axes[1].grid()
+    axes[1].spines['top'].set_visible(False)
+    axes[1].spines['right'].set_visible(False)
+    axes[1].legend(ncol=3, fontsize=8, loc='upper right')
+    axes[1].legend(title='Condition', bbox_to_anchor=(1.05, 1), loc='upper left')
+
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name('Trend_Deaths_and_DALYs_by_condition_All_Years_Panel_A_and_B_Stacked_Rate'))
 
 
 if __name__ == "__main__":
@@ -199,5 +289,3 @@ if __name__ == "__main__":
         output_folder=args.results_folder,
         resourcefilepath=Path('./resources')
     )
-
-
