@@ -72,7 +72,7 @@ class HRHExpansionByCadreWithExtraBudget(BaseScenario):
                         'HR_expansion_by_officer_type': self.scenarios.iloc[:, i].to_dict()
                     }
                     }
-                ) for i in range(len(self.scenarios.columns) - 25)  # run first 8 scenarios
+                ) for i in range(len(self.scenarios.columns) - 30)  # run first 3 scenarios of 33 scenarios
         }
 
     def _baseline(self) -> Dict:
