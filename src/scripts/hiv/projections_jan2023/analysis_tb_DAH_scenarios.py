@@ -31,7 +31,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 #Tb_DAH_scenarios_test_run13_partial-2023-10-02T144642Z xcept for CXR scaleup and outreach
 #tb_DAH_impact-2023-10-07T150348Z---main results
  #Tb_DAH_impact_partial55-2023-11-13T212007Z 10k pop
-results_folder = get_scenario_outputs("tb_DAH_impact-2023-10-07T150348Z", outputspath)[-1]
+results_folder = get_scenario_outputs("tb_DAH_impact-2023-12-04T222317Z", outputspath)[-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
@@ -44,10 +44,15 @@ print(f"Keys of log['tlo.methods.healthsystem.summary']: {log['tlo.methods.healt
 number_runs = info["runs_per_draw"]
 number_draws = info['number_of_draws']
 
+print(f"Keys of log['tlo.methods.tb']: {log['tlo.methods.tb'].keys()}")
+print(f"Keys of log['tlo.methods.healthburden']: {log['tlo.methods.healthburden'].keys()}")
+# print(f"Keys of log['tlo.methods.demography']: {log['tlo.methods.demography.detail'].keys()}")
+
+
 def get_parameter_names_from_scenario_file() -> Tuple[str]:
     """Get the tuple of names of the scenarios from `Scenario` class used to create the results."""
-    from scripts.hiv.projections_jan2023.partial_run import ImpactOfTbDaHx
-    e = ImpactOfTbDaHx()
+    from scripts.hiv.projections_jan2023.tb_DAH_impact01 import ImpactOfTbDaH
+    e = ImpactOfTbDaH()
     return tuple(e._scenarios.keys())
 
 def set_param_names_as_column_index_level_0(_df):
@@ -336,6 +341,8 @@ mdr = log["tlo.methods.tb"]["tb_mdr"]
 mdr = mdr.set_index("date")
 mdr.to_excel(outputspath / "mdr_summary.xlsx")
 
+
+
 #Active Tb prevalence
 Tb_prevalence= summarize(
     extract_results(
@@ -469,7 +476,7 @@ counts_of_hsi_by_treatment_id.to_excel(outputspath / "Tb_Test_Screening.xlsx")
 baseline_total = dalys_summary.loc[:, ('Baseline', 'mean')].sum()
 No_Xpert_total = dalys_summary.loc[:, ('No Xpert Available', 'mean')].sum()
 No_CXR_total = dalys_summary.loc[:, ('No CXR Available', 'mean')].sum()
-CXR_scaleup_total = dalys_summary.loc[:, ('CXR scale_up', 'mean')].sum()
+CXR_scaleup_total = dalys_summary.loc[:, ('CXR scaleup', 'mean')].sum()
 outreach_total = dalys_summary.loc[:, ('Outreach services', 'mean')].sum()
 
 # Calculate the corresponding lower and upper bounds
@@ -482,8 +489,8 @@ No_Xpert_upper = dalys_summary.loc[:, ('No Xpert Available', 'upper')].sum()
 No_CXR_lower = dalys_summary.loc[:, ('No CXR Available', 'lower')].sum()
 No_CXR_upper = dalys_summary.loc[:, ('No CXR Available', 'upper')].sum()
 
-CXR_scaleup_lower = dalys_summary.loc[:, ('CXR scale_up', 'lower')].sum()
-CXR_scaleup_upper = dalys_summary.loc[:, ('CXR scale_up', 'upper')].sum()
+CXR_scaleup_lower = dalys_summary.loc[:, ('CXR scaleup', 'lower')].sum()
+CXR_scaleup_upper = dalys_summary.loc[:, ('CXR scaleup', 'upper')].sum()
 
 outreach_lower = dalys_summary.loc[:, ('Outreach services', 'lower')].sum()
 outreach_upper = dalys_summary.loc[:, ('Outreach services', 'upper')].sum()
@@ -496,15 +503,15 @@ fig, ax = plt.subplots(figsize=(8, 6))
 bar1 = ax.bar(x[0], baseline_total, width, label='Baseline', yerr=[[baseline_total - baseline_lower], [baseline_upper - baseline_total]])
 bar2 = ax.bar(x[1], No_Xpert_total, width, label='No Xpert Available', yerr=[[No_Xpert_total - No_Xpert_lower], [No_Xpert_upper - No_Xpert_total]])
 bar3 = ax.bar(x[2], No_CXR_total, width, label='No CXR Available', yerr=[[No_CXR_total - No_CXR_lower], [No_CXR_upper - No_CXR_total]])
-bar4 = ax.bar(x[3], CXR_scaleup_total, width, label='CXR Scale_up', yerr=[[CXR_scaleup_total - CXR_scaleup_lower], [CXR_scaleup_upper - CXR_scaleup_total]])
+bar4 = ax.bar(x[3], CXR_scaleup_total, width, label='CXR scale_up', yerr=[[CXR_scaleup_total - CXR_scaleup_lower], [CXR_scaleup_upper - CXR_scaleup_total]])
 bar5 = ax.bar(x[4], outreach_total, width, label='Outreach services', yerr=[[outreach_total - outreach_lower], [outreach_upper - outreach_total]])
 
 # Adding labels and title
 ax.set_xlabel('Scenario')
 ax.set_ylabel('Total DALYs')
-ax.set_title('Cumulative TB DALYs 2010-2033')
+ax.set_title('Cumulative TB DALYs 2010-2020')
 ax.set_xticks(x)
-ax.set_xticklabels(['Baseline', 'No Xpert', 'No CXR', 'CXR Scale_up', 'Outreach services'])
+ax.set_xticklabels(['Baseline', 'No Xpert', 'No CXR', 'CXR scale_up', 'Outreach services'])
 ax.legend()
 
 # Displaying graph
@@ -515,7 +522,7 @@ plt.show()
 baseline_total = tb_mortality.loc[:, ('Baseline', 'mean')].sum()
 No_Xpert_total = tb_mortality.loc[:, ('No Xpert Available', 'mean')].sum()
 No_CXR_total = tb_mortality.loc[:, ('No CXR Available', 'mean')].sum()
-CXR_scaleup_total = tb_mortality.loc[:, ('CXR scale_up', 'mean')].sum()
+CXR_scaleup_total = tb_mortality.loc[:, ('CXR scaleup', 'mean')].sum()
 outreach_total = tb_mortality.loc[:, ('Outreach services', 'mean')].sum()
 
 # Calculate the corresponding lower and upper bounds
@@ -528,8 +535,8 @@ No_Xpert_upper = tb_mortality.loc[:, ('No Xpert Available', 'upper')].sum()
 No_CXR_lower = tb_mortality.loc[:, ('No CXR Available', 'lower')].sum()
 No_CXR_upper = tb_mortality.loc[:, ('No CXR Available', 'upper')].sum()
 
-CXR_scaleup_lower = tb_mortality.loc[:, ('CXR scale_up', 'lower')].sum()
-CXR_scaleup_upper = tb_mortality.loc[:, ('CXR scale_up', 'upper')].sum()
+CXR_scaleup_lower = tb_mortality.loc[:, ('CXR scaleup', 'lower')].sum()
+CXR_scaleup_upper = tb_mortality.loc[:, ('CXR scaleup', 'upper')].sum()
 
 outreach_lower = tb_mortality.loc[:, ('Outreach services', 'lower')].sum()
 outreach_upper = tb_mortality.loc[:, ('Outreach services', 'upper')].sum()
@@ -548,7 +555,7 @@ bar5 = ax.bar(x[4], outreach_total, width, label='Outreach services', yerr=[[out
 # Adding labels and title
 ax.set_xlabel('Scenario')
 ax.set_ylabel('TB Mortality')
-ax.set_title('Cumulative TB Mortality 2010-2033')
+ax.set_title('Cumulative TB Mortality 2010-2020')
 ax.set_xticks(x)
 ax.set_xticklabels(['Baseline', 'No Xpert', 'No CXR', 'CXR Scale_up', 'Outreach services'])
 ax.legend()

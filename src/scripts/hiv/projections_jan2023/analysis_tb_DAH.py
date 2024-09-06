@@ -22,7 +22,7 @@ from tlo.analysis.utils import (
 resourcefilepath = Path("./resources")
 outputspath = Path("./outputs/newton.chagoma@york.ac.uk")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
-TARGET_PERIOD = (Date(2015, 1, 1), Date(2019, 12, 31))
+#TARGET_PERIOD = (Date(2015, 1, 1), Date(2019, 12, 31))
 # Get basic information about the results
 
 #Tb_DAH_impactx51-2023-11-27T092206Z looks to work fine
@@ -47,7 +47,6 @@ def get_parameter_names_from_scenario_file() -> Tuple[str]:
     from scripts.hiv.projections_jan2023.tb_DAH_impact01 import ImpactOfTbDaH
     e = ImpactOfTbDaH()
     return tuple(e._scenarios.keys())
-
 
 def set_param_names_as_column_index_level_0(_df):
     """Set the columns index (level 0) as the param_names."""
@@ -152,15 +151,14 @@ print("Shape of tb_dalys:", tb_dalys.shape)
 dalys_summary = summarize(tb_dalys).sort_index()
 print("Shape after summarize:", dalys_summary.shape)
 
-
 dalys_summary = summarize(tb_dalys).sort_index()
 print("DALYs for TB are as follows:")
 print(dalys_summary)
 dalys_summary.to_excel(outputspath / "summarised_tb_dalys.xlsx")
 
 # secondary outcomes
-print(f"Keys of log['tlo.methods.tb']: {log['tlo.methods.tb'].keys()}")
-print(f"Keys of log['tlo.methods.demography']: {log['tlo.methods.demography'].keys()}")
+#print(f"Keys of log['tlo.methods.tb']: {log['tlo.methods.tb'].keys()}")
+#print(f"Keys of log['tlo.methods.demography']: {log['tlo.methods.demography'].keys()}")
 
 #extracting dalys by SES
 # def get_total_num_dalys_by_agegrp_and_label(_df):
@@ -252,7 +250,7 @@ def tb_mortality_rate(results_folder, pyears_all):
         custom_generate_series=(
             lambda df: df.assign(year=df["date"].dt.year).groupby(["year", "cause"])["person_id"].count()
         ),
-        do_scaling=False,
+        do_scaling=True,
     ).pipe(set_param_names_as_column_index_level_0)
 
     # Select only causes AIDS_TB, AIDS_non_TB, and TB
@@ -291,7 +289,7 @@ tb_hiv_prop = summarize(
         key="tb_incidence",
         column="prop_active_tb_in_plhiv",
         index="date",
-        do_scaling=False,
+        do_scaling=True,
     ),
     collapse_columns=True,
 ).pipe(set_param_names_as_column_index_level_0)
@@ -331,7 +329,7 @@ mdr_tb_cases = summarize(
         key="tb_mdr",
         column="tbNewActiveMdrCases",
         index="date",
-        do_scaling=False,
+        do_scaling=True,
     ),
     collapse_columns=True,
 ).pipe(set_param_names_as_column_index_level_0)
@@ -348,13 +346,14 @@ tb_treatment = summarize(
             key="tb_treatment",
             column="tbTreatmentCoverage",
             index="date",
-            do_scaling=False,
+            do_scaling=True,
         ),
         collapse_columns=True,
     ).pipe(set_param_names_as_column_index_level_0)
 
 #tb_treatment.index = tb_treatment.index.year,
 tb_treatment_cov = pd.DataFrame(tb_treatment)
+tb_treatment_cov.index = tb_treatment_cov.index.year
 tb_treatment_cov.to_excel(outputspath / "tb_treatment_coverage.xlsx")
 
 ## extracts number of people screened for TB by scenario
@@ -388,7 +387,7 @@ tb_inc = summarize(
         key="tb_incidence",
         column="num_new_active_tb",
         index="date",
-        do_scaling=False,
+        do_scaling=True,
     ),
     collapse_columns=True,
 ).pipe(set_param_names_as_column_index_level_0)
@@ -399,8 +398,12 @@ tb_incidence.to_excel(outputspath / "active_tb.xlsx")
 #Tb incidence rate
 #Tb_inc_rate = (tb_incidence.divide(pyears_all.values, axis=0)) * 100000
 Tb_inc_rate = tb_incidence.reset_index(drop=True).div(pyears_all.reset_index(drop=True), axis='rows')
+#Tb_inc_rate = tb_incidence.index(drop=True).div(pyears_all.index(drop=True), axis='rows')
 Tb_inc_rate.to_excel(outputspath / "Tb_incidence_rate.xlsx")
 
+# Assuming mdr_tb_cases and tb_incidence are your DataFrames
+MDR_prop_TB_cases = mdr_tb_cases.div(tb_incidence)*100
+MDR_prop_TB_cases.to_excel(outputspath / "MDR_prop_TB_cases.xlsx")
 #pyears = pyears.reset_index(drop=True)
 pyears_summary = pyears_summary.reset_index(drop=True)
 
@@ -408,6 +411,11 @@ print(f"Keys of log['tlo.methods.tb']: {log['tlo.methods.tb'].keys()}")
 mdr = log["tlo.methods.tb"]["tb_mdr"]
 mdr = mdr.set_index("date")
 mdr.to_excel(outputspath / "mdr_numbers.xlsx")
+
+print(f"Keys of log['tlo.methods.tb']: {log['tlo.methods.tb'].keys()}")
+new_active_tb = log["tlo.methods.tb"]["tb_incidence"]["num_new_active_tb"]
+#new_active_tb = new_active_tb.set_index("date")
+new_active_tb.to_excel(outputspath / "num_new_active_tb.xlsx")
 
 #Active Tb prevalence
 Tb_prevalence= summarize(
@@ -417,7 +425,7 @@ Tb_prevalence= summarize(
         key="tb_prevalence",
         column="tbPrevActive",
         index="date",
-        do_scaling=False,
+        do_scaling=True,
     ),
     collapse_columns=True,
 ).pipe(set_param_names_as_column_index_level_0)
@@ -432,7 +440,7 @@ adult_Tb_prevalence= summarize(
         key="tb_prevalence",
         column="tbPrevActiveAdult",
         index="date",
-        do_scaling=False,
+        do_scaling=True,
     ),
     collapse_columns=True,
 ).pipe(set_param_names_as_column_index_level_0)
@@ -447,15 +455,13 @@ child_Tb_prevalence= summarize(
         key="tb_prevalence",
         column="tbPrevActiveChild",
         index="date",
-        do_scaling=False,
+        do_scaling=True,
     ),
     collapse_columns=True,
 ).pipe(set_param_names_as_column_index_level_0)
 
 child_Tb_prevalence.index = child_Tb_prevalence.index.year
 child_Tb_prevalence.to_excel(outputspath / "child_Tb_prevalence.xlsx")
-
-
 
 #properties of deceased
 properties_of_deceased_persons = log["tlo.methods.demography.detail"]["properties_of_deceased_persons"]
@@ -558,7 +564,7 @@ bar5 = ax.bar(x[4], CXR_outreach, width, label='Outreach_services', yerr=[[CXR_o
 # Adding labels and title
 ax.set_xlabel('Scenarios')
 ax.set_ylabel('Total DALYs')
-ax.set_title('Cumulative TB DALYs 2010-2033')
+ax.set_title('Cumulative TB DALYs 2010-2020')
 ax.set_xticks(x)
 ax.set_xticklabels(['Baseline', 'No Xpert', 'No CXR', 'CXR Scaleup', 'CXR_outreach'])
 ax.legend()
@@ -604,13 +610,308 @@ bar5 = ax.bar(x[4], CXR_outreach, width, label='CXR_outreach', yerr=[[CXR_outrea
 # Adding labels and title
 ax.set_xlabel('Scenario')
 ax.set_ylabel('TB Mortality')
-ax.set_title('Cumulative TB Mortality 2010-2033')
+ax.set_title('Cumulative TB Mortality 2010-2020')
 ax.set_xticks(x)
 ax.set_xticklabels(['Baseline', 'No Xpert', 'No CXR', 'CXR Scaleup','CXR_outreach'])
 ax.legend()
 
 # Displaying graph
 plt.show()
+
+#Plotting other epidemiological outcomes
+#Plotting TB prevalence across scenarios
+fig, ax = plt.subplots(figsize=(10, 6))
+
+# Extract unique scenarios from column index level 0
+scenarios = Tb_prevalence.columns.get_level_values(0).unique()
+lines = []
+for scenario in scenarios:
+    scenario_data = Tb_prevalence[scenario]
+    mean = scenario_data['mean']
+    # Plotting the line
+   # ax.plot(scenario_data.index, mean, label=scenario)
+
+    # Apply a moving average to smooth the line
+    mean_smoothed = mean.rolling(window=3, center=True).mean()
+
+    # Plotting the smoothed line with label
+    line, = ax.plot(scenario_data.index, mean_smoothed, label=scenario)
+    lines.append(line)
+
+
+#setting axis limit
+
+#plt.xlim(2011, 2020)
+# Set Y-axis limit to 50%
+plt.ylim(0, 0.5)
+
+# Adding labels and title
+ax.set_xlabel('Year')
+ax.set_ylabel('TB prevalence')
+ax.set_title('TB prevalence 2010-2020')
+ax.legend()
+plt.show()
+
+#Plotting TB incidence across scenarios
+fig, ax = plt.subplots(figsize=(10, 6))
+# Extract unique scenarios from column index level 0
+scenarios = Tb_inc_rate.columns.get_level_values(0).unique()
+lines = []
+# Extract unique scenarios from column index level 0
+scenarios = Tb_inc_rate.columns.get_level_values(0).unique()
+
+fig, ax = plt.subplots(figsize=(10, 6))
+
+# Initialize line variable
+lines = []
+
+for scenario in scenarios:
+    scenario_data = Tb_inc_rate[scenario]
+    mean = scenario_data['mean']
+
+    # Apply a moving average to smooth the line
+    mean_smoothed = mean.rolling(window=3, center=True).mean()
+
+    # Plotting the smoothed line with label
+    line, = ax.plot(scenario_data.index, mean_smoothed, label=scenario)
+    lines.append(line)
+
+# Setting axis limits
+plt.ylim(0, 1)
+
+# Adding labels and title
+ax.set_xlabel('Year')
+ax.set_ylabel('TB Incidence')
+ax.set_title('TB Incidence 2010-2019')
+
+# Adding x-axis ticks and labels
+years = list(range(2010, 2020))
+ax.set_xticks(range(len(years)))
+ax.set_xticklabels(years)
+
+# Adding legend
+ax.legend()
+
+plt.show()
+
+# Plotting TB treatment coverage by scenarios-tb_treatment_cov
+fig, ax = plt.subplots(figsize=(10, 6))
+
+# Extract unique scenarios from column index level 0
+scenarios = tb_treatment_cov.columns.get_level_values(0).unique()
+for scenario in scenarios:
+    scenario_data = tb_treatment_cov[scenario]
+    mean = scenario_data['mean']
+
+# Plotting the line with label
+    ax.plot(scenario_data.index, mean, label=scenario)
+#setting axis limit
+
+#plt.xlim(2011, 2020)
+# Set Y-axis limit to 50%
+plt.ylim(0, 100)
+
+# Adding labels and title
+ax.set_xlabel('Year')
+ax.set_ylabel('Prop of treatment coverage')
+ax.set_title('TB treatment  coverage 2010-2019')
+ax.legend()
+# years = list(range(2010, 2020))
+# ax.set_xticks(range(len(years)))
+# ax.set_xticklabels(years)
+plt.show()
+
+# Plotting MDR by scenarios-
+fig, ax = plt.subplots(figsize=(10, 6))
+
+# Extract unique scenarios from column index level 0
+scenarios = mdr_tb.columns.get_level_values(0).unique()
+line=[]
+for scenario in scenarios:
+    scenario_data = mdr_tb[scenario]
+    mean = scenario_data['mean']
+
+# Plotting the line with label
+   # ax.plot(scenario_data.index, mean, label=scenario)
+#setting axis limit
+
+#plt.xlim(2011, 2020)
+# Set Y-axis limit to 50%
+#plt.ylim(0, 100)
+# Apply a moving average to smooth the line
+    mean_smoothed = mean.rolling(window=3, center=True).mean()
+
+    # Plotting the smoothed line with label
+    line, = ax.plot(scenario_data.index, mean_smoothed, label=scenario)
+    lines.append(line)
+# Adding labels and title
+ax.set_xlabel('Year')
+ax.set_ylabel('MDR cases')
+ax.set_title('MDR cases 2010-2019')
+ax.legend()
+# years = list(range(2010, 2020))
+# ax.set_xticks(range(len(years)))
+# ax.set_xticklabels(years)
+plt.show()
+
+# MDR Fractionalisation
+fig, ax = plt.subplots(figsize=(10, 6))
+
+# Extract unique scenarios from column index level 0
+scenarios = MDR_prop_TB_cases.columns.get_level_values(0).unique()
+
+# Select only the desired scenarios
+selected_scenarios = ['Baseline', 'No Xpert Available']
+
+# Initialize line variable
+lines = []
+
+for scenario in selected_scenarios:
+    if scenario in scenarios:
+        scenario_data = MDR_prop_TB_cases[scenario]
+        mean = scenario_data['mean']
+
+        # Plotting the line with label
+        line, = ax.plot(scenario_data.index, mean, label=scenario)
+        lines.append(line)
+
+# Adding labels and title
+ax.set_xlabel('Year')
+ax.set_ylabel('Proportion of cases')
+ax.set_title('MDR cases as fraction of all active TB 2010-2019')
+
+#Setting axis limits
+plt.xlim(2010, 2021)
+plt.ylim(0,5)
+
+# years = list(range(2010, 2020))
+# ax.set_xticks(range(len(years)))
+# ax.set_xticklabels(years)
+plt.show()
+
+
+###############
+
+# Extract unique scenarios from column index level 0
+scenarios = MDR_prop_TB_cases.columns.get_level_values(0).unique()
+scenario_data = MDR_prop_TB_cases[scenario].copy()
+# Select only the desired scenarios
+selected_scenarios = ['Baseline', 'No Xpert Available']
+
+# Initialize line variable
+lines = []
+
+for scenario in selected_scenarios:
+    if scenario in scenarios:
+        scenario_data = MDR_prop_TB_cases[scenario].copy()
+
+        # Correcting the mean value for "Baseline" in 2012
+        if scenario == 'Baseline' and 2012 in scenario_data.index:
+            mean_2011 = scenario_data.loc[2011, 'mean']
+            mean_2013 = scenario_data.loc[2013, 'mean']
+            scenario_data.loc[2012, 'mean'] = (mean_2011 + mean_2013) / 2
+
+        mean = scenario_data['mean']
+
+        # Plotting the line with label
+        line, = plt.plot(scenario_data.index, mean, label=scenario)
+        lines.append(line)
+
+# Adding labels and title
+plt.xlabel('Year')
+plt.ylabel('Proportion of cases')
+plt.title('Fraction of MDR cases 2010-2019')
+
+# Setting axis limits
+plt.xlim(2010, 2021)
+plt.ylim(0, 5)
+
+# Create the legend using the line objects
+plt.legend(handles=lines, labels=selected_scenarios)
+
+plt.show()
+
+
+###############################
+# Extract unique scenarios from column index level 0
+scenarios = MDR_prop_TB_cases.columns.get_level_values(0).unique()
+
+# Select only the desired scenarios
+selected_scenarios = ['Baseline', 'No Xpert Available']
+
+# Initialize line variable
+lines = []
+
+for scenario in selected_scenarios:
+    if scenario in scenarios:
+        scenario_data = MDR_prop_TB_cases[scenario].copy()
+
+        # Correcting the mean value for "Baseline" in 2012
+        if scenario == 'Baseline' and 2012 in scenario_data.index:
+            mean_2011 = scenario_data.loc[2011, 'mean']
+            mean_2013 = scenario_data.loc[2013, 'mean']
+            scenario_data.loc[2012, 'mean'] = (mean_2011 + mean_2013) / 2
+
+        mean = scenario_data['mean']
+
+        # Apply a moving average to smooth the line
+        mean_smoothed = mean.rolling(window=3, center=True).mean()
+
+        # Plotting the smoothed line with label
+        line, = plt.plot(scenario_data.index, mean_smoothed, label=scenario)
+        lines.append(line)
+
+# Adding labels and title
+plt.xlabel('Year')
+plt.ylabel('Proportion of cases')
+plt.title('Fraction of MDR cases 2010-2019')
+
+# Setting axis limits
+plt.xlim(2010, 2021)
+plt.ylim(0, 5)
+
+# Create the legend using the line objects
+plt.legend(handles=lines, labels=selected_scenarios)
+
+plt.show()
+#Treatment coverage revisted
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Assuming 'tb_treatment_cov' is your DataFrame with columns: ('mean', 'lower', 'upper') and scenario as column index level 0
+# Replace 'tb_treatment_cov' with your actual DataFrame
+
+# Extract unique scenarios from column index level 0
+scenarios = tb_treatment_cov.columns.get_level_values(0).unique()
+
+fig, ax = plt.subplots(figsize=(10, 6))
+
+# Set Y-axis limit to 100
+plt.ylim(0, 100)
+
+# Initialize line variable
+lines = []
+
+for scenario in scenarios:
+    scenario_data = tb_treatment_cov[scenario]
+    mean = scenario_data['mean']
+
+    # Apply a moving average to smooth the line
+    mean_smoothed = mean.rolling(window=3, center=True).mean()
+
+    # Plotting the smoothed line with label
+    line, = ax.plot(scenario_data.index, mean_smoothed, label=scenario)
+    lines.append(line)
+
+# Adding labels and title
+ax.set_xlabel('Year')
+ax.set_ylabel('Prop of treatment coverage')
+ax.set_title('TB treatment coverage 2010-2019')
+ax.legend()
+
+plt.show()
+
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
