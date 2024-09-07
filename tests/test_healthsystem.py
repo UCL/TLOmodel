@@ -2605,8 +2605,8 @@ def test_HR_expansion_by_officer_type(seed, tmpdir):
         params['HR_expansion_by_officer_type'] = HR_expansion_by_officer_type.to_dict()
 
         # for testing _rescale_capabilities_to_capture_effective_capability
-        # params['year_mode_switch'] = 2011
-        # params['scale_to_effective_capabilities'] = True
+        params['year_mode_switch'] = 2011
+        params['scale_to_effective_capabilities'] = True
 
         popsize = 100
         sim.make_initial_population(n=popsize)
