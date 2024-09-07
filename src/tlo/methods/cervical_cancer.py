@@ -1,13 +1,4 @@
 
-
-#todo: possibility that thermoablation does not successfully remove the cin2/3 ?
-#todo: screening probability depends on date last screen and result (who guidelines)
-#todo: if positive on xpert then do via if hiv negative but go straight to thermoablation if hiv negative
-#todo: consider fact that who recommend move towards xpert screening away from via
-#todo: consider whether to have reversion of cin1 (back to hpv or to none)
-#todo: include via ?  if so, need to decide which screening in place at which time
-
-
 """
 Cervical Cancer Disease Module
 
@@ -105,6 +96,10 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             Types.REAL,
             "probability per month of incident cin1 amongst people with hpv",
         ),
+        "prob_revert_from_cin1": Parameter(
+            Types.REAL,
+            "probability of reverting from cin1 to none",
+        ),
         "r_cin2_cin1": Parameter(
             Types.REAL,
             "probability per month of incident cin2 amongst people with cin1",
@@ -197,6 +192,9 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         ),
         "prob_via_screen": Parameter(
             Types.REAL, "prob_via_screen"
+        ),
+        "prob_thermoabl_successful": Parameter(
+            Types.REAL, "prob_thermoabl_successful"
         )
     }
 
@@ -803,6 +801,21 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[idx_gets_new_stage, 'ce_hpv_cc_status'] = stage
             df.loc[idx_gets_new_stage, 'ce_new_stage_this_month'] = True
 
+        # Identify rows where the status is 'cin1'
+        has_cin1 = (
+            (df.is_alive) &
+            (df.sex == 'F') &
+            (df.ce_hpv_cc_status == 'cin1')
+        )
+
+        # Apply the reversion probability to change some 'cin1' to 'none'
+        df.loc[has_cin1, 'ce_hpv_cc_status'] = np.where(
+            np.random.random(size=len(df[has_cin1])) < p['prob_revert_from_cin1'],
+            'none',
+            df.loc[has_cin1, 'ce_hpv_cc_status']
+        )
+
+
 
         # todo:
         # this is also broadcasting to all dataframe (including dead peple and never alive people,
@@ -842,6 +855,8 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         days_since_last_screen = (self.sim.date - df.ce_date_last_screened).dt.days
         days_since_last_thermoabl = (self.sim.date - df.ce_date_thermoabl).dt.days
 
+        # todo: screening probability depends on date last screen and result (who guidelines)
+
         eligible_population = (
             (df.is_alive) &
             (df.sex == 'F') &
@@ -854,6 +869,10 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 ((days_since_last_screen > 730) & (days_since_last_thermoabl < 1095))
             )
         )
+
+        # todo: consider fact that who recommend move towards xpert screening away from via
+        # todo: start with via as screening tool and move to xpert in about 2024
+
 
         df.loc[eligible_population, 'ce_selected_for_via_this_month'] = (
             np.random.random_sample(size=len(df[eligible_population])) < p['prob_via_screen']
@@ -1019,6 +1038,9 @@ class HSI_CervicalCancer_XpertHPVScreening(HSI_Event, IndividualScopeEventMixin)
         df = self.sim.population.props
         person = df.loc[person_id]
         hs = self.sim.modules["HealthSystem"]
+
+        # todo: if positive on xpert then do via if hiv negative but go straight to thermoablation
+        # todo: if hiv positive ?
 
         # Run a test to diagnose whether the person has condition:
         dx_result = hs.dx_manager.run_dx_test(
@@ -1187,7 +1209,10 @@ class HSI_CervicalCancer_Thermoablation_CIN(HSI_Event, IndividualScopeEventMixin
         # Record date and stage of starting treatment
         df.at[person_id, "ce_date_thermoabl"] = self.sim.date
 
-        df.at[person_id, "ce_hpv_cc_status"] = 'none'
+        random_value = random.random()
+
+        if random_value <= p['prob_thermoabl_successful']:
+            df.at[person_id, "ce_hpv_cc_status"] = 'none'
 
 
 class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
@@ -1769,6 +1794,8 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                             "ce_ever_screened", "ce_date_last_screened", "ce_date_cin_removal",
                             "ce_xpert_hpv_ever_pos", "ce_via_cin_ever_detected",  "ce_date_thermoabl",
                             "ce_biopsy"]
+
+        selected_columns = ["ce_hpv_cc_status"]
 
         selected_rows = df[(df['sex'] == 'F') & (df['age_years'] > 15) & df['is_alive'] & (df['hv_inf'])]
 
