@@ -3019,6 +3019,8 @@ class HRExpansionByOfficerType(Event, PopulationScopeEventMixin):
 
         # get proportional daily extra budget for each officer type
         extra_budget_fraction = pd.Series(self.module.parameters['HR_expansion_by_officer_type'])
+        assert set(extra_budget_fraction.index) == set(daily_cost.index), \
+            f"Input officer types do not match the defined officer types"
         daily_cost = daily_cost.reindex(index=extra_budget_fraction.index)
         daily_cost['extra_budget_per_day'] = daily_extra_budget * extra_budget_fraction
 
