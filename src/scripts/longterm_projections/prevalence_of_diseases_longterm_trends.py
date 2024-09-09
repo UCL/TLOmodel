@@ -1,6 +1,7 @@
 import argparse
 from pathlib import Path
 from typing import Tuple
+from types import MappingProxyType
 
 import colorcet as cc
 import matplotlib.colors as mcolors
@@ -26,10 +27,87 @@ max_year = 2024  # have to censure for dummy runs
 spacing_of_years = 1
 PREFIX_ON_FILENAME = '1'
 
+SHORT_TREATMENT_ID_TO_COLOR_MAP_PREVALENCE = MappingProxyType({ # based on same colours as CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP but differnet labels
+
+    '*': 'black',
+
+    'FirstAttendance*': 'darkgrey',
+    'Inpatient*': 'silver',
+
+    'Contraception*': 'darkseagreen',
+    'AntenatalCare*': 'green',
+    'DeliveryCare*': 'limegreen',
+    'PostnatalCare*': 'springgreen',
+
+    'Alri*': 'darkorange',
+    'Diarrhoea*': 'tan',
+    'Undernutrition*': 'gold',
+    'Epi*': 'darkgoldenrod',
+
+    'Hiv*': 'deepskyblue',
+    'Malaria*': 'lightsteelblue',
+    'Measles*': 'cornflowerblue',
+    'Tb*': 'mediumslateblue',
+    'Schisto*': 'skyblue',
+
+    'CardioMetabolicDisorders*': 'brown',
+    'chronic_ischemic_hd*': 'sienna',
+    'chronic_kidney_disease*': 'chocolate',
+    'chronic_lower_back_pain*': 'slategray',
+    'diabetes*': 'peru',
+    'hypertension*': 'darkkhaki',
+
+    'BladderCancer*': 'orchid',
+    'BreastCancer*': 'mediumvioletred',
+    'OesophagealCancer*': 'deeppink',
+    'ProstateCancer*': 'hotpink',
+    'OtherAdultCancer*': 'palevioletred',
+
+    'Depression*': 'indianred',
+    'Epilepsy*': 'red',
+    'Copd*': 'lightcoral',
+
+    'RTI*': 'lightsalmon',
+})
+
+rename_dict = { # FOr legend labels
+    'Alri': 'Lower respiratory infections',
+    'BladderCancer': 'Cancer (Bladder)',
+    'BreastCancer': 'Cancer (Breast)',
+    'Copd': 'COPD',
+    'Depression': 'Depression / Self-harm',
+    'Diarrhoea': 'Diarrhoea',
+    'Epilepsy': 'Epilepsy',
+    'Hiv': 'AIDS',
+    'Malaria': 'Malaria',
+    'Measles': 'Measles',
+    'OesophagealCancer': 'Cancer (Oesophagus)',
+    'OtherAdultCancer': 'Cancer (Other)',
+    'ProstateCancer': 'Cancer (Prostate)',
+    'RTI': 'Transport Injuries',
+    'Schisto': 'Schistosomiasis',
+    'Tb': 'TB (non-AIDS)',
+    'chronic_ischemic_hd': 'Heart Disease',
+    'chronic_kidney_disease': 'Kidney Disease',
+    'chronic_lower_back_pain': 'Lower Back Pain',
+    'diabetes': 'Diabetes',
+    'hypertension': 'Stroke'
+}
+
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Produce standard set of plots describing the prevalence of each disease
     """
+
+    def _standardize_short_treatment_id(short_treatment_id):
+        return short_treatment_id.replace('_*', '*').rstrip('*') + '*'
+
+    def get_color_cause_of_prevalence_label(prevalence_condition_label: str) -> str:
+        """Return the colour (as matplotlib string) assigned to this Prevalence Label.
+
+        Returns `np.nan` if label is not recognised.
+        """
+        return SHORT_TREATMENT_ID_TO_COLOR_MAP_PREVALENCE.get(_standardize_short_treatment_id(prevalence_condition_label), np.nan)
 
     TARGET_PERIOD = (Date(min_year, 1, 1), Date(max_year, 12, 31))
 
@@ -100,23 +178,20 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # Convert the accumulated data into a DataFrame for plotting
 
     df_all_years_prevalence = pd.DataFrame(all_years_data_prevalence)
-    print(df_all_years_prevalence.index)
     df_all_years_prevalence = df_all_years_prevalence.drop(['live_births', 'population'], axis=0)  # extra data
     df_all_years_prevalence = df_all_years_prevalence.drop(['PostnatalSupervisor', 'PregnancySupervisor',
-                                                            'CardioMetabolicDisorders', 'NewbornOutcomes'], axis=0)  # empty
+                                                            'CardioMetabolicDisorders', 'NewbornOutcomes', 'Labour'],
+                                                           axis=0)  # empty or duplicated with actual label
     df_all_years_prevalence = df_all_years_prevalence.drop(['NMR', 'MMR',
                                                             'Intrapartum stillbirth', 'Antenatal stillbirth'],
                                                            axis=0)  # not prevalence
 
-    num_colors = len(df_all_years_prevalence.index)
-    colours1 = plt.cm.get_cmap('tab20b', num_colors)(np.linspace(0, 1, 20))
-    colours2 = plt.cm.get_cmap('tab20c', num_colors)(np.linspace(0, 1, 20))
-    colours = np.vstack((colours1, colours2))
     # Plotting
     fig, axes = plt.subplots(1, 2, figsize=(25, 10))
     # Panel A: Prevalence - general - stacked
     df_all_years_prevalence.T.plot.bar(stacked=True, ax=axes[0],
-                                       color=colours)
+                                       color=[get_color_cause_of_prevalence_label(_label) for _label in
+                                              df_all_years_prevalence.index])
     axes[0].set_title('Panel A: Prevalence by Condition')
     axes[0].set_xlabel('Year')
     axes[0].set_ylabel('Prevalence in population')
@@ -126,10 +201,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     axes[0].legend().set_visible(False)
 
     # NORMALIZED Prevalence - normalized to 2010
+    df_all_years_prevalence = df_all_years_prevalence.rename(index=rename_dict)
     df_all_years_prevalence_normalized = df_all_years_prevalence.div(df_all_years_prevalence.iloc[:, 0], axis=0)
     for i, condition in enumerate(df_all_years_prevalence_normalized.index):
-        axes[1].plot(df_all_years_prevalence_normalized.columns, df_all_years_prevalence_normalized.loc[condition], marker='o',
-                     label=condition, color=colours[i])
+        axes[1].plot(df_all_years_prevalence_normalized.columns, df_all_years_prevalence_normalized.loc[condition],
+                     marker='o',
+                     label=condition, color=[get_color_cause_of_prevalence_label(_label) for _label in
+                                             df_all_years_prevalence_normalized.index][i])
     axes[1].set_title('Panel B: Normalized Prevalence by Condition')
     axes[1].set_xlabel('Year')
     axes[1].set_ylabel('Fold change in deaths compared to 2010')
@@ -140,6 +218,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     fig.savefig(make_graph_file_name('Trend_Prevalence_by_Condition_All_Years_Raw_and_Normalized_Panel_A_and_B'))
     plt.close(fig)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
