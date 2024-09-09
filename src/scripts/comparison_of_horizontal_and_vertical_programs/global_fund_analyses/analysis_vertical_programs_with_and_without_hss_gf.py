@@ -117,7 +117,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             xticks.keys(),
             _df['mean'].values,
             yerr=yerr,
-            alpha=0.8,
+            # alpha=0.8,
             ecolor='black',
             color=colors,
             capsize=10,
@@ -164,7 +164,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         xticks = {i: k for i, k in enumerate(median_df.index)}
 
         # Define colormap
-        cmap = sns.color_palette('Spectral', as_cmap=True)
+        cmap = sns.color_palette('Set2', as_cmap=True)
         rescale = lambda y: (y - np.min(y)) / (np.max(y) - np.min(y))  # noqa: E731
         colors = list(map(cmap, rescale(np.arange(len(median_df.columns))))) if put_labels_in_legend else None
 
@@ -236,6 +236,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # %% Charts of total numbers of deaths / DALYS
     num_dalys_summarized = summarize(num_dalys).loc[0].unstack().reindex(param_names)
     num_deaths_summarized = summarize(num_deaths).loc[0].unstack().reindex(param_names)
+    num_dalys_summarized.to_csv(results_folder / 'num_dalys_summarized.csv')
+    num_deaths_summarized.to_csv(results_folder / 'num_deaths_summarized.csv')
+
 
     name_of_plot = f'Deaths, {target_period()}'
     fig, ax = do_bar_plot_with_ci(num_deaths_summarized / 1e6)
@@ -257,6 +260,34 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
+    # remove the HIV/TB joint scenarios
+    # Filter out rows where level 0 of the multi-index is 'Hiv/Tb Programs Scale-up WITHOUT HSS PACKAGE' or 'Hiv/Tb Programs Scale-up WITH HSS PACKAGE'
+    filtered_num_deaths_summarized = num_deaths_summarized.drop(
+        index=['Hiv/Tb Programs Scale-up WITHOUT HSS PACKAGE', 'Hiv/Tb Programs Scale-up WITH HSS PACKAGE']
+    )
+    name_of_plot = f'Deaths, {target_period()}'
+    fig, ax = do_bar_plot_with_ci(filtered_num_deaths_summarized / 1e6)
+    ax.set_title(name_of_plot)
+    ax.set_ylabel('(Millions)')
+    fig.tight_layout()
+    ax.axhline(num_deaths_summarized.loc['Baseline', 'mean'] / 1e6, color='black', linestyle='--', alpha=0.5)
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
+    filtered_num_dalys_summarized = num_dalys_summarized.drop(
+        index=['Hiv/Tb Programs Scale-up WITHOUT HSS PACKAGE', 'Hiv/Tb Programs Scale-up WITH HSS PACKAGE']
+    )
+    name_of_plot = f'All Scenarios: DALYs, {target_period()}'
+    fig, ax = do_bar_plot_with_ci(filtered_num_dalys_summarized / 1e6)
+    ax.set_title(name_of_plot)
+    ax.set_ylabel('(Millions)')
+    ax.axhline(num_dalys_summarized.loc['Baseline', 'mean'] / 1e6, color='black', linestyle='--', alpha=0.5)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
     # %% Deaths and DALYS averted relative to Status Quo
     num_deaths_averted = summarize(
         -1.0 *
@@ -266,6 +297,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 comparison='Baseline')
         ).T
     ).iloc[0].unstack().reindex(param_names).drop(['Baseline'])
+    num_deaths_averted.to_csv(results_folder / 'num_deaths_averted.csv')
+
 
     pc_deaths_averted = 100.0 * summarize(
         -1.0 *
@@ -276,6 +309,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 scaled=True)
         ).T
     ).iloc[0].unstack().reindex(param_names).drop(['Baseline'])
+    pc_deaths_averted.to_csv(results_folder / 'pc_deaths_averted.csv')
 
     num_dalys_averted = summarize(
         -1.0 *
@@ -285,6 +319,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 comparison='Baseline')
         ).T
     ).iloc[0].unstack().reindex(param_names).drop(['Baseline'])
+    num_dalys_averted.to_csv(results_folder / 'num_dalys_averted.csv')
 
     pc_dalys_averted = 100.0 * summarize(
         -1.0 *
@@ -295,6 +330,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 scaled=True)
         ).T
     ).iloc[0].unstack().reindex(param_names).drop(['Baseline'])
+    pc_dalys_averted.to_csv(results_folder / 'pc_dalys_averted.csv')
 
     # DEATHS
     name_of_plot = f'Additional Deaths Averted vs Baseline, {target_period()}'
@@ -363,6 +399,19 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ),
         only_mean=True
     )
+    total_num_dalys_by_label_results_averted_vs_baseline.to_csv(results_folder / 'total_num_dalys_by_label_results_averted_vs_baseline.csv')
+
+    def sort_order_of_columns(_df):
+
+        level_0_columns_results = total_num_dalys_by_label_results.columns.get_level_values(0).unique()
+        filtered_level_0_columns_results = [col for col in level_0_columns_results if col != 'Baseline']
+
+        # Reindex total_num_dalys_by_label_results_averted_vs_baseline to match the order of Level 0 columns
+        reordered_df = _df.reindex(
+            columns=filtered_level_0_columns_results
+        )
+
+        return reordered_df
 
     # Check that when we sum across the causes, we get the same total as calculated when we didn't split by cause.
     assert (
@@ -420,9 +469,81 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig.show()
         plt.close(fig)
 
-    # todo: Neaten graphs
-    # todo: other metrics of health
-    # todo: other graphs, broken down by age/sex (this can also be cribbed from overview paper stuff)
+    def plot_combined_programs_scale_up(_df):
+        """
+        Generate combined plot, DALYs averted broken down by cause, exclude 'HIV_TB programs'
+        """
+        combined_plot_name = 'Combined Programs Scale-up'
+        fig, ax = plt.subplots(figsize=(12, 6))
+
+        colours = sns.color_palette('Set1', 4)  # We have 4 categories to stack
+        x_labels = [
+            'FULL HSS',
+            'WITHOUT \nRSSH',
+            'WITH \nRSSH',
+            'WITHOUT \nRSSH',
+            'WITH \nRSSH',
+            'WITHOUT \nRSSH',
+            'WITH \nRSSH',
+            'WITHOUT \nRSSH',
+            'WITH \nRSSH',
+        ]
+        shared_labels = [
+            '',  # No shared label for the first bar
+            'HIV Scale-up',  # Shared label for the second and third bars
+            '',  # Shared label for the second and third bars
+            'TB Scale-up',  # Shared label for the fourth and fifth bars
+            '',  # Shared label for the fourth and fifth bars
+            'Malaria Scale-up',  # Shared label for the sixth and seventh bars
+            '',  # Shared label for the sixth and seventh bars
+            'HTM Scale-up',  # Shared label for the eighth and ninth bars
+            '',  # Shared label for the eighth and ninth bars
+        ]
+
+        # Transpose the DataFrame to get each program as a bar (columns become x-axis categories)
+        filtered_df.T.plot(
+            kind='bar',
+            stacked=True,
+            ax=ax,
+            color=colours,
+            rot=0
+        )
+
+        # Set the title and labels
+        ax.set_title(combined_plot_name)
+        ax.set_ylabel(f'DALYs Averted vs Baseline, {target_period()}\n(Millions)')
+        ax.set_ylim([0, 2e7])
+        ax.set_xlabel("")
+        ax.set_xticks(range(len(x_labels)))
+        ax.set_xticklabels(x_labels, ha="center")
+
+        # Add shared second-line labels
+        for i, label in enumerate(shared_labels):
+            if label:  # Only add text if there's a label
+                ax.text(i, filtered_df.sum().max() * 1.05, label, ha='left', va='bottom', fontsize=10, rotation=0,
+                        color='black')
+
+        ax.legend(title="Cause", labels=filtered_df.index, bbox_to_anchor=(1.05, 1), loc='upper left')
+
+        # Add vertical grey lines
+        line_positions = [0, 2, 4, 6]
+        for pos in line_positions:
+            ax.axvline(x=pos + 0.5, color='grey', linestyle='--', linewidth=1)
+
+        # Adjust layout and save
+        fig.tight_layout()
+        fig.savefig(make_graph_file_name(combined_plot_name.replace(' ', '_').replace(',', '')))
+        fig.show()
+        plt.close(fig)
+
+    data_for_plot = sort_order_of_columns(total_num_dalys_by_label_results_averted_vs_baseline)
+    filtered_df = data_for_plot.drop(
+        columns=[
+            'Hiv/Tb Programs Scale-up WITHOUT HSS PACKAGE',
+            'Hiv/Tb Programs Scale-up WITH HSS PACKAGE'
+        ]
+    )
+    plot_combined_programs_scale_up(filtered_df)
 
     def get_num_dalys_by_year(_df):
         """Return total number of DALYS (Stacked) by label (total within the TARGET_PERIOD).
@@ -474,9 +595,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    # DALYS over time: Split by HRH scenarios and supply chain scenarios
+    # DALYS over time
     for plot_name, scenario_names in plots.items():
-        # filtered_df = result_df.xs(key=scenario_names, level=1, axis=1) / 1e6
 
         name_of_plot = f'DALYS, {target_period()}, {plot_name}'
         fig, ax = do_line_plot_with_ci(
