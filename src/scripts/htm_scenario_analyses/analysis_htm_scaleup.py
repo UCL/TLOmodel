@@ -51,9 +51,9 @@ class EffectOfProgrammes(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2020, 1, 1)
-        self.pop_size = 75_000
-        self.number_of_draws = 5
+        self.end_date = Date(2025, 1, 1)
+        self.pop_size = 5_000
+        self.number_of_draws = 2
         self.runs_per_draw = 1
 
     def log_configuration(self):
@@ -86,7 +86,7 @@ class EffectOfProgrammes(BaseScenario):
         ]
 
     def draw_parameters(self, draw_number, rng):
-        scaleup_start_year = 2012
+        scaleup_start_year = 2019
 
         return {
             'Hiv': {
