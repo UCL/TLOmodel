@@ -29,7 +29,8 @@ from tlo.analysis.utils import (
 
 PREFIX_ON_FILENAME = '2'
 
-max_year = 2019
+max_year = 2024
+spacing_of_years = 1
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     # Declare path for output graphs from this script
     make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}.png"  # noqa: E731
