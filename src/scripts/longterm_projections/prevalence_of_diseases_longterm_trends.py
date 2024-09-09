@@ -1,15 +1,9 @@
 import argparse
 from pathlib import Path
-from typing import Tuple
 from types import MappingProxyType
 
-import colorcet as cc
-import matplotlib.colors as mcolors
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import seaborn as sns
-from longterm_projections import LongRun
 from matplotlib import pyplot as plt
 
 from tlo import Date
@@ -26,51 +20,42 @@ min_year = 2010
 max_year = 2024  # have to censure for dummy runs
 spacing_of_years = 1
 PREFIX_ON_FILENAME = '1'
+CONDITION_TO_COLOR_MAP_PREVALENCE = MappingProxyType(
+    {
+        '*': 'black',
+        'Lower respiratory infections*': 'darkorange',
+        'Diarrhoea*': 'tan',
+        'Epilepsy*': 'darkgoldenrod',
 
-SHORT_TREATMENT_ID_TO_COLOR_MAP_PREVALENCE = MappingProxyType({ # based on same colours as CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP but differnet labels
+        'AIDS*': 'deepskyblue',
+        'Malaria*': 'lightsteelblue',
+        'Measles*': 'cornflowerblue',
+        'TB*': 'mediumslateblue',
+        'Schistosomiasis*': 'skyblue',
 
-    '*': 'black',
+        'CardioMetabolicDisorders*': 'brown',
+        'Heart Disease*': 'sienna',
+        'Kidney Disease*': 'chocolate',
+        'Lower Back Pain*': 'slategray',
+        'Diabetes*': 'peru',
+        'Stroke*': 'darkkhaki',
+        'Hypertension*': 'firebrick',
 
-    'FirstAttendance*': 'darkgrey',
-    'Inpatient*': 'silver',
+        'Cancer (Bladder)*': 'orchid',
+        'Cancer (Breast)*': 'mediumvioletred',
+        'Cancer (Oesophagus)*': 'deeppink',
+        'Cancer (Prostate)*': 'hotpink',
+        'Cancer (Other)*': 'palevioletred',
 
-    'Contraception*': 'darkseagreen',
-    'AntenatalCare*': 'green',
-    'DeliveryCare*': 'limegreen',
-    'PostnatalCare*': 'springgreen',
+        'Depression / Self-harm*': 'indianred',
+        'Epilepsy*': 'red',
+        'COPD*': 'lightcoral',
 
-    'Alri*': 'darkorange',
-    'Diarrhoea*': 'tan',
-    'Undernutrition*': 'gold',
-    'Epi*': 'darkgoldenrod',
+        'Transport Injuries*': 'lightsalmon',
+    }
+)
 
-    'Hiv*': 'deepskyblue',
-    'Malaria*': 'lightsteelblue',
-    'Measles*': 'cornflowerblue',
-    'Tb*': 'mediumslateblue',
-    'Schisto*': 'skyblue',
-
-    'CardioMetabolicDisorders*': 'brown',
-    'chronic_ischemic_hd*': 'sienna',
-    'chronic_kidney_disease*': 'chocolate',
-    'chronic_lower_back_pain*': 'slategray',
-    'diabetes*': 'peru',
-    'hypertension*': 'darkkhaki',
-
-    'BladderCancer*': 'orchid',
-    'BreastCancer*': 'mediumvioletred',
-    'OesophagealCancer*': 'deeppink',
-    'ProstateCancer*': 'hotpink',
-    'OtherAdultCancer*': 'palevioletred',
-
-    'Depression*': 'indianred',
-    'Epilepsy*': 'red',
-    'Copd*': 'lightcoral',
-
-    'RTI*': 'lightsalmon',
-})
-
-rename_dict = { # FOr legend labels
+rename_dict = {  # For legend labels
     'Alri': 'Lower respiratory infections',
     'BladderCancer': 'Cancer (Bladder)',
     'BreastCancer': 'Cancer (Breast)',
@@ -86,18 +71,24 @@ rename_dict = { # FOr legend labels
     'ProstateCancer': 'Cancer (Prostate)',
     'RTI': 'Transport Injuries',
     'Schisto': 'Schistosomiasis',
-    'Tb': 'TB (non-AIDS)',
+    'Tb': 'TB',
     'chronic_ischemic_hd': 'Heart Disease',
     'chronic_kidney_disease': 'Kidney Disease',
     'chronic_lower_back_pain': 'Lower Back Pain',
     'diabetes': 'Diabetes',
-    'hypertension': 'Stroke'
+    'hypertension': 'Hypertension'
 }
 
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Produce standard set of plots describing the prevalence of each disease
     """
+    # Set period of interest needed for helper functions
+    TARGET_PERIOD = (Date(min_year, 1, 1), Date(max_year, 12, 31))
+    # Definitions of general helper functions
+    make_graph_file_name = lambda stub: output_folder / f"{stub.replace('*', '_star_')}.png"  # noqa: E731
+
+    _, age_grp_lookup = make_age_grp_lookup()
 
     def _standardize_short_treatment_id(short_treatment_id):
         return short_treatment_id.replace('_*', '*').rstrip('*') + '*'
@@ -107,14 +98,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         Returns `np.nan` if label is not recognised.
         """
-        return SHORT_TREATMENT_ID_TO_COLOR_MAP_PREVALENCE.get(_standardize_short_treatment_id(prevalence_condition_label), np.nan)
-
-    TARGET_PERIOD = (Date(min_year, 1, 1), Date(max_year, 12, 31))
-
-    # Definitions of general helper functions
-    make_graph_file_name = lambda stub: output_folder / f"{stub.replace('*', '_star_')}.png"  # noqa: E731
-
-    _, age_grp_lookup = make_age_grp_lookup()
+        return CONDITION_TO_COLOR_MAP_PREVALENCE.get(_standardize_short_treatment_id(prevalence_condition_label),
+                                                     np.nan)
 
     def get_prevalence_by_cause_label(_df):
         """Return total number of Prevalence by label (total by age-group within the TARGET_PERIOD)
@@ -148,7 +133,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     for target_year in target_year_sequence:
         TARGET_PERIOD = (
             Date(target_year, 1, 1),
-            Date(target_year + spacing_of_years, 12, 31))  # Corrected the year range to cover 5 years.
+            Date(target_year + spacing_of_years, 12, 31))
 
         # Prevalence of diseases
         result_data_deaths = summarize(extract_results(
@@ -185,6 +170,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     df_all_years_prevalence = df_all_years_prevalence.drop(['NMR', 'MMR',
                                                             'Intrapartum stillbirth', 'Antenatal stillbirth'],
                                                            axis=0)  # not prevalence
+    df_all_years_prevalence = df_all_years_prevalence.rename(index=rename_dict)  # For labels
+
+    # Check for missing conditions
+    #for _label in df_all_years_prevalence.index:
+    #     print(f"Label: {_label}, Result: {get_color_cause_of_prevalence_label(_label)}")
 
     # Plotting
     fig, axes = plt.subplots(1, 2, figsize=(25, 10))
