@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import json
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Any, Dict, FrozenSet, Optional, Set, Type
+from typing import TYPE_CHECKING, Any, Dict, List, FrozenSet, Optional
 
 import numpy as np
 import pandas as pd
@@ -80,7 +80,7 @@ class Specifiable:
         Types.BITSET: int,
     }
 
-    def __init__(self, type_: Types, description: str, categories: Set[Any] = None):
+    def __init__(self, type_: Types, description: str, categories: List[str] = None):
         """Create a new Specifiable.
 
         :param type_: an instance of Types giving the type of allowed values
@@ -141,7 +141,7 @@ class Property(Specifiable):
         self,
         type_: Types,
         description: str,
-        categories: Set[Any] = None,
+        categories: List[str] = None,
         *,
         ordered: bool = False,
         default_value: Optional[Any] = None,
@@ -162,6 +162,7 @@ class Property(Specifiable):
 
         super().__init__(type_, description, categories)
         self.ordered = ordered
+        # Use _default_value setter method to set property initial value
         self._default_value = default_value
 
     @property
@@ -289,7 +290,7 @@ class Module:
     # parameters created from the PARAMETERS specification.
     __slots__ = ('name', 'parameters', 'rng', 'sim')
 
-    def __init__(self, name: str = None) -> None:
+    def __init__(self, name: Optional[str] = None) -> None:
         """Construct a new disease module ready to be included in a simulation.
 
         Initialises an empty parameters dictionary and module-specific random number
