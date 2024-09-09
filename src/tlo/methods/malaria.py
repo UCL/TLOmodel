@@ -189,17 +189,16 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
             Types.REAL,
             'probability that treatment will clear malaria symptoms'
         ),
-        # ------------------ scale-up parameters for scenario analysis ------------------ #
-        "do_scaleup": Parameter(
-            Types.BOOL,
-            "argument to determine whether scale-up of program will be implemented"
+        "type_of_scaleup": Parameter(
+            Types.STRING, "argument to determine type scale-up of program which will be implemented, "
+                          "can be 'none', 'target' or 'max'",
         ),
         "scaleup_start_year": Parameter(
             Types.INT,
             "the year when the scale-up starts (it will occur on 1st January of that year)"
         ),
         "scaleup_parameters": Parameter(
-            Types.DICT,
+            Types.DATA_FRAME,
             "the parameters and values changed in scenario analysis"
         )
     }
@@ -261,7 +260,7 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         p['sev_inc'] = pd.read_csv(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria_SevInc_expanded.csv')
 
         # load parameters for scale-up projections
-        p["scaleup_parameters"] = workbook["scaleup_parameters"].set_index('parameter')['scaleup_value'].to_dict()
+        p['scaleup_parameters'] = workbook["scaleup_parameters"]
 
         # check itn projected values are <=0.7 and rounded to 1dp for matching to incidence tables
         p['itn'] = round(p['itn'], 1)
@@ -327,13 +326,16 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         )
 
     def pre_initialise_population(self):
-        """
-        * Establish the Linear Models
+        """Do things required before the population is created
+        * Build the LinearModels"""
+        self._build_linear_models()
+
+    def _build_linear_models(self):
+        """Establish the Linear Models
 
         if HIV is registered, the conditional predictors will apply
         otherwise only IPTp will affect risk of clinical/severe malaria
         """
-
         p = self.parameters
 
         # ---- LINEAR MODELS -----
@@ -599,7 +601,7 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         sim.schedule_event(MalariaPrevDistrictLoggingEvent(self), sim.date + DateOffset(months=1))
 
         # Optional: Schedule the scale-up of programs
-        if self.parameters["do_scaleup"]:
+        if self.parameters["type_of_scaleup"] != 'none':
             scaleup_start_date = Date(self.parameters["scaleup_start_year"], 1, 1)
             assert scaleup_start_date >= self.sim.start_date, f"Date {scaleup_start_date} is before simulation starts."
             sim.schedule_event(MalariaScaleUpEvent(self), scaleup_start_date)
@@ -656,52 +658,58 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         )
 
     def update_parameters_for_program_scaleup(self):
-
+        """ options for program scale-up are 'target' or 'max' """
         p = self.parameters
-        scaled_params = p["scaleup_parameters"]
+        scaled_params_workbook = p["scaleup_parameters"]
 
-        if p["do_scaleup"]:
+        if p['type_of_scaleup'] == 'target':
+            scaled_params = scaled_params_workbook.set_index('parameter')['target_value'].to_dict()
+        else:
+            scaled_params = scaled_params_workbook.set_index('parameter')['max_value'].to_dict()
 
-            # scale-up malaria program
-            # increase testing
-            # prob_malaria_case_tests=0.4 default
-            p["prob_malaria_case_tests"] = scaled_params["prob_malaria_case_tests"]
+        # scale-up malaria program
+        # increase testing
+        # prob_malaria_case_tests=0.4 default
+        p["prob_malaria_case_tests"] = scaled_params["prob_malaria_case_tests"]
 
-            # gen pop testing rates
-            # annual Rate_rdt_testing=0.64 at 2023
-            p["rdt_testing_rates"]["Rate_rdt_testing"] = scaled_params["rdt_testing_rates"]
+        # gen pop testing rates
+        # annual Rate_rdt_testing=0.64 at 2023
+        p["rdt_testing_rates"]["Rate_rdt_testing"] = scaled_params["rdt_testing_rates"]
 
-            # treatment reaches XX
-            # no default between testing and treatment, governed by tx availability
+        # treatment reaches XX
+        # no default between testing and treatment, governed by tx availability
 
-            # coverage IPTp reaches XX
-            # given during ANC visits and MalariaIPTp Event which selects ALL eligible women
+        # coverage IPTp reaches XX
+        # given during ANC visits and MalariaIPTp Event which selects ALL eligible women
 
-            # treatment success reaches 1 - default is currently 1 also
-            p["prob_of_treatment_success"] = scaled_params["prob_of_treatment_success"]
+        # treatment success reaches 1 - default is currently 1 also
+        p["prob_of_treatment_success"] = scaled_params["prob_of_treatment_success"]
 
-            # bednet and ITN coverage
-            # set IRS for 4 high-risk districts
-            # lookup table created in malaria read_parameters
-            # produces self.itn_irs called by malaria poll to draw incidence
-            # need to overwrite this
-            highrisk_distr_num = p["highrisk_districts"]["district_num"]
+        # bednet and ITN coverage
+        # set IRS for 4 high-risk districts
+        # lookup table created in malaria read_parameters
+        # produces self.itn_irs called by malaria poll to draw incidence
+        # need to overwrite this
+        highrisk_distr_num = p["highrisk_districts"]["district_num"]
 
-            # Find indices where District_Num is in highrisk_distr_num
-            mask = self.itn_irs['irs_rate'].index.get_level_values('District_Num').isin(
-                highrisk_distr_num)
+        # Find indices where District_Num is in highrisk_distr_num
+        mask = self.itn_irs['irs_rate'].index.get_level_values('District_Num').isin(
+            highrisk_distr_num)
 
-            # IRS values can be 0 or 0.8 - no other value in lookup table
-            self.itn_irs['irs_rate'].loc[mask] = scaled_params["irs_district"]
+        # IRS values can be 0 or 0.8 - no other value in lookup table
+        self.itn_irs['irs_rate'].loc[mask] = scaled_params["irs_district"]
 
-            # set ITN for all districts
-            # Set these values to 0.7 - this is the max value possible in lookup table
-            # equivalent to 0.7 of all pop sleeping under bednet
-            # household coverage could be 100%, but not everyone in household sleeping under bednet
-            self.itn_irs['itn_rate'] = scaled_params["itn_district"]
+        # set ITN for all districts
+        # Set these values to 0.7 - this is the max value possible in lookup table
+        # equivalent to 0.7 of all pop sleeping under bednet
+        # household coverage could be 100%, but not everyone in household sleeping under bednet
+        self.itn_irs['itn_rate'] = scaled_params["itn_district"]
 
-            # itn rates for 2019 onwards
-            p["itn"] = scaled_params["itn"]
+        # itn rates for 2019 onwards
+        p["itn"] = scaled_params["itn"]
+
+        # update exising linear models to use new scaled-up parameters
+        self._build_linear_models()
 
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
@@ -1161,7 +1169,7 @@ class HSI_Malaria_rdt_community(HSI_Event, IndividualScopeEventMixin):
             facility_level=self.ACCEPTED_FACILITY_LEVEL,
             treatment_id=self.TREATMENT_ID,
         )
-        
+
         logger.info(key='rdt_log', data=person_details_for_test)
 
         # if positive, refer for a confirmatory test at level 1a
