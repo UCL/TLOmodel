@@ -1,10 +1,12 @@
 import argparse
 from pathlib import Path
+from typing import Tuple
+
 import numpy as np
 import pandas as pd
-from matplotlib import pyplot as plt
-from typing import Tuple
 from longterm_projections import LongRun
+from matplotlib import pyplot as plt
+
 from tlo import Date
 from tlo.analysis.utils import (
     CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP,

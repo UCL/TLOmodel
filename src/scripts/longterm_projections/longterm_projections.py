@@ -1,11 +1,10 @@
 from typing import Dict
 
 from tlo import Date, logging
-from tlo.scenario import BaseScenario
-from tlo.methods.fullmodel import fullmodel
 from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios
-
+from tlo.methods.fullmodel import fullmodel
 from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScenarioSwitcher
+from tlo.scenario import BaseScenario
 
 
 class LongRun(BaseScenario):
