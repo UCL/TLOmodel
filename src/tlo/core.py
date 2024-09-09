@@ -98,12 +98,12 @@ class Specifiable:
             self.categories = categories
 
     @property
-    def python_type(self) -> Type[Any]:
+    def python_type(self) -> type:
         """Return the Python type corresponding to this Specifiable."""
         return self.PYTHON_TYPE_MAP[self.type_]
 
     @property
-    def pandas_type(self) -> Type[Any]:
+    def pandas_type(self) -> type:
         """Return the Pandas type corresponding to this Specifiable."""
         return self.PANDAS_TYPE_MAP[self.type_]
 
