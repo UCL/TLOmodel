@@ -20,7 +20,11 @@ except ImportError:
     DILL_AVAILABLE = False
 
 from tlo import Date, Population, logging
-from tlo.dependencies import check_dependencies_present, topologically_sort_modules
+from tlo.dependencies import (
+    check_dependencies_present,
+    initialise_missing_dependencies,
+    topologically_sort_modules,
+)
 from tlo.events import Event, IndividualScopeEventMixin
 from tlo.progressbar import ProgressBar
 
@@ -67,6 +71,7 @@ class Simulation:
         seed: Optional[int] = None,
         log_config: Optional[dict] = None,
         show_progress_bar: bool = False,
+        resourcefilepath: Optional[Path] = None,
     ):
         """Create a new simulation.
 
@@ -84,6 +89,8 @@ class Simulation:
             logging to standard output stream (default is `False`).
         :param show_progress_bar: Whether to show a progress bar instead of the logger
             output during the simulation.
+        :param resourcefilepath: Path to resource files folder. Assign ``None` if no 
+            path is provided.
             
         .. note::
            The `custom_levels` entry in `log_config` argument can be used to disable
@@ -100,6 +107,7 @@ class Simulation:
         self.population: Optional[Population] = None
 
         self.show_progress_bar = show_progress_bar
+        self.resourcefilepath = resourcefilepath
 
         # logging
         if log_config is None:
@@ -180,7 +188,8 @@ class Simulation:
         self,
         *modules: Module,
         sort_modules: bool = True,
-        check_all_dependencies: bool = True
+        check_all_dependencies: bool = True,
+        auto_register_dependencies: bool = False,
     ) -> None:
         """Register one or more disease modules with the simulation.
 
@@ -200,7 +209,16 @@ class Simulation:
             ``ADDITIONAL_DEPENDENCIES`` attributes) have been included in the set of
             modules to be registered. A :py:exc:`.ModuleDependencyError` exception will
             be raised if there are missing dependencies.
+        :param auto_register_dependencies: Whether to register missing module dependencies
+            or not. If this argument is set to True, all module dependencies will be 
+            automatically registered.
         """
+        if auto_register_dependencies:
+            modules = [
+                *modules,
+                *initialise_missing_dependencies(modules, resourcefilepath=self.resourcefilepath)
+            ]
+
         if sort_modules:
             modules = list(topologically_sort_modules(modules))
         if check_all_dependencies:
