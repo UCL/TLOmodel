@@ -1,6 +1,7 @@
 import argparse
 from pathlib import Path
 from types import MappingProxyType
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -101,6 +102,19 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         return CONDITION_TO_COLOR_MAP_PREVALENCE.get(_standardize_short_treatment_id(prevalence_condition_label),
                                                      np.nan)
 
+    # def order_of_prevalence_label(
+    #     prevalence_label: Union[str, pd.Index]
+    # ) -> Union[int, pd.Index]:
+    #     """Define a standard order for Cause-of-Death labels."""
+    #     ordered_prevalence_labels = list(CONDITION_TO_COLOR_MAP_PREVALENCE.keys())
+    #     print(ordered_prevalence_labels)
+    #     if isinstance(prevalence_label, str):
+    #         return ordered_prevalence_labels.index(prevalence_label)
+    #     else:
+    #         return pd.Index(
+    #             ordered_prevalence_labels.index(c) for c in prevalence_label
+    #         )
+
     def get_prevalence_by_cause_label(_df):
         """Return total number of Prevalence by label (total by age-group within the TARGET_PERIOD)
         """
@@ -109,6 +123,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         filtered_df = _df.loc[_df['date'].between(*TARGET_PERIOD)]
         prevalence_sum = filtered_df.sum(numeric_only=True)
         return prevalence_sum
+
 
     def get_population_for_year(_df):
         """Returns the population in the year of interest"""
@@ -175,6 +190,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # Check for missing conditions
     #for _label in df_all_years_prevalence.index:
     #     print(f"Label: {_label}, Result: {get_color_cause_of_prevalence_label(_label)}")
+    # df_all_years_prevalence = df_all_years_prevalence \
+    #     .reindex(index=CONDITION_TO_COLOR_MAP_PREVALENCE.keys(), fill_value=0.0) \
+    #     .sort_index(axis=0, key=order_of_cause_of_death_or_daly_label)
 
     # Plotting
     fig, axes = plt.subplots(1, 2, figsize=(25, 10))
