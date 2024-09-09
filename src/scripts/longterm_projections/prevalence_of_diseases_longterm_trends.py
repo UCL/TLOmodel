@@ -221,7 +221,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     axes[1].set_ylabel('Fold change in deaths compared to 2010')
     axes[1].spines['top'].set_visible(False)
     axes[1].spines['right'].set_visible(False)
-    axes[1].legend(title='Condition', bbox_to_anchor=(1.05, 1), loc='upper left')
+    axes[1].legend(title='Condition', bbox_to_anchor=(1, 1), loc='upper left')
     axes[1].grid(True)
 
     fig.savefig(make_graph_file_name('Trend_Prevalence_by_Condition_All_Years_Raw_and_Normalized_Panel_A_and_B'))
