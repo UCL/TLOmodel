@@ -2,6 +2,7 @@
 import copy
 import os
 from pathlib import Path
+from typing import Dict
 
 import pandas as pd
 import pytest
@@ -82,6 +83,88 @@ def test_beddays_in_isolation(tmpdir, seed):
     hs.bed_days.remove_beddays_footprint(2)
     assert ([cap_bedtype1] * days_sim == tracker.values).all()
 
+
+def test_beddays_allocation_resolution(tmpdir, seed):
+    sim = Simulation(start_date=start_date, seed=seed)
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+    )
+
+    # Update BedCapacity data with a simple table:
+    level2_facility_ids = [128, 129, 130]  # <-- the level 2 facilities for each region
+    # This ensures over-allocations have to be properly resolved
+    cap_bedtype1 = 10
+    cap_bedtype2 = 10
+    cap_bedtype3 = 10
+
+    # create a simple bed capacity dataframe
+    hs = sim.modules["HealthSystem"]
+    hs.parameters["BedCapacity"] = pd.DataFrame(
+        data={
+            "Facility_ID": level2_facility_ids,
+            "bedtype1": cap_bedtype1,
+            "bedtype2": cap_bedtype2,
+            "bedtype3": cap_bedtype3,
+        }
+    )
+
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=start_date)
+
+    # reset bed days tracker to the start_date of the simulation
+    hs.bed_days.initialise_beddays_tracker()
+
+    def assert_footprint_matches_expected(
+        footprint: Dict[str, int], expected_footprint: Dict[str, int]
+    ):
+        """
+        Asserts that two footprints are identical.
+        The footprint provided as the 2nd argument is assumed to be the footprint
+        that we want to match, and the 1st as the result of the program attempting
+        to resolve over-allocations.
+        """
+        assert len(footprint) == len(
+            expected_footprint
+        ), "Bed type footprints did not return same allocations."
+        for bed_type, expected_days in expected_footprint.items():
+            allocated_days = footprint[bed_type]
+            assert expected_days == allocated_days, (
+                f"Bed type {bed_type} was allocated {allocated_days} upon combining, "
+                f"but expected it to get {expected_days}."
+            )
+
+    # Check that combining footprints for a person returns the expected output
+
+    # SIMPLE 2-bed days case
+    # Test uses example fail case given in https://github.com/UCL/TLOmodel/issues/1399
+    # Person p has: bedtyp1 for 2 days, bedtype2 for 0 days.
+    # Person p then assigned: bedtype1 for 1 days, bedtype2 for 6 days.
+    # EXPECT: p's footprints are combined into bedtype1 for 2 days, bedtype2 for 5 days.
+    existing_footprint = {"bedtype1": 2, "bedtype2": 0, "bedtype3": 0}
+    incoming_footprint = {"bedtype1": 1, "bedtype2": 6, "bedtype3": 0}
+    expected_resolution = {"bedtype1": 2, "bedtype2": 5, "bedtype3": 0}
+    allocated_footprint = hs.bed_days.combine_footprints_for_same_patient(
+        existing_footprint, incoming_footprint
+    )
+    assert_footprint_matches_expected(allocated_footprint, expected_resolution)
+
+    # TEST case involve 3 different bed-types.
+    # Person p has: bedtype1 for 2 days, then bedtype3 for 4 days.
+    # p is assigned: bedtype1 for 1 day, bedtype2 for 3 days, and bedtype3 for 1 day.
+    # EXPECT: p spends 2 days in each bedtype;
+    # - Day 1 needs bedtype1 for both footprints
+    # - Day 2 existing footprint at bedtype1 overwrites incoming at bedtype2
+    # - Day 3 & 4 incoming footprint at bedtype2 overwrites existing allocation to bedtype3
+    # - Day 5 both footprints want bedtype3
+    # - Day 6 existing footprint needs bedtype3, whilst incoming footprint is over.s
+    existing_footprint = {"bedtype1": 2, "bedtype2": 0, "bedtype3": 4}
+    incoming_footprint = {"bedtype1": 1, "bedtype2": 3, "bedtype3": 1}
+    expected_resolution = {"bedtype1": 2, "bedtype2": 2, "bedtype3": 2}
+    allocated_footprint = hs.bed_days.combine_footprints_for_same_patient(
+        existing_footprint, incoming_footprint
+    )
+    assert_footprint_matches_expected(allocated_footprint, expected_resolution)
 
 def check_dtypes(simulation):
     # check types of columns
