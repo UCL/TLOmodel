@@ -73,6 +73,7 @@ def get_parameter_tables(
     modules: Iterable[Module],
     overriden_parameters: dict[str, dict[str, ParameterValue]],
     excluded_modules: set[str],
+    excluded_parameters: dict[str, set[str]],
     max_inline_parameter_length: int = 10,
 ) -> tuple[ModuleParameterTablesDict, ModuleStructuredParametersDict]:
     module_parameter_tables = {}
@@ -82,7 +83,10 @@ def get_parameter_tables(
             continue
         parameter_records = []
         module_structured_parameters[module.name] = {}
+        module_excluded_parameters = excluded_parameters.get(module.name, set())
         for parameter_name, parameter in module.PARAMETERS.items():
+            if parameter_name in module_excluded_parameters:
+                continue
             if (
                 module.name in overriden_parameters
                 and parameter_name in overriden_parameters[module.name]
@@ -225,7 +229,10 @@ if __name__ == "__main__":
     status_quo_parameters = get_parameters_for_status_quo()
     simulation.register(*fullmodel.fullmodel(args.resource_file_path))
     module_parameter_tables, module_structured_parameters = get_parameter_tables(
-        simulation.modules.values(), status_quo_parameters, {"HealthBurden"}
+        simulation.modules.values(),
+        status_quo_parameters,
+        {"HealthBurden", "Wasting"},
+        {"Demography": {"gbd_causes_of_death_data"}, "Tb": {"who_incidence_estimates"}}
     )
     write_parameters_markdown_file(
         args.output_file_path, module_parameter_tables, module_structured_parameters
