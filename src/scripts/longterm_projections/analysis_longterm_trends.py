@@ -1,6 +1,4 @@
-"""
 
-"""
 import argparse
 import datetime
 from pathlib import Path
@@ -9,7 +7,11 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
+import imageio
 
+from moviepy.editor import VideoClip
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from moviepy.video.io.ffmpeg_writer import ffmpeg_write_video
 from tlo.analysis.life_expectancy import get_life_expectancy_estimates
 from tlo.analysis.utils import (
     extract_results,
@@ -23,7 +25,8 @@ from tlo.analysis.utils import (
 )
 
 PREFIX_ON_FILENAME = '1'
-max_year = "2030"
+min_year = "2010"
+max_year = "2029"
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
 
@@ -255,7 +258,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         )
         return num_by_age
 
-    for year in [2010, 2015, 2018, 2029, 2039]: #2049, 2059, 2069, 2079]:
+    for year in range(int(min_year), int(max_year),1): #2049, 2059, 2069, 2079]:
         if year in pop_model.index:
             # Get WPP data:
             wpp_thisyr = wpp_ann.loc[wpp_ann['Year'] == year].groupby(['Sex', 'Age_Grp'])['Count'].sum()
@@ -282,8 +285,17 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             fig.savefig(make_graph_file_name(f"Pop_Size_{year}"))
             plt.close(fig)
 
-    # %% Births: Number over time
+    # Make a film
+    frames = []
+    for year in range(int(min_year), int(max_year)):
+        image = imageio.v2.imread(make_graph_file_name(f"Pop_Size_{year}"))
+        frames.append(image)
 
+    imageio.mimsave(output_folder / f"Pop_Pyramids_{min_year}-{max_year}.gif",
+                    frames,
+                    fps=5)
+
+    # %% Births: Number over time
     # Births over time (Model)
     births_results = extract_results(
         results_folder,
@@ -843,7 +855,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig, ax = plt.subplots()
     dataframes = []
     wpp_le = pd.read_csv("/Users/rem76/PycharmProjects/TLOmodel/src/scripts/longterm_projections/Life_Expectancy_WPP_2010_2014.csv")
-    for year in range(2010, int(max_year) -5):
+    for year in range(2010, int(max_year) ):
         df = get_life_expectancy_estimates(
             results_folder=args.results_folder,
             target_period=(datetime.date(year, 1, 1), datetime.date(year, 12, 31)),
