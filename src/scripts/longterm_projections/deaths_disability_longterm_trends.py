@@ -3,7 +3,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
-
+from typing import Tuple
+from longterm_projections import LongRun
 from tlo import Date
 from tlo.analysis.utils import (
     CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP,
@@ -15,7 +16,7 @@ from tlo.analysis.utils import (
 )
 
 min_year = 2010
-max_year = 2025  # have to censure for dummy runs
+max_year = 20  # have to censure for dummy runs
 PREFIX_ON_FILENAME = '1'
 
 
@@ -24,7 +25,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     - We estimate the epidemiological impact as the EXTRA deaths that would occur if that treatment did not occur.
     - We estimate the draw on healthcare system resources as the FEWER appointments when that treatment does not occur.
     """
+    def get_parameter_names_from_scenario_file() -> Tuple[str]:
+        """Get the tuple of names of the scenarios from `Scenario` class used to create the results."""
+        from scripts.healthsystem.impact_of_mode.scenario_impact_of_mode import (
+            ImpactOfHealthSystemMode,
+        )
+        e = LongRun()
+        return tuple(e._scenarios.keys())
 
+    param_names = get_parameter_names_from_scenario_file()
+    print(param_names)
     TARGET_PERIOD = (Date(min_year, 1, 1), Date(max_year, 12, 31))
 
     # Definitions of general helper functions
