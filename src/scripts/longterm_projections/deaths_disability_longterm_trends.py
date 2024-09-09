@@ -16,7 +16,8 @@ from tlo.analysis.utils import (
 )
 
 min_year = 2010
-max_year = 20  # have to censure for dummy runs
+max_year = 2024  # have to censure for dummy runs
+spacing_of_years = 1
 PREFIX_ON_FILENAME = '1'
 
 
@@ -73,7 +74,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         return population_sum
 
-    target_year_sequence = range(min_year, max_year, 5)
+    target_year_sequence = range(min_year, max_year, spacing_of_years)
     make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}.png"  # noqa: E731
 
     all_years_data_deaths = {}
