@@ -20,6 +20,7 @@ from tlo.methods import (
     symptommanager,
 )
 
+
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     PREFIX_ON_FILENAME = 1
     output = summarize(extract_results(results_folder,

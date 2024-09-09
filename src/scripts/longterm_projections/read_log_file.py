@@ -1,8 +1,4 @@
-from tlo.analysis.utils import (
-    create_pickles_locally,
-    parse_log_file
-)
-
+from tlo.analysis.utils import create_pickles_locally, parse_log_file
 
 # File paths
 input_file = '/Users/rem76/PycharmProjects/TLOmodel/outputs/rm916@ic.ac.uk/longterm_trends_all_diseases-2024-09-04T082106Z/0/0/longterm_trends_all_diseases__2024-09-04T082345.log'

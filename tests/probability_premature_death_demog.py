@@ -1,6 +1,7 @@
+import datetime
 import pickle
 from pathlib import Path
-import datetime
+
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import demography
