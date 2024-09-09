@@ -88,7 +88,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             .drop(columns=([comparison] if drop_comparison else [])) \
             .stack()
 
-    def do_bar_plot_with_ci(_df, annotations=None, xticklabels_horizontal_and_wrapped=False, put_labels_in_legend=True):
+    def do_bar_plot_with_ci(_df, annotations=None,
+                            xticklabels_horizontal_and_wrapped=False,
+                            put_labels_in_legend=True,
+                            offset=1e6):
         """Make a vertical bar plot for each row of _df, using the columns to identify the height of the bar and the
          extent of the error bar."""
 
@@ -112,20 +115,30 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             xticks.keys(),
             _df['mean'].values,
             yerr=yerr,
-            alpha=0.8,  # todo remove?
+            # alpha=0.8,
             ecolor='black',
             color=colors,
             capsize=10,
             label=xticks.values()
         )
-        # if annotations:
-        #     for xpos, ypos, text in zip(xticks.keys(), _df['upper'].values, annotations):
-        #         ax.text(xpos, ypos*1.15, text, horizontalalignment='center', rotation='vertical', fontsize='x-small')
 
         if annotations:
-            for xpos, ypos, text in zip(xticks.keys(), _df['upper'].values, annotations):
-                ax.text(xpos, ypos * 1.15, '\n'.join(text.split(' ', 1)),
-                        horizontalalignment='center', rotation='horizontal', fontsize='x-small')
+            # for xpos, ypos, text in zip(xticks.keys(), _df['upper'].values, annotations):
+            #     ax.text(xpos, ypos * 1.15, '\n'.join(text.split(' ', 1)),
+            #             horizontalalignment='center', rotation='horizontal', fontsize='x-small')
+            for xpos, (ypos, text) in zip(xticks.keys(), zip(_df['upper'].values.flatten(), annotations)):
+                # Set annotation position with fixed offset
+                annotation_y = ypos + offset
+
+                ax.text(
+                    xpos,
+                    annotation_y,
+                    '\n'.join(text.split(' ', 1)),
+                    horizontalalignment='center',
+                    verticalalignment='bottom',  # Aligns text at the bottom of the annotation position
+                    fontsize='x-small',
+                    rotation='horizontal'
+                )
 
         ax.set_xticks(list(xticks.keys()))
 
@@ -151,6 +164,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig.tight_layout()
 
         return fig, ax
+
 
     def do_line_plot_with_ci(_df, xticklabels_horizontal_and_wrapped=False, put_labels_in_legend=True):
         """Make a line plot with median values and shaded confidence intervals using a DataFrame with MultiIndex columns."""
@@ -198,7 +212,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         if not xticklabels_horizontal_and_wrapped:
             ax.set_xticks(list(xticks.keys()))
-            ax.set_xticklabels(list(xticks.values()), rotation=90)
+            ax.set_xticklabels(list(xticks.values()), rotation=0)
         else:
             wrapped_labs = ["\n".join(textwrap.wrap(_lab, 20)) for _lab in xticks.values()]
             ax.set_xticks(list(xticks.keys()))
@@ -238,6 +252,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # %% Charts of total numbers of deaths / DALYS
     num_dalys_summarized = summarize(num_dalys).loc[0].unstack().reindex(param_names)
     num_deaths_summarized = summarize(num_deaths).loc[0].unstack().reindex(param_names)
+    num_dalys_summarized.to_csv(results_folder / 'num_dalys_summarized.csv')
+    num_deaths_summarized.to_csv(results_folder / 'num_deaths_summarized.csv')
 
     # Make a separate plot for the scale-up of each program/programs
     plots = {
@@ -315,6 +331,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 comparison='Baseline')
         ).T
     ).iloc[0].unstack().reindex(param_names).drop(['Baseline'])
+    num_deaths_averted.to_csv(results_folder / 'num_deaths_averted.csv')
 
     pc_deaths_averted = 100.0 * summarize(
         -1.0 *
@@ -325,6 +342,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 scaled=True)
         ).T
     ).iloc[0].unstack().reindex(param_names).drop(['Baseline'])
+    pc_deaths_averted.to_csv(results_folder / 'pc_deaths_averted.csv')
 
     num_dalys_averted = summarize(
         -1.0 *
@@ -334,6 +352,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 comparison='Baseline')
         ).T
     ).iloc[0].unstack().reindex(param_names).drop(['Baseline'])
+    num_dalys_averted.to_csv(results_folder / 'num_dalys_averted.csv')
 
     pc_dalys_averted = 100.0 * summarize(
         -1.0 *
@@ -344,18 +363,21 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 scaled=True)
         ).T
     ).iloc[0].unstack().reindex(param_names).drop(['Baseline'])
+    pc_dalys_averted.to_csv(results_folder / 'pc_dalys_averted.csv')
 
     # DEATHS AVERTED
-    name_of_plot = f'Additional Deaths Averted vs Baseline, {target_period()}'
+    name_of_plot = f'Deaths Averted vs Baseline, {target_period()}'
     fig, ax = do_bar_plot_with_ci(
         num_deaths_averted.clip(lower=0.0),
         annotations=[
             f"{round(row['mean'], 0)}% ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
             for _, row in pc_deaths_averted.clip(lower=0.0).iterrows()
-        ]
+        ],
+        offset=10_000
     )
     ax.set_title(name_of_plot)
-    ax.set_ylabel('Additional Deaths Averted')
+    ax.set_ylim(0, 250_000)
+    ax.set_ylabel('Deaths Averted')
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     fig.show()
@@ -364,7 +386,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # DEATHS AVERTED: HRH scenarios and supply chain scenarios separately
     for plot_name, scenario_names in plots.items():
         filtered_scenario_names = [name for name in scenario_names if name != 'Baseline']
-        name_of_plot = f'Additional Deaths Averted vs Baseline, {target_period()}, {plot_name}'
+        name_of_plot = f'Deaths Averted vs Baseline, {target_period()}, {plot_name}'
         data = num_deaths_averted.loc[filtered_scenario_names]
         data_pc = pc_deaths_averted.loc[filtered_scenario_names]
         fig, ax = do_bar_plot_with_ci(
@@ -372,26 +394,31 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         annotations=[
             f"{round(row['mean'], 0)}% ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
             for _, row in data_pc.clip(lower=0.0).iterrows()
-        ]
+        ],
+        offset=10_000
+
         )
         ax.set_title(name_of_plot)
-        ax.set_ylabel('Additional Deaths Averted')
+        ax.set_ylim(0, 250_000)
+        ax.set_ylabel('Deaths Averted')
         fig.tight_layout()
         fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
         fig.show()
         plt.close(fig)
 
     # DALYS AVERTED
-    name_of_plot = f'Additional DALYs Averted vs Baseline, {target_period()}'
+    name_of_plot = f'DALYs Averted vs Baseline, {target_period()}'
     fig, ax = do_bar_plot_with_ci(
         (num_dalys_averted / 1e6).clip(lower=0.0),
         annotations=[
             f"{round(row['mean'])}% ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
             for _, row in pc_dalys_averted.clip(lower=0.0).iterrows()
-        ]
+        ],
+        offset=0.5
     )
     ax.set_title(name_of_plot)
-    ax.set_ylabel('Additional DALYS Averted \n(Millions)')
+    ax.set_ylim(0, 20)
+    ax.set_ylabel('DALYS Averted \n(Millions)')
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     fig.show()
@@ -408,9 +435,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             annotations=[
                 f"{round(row['mean'], 0)}% ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
                 for _, row in data_pc.clip(lower=0.0).iterrows()
-            ]
+            ],
+            offset=0.5
         )
         ax.set_title(name_of_plot)
+        ax.set_ylim(0, 20)
         ax.set_ylabel('Additional DALYS Averted \n (Millions)')
         fig.tight_layout()
         fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
@@ -475,6 +504,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ),
         only_mean=True
     )
+    total_num_dalys_by_label_results_averted_vs_baseline.to_csv(results_folder / 'total_num_dalys_by_label_results_averted_vs_baseline.csv')
 
     # Check that when we sum across the causes, we get the same total as calculated when we didn't split by cause.
     assert (
@@ -503,7 +533,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.set_ylim([0, 2e7])
         ax.set_title(name_of_plot)
         ax.set_ylabel(f'DALYs Averted vs Baseline, (Millions)')
-        wrapped_labs = ["\n".join(textwrap.wrap(_lab.get_text(), 20)) for _lab in ax.get_xticklabels()]
+        wrapped_labs = ["\n".join(textwrap.wrap(_lab.get_text(), 13)) for _lab in ax.get_xticklabels()]
         ax.set_xticklabels(wrapped_labs)
         ax.set_xlabel('')
         fig.tight_layout()
@@ -511,11 +541,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig.show()
         plt.close(fig)
 
-    # todo: Neaten graphs
-    # todo: Graph showing difference broken down by disease (this can be cribbed from the calcs about wealth from the
-    #  third set of analyses in the overview paper).
-    # todo: other metrics of health
-    # todo: other graphs, broken down by age/sex (this can also be cribbed from overview paper stuff)
 
     def get_num_dalys_by_year(_df):
         """Return total number of DALYS (Stacked) by label (total within the TARGET_PERIOD).
