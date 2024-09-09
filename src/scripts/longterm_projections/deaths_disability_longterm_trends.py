@@ -65,11 +65,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         # Filter the DataFrame based on the target period
         filtered_df = _df.loc[_df['date'].between(*TARGET_PERIOD)]
-
-        # Drop non-numeric columns (assume 'female' and 'male' are non-numeric)
         numeric_df = filtered_df.drop(columns=['female', 'male'], errors='ignore')
-
-        # Sum only numeric columns
         population_sum = numeric_df.sum(numeric_only=True)
 
         return population_sum
@@ -82,7 +78,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     all_years_data_population = {}
     for target_year in target_year_sequence:
         TARGET_PERIOD = (
-            Date(target_year, 1, 1), Date(target_year + 4, 12, 31))  # Corrected the year range to cover 5 years.
+            Date(target_year, 1, 1), Date(target_year + spacing_of_years, 12, 31))  # Corrected the year range to cover 5 years.
 
         # %% Quantify the health gains associated with all interventions combined.
 
