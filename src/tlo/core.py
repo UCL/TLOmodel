@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import json
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Any, Dict, List, FrozenSet, Optional
+from typing import TYPE_CHECKING, Any, Dict, FrozenSet, List, Optional
 
 import numpy as np
 import pandas as pd
