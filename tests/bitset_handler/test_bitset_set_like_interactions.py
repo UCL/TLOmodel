@@ -9,6 +9,7 @@ import pytest
 
 from tlo.bitset_handler.bitset_extension import BitsetDtype, CastableForPandasOps, ElementType
 
+
 def seq_of_sets_to_series(sets: Iterable[Set[ElementType]], dtype: BitsetDtype) -> pd.Series:
     """
     Casts a sequence of sets representing a single BitsetDtype to a

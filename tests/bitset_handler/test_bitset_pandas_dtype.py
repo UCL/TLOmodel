@@ -6,7 +6,7 @@ from pandas.tests.extension.base import BaseDtypeTests
 from tlo.bitset_handler.bitset_extension import BitsetDtype
 
 
-class TestMyDtype(BaseDtypeTests):
+class TestBitsetDtype(BaseDtypeTests):
     """
     Setting the dtype fixture, above, to out BitsetDtype results in us inheriting
     all default pandas tests for extension Dtypes.

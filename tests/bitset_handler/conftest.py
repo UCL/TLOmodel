@@ -1,3 +1,12 @@
+"""
+Implements the fixtures required in 
+https://github.com/pandas-dev/pandas/blob/bdb509f95a8c0ff16530cedb01c2efc822c0d314/pandas/core/dtypes/dtypes.py,
+
+which allows us to run the pandas-provided test suite for custom dtypes.
+Additional tests and fixtures can be defined on top of those listed in the link above, if we want to
+run our own tests.
+"""
+
 from typing import List, Set
 
 import numpy as np
