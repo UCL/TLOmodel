@@ -842,7 +842,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 # 4) Life expectancy
     fig, ax = plt.subplots()
     dataframes = []
-
+    wpp_le = pd.read_csv("/Users/rem76/PycharmProjects/TLOmodel/src/scripts/longterm_projections/Life_Expectancy_WPP_2010_2014.csv")
     for year in range(2010, int(max_year) -5):
         df = get_life_expectancy_estimates(
             results_folder=args.results_folder,
@@ -862,11 +862,27 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     rtn_all_years.to_csv(args.results_folder / 'life_expectancy_estimates.csv', index=True)
 
     # Plot odd indices (for "F")
-    ax.plot(rtn_all_years.index[1::2], rtn_all_years.iloc[1::2, 0], marker='o', color='blue', label="F")
+    ax.plot(wpp_le['Time'], wpp_le['Value'], marker='o', color=colors['WPP'], label="F")
 
     # Plot even indices (for "M")
-    ax.plot(rtn_all_years.index[0::2], rtn_all_years.iloc[0::2, 0], marker='o', color='green', label="M")
-
+    ax.errorbar(
+        rtn_all_years.index[1::2],
+        rtn_all_years.iloc[1::2, 0],
+        yerr=[rtn_all_years.iloc[1::2]['lower'], rtn_all_years.iloc[1::2]['upper']],
+        fmt='o',
+        color='#1C6E8C',
+        label="F",
+        capsize=5
+    )
+    ax.errorbar(
+        rtn_all_years.index[0::2],
+        rtn_all_years.iloc[0::2, 0],
+        yerr=[rtn_all_years.iloc[0::2]['lower'], rtn_all_years.iloc[0::2]['upper']],
+        fmt='o',
+        color='#9AC4F8',
+        label="M",
+        capsize=5
+    )
     ax.legend(loc='lower right')
     ax.set_xlabel('Year')
     ax.set_ylim(0, 75)  # Corrected set_ylimylim to set_ylim
