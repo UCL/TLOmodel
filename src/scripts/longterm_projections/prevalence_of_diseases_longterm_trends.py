@@ -103,7 +103,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     print(df_all_years_prevalence.index)
     df_all_years_prevalence = df_all_years_prevalence.drop(['live_births', 'population'], axis=0)  # extra data
     df_all_years_prevalence = df_all_years_prevalence.drop(['PostnatalSupervisor', 'PregnancySupervisor',
-                                                            'CardioMetabolicDisorders'], axis=0)  # empty
+                                                            'CardioMetabolicDisorders', 'NewbornOutcomes'], axis=0)  # empty
     df_all_years_prevalence = df_all_years_prevalence.drop(['NMR', 'MMR',
                                                             'Intrapartum stillbirth', 'Antenatal stillbirth'],
                                                            axis=0)  # not prevalence
@@ -114,18 +114,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     colours = np.vstack((colours1, colours2))
     # Plotting
     fig, axes = plt.subplots(1, 2, figsize=(25, 10))
-
-    # Panel A: Prevalence - general
-    print(df_all_years_prevalence)
-    for i, condition in enumerate(df_all_years_prevalence.index):
-        axes[0].plot(df_all_years_prevalence.columns, df_all_years_prevalence.loc[condition], marker='o',
-                     label=condition, color=colours[i])
+    # Panel A: Prevalence - general - stacked
+    df_all_years_prevalence.T.plot.bar(stacked=True, ax=axes[0],
+                                       color=colours)
     axes[0].set_title('Panel A: Prevalence by Condition')
     axes[0].set_xlabel('Year')
     axes[0].set_ylabel('Prevalence in population')
+    axes[0].grid(True)
     axes[0].spines['top'].set_visible(False)
     axes[0].spines['right'].set_visible(False)
-    axes[0].grid(True)
+    axes[0].legend().set_visible(False)
 
     # NORMALIZED Prevalence - normalized to 2010
     df_all_years_prevalence_normalized = df_all_years_prevalence.div(df_all_years_prevalence.iloc[:, 0], axis=0)
@@ -142,22 +140,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     fig.savefig(make_graph_file_name('Trend_Prevalence_by_Condition_All_Years_Raw_and_Normalized_Panel_A_and_B'))
     plt.close(fig)
-
-    # BARPLOT STACKED DEATHS AND DALYS OVER TIME
-    fig, axes = plt.subplots(1, 2, figsize=(25, 10))  # Two panels side by side
-    df_all_years_prevalence.T.plot.bar(stacked=True, ax=axes[0],
-                                       color=colours)
-    axes[0].set_title('Panel A: Prevalence by Condition')
-    axes[0].set_xlabel('Year')
-    axes[0].set_ylabel('Prevalence in population')
-    axes[0].grid(True)
-    axes[0].spines['top'].set_visible(False)
-    axes[0].spines['right'].set_visible(False)
-    axes[0].legend(title='Cause', bbox_to_anchor=(1.05, 1), loc='upper left')
-
-    fig.tight_layout()
-    fig.savefig(make_graph_file_name('Trend_Prevalence_by_Condition_All_Years_Panel_A_and_B_Stacked'))
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
