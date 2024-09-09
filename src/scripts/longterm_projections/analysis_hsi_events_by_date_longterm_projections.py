@@ -29,8 +29,8 @@ PREFIX_ON_FILENAME = '3'
 
 # Declare period for which the results will be generated (defined inclusively)
 min_year = 2010
-max_year = 2060
-
+max_year = 2024
+spacing_of_years = 1
 def drop_outside_period(_df, target_period):
     """Return a dataframe which only includes for which the date is within the limits defined by TARGET_PERIOD"""
     return _df.drop(index=_df.index[~_df['date'].between(*target_period)])
@@ -832,7 +832,7 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Description of the usage of healthcare system resources."""
-    target_year_sequence = range(min_year, max_year , 5)
+    target_year_sequence = range(min_year, max_year , spacing_of_years)
     figure8_distribution_of_hsi_event_all_years(
             results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath, target_period = (Date(min_year, 1, 1), Date(max_year + 5, 12, 31))
         )
