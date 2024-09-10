@@ -2628,7 +2628,9 @@ def test_logging_of_only_hsi_events_with_non_blank_footprints(tmpdir):
 
     # When the footprint is non-blank:
     log = run_simulation_and_return_healthsystem_summary_log(tmpdir, blank_footprint=False)
-    assert (
+    assert not log['HSI_Event'].empty
+    assert 'TREATMENT_ID' in log['HSI_Event'].columns
+    assert 'TREATMENT_ID' in log['HSI_Event_non_blank_appt_footprint'].columns
         log['HSI_Event']['TREATMENT_ID'].iloc[0]
         == log['HSI_Event_non_blank_appt_footprint']['TREATMENT_ID'].iloc[0]
         == {'Dummy': 1}
