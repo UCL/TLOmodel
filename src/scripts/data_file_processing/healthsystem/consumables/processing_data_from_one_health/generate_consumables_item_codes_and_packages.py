@@ -19,20 +19,22 @@ from typing import Dict
 import numpy as np
 import pandas as pd
 
-# Set local shared folder source
-path_to_share = Path(  # <-- point to the shared folder
-    '/Users/sm2511/Library/CloudStorage/OneDrive-SharedLibraries-ImperialCollegeLondon/TLOModel - WP - Documents/'
-)
+# Set local Dropbox source
+path_to_dropbox = Path(  # <-- point to the TLO dropbox locally
+   # '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE'
+    '/Users/sm2511/Dropbox/Thanzi La Onse')
 
 resourcefilepath = Path("./resources")
 path_for_new_resourcefiles = resourcefilepath / "healthsystem/consumables"
 
 
 # EHP Consumables list
-workingfile_ehp_consumables = path_to_share / \
+path_to_files_in_the_tlo_dropbox = path_to_dropbox / "05 - Resources/Module-healthsystem/consumables raw files/"
+
+workingfile_ehp_consumables = path_to_dropbox / \
               "05 - Resources/Module-healthsystem/From Matthias Arnold/ORIGINAL_Intervention input.xlsx"
 
-workingfile_one_health = path_to_share / \
+workingfile_one_health = path_to_dropbox / \
                          "07 - Data/OneHealth projection files/OneHealth commodities.xlsx"
 
 
@@ -155,8 +157,7 @@ intv_codes = pd.DataFrame({'Intervention_Pkg': unique_intvs,
 
 wb = wb.merge(intv_codes, on='Intervention_Pkg', how='left', indicator=True)
 assert (wb['_merge'] == 'both').all()
-wb = wb.drop(columns=['_merge','Expected_Units_Per_Case',
-                'Unit_Cost'])
+wb = wb.drop(columns='_merge')
 
 # Assign a unique code for each individual consumable item
 unique_items = pd.unique(wb['Items'])
@@ -171,7 +172,9 @@ wb = wb[['Intervention_Cat',
          'Intervention_Pkg',
          'Intervention_Pkg_Code',
          'Items',
-         'Item_Code']]
+         'Item_Code',
+         'Expected_Units_Per_Case',
+         'Unit_Cost']]
 
 assert not pd.isnull(wb).any().any()
 
@@ -212,7 +215,7 @@ only_in_oh['Intervention_Cat'] = 'Imported From One Health'
 only_in_oh['Intervention_Pkg'] = 'Misc'
 only_in_oh['Intervention_Pkg_Code'] = -99
 only_in_oh['Item_Code'] = np.arange(1000, 1000 + len(only_in_oh))
-only_in_oh = only_in_oh.drop(columns = 'Unit_Cost')
+only_in_oh['Expected_Units_Per_Case'] = 1.0
 
 assert set(only_in_oh.columns) == set(wb.columns)
 
@@ -246,6 +249,8 @@ def add_record(df: pd.DataFrame, record: Dict):
     assert set(df.columns) == set(record.keys())
     return pd.concat([df, pd.DataFrame.from_records([record])], ignore_index=True)
 
+
+
 cons = add_record(
     cons,
     {
@@ -253,7 +258,10 @@ cons = add_record(
         'Intervention_Pkg': "Misc",
         'Intervention_Pkg_Code': -99,
         'Items': "Forceps, obstetric",
-        'Item_Code': 2669}
+        'Item_Code': 2669,
+        'Expected_Units_Per_Case': 1.0,
+        'Unit_Cost': 1.0
+        }
 )
 
 cons = add_record(
@@ -263,7 +271,10 @@ cons = add_record(
         'Intervention_Pkg': "Misc",
         'Intervention_Pkg_Code': -99,
         'Items': "Vacuum, obstetric",
-        'Item_Code': 2670},
+        'Item_Code': 2670,
+        'Expected_Units_Per_Case': 1.0,
+        'Unit_Cost': 1.0
+    },
 )
 
 cons = add_record(
@@ -273,7 +284,10 @@ cons = add_record(
         'Intervention_Pkg': "Misc",
         'Intervention_Pkg_Code': -99,
         'Items': "First-line ART regimen: adult",
-        'Item_Code': 2671},
+        'Item_Code': 2671,
+        'Expected_Units_Per_Case': 1.0,
+        'Unit_Cost': 1.0
+    },
 )
 
 cons = add_record(
@@ -283,7 +297,10 @@ cons = add_record(
         'Intervention_Pkg': "Misc",
         'Intervention_Pkg_Code': -99,
         'Items': "First line ART regimen: older child",
-        'Item_Code': 2672},
+        'Item_Code': 2672,
+        'Expected_Units_Per_Case': 1.0,
+        'Unit_Cost': 1.0
+    },
 )
 
 cons = add_record(
@@ -293,7 +310,10 @@ cons = add_record(
         'Intervention_Pkg': "Misc",
         'Intervention_Pkg_Code': -99,
         'Items': "First line ART regimen: young child",
-        'Item_Code': 2673},
+        'Item_Code': 2673,
+        'Expected_Units_Per_Case': 1.0,
+        'Unit_Cost': 1.0
+    },
 )
 
 cons = add_record(
@@ -303,7 +323,10 @@ cons = add_record(
         'Intervention_Pkg': "Misc",
         'Intervention_Pkg_Code': -99,
         'Items': "Pre-exposure prophlaxis for HIV",
-        'Item_Code': 2674},
+        'Item_Code': 2674,
+        'Expected_Units_Per_Case': 1.0,
+        'Unit_Cost': 1.0
+    },
 )
 
 cons = add_record(
@@ -313,7 +336,10 @@ cons = add_record(
         'Intervention_Pkg': "Isoniazid preventative therapy for HIV+ no TB",
         'Intervention_Pkg_Code': 82,
         'Items': "Isoniazid/Rifapentine",
-        'Item_Code': 2678},
+        'Item_Code': 2678,
+        'Expected_Units_Per_Case': 1.0,
+        'Unit_Cost': 1.0
+    },
 )
 
 cons = add_record(
@@ -323,7 +349,9 @@ cons = add_record(
     'Intervention_Pkg': "Misc",
     'Intervention_Pkg_Code': -99,
     'Items': "Cystoscope",
-    'Item_Code': 285},
+    'Item_Code': 285,
+    'Expected_Units_Per_Case': 1.0,
+    'Unit_Cost': np.nan},
 )
 
 cons = add_record(
@@ -332,7 +360,9 @@ cons = add_record(
     'Intervention_Pkg': "Misc",
     'Intervention_Pkg_Code': -99,
     'Items': "Endoscope",
-    'Item_Code': 280},
+    'Item_Code': 280,
+    'Expected_Units_Per_Case': 1.0,
+    'Unit_Cost': np.nan},
 )
 
 cons = add_record(
@@ -341,7 +371,9 @@ cons = add_record(
     'Intervention_Pkg': "Misc",
     'Intervention_Pkg_Code': -99,
     'Items': "Prostate specific antigen test",
-    'Item_Code': 281},
+    'Item_Code': 281,
+    'Expected_Units_Per_Case': 1.0,
+    'Unit_Cost': np.nan},
 )
 
 
