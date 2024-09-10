@@ -797,8 +797,6 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
 
     # Convert the accumulated data into a DataFrame for plotting
     df_all_years = pd.DataFrame(all_years_data)
-    num_colors = len(df_all_years.index)
-    colors = plt.cm.get_cmap('tab20', num_colors)
     # Normalizing by the first column (first year in the sequence)
     df_normalized = df_all_years.div(df_all_years.iloc[:, 0], axis=0)
 
