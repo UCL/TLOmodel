@@ -810,7 +810,7 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
     axes[0].set_title('Panel A: HSI Events by TREATMENT_ID (Short) All Years Trend')
     axes[0].set_xlabel('Year')
     axes[0].set_ylabel('Counts of HSI Events')
-    #axes[0].legend(title='Treatment ID', bbox_to_anchor=(1.05, 1), loc='upper left')
+    axes[0].legend().set_visible(False)
     axes[0].grid(True)
 
     # Panel B: Normalized counts
@@ -820,7 +820,7 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
                             df_all_years.index][i])
     axes[1].set_title('Panel B: Normalized HSI Events by TREATMENT_ID (Short) All Years Trend')
     axes[1].set_xlabel('Year')
-    axes[1].set_ylabel('Normalized Counts (First Year = 1)')
+    axes[1].set_ylabel('Normalized Counts (First Year = 2010)')
     axes[1].legend(title='Treatment ID', bbox_to_anchor=(1.05, 1), loc='upper left')
     axes[1].grid(True)
 
