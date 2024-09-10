@@ -27,6 +27,7 @@ import os
 
 import matplotlib.pyplot as plt
 from plotnine import * # ggplot, aes, geom_point for ggplots from R
+import seaborn as sns
 import numpy as np
 import pandas as pd
 
@@ -574,10 +575,14 @@ full_df_with_scenario.to_csv(
     index=False
 )
 # TODO: Create a column providing the source of scenario data
-# TODO: 3 more scenarios where availability is equated to HIV and EPI, HIV availability is equated to general (excluding EPI)
 
 # 8. Plot new availability estimates by scenario
 #*********************************************************************************************
+# Create the directory if it doesn't exist
+figurespath = outputfilepath / 'consumable_scenario_analysis'
+if not os.path.exists(figurespath):
+    os.makedirs(figurespath)
+
 # Creating the line plot with ggplot
 df_for_plots = full_df_with_scenario.merge(mfl[['Facility_ID', 'Facility_Level']], on = 'Facility_ID', how = 'left', validate = "m:1")
 def generate_barplot_of_scenarios(_df, _x_axis_var, _filename):
@@ -592,13 +597,82 @@ def generate_barplot_of_scenarios(_df, _x_axis_var, _filename):
                    y='Probability of availability')
             + theme(axis_text_x=element_text(angle=45, hjust=1))
            )
-    # Create the directory if it doesn't exist
-    directory = outputfilepath / 'consumable_scenario_analysis'
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-    plot.save(filename= directory / _filename, dpi=300, width=10, height=8, units='in')
+
+    plot.save(filename= figurespath / _filename, dpi=300, width=10, height=8, units='in')
 generate_barplot_of_scenarios(_df = df_for_plots, _x_axis_var = 'item_category', _filename = 'availability_by_category.png')
 generate_barplot_of_scenarios(_df = df_for_plots, _x_axis_var = 'Facility_Level', _filename = 'availability_by_level.png')
+
+# Create heatmaps by Facility_Level of average availability by item_category across chosen scenarios
+chosen_scenarios_for_heatmap =
+number_of_scenarios = 12
+availability_columns = ['available_prop'] + [f'available_prop_scenario{i}' for i in
+                                             range(1, number_of_scenarios + 1)]
+
+for level in fac_levels:
+    # Generate a heatmap
+    # Pivot the DataFrame
+    aggregated_df = df_for_plots.groupby(['item_category', 'Facility_Level'])[availability_columns].mean().reset_index()
+    aggregated_df = aggregated_df[aggregated_df.Facility_Level.isin([level])]
+    heatmap_data = aggregated_df.set_index('item_category').drop(columns = 'Facility_Level')
+
+    # Calculate the aggregate row and column
+    aggregate_col= aggregated_df[availability_columns].mean()
+    #overall_aggregate = aggregate_col.mean()
+
+    # Add aggregate row and column
+    #heatmap_data['Average'] = aggregate_row
+    #aggregate_col['Average'] = overall_aggregate
+    heatmap_data.loc['Average'] = aggregate_col
+
+    # Generate the heatmap
+    sns.set(font_scale=0.5)
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn', cbar_kws={'label': 'Proportion of days on which consumable is available'})
+
+    # Customize the plot
+    plt.title(f'Facility Level {level}')
+    plt.xlabel('Scenarios')
+    plt.ylabel(f'Disease/Public health \n program')
+    plt.xticks(rotation=90)
+    plt.yticks(rotation=0)
+
+    plt.savefig(figurespath /f'consumable_availability_heatmap_{level}.png', dpi=300, bbox_inches='tight')
+    plt.show()
+    plt.close()
+
+# Create heatmap of average availability by Facility_Level across chosen scenarios
+scenario_list = [1,2,3,6,7,8,9,10,11]
+chosen_availability_columns = ['available_prop'] + [f'available_prop_scenario{i}' for i in
+                                             scenario_list]
+# Pivot the DataFrame
+aggregated_df = df_for_plots.groupby(['Facility_Level'])[chosen_availability_columns].mean().reset_index()
+heatmap_data = aggregated_df.set_index('Facility_Level')
+
+# Calculate the aggregate row and column
+aggregate_col= aggregated_df[chosen_availability_columns].mean()
+#overall_aggregate = aggregate_col.mean()
+
+# Add aggregate row and column
+#heatmap_data['Average'] = aggregate_row
+#aggregate_col['Average'] = overall_aggregate
+heatmap_data.loc['Average'] = aggregate_col
+
+# Generate the heatmap
+sns.set(font_scale=0.5)
+plt.figure(figsize=(10, 8))
+sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn', cbar_kws={'label': 'Proportion of days on which consumable is available'})
+
+# Customize the plot
+plt.title(f'Availability across scenarios')
+plt.xlabel('Scenarios')
+plt.ylabel(f'Facility Level')
+plt.xticks(rotation=90)
+plt.yticks(rotation=0)
+
+plt.savefig(figurespath /f'consumable_availability_heatmap_alllevels.png', dpi=300, bbox_inches='tight')
+plt.show()
+plt.close()
+
 
 # Scenario on the X axis, level on the Y axis
 # Scenario on the X axis, program on the Y axis
