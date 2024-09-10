@@ -18,7 +18,7 @@ from tlo.analysis.utils import (
 )
 
 min_year = 2010
-max_year = 2024  # have to censure for dummy runs
+max_year = 2029  # have to censure for dummy runs
 spacing_of_years = 1
 PREFIX_ON_FILENAME = '1'
 
@@ -257,11 +257,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                                         df_death_per_1000.index])
     axes[0].set_title('Panel A: Deaths by Cause')
     axes[0].set_xlabel('Year')
-    axes[0].set_ylabel('Number of deaths')
+    axes[0].set_ylabel('Number of deaths per 1000 people')
     axes[0].grid(True)
     axes[0].spines['top'].set_visible(False)
     axes[0].spines['right'].set_visible(False)
-    axes[0].legend(title='Cause', bbox_to_anchor=(1.05, 1), loc='upper left')
+    axes[0].legend().set_visible(False)
 
     # Panel B: DALYs (Stacked bar plot)
     df_daly_per_1000.T.plot.bar(stacked=True, ax=axes[1],
@@ -269,7 +269,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                                        df_daly_per_1000.index])
     axes[1].axhline(0.0, color='black')
     axes[1].set_title('Panel B: DALYs')
-    axes[1].set_ylabel('Number of DALYs')
+    axes[1].set_ylabel('Number of DALYs per 1000 people')
     axes[1].set_xlabel('Year')
     axes[1].grid()
     axes[1].spines['top'].set_visible(False)
