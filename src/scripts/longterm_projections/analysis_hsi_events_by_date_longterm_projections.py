@@ -805,10 +805,10 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
     # Plotting
     fig, axes = plt.subplots(1, 2, figsize=(25, 10))  # Two panels side by side
 
-    # Panel A: Raw counts
-    for i, treatment_id in enumerate(df_all_years.index):
-        axes[0].plot(df_all_years.columns, df_all_years.loc[treatment_id], marker='o',
-                     label=treatment_id, color=colors(i / num_colors))
+    # Panel A: Raw counts = stacked
+    df_all_years.T.plot.bar(stacked=True, ax=axes[0],
+                                           color=[get_color_short_treatment_id(_label) for _label in
+                                                  df_all_years.index])
     axes[0].set_title('Panel A: HSI Events by TREATMENT_ID (Short) All Years Trend')
     axes[0].set_xlabel('Year')
     axes[0].set_ylabel('Counts of HSI Events')
@@ -817,8 +817,14 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
 
     # Panel B: Normalized counts
     for i, treatment_id in enumerate(df_normalized.index):
+        for _label in df_all_years.index:
+            print(_label)
+        print([get_color_short_treatment_id(_label) for _label in
+                            df_all_years.index][i])
+    for i, treatment_id in enumerate(df_normalized.index):
         axes[1].plot(df_normalized.columns, df_normalized.loc[treatment_id], marker='o', label=treatment_id,
-                     color=colors(i / num_colors))
+                     color=[get_color_short_treatment_id(_label) for _label in
+                            df_all_years.index][i])
     axes[1].set_title('Panel B: Normalized HSI Events by TREATMENT_ID (Short) All Years Trend')
     axes[1].set_xlabel('Year')
     axes[1].set_ylabel('Normalized Counts (First Year = 1)')
@@ -838,30 +844,34 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         )
     figure9_distribution_of_hsi_event_all_years_line_graph(
             results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath, min_year = min_year, max_year = max_year)
-    for target_year in target_year_sequence:
-        TARGET_PERIOD = (Date(target_year, 1, 1), Date(target_year + 5, 12, 31))
-        print(TARGET_PERIOD)
-        year_range = f"{TARGET_PERIOD[0].year}-{TARGET_PERIOD[1].year}"
-
-        table1_description_of_hsi_events(
-            results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
-            year_range=year_range, target_period=TARGET_PERIOD
-        )
-
-        figure1_distribution_of_hsi_event_by_treatment_id(
-            results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
-            year_range=year_range, target_period=TARGET_PERIOD
-        )
-
-        figure5_bed_use(
-            results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
-            year_range=year_range, target_period=TARGET_PERIOD
-        )
-
-        figure7_squeeze_factors(
-            results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
-            year_range=year_range, target_period=TARGET_PERIOD
-        )
+    # for target_year in target_year_sequence:
+    #     TARGET_PERIOD = (Date(target_year, 1, 1), Date(target_year + 5, 12, 31))
+    #     print(TARGET_PERIOD)
+    #     year_range = f"{TARGET_PERIOD[0].year}-{TARGET_PERIOD[1].year}"
+    #
+    #     table1_description_of_hsi_events(
+    #         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
+    #         year_range=year_range, target_period=TARGET_PERIOD
+    #     )
+    #
+    #     figure1_distribution_of_hsi_event_by_treatment_id(
+    #         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
+    #         year_range=year_range, target_period=TARGET_PERIOD
+    #     )
+    #
+    #     figure3_fraction_of_time_of_hcw_used_by_treatment(
+    #         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
+    #         year_range=year_range, target_period=TARGET_PERIOD
+    #     )
+    #     figure5_bed_use(
+    #         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
+    #         year_range=year_range, target_period=TARGET_PERIOD
+    #     )
+    #
+    #     figure7_squeeze_factors(
+    #         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
+    #         year_range=year_range, target_period=TARGET_PERIOD
+    #     )
 
 
 
