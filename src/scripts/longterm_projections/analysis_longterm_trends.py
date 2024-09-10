@@ -8,10 +8,6 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
 import imageio
-
-from moviepy.editor import VideoClip
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-from moviepy.video.io.ffmpeg_writer import ffmpeg_write_video
 from tlo.analysis.life_expectancy import get_life_expectancy_estimates
 from tlo.analysis.utils import (
     extract_results,
@@ -894,11 +890,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         df = get_life_expectancy_estimates(
             results_folder=args.results_folder,
             target_period=(datetime.date(year, 1, 1), datetime.date(year, 12, 31)),
-            summary=True,
+            summary=False,
         )
+        df.replace([np.inf, -np.inf], np.nan, inplace=True)# for dummy runs some issues calculating, results in infinities
+        df = summarize(results=df, only_mean=False, collapse_columns=False)#
         df['Year'] = year  # Add a new column for the year
         dataframes.append(df)
-
     # Concatenate all dataframes
     rtn_all_years = pd.concat(dataframes, ignore_index=True)
     rtn_all_years.set_index('Year', inplace=True)
