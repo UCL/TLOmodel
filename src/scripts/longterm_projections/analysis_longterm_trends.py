@@ -116,6 +116,40 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     plt.savefig(make_graph_file_name("Pop_Over_Time"))
     plt.close(fig)
 
+    # Make a gif
+    for year in range(int(min_year), int(max_year),1):
+        if year in pop_model.index:
+            fig, ax = plt.subplots()
+            # Get WPP data:
+            wpp_ann_subset = wpp_ann_total.loc[wpp_ann_total.index <= year]
+            pop_model_subset = pop_model.loc[pop_model.index <= year]
+            ax.plot(pop_model_subset.index, pop_model_subset['mean'] / 1e6,
+                    label=f'Model (mean)', color=colors['Model'])
+            ax.plot(wpp_ann_subset.index, wpp_ann_subset / 1e6,
+                    label=f'WPP', color=colors['WPP'])
+            if year >= 2018:
+                ax.plot(2018.5, cens_2018.sum() / 1e6,
+                        marker='o', markersize=10, linestyle='none', label='Census', zorder=10, color=colors['Census'])
+            ax.set_title(f"Population Size {min_year}-{max_year}")
+            ax.set_xlabel("Year")
+            ax.set_ylabel("Population Size (millions)")
+            ax.set_xlim(2010, int(max_year))
+            ax.xaxis.set_major_formatter(FormatStrFormatter('%.0f'))
+            ax.set_ylim(0, 40)
+            ax.legend()
+            fig.tight_layout()
+            plt.savefig(make_graph_file_name(f"Pop_Over_Time_line_{year}"))
+            plt.close(fig)
+    # first need to make plots
+    frames = []
+    for year in range(int(min_year), int(max_year)):
+        image = imageio.v2.imread(make_graph_file_name(f"Pop_Over_Time_line_{year}"))
+        frames.append(image)
+
+    imageio.mimsave(output_folder / f"Pop_Line_{min_year}-{max_year}.gif",
+                    frames,
+                    fps=10)
+
     # 2) Population Size in 2018 (broken down by Male and Female)
 
     # Census vs WPP vs Model
@@ -285,7 +319,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             fig.savefig(make_graph_file_name(f"Pop_Size_{year}"))
             plt.close(fig)
 
-    # Make a film
+    # Make a gif
     frames = []
     for year in range(int(min_year), int(max_year)):
         image = imageio.v2.imread(make_graph_file_name(f"Pop_Size_{year}"))
@@ -867,7 +901,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # Concatenate all dataframes
     rtn_all_years = pd.concat(dataframes, ignore_index=True)
-
     rtn_all_years.set_index('Year', inplace=True)
     rtn_all_years.to_csv(args.results_folder / 'life_expectancy_estimates.csv', index=True)
 
