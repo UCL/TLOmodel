@@ -293,7 +293,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     imageio.mimsave(output_folder / f"Pop_Pyramids_{min_year}-{max_year}.gif",
                     frames,
-                    fps=5)
+                    fps=10)
 
     # %% Births: Number over time
     # Births over time (Model)
@@ -851,8 +851,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             fig.savefig(make_graph_file_name(f"Deaths_By_Age_{sex}_{period}"))
             plt.close(fig)
 
-# 4) Life expectancy
-    fig, ax = plt.subplots()
+    # 4) Life expectancy
+    fig.tight_layout()
+
     dataframes = []
     wpp_le = pd.read_csv("/Users/rem76/PycharmProjects/TLOmodel/src/scripts/longterm_projections/Life_Expectancy_WPP_2010_2014.csv")
     for year in range(2010, int(max_year) ):
@@ -907,11 +908,100 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.legend(loc='lower right')
     ax.set_xlabel('Year')
     ax.set_ylim(0, 75)  # Corrected set_ylimylim to set_ylim
-    ax.set_ylabel('Life Expectancy')
-    ax.set_title('Life Expectancy Over Years')  # Corrected ax.title to ax.set_title
+    ax.set_ylabel('Life Expectancy (Years)')
+    ax.set_title('Life Expectancy Over Time')  # Corrected ax.title to ax.set_title
     fig.tight_layout()
     plt.savefig(make_graph_file_name("Life_expectancy_over_years"))
     plt.close(fig)
+
+
+    # 5) Deaths and Life Expectancy
+    fig, ax = plt.subplots(1, 2, figsize=(25, 10))
+    ax[0].plot(
+        deaths_by_period.index,
+        deaths_by_period['WPP_continuous'] / 1e6,
+        label='WPP',
+        color=colors['WPP'])
+    ax[0].fill_between(
+        (deaths_by_period.index).to_numpy(),
+        (deaths_by_period['WPP_Low variant'] / 1e6).to_numpy(),
+        (deaths_by_period['WPP_High variant'] / 1e6).to_numpy(),
+        facecolor=colors['WPP'], alpha=0.2)
+    ax[0].plot(
+        deaths_by_period.index,
+        deaths_by_period['GBD_Est'] / 1e6,
+        label='GBD',
+        color=colors['GBD']
+    )
+    ax[0].fill_between(
+        (deaths_by_period.index).to_numpy(),
+        (deaths_by_period['GBD_Lower'] / 1e6).to_numpy(),
+        (deaths_by_period['GBD_Upper'] / 1e6).to_numpy(),
+        facecolor=colors['GBD'], alpha=0.2)
+    ax[0].plot(
+        deaths_by_period.index,
+        deaths_by_period['Model_mean'] / 1e6,
+        label='Model',
+        color=colors['Model']
+    )
+    ax[0].fill_between(
+        (deaths_by_period.index).to_numpy(),
+        (deaths_by_period['Model_lower'] / 1e6).to_numpy(),
+        (deaths_by_period['Model_upper'] / 1e6).to_numpy(),
+        facecolor=colors['Model'], alpha=0.2)
+
+    max_index = find_index_with_string(deaths_by_period.index)
+    ax[0].set_title('Panel A: Number of Deaths')
+    ax[0].legend(loc='upper left')
+    ax[0].set_xlabel('Calendar Period')
+    ax[0].set_ylabel('Number per period (millions)')
+    ax[0].set_xticks(np.arange(len(deaths_by_period.index)), deaths_by_period.index, rotation=90)
+    ax[0].set_xlim(right = max_index)
+    fig.tight_layout()
+
+    # Plotting
+    ax[1].plot(
+        rtn_all_years.index[1::2],
+        rtn_all_years.iloc[1::2]['mean'],
+        marker='o',
+        color='#1C6E8C',
+        label="F"
+    )
+    # Panel B: Life Expectancy
+    ax[1].fill_between(
+        rtn_all_years.index[1::2],
+        rtn_all_years.iloc[1::2]['lower'],
+        rtn_all_years.iloc[1::2]['upper'],
+        color='#1C6E8C',
+        alpha=0.3
+    )
+
+    ax[1].plot(
+        rtn_all_years.index[0::2],
+        rtn_all_years.iloc[0::2]['mean'],
+        marker='o',
+        color='#9AC4F8',
+        label="M"
+    )
+
+    ax[1].fill_between(
+        rtn_all_years.index[0::2],
+        rtn_all_years.iloc[0::2]['lower'],
+        rtn_all_years.iloc[0::2]['upper'],
+        color='#9AC4F8',
+        alpha=0.3
+    )
+    ax[1].plot(wpp_le['Time'], wpp_le['Value'], marker='o', color=colors['WPP'], label="WPP")
+
+    ax[1].legend(loc='lower right')
+    ax[1].set_xlabel('Year')
+    ax[1].set_ylim(0, 75)
+    ax[1].set_ylabel('Life Expectancy (Years)')
+    ax[1].set_title('Panel B: Life Expectancy')
+    fig.tight_layout()
+    plt.savefig(make_graph_file_name("Death_Life_expectancy_over_years"))
+    plt.close(fig)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
