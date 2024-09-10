@@ -96,8 +96,6 @@ def test_probability_premature_death(tmpdir, age_before_which_death_is_defined_a
         summary=True,)
 
 
-    assert probability_premature_death_summary[0]['lower'][1] < probability_premature_death_sim_M > probability_premature_death_summary[0]['lower'][1]
-
     assert probability_premature_death_summary[0]['lower'][0] < probability_premature_death_sim_F > probability_premature_death_summary[0]['lower'][0]
     assert probability_premature_death_summary[0]['lower'][1] < probability_premature_death_sim_M > probability_premature_death_summary[0]['lower'][1]
 
