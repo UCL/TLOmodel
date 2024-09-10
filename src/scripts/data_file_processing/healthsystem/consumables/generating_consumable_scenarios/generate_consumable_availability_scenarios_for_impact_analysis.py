@@ -564,7 +564,7 @@ full_df_with_scenario = full_df_with_scenario.merge(hiv_scenario_df[old_vars + [
 full_df_with_scenario = full_df_with_scenario.merge(epi_scenario_df[old_vars + ['available_prop_scenario11']], on = old_vars, how = 'left', validate = "1:1")
 full_df_with_scenario = full_df_with_scenario.merge(non_vertical_hiv_scenario_df[old_vars + ['available_prop_scenario12']], on = old_vars, how = 'left', validate = "1:1")
 
-full_df_with_scenario = full_df_with_scenario.merge(program_item_mapping, on = 'item_code', validate = 'm:1', how = 'left')
+#full_df_with_scenario = full_df_with_scenario.merge(program_item_mapping, on = 'item_code', validate = 'm:1', how = 'left')
 
 # --- Check that the exported file has the properties required of it by the model code. --- #
 check_format_of_consumables_file(df=full_df_with_scenario, fac_ids=fac_ids)

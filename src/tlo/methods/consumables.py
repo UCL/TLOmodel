@@ -357,7 +357,7 @@ def check_format_of_consumables_file(df, fac_ids):
     availability_columns = ['available_prop'] + [f'available_prop_scenario{i}' for i in
                                                  range(1, number_of_scenarios + 1)]
 
-    assert set(df.columns) == {'Facility_ID', 'month', 'item_code', 'item_category'} | set(availability_columns)
+    assert set(df.columns) == {'Facility_ID', 'month', 'item_code'} | set(availability_columns)
 
     # Check that all permutations of Facility_ID, month and item_code are present
     pd.testing.assert_index_equal(
