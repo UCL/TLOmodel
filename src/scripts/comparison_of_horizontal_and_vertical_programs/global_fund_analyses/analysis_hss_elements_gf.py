@@ -88,7 +88,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             .drop(columns=([comparison] if drop_comparison else [])) \
             .stack()
 
-    def do_bar_plot_with_ci(_df, annotations=None,
+    def do_bar_plot_with_ci(_df, set_colors=None, annotations=None,
                             xticklabels_horizontal_and_wrapped=False,
                             put_labels_in_legend=True,
                             offset=1e6):
@@ -106,9 +106,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         # Define colormap (used only with option `put_labels_in_legend=True`)
         # cmap = plt.get_cmap("tab20")
-        cmap = sns.color_palette('Spectral', as_cmap=True)
-        rescale = lambda y: (y - np.min(y)) / (np.max(y) - np.min(y))  # noqa: E731
-        colors = list(map(cmap, rescale(np.array(list(xticks.keys()))))) if put_labels_in_legend else None
+        # cmap = sns.color_palette('Spectral', as_cmap=True)
+        # rescale = lambda y: (y - np.min(y)) / (np.max(y) - np.min(y))  # noqa: E731
+        # colors = list(map(cmap, rescale(np.array(list(xticks.keys()))))) if put_labels_in_legend else None
+        if set_colors:
+            colors = [color_map.get(series, 'grey') for series in _df.index]
+        else:
+            cmap = sns.color_palette('Spectral', as_cmap=True)
+            rescale = lambda y: (y - np.min(y)) / (np.max(y) - np.min(y))  # noqa: E731
+            colors = list(map(cmap, rescale(np.array(list(xticks.keys()))))) if put_labels_in_legend else None
+
 
         fig, ax = plt.subplots(figsize=(10, 5))
         ax.bar(
@@ -166,8 +173,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         return fig, ax
 
 
-    def do_line_plot_with_ci(_df, xticklabels_horizontal_and_wrapped=False, put_labels_in_legend=True):
-        """Make a line plot with median values and shaded confidence intervals using a DataFrame with MultiIndex columns."""
+    def do_line_plot_with_ci(_df, set_colors=None,
+                             xticklabels_horizontal_and_wrapped=False,
+                             put_labels_in_legend=True):
+        """
+        Make a line plot with median values and shaded confidence intervals using a
+        DataFrame with MultiIndex columns.
+        """
 
         # Extract median, lower, and upper values from the MultiIndex columns
         median_df = _df.xs('median', level=0, axis=1)
@@ -178,9 +190,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         xticks = {i: k for i, k in enumerate(median_df.index)}
 
         # Define colormap
-        cmap = sns.color_palette('Spectral', as_cmap=True)
-        rescale = lambda y: (y - np.min(y)) / (np.max(y) - np.min(y))  # noqa: E731
-        colors = list(map(cmap, rescale(np.arange(len(median_df.columns))))) if put_labels_in_legend else None
+        # cmap = sns.color_palette('Spectral', as_cmap=True)
+        # rescale = lambda y: (y - np.min(y)) / (np.max(y) - np.min(y))  # noqa: E731
+        # colors = list(map(cmap, rescale(np.arange(len(median_df.columns))))) if put_labels_in_legend else None
+
+        if set_colors:
+            colors = [color_map.get(series, 'grey') for series in median_df.columns]
+        else:
+            cmap = sns.color_palette('Spectral', as_cmap=True)
+            rescale = lambda y: (y - np.min(y)) / (np.max(y) - np.min(y))  # noqa: E731
+            colors = list(map(cmap, rescale(np.arange(len(median_df.columns))))) if put_labels_in_legend else None
 
         fig, ax = plt.subplots(figsize=(10, 5))
 
@@ -225,6 +244,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         return fig, ax
 
+    # # Function to create a consistent color map for all series
+    # def get_color_map(series_names):
+    #     # Generate a consistent set of colors for the full list of series
+    #     cmap = sns.color_palette('Spectral', len(series_names))
+    #     return {series: color for series, color in zip(series_names, cmap)}
+
     # %% Define parameter names
     param_names = get_parameter_names_from_scenario_file()
 
@@ -256,6 +281,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     num_deaths_summarized.to_csv(results_folder / 'num_deaths_summarized.csv')
 
     # Make a separate plot for the scale-up of each program/programs
+    # remove FULL PACKAGE
     plots = {
         'HRH scenarios': [
             'Baseline',
@@ -263,15 +289,29 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             'HRH Keeps Pace with Population Growth',
             'HRH Increases at GDP Growth',
             'HRH Increases above GDP Growth',
-            'FULL PACKAGE'
         ],
         'Supply chain scenarios': [
             'Baseline',
             'Perfect Availability of Vital Items',
             'Perfect Availability of Medicines',
             'Perfect Availability of All Consumables',
-            'FULL PACKAGE'
         ],
+    }
+    # cmap_HRH = sns.color_palette('Spectral', len(plots['HRH scenarios']))
+    # color_map_HRH = {series: color for series, color in zip(plots['HRH scenarios'], cmap_HRH)}
+    #
+    # cmap_SC = sns.color_palette('Spectral', len(plots['Supply chain scenarios']))
+    # color_map_SC = {series: color for series, color in zip(plots['Supply chain scenarios'], cmap_SC)}
+
+    color_map = {
+        'Baseline': '#9e0142',
+        'Double Capacity at Primary Care': '#f98e52',
+    'HRH Keeps Pace with Population Growth': '#ffffbe',
+    'HRH Increases at GDP Growth': '#86cfa5',
+    'HRH Increases above GDP Growth': '#5e4fa2',
+    'Perfect Availability of Vital Items': '#f98e52',
+    'Perfect Availability of Medicines':  '#86cfa5',
+    'Perfect Availability of All Consumables': '#5e4fa2',
     }
 
     # DEATHS: all scenarios
@@ -288,8 +328,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # DEATHS: Split by HRH scenarios and supply chain scenarios
     for plot_name, scenario_names in plots.items():
         name_of_plot = f'Deaths, {target_period()}, {plot_name}'
-        fig, ax = do_bar_plot_with_ci(num_deaths_summarized.loc[scenario_names] / 1e6)
-        # do_bar_plot_with_ci(num_deaths_summarized.loc[scenario_names] / 1e6)
+        fig, ax = do_bar_plot_with_ci(num_deaths_summarized.loc[scenario_names] / 1e6, set_colors=color_map)
         ax.set_title(name_of_plot)
         ax.set_ylabel('Deaths, (Millions)')
         fig.tight_layout()
@@ -312,7 +351,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # DALYS: Split by HRH scenarios and supply chain scenarios
     for plot_name, scenario_names in plots.items():
         name_of_plot = f'DALYS, {target_period()}, {plot_name}'
-        fig, ax = do_bar_plot_with_ci(num_dalys_summarized.loc[scenario_names] / 1e6)
+        fig, ax = do_bar_plot_with_ci(num_dalys_summarized.loc[scenario_names] / 1e6, set_colors=color_map)
         # do_bar_plot_with_ci(num_deaths_summarized.loc[scenario_names] / 1e6)
         ax.set_title(name_of_plot)
         ax.set_ylabel('DALYS, (Millions)')
@@ -395,8 +434,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             f"{round(row['mean'], 0)}% ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
             for _, row in data_pc.clip(lower=0.0).iterrows()
         ],
-        offset=10_000
-
+        offset=10_000, set_colors=color_map,
         )
         ax.set_title(name_of_plot)
         ax.set_ylim(0, 250_000)
@@ -414,7 +452,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             f"{round(row['mean'])}% ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
             for _, row in pc_dalys_averted.clip(lower=0.0).iterrows()
         ],
-        offset=0.5
+        offset=0.5,
     )
     ax.set_title(name_of_plot)
     ax.set_ylim(0, 20)
@@ -436,7 +474,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 f"{round(row['mean'], 0)}% ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
                 for _, row in data_pc.clip(lower=0.0).iterrows()
             ],
-            offset=0.5
+            offset=0.5, set_colors=color_map,
         )
         ax.set_title(name_of_plot)
         ax.set_ylim(0, 20)
@@ -497,6 +535,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         do_scaling=True,
     ).pipe(set_param_names_as_column_index_level_0)
 
+    summarise_total_num_dalys_by_label_results = summarize(extract_results(
+        results_folder,
+        module="tlo.methods.healthburden",
+        key="dalys_by_wealth_stacked_by_age_and_time",
+        custom_generate_series=get_total_num_dalys_by_label,
+        do_scaling=True,
+    ), only_mean=True
+    )
+    summarise_total_num_dalys_by_label_results.to_csv(results_folder / 'summarise_total_num_dalys_by_label_results.csv')
+
     total_num_dalys_by_label_results_averted_vs_baseline = summarize(
         -1.0 * find_difference_relative_to_comparison_series_dataframe(
             total_num_dalys_by_label_results,
@@ -523,14 +571,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         num_categories = len(total_num_dalys_by_label_results_averted_vs_baseline.index)
         colours = sns.color_palette('Set1', num_categories)
 
-        total_num_dalys_by_label_results_averted_vs_baseline[filtered_scenario_names].T.plot.bar(
+        scaled_data = total_num_dalys_by_label_results_averted_vs_baseline[filtered_scenario_names] / 1e6
+
+        scaled_data.T.plot.bar(
             stacked=True,
             ax=ax,
             rot=0,
             # alpha=0.75,
             color=colours
         )
-        ax.set_ylim([0, 2e7])
+        ax.set_ylim([0, 20])
         ax.set_title(name_of_plot)
         ax.set_ylabel(f'DALYs Averted vs Baseline, (Millions)')
         wrapped_labs = ["\n".join(textwrap.wrap(_lab.get_text(), 13)) for _lab in ax.get_xticklabels()]
@@ -583,9 +633,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     name_of_plot = f'DALYS, {target_period()}'
     fig, ax = do_line_plot_with_ci(
         result_df / 1e6,
-        put_labels_in_legend=True
+        put_labels_in_legend=True,
+        set_colors=color_map,
     )
     ax.set_title(name_of_plot)
+    ax.set_ylim(6, 14)
     ax.set_ylabel('(Millions)')
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
@@ -599,8 +651,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         name_of_plot = f'DALYS, {target_period()}, {plot_name}'
         fig, ax = do_line_plot_with_ci(
             result_df.loc[:, pd.IndexSlice[:, scenario_names]] / 1e6,
-            put_labels_in_legend=True)
+            put_labels_in_legend=True,
+            set_colors=color_map,
+        )
         ax.set_title(name_of_plot)
+        ax.set_ylim(6, 14)
         ax.set_ylabel('DALYS, (Millions)')
         fig.tight_layout()
         fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))

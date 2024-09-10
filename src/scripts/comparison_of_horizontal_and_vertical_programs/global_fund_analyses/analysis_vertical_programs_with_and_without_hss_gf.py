@@ -392,6 +392,29 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         do_scaling=True,
     ).pipe(set_param_names_as_column_index_level_0)
 
+    summarise_total_num_dalys_by_label_results = summarize(extract_results(
+        results_folder,
+        module="tlo.methods.healthburden",
+        key="dalys_by_wealth_stacked_by_age_and_time",
+        custom_generate_series=get_total_num_dalys_by_label,
+        do_scaling=True,
+    ).pipe(set_param_names_as_column_index_level_0), only_mean=True
+    )
+    summarise_total_num_dalys_by_label_results.to_csv(results_folder / 'summarise_total_num_dalys_by_label_results.csv')
+
+
+    pc_dalys_averted_by_label = 100.0 * summarize(
+        -1.0 *
+        pd.DataFrame(
+            find_difference_relative_to_comparison_series_dataframe(
+                total_num_dalys_by_label_results,
+                comparison='Baseline',
+                scaled=True)
+        )
+    )
+    pc_dalys_averted_by_label.to_csv(results_folder / 'pc_dalys_averted_by_label.csv')
+
+
     total_num_dalys_by_label_results_averted_vs_baseline = summarize(
         -1.0 * find_difference_relative_to_comparison_series_dataframe(
             total_num_dalys_by_label_results,
@@ -544,6 +567,89 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ]
     )
     plot_combined_programs_scale_up(filtered_df)
+
+
+
+    def plot_pc_DALYS_combined_programs_scale_up(_df):
+        """
+        Generate combined plot, DALYs averted broken down by cause, exclude 'HIV_TB programs'
+        """
+        combined_plot_name = 'Percentage Change in DALYS vs Baseline'
+        fig, ax = plt.subplots(figsize=(12, 6))
+
+        colours = sns.color_palette('Set1', 4)  # We have 4 categories to stack
+        x_labels = [
+            'FULL HSS',
+            'WITHOUT \nRSSH',
+            'WITH \nRSSH',
+            'WITHOUT \nRSSH',
+            'WITH \nRSSH',
+            'WITHOUT \nRSSH',
+            'WITH \nRSSH',
+            'WITHOUT \nRSSH',
+            'WITH \nRSSH',
+        ]
+        shared_labels = [
+            '',  # No shared label for the first bar
+            'HIV Scale-up',  # Shared label for the second and third bars
+            '',  # Shared label for the second and third bars
+            'TB Scale-up',  # Shared label for the fourth and fifth bars
+            '',  # Shared label for the fourth and fifth bars
+            'Malaria Scale-up',  # Shared label for the sixth and seventh bars
+            '',  # Shared label for the sixth and seventh bars
+            'HTM Scale-up',  # Shared label for the eighth and ninth bars
+            '',  # Shared label for the eighth and ninth bars
+        ]
+
+        # Transpose the DataFrame to get each program as a bar (columns become x-axis categories)
+        filtered_df.T.plot(
+            kind='bar',
+            stacked=True,
+            ax=ax,
+            color=colours,
+            rot=0
+        )
+
+        # Set the title and labels
+        ax.set_title(combined_plot_name)
+        ax.set_ylabel(f'Percentage Change in DALYs vs Baseline, \n{target_period()}(%)')
+        ax.set_ylim([0, 300])
+        ax.set_xlabel("")
+        ax.set_xticks(range(len(x_labels)))
+        ax.set_xticklabels(x_labels, ha="center")
+
+        # Add shared second-line labels
+        for i, label in enumerate(shared_labels):
+            if label:  # Only add text if there's a label
+                ax.text(i, filtered_df.sum().max() * 1.05, label, ha='left', va='bottom', fontsize=10, rotation=0,
+                        color='black')
+
+        ax.legend(title="Cause", labels=filtered_df.index, bbox_to_anchor=(1.05, 1), loc='upper left')
+
+        # Add vertical grey lines
+        line_positions = [0, 2, 4, 6]
+        for pos in line_positions:
+            ax.axvline(x=pos + 0.5, color='grey', linestyle='--', linewidth=1)
+
+        # Adjust layout and save
+        fig.tight_layout()
+        fig.savefig(make_graph_file_name(combined_plot_name.replace(' ', '_').replace(',', '')))
+        fig.show()
+        plt.close(fig)
+
+
+    data_for_plot = pc_dalys_averted_by_label.loc[:, pc_dalys_averted_by_label.columns.get_level_values(1) == 'mean']
+    data_for_plot.columns = data_for_plot.columns.droplevel(1)
+    data_for_plot = sort_order_of_columns(data_for_plot)
+    filtered_df = data_for_plot.drop(
+        columns=[
+            'Hiv/Tb Programs Scale-up WITHOUT HSS PACKAGE',
+            'Hiv/Tb Programs Scale-up WITH HSS PACKAGE'
+        ]
+    )
+    plot_pc_DALYS_combined_programs_scale_up(filtered_df)
+
+
 
     def get_num_dalys_by_year(_df):
         """Return total number of DALYS (Stacked) by label (total within the TARGET_PERIOD).
