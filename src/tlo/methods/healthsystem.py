@@ -1048,7 +1048,9 @@ class HealthSystem(Module):
 
         availability_columns = ['available_prop', 'available_prop_scenario1', 'available_prop_scenario2',
                                 'available_prop_scenario3', 'available_prop_scenario4', 'available_prop_scenario5',
-                                'available_prop_scenario6', 'available_prop_scenario7', 'available_prop_scenario8']
+                                'available_prop_scenario6', 'available_prop_scenario7', 'available_prop_scenario8',
+                                'available_prop_scenario9', 'available_prop_scenario10', 'available_prop_scenario11',
+                                'available_prop_scenario12']
 
         # compute the updated availability at the merged level '1b' and '2'
         availability_at_1b_and_2 = \
