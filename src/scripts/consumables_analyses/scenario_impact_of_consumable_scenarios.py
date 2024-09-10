@@ -33,9 +33,9 @@ class ImpactOfConsumablesScenarios(BaseScenario):
         self.seed = 99
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2019, 12, 31)
-        self.pop_size = 100_000 # large population size for final simulation
-        self.number_of_draws = 10  # <- 10 scenarios (10)
-        self.runs_per_draw = 5  # <- repeated this many times
+        self.pop_size = 5000 # large population size for final simulation - 100,000
+        self.number_of_draws = 12  # <- 10 scenarios (10)
+        self.runs_per_draw = 3  # <- repeated this many times
 
     def log_configuration(self):
         return {
@@ -56,8 +56,10 @@ class ImpactOfConsumablesScenarios(BaseScenario):
         return {
             'HealthSystem': {
                 'cons_availability': ['default',
-                                      'scenario1', 'scenario2', 'scenario3', 'scenario4',
-                                      'scenario5', 'scenario6', 'scenario7', 'scenario8',
+                                      'scenario1', 'scenario2', 'scenario3',
+                                      'scenario6', 'scenario7', 'scenario8',
+                                      'scenario9', 'scenario10', 'scenario11',
+                                      'scenario12',
                                       'all'][draw_number]
                }
         }
