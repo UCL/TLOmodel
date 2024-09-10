@@ -349,11 +349,10 @@ def check_format_of_consumables_file(df, fac_ids):
     """Check that we have a complete set of estimates, for every region & facility_type, as defined in the model."""
     months = set(range(1, 13))
     item_codes = set(df.item_code.unique())
+    number_of_scenarios = 12
 
-    availability_columns = ['available_prop', 'available_prop_scenario1', 'available_prop_scenario2',
-                                      'available_prop_scenario3', 'available_prop_scenario4', 'available_prop_scenario5',
-                                      'available_prop_scenario6', 'available_prop_scenario7', 'available_prop_scenario8',
-                                      'available_prop_scenario9']
+    availability_columns = ['available_prop'] + [f'available_prop_scenario{i}' for i in
+                                                 range(1, number_of_scenarios + 1)]
 
     assert set(df.columns) == {'Facility_ID', 'month', 'item_code', 'item_category'} | set(availability_columns)
 

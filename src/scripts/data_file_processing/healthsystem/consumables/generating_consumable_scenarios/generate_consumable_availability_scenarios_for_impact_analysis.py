@@ -435,7 +435,6 @@ for level in facility_levels:
             best_performing_facilities[level][item][str(target_perc) + 'th percentile'] = closest_row['Facility_ID']
 
 print("Reference facilities at each level for each item: ", best_performing_facilities)
-# TODO Flip the nesting order above for percentile to go before item?
 
 # Obtain the updated availability estimates for level 1a for scenarios 6-8
 updated_availability_1a = df[['item_code', 'month']].drop_duplicates()
@@ -512,13 +511,58 @@ for col in new_scenario_columns:
 # Append the above dataframes
 df_new_scenarios9 = pd.concat([df_new_1a_scenario9, df_new_1b_scenario9, df_new_2_scenario9, df_new_otherlevels], ignore_index = True)
 
-# Save dataframe
+# 6. Generate scenarios based on the performance of vertical programs
+#***************************************************************************************
+cond_levels1a1b = (tlo_availability_df.Facility_Level == '1a') |(tlo_availability_df.Facility_Level == '1b')
+cond_hiv = tlo_availability_df.item_category == 'hiv'
+cond_epi = tlo_availability_df.item_category == 'epi'
+#cond_not_hivorepi = (tlo_availability_df.item_category != 'hiv') & (tlo_availability_df.item_category != 'epi')
+nonhivepi_availability_df = tlo_availability_df[(~cond_hiv & ~cond_epi) & cond_levels1a1b]
+hivepi_availability_df = tlo_availability_df[(cond_hiv| cond_epi) & cond_levels1a1b]
+irrelevant_levels_availability_df = tlo_availability_df[~cond_levels1a1b]
+
+hiv_availability_df = tlo_availability_df[cond_hiv & cond_levels1a1b].groupby(['Facility_ID', 'month', 'item_category'])['available_prop'].mean().reset_index()
+hiv_availability_df = hiv_availability_df.rename(columns = {'available_prop': 'available_prop_scenario10'})
+hivepi_availability_df['available_prop_scenario10'] = hivepi_availability_df['available_prop']
+irrelevant_levels_availability_df['available_prop_scenario10'] = irrelevant_levels_availability_df['available_prop']
+minimum_scenario_varlist = ['Facility_ID', 'month', 'item_code', 'available_prop_scenario10']
+hiv_scenario_df = nonhivepi_availability_df.merge(hiv_availability_df, on = ['Facility_ID', 'month'] , how = 'left', validate = 'm:1')
+hiv_scenario_df = pd.concat([hiv_scenario_df[minimum_scenario_varlist], hivepi_availability_df[minimum_scenario_varlist], irrelevant_levels_availability_df[minimum_scenario_varlist]], ignore_index = True)
+
+epi_availability_df = tlo_availability_df[cond_epi].groupby(['Facility_ID', 'month', 'item_category'])['available_prop'].mean().reset_index()
+epi_availability_df = epi_availability_df.rename(columns = {'available_prop': 'available_prop_scenario11'})
+hivepi_availability_df['available_prop_scenario11'] = hivepi_availability_df['available_prop']
+irrelevant_levels_availability_df['available_prop_scenario11'] = irrelevant_levels_availability_df['available_prop']
+epi_scenario_df = nonhivepi_availability_df.merge(epi_availability_df, on = ['Facility_ID', 'month'] , how = 'left', validate = 'm:1')
+minimum_scenario_varlist = ['Facility_ID', 'month', 'item_code', 'available_prop_scenario11']
+epi_scenario_df = nonhivepi_availability_df.merge(epi_availability_df, on = ['Facility_ID', 'month'] , how = 'left', validate = 'm:1')
+epi_scenario_df = pd.concat([epi_scenario_df[minimum_scenario_varlist], hivepi_availability_df[minimum_scenario_varlist], irrelevant_levels_availability_df[minimum_scenario_varlist]], ignore_index = True)
+
+# 7. Generate a scenario to represent HIV availability falling to that of other programs
+#***************************************************************************************
+nonhivepi_availability_average = tlo_availability_df[(~cond_hiv & ~cond_epi)].groupby(['Facility_ID', 'month'])['available_prop'].mean().reset_index()
+nonhiv_availability_df = tlo_availability_df[~cond_hiv]
+non_vertical_hiv_availability_df = tlo_availability_df[cond_hiv]
+nonhivepi_availability_average = nonhivepi_availability_average.rename(columns = {'available_prop':'available_prop_scenario12'})
+nonhiv_availability_df['available_prop_scenario12'] = nonhiv_availability_df['available_prop']
+non_vertical_hiv_availability_df = non_vertical_hiv_availability_df.merge(nonhiv_availability_average, on = ['Facility_ID', 'month'],  how = 'left', validate = 'm:1')
+minimum_scenario_varlist = ['Facility_ID', 'month', 'item_code', 'available_prop_scenario12']
+non_vertical_hiv_scenario_df = pd.concat([non_vertical_hiv_availability_df[minimum_scenario_varlist], nonhiv_availability_df[minimum_scenario_varlist]], ignore_index = True)
+
+# Add scenarios 6 to 11 to the original dataframe
 #------------------------------------------------------
-list_of_scenario_suffixes = list_of_scenario_suffixes + ['scenario6', 'scenario7', 'scenario8', 'scenario9']
-final_list_of_scenario_vars = ['available_prop_' + item for item in list_of_scenario_suffixes]
-old_vars = ['Facility_ID', 'month', 'item_code', 'available_prop', 'item_category']
-full_df_with_scenario = df_new_scenarios6to8[old_vars + [col for col in final_list_of_scenario_vars if col != 'available_prop_scenario9']].reset_index().drop('index', axis = 1)
+list_of_scenario_suffixes_first_stage = list_of_scenario_suffixes + ['scenario6', 'scenario7', 'scenario8', 'scenario9']
+list_of_scenario_variables_first_stage = ['available_prop_' + item for item in list_of_scenario_suffixes_first_stage]
+old_vars = ['Facility_ID', 'month', 'item_code']
+full_df_with_scenario = df_new_scenarios6to8[old_vars + ['available_prop'] + [col for col in list_of_scenario_variables_first_stage if col != 'available_prop_scenario9']].reset_index().drop('index', axis = 1)
 full_df_with_scenario = full_df_with_scenario.merge(df_new_scenarios9[old_vars + ['available_prop_scenario9']], on = old_vars, how = 'left', validate = "1:1")
+
+list_of_scenario_suffixes_second_stage = list_of_scenario_suffixes_first_stage + ['scenario10', 'scenario11', 'scenario12']
+final_list_of_scenario_vars = ['available_prop_' + item for item in list_of_scenario_suffixes_second_stage]
+full_df_with_scenario = full_df_with_scenario.merge(hiv_scenario_df[old_vars + ['available_prop_scenario10']], on = old_vars, how = 'left', validate = "1:1")
+full_df_with_scenario = full_df_with_scenario.merge(epi_scenario_df[old_vars + ['available_prop_scenario11']], on = old_vars, how = 'left', validate = "1:1")
+full_df_with_scenario = full_df_with_scenario.merge(non_vertical_hiv_scenario_df[old_vars + ['available_prop_scenario12']], on = old_vars, how = 'left', validate = "1:1")
+
 full_df_with_scenario = full_df_with_scenario.merge(program_item_mapping, on = 'item_code', validate = 'm:1', how = 'left')
 
 # --- Check that the exported file has the properties required of it by the model code. --- #
@@ -530,6 +574,7 @@ full_df_with_scenario.to_csv(
     index=False
 )
 # TODO: Create a column providing the source of scenario data
+# TODO: 3 more scenarios where availability is equated to HIV and EPI, HIV availability is equated to general (excluding EPI)
 
 # 8. Plot new availability estimates by scenario
 #*********************************************************************************************
@@ -557,7 +602,7 @@ generate_barplot_of_scenarios(_df = df_for_plots, _x_axis_var = 'Facility_Level'
 
 # Scenario on the X axis, level on the Y axis
 # Scenario on the X axis, program on the Y axis
-# TODO add heat maps
+# TODO add heat maps i. heatmap by item_category across the sceanrios
 
 '''
 # 2.3.2. Browse missingness in the availability_change_prop variable
