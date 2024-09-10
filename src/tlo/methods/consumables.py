@@ -48,6 +48,7 @@ class Consumables:
             'all_drug_or_vaccine_available',
             'scenario1', 'scenario2', 'scenario3', 'scenario4',
             'scenario5', 'scenario6', 'scenario7', 'scenario8',
+            'scenario9', 'scenario10', 'scenario11', 'scenario12',
         }
 
         # Create internal items:
@@ -106,7 +107,8 @@ class Consumables:
         # Over-ride the data according to option for `availability`
         if availability in ('default',
                             'scenario1', 'scenario2', 'scenario3', 'scenario4',
-                            'scenario5', 'scenario6', 'scenario7', 'scenario8'):
+                            'scenario5', 'scenario6', 'scenario7', 'scenario8',
+                            'scenario9', 'scenario10', 'scenario11', 'scenario12'):
             pass
         elif availability == 'all':
             self.override_availability(dict(zip(self.item_codes, repeat(1.0))))
@@ -145,7 +147,8 @@ class Consumables:
         each consumable at each facility_id during each month.
         """
         if availability in ('scenario1', 'scenario2', 'scenario3', 'scenario4',
-                              'scenario5', 'scenario6', 'scenario7', 'scenario8'):
+                              'scenario5', 'scenario6', 'scenario7', 'scenario8',
+                            'scenario9', 'scenario10', 'scenario11', 'scenario12'):
             return (
                 set(availability_data.item_code),
                 availability_data.set_index(['month', 'Facility_ID', 'item_code'])['available_prop_' + availability]
