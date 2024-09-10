@@ -837,34 +837,34 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         )
     figure9_distribution_of_hsi_event_all_years_line_graph(
             results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath, min_year = min_year, max_year = max_year)
-    # for target_year in target_year_sequence:
-    #     TARGET_PERIOD = (Date(target_year, 1, 1), Date(target_year + 5, 12, 31))
-    #     print(TARGET_PERIOD)
-    #     year_range = f"{TARGET_PERIOD[0].year}-{TARGET_PERIOD[1].year}"
-    #
-    #     table1_description_of_hsi_events(
-    #         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
-    #         year_range=year_range, target_period=TARGET_PERIOD
-    #     )
-    #
-    #     figure1_distribution_of_hsi_event_by_treatment_id(
-    #         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
-    #         year_range=year_range, target_period=TARGET_PERIOD
-    #     )
-    #
-    #     figure3_fraction_of_time_of_hcw_used_by_treatment(
-    #         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
-    #         year_range=year_range, target_period=TARGET_PERIOD
-    #     )
-    #     figure5_bed_use(
-    #         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
-    #         year_range=year_range, target_period=TARGET_PERIOD
-    #     )
-    #
-    #     figure7_squeeze_factors(
-    #         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
-    #         year_range=year_range, target_period=TARGET_PERIOD
-    #     )
+    for target_year in target_year_sequence:
+        TARGET_PERIOD = (Date(target_year, 1, 1), Date(target_year + 5, 12, 31))
+        print(TARGET_PERIOD)
+        year_range = f"{TARGET_PERIOD[0].year}-{TARGET_PERIOD[1].year}"
+
+        table1_description_of_hsi_events(
+            results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
+            year_range=year_range, target_period=TARGET_PERIOD
+        )
+
+        figure1_distribution_of_hsi_event_by_treatment_id(
+            results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
+            year_range=year_range, target_period=TARGET_PERIOD
+        )
+
+        figure3_fraction_of_time_of_hcw_used_by_treatment(
+            results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
+            year_range=year_range, target_period=TARGET_PERIOD
+        )
+        figure5_bed_use(
+            results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
+            year_range=year_range, target_period=TARGET_PERIOD
+        )
+
+        figure7_squeeze_factors(
+            results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
+            year_range=year_range, target_period=TARGET_PERIOD
+        )
 
 
 
