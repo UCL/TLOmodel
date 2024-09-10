@@ -817,11 +817,6 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
 
     # Panel B: Normalized counts
     for i, treatment_id in enumerate(df_normalized.index):
-        for _label in df_all_years.index:
-            print(_label)
-        print([get_color_short_treatment_id(_label) for _label in
-                            df_all_years.index][i])
-    for i, treatment_id in enumerate(df_normalized.index):
         axes[1].plot(df_normalized.columns, df_normalized.loc[treatment_id], marker='o', label=treatment_id,
                      color=[get_color_short_treatment_id(_label) for _label in
                             df_all_years.index][i])
