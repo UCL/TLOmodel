@@ -117,12 +117,16 @@ class HealthBurden(Module):
             m.name for m in self.sim.modules.values() if Metadata.USES_HEALTHBURDEN in m.METADATA
         ]
 
-        # Check that all registered disease modules have the report_daly_values() function
+        # Check that all registered disease modules have the report_daly_values() and the function
         for module_name in self.recognised_modules_names:
             assert getattr(self.sim.modules[module_name], 'report_daly_values', None) and \
                    callable(self.sim.modules[module_name].report_daly_values), 'A module that declares use of ' \
                                                                                'HealthBurden module must have a ' \
                                                                                'callable function "report_daly_values"'
+            assert getattr(self.sim.modules[module_name], 'report_prevalence', None) and \
+                   callable(self.sim.modules[module_name].report_prevalence), 'A module that declares use of ' \
+                                                                               'HealthBurden module must have a ' \
+                                                                               'callable function "report_prevalence"'
 
         # 3) Process the declarations of causes of disability and DALYS made by the disease modules
         self.process_causes_of_disability()

@@ -376,9 +376,3 @@ class Module:
     def on_simulation_end(self):
         """This is called after the simulation has ended.
         Modules do not need to declare this."""
-
-    def report_prevalence(self):
-        """This reports the prevalence of given conditions at set intervals.
-            Returns None if not overwritten
-        """
-        return None
