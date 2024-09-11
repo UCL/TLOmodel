@@ -1,9 +1,11 @@
 """Unit tests for utility functions."""
 import os
 import pickle
+import shutil
 import string
 import types
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -11,10 +13,10 @@ import pytest
 from scipy.stats import chisquare
 
 import tlo.util
-from tlo import Date, Simulation
+from tlo import Date, Module, Parameter, Simulation, Types
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography
-from tlo.util import DEFAULT_MOTHER_ID
+from tlo.methods import Metadata, demography
+from tlo.util import DEFAULT_MOTHER_ID, convert_excel_files_to_csv, read_csv_files
 
 path_to_files = Path(os.path.dirname(__file__))
 
@@ -191,10 +193,10 @@ def test_logs_parsing(tmpdir):
     sim = Simulation(start_date=start_date, seed=0, log_config={
         'filename': 'logs_dict_class',
         'directory': tmpdir,
-    })
+    }, resourcefilepath=resourcefilepath)
 
     sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath)
+        demography.Demography()
     )
 
     # Create a simulation
@@ -317,3 +319,123 @@ def test_hash_dataframe(rng):
             # check hash differs for different dataframes
             if not dataframes[i].equals(dataframes[j]):
                 assert df_hash != tlo.util.hash_dataframe(dataframes[j])
+
+
+def test_read_csv_files_method():
+    """ This test read csv files method in util if it can replicate what :py:func:pandas.read_excel was doing without
+    changing expected outputs
+
+    Tests
+        1) if the method is supplied with one file name, it should return a dataframe
+        2) if supplied with two or more file names, it should return a dictionary containing dataframes of the
+           supplied files
+        3) if supplied with no file names, it should search for all csv files in the
+           path (resource file containing folder) and return a dictionary csv file names as keys and file data
+           as dataframes
+        4) test loading parameter values from Excel file should be equal to loading the same from csv file
+
+    """
+    resourcefilepath = path_to_files / 'resources'
+
+    # ----- Test case 1. read csv method when one file name is supplied. should return a dataframe
+    df = read_csv_files(resourcefilepath, files=['df_at_healthcareseeking'])
+    assert isinstance(df, pd.DataFrame)
+
+    # ----- Test case 2. read csv method when multiple file names are supplied.
+    # should return dictionary.
+    # dictionary keys should match supplied file names
+    # all dictionary values should be dataframes
+    file_names = ['df_at_healthcareseeking', 'df_at_init_of_lifestyle']
+    df_dict = read_csv_files(resourcefilepath, files=file_names)
+    assert isinstance(df_dict, dict)
+    assert set(df_dict.keys()) == set(file_names)
+    for _key, dataframe in df_dict.items():
+        assert isinstance(dataframe, pd.DataFrame)
+
+    # ---- Test case 3  read csv method when no file names are supplied.
+    # should return dictionary.
+    # dictionary keys should match csv file names in resource folder
+    # all dictionary values should be dataframes
+    file_names = [csv_file_path.stem for csv_file_path in resourcefilepath.rglob("*.csv")]
+
+    df_none_files = read_csv_files(resourcefilepath)
+    assert isinstance(df_none_files, dict)
+    assert set(df_none_files.keys()) == set(file_names)
+    assert all(isinstance(value, pd.DataFrame) for value in df_none_files.values())
+
+    # ---- Test case 4 check
+    excel_file_path = Path(resourcefilepath / 'ResourceFile_test_convert_to_csv/ResourceFile_test_convert_to_csv.xlsx')
+    # convert the above Excel file into csv equivalent. we will use the newly converted files to determine if
+    # loading parameters from Excel file will be equal to loading parameters from the converted csv files
+    convert_excel_files_to_csv(folder=Path(resourcefilepath / 'ResourceFile_test_convert_to_csv'),
+                               files=[excel_file_path.name], test_mode=True)
+
+    # get excel sheet names
+    xls = pd.ExcelFile(excel_file_path)
+    df_excel = pd.read_excel(xls, sheet_name=xls.sheet_names)
+
+    # read newly converted csv files using read_csv_files method
+    df_csv = read_csv_files(Path(str(excel_file_path).split('.')[0]),
+                            files=['dummy_parameter_values', 'parameter_values'])
+
+    # dictionary keys from both dataframe dictionaries should match
+    assert df_excel.keys() == df_csv.keys()
+
+
+def test_convert_excel_files_method(tmpdir):
+    """ Test converting Excel files to csv equivalent is done as expected
+
+        1) Excel file name should become the name of the folder containing the newly converted csv files
+        2) Excel file sheet names should become csv file names
+        3) if files are given, the function should only convert to excel only those given files in a folder
+        4) if no files are given, all Excel files in the parent folder and subsequent folders within the parent folder
+           should get converted to csv files
+
+    """
+
+    def check_logic_of_converting_excel_files_to_csv_files(folder: Path, files: list) -> None:
+        """ check converting Excel files to csv files is done as expected
+                1) check that a new directory to hold the newly created csv files has been created
+                2) check that this new directory name matches the Excel file name it has been created from
+                3) check csv files are created and that the csv names should match sheet names of an Excel file they
+                have been created from
+        """
+        # check that the above function has created a folder named `ResourceFile_load-parameters`(name of the Excel
+        # file) and a csv file named `parameter_values` (Excel file sheet name).
+        excel_file_paths = [folder / file for file in files]
+
+        for excel_file_path in excel_file_paths:
+            xl = pd.ExcelFile(excel_file_path)
+            path_to_new_directory = excel_file_path.with_suffix("")
+            # new folder should be created
+            assert path_to_new_directory.exists() and path_to_new_directory.is_dir()
+            # the new folder name should be the same as the Excel file name
+            assert excel_file_path.stem == path_to_new_directory.name
+            for sheet_name in xl.sheet_names:
+                path_to_new_file = Path(path_to_new_directory / f'{sheet_name}.csv')
+                # new csv file(s) should be created with name(s) resembling sheet name(s) in excel file
+                assert path_to_new_file.exists() and path_to_new_file.is_file()
+                assert sheet_name == path_to_new_file.name.split('.')[0]
+
+
+    # get resource file path
+    resourcefilepath = path_to_files / 'resources'
+    tmpdir_resourcefilepath = Path(tmpdir/'resources')
+    shutil.copytree(resourcefilepath, tmpdir_resourcefilepath)
+
+    # ----- Test case 1. supply excel file names to convert Excel files function
+    excel_file = ['ResourceFile_load-parameters.xlsx']
+    convert_excel_files_to_csv(tmpdir_resourcefilepath, files=excel_file)
+    # check new folder containing csv file is created. The folder name and csv file name should resemble the supplied
+    # Excel file name and sheet name respectively
+    check_logic_of_converting_excel_files_to_csv_files(tmpdir_resourcefilepath, files=excel_file)
+
+    # ------ Test case 2. search and get all Excel files from the tests resources folder
+    excel_files = [file for file in tmpdir_resourcefilepath.rglob("*.xlsx")]
+    if excel_files is None:
+        excel_files = excel_file
+
+    convert_excel_files_to_csv(tmpdir_resourcefilepath)
+    # check behaviours are as expected. New folders containing csv files should be created with names resembling the
+    # Excel file they were created from
+    check_logic_of_converting_excel_files_to_csv_files(tmpdir_resourcefilepath, excel_files)
