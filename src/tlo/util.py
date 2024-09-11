@@ -510,3 +510,4 @@ def read_csv_files(folder: Path, files: Optional[list[str]] = None) -> DataFrame
     clean_dataframe(all_data)
     # If only one file loaded return dataframe directly rather than dict
     return next(iter(all_data.values())) if len(all_data) == 1 else all_data
+

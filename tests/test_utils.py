@@ -5,7 +5,6 @@ import shutil
 import string
 import types
 from pathlib import Path
-from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -13,9 +12,9 @@ import pytest
 from scipy.stats import chisquare
 
 import tlo.util
-from tlo import Date, Module, Parameter, Simulation, Types
+from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import Metadata, demography
+from tlo.methods import demography
 from tlo.util import DEFAULT_MOTHER_ID, convert_excel_files_to_csv, read_csv_files
 
 path_to_files = Path(os.path.dirname(__file__))
@@ -193,10 +192,10 @@ def test_logs_parsing(tmpdir):
     sim = Simulation(start_date=start_date, seed=0, log_config={
         'filename': 'logs_dict_class',
         'directory': tmpdir,
-    }, resourcefilepath=resourcefilepath)
+    })
 
     sim.register(
-        demography.Demography()
+        demography.Demography(resourcefilepath=resourcefilepath)
     )
 
     # Create a simulation
@@ -319,7 +318,6 @@ def test_hash_dataframe(rng):
             # check hash differs for different dataframes
             if not dataframes[i].equals(dataframes[j]):
                 assert df_hash != tlo.util.hash_dataframe(dataframes[j])
-
 
 def test_read_csv_files_method():
     """ This test read csv files method in util if it can replicate what :py:func:pandas.read_excel was doing without
