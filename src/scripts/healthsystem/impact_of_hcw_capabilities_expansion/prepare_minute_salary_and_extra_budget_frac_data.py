@@ -56,6 +56,7 @@ staff_cost = staff_cost.reindex(index=cadre_all)
 # i.e., four main cadres and the "Other" cadre that groups up all other cadres, is the same (fair allocation)
 
 cadre_group = ['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy', 'Other']  # main cadres
+other_group = ['Dental', 'Laboratory', 'Mental', 'Nutrition', 'Radiography']
 
 # create scenarios
 combination_list = ['s_1', 's_2']  # two baseline scenarios
@@ -90,8 +91,10 @@ for i in extra_budget_fracs.columns[2:]:
         if c in auxiliary.index:  # the four main cadres
             extra_budget_fracs.loc[c, i] = auxiliary.loc[c, i]
         else:  # the other 5 cadres
-            extra_budget_fracs.loc[c, i] = auxiliary.loc['Other', i] / 5  # equal fracs among the 5 other cadres; could
-            # set non-equal fracs
+            # extra_budget_fracs.loc[c, i] = auxiliary.loc['Other', i] * (
+            #     staff_cost.loc[c, 'cost_frac'] / staff_cost.loc[staff_cost.index.isin(other_group), 'cost_frac'].sum()
+            # )  # current cost distribution among the 5 other cadres
+            extra_budget_fracs.loc[c, i] = auxiliary.loc['Other', i] / 5  # equal fracs among the 5 other cadres
 
 assert (abs(extra_budget_fracs.iloc[:, 1:len(extra_budget_fracs.columns)].sum(axis=0) - 1.0) < 1/1e10).all()
 
