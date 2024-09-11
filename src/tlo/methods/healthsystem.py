@@ -2653,6 +2653,11 @@ class HealthSystemSummaryCounter:
         self._appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
         # <--Same as `self._appts` but also split by facility_level
 
+        # Log HSI_Events that have a non-blank appointment footprint
+        self._no_blank_appt_treatment_ids = defaultdict(int)  # As above, but for `HSI_Event`s with non-blank footprint
+        self._no_blank_appt_appts = defaultdict(int)  # As above, but for `HSI_Event`s that with non-blank footprint
+        self._no_blank_appt_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
+
         # Log HSI_Events that never ran to monitor shortcoming of Health System
         self._never_ran_treatment_ids = defaultdict(int)  # As above, but for `HSI_Event`s that never ran
         self._never_ran_appts = defaultdict(int)  # As above, but for `HSI_Event`s that have never ran
@@ -2685,6 +2690,13 @@ class HealthSystemSummaryCounter:
         for appt_type, number in appt_footprint:
             self._appts[appt_type] += number
             self._appts_by_level[level][appt_type] += number
+
+        # Count the non-blank appointment footprints
+        if len(appt_footprint):
+            self._no_blank_appt_treatment_ids[treatment_id] += 1
+            for appt_type, number in appt_footprint:
+                self._no_blank_appt_appts[appt_type] += number
+                self._no_blank_appt_by_level[level][appt_type] += number
 
     def record_never_ran_hsi_event(self,
                                    treatment_id: str,
@@ -2728,6 +2740,15 @@ class HealthSystemSummaryCounter:
                 'squeeze_factor': {
                     k: sum(v) / len(v) for k, v in self._squeeze_factor_by_hsi_event_name.items()
                 }
+            },
+        )
+        logger_summary.info(
+            key="HSI_Event_non_blank_appt_footprint",
+            description="Same as for key 'HSI_Event' but limited to HSI_Event that have non-blank footprints",
+            data={
+            "TREATMENT_ID": self._no_blank_appt_treatment_ids,
+            "Number_By_Appt_Type_Code": self._no_blank_appt_appts,
+            "Number_By_Appt_Type_Code_And_Level": self._no_blank_appt_by_level,
             },
         )
 
