@@ -41,6 +41,7 @@ class HealthBurden(Module):
         self.years_lived_with_disability = None
         self.prevalence_of_diseases = None
         self.recognised_modules_names = None
+        self.recognised_modules_names_for_prevalence = None
         self.causes_of_disability = None
         self._causes_of_yll = None
         self._causes_of_dalys = None
@@ -116,6 +117,9 @@ class HealthBurden(Module):
         self.recognised_modules_names = [
             m.name for m in self.sim.modules.values() if Metadata.USES_HEALTHBURDEN in m.METADATA
         ]
+        # 2) Collect the module that are expected to return prevalences
+
+        self.recognised_modules_names_for_prevalence = self.recognised_modules_names + ['Demography']
 
         # Check that all registered disease modules have the report_daly_values() and report_prevalence() functions
         for module_name in self.recognised_modules_names:
@@ -125,8 +129,8 @@ class HealthBurden(Module):
                                                                                'callable function "report_daly_values"'
             assert getattr(self.sim.modules[module_name], 'report_prevalence', None) and \
                    callable(self.sim.modules[module_name].report_prevalence), 'A module that declares use of ' \
-                                                                               'HealthBurden module must have a ' \
-                                                                               'callable function "report_prevalence"'
+                                                                              'HealthBurden module must have a ' \
+                                                                              'callable function "report_prevalence"'
 
         # 3) Process the declarations of causes of disability and DALYS made by the disease modules
         self.process_causes_of_disability()
@@ -152,7 +156,6 @@ class HealthBurden(Module):
         # 6) Schedule `Healthburden_WriteToLog` that will write to log annually
         last_day_of_the_year = Date(sim.date.year, 12, 31)
         sim.schedule_event(Healthburden_WriteToLog(self), last_day_of_the_year)
-
 
     def process_causes_of_disability(self):
         """
@@ -594,7 +597,7 @@ class HealthBurden(Module):
                         'schisto: individuals who have Low-infection or High-infection, any parasite'
                         'TB: individuals who have tb_inf = active',
             df=self.prevalence_of_diseases,
-            force_cols=self.recognised_modules_names,
+            force_cols=self.prevalence_of_diseases.columns,
         )
 
     def check_multi_index(self):
@@ -738,42 +741,31 @@ class GetCurrentPrevalenceWriteToLog(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=frequency)
 
     def apply(self, population):
-        if not self.module.recognised_modules_names or not self.module.causes_of_disability:
+        if not self.module.recognised_modules_names:
             return
         else:
             # Calculate the population size
             population_size = len(self.sim.population.props[self.sim.population.props['is_alive']])
-            for disease_module_name in self.module.recognised_modules_names:
-                if disease_module_name in ['DiseaseThatCausesA', ]:
+            for disease_module_name in self.module.recognised_modules_names_for_prevalence:
+                if disease_module_name in ['DiseaseThatCausesA']:
                     continue
-            # Create a DataFrame with one row and assign the population size
-            prevalence_from_each_disease_module = pd.DataFrame({'population': [population_size]})
-            for disease_module_name in self.module.recognised_modules_names:
-                disease_module = self.sim.modules[disease_module_name]
-                prevalence_from_disease_module = disease_module.report_prevalence()
-                if prevalence_from_disease_module is None:
-                    continue
-
-                elif isinstance(prevalence_from_disease_module, pd.DataFrame):
-                    for i, column_name in enumerate(prevalence_from_disease_module.columns):
-                        prevalence_from_each_disease_module[column_name] = prevalence_from_disease_module.iloc[:, i]
                 else:
-                    prevalence_from_disease_module = pd.DataFrame([[prevalence_from_disease_module]])
+                    prevalence_from_each_disease_module = {'population': [population_size]}
                     print(disease_module_name)
-                    # Add the prevalence data as a new column to the DataFrame
-                    prevalence_from_each_disease_module[disease_module_name] = prevalence_from_disease_module.iloc[:, 0]
-
-            neonatal_maternal_mortality = pd.DataFrame(
-                self.sim.modules['Demography'].report_prevalence())  # Already a dataframe
-            prevalence_from_each_disease_module['NMR'] = neonatal_maternal_mortality.iloc[:, 0]
-            prevalence_from_each_disease_module['MMR'] = neonatal_maternal_mortality.iloc[:, 1]
-            prevalence_from_each_disease_module['live_births'] = neonatal_maternal_mortality.iloc[:, 2]
-
+                    disease_module = self.sim.modules[disease_module_name]
+                    prevalence_from_disease_module = disease_module.report_prevalence()
+                    if prevalence_from_disease_module is None:
+                        continue
+                    for key, value in prevalence_from_disease_module.items():
+                        prevalence_from_each_disease_module[key] = value
+            print(prevalence_from_each_disease_module.keys())
+            prevalence_from_each_disease_module = pd.DataFrame([prevalence_from_each_disease_module])
             prevalence_from_each_disease_module.drop(
                 prevalence_from_each_disease_module.index.intersection(
                     ['DiseaseThatCausesA']
                 ),
                 axis=0, inplace=True
             )
+            print(prevalence_from_each_disease_module.columns)
             self.module.prevalence_of_diseases = prevalence_from_each_disease_module
         self.module.write_to_log_prevalence()

@@ -428,7 +428,6 @@ class Demography(Module):
             'MMR': maternal_mortality_rate,
             'live_births': live_births
         }
-
         return metrics_dict
 
     def _edit_init_pop_to_prevent_persons_greater_than_max_age(self, df, max_age: int):
