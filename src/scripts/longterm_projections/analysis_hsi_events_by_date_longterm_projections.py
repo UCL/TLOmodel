@@ -371,6 +371,201 @@ def figure3_fraction_of_time_of_hcw_used_by_treatment(results_folder: Path, outp
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     plt.close(fig)
 
+def figure3b_minutes_per_cadre(results_folder: Path, output_folder: Path,
+                                                      resourcefilepath: Path, year_range, target_period):
+    """ 'Figure 3': The Fraction of the time of each HCW used by each TREATMENT_ID (Short)"""
+
+    make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_Fig3_{stub}.png"  # noqa: E731
+
+    appointment_time_table = pd.read_csv(
+        resourcefilepath
+        / 'healthsystem'
+        / 'human_resources'
+        / 'definitions'
+        / 'ResourceFile_Appt_Time_Table.csv',
+        index_col=["Appt_Type_Code", "Facility_Level", "Officer_Category"]
+    )
+
+    appt_type_facility_level_officer_category_to_appt_time = (
+        appointment_time_table.Time_Taken_Mins.to_dict()
+    )
+
+    officer_categories = appointment_time_table.index.levels[
+        appointment_time_table.index.names.index("Officer_Category")
+    ].to_list()
+
+    times_by_officer_category_treatment_id_per_run = bin_hsi_event_details(
+        results_folder,
+        lambda event_details, count: sum(
+            [
+                Counter({
+                    (
+                        officer_category,
+                        event_details["treatment_id"].split("_")[0]
+                    ):
+                    count
+                    * appt_number
+                    * appt_type_facility_level_officer_category_to_appt_time.get(
+                        (
+                            appt_type,
+                            event_details["facility_level"],
+                            officer_category
+                        ),
+                        0
+                    )
+                    for officer_category in officer_categories
+                })
+                for appt_type, appt_number in event_details["appt_footprint"]
+            ],
+            Counter()
+        ),
+        *target_period,
+        False
+    )
+
+    time_per_treatment_id_all_runs = defaultdict(list)
+
+    for _, times_by_officer_category_treatment_id in (
+        times_by_officer_category_treatment_id_per_run.items()
+    ):
+        total_times_by_treatment_id = Counter()
+        for (cat, treatment_id), time in times_by_officer_category_treatment_id.items():
+            print(treatment_id)
+            total_times_by_treatment_id[treatment_id] += time
+            time_per_treatment_id_all_runs[treatment_id].append(
+                Counter(
+                    {
+                    total_times_by_treatment_id[treatment_id]
+                    }
+                )
+            )
+
+    total_time_per_treatment_id_all_runs = defaultdict(float)
+
+    # Iterate over each key and list of Counters
+    for key, counters in time_per_treatment_id_all_runs.items():
+        total = 0
+        # Sum values from each Counter
+        for counter in counters:
+            total += sum(counter.keys())
+        total_time_per_treatment_id_all_runs[key] = total
+
+
+
+
+    print(total_time_per_treatment_id_all_runs)
+
+    # cadres_to_plot = ['DCSA', 'Nursing_and_Midwifery', 'Clinical', 'Pharmacy']
+    #
+    # fig, ax = plt.subplots(nrows=2, ncols=2)
+    # name_of_plot = f'Time Used For Selected Cadre by TREATMENT_ID (Short) {year_range}'
+    # for cadre, ax in zip(cadres_to_plot, ax.flat):
+    #     p_by_treatment_id = proportions_per_treatment_id_by_officer_category[cadre]
+    #     squarify_neat(
+    #         sizes=list(p_by_treatment_id.values()),
+    #         label=list(p_by_treatment_id.keys()),
+    #         colormap=get_color_short_treatment_id,
+    #         numlabels=4,
+    #         alpha=1,
+    #         pad=True,
+    #         ax=ax,
+    #         text_kwargs={'color': 'black', 'size': 8},
+    #     )
+    #     ax.set_axis_off()
+    #     ax.set_title(f'{cadre}', {'size': 10, 'color': 'black'})
+    # fig.suptitle(name_of_plot, fontproperties={'size': 12})
+    # fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
+    # plt.close(fig)
+
+# def figure3b_minutes_per_cadre(results_folder: Path, output_folder: Path,
+#                                                       resourcefilepath: Path, year_range, target_period):
+#     make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_Fig3b_{stub}.png"  # noqa: E731
+#
+#     def get_counts_of_hsi_by_treatment_id(_df):
+#         """Get the counts of the short TREATMENT_IDs occurring"""
+#         _counts_by_treatment_id = _df \
+#             .loc[pd.to_datetime(_df['date']).between(*target_period), 'TREATMENT_ID'] \
+#             .apply(pd.Series) \
+#             .sum() \
+#             .astype(int)
+#         return _counts_by_treatment_id.groupby(level=0).sum()
+#
+#     def get_counts_of_hsi_by_short_treatment_id(_df):
+#         """Get the counts of the short TREATMENT_IDs occurring (shortened, up to first underscore)"""
+#         _counts_by_treatment_id = get_counts_of_hsi_by_treatment_id(_df)
+#         _short_treatment_id = _counts_by_treatment_id.index.map(lambda x: x.split('_')[0] + "*")
+#         return _counts_by_treatment_id.groupby(by=_short_treatment_id).sum()
+#
+#
+#     appointment_time_table = pd.read_csv(
+#         resourcefilepath
+#         / 'healthsystem'
+#         / 'human_resources'
+#         / 'definitions'
+#         / 'ResourceFile_Appt_Time_Table.csv',
+#         index_col=["Appt_Type_Code", "Facility_Level", "Officer_Category"]
+#     )
+#
+#     appt_type_facility_level_officer_category_to_appt_time = (
+#         appointment_time_table.Time_Taken_Mins.to_dict()
+#     )
+#     print(appt_type_facility_level_officer_category_to_appt_time)
+#     officer_categories = appointment_time_table.index.levels[
+#         appointment_time_table.index.names.index("Officer_Category")
+#     ].to_list()
+#
+#     times_by_officer_category_treatment_id_per_run = bin_hsi_event_details(
+#         results_folder,
+#         lambda event_details, count: sum(
+#             [
+#                 Counter({
+#                     (
+#                         officer_category,
+#                         event_details["treatment_id"].split("_")[0]
+#                     ):
+#                     count
+#                     * appt_number
+#                     * appt_type_facility_level_officer_category_to_appt_time.get(
+#                         (
+#                             appt_type,
+#                             event_details["facility_level"],
+#                             officer_category
+#                         ),
+#                         0
+#                     )
+#                     for officer_category in officer_categories
+#                 })
+#                 for appt_type, appt_number in event_details["appt_footprint"]
+#             ],
+#             Counter()
+#         ),
+#         *target_period,
+#         False
+#     )
+#     print(times_by_officer_category_treatment_id_per_run)
+#     hsi_event_counts = summarize(extract_results(
+#         results_folder,
+#         module='tlo.methods.healthsystem.summary',
+#         key='hsi_event_counts',
+#         custom_generate_series=get_counts_of_hsi_by_short_treatment_id,
+#         do_scaling=True
+#     ),
+#         only_mean=True,
+#         collapse_columns=True,
+#     )
+#
+#     # hsi_event_details = summarize(extract_results(
+#     #     #     results_folder,
+#     #     #     module='tlo.methods.healthsystem.summary',
+#     #     #     key='hsi_event_details',
+#     #     #     do_scaling=True
+#     #     # ),
+#     #     #     only_mean=True,
+#     #     #     collapse_columns=True,
+#     #     # )
+#
+#     print(hsi_event_counts)
+
 
 def figure4_hr_use_overall(results_folder: Path, output_folder: Path, resourcefilepath: Path, year_range, target_period):
     """ 'Figure 4': The level of usage of the HealthSystem HR Resources """
@@ -758,23 +953,9 @@ def figure8_distribution_of_hsi_event_all_years(results_folder: Path, output_fol
 def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path, output_folder: Path,
                                                            resourcefilepath: Path, min_year, max_year):
     """ 'Figure 9': The Trend of HSI_Events that occur by date."""
+
     target_year_sequence = range(min_year, max_year, 5)
     make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_Fig9_{stub}.png"  # noqa: E731
-
-    def get_counts_of_hsi_by_treatment_id(_df):
-        """Get the counts of the short TREATMENT_IDs occurring"""
-        _counts_by_treatment_id = _df \
-            .loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), 'TREATMENT_ID'] \
-            .apply(pd.Series) \
-            .sum() \
-            .astype(int)
-        return _counts_by_treatment_id.groupby(level=0).sum()
-
-    def get_counts_of_hsi_by_short_treatment_id(_df):
-        """Get the counts of the short TREATMENT_IDs occurring (shortened, up to first underscore)"""
-        _counts_by_treatment_id = get_counts_of_hsi_by_treatment_id(_df)
-        _short_treatment_id = _counts_by_treatment_id.index.map(lambda x: x.split('_')[0] + "*")
-        return _counts_by_treatment_id.groupby(by=_short_treatment_id).sum()
 
     all_years_data = {}
 
@@ -782,6 +963,20 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
         TARGET_PERIOD = (
         Date(target_year, 1, 1), Date(target_year + 4, 12, 31))  # Corrected the year range to cover 5 years.
 
+        def get_counts_of_hsi_by_treatment_id(_df):
+            """Get the counts of the short TREATMENT_IDs occurring"""
+            _counts_by_treatment_id = _df \
+                .loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), 'TREATMENT_ID'] \
+                .apply(pd.Series) \
+                .sum() \
+                .astype(int)
+            return _counts_by_treatment_id.groupby(level=0).sum()
+
+        def get_counts_of_hsi_by_short_treatment_id(_df):
+            """Get the counts of the short TREATMENT_IDs occurring (shortened, up to first underscore)"""
+            _counts_by_treatment_id = get_counts_of_hsi_by_treatment_id(_df)
+            _short_treatment_id = _counts_by_treatment_id.index.map(lambda x: x.split('_')[0] + "*")
+            return _counts_by_treatment_id.groupby(by=_short_treatment_id).sum()
         result_data = summarize(
             extract_results(
                 results_folder,
@@ -832,39 +1027,42 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Description of the usage of healthcare system resources."""
     target_year_sequence = range(min_year, max_year , spacing_of_years)
-    figure8_distribution_of_hsi_event_all_years(
-            results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath, target_period = (Date(min_year, 1, 1), Date(max_year + 5, 12, 31))
-        )
-    figure9_distribution_of_hsi_event_all_years_line_graph(
-            results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath, min_year = min_year, max_year = max_year)
+    # figure8_distribution_of_hsi_event_all_years(
+    #         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath, target_period = (Date(min_year, 1, 1), Date(max_year + 5, 12, 31))
+    #     )
+    # figure9_distribution_of_hsi_event_all_years_line_graph(
+    #         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath, min_year = min_year, max_year = max_year)
+
     for target_year in target_year_sequence:
         TARGET_PERIOD = (Date(target_year, 1, 1), Date(target_year + 5, 12, 31))
-        print(TARGET_PERIOD)
         year_range = f"{TARGET_PERIOD[0].year}-{TARGET_PERIOD[1].year}"
-
-        table1_description_of_hsi_events(
+        figure3b_minutes_per_cadre(
             results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
-            year_range=year_range, target_period=TARGET_PERIOD
-        )
-
-        figure1_distribution_of_hsi_event_by_treatment_id(
-            results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
-            year_range=year_range, target_period=TARGET_PERIOD
-        )
-
-        figure3_fraction_of_time_of_hcw_used_by_treatment(
-            results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
-            year_range=year_range, target_period=TARGET_PERIOD
-        )
-        figure5_bed_use(
-            results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
-            year_range=year_range, target_period=TARGET_PERIOD
-        )
-
-        figure7_squeeze_factors(
-            results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
-            year_range=year_range, target_period=TARGET_PERIOD
-        )
+            year_range=year_range, target_period=TARGET_PERIOD)
+    #
+    #     table1_description_of_hsi_events(
+    #         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
+    #         year_range=year_range, target_period=TARGET_PERIOD
+    #     )
+    #
+    #     figure1_distribution_of_hsi_event_by_treatment_id(
+    #         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
+    #         year_range=year_range, target_period=TARGET_PERIOD
+    #     )
+    #
+    #     figure3_fraction_of_time_of_hcw_used_by_treatment(
+    #         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
+    #         year_range=year_range, target_period=TARGET_PERIOD
+    #     )
+    #     figure5_bed_use(
+    #         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
+    #         year_range=year_range, target_period=TARGET_PERIOD
+    #     )
+    #
+    #     figure7_squeeze_factors(
+    #         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
+    #         year_range=year_range, target_period=TARGET_PERIOD
+    #     )
 
 
 
