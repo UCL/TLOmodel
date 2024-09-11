@@ -18,7 +18,6 @@ from tlo.analysis.utils import (
 )
 
 # Declare the age before which death is defined as premature
-AGE_BEFORE_WHICH_DEATH_IS_DEFINED_AS_PREMATURE = 70 # defined in Norheim et al (2015)
 
 def _map_age_to_age_group(age: pd.Series) -> pd.Series:
     """
@@ -250,7 +249,7 @@ def get_life_expectancy_estimates(
         return summarize(results=output, only_mean=False, collapse_columns=False)
 
 
-def _calculate_probability_of_premature_death(
+def _calculate_probability_of_premature_death_for_single_run(AGE_BEFORE_WHICH_DEATH_IS_DEFINED_AS_PREMATURE:int,
     _person_years_at_risk: pd.Series,
     _number_of_deaths_in_interval: pd.Series
 ) -> Dict[str, float]:
@@ -301,7 +300,8 @@ def _calculate_probability_of_premature_death(
 def get_probability_of_premature_death(
     results_folder: Path,
     target_period: Tuple[datetime.date, datetime.date],
-    summary: bool = True
+    summary: bool = True,
+    AGE_BEFORE_WHICH_DEATH_IS_DEFINED_AS_PREMATURE: int = 70 # defined in Norheim et al (2015)
 ) -> pd.DataFrame:
     """
     Produces sets of probability of premature death for each draw/run.
@@ -324,7 +324,8 @@ def get_probability_of_premature_death(
 
     for draw in range(info['number_of_draws']):
         for run in range(info['runs_per_draw']):
-            prob_for_each_draw_and_run[(draw, run)] = _calculate_probability_of_premature_death(
+            prob_for_each_draw_and_run[(draw, run)] = _calculate_probability_of_premature_death_for_single_run(
+                AGE_BEFORE_WHICH_DEATH_IS_DEFINED_AS_PREMATURE,
                 _number_of_deaths_in_interval=deaths[(draw, run)],
                 _person_years_at_risk=person_years[(draw, run)]
             )
