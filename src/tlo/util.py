@@ -1,6 +1,5 @@
 """This file contains helpful utility functions."""
 import hashlib
-import os
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Union

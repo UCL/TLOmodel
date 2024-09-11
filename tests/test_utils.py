@@ -319,7 +319,7 @@ def test_hash_dataframe(rng):
             if not dataframes[i].equals(dataframes[j]):
                 assert df_hash != tlo.util.hash_dataframe(dataframes[j])
 
-def test_read_csv_files_method():
+def test_read_csv_files_method(tmpdir):
     """ This test read csv files method in util if it can replicate what :py:func:pandas.read_excel was doing without
     changing expected outputs
 
@@ -333,10 +333,13 @@ def test_read_csv_files_method():
         4) test loading parameter values from Excel file should be equal to loading the same from csv file
 
     """
+    # get resource file path
     resourcefilepath = path_to_files / 'resources'
+    tmpdir_resourcefilepath = Path(tmpdir / 'resources')
+    shutil.copytree(resourcefilepath, tmpdir_resourcefilepath)
 
     # ----- Test case 1. read csv method when one file name is supplied. should return a dataframe
-    df = read_csv_files(resourcefilepath, files=['df_at_healthcareseeking'])
+    df = read_csv_files(tmpdir_resourcefilepath, files=['df_at_healthcareseeking'])
     assert isinstance(df, pd.DataFrame)
 
     # ----- Test case 2. read csv method when multiple file names are supplied.
@@ -344,7 +347,7 @@ def test_read_csv_files_method():
     # dictionary keys should match supplied file names
     # all dictionary values should be dataframes
     file_names = ['df_at_healthcareseeking', 'df_at_init_of_lifestyle']
-    df_dict = read_csv_files(resourcefilepath, files=file_names)
+    df_dict = read_csv_files(tmpdir_resourcefilepath, files=file_names)
     assert isinstance(df_dict, dict)
     assert set(df_dict.keys()) == set(file_names)
     for _key, dataframe in df_dict.items():
@@ -354,19 +357,19 @@ def test_read_csv_files_method():
     # should return dictionary.
     # dictionary keys should match csv file names in resource folder
     # all dictionary values should be dataframes
-    file_names = [csv_file_path.stem for csv_file_path in resourcefilepath.rglob("*.csv")]
+    file_names = [csv_file_path.stem for csv_file_path in tmpdir_resourcefilepath.rglob("*.csv")]
 
-    df_none_files = read_csv_files(resourcefilepath)
+    df_none_files = read_csv_files(tmpdir_resourcefilepath)
     assert isinstance(df_none_files, dict)
     assert set(df_none_files.keys()) == set(file_names)
     assert all(isinstance(value, pd.DataFrame) for value in df_none_files.values())
 
     # ---- Test case 4 check
-    excel_file_path = Path(resourcefilepath / 'ResourceFile_test_convert_to_csv/ResourceFile_test_convert_to_csv.xlsx')
+    excel_file_path = Path(tmpdir_resourcefilepath / 'ResourceFile_test_convert_to_csv/ResourceFile_test_convert_to_csv.xlsx')
     # convert the above Excel file into csv equivalent. we will use the newly converted files to determine if
     # loading parameters from Excel file will be equal to loading parameters from the converted csv files
-    convert_excel_files_to_csv(folder=Path(resourcefilepath / 'ResourceFile_test_convert_to_csv'),
-                               files=[excel_file_path.name], test_mode=True)
+    convert_excel_files_to_csv(folder=Path(tmpdir_resourcefilepath / 'ResourceFile_test_convert_to_csv'),
+                               files=[excel_file_path.name])
 
     # get excel sheet names
     xls = pd.ExcelFile(excel_file_path)
