@@ -299,7 +299,7 @@ class Mockitis(Module, GenericFirstAppointmentsMixin):
         df = self.sim.population.props  # shortcut to population properties dataframe
         total_prev = df.loc[df.is_alive, 'mi_is_infected'].sum()/ len(df[df['is_alive']])
         print(total_prev)
-        return total_prev
+        return {'Mockitis': total_prev}
 
     def do_at_generic_first_appt_emergency(
         self,
