@@ -220,7 +220,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         is_infected = (df[self.cols_of_infection_status].isin(['Low-infection', 'High-infection'])).any()
         total_prev = len(is_infected)/ len(df[df['is_alive']])
 
-        return total_prev
+        return {'Schisto': total_prev}
 
     def do_effect_of_treatment(self, person_id: Union[int, Sequence[int]]) -> None:
         """Do the effects of a treatment administered to a person or persons. This can be called for a person who is

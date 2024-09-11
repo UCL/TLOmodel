@@ -767,7 +767,7 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         )
         total_prev = total_clin/ len(df[df.is_alive])
 
-        return total_prev
+        return {'Malaria': total_prev}
 
     def check_if_fever_is_caused_by_malaria(
         self,

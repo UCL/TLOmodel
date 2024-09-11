@@ -189,7 +189,7 @@ class Copd(Module, GenericFirstAppointmentsMixin):
             df[(df['is_alive']) & (df['ch_lungfunction'] > 3)] # 3 is mild COPD
         ) / len(df[df['is_alive']])
 
-        return total_prev
+        return {'COPD': total_prev}
 
     def define_symptoms(self):
         """Define and register Symptoms"""

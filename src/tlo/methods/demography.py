@@ -423,13 +423,13 @@ class Demography(Module):
                 maternal_deaths = maternal_direct_deaths + indirect_deaths_non_hiv + indirect_deaths_hiv
                 maternal_mortality_rate = maternal_deaths/live_births * 1000
 
-        health_values_df = pd.DataFrame({
-            'NMR': [neonatal_mortality_rate],
-            'MMR': [maternal_mortality_rate],
-            'live_births': [live_births]
-        })
+        metrics_dict = {
+            'NMR': neonatal_mortality_rate,
+            'MMR': maternal_mortality_rate,
+            'live_births': live_births
+        }
 
-        return health_values_df
+        return metrics_dict
 
     def _edit_init_pop_to_prevent_persons_greater_than_max_age(self, df, max_age: int):
         """Return an edited version of the `pd.DataFrame` describing the probability of persons in the population being

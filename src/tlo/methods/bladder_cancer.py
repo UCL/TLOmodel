@@ -601,7 +601,7 @@ class BladderCancer(Module, GenericFirstAppointmentsMixin):
         total_prev = len(
             df[(df.bc_status != 'none') & (df.is_alive)]
         ) / len(df[df.is_alive])
-        return total_prev
+        return {'Bladder Cancer': total_prev}
 
     def do_at_generic_first_appt(
         self,

@@ -1015,8 +1015,8 @@ class Tb(Module):
         df = self.sim.population.props
         df_tmp = df.loc[df.is_alive]
         num_active_tb_cases = len(df_tmp[(df_tmp.tb_inf == "active") & df_tmp.is_alive])
-        total_prev = (num_active_tb_cases) / len(df_tmp)
-        return total_prev
+        total_prev = num_active_tb_cases / len(df_tmp)
+        return {'TB': total_prev}
 
     def calculate_untreated_proportion(self, population, strain):
         """

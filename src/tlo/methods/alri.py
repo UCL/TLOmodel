@@ -1002,7 +1002,7 @@ class Alri(Module, GenericFirstAppointmentsMixin):
             df[(df['is_alive']) & (df['ri_current_infection_status'])]
         ) / len(df[df['is_alive']])
 
-        return total_prev
+        return {'ALRI': total_prev}
     def over_ride_availability_of_certain_consumables(self):
         """Over-ride the availability of certain consumables, according the parameter values provided."""
         p = self.parameters

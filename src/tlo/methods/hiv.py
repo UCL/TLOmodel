@@ -1300,7 +1300,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         total_prev = len(
             df[df.hv_inf & df.is_alive]
         ) / len(df[df.is_alive])
-        return total_prev
+        return {'HIV': total_prev}
 
     def mtct_during_breastfeeding(self, mother_id, child_id):
         """

@@ -654,7 +654,7 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
         total_prev = len(
             df[df.gi_has_diarrhoea & df.is_alive]
         ) / len(df[df.is_alive])
-        return total_prev
+        return {'Diarrhoea': total_prev}
 
     def look_up_consumables(self):
         """Look up and store the consumables item codes used in each of the HSI."""
