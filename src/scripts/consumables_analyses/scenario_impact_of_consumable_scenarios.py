@@ -32,10 +32,10 @@ class ImpactOfConsumablesScenarios(BaseScenario):
         super().__init__()
         self.seed = 99
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2019, 12, 31)
-        self.pop_size = 5000 # large population size for final simulation - 100,000
-        self.number_of_draws = 12  # <- 10 scenarios (10)
-        self.runs_per_draw = 3  # <- repeated this many times
+        self.end_date = Date(2012, 12, 31)
+        self.pop_size = 1000 # large population size for final simulation - 100,000
+        self.number_of_draws = 12  # <- 12 scenarios
+        self.runs_per_draw = 1  # <- repeated this many times
 
     def log_configuration(self):
         return {
