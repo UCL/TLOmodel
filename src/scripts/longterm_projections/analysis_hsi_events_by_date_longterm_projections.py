@@ -29,7 +29,7 @@ PREFIX_ON_FILENAME = '3'
 
 # Declare period for which the results will be generated (defined inclusively)
 min_year = 2010
-max_year = 2025
+max_year = 2024
 spacing_of_years = 1
 def drop_outside_period(_df, target_period):
     """Return a dataframe which only includes for which the date is within the limits defined by TARGET_PERIOD"""
@@ -820,7 +820,7 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
     axes[1].set_title('Panel B: Normalized HSI Events by TREATMENT_ID (Short) All Years Trend')
     axes[1].set_xlabel('Year')
     axes[1].set_ylabel('Normalized Counts (First Year = 2010)')
-    axes[1].legend(title='Treatment ID', bbox_to_anchor=(1.05, 1), loc='upper left')
+    axes[1].legend(title='Treatment ID', bbox_to_anchor=(1.0, 1), loc='upper left')
     axes[1].grid(True)
 
     # Save the figure with both panels
