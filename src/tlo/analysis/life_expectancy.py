@@ -154,7 +154,6 @@ def _estimate_life_expectancy(
     """
 
     estimated_life_expectancy_at_birth = dict()
-    calculate_probability_of_dying(_person_years_at_risk, _number_of_deaths_in_interval)
     # first age-group is 0, then 1-4, 5-9, 10-14 etc. 22 categories in total
     age_group_labels = _person_years_at_risk.index.get_level_values('age_group').unique()
 

@@ -40,7 +40,7 @@ def test_get_life_expectancy():
     assert rtn_full.columns.levels[1].to_list() == [0, 1]
 
 
-def test_probability_premature_death(tmpdir, age_before_which_death_is_defined_as_premature: int =70):
+def test_probability_premature_death(tmpdir, age_before_which_death_is_defined_as_premature: int = 70):
     """
     Test the calculation of the probability of premature death from a simulated cohort.
 
@@ -62,7 +62,7 @@ def test_probability_premature_death(tmpdir, age_before_which_death_is_defined_a
 
     with open(pickled_file, 'rb') as file:
         demography_data = pickle.load(file)
-                # test parsing when log level is INFO
+        # test parsing when log level is INFO
     initial_female = demography_data['population']['female'][0]
     initial_male = demography_data['population']['male'][0]
 
@@ -80,23 +80,23 @@ def test_probability_premature_death(tmpdir, age_before_which_death_is_defined_a
         column="age",
         do_scaling=False
     )
-    deaths_total= pd.DataFrame({
-    'Sex': death_sex[0][0],
-    'Age': death_age[0][0]}, index = range(len(death_sex)))
+    deaths_total = pd.DataFrame({
+        'Sex': death_sex[0][0],
+        'Age': death_age[0][0]}, index=range(len(death_sex)))
 
     probability_premature_death_sim_F = len(deaths_total[
-    (deaths_total['Sex'] == 'F') &
-    (deaths_total['Age'].astype(int) <= age_before_which_death_is_defined_as_premature)])/ initial_female
+                                                (deaths_total['Sex'] == 'F') &
+                                                (deaths_total['Age'].astype(
+                                                    int) <= age_before_which_death_is_defined_as_premature)]) / initial_female
     probability_premature_death_sim_M = len(deaths_total[(deaths_total['Sex'] == 'M') & (
-            deaths_total['Age'].astype(int) <= age_before_which_death_is_defined_as_premature)]) / initial_male
+        deaths_total['Age'].astype(int) <= age_before_which_death_is_defined_as_premature)]) / initial_male
 
     probability_premature_death_summary = get_probability_of_premature_death(
         results_folder=results_folder_dummy_results,
         target_period=target_period,
-        summary=True,)
+        summary=True, )
 
-
-    assert probability_premature_death_summary[0]['lower'][0] < probability_premature_death_sim_F > probability_premature_death_summary[0]['lower'][0]
-    assert probability_premature_death_summary[0]['lower'][1] < probability_premature_death_sim_M > probability_premature_death_summary[0]['lower'][1]
-
-
+    assert probability_premature_death_summary[0]['lower'][0] < probability_premature_death_sim_F > \
+           probability_premature_death_summary[0]['lower'][0]
+    assert probability_premature_death_summary[0]['lower'][1] < probability_premature_death_sim_M > \
+           probability_premature_death_summary[0]['lower'][1]
