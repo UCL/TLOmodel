@@ -35,7 +35,7 @@ class ImpactOfConsumablesScenarios(BaseScenario):
         self.end_date = Date(2012, 12, 31)
         self.pop_size = 1000 # large population size for final simulation - 100,000
         self.number_of_draws = 12  # <- 12 scenarios
-        self.runs_per_draw = 1  # <- repeated this many times
+        self.runs_per_draw = 2  # <- repeated this many times
 
     def log_configuration(self):
         return {
