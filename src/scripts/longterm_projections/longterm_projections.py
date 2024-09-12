@@ -14,8 +14,8 @@ class LongRun(BaseScenario):
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2060, 1, 12)
         self.pop_size = 100_000
-        self.number_of_draws = 10
-        self.runs_per_draw = 1
+        self.number_of_draws = 1
+        self.runs_per_draw = 10
         self.YEAR_OF_CHANGE = 2020
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
