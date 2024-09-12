@@ -3,7 +3,21 @@ This script adds estimates of availability of consumables under different scenar
 
 Outputs:
 * Updated version of ResourceFile_Consumables_availability_small.csv (estimate of consumable available - smaller file for use in the
- simulation) which includes new consumable availability estimates for all scenarios
+ simulation) which includes new consumable availability estimates for all scenarios. The following scenarios are generated
+1. 'default' : this is the benchmark scenario with 2018 levels of consumable availability
+2. 'scenario1' : [Level 1a + 1b] All items perform as well as consumables other than drugs/diagnostic tests
+3. 'scenario2' : [Level 1a + 1b] 1 + All items perform as well as consumables classified as 'Vital' in the Essential Medicines List
+4. 'scenario3' : [Level 1a + 1b] 2 + All facilities perform as well as those in which consumables stock is managed by pharmacists
+5. 'scenario4' : [Level 1a + 1b] 3 + Level 1a facilities perform as well as level 1b
+6. 'scenario5' : [Level 1a + 1b] 4 + All facilities perform as well as CHAM facilities
+7. 'scenario6' : [Level 1a + 1b] All facilities have the same probability of consumable availability as the 75th percentile best performing facility for each individual item
+8. 'scenario7' : [Level 1a + 1b] All facilities have the same probability of consumable availability as the 90th percentile best performing facility for each individual item
+9. 'scenario8' : [Level 1a + 1b] All facilities have the same probability of consumable availability as the 99th percentile best performing facility for each individual item
+10. 'scenario9' : [Level 1a + 1b + 2] All facilities have the same probability of consumable availability as the 99th percentile best performing facility for each individual item
+11. 'scenario10' : [Level 1a + 1b] All programs perform as well as HIV
+12. 'scenario11' : [Level 1a + 1b] All programs perform as well as EPI
+13. 'scenario12' : [Level 1a + 1b] HIV performs as well as other programs (excluding EPI)
+14. 'all': all consumable are always available - provides the theoretical maximum health gains which can be made through improving consumable supply
 
 Inputs:
 * outputs/regression_analysis/predictions/predicted_consumable_availability_regression_scenarios.csv - This file is hosted

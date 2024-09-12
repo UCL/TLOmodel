@@ -1,16 +1,18 @@
 """
 This file defines a batch run to calculate the health effect of updated consumable availability estimates
 as a result of a supply chain intervention. The following scenarios are considered:
-1. 'default' - this is the benchmark scenario with 2018 levels of consumable availability
-2. 'scenario1' : All items perform as well as consumables other than drugs/diagnostic tests
-3. 'scenario2' : 1 + All items perform as well as consumables classified as 'Vital' in the Essential Medicines List
-4. 'scenario3' : 2 + All facilities perform as well as those in which consumables stock is managed by pharmacists
-5. 'scenario4' : 3 + Level 1a facilities perform as well as level 1b
-6. 'scenario5' : 4 + All facilities perform as well as CHAM facilities
-7. 'scenario6' : All facilities have the same probability of consumable availability as the 75th percentile best performing facility for each individual item
-8. 'scenario7' : All facilities have the same probability of consumable availability as the 90th percentile best performing facility for each individual item
-9. 'scenario8' : All facilities have the same probability of consumable availability as the 99th percentile best performing facility for each individual item
-10. 'all': all consumable are always available - provides the theoretical maximum health gains which can be made through improving consumable supply
+1. 'default' : this is the benchmark scenario with 2018 levels of consumable availability
+2. 'scenario1' : [Level 1a + 1b] All items perform as well as consumables other than drugs/diagnostic tests
+3. 'scenario2' : [Level 1a + 1b] 1 + All items perform as well as consumables classified as 'Vital' in the Essential Medicines List
+4. 'scenario3' : [Level 1a + 1b] 2 + All facilities perform as well as those in which consumables stock is managed by pharmacists
+5. 'scenario6' : [Level 1a + 1b] All facilities have the same probability of consumable availability as the 75th percentile best performing facility for each individual item
+6. 'scenario7' : [Level 1a + 1b] All facilities have the same probability of consumable availability as the 90th percentile best performing facility for each individual item
+7. 'scenario8' : [Level 1a + 1b] All facilities have the same probability of consumable availability as the 99th percentile best performing facility for each individual item
+8. 'scenario9' : [Level 1a + 1b + 2] All facilities have the same probability of consumable availability as the 99th percentile best performing facility for each individual item
+9. 'scenario10' : [Level 1a + 1b] All programs perform as well as HIV
+10. 'scenario11' : [Level 1a + 1b] All programs perform as well as EPI
+11. 'scenario12' : [Level 1a + 1b] HIV performs as well as other programs (excluding EPI)
+12. 'all': all consumable are always available - provides the theoretical maximum health gains which can be made through improving consumable supply
 
 The batch runs are for a large population for a long time with all disease modules and full use of HSIs.
 Run on the batch system using:
