@@ -154,6 +154,7 @@ def _estimate_life_expectancy(
     """
 
     estimated_life_expectancy_at_birth = dict()
+
     # first age-group is 0, then 1-4, 5-9, 10-14 etc. 22 categories in total
     age_group_labels = _person_years_at_risk.index.get_level_values('age_group').unique()
 
@@ -169,7 +170,26 @@ def _estimate_life_expectancy(
     for sex in ['M', 'F']:
         person_years_by_sex = _person_years_at_risk.xs(key=sex, level='sex')
         number_of_deaths_by_sex = _number_of_deaths_in_interval.xs(key=sex, level='sex')
-        probability_of_dying_in_interval = calculate_probability_of_dying(person_years_by_sex, number_of_deaths_by_sex)
+
+        death_rate_in_interval = number_of_deaths_by_sex / person_years_by_sex
+        # if no deaths or person-years, produces nan
+        death_rate_in_interval = death_rate_in_interval.fillna(0)
+        # if no deaths in age 90+, set death rate equal to value in age 85-89
+        if death_rate_in_interval.loc['90'] == 0:
+            death_rate_in_interval.loc['90'] = death_rate_in_interval.loc['85-89']
+
+        # Calculate the probability of dying in the interval
+        # condition checks whether the observed number deaths is significantly higher than would be expected
+        # based on population years at risk and survival fraction
+        # if true, suggests very high mortality rates and returns value 1
+        condition = number_of_deaths_by_sex > (
+            person_years_by_sex / interval_width / fraction_of_last_age_survived)
+        probability_of_dying_in_interval = pd.Series(index=number_of_deaths_by_sex.index, dtype=float)
+        probability_of_dying_in_interval[condition] = 1
+        probability_of_dying_in_interval[~condition] = interval_width * death_rate_in_interval / (
+            1 + interval_width * (1 - fraction_of_last_age_survived) * death_rate_in_interval)
+        # all those surviving to final interval die during this interval
+        probability_of_dying_in_interval.at['90'] = 1
 
         # number_alive_at_start_of_interval
         # keep dtype as float in case using aggregated outputs
