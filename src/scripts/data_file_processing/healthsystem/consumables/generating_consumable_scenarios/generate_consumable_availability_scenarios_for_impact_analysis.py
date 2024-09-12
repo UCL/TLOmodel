@@ -160,7 +160,10 @@ map_model_programs_to_hhfa = {
     'cardiometabolicdisorders': 'ncds',
     'cancer': 'ncds',
 }
-scenario_availability_df['category_tlo'] = scenario_availability_df['program_plot'].replace(map_model_programs_to_hhfa) # TODO this does not work
+# Reverse the map_model_programs_to_hhfa dictionary
+hhfa_to_model_programs = {v: k for k, v in map_model_programs_to_hhfa.items()}
+
+scenario_availability_df['category_tlo'] = scenario_availability_df['program_plot'].replace(hhfa_to_model_programs) # TODO this might not be relevant
 
 # 1.2.5 Consumable/Item code and Category
 #------------------------------------------------------
