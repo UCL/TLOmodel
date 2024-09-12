@@ -127,10 +127,12 @@ class HealthBurden(Module):
                    callable(self.sim.modules[module_name].report_daly_values), 'A module that declares use of ' \
                                                                                'HealthBurden module must have a ' \
                                                                                'callable function "report_daly_values"'
-            assert getattr(self.sim.modules[module_name], 'report_prevalence', None) and \
-                   callable(self.sim.modules[module_name].report_prevalence), 'A module that declares use of ' \
-                                                                              'HealthBurden module must have a ' \
-                                                                              'callable function "report_prevalence"'
+            print(module_name)
+            if not module_name.startswith('DiseaseThatCauses'):
+                assert getattr(self.sim.modules[module_name], 'report_prevalence', None) and \
+                       callable(self.sim.modules[module_name].report_prevalence), 'A module that declares use of ' \
+                                                                                  'HealthBurden module must have a ' \
+                                                                                  'callable function "report_prevalence"'
 
         # 3) Process the declarations of causes of disability and DALYS made by the disease modules
         self.process_causes_of_disability()

@@ -619,7 +619,7 @@ class DummyDisease(Module, GenericFirstAppointmentsMixin):
 	    - Collect prevalence
     """
 
-    INIT_DEPENDENCIES = {'Demography', 'SymptomManager'}
+    INIT_DEPENDENCIES = {'Demography'}
 
     OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
 
@@ -630,7 +630,6 @@ class DummyDisease(Module, GenericFirstAppointmentsMixin):
     # Declare Metadata
     METADATA = {
         Metadata.DISEASE_MODULE,
-        Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN
     }
 
@@ -659,7 +658,7 @@ class DummyDisease(Module, GenericFirstAppointmentsMixin):
         p = self.parameters
 
         p['p_infection'] = 1
-        p['initial_prevalence'] = 0.5
+        p['initial_prevalence'] = 0
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
