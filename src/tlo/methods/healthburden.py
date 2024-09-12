@@ -751,15 +751,15 @@ class GetCurrentPrevalenceWriteToLog(RegularEvent, PopulationScopeEventMixin):
                     continue
                 else:
                     prevalence_from_each_disease_module = {'population': [population_size]}
-                    print(disease_module_name)
                     disease_module = self.sim.modules[disease_module_name]
                     prevalence_from_disease_module = disease_module.report_prevalence()
                     if prevalence_from_disease_module is None:
                         continue
                     for key, value in prevalence_from_disease_module.items():
+                        print(key)
                         prevalence_from_each_disease_module[key] = value
-            print(prevalence_from_each_disease_module.keys())
             prevalence_from_each_disease_module = pd.DataFrame([prevalence_from_each_disease_module])
+            print(prevalence_from_each_disease_module.columns)
             prevalence_from_each_disease_module.drop(
                 prevalence_from_each_disease_module.index.intersection(
                     ['DiseaseThatCausesA']

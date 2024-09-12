@@ -113,6 +113,8 @@ def test_run_with_healthburden_with_real_diseases(tmpdir, seed):
     columns = prevalence.columns
     excluded_modules = ['Lifestyle', 'HealthBurden', 'HealthSeekingBehaviour', 'SymptomManager', 'Epi', 'HealthSystem', 'SimplifiedBirths', 'Contraception', 'CareOfWomenDuringPregnancy'] # don't return prevalences
 
+    assert 'chronic_ischemic_hd' in columns
+
     for module in sim.modules:
         if module not in excluded_modules:
             if module == 'CardioMetabolicDisorders':
