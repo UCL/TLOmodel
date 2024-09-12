@@ -11,7 +11,6 @@ as a result of a supply chain intervention. The following scenarios are consider
 8. 'scenario9' : [Level 1a + 1b + 2] All facilities have the same probability of consumable availability as the 99th percentile best performing facility for each individual item
 9. 'scenario10' : [Level 1a + 1b] All programs perform as well as HIV
 10. 'scenario11' : [Level 1a + 1b] All programs perform as well as EPI
-11. 'scenario12' : [Level 1a + 1b] HIV performs as well as other programs (excluding EPI)
 12. 'all': all consumable are always available - provides the theoretical maximum health gains which can be made through improving consumable supply
 
 The batch runs are for a large population for a long time with all disease modules and full use of HSIs.
@@ -34,10 +33,10 @@ class ImpactOfConsumablesScenarios(BaseScenario):
         super().__init__()
         self.seed = 99
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2012, 12, 31)
-        self.pop_size = 1000 # large population size for final simulation - 100,000
-        self.number_of_draws = 12  # <- 12 scenarios
-        self.runs_per_draw = 2  # <- repeated this many times
+        self.end_date = Date(2019, 12, 31)
+        self.pop_size = 100_000 # large population size for final simulation - 100,000
+        self.number_of_draws = 11  # <- 11 scenarios
+        self.runs_per_draw = 10  # <- repeated this many times
 
     def log_configuration(self):
         return {
@@ -61,7 +60,6 @@ class ImpactOfConsumablesScenarios(BaseScenario):
                                       'scenario1', 'scenario2', 'scenario3',
                                       'scenario6', 'scenario7', 'scenario8',
                                       'scenario9', 'scenario10', 'scenario11',
-                                      'scenario12',
                                       'all'][draw_number]
                }
         }
