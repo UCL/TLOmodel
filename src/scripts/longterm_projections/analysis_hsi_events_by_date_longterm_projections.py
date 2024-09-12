@@ -956,6 +956,7 @@ def figure11_minutes_per_cadre(results_folder: Path, output_folder: Path,
 
     all_years_data = {}
     scenario_info = get_scenario_info(results_folder)
+    print(scenario_info)
     for target_year in target_year_sequence:
         target_period = (
             Date(target_year, 1, 1), Date(target_year + spacing_of_years, 12, 31))
@@ -965,11 +966,8 @@ def figure11_minutes_per_cadre(results_folder: Path, output_folder: Path,
                     results_folder, draw, run, "tlo.methods.healthsystem.summary"
                 )["tlo.methods.healthsystem.summary"]["hsi_event_details"]
 
-                hsi_event_key_to_event_details = hsi_event_key_to_event_details[
-                        hsi_event_key_to_event_details['date'].between(target_period[0], target_period[1])
-                    ]
                 hsi_event_key_to_event_details = hsi_event_key_to_event_details["hsi_event_key_to_event_details"]
-
+                print(hsi_event_key_to_event_details[0])
                 hsi_event_key_to_counts = load_pickled_dataframes(
                     results_folder, draw, run, "tlo.methods.healthsystem.summary"
                 )["tlo.methods.healthsystem.summary"]["hsi_event_counts"]
@@ -978,14 +976,9 @@ def figure11_minutes_per_cadre(results_folder: Path, output_folder: Path,
                     ]
 
                 hsi_event_key_to_counts = hsi_event_key_to_counts['hsi_event_key_to_counts']
-                print(hsi_event_key_to_counts.iloc[1])
-                for hsi_event_code, hsi_event_details in hsi_event_key_to_event_details.items():
+                for hsi_event_code, hsi_event_details in hsi_event_key_to_event_details[0].items():
                     hsi_count = hsi_event_key_to_counts.iloc[1][str(hsi_event_code)]
-                    hsi_event_name = hsi_event_details['event_name']
-                    hsi_event_treatment_id = hsi_event_details['treatment_id']
-                    hsi_event_facility = hsi_event_details['facility_level']
-                    hsi_event_appt = hsi_event_details['appt_footprint']
-                    print(hsi_event_appt, hsi_event_treatment_id, hsi_event_name)
+
 
 
     all_years_data = {}
@@ -1112,7 +1105,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("results_folder", type=Path)
     args = parser.parse_args()
-    #results_folder = '/Users/rem76/PycharmProjects/TLOmodel/outputs/tbh03@ic.ac.uk/long_run_all_diseases-2024-05-31T160939Z'
+    #results_folder = Path("/Users/rem76/PycharmProjects/TLOmodel/outputs/rm916@ic.ac.uk/longterm_trends_all_diseases-2024-09-04T082106Z")
 
     apply(
         results_folder=args.results_folder,
