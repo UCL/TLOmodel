@@ -647,6 +647,12 @@ def recategorize_modules_into_consumable_categories(_df):
 stkout_df = recategorize_modules_into_consumable_categories(stkout_df)
 item_code_category_mapping = stkout_df[['item_category', 'item_code']].drop_duplicates()
 
+# Add item_category to ResourceFile_Consumables_Item_Designations
+item_designations = pd.read_csv(path_for_new_resourcefiles  / 'ResourceFile_Consumables_Item_Designations.csv')
+item_designations = item_designations.drop(columns = 'item_category')
+item_designations = item_designations.merge(item_code_category_mapping, left_on = 'Item_Code', right_on = 'item_code', how = 'left', validate = '1:1')
+item_designations.drop(columns = 'item_code').to_csv(path_for_new_resourcefiles  / 'ResourceFile_Consumables_Item_Designations.csv', index = False)
+
 # --- 6.5 Replace district/fac_name/month entries where missing --- #
 for var in ['district', 'fac_name', 'month']:
     cond = stkout_df[var].isna()
@@ -833,7 +839,8 @@ for fac in fac_ids:
 # Check that there are not missing values
 assert not pd.isnull(full_set_interpolated).any().any()
 
-full_set_interpolated = full_set_interpolated.reset_index().merge(item_code_category_mapping, on = 'item_code', how = 'left', validate = 'm:1')
+full_set_interpolated = full_set_interpolated.reset_index()
+#full_set_interpolated = full_set_interpolated.reset_index().merge(item_code_category_mapping, on = 'item_code', how = 'left', validate = 'm:1')
 
 # --- Check that the exported file has the properties required of it by the model code. --- #
 check_format_of_consumables_file(df=full_set_interpolated, fac_ids=fac_ids)

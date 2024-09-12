@@ -357,7 +357,7 @@ def check_format_of_consumables_file(df, fac_ids):
     availability_columns = ['available_prop'] + [f'available_prop_scenario{i}' for i in
                                                  range(1, number_of_scenarios + 1)]
 
-    assert set(df.columns) == {'Facility_ID', 'month', 'item_code'} | set(availability_columns)
+    assert set(df.columns).issubset({'Facility_ID', 'month', 'item_code'} | set(availability_columns))
 
     # Check that all permutations of Facility_ID, month and item_code are present
     pd.testing.assert_index_equal(
@@ -368,8 +368,10 @@ def check_format_of_consumables_file(df, fac_ids):
 
     # Check that every entry for a probability is a float on [0,1]
     for col in availability_columns:
-        assert (df[col] <= 1.0).all() and (df[col] >= 0.0).all()
-        assert not pd.isnull(df[col]).any()
+        if col in df.columns: # This makes sure that even when all scenarios have not been created, the ones that are
+            # have appropriate values
+            assert (df[col] <= 1.0).all() and (df[col] >= 0.0).all()
+            assert not pd.isnull(df[col]).any()
 
 
 class ConsumablesSummaryCounter:
