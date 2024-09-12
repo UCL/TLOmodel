@@ -597,7 +597,7 @@ class HealthBurden(Module):
                         'schisto: individuals who have Low-infection or High-infection, any parasite'
                         'TB: individuals who have tb_inf = active',
             df=self.prevalence_of_diseases,
-            force_cols=self.prevalence_of_diseases.columns,
+            force_cols=self.prevalence_of_diseases.columns
         )
 
     def check_multi_index(self):
@@ -746,26 +746,23 @@ class GetCurrentPrevalenceWriteToLog(RegularEvent, PopulationScopeEventMixin):
         else:
             # Calculate the population size
             population_size = len(self.sim.population.props[self.sim.population.props['is_alive']])
+            prevalence_from_each_disease_module = {'population': [population_size]}
             for disease_module_name in self.module.recognised_modules_names_for_prevalence:
                 if disease_module_name in ['DiseaseThatCausesA']:
                     continue
                 else:
-                    prevalence_from_each_disease_module = {'population': [population_size]}
                     disease_module = self.sim.modules[disease_module_name]
                     prevalence_from_disease_module = disease_module.report_prevalence()
                     if prevalence_from_disease_module is None:
                         continue
                     for key, value in prevalence_from_disease_module.items():
-                        print(key)
                         prevalence_from_each_disease_module[key] = value
-            prevalence_from_each_disease_module = pd.DataFrame([prevalence_from_each_disease_module])
-            print(prevalence_from_each_disease_module.columns)
-            prevalence_from_each_disease_module.drop(
+        prevalence_from_each_disease_module = pd.DataFrame([prevalence_from_each_disease_module])
+        prevalence_from_each_disease_module.drop(
                 prevalence_from_each_disease_module.index.intersection(
                     ['DiseaseThatCausesA']
                 ),
                 axis=0, inplace=True
             )
-            print(prevalence_from_each_disease_module.columns)
-            self.module.prevalence_of_diseases = prevalence_from_each_disease_module
+        self.module.prevalence_of_diseases = prevalence_from_each_disease_module
         self.module.write_to_log_prevalence()
