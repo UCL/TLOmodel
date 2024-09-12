@@ -150,7 +150,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         elif put_labels_in_legend and len(xticks) == 2:
             colors = ['blue', 'green']
         else:
-            colore = None
+            colors = None
 
         fig, ax = plt.subplots(figsize=(10, 5))
         ax.bar(
@@ -425,22 +425,22 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         cause: CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.get(cause, np.nan)
         for cause in num_dalys_by_cause_summarized.columns
     }
-    officer_category_color = {
-        'Clinical': 'blue',
-        'DCSA': 'orange',
-        'Nursing_and_Midwifery': 'red',
-        'Pharmacy': 'green',
-        'Dental': 'gray',
-        'Laboratory': 'gray',
-        'Mental': 'gray',
-        'Nutrition': 'gray',
-        'Radiography': 'gray',
-    }
-    scenario_color = {
-        's_1': 'orange',
-        's_2': 'blue',
-        's_3': 'green',
-    }
+    # officer_category_color = {
+    #     'Clinical': 'blue',
+    #     'DCSA': 'orange',
+    #     'Nursing_and_Midwifery': 'red',
+    #     'Pharmacy': 'green',
+    #     'Dental': 'gray',
+    #     'Laboratory': 'gray',
+    #     'Mental': 'gray',
+    #     'Nutrition': 'gray',
+    #     'Radiography': 'gray',
+    # }
+    # scenario_color = {
+    #     's_1': 'orange',
+    #     's_2': 'blue',
+    #     's_3': 'green',
+    # }
 
     # plot absolute numbers for scenarios
 
