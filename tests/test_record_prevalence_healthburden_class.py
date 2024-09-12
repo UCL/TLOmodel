@@ -10,7 +10,6 @@ from tlo.methods import (
     healthsystem,
     mockitis,
     symptommanager,
-
 )
 from tlo.methods.fullmodel import fullmodel
 
