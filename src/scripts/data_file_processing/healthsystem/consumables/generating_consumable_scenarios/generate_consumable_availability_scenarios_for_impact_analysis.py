@@ -51,10 +51,13 @@ path_for_new_resourcefiles = resourcefilepath / "healthsystem/consumables"
 #------------------------------------------------------
 tlo_availability_df = pd.read_csv(path_for_new_resourcefiles / "ResourceFile_Consumables_availability_small.csv")
 # Drop any scenario data previously included in the resourcefile
-tlo_availability_df = tlo_availability_df[['Facility_ID', 'month', 'item_category', 'item_code', 'available_prop']]
-program_item_mapping = tlo_availability_df[['item_category', 'item_code']].drop_duplicates()
+tlo_availability_df = tlo_availability_df[['Facility_ID', 'month','item_code', 'available_prop']]
 
-# 1.1.1 Attach district and facility level to this dataset
+# Import item_category
+program_item_mapping = pd.read_csv(path_for_new_resourcefiles  / 'ResourceFile_Consumables_Item_Designations.csv')[['Item_Code', 'item_category']]
+program_item_mapping = program_item_mapping.rename(columns ={'Item_Code': 'item_code'})[program_item_mapping.item_category.notna()]
+
+# 1.1.1 Attach district,  facility level and item_category to this dataset
 #----------------------------------------------------------------
 # Get TLO Facility_ID for each district and facility level
 mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "ResourceFile_Master_Facilities_List.csv")
@@ -62,6 +65,9 @@ districts = set(pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_Popu
 fac_levels = {'0', '1a', '1b', '2', '3', '4'}
 tlo_availability_df = tlo_availability_df.merge(mfl[['District', 'Facility_Level', 'Facility_ID']],
                     on = ['Facility_ID'], how='left')
+
+tlo_availability_df = tlo_availability_df.merge(program_item_mapping,
+                    on = ['item_code'], how='left')
 
 # 1.2 Import scenario data
 #------------------------------------------------------
@@ -546,7 +552,7 @@ nonhiv_availability_df = tlo_availability_df[~cond_hiv]
 non_vertical_hiv_availability_df = tlo_availability_df[cond_hiv]
 nonhivepi_availability_average = nonhivepi_availability_average.rename(columns = {'available_prop':'available_prop_scenario12'})
 nonhiv_availability_df['available_prop_scenario12'] = nonhiv_availability_df['available_prop']
-non_vertical_hiv_availability_df = non_vertical_hiv_availability_df.merge(nonhiv_availability_average, on = ['Facility_ID', 'month'],  how = 'left', validate = 'm:1')
+non_vertical_hiv_availability_df = non_vertical_hiv_availability_df.merge(nonhivepi_availability_average, on = ['Facility_ID', 'month'],  how = 'left', validate = 'm:1')
 minimum_scenario_varlist = ['Facility_ID', 'month', 'item_code', 'available_prop_scenario12']
 non_vertical_hiv_scenario_df = pd.concat([non_vertical_hiv_availability_df[minimum_scenario_varlist], nonhiv_availability_df[minimum_scenario_varlist]], ignore_index = True)
 
@@ -585,6 +591,7 @@ if not os.path.exists(figurespath):
 
 # Creating the line plot with ggplot
 df_for_plots = full_df_with_scenario.merge(mfl[['Facility_ID', 'Facility_Level']], on = 'Facility_ID', how = 'left', validate = "m:1")
+df_for_plots = df_for_plots.merge(program_item_mapping, on = 'item_code', how = 'left', validate = "m:1")
 def generate_barplot_of_scenarios(_df, _x_axis_var, _filename):
     df_for_line_plot = _df.groupby([_x_axis_var])[['available_prop'] + final_list_of_scenario_vars].mean()
     df_for_line_plot = df_for_line_plot.reset_index().melt(id_vars=[_x_axis_var], value_vars=['available_prop'] + final_list_of_scenario_vars,
@@ -603,7 +610,6 @@ generate_barplot_of_scenarios(_df = df_for_plots, _x_axis_var = 'item_category',
 generate_barplot_of_scenarios(_df = df_for_plots, _x_axis_var = 'Facility_Level', _filename = 'availability_by_level.png')
 
 # Create heatmaps by Facility_Level of average availability by item_category across chosen scenarios
-chosen_scenarios_for_heatmap =
 number_of_scenarios = 12
 availability_columns = ['available_prop'] + [f'available_prop_scenario{i}' for i in
                                              range(1, number_of_scenarios + 1)]
@@ -670,6 +676,35 @@ plt.xticks(rotation=90)
 plt.yticks(rotation=0)
 
 plt.savefig(figurespath /f'consumable_availability_heatmap_alllevels.png', dpi=300, bbox_inches='tight')
+plt.show()
+plt.close()
+
+# Create heatmap of average availability by Facility_Level just showing scenario 12
+scenario_list = [12]
+chosen_availability_columns = ['available_prop'] + [f'available_prop_scenario{i}' for i in
+                                             scenario_list]
+# Pivot the DataFrame
+df_for_hiv_plot = df_for_plots
+df_for_hiv_plot['hiv_or_other'] = np.where(df_for_hiv_plot['item_category'] == 'hiv', 'hiv', 'other programs')
+
+aggregated_df = df_for_hiv_plot.groupby(['Facility_Level', 'hiv_or_other'])[chosen_availability_columns].mean().reset_index()
+aggregated_df = aggregated_df.rename(columns = {'available_prop': 'Actual', 'available_prop_scenario12': 'HIV moved to Govt supply chain'})
+heatmap_data = aggregated_df.pivot_table(index=['Facility_Level'],  # Keep other relevant columns in the index
+                                      columns='hiv_or_other',
+                                      values=['Actual', 'HIV moved to Govt supply chain'])
+# Generate the heatmap
+sns.set(font_scale=1)
+plt.figure(figsize=(10, 8))
+sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn', cbar_kws={'label': 'Proportion of days on which consumable is available'})
+
+# Customize the plot
+plt.title(f'Availability across scenarios')
+plt.xlabel('Scenarios')
+plt.ylabel(f'Facility Level')
+plt.xticks(rotation=90)
+plt.yticks(rotation=0)
+
+plt.savefig(figurespath /f'consumable_availability_heatmap_hiv_v_other.png', dpi=300, bbox_inches='tight')
 plt.show()
 plt.close()
 
