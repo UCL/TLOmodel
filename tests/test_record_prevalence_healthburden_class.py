@@ -3,12 +3,7 @@ from pathlib import Path
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import (
-    demography,
-    enhanced_lifestyle,
-    healthburden,
-    mockitis,
-)
+from tlo.methods import demography, enhanced_lifestyle, healthburden, mockitis
 from tlo.methods.fullmodel import fullmodel
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
