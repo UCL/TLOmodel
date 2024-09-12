@@ -659,7 +659,7 @@ class DummyDisease(Module, GenericFirstAppointmentsMixin):
         p = self.parameters
 
         p['p_infection'] = 1
-        p['initial_prevalence'] = 0.05
+        p['initial_prevalence'] = 0.5
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -761,7 +761,7 @@ class DummyDiseaseEvent(RegularEvent, PopulationScopeEventMixin):
 
         # 1. get (and hold) index of currently infected and uninfected individuals
         currently_infected = df.index[df.dm_is_infected & df.is_alive]
-        currently_susc = df.index[df.is_alive & (not df.dm_is_infected)]
+        currently_susc = df.index[df.is_alive & (~df.dm_is_infected)]
 
         if df.is_alive.sum():
             prevalence = len(currently_infected) / (

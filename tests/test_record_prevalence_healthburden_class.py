@@ -10,9 +10,9 @@ resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 outputpath = Path("./outputs/")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2011, 1, 1)
+end_date = Date(2011, 1, 12)
 
-popsize = 100
+popsize = 1000
 do_sim = True
 
 
