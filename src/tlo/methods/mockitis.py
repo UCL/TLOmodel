@@ -698,9 +698,6 @@ class DummyDisease(Module, GenericFirstAppointmentsMixin):
         # add an event to log to screen
         sim.schedule_event(DummyDiseaseLoggingEvent(self), sim.date + DateOffset(months=1))
 
-        # a shortcut to the dataframe storing data for individiuals
-        df = sim.population.props
-
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
 
