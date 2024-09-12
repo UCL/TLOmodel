@@ -17,7 +17,6 @@ from tlo.analysis.utils import (
     summarize,
 )
 
-
 # Declare the age before which death is defined as premature
 
 def _map_age_to_age_group(age: pd.Series) -> pd.Series:
