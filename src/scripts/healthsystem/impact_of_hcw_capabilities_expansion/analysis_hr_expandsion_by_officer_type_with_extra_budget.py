@@ -30,22 +30,8 @@ from tlo.analysis.utils import (
 # todo: to update once scenarios confirmed
 substitute_labels = {
     's_1': 'no_expansion',
-    's_2': 'CDNP_expansion_current',
-    's_3': 'C_expansion',
-    's_4': 'D_expansion',
-    's_5': 'N_expansion',
-    's_6': 'P_expansion',
-    's_7': 'CD_expansion',
-    's_8': 'CN_expansion',
-    's_9': 'CP_expansion',
-    's_10': 'DN_expansion',
-    's_11': 'DP_expansion',
-    's_12': 'NP_expansion',
-    's_13': 'CDN_expansion',
-    's_14': 'CDP_expansion',
-    's_15': 'CNP_expansion',
-    's_16': 'DNP_expansion',
-    's_17': 'CDNP_expansion_equal'
+    's_2': 'all_expansion_current',
+    's_3': 'all_expansion_equal',
 }
 
 
@@ -159,10 +145,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         # Define colormap (used only with option `put_labels_in_legend=True`)
         # todo: could re-define colors for each scenario once scenarios are confirmed
-        cmap = plt.get_cmap("tab20")
-        rescale = lambda y: (y - np.min(y)) / (np.max(y) - np.min(y))  # noqa: E731
-        colors = list(map(cmap, rescale(np.array(list(xticks.keys()))))) if put_labels_in_legend and len(xticks) > 1 \
-            else None
+        if put_labels_in_legend and len(xticks) == 3:
+            colors = ['orange', 'blue', 'green']
+        elif put_labels_in_legend and len(xticks) == 2:
+            colors = ['blue', 'green']
+        else:
+            colore = None
 
         fig, ax = plt.subplots(figsize=(10, 5))
         ax.bar(
@@ -205,13 +193,32 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     def get_scale_up_factor(_df):
         """
-        Return a series of yearly scale up factors for four cadres - Clinical, DCSA, Nursing_and_Midwifery, Pharmacy,
-        with index of year and value of list of the four scale up factors.
+        Return a series of yearly scale up factors for all cadres,
+        with index of year and value of list of scale up factors.
         """
-        # todo: once job re-run, update columns name as the logger recorded: year_of_scale_up, scale_up_factor
-        _df = _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD), ['Year of scaling up', 'Scale up factor']]
+        _df = _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD), ['year_of_scale_up', 'scale_up_factor']
+                      ].set_index('year_of_scale_up')
+        _df = _df['scale_up_factor'].apply(pd.Series)
+        assert (_df.columns == cadres).all()
+        _dict = {idx: [list(_df.loc[idx, :])] for idx in _df.index}
+        _df_1 = pd.DataFrame(data=_dict).T
         return pd.Series(
-            _df['Scale up factor'].values, index=_df['Year of scaling up']
+            _df_1.loc[:, 0], index=_df_1.index
+        )
+
+    def get_total_cost(_df):
+        """
+        Return a series of yearly total cost for all cadres,
+        with index of year and values of list of total cost.
+        """
+        _df = _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD), ['year_of_scale_up', 'total_hr_salary']
+                      ].set_index('year_of_scale_up')
+        _df = _df['total_hr_salary'].apply(pd.Series)
+        assert (_df.columns == cadres).all()
+        _dict = {idx: [list(_df.loc[idx, :])] for idx in _df.index}
+        _df_1 = pd.DataFrame(data=_dict).T
+        return pd.Series(
+            _df_1.loc[:, 0], index=_df_1.index
         )
 
     def get_current_hr(cadres):
@@ -244,66 +251,53 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # Get parameter/scenario names
     param_names = get_parameter_names_from_scenario_file()
 
-    # Get current (year of 2019) hr counts
-    cadres = ['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy']
-    curr_hr = get_current_hr(cadres)
+    # Define cadres in order
+    cadres = ['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy',
+              'Dental', 'Laboratory', 'Mental', 'Nutrition', 'Radiography']
 
-    # Get salary
-    salary = get_hr_salary(cadres)
+    # # Get current (year of 2019) hr counts
+    # curr_hr = get_current_hr(cadres)
 
-    # Get scale up factors for all scenarios
-    scale_up_factors = extract_results(
+    # # Get salary
+    # salary = get_hr_salary(cadres)
+
+    # # Get scale up factors for all scenarios
+    # scale_up_factors = extract_results(
+    #     results_folder,
+    #     module='tlo.methods.healthsystem.summary',
+    #     key='HRScaling',
+    #     custom_generate_series=get_scale_up_factor,
+    #     do_scaling=False
+    # ).pipe(set_param_names_as_column_index_level_0).stack(level=0)
+    # # check that the scale up factors are all most the same between each run within each draw
+    # # assert scale_up_factors.eq(scale_up_factors.iloc[:, 0], axis=0).all().all()
+    # # keep scale up factors of only one run within each draw
+    # scale_up_factors = scale_up_factors.iloc[:, 0].unstack().reset_index().melt(id_vars='index')
+    # scale_up_factors[cadres] = scale_up_factors.value.tolist()
+    # scale_up_factors.drop(columns='value', inplace=True)
+
+    # Get total cost for all scenarios
+    total_cost = extract_results(
         results_folder,
         module='tlo.methods.healthsystem.summary',
         key='HRScaling',
-        custom_generate_series=get_scale_up_factor,
+        custom_generate_series=get_total_cost,
         do_scaling=False
     ).pipe(set_param_names_as_column_index_level_0).stack(level=0)
-    # check that the scale up factors are the same between each run within each draw
-    assert scale_up_factors.eq(scale_up_factors.iloc[:, 0], axis=0).all().all()
-    # keep scale up factors of only one run within each draw
-    scale_up_factors = scale_up_factors.iloc[:, 0].unstack().reset_index().melt(id_vars='Year of scaling up')
-    scale_up_factors[cadres] = scale_up_factors.value.tolist()
-    scale_up_factors.drop(columns='value', inplace=True)
+    total_cost = total_cost.iloc[:, 0].unstack().reset_index().melt(id_vars='index')
+    total_cost[cadres] = total_cost.value.tolist()
+    total_cost.drop(columns='value', inplace=True)
+    total_cost['all_cadres'] = total_cost[total_cost.columns[2:11]].sum(axis=1)
+    total_cost.rename(columns={'index': 'year'}, inplace=True)
 
-    # Get total extra staff counts by officer type and total extra budget within the target period for all scenarios
-    years = range(2020, the_target_period[1].year + 1)
-    integrated_scale_up_factor = pd.DataFrame(index=list(param_names), columns=cadres)
-    for s in integrated_scale_up_factor.index:
-        integrated_scale_up_factor.loc[s] = scale_up_factors.loc[
-            (scale_up_factors['Year of scaling up'].isin(years)) & (scale_up_factors['draw'] == s), cadres
-        ].product()
-
-    total_staff = pd.DataFrame(integrated_scale_up_factor.mul(curr_hr.values, axis=1))
-    total_cost = pd.DataFrame(total_staff.mul(salary.values, axis=1))
-    total_staff['all_four_cadres'] = total_staff.sum(axis=1)
-    total_cost['all_four_cadres'] = total_cost.sum(axis=1)
-
-    extra_cost = pd.DataFrame(total_cost.subtract(total_cost.loc['s_1'], axis=1).drop(index='s_1').all_four_cadres)
-
-    extra_staff_by_cadre = pd.DataFrame(
-        total_staff.subtract(total_staff.loc['s_1'], axis=1).drop(index='s_1').drop(columns='all_four_cadres')
-    )
-    extra_cost_by_cadre = pd.DataFrame(
-        total_cost.subtract(total_cost.loc['s_1'], axis=1).drop(index='s_1').drop(columns='all_four_cadres')
-    )
-
-    # As checked below, the increase percentages per cadre should be equal to each other and to the overall percentage
-    # because we set the extra budget fractions the same as the current cost distribution. Especially, in the scenario
-    # of expanding all four cadres, the yearly percentage increase if 4.2%, which is exactly the budget increasing rate.
-    # staff_increase_percents = pd.DataFrame(
-    #     total_staff.subtract(
-    #         total_staff.loc['s_1'], axis=1
-    #     ).divide(
-    #         total_staff.loc['s_1'], axis=1
-    #     ).multiply(100).drop(index='s_1')
-    # )
-
-    # check total cost calculated is increased as expected - approximate float of a fraction can sacrifice some budget
-    # todo: to run the following checks once the scenarios are confirmed and re-run
-    # for s in param_names[1:]:
-    #     assert abs(total_cost.loc[s, 'all_four_cadres'] -
-    #                (1 + 0.042) ** (len(years)) * total_cost.loc['s_1', 'all_four_cadres']) < 1e6
+    # check total cost calculated is increased as expected
+    years = range(2019, the_target_period[1].year + 1)
+    for s in param_names[1:]:
+        assert (abs(
+            total_cost.loc[(total_cost.year == 2029) & (total_cost.draw == s), 'all_cadres'].values[0] -
+            (1 + 0.042) ** len(years) * total_cost.loc[(total_cost.year == 2019) & (total_cost.draw == 's_1'),
+                                                       'all_cadres'].values[0]
+        ) < 1e6).all()
 
     # Absolute Number of Deaths and DALYs and Services
     num_deaths = extract_results(
@@ -412,16 +406,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
          ) < 1e-6
     ).all()
 
-    # get Return (in terms of DALYs averted) On Investment (extra cost) for all expansion scenarios, excluding s_1
-    # get Cost-Effectiveness, i.e., cost of every daly averted, for all expansion scenarios
-    ROI = pd.DataFrame(index=num_deaths_averted.index, columns=num_dalys_averted.columns)
-    CE = pd.DataFrame(index=num_deaths_averted.index, columns=num_dalys_averted.columns)
-    assert (ROI.index == extra_cost.index).all()
-    for i in ROI.index:
-        ROI.loc[i, :] = num_dalys_averted.loc[i, :] / extra_cost.loc[i, 'all_four_cadres']
-        CE.loc[i, 'mean'] = extra_cost.loc[i, 'all_four_cadres'] / num_dalys_averted.loc[i, 'mean']
-        CE.loc[i, 'lower'] = extra_cost.loc[i, 'all_four_cadres'] / num_dalys_averted.loc[i, 'upper']
-        CE.loc[i, 'upper'] = extra_cost.loc[i, 'all_four_cadres'] / num_dalys_averted.loc[i, 'lower']
+    # # get Return (in terms of DALYs averted) On Investment (extra cost) for all expansion scenarios, excluding s_1
+    # # get Cost-Effectiveness, i.e., cost of every daly averted, for all expansion scenarios
+    # ROI = pd.DataFrame(index=num_deaths_averted.index, columns=num_dalys_averted.columns)
+    # CE = pd.DataFrame(index=num_deaths_averted.index, columns=num_dalys_averted.columns)
+    # assert (ROI.index == extra_cost.index).all()
+    # for i in ROI.index:
+    #     ROI.loc[i, :] = num_dalys_averted.loc[i, :] / extra_cost.loc[i, 'all_cadres']
+    #     CE.loc[i, 'mean'] = extra_cost.loc[i, 'all_cadres'] / num_dalys_averted.loc[i, 'mean']
+    #     CE.loc[i, 'lower'] = extra_cost.loc[i, 'all_cadres'] / num_dalys_averted.loc[i, 'upper']
+    #     CE.loc[i, 'upper'] = extra_cost.loc[i, 'all_cadres'] / num_dalys_averted.loc[i, 'lower']
 
     # prepare colors for plots
     appt_color = {
@@ -435,7 +429,17 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         'Clinical': 'blue',
         'DCSA': 'orange',
         'Nursing_and_Midwifery': 'red',
-        'Pharmacy': 'green'
+        'Pharmacy': 'green',
+        'Dental': 'gray',
+        'Laboratory': 'gray',
+        'Mental': 'gray',
+        'Nutrition': 'gray',
+        'Radiography': 'gray',
+    }
+    scenario_color = {
+        's_1': 'orange',
+        's_2': 'blue',
+        's_3': 'green',
     }
 
     # plot absolute numbers for scenarios
@@ -468,7 +472,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ])/1e6
     fig, ax = plt.subplots()
     num_appts_summarized_in_millions.plot(kind='bar', stacked=True, color=appt_color, rot=0, ax=ax)
-    ax.errorbar([0, 1], num_services_summarized['mean'].values / 1e6, yerr=yerr_services,
+    ax.errorbar([0, 1, 2], num_services_summarized['mean'].values / 1e6, yerr=yerr_services,
                 fmt=".", color="black", zorder=100)
     ax.set_ylabel('Millions', fontsize='small')
     ax.set(xlabel=None)
@@ -482,37 +486,37 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    name_of_plot = f'Number of staff by cadre, {target_period()}'
-    total_staff_to_plot = (total_staff / 1000).drop(columns='all_four_cadres')
-    fig, ax = plt.subplots()
-    total_staff_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
-    ax.set_ylabel('Thousands', fontsize='small')
-    ax.set(xlabel=None)
-    xtick_labels = [substitute_labels[v] for v in total_staff_to_plot.index]
-    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
-    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
-               fontsize='small', reverse=True)
-    plt.title(name_of_plot)
-    fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-    fig.show()
-    plt.close(fig)
-
-    name_of_plot = f'Total budget in USD dollars by cadre, {target_period()}'
-    total_cost_to_plot = (total_cost / 1e6).drop(columns='all_four_cadres')
-    fig, ax = plt.subplots()
-    total_cost_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
-    ax.set_ylabel('Millions', fontsize='small')
-    ax.set(xlabel=None)
-    xtick_labels = [substitute_labels[v] for v in total_cost_to_plot.index]
-    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
-    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
-               fontsize='small', reverse=True)
-    plt.title(name_of_plot)
-    fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-    fig.show()
-    plt.close(fig)
+    # name_of_plot = f'Number of staff by cadre, {target_period()}'
+    # total_staff_to_plot = (total_staff / 1000).drop(columns='all_cadres')
+    # fig, ax = plt.subplots()
+    # total_staff_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
+    # ax.set_ylabel('Thousands', fontsize='small')
+    # ax.set(xlabel=None)
+    # xtick_labels = [substitute_labels[v] for v in total_staff_to_plot.index]
+    # ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
+    # plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
+    #            fontsize='small', reverse=True)
+    # plt.title(name_of_plot)
+    # fig.tight_layout()
+    # fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    # fig.show()
+    # plt.close(fig)
+    #
+    # name_of_plot = f'Total budget in USD dollars by cadre, {target_period()}'
+    # total_cost_to_plot = (total_cost / 1e6).drop(columns='all_cadres')
+    # fig, ax = plt.subplots()
+    # total_cost_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
+    # ax.set_ylabel('Millions', fontsize='small')
+    # ax.set(xlabel=None)
+    # xtick_labels = [substitute_labels[v] for v in total_cost_to_plot.index]
+    # ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
+    # plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
+    #            fontsize='small', reverse=True)
+    # plt.title(name_of_plot)
+    # fig.tight_layout()
+    # fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    # fig.show()
+    # plt.close(fig)
 
     name_of_plot = f'DALYs by cause, {target_period()}'
     num_dalys_by_cause_summarized_in_millions = num_dalys_by_cause_summarized / 1e6
@@ -522,7 +526,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ])/1e6
     fig, ax = plt.subplots()
     num_dalys_by_cause_summarized_in_millions.plot(kind='bar', stacked=True, color=cause_color, rot=0, ax=ax)
-    ax.errorbar([0, 1], num_dalys_summarized['mean'].values / 1e6, yerr=yerr_dalys,
+    ax.errorbar([0, 1, 2], num_dalys_summarized['mean'].values / 1e6, yerr=yerr_dalys,
                 fmt=".", color="black", zorder=100)
     ax.set_ylabel('Millions', fontsize='small')
     ax.set(xlabel=None)
@@ -546,7 +550,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     plt.close(fig)
 
     # plot relative numbers for scenarios
-    name_of_plot = f'DALYs averted, {target_period()}'
+    name_of_plot = f'DALYs averted against no expansion, {target_period()}'
     fig, ax = do_bar_plot_with_ci(num_dalys_averted / 1e6, xticklabels_horizontal_and_wrapped=True,
                                   put_labels_in_legend=True)
     ax.set_title(name_of_plot)
@@ -556,7 +560,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    name_of_plot = f'Deaths averted, {target_period()}'
+    name_of_plot = f'Deaths averted against no expansion, {target_period()}'
     fig, ax = do_bar_plot_with_ci(num_deaths_averted / 1e6, xticklabels_horizontal_and_wrapped=True,
                                   put_labels_in_legend=True)
     ax.set_title(name_of_plot)
@@ -566,39 +570,39 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    name_of_plot = f'Extra staff by cadre, {target_period()}'
-    extra_staff_by_cadre_to_plot = extra_staff_by_cadre / 1e3
-    fig, ax = plt.subplots()
-    extra_staff_by_cadre_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
-    ax.set_ylabel('Thousands', fontsize='small')
-    ax.set(xlabel=None)
-    xtick_labels = [substitute_labels[v] for v in extra_staff_by_cadre_to_plot.index]
-    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
-    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
-               fontsize='small')
-    plt.title(name_of_plot)
-    fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-    fig.show()
-    plt.close(fig)
+    # name_of_plot = f'Extra staff by cadre, {target_period()}'
+    # extra_staff_by_cadre_to_plot = extra_staff_by_cadre / 1e3
+    # fig, ax = plt.subplots()
+    # extra_staff_by_cadre_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
+    # ax.set_ylabel('Thousands', fontsize='small')
+    # ax.set(xlabel=None)
+    # xtick_labels = [substitute_labels[v] for v in extra_staff_by_cadre_to_plot.index]
+    # ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
+    # plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
+    #            fontsize='small')
+    # plt.title(name_of_plot)
+    # fig.tight_layout()
+    # fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    # fig.show()
+    # plt.close(fig)
+    #
+    # name_of_plot = f'Extra budget by cadre, {target_period()}'
+    # extra_cost_by_cadre_to_plot = extra_cost_by_cadre / 1e6
+    # fig, ax = plt.subplots()
+    # extra_cost_by_cadre_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
+    # ax.set_ylabel('Millions', fontsize='small')
+    # ax.set(xlabel=None)
+    # xtick_labels = [substitute_labels[v] for v in extra_cost_by_cadre_to_plot.index]
+    # ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
+    # plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
+    #            fontsize='small')
+    # plt.title(name_of_plot)
+    # fig.tight_layout()
+    # fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    # fig.show()
+    # plt.close(fig)
 
-    name_of_plot = f'Extra budget by cadre, {target_period()}'
-    extra_cost_by_cadre_to_plot = extra_cost_by_cadre / 1e6
-    fig, ax = plt.subplots()
-    extra_cost_by_cadre_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
-    ax.set_ylabel('Millions', fontsize='small')
-    ax.set(xlabel=None)
-    xtick_labels = [substitute_labels[v] for v in extra_cost_by_cadre_to_plot.index]
-    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
-    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
-               fontsize='small')
-    plt.title(name_of_plot)
-    fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-    fig.show()
-    plt.close(fig)
-
-    name_of_plot = f'Services increased by appointment type, {target_period()}'
+    name_of_plot = f'Services increased by appointment type \n against no expansion, {target_period()}'
     num_appts_increased_in_millions = num_appts_increased / 1e6
     yerr_services = np.array([
         (num_services_increased['mean'].values - num_services_increased['lower']).values,
@@ -606,7 +610,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ]) / 1e6
     fig, ax = plt.subplots()
     num_appts_increased_in_millions.plot(kind='bar', stacked=True, color=appt_color, rot=0, ax=ax)
-    ax.errorbar(0, num_services_increased['mean'].values / 1e6, yerr=yerr_services,
+    ax.errorbar([0, 1], num_services_increased['mean'].values / 1e6, yerr=yerr_services,
                 fmt=".", color="black", zorder=100)
     ax.set_ylabel('Millions', fontsize='small')
     ax.set(xlabel=None)
@@ -616,11 +620,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                fontsize='small')
     plt.title(name_of_plot)
     fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.savefig(make_graph_file_name(
+        name_of_plot.replace(' ', '_').replace(',', '').replace('\n', ''))
+    )
     fig.show()
     plt.close(fig)
 
-    name_of_plot = f'DALYs averted by cause, {target_period()}'
+    name_of_plot = f'DALYs averted by cause against no expansion, {target_period()}'
     num_dalys_by_cause_averted_in_millions = num_dalys_by_cause_averted / 1e6
     yerr_dalys = np.array([
         (num_dalys_averted['mean'].values - num_dalys_averted['lower']).values,
@@ -628,7 +634,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ]) / 1e6
     fig, ax = plt.subplots()
     num_dalys_by_cause_averted_in_millions.plot(kind='bar', stacked=True, color=cause_color, rot=0, ax=ax)
-    ax.errorbar(0, num_dalys_averted['mean'].values / 1e6, yerr=yerr_dalys,
+    ax.errorbar([0, 1], num_dalys_averted['mean'].values / 1e6, yerr=yerr_dalys,
                 fmt=".", color="black", zorder=100)
     ax.set_ylabel('Millions', fontsize='small')
     ax.set(xlabel=None)
@@ -650,34 +656,36 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    # plot ROI and CE for all expansion scenarios
-
-    name_of_plot = f'DALYs averted per extra USD dollar invested, {target_period()}'
-    fig, ax = do_bar_plot_with_ci(ROI, xticklabels_horizontal_and_wrapped=True,
-                                  put_labels_in_legend=True)
-    ax.set_title(name_of_plot)
-    fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-    fig.show()
-    plt.close(fig)
-
-    name_of_plot = f'Cost per DALY averted, {target_period()}'
-    fig, ax = do_bar_plot_with_ci(CE, xticklabels_horizontal_and_wrapped=True,
-                                  put_labels_in_legend=True)
-    ax.set_title(name_of_plot)
-    ax.set_ylabel('USD dollars')
-    fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-    fig.show()
-    plt.close(fig)
+    # # plot ROI and CE for all expansion scenarios
+    #
+    # name_of_plot = f'DALYs averted per extra USD dollar invested, {target_period()}'
+    # fig, ax = do_bar_plot_with_ci(ROI, xticklabels_horizontal_and_wrapped=True,
+    #                               put_labels_in_legend=True)
+    # ax.set_title(name_of_plot)
+    # fig.tight_layout()
+    # fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    # fig.show()
+    # plt.close(fig)
+    #
+    # name_of_plot = f'Cost per DALY averted, {target_period()}'
+    # fig, ax = do_bar_plot_with_ci(CE, xticklabels_horizontal_and_wrapped=True,
+    #                               put_labels_in_legend=True)
+    # ax.set_title(name_of_plot)
+    # ax.set_ylabel('USD dollars')
+    # fig.tight_layout()
+    # fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    # fig.show()
+    # plt.close(fig)
 
     # todo
     # Plot comparison results: there are negative changes of some appts and causes, try increase runs and see.
-    # To design more scenarios so that Pharmacy cadre can be expanded more than the 16 scenarios
+    # To design more scenarios so that Pharmacy cadre can be expanded more than the 33 scenarios
     # and so that each cadre has different scale up factor (the one in more shortage will need to be scaled up more)?
-    # As we have 16 scenarios in total, \
+    # As we have 33 scenarios in total, \
     # design comparison groups of scenarios to examine marginal/combined productivity of cadres.
-    # As it is analysis of 10 year results, it would be better to consider increasing annual/minute salary?
+    # As it is analysis of 10 year results, it would be better to consider increasing annual/minute salary? The \
+    # inflation rate of GDP and health workforce budget and the increase rate of salary could be assumed to be \
+    # the same, thus no need to consider the increase rate of salary if GDP inflation is not considered.
     # To plot time series of staff and budget in the target period to show \
     # how many staff and how much budget to increase yearly (choose the best scenario to illustrate)?
     # Get and plot services by short treatment id?
@@ -714,5 +722,5 @@ if __name__ == "__main__":
         results_folder=args.results_folder,
         output_folder=args.results_folder,
         resourcefilepath=Path('./resources'),
-        the_target_period=(Date(2020, 1, 1), Date(2029, 12, 31))
+        the_target_period=(Date(2019, 1, 1), Date(2029, 12, 31))
     )
