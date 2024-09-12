@@ -297,7 +297,7 @@ class Mockitis(Module, GenericFirstAppointmentsMixin):
         logger.debug(key='debug', data='This is mockitis reporting my prevalence ')
 
         df = self.sim.population.props  # shortcut to population properties dataframe
-        total_prev = df.loc[df.is_alive, 'mi_is_infected'].sum()/ len(df[df['is_alive']])
+        total_prev = df.loc[df.is_alive, 'mi_is_infected'].sum() / len(df[df['is_alive']])
         print(total_prev)
         return {'Mockitis': total_prev}
 
@@ -315,6 +315,7 @@ class Mockitis(Module, GenericFirstAppointmentsMixin):
                 person_id=person_id,
             )
             schedule_hsi_event(event, priority=1, topen=self.sim.date)
+
 
 class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
     """
@@ -603,3 +604,189 @@ class MockitisLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                           })
 
         logger.info(key='status_counts', data=counts)
+
+
+# ---------------------------------------------------
+# Even simpler Dummy Disease - only infection. For checking logging
+# ---------------------------------------------------
+class DummyDisease(Module, GenericFirstAppointmentsMixin):
+    """This is a dummy infectious disease.
+
+    It demonstrates the following behaviours in respect of the healthsystem module:
+
+        - Registration of the disease module with healthsystem
+        - Allow infections
+	    - Collect prevalence
+    """
+
+    INIT_DEPENDENCIES = {'Demography', 'SymptomManager'}
+
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
+
+    # Declare Metadata
+    METADATA = {
+        Metadata.DISEASE_MODULE,
+        Metadata.USES_HEALTHSYSTEM,
+        Metadata.USES_HEALTHBURDEN
+    }
+
+    PARAMETERS = {
+        'p_infection': Parameter(
+            Types.REAL, 'Probability that an uninfected individual becomes infected'),
+        'initial_prevalence': Parameter(
+            Types.REAL, 'Prevalence of the disease in the initial population'),
+
+    }
+
+    PROPERTIES = {
+        'mi_is_infected': Property(
+            Types.BOOL, 'Current status of DummyDisease'),
+    }
+
+    def __init__(self, name=None, resourcefilepath=None):
+        # NB. Parameters passed to the module can be inserted in the __init__ definition.
+
+        super().__init__(name)
+        self.resourcefilepath = resourcefilepath
+
+    def read_parameters(self, data_folder):
+        """Read in parameters and do the registration of this module and its symptoms"""
+
+        p = self.parameters
+
+        p['p_infection'] = 1
+        p['initial_prevalence'] = 0.05
+
+    def initialise_population(self, population):
+        """Set our property values for the initial population.
+
+        This method is called by the simulation when creating the initial population, and is
+        responsible for assigning initial values, for every individual, of those properties
+        'owned' by this module, i.e. those declared in the PROPERTIES dictionary above.
+
+        :param population: the population of individuals
+        """
+
+        df = population.props  # a shortcut to the dataframe storing data for individiuals
+
+        # Set default for properties
+        df.loc[df.is_alive, 'mi_is_infected'] = False  # default: no individuals infected
+
+        alive_count = df.is_alive.sum()
+
+        # randomly selected some individuals as infected
+        initial_infected = self.parameters['initial_prevalence']
+        df.loc[df.is_alive, 'mi_is_infected'] = self.rng.random_sample(size=alive_count) < initial_infected
+
+    def initialise_simulation(self, sim):
+
+        """Get ready for simulation start.
+
+        This method is called just before the main simulation loop begins, and after all
+        modules have read their parameters and the initial population has been created.
+        It is a good place to add initial events to the event queue.
+        """
+
+        # add the basic event
+        event = DummyDiseaseEvent(self)
+        sim.schedule_event(event, sim.date + DateOffset(months=1))
+
+        # add an event to log to screen
+        sim.schedule_event(DummyDiseaseLoggingEvent(self), sim.date + DateOffset(months=1))
+
+        # a shortcut to the dataframe storing data for individiuals
+        df = sim.population.props
+
+    def on_birth(self, mother_id, child_id):
+        """Initialise our properties for a newborn individual.
+
+        This is called by the simulation whenever a new person is born.
+
+        :param mother_id: the ID for the mother for this child
+        :param child_id: the ID for the new child
+        """
+
+        df = self.sim.population.props  # shortcut to the population props dataframe
+
+        # Initialise all the properties that this module looks after:
+
+        child_is_infected = df.at[mother_id, 'mi_is_infected']  # is infected if mother is infected
+
+        if child_is_infected:
+            # Assign properties
+            df.at[child_id, 'mi_is_infected'] = True
+        else:
+            # Assign the default for a child who is not infected
+            df.at[child_id, 'mi_is_infected'] = False
+
+    def report_prevalence(self):
+        logger.debug(key='debug', data='This is DummyDisease reporting my prevalence ')
+
+        df = self.sim.population.props  # shortcut to population properties dataframe
+        total_prev = df.loc[df.is_alive, 'mi_is_infected'].sum() / len(df[df['is_alive']])
+        print(total_prev)
+        return {'DummyDisease': total_prev}
+
+
+class DummyDiseaseEvent(RegularEvent, PopulationScopeEventMixin):
+    """
+    This event is occurring regularly at one monthly intervals and controls the infection process
+    and onset of symptoms of DummyDisease.
+    """
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(months=1))
+        assert isinstance(module, DummyDisease)
+
+    def apply(self, population):
+
+        logger.debug(key='debug',
+                     data='This is DummyDiseaseEvent, tracking the disease progression of the population.')
+
+        df = population.props
+
+        # 1. get (and hold) index of currently infected and uninfected individuals
+        currently_infected = df.index[df.mi_is_infected & df.is_alive]
+        currently_susc = df.index[(df.is_alive) & (df.mi_is_infected == False)]
+
+        if df.is_alive.sum():
+            prevalence = len(currently_infected) / (
+                len(currently_infected) + len(currently_susc))
+        else:
+            prevalence = 0
+
+        # 2. handle new infections
+        now_infected = self.module.rng.choice([True, False],
+                                              size=len(currently_susc),
+                                              p=[prevalence, 1 - prevalence])
+
+        # if any are newly infected...
+        if now_infected.sum():
+            infected_idx = currently_susc[now_infected]
+
+            df.loc[infected_idx, 'mi_is_infected'] = True
+
+        else:
+            logger.debug(key='debug', data='This is DummyDiseaseEvent, no one is newly infected.')
+
+
+class DummyDiseaseLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+    def __init__(self, module):
+        """Produce a summmary of the numbers of people with respect to their 'DummyDisease status'
+        """
+        # run this event every month
+        self.repeat = 1
+        super().__init__(module, frequency=DateOffset(months=self.repeat))
+        assert isinstance(module, DummyDisease)
+
+    def apply(self, population):
+        # get some summary statistics
+        df = population.props
+
+        infected_total = df.loc[df.is_alive, 'mi_is_infected'].sum()
+        proportion_infected = infected_total / len(df)
+
+        logger.info(key='summary',
+                    data={'PropInf': proportion_infected,
+
+                          })
