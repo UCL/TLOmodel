@@ -623,6 +623,10 @@ class DummyDisease(Module, GenericFirstAppointmentsMixin):
 
     OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
 
+    CAUSES_OF_DISABILITY = {
+        'Mockitis': Cause(label='Mockitis_Disability_And_Death') # use mockitis for simplicity
+    }
+
     # Declare Metadata
     METADATA = {
         Metadata.DISEASE_MODULE,
@@ -639,7 +643,7 @@ class DummyDisease(Module, GenericFirstAppointmentsMixin):
     }
 
     PROPERTIES = {
-        'mi_is_infected': Property(
+        'dm_is_infected': Property(
             Types.BOOL, 'Current status of DummyDisease'),
     }
 
@@ -676,7 +680,7 @@ class DummyDisease(Module, GenericFirstAppointmentsMixin):
 
         # randomly selected some individuals as infected
         initial_infected = self.parameters['initial_prevalence']
-        df.loc[df.is_alive, 'mi_is_infected'] = self.rng.random_sample(size=alive_count) < initial_infected
+        df.loc[df.is_alive, 'dm_is_infected'] = self.rng.random_sample(size=alive_count) < initial_infected
 
     def initialise_simulation(self, sim):
 
@@ -710,22 +714,35 @@ class DummyDisease(Module, GenericFirstAppointmentsMixin):
 
         # Initialise all the properties that this module looks after:
 
-        child_is_infected = df.at[mother_id, 'mi_is_infected']  # is infected if mother is infected
+        child_is_infected = df.at[mother_id, 'dm_is_infected']  # is infected if mother is infected
 
         if child_is_infected:
             # Assign properties
-            df.at[child_id, 'mi_is_infected'] = True
+            df.at[child_id, 'dm_is_infected'] = True
         else:
             # Assign the default for a child who is not infected
-            df.at[child_id, 'mi_is_infected'] = False
+            df.at[child_id, 'dm_is_infected'] = False
 
     def report_prevalence(self):
         logger.debug(key='debug', data='This is DummyDisease reporting my prevalence ')
 
         df = self.sim.population.props  # shortcut to population properties dataframe
-        total_prev = df.loc[df.is_alive, 'mi_is_infected'].sum() / len(df[df['is_alive']])
-        print(total_prev)
+        total_prev = df.loc[df.is_alive, 'dm_is_infected'].sum() / len(df[df['is_alive']])
         return {'DummyDisease': total_prev}
+
+    def report_daly_values(self):
+        # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
+        # experienced by persons in the previous month. Only rows for alive-persons must be returned.
+        # The names of the series of columns is taken to be the label of the cause of this disability.
+        # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
+
+        logger.debug(key='debug', data='This is DummyDisease reporting my daly values')
+
+        df = self.sim.population.props  # shortcut to population properties dataframe
+        health_values = pd.Series(index=df.index[df.is_alive], data=0.2) # dummy value
+
+        return health_values  # returns the series
+
 
 
 class DummyDiseaseEvent(RegularEvent, PopulationScopeEventMixin):
@@ -746,8 +763,8 @@ class DummyDiseaseEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
 
         # 1. get (and hold) index of currently infected and uninfected individuals
-        currently_infected = df.index[df.mi_is_infected & df.is_alive]
-        currently_susc = df.index[(df.is_alive) & (df.mi_is_infected == False)]
+        currently_infected = df.index[df.dm_is_infected & df.is_alive]
+        currently_susc = df.index[df.is_alive & (df.dm_is_infected == False)]
 
         if df.is_alive.sum():
             prevalence = len(currently_infected) / (
@@ -764,7 +781,7 @@ class DummyDiseaseEvent(RegularEvent, PopulationScopeEventMixin):
         if now_infected.sum():
             infected_idx = currently_susc[now_infected]
 
-            df.loc[infected_idx, 'mi_is_infected'] = True
+            df.loc[infected_idx, 'dm_is_infected'] = True
 
         else:
             logger.debug(key='debug', data='This is DummyDiseaseEvent, no one is newly infected.')
@@ -783,10 +800,8 @@ class DummyDiseaseLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
 
-        infected_total = df.loc[df.is_alive, 'mi_is_infected'].sum()
+        infected_total = df.loc[df.is_alive, 'dm_is_infected'].sum()
         proportion_infected = infected_total / len(df)
 
         logger.info(key='summary',
-                    data={'PropInf': proportion_infected,
-
-                          })
+                    data={'PropInf': proportion_infected,})
