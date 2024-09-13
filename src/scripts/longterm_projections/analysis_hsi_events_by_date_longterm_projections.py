@@ -30,7 +30,7 @@ PREFIX_ON_FILENAME = '3'
 
 # Declare period for which the results will be generated (defined inclusively)
 min_year = 2010
-max_year = 2024
+max_year = 2040
 spacing_of_years = 1
 
 
