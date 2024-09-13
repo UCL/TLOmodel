@@ -8,14 +8,18 @@ from __future__ import annotations
 
 import json
 from enum import Enum, auto
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, FrozenSet, List, Optional
 
 import numpy as np
 import pandas as pd
 
 if TYPE_CHECKING:
+    from pathlib import Path
     from typing import Optional
 
+    from tlo.methods import Metadata
+    from tlo.methods.causes import Cause
+    from tlo.population import Population
     from tlo.simulation import Simulation
 
 class Types(Enum):
@@ -76,7 +80,7 @@ class Specifiable:
         Types.BITSET: int,
     }
 
-    def __init__(self, type_, description, categories=None):
+    def __init__(self, type_: Types, description: str, categories: List[str] = None):
         """Create a new Specifiable.
 
         :param type_: an instance of Types giving the type of allowed values
@@ -94,16 +98,16 @@ class Specifiable:
             self.categories = categories
 
     @property
-    def python_type(self):
+    def python_type(self) -> type:
         """Return the Python type corresponding to this Specifiable."""
         return self.PYTHON_TYPE_MAP[self.type_]
 
     @property
-    def pandas_type(self):
+    def pandas_type(self) -> type:
         """Return the Pandas type corresponding to this Specifiable."""
         return self.PANDAS_TYPE_MAP[self.type_]
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Return detailed description of Specifiable."""
 
         delimiter = " === "
@@ -131,8 +135,17 @@ class Property(Specifiable):
         object: float("nan"),
         np.uint32: 0,
     }
+    _default_value_override: Any
 
-    def __init__(self, type_, description, categories=None, *, ordered=False):
+    def __init__(
+        self,
+        type_: Types,
+        description: str,
+        categories: List[str] = None,
+        *,
+        ordered: bool = False,
+        default_value: Optional[Any] = None,
+    ) -> None:
         """Create a new property specification.
 
         :param type_: An instance of ``Types`` giving the type of allowed values of this
@@ -142,17 +155,53 @@ class Property(Specifiable):
             ``Types.CATEGORICAL``.
         :param ordered: Whether categories are ordered  if ``type_`` is
             ``Types.CATEGORICAL``.
+        :param default_value: The default value for the property.
         """
         if type_ in [Types.SERIES, Types.DATA_FRAME]:
             raise TypeError("Property cannot be of type SERIES or DATA_FRAME.")
+
         super().__init__(type_, description, categories)
         self.ordered = ordered
+        # Use _default_value setter method to set property initial value
+        self._default_value = default_value
 
     @property
-    def _default_value(self):
-        return self.PANDAS_TYPE_DEFAULT_VALUE_MAP[self.pandas_type]
+    def _default_value(self) -> Any:
+        """
+        Default value for this property, which will be used to fill the respective columns
+        of the population dataframe, for example.
+        
+        If not explicitly set, it will fall back on the ``PANDAS_TYPE_DEFAULT_TYPE_MAP``.
+        If a value is provided, it must:
 
-    def create_series(self, name, size):
+        - Be of the corresponding TYPE for the property.
+        - If ``type_`` is ``Types.CATEGORICAL``, it must also be a possible category.
+        """
+        return (
+            self.PANDAS_TYPE_DEFAULT_VALUE_MAP[self.pandas_type]
+            if self._default_value_override is None
+            else self._default_value_override
+        )
+
+    @_default_value.setter
+    def _default_value(self, new_val: Any) -> None:
+        if new_val is not None:
+            # Check for valid category
+            if self.type_ is Types.CATEGORICAL:
+                if new_val not in self.categories:
+                    raise ValueError(
+                        f"Value {new_val} is not a valid category, so cannot be set as the default."
+                    )
+            # If not categorical, check for valid data type for default
+            elif not isinstance(new_val, self.python_type):
+                raise ValueError(
+                    f"Trying to set a default value of type {type(new_val).__name__}, "
+                    f"which is different from Property's type of {type(self.python_type).__name__}."
+                )
+        # Outside block so that providing new_val = None reverts to Property-wide default.
+        self._default_value_override = new_val
+
+    def create_series(self, name: str, size: int) -> pd.Series:
         """Create a Pandas Series for this property.
 
         The values will be left uninitialised.
@@ -201,48 +250,47 @@ class Module:
     # Subclasses can override this to declare the set of initialisation dependencies
     # Declares modules that need to be registered in simulation and initialised before
     # this module
-    INIT_DEPENDENCIES = frozenset()
+    INIT_DEPENDENCIES: FrozenSet[str] = frozenset()
 
     # Subclasses can override this to declare the set of optional init. dependencies
     # Declares modules that need to be registered in simulation and initialised before
     # this module if they are present, but are not required otherwise
-    OPTIONAL_INIT_DEPENDENCIES = frozenset()
+    OPTIONAL_INIT_DEPENDENCIES: FrozenSet[str] = frozenset()
 
     # Subclasses can override this to declare the set of additional dependencies
     # Declares any modules that need to be registered in simulation in addition to those
     # in INIT_DEPENDENCIES to allow running simulation
-    ADDITIONAL_DEPENDENCIES = frozenset()
+    ADDITIONAL_DEPENDENCIES: FrozenSet[str] = frozenset()
 
     # Subclasses can override this to declare the set of modules that this module can be
     # used in place of as a dependency
-    ALTERNATIVE_TO = frozenset()
+    ALTERNATIVE_TO: FrozenSet[str] = frozenset()
 
     # Subclasses can override this set to add metadata tags to their class
     # See tlo.methods.Metadata class
-    METADATA = {}
+    METADATA: FrozenSet[Metadata] = frozenset()
 
-    # Subclasses can override this set to declare the causes death that this module contributes to
+    # Subclasses can override this dict to declare the causes death that this module contributes to
     # This is a dict of the form {<name_used_by_the_module : Cause()}: see core.Cause
-    CAUSES_OF_DEATH = {}
+    CAUSES_OF_DEATH: Dict[str, Cause] = {}
 
     # Subclasses can override this set to declare the causes disability that this module contributes to
     # This is a dict of the form {<name_used_by_the_module : Cause()}: see core.Cause
-    CAUSES_OF_DISABILITY = {}
+    CAUSES_OF_DISABILITY: Dict[str, Cause] = {}
 
     # Subclasses may declare this dictionary to specify module-level parameters.
     # We give an empty definition here as default.
-    PARAMETERS = {}
+    PARAMETERS: Dict[str, Parameter] = {}
 
     # Subclasses may declare this dictionary to specify properties of individuals.
     # We give an empty definition here as default.
-    PROPERTIES = {}
+    PROPERTIES: Dict[str, Property] = {}
 
     # The explicit attributes of the module. We list these to distinguish dynamic
     # parameters created from the PARAMETERS specification.
     __slots__ = ('name', 'parameters', 'rng', 'sim')
 
-
-    def __init__(self, name=None):
+    def __init__(self, name: Optional[str] = None) -> None:
         """Construct a new disease module ready to be included in a simulation.
 
         Initialises an empty parameters dictionary and module-specific random number
@@ -255,7 +303,7 @@ class Module:
         self.name = name or self.__class__.__name__
         self.sim: Optional[Simulation] = None
 
-    def load_parameters_from_dataframe(self, resource: pd.DataFrame):
+    def load_parameters_from_dataframe(self, resource: pd.DataFrame) -> None:
         """Automatically load parameters from resource dataframe, updating the class parameter dictionary
 
         Goes through parameters dict self.PARAMETERS and updates the self.parameters with values
@@ -316,7 +364,7 @@ class Module:
             # Save the values to the parameters
             self.parameters[parameter_name] = parameter_value
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, data_folder: str | Path) -> None:
         """Read parameter values from file, if required.
 
         Must be implemented by subclasses.
@@ -326,23 +374,41 @@ class Module:
         """
         raise NotImplementedError
 
-    def initialise_population(self, population):
+    def initialise_population(self, population: Population) -> None:
         """Set our property values for the initial population.
-
-        Must be implemented by subclasses.
 
         This method is called by the simulation when creating the initial population, and is
         responsible for assigning initial values, for every individual, of those properties
         'owned' by this module, i.e. those declared in its PROPERTIES dictionary.
 
+        By default, all ``Property``s in ``self.PROPERTIES`` will have
+        their columns in the population dataframe set to the default value.
+
+        Modules that wish to implement this behaviour do not need to implement this method,
+        it will be inherited automatically. Modules that wish to perform additional steps
+        during the initialise_population stage should reimplement this method and call 
+        
+        ```python
+        super().initialise_population(population=population)
+        ```
+
+        at the beginning of the method, then proceed with their additional steps. Modules that
+        do not wish to inherit this default behaviour should re-implement initialise_population
+        without the call to ``super()`` above.
+
         TODO: We probably need to declare somehow which properties we 'read' here, so the
         simulation knows what order to initialise modules in!
 
-        :param population: the population of individuals
+        :param population: The population of individuals in the simulation.
         """
-        raise NotImplementedError
+        df = population.props
 
-    def initialise_simulation(self, sim):
+        for property_name, property in self.PROPERTIES.items():
+            df.loc[df.is_alive, property_name] = (
+                property._default_value
+            )
+
+    def initialise_simulation(self, sim: Simulation) -> None:
         """Get ready for simulation start.
 
         Must be implemented by subclasses.
@@ -353,7 +419,7 @@ class Module:
         """
         raise NotImplementedError
 
-    def pre_initialise_population(self):
+    def pre_initialise_population(self) -> None:
         """Carry out any work before any populations have been initialised
 
         This optional method allows access to all other registered modules, before any of
@@ -361,7 +427,7 @@ class Module:
         when a module's properties rely upon information from other modules.
         """
 
-    def on_birth(self, mother_id, child_id):
+    def on_birth(self, mother_id: int, child_id: int) -> None:
         """Initialise our properties for a newborn individual.
 
         Must be implemented by subclasses.
@@ -373,6 +439,6 @@ class Module:
         """
         raise NotImplementedError
 
-    def on_simulation_end(self):
+    def on_simulation_end(self) -> None:
         """This is called after the simulation has ended.
         Modules do not need to declare this."""
