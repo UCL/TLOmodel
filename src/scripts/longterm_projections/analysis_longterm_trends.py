@@ -22,7 +22,7 @@ from tlo.analysis.utils import (
 
 PREFIX_ON_FILENAME = '1'
 min_year = "2010"
-max_year = "2024"
+max_year = "2040"
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
 
@@ -727,68 +727,72 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # 2b) All on one graph
     # Create a figure and axis for plotting
-    fig, ax = plt.subplots()
 
-    # Loop over each selected period and plot them on the same axis
-    for period in calperiods_selected:
-            tot_deaths_byage = pd.DataFrame(
-                deaths_by_ageperiod.loc[
-                    (deaths_by_ageperiod['Period'] == period)].groupby(
-                    by=['Variant', 'Age_Grp'])['Count'].sum()).unstack()
-            tot_deaths_byage.columns = pd.Index([label[1] for label in tot_deaths_byage.columns.tolist()])
-            tot_deaths_byage = tot_deaths_byage.transpose()
+    fig, axs = plt.subplots(int(len(calperiods_selected) / 3), 3, figsize=(int(len(calperiods_selected) / 3) * 7.5,  3 * 3.5))
 
-            if 'WPP_Medium variant' in tot_deaths_byage.columns:
-                ax.plot(
-                    tot_deaths_byage.index,
-                    tot_deaths_byage['WPP_Medium variant'] / 1e3,
-                    label=f'WPP {period}',
-                    color=colors['WPP'])
-                ax.fill_between(
-                    tot_deaths_byage.index.to_numpy(),
-                    tot_deaths_byage['WPP_Low variant'] / 1e3,
-                    tot_deaths_byage['WPP_High variant'] / 1e3,
-                    facecolor=colors['WPP'], alpha=0.2)
-            else:
-                ax.plot(
-                    tot_deaths_byage.index,
-                    tot_deaths_byage['WPP_Estimates'] / 1e3,
-                    label=f'WPP {period}',
-                    color=colors['WPP'])
+    for idx, period in enumerate(calperiods_selected):
+        row = idx // 3
+        col = idx % 3
+        ax = axs[row, col]
 
-            if 'GBD_Est' in tot_deaths_byage.columns:
-                ax.plot(
-                    tot_deaths_byage.index,
-                    tot_deaths_byage['GBD_Est'] / 1e3,
-                    label=f'GBD {period}',
-                    color=colors['GBD'])
-                ax.fill_between(
-                    tot_deaths_byage.index.to_numpy(),
-                    tot_deaths_byage['GBD_Lower'] / 1e3,
-                    tot_deaths_byage['GBD_Upper'] / 1e3,
-                    facecolor=colors['GBD'], alpha=0.2)
+        tot_deaths_byage = pd.DataFrame(
+            deaths_by_ageperiod.loc[
+                (deaths_by_ageperiod['Period'] == period)].groupby(
+                by=['Variant', 'Age_Grp'])['Count'].sum()).unstack()
 
+        tot_deaths_byage.columns = pd.Index([label[1] for label in tot_deaths_byage.columns.tolist()])
+        tot_deaths_byage = tot_deaths_byage.transpose()
+
+        if 'WPP_Medium variant' in tot_deaths_byage.columns:
             ax.plot(
                 tot_deaths_byage.index,
-                tot_deaths_byage['Model_mean'] / 1e3,
-                label=f'Model {period}',
-                color=colors['Model'])
+                tot_deaths_byage['WPP_Medium variant'] / 1e3,
+                label='WPP',
+                color=colors['WPP'])
             ax.fill_between(
-                tot_deaths_byage.index.to_numpy(),
-                tot_deaths_byage['Model_lower'] / 1e3,
-                tot_deaths_byage['Model_upper'] / 1e3,
-                facecolor=colors['Model'], alpha=0.2)
+                (tot_deaths_byage.index).to_numpy(),
+                (tot_deaths_byage['WPP_Low variant'] / 1e3).to_numpy(),
+                (tot_deaths_byage['WPP_High variant'] / 1e3).to_numpy(),
+                facecolor=colors['WPP'], alpha=0.2)
+        else:
+            ax.plot(
+                tot_deaths_byage.index,
+                tot_deaths_byage['WPP_Estimates'] / 1e3,
+                label='WPP',
+                color=colors['WPP'])
 
-    # Set labels and titles
-    ax.set_xticks(np.arange(len(tot_deaths_byage.index)))
-    ax.set_xticklabels(tot_deaths_byage.index, rotation=90)
-    ax.set_title("Number of Deaths by Age Group for Selected Periods")
-    ax.legend(loc='upper right')
-    ax.set_xlabel('Age Group')
-    ax.set_ylabel('Deaths per period (thousands)')
-    ax.set_ylim(0, 120)
+        if 'GBD_Est' in tot_deaths_byage.columns:
+            ax.plot(
+                tot_deaths_byage.index,
+                tot_deaths_byage['GBD_Est'] / 1e3,
+                label='GBD',
+                color=colors['GBD'])
+            ax.fill_between(
+                (tot_deaths_byage.index).to_numpy(),
+                (tot_deaths_byage['GBD_Lower'] / 1e3).to_numpy(),
+                (tot_deaths_byage['GBD_Upper'] / 1e3).to_numpy(),
+                facecolor=colors['GBD'], alpha=0.2)
 
-        # Adjust layout and save figure
+        ax.plot(
+            tot_deaths_byage.index,
+            tot_deaths_byage['Model_mean'] / 1e3,
+            label='Model',
+            color=colors['Model'])
+        ax.fill_between(
+            (tot_deaths_byage.index).to_numpy(),
+            (tot_deaths_byage['Model_lower'] / 1e3).to_numpy(),
+            (tot_deaths_byage['Model_upper'] / 1e3).to_numpy(),
+            facecolor=colors['Model'], alpha=0.2)
+
+        ax.set_xticks(np.arange(len(tot_deaths_byage.index)))
+        ax.set_xticklabels(tot_deaths_byage.index, rotation=90)
+        ax.set_title(f"Number of Deaths {period}")
+        if idx == 0:
+            ax.legend(loc='upper right')
+        ax.set_xlabel('Age Group')
+        ax.set_ylabel('Deaths per period (thousands)')
+        ax.set_ylim(0, 120)
+
     fig.tight_layout()
     fig.savefig(make_graph_file_name("Deaths_By_Age_All_Periods"))
     # 3) Plots by sex and age-group for selected period:

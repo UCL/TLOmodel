@@ -18,7 +18,7 @@ from tlo.analysis.utils import (
 )
 
 min_year = 2010
-max_year = 2024  # have to censure for dummy runs
+max_year = 2040  # have to censure for dummy runs
 spacing_of_years = 1
 PREFIX_ON_FILENAME = '1'
 CONDITION_TO_COLOR_MAP_PREVALENCE = MappingProxyType(
