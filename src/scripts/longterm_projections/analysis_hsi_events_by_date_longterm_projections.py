@@ -933,7 +933,7 @@ def figure11_minutes_per_cadre(results_folder: Path, output_folder: Path,
     """ 'Figure 3': The Fraction of the time of each HCW used by each TREATMENT_ID (Short)"""
     target_year_sequence = range(min_year, max_year, spacing_of_years)
 
-    make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_Fig3_{stub}.png"  # noqa: E731
+    make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_Fig11_{stub}.png"  # noqa: E731
     appointment_time_table = pd.read_csv(
         resourcefilepath
         / 'healthsystem'
@@ -943,26 +943,26 @@ def figure11_minutes_per_cadre(results_folder: Path, output_folder: Path,
         index_col=["Appt_Type_Code", "Facility_Level", "Officer_Category"]
     )
 
-    appt_type_facility_level_officer_category_to_appt_time = (
-        appointment_time_table.Time_Taken_Mins.to_dict()
-    )
-
-    officer_categories = appointment_time_table.index.levels[
-        appointment_time_table.index.names.index("Officer_Category")
-    ].to_list()
-    appt_type_facility_level_officer_category_to_appt_time = (
-        appointment_time_table.Time_Taken_Mins.to_dict()
-    )
-    #print("APPT TYPE", appt_type_facility_level_officer_category_to_appt_time)
-
-    all_years_data = {}
-    scenario_info = get_scenario_info(results_folder)
     officer_cadres = appointment_time_table.index.levels[
         appointment_time_table.index.names.index("Officer_Category")
     ].to_list()
+    appt_type_facility_level_officer_category_to_appt_time = (
+        appointment_time_table.Time_Taken_Mins.to_dict()
+    )
+
+    all_years_data_cadre = {}
+    all_years_data_treatment = {}
+
+    scenario_info = get_scenario_info(results_folder)
     for target_year in target_year_sequence:
         target_period = (
             Date(target_year, 1, 1), Date(target_year + spacing_of_years, 12, 31))
+        # Initialize aggregation variables
+        cadre_to_total_time = {}
+        module_id_to_total_time = {}
+        total_runs = scenario_info["number_of_draws"] * scenario_info["runs_per_draw"]
+
+        # Loop through all draws and runs
         for draw in range(scenario_info["number_of_draws"]):
             for run in range(scenario_info["runs_per_draw"]):
                 hsi_event_key_to_event_details = load_pickled_dataframes(
@@ -970,29 +970,24 @@ def figure11_minutes_per_cadre(results_folder: Path, output_folder: Path,
                 )["tlo.methods.healthsystem.summary"]["hsi_event_details"]
 
                 hsi_event_key_to_event_details = hsi_event_key_to_event_details["hsi_event_key_to_event_details"]
-                print(hsi_event_key_to_event_details[0])
                 hsi_event_key_to_counts = load_pickled_dataframes(
                     results_folder, draw, run, "tlo.methods.healthsystem.summary"
                 )["tlo.methods.healthsystem.summary"]["hsi_event_counts"]
                 hsi_event_key_to_counts = hsi_event_key_to_counts[
                     hsi_event_key_to_counts['date'].between(target_period[0], target_period[1])
                 ]
-
                 hsi_event_key_to_counts = hsi_event_key_to_counts['hsi_event_key_to_counts']
-                cadre_to_total_time = {}
-                treatment_id_to_total_time = {}
 
                 # Loop through all hsi_event details
                 for hsi_event_code, hsi_event_details in hsi_event_key_to_event_details[0].items():
                     appt_footprint = hsi_event_details["appt_footprint"]
                     if len(appt_footprint) != 0:
                         for appt_type, appt_number in appt_footprint:  # could be more than one per footprint
-                            #event_name = hsi_event_details["event_name"]
-                            #treatment_id = hsi_event_details["treatment_id"]
-                            #treatment_module = treatment_id.split("_")[0]  # first part of treatment_id
                             module_name = hsi_event_details["module_name"]
                             facility_level = hsi_event_details["facility_level"]
+                            treatment_id = hsi_event_details["treatment_id"].split("_")[0]
                             hsi_count = hsi_event_key_to_counts.iloc[1].get(str(hsi_event_code), 0)
+
                             # Calculate the time for each officer cadre
                             for cadre in officer_cadres:
                                 time_for_appointment_officer_facility = appt_type_facility_level_officer_category_to_appt_time.get(
@@ -1007,31 +1002,40 @@ def figure11_minutes_per_cadre(results_folder: Path, output_folder: Path,
                                                                * appt_number)
 
                                 # Add time to module dictionary
-                                if module_name not in treatment_id_to_total_time:
-                                    treatment_id_to_total_time[module_name] = 0
-                                treatment_id_to_total_time[module_name] += (time_for_appointment_officer_facility
-                                                                            * hsi_count * appt_number)
+                                if treatment_id not in module_id_to_total_time:
+                                    module_id_to_total_time[treatment_id] = 0
+                                module_id_to_total_time[treatment_id] += (time_for_appointment_officer_facility
+                                                                         * hsi_count * appt_number)
+
+        # Average the results over all runs and draws
+        for cadre in cadre_to_total_time:
+            cadre_to_total_time[cadre] /= total_runs
+
+        for module_name in module_id_to_total_time:
+            module_id_to_total_time[treatment_id] /= total_runs
+        all_years_data_cadre[target_year] = cadre_to_total_time
+        all_years_data_treatment[target_year] = module_id_to_total_time
 
     # Convert the accumulated data into a DataFrame for plotting
-    df_all_years = pd.DataFrame(all_years_data)
+    df_all_years_cadre = pd.DataFrame(all_years_data_cadre)
     # Normalizing by the first column (first year in the sequence)
-    df_normalized = df_all_years.div(df_all_years.iloc[:, 0], axis=0)
+    df_normalized_cadre = df_all_years_cadre.div(df_all_years_cadre.iloc[:, 0], axis=0)
 
     # Plotting
     fig, axes = plt.subplots(1, 2, figsize=(25, 10))  # Two panels side by side
 
     # Panel A: Raw counts = stacked
-    df_all_years.T.plot.bar(stacked=True, ax=axes[0])
-    axes[0].set_title('Panel A: HSI Events by TREATMENT_ID (Short) All Years Trend')
+    df_all_years_cadre.T.plot.bar(stacked=True, ax=axes[0])
+    axes[0].set_title('Panel A: Time by Cadre')
     axes[0].set_xlabel('Year')
     axes[0].set_ylabel('Time Spent (Minutes)')
     axes[0].legend().set_visible(False)
     axes[0].grid(True)
 
     # Panel B: Normalized counts
-    for i, treatment_id in enumerate(df_normalized.index):
-        axes[1].plot(df_normalized.columns, df_normalized.loc[treatment_id], marker='o', label=treatment_id)
-    axes[1].set_title('Panel B: Normalized HSI Events by TREATMENT_ID (Short) All Years Trend')
+    for i, treatment_id in enumerate(df_normalized_cadre.index):
+        axes[1].plot(df_normalized_cadre.columns, df_normalized_cadre.loc[treatment_id], marker='o', label=treatment_id)
+    axes[1].set_title('Panel B: Normalized Time by Cadre')
     axes[1].set_xlabel('Year')
     axes[1].set_ylabel('Increase in Demand from 2010')
     axes[1].legend(title='Treatment ID', bbox_to_anchor=(1, 1), loc='upper left')
@@ -1039,6 +1043,39 @@ def figure11_minutes_per_cadre(results_folder: Path, output_folder: Path,
 
     # Save the figure with both panels
     fig.savefig(make_graph_file_name('Time_HSI_Events_by_Cadre_All_Years_Panel_A_and_B'))
+    plt.close(fig)
+
+    # Plotting
+    df_all_years_treatment_module = pd.DataFrame(all_years_data_treatment)
+    # Normalizing by the first column (first year in the sequence)
+    df_normalized_treatment_module = df_all_years_treatment_module.div(df_all_years_treatment_module.iloc[:, 0], axis=0)
+
+    fig, axes = plt.subplots(1, 2, figsize=(25, 10))  # Two panels side by side
+    # Panel A: Raw counts = stacked
+    df_all_years_treatment_module.T.plot.bar(stacked=True, ax=axes[0],
+                                             color=[get_color_short_treatment_id(_label) for _label in
+                                                    df_all_years_treatment_module.index])
+    axes[0].set_title('Panel A: Time by Treatment')
+    axes[0].set_xlabel('Year')
+    axes[0].set_ylabel('Time Spent (Minutes)')
+    axes[0].legend().set_visible(False)
+    axes[0].grid(True)
+
+    # Panel B: Normalized counts
+    for i, treatment_id in enumerate(df_normalized_treatment_module.index):
+        axes[1].plot(df_normalized_treatment_module.columns, df_normalized_treatment_module.loc[treatment_id],
+                     marker='o', label=treatment_id,
+                     color=[get_color_short_treatment_id(_label) for _label in
+                            df_normalized_treatment_module.index][i]
+                     )
+    axes[1].set_title('Panel B: Normalized Time by Treatment')
+    axes[1].set_xlabel('Year')
+    axes[1].set_ylabel('Increase in Demand from 2010')
+    axes[1].legend(title='Treatment ID', bbox_to_anchor=(1, 1), loc='upper left')
+    axes[1].grid(True)
+
+    # Save the figure with both panels
+    fig.savefig(make_graph_file_name('Time_HSI_Events_by_Treatment_All_Years_Panel_A_and_B'))
     plt.close(fig)
 
 
