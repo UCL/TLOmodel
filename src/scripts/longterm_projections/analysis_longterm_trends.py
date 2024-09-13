@@ -946,7 +946,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
 
     # 5) Deaths and Life Expectancy
+
+
     fig, ax = plt.subplots(1, 2, figsize=(25, 10))
+
     ax[0].plot(
         deaths_by_period.index,
         deaths_by_period['WPP_continuous'] / 1e6,
@@ -981,12 +984,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         facecolor=colors['Model'], alpha=0.2)
 
     max_index = find_index_with_string(deaths_by_period.index)
+    min_index = find_index_with_string(deaths_by_period.index, '2000')
+    period_labels = deaths_by_period.index[min_index:max_index].astype(str)
+    tick_positions = np.arange(len(period_labels))
     ax[0].set_title('Panel A: Number of Deaths')
     ax[0].legend(loc='upper left')
     ax[0].set_xlabel('Calendar Period')
     ax[0].set_ylabel('Number per period (millions)')
-    ax[0].set_xticks(np.arange(len(deaths_by_period.index)), deaths_by_period.index, rotation=90)
-    ax[0].set_xlim(right = max_index)
+    ax[0].set_xlim(left = min_index, right = max_index)
     fig.tight_layout()
 
     # Plotting
