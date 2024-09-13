@@ -477,7 +477,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                            (model[(0, 'upper', _agegrp)]).to_numpy(),
                            color='r',
                            alpha=0.2)
-        ax[i].set_ylim(0, 0.4)
+        ax[i].set_ylim(0, 0.3)
         ax[i].set_title(f'Age at Conception: {_agegrp}y', fontsize=6)
         ax[i].set_xlabel('Year')
         ax[i].set_ylabel('Live births per woman')
