@@ -22,7 +22,7 @@ from tlo.analysis.utils import (
 
 PREFIX_ON_FILENAME = '1'
 min_year = "2010"
-max_year = "2029"
+max_year = "2024"
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
 
