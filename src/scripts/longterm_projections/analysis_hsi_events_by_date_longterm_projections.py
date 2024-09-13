@@ -838,7 +838,7 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
 
 
 def figure10_minutes_per_ID(results_folder: Path, output_folder: Path,
-                               resourcefilepath: Path, min_year, max_year):
+                            resourcefilepath: Path, min_year, max_year):
     """ 'Figure 3': The Fraction of the time of each HCW used by each TREATMENT_ID (Short)"""
     target_year_sequence = range(min_year, max_year, spacing_of_years)
 
@@ -927,6 +927,7 @@ def figure10_minutes_per_ID(results_folder: Path, output_folder: Path,
     fig.savefig(make_graph_file_name('Time_HSI_Events_by_TREATMENT_ID_All_Years_Panel_A_and_B'))
     plt.close(fig)
 
+
 def figure11_minutes_per_cadre(results_folder: Path, output_folder: Path,
                                resourcefilepath: Path, min_year, max_year):
     """ 'Figure 3': The Fraction of the time of each HCW used by each TREATMENT_ID (Short)"""
@@ -956,7 +957,9 @@ def figure11_minutes_per_cadre(results_folder: Path, output_folder: Path,
 
     all_years_data = {}
     scenario_info = get_scenario_info(results_folder)
-    print(scenario_info)
+    officer_cadres = appointment_time_table.index.levels[
+        appointment_time_table.index.names.index("Officer_Category")
+    ].to_list()
     for target_year in target_year_sequence:
         target_period = (
             Date(target_year, 1, 1), Date(target_year + spacing_of_years, 12, 31))
@@ -972,50 +975,43 @@ def figure11_minutes_per_cadre(results_folder: Path, output_folder: Path,
                     results_folder, draw, run, "tlo.methods.healthsystem.summary"
                 )["tlo.methods.healthsystem.summary"]["hsi_event_counts"]
                 hsi_event_key_to_counts = hsi_event_key_to_counts[
-                        hsi_event_key_to_counts['date'].between(target_period[0], target_period[1])
-                    ]
+                    hsi_event_key_to_counts['date'].between(target_period[0], target_period[1])
+                ]
 
                 hsi_event_key_to_counts = hsi_event_key_to_counts['hsi_event_key_to_counts']
+                cadre_to_total_time = {}
+                treatment_id_to_total_time = {}
+
+                # Loop through all hsi_event details
                 for hsi_event_code, hsi_event_details in hsi_event_key_to_event_details[0].items():
-                    hsi_count = hsi_event_key_to_counts.iloc[1][str(hsi_event_code)]
+                    appt_footprint = hsi_event_details["appt_footprint"]
+                    if len(appt_footprint) != 0:
+                        for appt_type, appt_number in appt_footprint:  # could be more than one per footprint
+                            #event_name = hsi_event_details["event_name"]
+                            #treatment_id = hsi_event_details["treatment_id"]
+                            #treatment_module = treatment_id.split("_")[0]  # first part of treatment_id
+                            module_name = hsi_event_details["module_name"]
+                            facility_level = hsi_event_details["facility_level"]
+                            hsi_count = hsi_event_key_to_counts.iloc[1].get(str(hsi_event_code), 0)
+                            # Calculate the time for each officer cadre
+                            for cadre in officer_cadres:
+                                time_for_appointment_officer_facility = appt_type_facility_level_officer_category_to_appt_time.get(
+                                    (appt_type, facility_level, cadre),
+                                    0  # default to 0 if not found
+                                )
 
+                                # Add time to cadre dictionary
+                                if cadre not in cadre_to_total_time:
+                                    cadre_to_total_time[cadre] = 0
+                                cadre_to_total_time[cadre] += (time_for_appointment_officer_facility * hsi_count
+                                                               * appt_number)
 
+                                # Add time to module dictionary
+                                if module_name not in treatment_id_to_total_time:
+                                    treatment_id_to_total_time[module_name] = 0
+                                treatment_id_to_total_time[module_name] += (time_for_appointment_officer_facility
+                                                                            * hsi_count * appt_number)
 
-    all_years_data = {}
-    for target_year in target_year_sequence:
-        target_period = (
-            Date(target_year, 1, 1), Date(target_year + spacing_of_years, 12, 31))
-        times_by_officer_category_treatment_id_per_run = bin_hsi_event_details(
-            results_folder,
-            lambda event_details, count: sum(
-                [Counter({
-                    (officer_category, event_details["treatment_id"].split("_")[0]):
-                        count * appt_number * appt_type_facility_level_officer_category_to_appt_time.get(
-                            (appt_type, event_details["facility_level"], officer_category), 0)
-                    for officer_category in officer_categories
-                })
-                    for appt_type, appt_number in event_details["appt_footprint"]],
-                Counter()
-            ), target_period[0], target_period[1], False)
-
-        time_per_treatment_id_all_runs = defaultdict(list)
-
-        for _, times_by_officer_category_treatment_id in times_by_officer_category_treatment_id_per_run.items():
-            total_times_by_treatment_id = Counter()
-            for (cat, treatment_id), time in times_by_officer_category_treatment_id.items():
-                total_times_by_treatment_id[cat] += time
-                time_per_treatment_id_all_runs[cat].append(
-                    Counter({total_times_by_treatment_id[cat]}))
-
-        total_time_per_treatment_id_all_runs = dict()
-
-        # Iterate over each key and list of Counters
-        for key, counters in time_per_treatment_id_all_runs.items():
-            total = 0
-            for counter in counters:
-                total += sum(counter.keys())
-            total_time_per_treatment_id_all_runs[key] = total
-        all_years_data[target_year] = total_time_per_treatment_id_all_runs
     # Convert the accumulated data into a DataFrame for plotting
     df_all_years = pd.DataFrame(all_years_data)
     # Normalizing by the first column (first year in the sequence)
@@ -1044,6 +1040,7 @@ def figure11_minutes_per_cadre(results_folder: Path, output_folder: Path,
     # Save the figure with both panels
     fig.savefig(make_graph_file_name('Time_HSI_Events_by_Cadre_All_Years_Panel_A_and_B'))
     plt.close(fig)
+
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Description of the usage of healthcare system resources."""
