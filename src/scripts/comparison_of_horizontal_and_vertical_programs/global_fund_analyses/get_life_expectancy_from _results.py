@@ -130,9 +130,9 @@ def apply(results_folder: Path, output_folder: Path, HSS_or_HTM: str):
             ax.errorbar(x_positions, means, yerr=yerr, label=f'{sex}', fmt='o', capsize=5, color=color[i])
 
             # Add shaded horizontal bands for baseline 2024
-            baseline_lower = baseline2024.loc[sex, 'lower']
-            baseline_upper = baseline2024.loc[sex, 'upper']
-            ax.fill_betweenx([baseline_lower, baseline_upper], -0.5, num_categories - 0.5, color=color[i], alpha=0.2)
+            # baseline_lower = baseline2024.loc[sex, 'lower']
+            # baseline_upper = baseline2024.loc[sex, 'upper']
+            # ax.fill_betweenx([baseline_lower, baseline_upper], -0.5, num_categories - 0.5, color=color[i], alpha=0.2)
 
         # Customize plot
         ax.set_xlabel('')

@@ -306,7 +306,7 @@ def extract_results(results_folder: Path,
     return _concat
 
 
-def summarize(results: pd.DataFrame, only_mean: bool = False, collapse_columns: bool = False) -> pd.DataFrame:
+def summarize(results: pd.DataFrame, only_median: bool = False, collapse_columns: bool = False) -> pd.DataFrame:
     """Utility function to compute summary statistics
 
     Finds mean value and 95% interval across the runs for each draw.
@@ -314,7 +314,7 @@ def summarize(results: pd.DataFrame, only_mean: bool = False, collapse_columns: 
 
     summary = pd.concat(
         {
-            'mean': results.groupby(axis=1, by='draw', sort=False).mean(),
+            'median': results.groupby(axis=1, by='draw', sort=False).quantile(0.5),
             'lower': results.groupby(axis=1, by='draw', sort=False).quantile(0.025),
             'upper': results.groupby(axis=1, by='draw', sort=False).quantile(0.975),
         },
@@ -324,9 +324,9 @@ def summarize(results: pd.DataFrame, only_mean: bool = False, collapse_columns: 
     summary.columns.names = ['draw', 'stat']
     summary = summary.sort_index(axis=1)
 
-    if only_mean and (not collapse_columns):
+    if only_median and (not collapse_columns):
         # Remove other metrics and simplify if 'only_mean' across runs for each draw is required:
-        om: pd.DataFrame = summary.loc[:, (slice(None), "mean")]
+        om: pd.DataFrame = summary.loc[:, (slice(None), "median")]
         om.columns = [c[0] for c in om.columns.to_flat_index()]
         om.columns.name = 'draw'
         return om
@@ -334,8 +334,8 @@ def summarize(results: pd.DataFrame, only_mean: bool = False, collapse_columns: 
     elif collapse_columns and (len(summary.columns.levels[0]) == 1):
         # With 'collapse_columns', if number of draws is 1, then collapse columns multi-index:
         summary_droppedlevel = summary.droplevel('draw', axis=1)
-        if only_mean:
-            return summary_droppedlevel['mean']
+        if only_median:
+            return summary_droppedlevel['median']
         else:
             return summary_droppedlevel
 
@@ -1129,7 +1129,7 @@ def get_parameters_for_status_quo() -> Dict:
             "equip_availability": "all",  # <--- NB. Existing calibration is assuming all equipment is available
         },
     }
-    
+
 def get_parameters_for_standard_mode2_runs() -> Dict:
     """
     Returns a dictionary of parameters and their updated values to indicate

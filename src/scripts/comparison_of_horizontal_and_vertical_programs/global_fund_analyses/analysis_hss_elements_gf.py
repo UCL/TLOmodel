@@ -564,7 +564,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # DALYS averted by cause, HRH and supply chain scenarios separately
     for plot_name, scenario_names in plots.items():
         filtered_scenario_names = [name for name in scenario_names if name != 'Baseline']
-        name_of_plot = f'DALYS Averted vs Baseline, {target_period()}, {plot_name}'
+        name_of_plot = f'DALYS Averted vs Baseline by Cause, {target_period()}, {plot_name}'
         fig, ax = plt.subplots()
 
         # Plot each bar stack with the specified color
