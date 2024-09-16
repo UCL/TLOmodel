@@ -420,35 +420,17 @@ if __name__ == "__main__":
     parser.add_argument("results_folder", type=Path)  # outputs/horizontal_and_vertical_programs-2024-05-16
     args = parser.parse_args()
 
-    # Produce results for short-term analysis - beginning 2020
-    # apply(
-    #     results_folder=args.results_folder,
-    #     output_folder=args.results_folder,
-    #     resourcefilepath=Path('./resources'),
-    #     the_target_period=(Date(2020, 1, 1), Date(2024, 12, 31))
-    # )
-    #
-    # # Produce results for long-term analysis - beginning 2020
-    # apply(
-    #     results_folder=args.results_folder,
-    #     output_folder=args.results_folder,
-    #     resourcefilepath=Path('./resources'),
-    #     the_target_period=(Date(2020, 1, 1), Date(2030, 12, 31))
-    # )
-
-    # Produce results for short-term analysis - beginning 2021 (additional results per GF request)
+    # Produce results for short-term analysis - 2020 - 2024 (incl.)
     apply(
         results_folder=args.results_folder,
         output_folder=args.results_folder,
         resourcefilepath=Path('./resources'),
-        the_target_period=(Date(2021, 1, 1), Date(2024, 12, 31))
+        the_target_period=(Date(2020, 1, 1), Date(2024, 12, 31))
     )
-
-    # Produce results for long-term analysis - beginning 2021 (additional results per GF request)
+    # Produce results for only later period 2025-2030 (incl.)
     apply(
         results_folder=args.results_folder,
         output_folder=args.results_folder,
         resourcefilepath=Path('./resources'),
-        the_target_period=(Date(2021, 1, 1), Date(2030, 12, 31))
+        the_target_period=(Date(2025, 1, 1), Date(2030, 12, 31))
     )
-
