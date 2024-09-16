@@ -9,7 +9,7 @@ class ScenarioDefinitions:
     @property
     def YEAR_OF_CHANGE_FOR_HSS(self) -> int:
         """Year in which Health Systems Strengthening changes are made."""
-        return 2019  # <-- baseline year of Human Resources for Health is 2018, and this is consistent with calibration
+        return 2011  # <-- baseline year of Human Resources for Health is 2018, and this is consistent with calibration
         #                  during 2015-2019 period.
 
     @property

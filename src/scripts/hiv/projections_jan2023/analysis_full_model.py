@@ -11,6 +11,7 @@ from pathlib import Path
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods.fullmodel import fullmodel
+from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScenarioSwitcher
 
 # Where will outputs go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
@@ -47,25 +48,23 @@ log_config = {
 # seed = random.randint(0, 50000)
 seed = 32  # set seed for reproducibility
 
+
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
 sim.register(*fullmodel(
-    resourcefilepath=resourcefilepath,
-    use_simplified_births=False,
-    module_kwargs={
-        "SymptomManager": {"spurious_symptoms": True},
-        "HealthSystem": {"disable": False,
-                         "service_availability": ["*"],
-                         "mode_appt_constraints": 1,
-                         "cons_availability": "default",
-                         "beds_availability": "all",
-                         "ignore_priority": False,
-                         "use_funded_or_actual_staffing": "actual"},
-    },
-))
+    resourcefilepath=resourcefilepath),
+ ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=resourcefilepath)
+
+)
 
 # # set the scenario
 # sim.modules["Tb"].parameters["scenario"] = scenario
 # sim.modules["Tb"].parameters["scenario_start_date"] = Date(2023, 1, 1)
+sim.modules["Malaria"].parameters["type_of_scaleup"] = 'target'
+sim.modules["Malaria"].parameters["scaleup_start_year"] = 2011
+
+sim.modules['ImprovedHealthSystemAndCareSeekingScenarioSwitcher'].parameters['max_healthcare_seeking'] = [False, True]
+sim.modules['ImprovedHealthSystemAndCareSeekingScenarioSwitcher'].parameters['year_of_switch'] = 2011
+
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)

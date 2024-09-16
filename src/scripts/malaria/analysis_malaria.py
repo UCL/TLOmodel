@@ -21,6 +21,7 @@ from tlo.methods import (
     symptommanager,
     tb,
 )
+from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScenarioSwitcher
 
 t0 = time.time()
 
