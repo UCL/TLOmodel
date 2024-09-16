@@ -284,6 +284,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             'AIDS': 'HIV/AIDS',
             'TB (non-AIDS)': 'TB',
             'Malaria': 'Malaria',
+            'Lower respiratory infections': 'Lower respiratory infections',
+            'Neonatal Disorders': 'Neonatal Disorders',
+            'Maternal Disorders': 'Maternal Disorders',
             '': 'Other',    # defined in order to use this dict to determine ordering of the causes in output
         }
         causes_relabels = y.index.map(causes).fillna('Other')
@@ -334,7 +337,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             alpha=0.75,
             zorder=3,
             legend=False,
-            color=['orange', 'teal', 'purple', 'red']
+            # color=['orange', 'teal', 'purple', 'red']
         )
         ax.errorbar(0, num_dalys_averted['mean'].values/1e6, yerr=yerr, fmt="o", color="black", zorder=4)
         ax.set_title(name_of_plot + '\n' + str_num_dalys_averted + '\n' + str_pc_dalys_averted)
