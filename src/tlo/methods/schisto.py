@@ -169,9 +169,6 @@ class Schisto(Module):
         workbook = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Schisto.xlsx', sheet_name=None)
         self.parameters = self._load_parameters_from_workbook(workbook)
 
-        # update mda strategy from default values
-        self.prognosed_mda = self._create_mda_strategy()
-
         # load species-specific parameters
         for _spec in self.species.values():
             self.parameters.update(_spec.load_parameters_from_workbook(workbook))
@@ -228,12 +225,18 @@ class Schisto(Module):
 
         # Schedule MDA events
         if self.mda_execute:
+            # update future mda strategy from default values
+            self.prognosed_mda = self._create_mda_strategy()
+
             self._schedule_mda_events()
 
         # schedule WASH scale-up
         if self.parameters['scaleup_WASH']:
             sim.schedule_event(SchistoWashScaleUp(self),
                                Date(self.parameters['scaleup_WASH_start_year'], 1, 1))
+
+
+
 
         # # schedule calibration reset
         # if self.parameters['reset_calibration']:

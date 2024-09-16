@@ -76,9 +76,9 @@ def get_model_prevalence_by_district_over_time(_df):
     _df.set_index('date', inplace=True)
     df = _df.resample('Y').last()
 
-    df = df.filter(like='Likoma')
+    # df = df.filter(like='Likoma')
 
-    # todo limit to SAC
+    # limit to SAC
     if age == 'SAC':
         df = df.filter(like='SAC')
     if age == 'adult':
