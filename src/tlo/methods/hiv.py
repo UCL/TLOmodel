@@ -2378,7 +2378,8 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                 'referred_from': self.referred_from,
                 'person_id': person_id
             }
-            logger.info(key='hiv_test', data=person_details_for_test)
+            # todo reinstate if needed
+            # logger.info(key='hiv_test', data=person_details_for_test)
 
             # Offer services as needed:
             if test_result:
@@ -2753,7 +2754,8 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 'person_id': person_id,
                 'drugs_available': drugs_were_available,
             }
-            logger.info(key='hiv_arv_NA', data=person_details_for_tx)
+            # todo reinstate if needed
+            # logger.info(key='hiv_arv_NA', data=person_details_for_tx)
 
             # As drugs were not available, the person will default to being off ART (...if they were on ART at the
             # beginning of the HSI.)
@@ -3467,14 +3469,15 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         child_tx_delays = (df.loc[child_tx_idx, "hv_date_treated"] - df.loc[child_tx_idx, "hv_date_inf"]).dt.days
         child_tx_delays = child_tx_delays.tolist()
 
-        logger.info(
-            key="hiv_treatment_delays",
-            description="HIV time from onset to treatment",
-            data={
-                "HivTreatmentDelayAdults": adult_tx_delays,
-                "HivTreatmentDelayChildren": child_tx_delays,
-            },
-        )
+        # todo reinstate if needed
+        # logger.info(
+        #     key="hiv_treatment_delays",
+        #     description="HIV time from onset to treatment",
+        #     data={
+        #         "HivTreatmentDelayAdults": adult_tx_delays,
+        #         "HivTreatmentDelayChildren": child_tx_delays,
+        #     },
+        # )
 
 
 # ---------------------------------------------------------------------------
