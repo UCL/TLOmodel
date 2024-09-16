@@ -690,15 +690,15 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         # lookup table created in malaria read_parameters
         # produces self.itn_irs called by malaria poll to draw incidence
         # need to overwrite this
-        # highrisk_distr_num = p["highrisk_districts"]["district_num"]
+        highrisk_distr_num = p["highrisk_districts"]["district_num"]
 
         # Find indices where District_Num is in highrisk_distr_num
-        # mask = self.itn_irs['irs_rate'].index.get_level_values('District_Num').isin(
-        #     highrisk_distr_num)
+        mask = self.itn_irs['irs_rate'].index.get_level_values('District_Num').isin(
+            highrisk_distr_num)
 
         # IRS values can be 0 or 0.8 - no other value in lookup table
         # self.itn_irs['irs_rate'].loc[mask] = scaled_params["irs_district"]
-        self.itn_irs['irs_rate'] = scaled_params["irs_district"]
+        # self.itn_irs['irs_rate'] = scaled_params["irs_district"]
 
         # set ITN for all districts
         # Set these values to 0.7 - this is the max value possible in lookup table
