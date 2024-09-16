@@ -223,15 +223,26 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         # reformat data to ensure axes align
         sources = data['M'].keys()
-        dat = {_sex: pd.concat(
-            {_source: data['M'][_source] for _source in sources}, axis=1
-        ) for _sex in ['M', 'F']
+        correct_index_order = ['0-4', '5-9', '10-14', '15-19', '20-24', '25-29', '30-34',
+                               '35-39', '40-44', '45-49', '50-54', '55-59', '60-64', '65-69',
+                               '70-74', '75-79', '80-84', '85-89', '90-94', '95-99', '100+']
+        for _sex in ['M', 'F']:
+            for _source in sources:
+                data[_sex][_source].index = pd.Categorical(data[_sex][_source].index,
+                                                           categories=correct_index_order,
+                                                           ordered=True)
+                data[_sex][_source] = data[_sex][_source].sort_index()
+
+        # Now concatenate the data
+        dat = {
+            _sex: pd.concat(
+                {_source: data[_sex][_source] for _source in sources}, axis=1
+            ) for _sex in ['M', 'F']
         }
 
-        # use horizontal bar chart functions (barh) to plot the pyramid for the Model outputs
-        ax.barh(dat['M'].index, data['M']['Model'].values / 1e3, alpha=1.0, label='Model', color=colors['Model'])
-        ax.barh(dat['F'].index, -data['F']['Model'].values / 1e3, alpha=1.0, label='_', color='cornflowerblue')
-
+        # Use horizontal bar chart functions to plot the pyramid
+        ax.barh(dat['M'].index, dat['M']['Model'].values / 1e3, alpha=1.0, label='Model', color=colors['Model'])
+        ax.barh(dat['F'].index, -dat['F']['Model'].values / 1e3, alpha=1.0, label='_', color='cornflowerblue')
         # use plot to overlay the comparison data sources (whatever is available from 'WPP' and/or 'Census')
         for _dat_source in sorted(set(sources).intersection(['WPP', 'Census'])):
             ax.plot(data['M'][_dat_source].values / 1e3, dat['M'].index, label=_dat_source, color=colors[_dat_source])
@@ -263,7 +274,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # Get Age/Sex Breakdown of population (with scaling)
     calperiods, calperiodlookup = make_calendar_period_lookup()
-
     def get_mean_pop_by_age_for_sex_and_year(sex, year):
         if sex == 'F':
             key = "age_range_f"
@@ -297,7 +307,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             for sex in ['M', 'F']:
                 # Import model results and scale:
                 model = get_mean_pop_by_age_for_sex_and_year(sex, year)
-
                 # Make into dataframes for plotting:
                 pops[sex] = {
                     'Model': model,
@@ -995,7 +1004,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax[0].legend(loc='upper left')
     ax[0].set_xlabel('Calendar Period')
     ax[0].set_ylabel('Number per period (millions)')
-    ax[0].set_xlim(left = min_index, right = max_index)
+    ax[0].set_xlim(left = min_index, right = max_index - 1)
     fig.tight_layout()
 
     # Plotting
@@ -1034,7 +1043,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     ax[1].legend(loc='lower right')
     ax[1].set_xlabel('Year')
-    ax[1].set_ylim(0, 75)
+    ax[1].set_ylim(0, 80)
     ax[1].set_ylabel('Life Expectancy (Years)')
     ax[1].set_title('Panel B: Life Expectancy')
     fig.tight_layout()
