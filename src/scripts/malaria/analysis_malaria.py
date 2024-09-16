@@ -35,7 +35,7 @@ resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
-popsize = 15_000
+popsize = 1_000
 
 
 # set up the log config
@@ -85,8 +85,8 @@ sim.register(
 )
 
 # update parameters
-sim.modules["Tb"].parameters["type_of_scaleup"] = 'max'
-sim.modules["Tb"].parameters["scaleup_start_year"] = 2010
+sim.modules["Malaria"].parameters["type_of_scaleup"] = 'target'
+sim.modules["Malaria"].parameters["scaleup_start_year"] = 2011
 
 
 # Run the simulation and flush the logger
