@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, List
+
 import numpy as np
 import pandas as pd
 
@@ -7,13 +11,17 @@ from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.hsi_event import HSI_Event
+from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
+
+if TYPE_CHECKING:
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class ChronicSyndrome(Module):
+class ChronicSyndrome(Module, GenericFirstAppointmentsMixin):
     """
     This is a dummy chronic disease
     It demonstrates the following behaviours in respect of the healthsystem module:
@@ -275,6 +283,20 @@ class ChronicSyndrome(Module):
 
         return health_values
 
+    def do_at_generic_first_appt_emergency(
+        self,
+        person_id: int,
+        symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
+        **kwargs,
+    ) -> None:
+        """Example for CHRONIC SYNDROME"""
+        if "craving_sandwiches" in symptoms:
+            event = HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(
+                module=self,
+                person_id=person_id,
+            )
+            schedule_hsi_event(event, topen=self.sim.date, priority=1)
 
 class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
 

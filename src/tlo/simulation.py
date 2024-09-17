@@ -11,7 +11,11 @@ from typing import Dict, Optional, Union
 import numpy as np
 
 from tlo import Date, Population, logging
-from tlo.dependencies import check_dependencies_present, topologically_sort_modules
+from tlo.dependencies import (
+    check_dependencies_present,
+    initialise_missing_dependencies,
+    topologically_sort_modules,
+)
 from tlo.events import Event, IndividualScopeEventMixin
 from tlo.progressbar import ProgressBar
 
@@ -44,7 +48,7 @@ class Simulation:
     """
 
     def __init__(self, *, start_date: Date, seed: int = None, log_config: dict = None,
-                 show_progress_bar=False):
+                 show_progress_bar=False, resourcefilepath: Optional[Path] = None):
         """Create a new simulation.
 
         :param start_date: the date the simulation begins; must be given as
@@ -53,6 +57,7 @@ class Simulation:
         :param log_config: sets up the logging configuration for this simulation
         :param show_progress_bar: whether to show a progress bar instead of the logger
             output during the simulation
+        :param resourcefilepath: Path to resource files folder. Assign ``None` if no path is provided.
         """
         # simulation
         self.date = self.start_date = start_date
@@ -63,13 +68,14 @@ class Simulation:
         self.population: Optional[Population] = None
 
         self.show_progress_bar = show_progress_bar
+        self.resourcefilepath = resourcefilepath
 
         # logging
         if log_config is None:
             log_config = {}
         self._custom_log_levels = None
-        self._log_filepath = None
-        self.configure_logging(**log_config)
+        self._log_filepath = self._configure_logging(**log_config)
+        
 
         # random number generator
         seed_from = 'auto' if seed is None else 'user'
@@ -81,8 +87,8 @@ class Simulation:
         )
         self.rng = np.random.RandomState(np.random.MT19937(self._seed_seq))
 
-    def configure_logging(self, filename: str = None, directory: Union[Path, str] = "./outputs",
-                          custom_levels: Dict[str, int] = None, suppress_stdout: bool = False):
+    def _configure_logging(self, filename: str = None, directory: Union[Path, str] = "./outputs",
+                           custom_levels: Dict[str, int] = None, suppress_stdout: bool = False):
         """Configure logging, can write logging to a logfile in addition the default of stdout.
 
         Minimum custom levels for each logger can be specified for filtering out messages
@@ -99,8 +105,10 @@ class Simulation:
         # clear logging environment
         # if using progress bar we do not print log messages to stdout to avoid
         # clashes between progress bar and log output
-        logging.init_logging(add_stdout_handler=not (self.show_progress_bar or suppress_stdout))
-        logging.set_simulation(self)
+        logging.initialise(
+            add_stdout_handler=not (self.show_progress_bar or suppress_stdout),
+            simulation_date_getter=lambda: self.date.isoformat(),
+        )
 
         if custom_levels:
             # if modules have already been registered
@@ -115,7 +123,6 @@ class Simulation:
             log_path = Path(directory) / f"{filename}__{timestamp}.log"
             self.output_file = logging.set_output_file(log_path)
             logger.info(key='info', data=f'Log output: {log_path}')
-            self._log_filepath = log_path
             return log_path
 
         return None
@@ -125,7 +132,7 @@ class Simulation:
         """The path to the log file, if one has been set."""
         return self._log_filepath
 
-    def register(self, *modules, sort_modules=True, check_all_dependencies=True):
+    def register(self, *modules, sort_modules=True, check_all_dependencies=True, auto_register_dependencies: bool = False):
         """Register one or more disease modules with the simulation.
 
         :param modules: the disease module(s) to use as part of this simulation.
@@ -143,7 +150,15 @@ class Simulation:
             ``ADDITIONAL_DEPENDENCIES`` attributes) have been included in the set of
             modules to be registered. A ``ModuleDependencyError`` exception will
             be raised if there are missing dependencies.
+        :param auto_register_dependencies: Whether to register missing module dependencies or not. If this argument is
+         set to True, all module dependencies will be automatically registered.
         """
+        if auto_register_dependencies:
+            modules = [
+                *modules,
+                *initialise_missing_dependencies(modules, resourcefilepath=self.resourcefilepath)
+            ]
+
         if sort_modules:
             modules = list(topologically_sort_modules(modules))
         if check_all_dependencies:
@@ -183,7 +198,12 @@ class Simulation:
             module.pre_initialise_population()
 
         # Make the initial population
-        self.population = Population(self, n)
+        properties = {
+            name: prop
+            for module in self.modules.values()
+            for name, prop in module.PROPERTIES.items()
+        }
+        self.population = Population(properties, n)
         for module in self.modules.values():
             start1 = time.time()
             module.initialise_population(self.population)

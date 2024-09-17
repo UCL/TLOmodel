@@ -29,6 +29,7 @@ from tlo.methods.consumables import Consumables, create_dummy_data_for_cons_avai
 from tlo.methods.fullmodel import fullmodel
 from tlo.methods.healthsystem import HealthSystem, HealthSystemChangeParameters
 from tlo.methods.hsi_event import HSI_Event
+from tlo.util import BitsetDType
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
@@ -188,7 +189,11 @@ def test_run_no_interventions_allowed(tmpdir, seed):
     # Do the checks for the symptom manager: some symptoms should be registered
     assert sim.population.props.loc[:, sim.population.props.columns.str.startswith('sy_')] \
         .apply(lambda x: x != set()).any().any()
-    assert (sim.population.props.loc[:, sim.population.props.columns.str.startswith('sy_')].dtypes == 'int64').all()
+    assert (
+        sim.population.props.loc[
+            :, sim.population.props.columns.str.startswith('sy_')
+        ].dtypes == BitsetDType
+    ).all()
     assert not pd.isnull(sim.population.props.loc[:, sim.population.props.columns.str.startswith('sy_')]).any().any()
 
     # Check that no one was cured of mockitis:
@@ -393,6 +398,86 @@ def test_run_in_mode_1_with_capacity(tmpdir, seed):
 
     # Check that some mockitis cured occurred (though health system)
     assert any(sim.population.props['mi_status'] == 'P')
+
+
+@pytest.mark.slow
+def test_rescaling_capabilities_based_on_squeeze_factors(tmpdir, seed):
+    # Capabilities should increase when a HealthSystem that has low capabilities changes mode with
+    # the option `scale_to_effective_capabilities` set to `True`.
+
+    # Establish the simulation object
+    sim = Simulation(
+        start_date=start_date,
+        seed=seed,
+        log_config={
+            "filename": "log",
+            "directory": tmpdir,
+            "custom_levels": {
+                "tlo.methods.healthsystem": logging.DEBUG,
+            }
+        }
+    )
+
+    # Register the core modules
+    # Set the year in which mode is changed to start_date + 1 year, and mode after that still 1.
+    # Check that in second year, squeeze factor is smaller on average.
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           capabilities_coefficient=0.0000001,  # This will mean that capabilities are
+                                                                                # very close to 0 everywhere.
+                                                                                # (If the value was 0, then it would
+                                                                                # be interpreted as the officers NEVER
+                                                                                # being available at a facility,
+                                                                                # which would mean the HSIs should not
+                                                                                # run (as opposed to running with
+                                                                                # a very high squeeze factor)).
+                 ),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 mockitis.Mockitis(),
+                 chronicsyndrome.ChronicSyndrome()
+                 )
+
+    # Define the "switch" from Mode 1 to Mode 1, with the rescaling
+    hs_params = sim.modules['HealthSystem'].parameters
+    hs_params['mode_appt_constraints'] = 1
+    hs_params['mode_appt_constraints_postSwitch'] = 1
+    hs_params['year_mode_switch'] = start_date.year + 1
+    hs_params['scale_to_effective_capabilities'] = True
+
+    # Run the simulation
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=end_date)
+    check_dtypes(sim)
+
+    # read the results
+    output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
+
+    # Do the checks
+    assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
+    hsi_events = output['tlo.methods.healthsystem']['HSI_Event']
+    hsi_events['date'] = pd.to_datetime(hsi_events['date']).dt.year
+
+    # Check that all squeeze factors were high in 2010, but not all were high in 2011
+    # thanks to rescaling of capabilities
+    assert (
+        hsi_events.loc[
+            (hsi_events['Person_ID'] >= 0) &
+            (hsi_events['Number_By_Appt_Type_Code'] != {}) &
+            (hsi_events['date'] == 2010),
+            'Squeeze_Factor'
+        ] >= 100.0
+    ).all()  # All the events that had a non-blank footprint experienced high squeezing.
+    assert not (
+        hsi_events.loc[
+            (hsi_events['Person_ID'] >= 0) &
+            (hsi_events['Number_By_Appt_Type_Code'] != {}) &
+            (hsi_events['date'] == 2011),
+            'Squeeze_Factor'
+        ] >= 100.0
+    ).all()  # All the events that had a non-blank footprint experienced high squeezing.
 
 
 @pytest.mark.slow
@@ -846,7 +931,7 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
     all_fac_ids = set(mfl.loc[mfl.Facility_Level != '5'].Facility_ID)
 
     sim.modules['HealthSystem'].consumables = Consumables(
-        data=create_dummy_data_for_cons_availability(
+        availability_data=create_dummy_data_for_cons_availability(
             intrinsic_availability={0: 0.5, 1: 0.5},
             months=list(range(1, 13)),
             facility_ids=list(all_fac_ids)),
@@ -863,7 +948,7 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
     detailed_consumables = log["tlo.methods.healthsystem"]['Consumables']
 
     assert {'date', 'TREATMENT_ID', 'did_run', 'Squeeze_Factor', 'priority', 'Number_By_Appt_Type_Code', 'Person_ID',
-            'Facility_Level', 'Facility_ID', 'Event_Name',
+            'Facility_Level', 'Facility_ID', 'Event_Name', 'Equipment'
             } == set(detailed_hsi_event.columns)
     assert {'date', 'Frac_Time_Used_Overall', 'Frac_Time_Used_By_Facility_ID', 'Frac_Time_Used_By_OfficerType',
             } == set(detailed_capacity.columns)
@@ -1261,6 +1346,8 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
         'capabilities_coefficient': 0.5,
         'cons_availability': 'all',
         'beds_availability': 'default',
+        'equip_availability': 'default',
+        'use_funded_or_actual_staffing': 'funded_plus',
     }
     new_parameters = {
         'mode_appt_constraints': 2,
@@ -1268,6 +1355,8 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
         'capabilities_coefficient': 1.0,
         'cons_availability': 'none',
         'beds_availability': 'none',
+        'equip_availability': 'all',
+        'use_funded_or_actual_staffing': 'actual',
     }
 
     class CheckHealthSystemParameters(RegularEvent, PopulationScopeEventMixin):
@@ -1281,8 +1370,10 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
             _params['mode_appt_constraints'] = hs.mode_appt_constraints
             _params['ignore_priority'] = hs.ignore_priority
             _params['capabilities_coefficient'] = hs.capabilities_coefficient
-            _params['cons_availability'] = hs.consumables.cons_availability
+            _params['cons_availability'] = hs.consumables.availability
             _params['beds_availability'] = hs.bed_days.availability
+            _params['equip_availability'] = hs.equipment.availability
+            _params['use_funded_or_actual_staffing'] = hs.use_funded_or_actual_staffing
 
             logger = logging.getLogger('tlo.methods.healthsystem')
             logger.info(key='CheckHealthSystemParameters', data=_params)
@@ -1449,8 +1540,12 @@ def test_manipulation_of_service_availability(seed, tmpdir):
            get_set_of_treatment_ids_that_run(service_availability=["Hiv_Test_*"]) - generic_first_appts
 
     # Allow all `Hiv` things (but nothing else)
-    assert set({'Hiv_Test', 'Hiv_Treatment', 'Hiv_Prevention_Circumcision'}) == \
-           get_set_of_treatment_ids_that_run(service_availability=["Hiv_*"]) - generic_first_appts
+    hiv_hsi_events = {'Hiv_Test', 'Hiv_Treatment', 'Hiv_Prevention_Circumcision', 'Hiv_Prevention_Infant',
+                      'Hiv_Prevention_Prep', 'Hiv_PalliativeCare'}
+    returned_treatment_ids = get_set_of_treatment_ids_that_run(service_availability=["Hiv_*"])
+
+    assert returned_treatment_ids.intersection(
+        hiv_hsi_events), "None of the expected treatment IDs are found in the returned set"
 
     # Allow all except `Hiv_Test`
     everything_except_hiv_test = everything - set({'Hiv_Test'})
@@ -2422,3 +2517,122 @@ def test_dynamic_HR_scaling_multiple_changes(seed, tmpdir):
     ratio_in_sim = caps / initial_caps
 
     assert np.allclose(ratio_in_sim, expected_overall_scaling)
+
+
+def test_scaling_up_HRH_using_yearly_scaling_and_scaling_by_level_together(seed):
+    """We want the behaviour of HRH 'yearly scaling' and 'scaling_by_level' to operate together, so that, for instance,
+    the total capabilities is greater when scaling up by level _and_ by yearly-scaling than by using either
+    independently."""
+
+    def get_capabilities(yearly_scaling: bool, scaling_by_level: bool, rescaling: bool) -> float:
+        """Return total capabilities of HRH when optionally using 'yearly scaling' and/or 'scaling_by_level'"""
+        sim = Simulation(start_date=start_date, seed=seed)
+        sim.register(
+            demography.Demography(resourcefilepath=resourcefilepath),
+            healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+            simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+        )
+        params = sim.modules['HealthSystem'].parameters
+
+        # In Mode 1, from the beginning.
+        params["mode_appt_constraints"] = 1
+
+        if yearly_scaling:
+            params['yearly_HR_scaling_mode'] = 'GDP_growth_fHE_case5'
+            # This is above-GDP growth after 2018 (baseline year for HRH)
+
+        if scaling_by_level:
+            params['year_HR_scaling_by_level_and_officer_type'] = 2018  # <--  same time as yearly-scaling
+            params['HR_scaling_by_level_and_officer_type_mode'] = 'x2_fac0&1'
+
+        if rescaling:
+            # Switch to Mode 2, with the rescaling, at the same time as the other changes occur
+            params["mode_appt_constraints_postSwitch"] = 2
+            params["scale_to_effective_capabilities"] = True
+            params["year_mode_switch"] = 2018
+
+        popsize = 100
+        sim.make_initial_population(n=popsize)
+        sim.simulate(end_date=sim.date + pd.DateOffset(years=10, days=1))  # run simulation until at least past 2018
+
+        return sim.modules['HealthSystem'].capabilities_today.sum()
+
+    # - When running without any rescaling
+    caps_only_scaling_by_level = get_capabilities(yearly_scaling=False, scaling_by_level=True, rescaling=False)
+    caps_only_scaling_by_year = get_capabilities(yearly_scaling=True, scaling_by_level=False, rescaling=False)
+    caps_scaling_by_both = get_capabilities(yearly_scaling=True, scaling_by_level=True, rescaling=False)
+    assert caps_scaling_by_both > caps_only_scaling_by_level
+    assert caps_scaling_by_both > caps_only_scaling_by_year
+
+    # - When there is also rescaling as we go from Mode 2 into Mode 1
+    caps_only_scaling_by_level_with_rescaling = get_capabilities(yearly_scaling=False, scaling_by_level=True, rescaling=True)
+    caps_only_scaling_by_year_with_rescaling = get_capabilities(yearly_scaling=True, scaling_by_level=False, rescaling=True)
+    caps_scaling_by_both_with_rescaling = get_capabilities(yearly_scaling=True, scaling_by_level=True, rescaling=True)
+    assert caps_scaling_by_both_with_rescaling > caps_only_scaling_by_level_with_rescaling
+    assert caps_scaling_by_both_with_rescaling > caps_only_scaling_by_year_with_rescaling
+
+
+def test_logging_of_only_hsi_events_with_non_blank_footprints(tmpdir):
+    """Run the simulation with an HSI_Event that may have a blank_footprint and examine the healthsystem.summary logger.
+     * If the footprint is blank, the HSI event should be recorded in the usual loggers but not the 'no_blank' logger
+     * If the footprint is non-blank, the HSI event should be recorded in the usual and the 'no_blank' loggers.
+     """
+
+    def run_simulation_and_return_healthsystem_summary_log(tmpdir: Path, blank_footprint: bool) -> dict:
+        """Return the `healthsystem.summary` logger for a simulation. In that simulation, there is HSI_Event run on the
+        first day of the simulation and its `EXPECTED_APPT_FOOTPRINT` may or may not be blank. The simulation is run for one
+        year in order that the summary logger is active (it runs annually)."""
+
+        class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
+            def __init__(self, module, person_id, _is_footprint_blank):
+                super().__init__(module, person_id=person_id)
+                self.TREATMENT_ID = 'Dummy'
+                self.ACCEPTED_FACILITY_LEVEL = '0'
+                self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({}) if blank_footprint \
+                    else self.make_appt_footprint({'ConWithDCSA': 1})
+
+            def apply(self, person_id, squeeze_factor):
+                pass
+
+        class DummyModule(Module):
+            METADATA = {Metadata.DISEASE_MODULE}
+
+            def read_parameters(self, data_folder):
+                pass
+
+            def initialise_population(self, population):
+                pass
+
+            def initialise_simulation(self, sim):
+                hsi_event = HSI_Dummy(module=self, person_id=0, _is_footprint_blank=blank_footprint)
+                sim.modules['HealthSystem'].schedule_hsi_event(hsi_event=hsi_event, topen=sim.date, priority=0)
+
+        start_date = Date(2010, 1, 1)
+        sim = Simulation(start_date=start_date, seed=0, log_config={'filename': 'tmp', 'directory': tmpdir})
+        sim.register(
+            demography.Demography(resourcefilepath=resourcefilepath),
+            healthsystem.HealthSystem(resourcefilepath=resourcefilepath, mode_appt_constraints=0),
+            DummyModule(),
+            # Disable sorting + checks to avoid error due to missing dependencies
+            sort_modules=False,
+            check_all_dependencies=False
+        )
+        sim.make_initial_population(n=100)
+        sim.simulate(end_date=sim.start_date + pd.DateOffset(years=1))
+
+        return parse_log_file(sim.log_filepath)['tlo.methods.healthsystem.summary']
+    # When the footprint is blank:
+    log = run_simulation_and_return_healthsystem_summary_log(tmpdir, blank_footprint=True)
+    assert log['HSI_Event']['TREATMENT_ID'].iloc[0] == {'Dummy': 1}  # recorded in usual logger
+    assert log['HSI_Event_non_blank_appt_footprint']['TREATMENT_ID'].iloc[0] == {}  # not recorded in 'non-blank' logger
+
+    # When the footprint is non-blank:
+    log = run_simulation_and_return_healthsystem_summary_log(tmpdir, blank_footprint=False)
+    assert not log['HSI_Event'].empty
+    assert 'TREATMENT_ID' in log['HSI_Event'].columns
+    assert 'TREATMENT_ID' in log['HSI_Event_non_blank_appt_footprint'].columns
+    assert(    log['HSI_Event']['TREATMENT_ID'].iloc[0]
+        == log['HSI_Event_non_blank_appt_footprint']['TREATMENT_ID'].iloc[0]
+        == {'Dummy': 1}
+        # recorded in both the usual and the 'non-blank' logger
+    )
