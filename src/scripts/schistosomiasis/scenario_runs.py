@@ -18,6 +18,7 @@ tlo batch-submit src/scripts/schistosomiasis/scenario_runs.py
 """
 
 import random
+from typing import Dict
 
 from tlo import Date, logging
 from tlo.methods import (
@@ -39,6 +40,10 @@ from tlo.methods import (
     wasting,
 )
 from tlo.scenario import BaseScenario
+from scripts.schistosomiasis.schisto_scenario_definitions import (
+    ScenarioDefinitions,
+)
+from tlo.analysis.utils import mix_scenarios
 
 
 class TestScenario(BaseScenario):
@@ -53,17 +58,20 @@ class TestScenario(BaseScenario):
         self.pop_size = 5_000  # todo if equal_allocation_by_district, 64,000=2k per district
         self.runs_per_draw = 1
 
+        self._scenarios = self._get_scenarios()
+        self.number_of_draws = len(self._scenarios)
+
         # self.coverage_options = [0.6, 0.7, 0.8]
-        self.target_group_options = ['SAC', 'PSAC', 'All']
-        self.coverage_options = [0.0, 0.8]
-        self.wash_options = [0, 1]  # although this is BOOL, python changes type when reading in from Excel
+        # self.target_group_options = ['SAC', 'PSAC', 'All']
+        # self.coverage_options = [0.0, 0.8]
+        # self.wash_options = [0, 1]  # although this is BOOL, python changes type when reading in from Excel
 
         self.mda_execute = True  # todo reset
         self.single_district = True
         self.equal_allocation_by_district = True
 
         # Calculate the total number of combinations
-        self.number_of_draws = len(self.coverage_options) * len(self.target_group_options) * len(self.wash_options)
+        # self.number_of_draws = len(self.coverage_options) * len(self.target_group_options) * len(self.wash_options)
 
     def log_configuration(self):
         return {
@@ -107,23 +115,76 @@ class TestScenario(BaseScenario):
         ]
 
     def draw_parameters(self, draw_number, rng):
+        if draw_number < len(self._scenarios):
+            return list(self._scenarios.values())[draw_number]
 
-        # Determine indices for each parameter
-        coverage_index = draw_number % len(self.coverage_options)
-        target_group_index = (draw_number // len(self.coverage_options)) % len(self.target_group_options)
-        wash_index = (draw_number // (len(self.coverage_options) * len(self.target_group_options))) % len(self.wash_options)
+    # def draw_parameters(self, draw_number, rng):
+    #
+    #     # Determine indices for each parameter
+    #     coverage_index = draw_number % len(self.coverage_options)
+    #     target_group_index = (draw_number // len(self.coverage_options)) % len(self.target_group_options)
+    #     wash_index = (draw_number // (len(self.coverage_options) * len(self.target_group_options))) % len(self.wash_options)
+    #
+    #     return {
+    #         'Schisto': {
+    #             'mda_coverage': self.coverage_options[coverage_index],
+    #             'mda_target_group': self.target_group_options[target_group_index],
+    #             'mda_frequency_months': 12,
+    #             'scaleup_WASH': self.wash_options[wash_index],
+    #             'scaleup_WASH_start_year': 2025,
+    #         },
+    #     }
+
+    def _get_scenarios(self) -> Dict[str, Dict]:
+        """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
+        # Load helper class containing the definitions of the elements of all the scenarios
+        scenario_definitions = ScenarioDefinitions()
 
         return {
-            'Schisto': {
-                'mda_coverage': self.coverage_options[coverage_index],
-                'mda_target_group': self.target_group_options[target_group_index],
-                'mda_frequency_months': 12,
-                'scaleup_WASH': self.wash_options[wash_index],
-                'scaleup_WASH_start_year': 2025,
-            },
+            "Baseline":
+                scenario_definitions.baseline(),
+
+            # - - - Modify future MDA schedules with/without WASH activities - - -
+            "MDA SAC with no WASH":
+                mix_scenarios(
+                    scenario_definitions.high_coverage_MDA(),
+                ),
+
+            "MDA SAC with WASH":
+                mix_scenarios(
+                    scenario_definitions.high_coverage_MDA(),
+                    scenario_definitions.scaleup_WASH(),
+                ),
+
+            "MDA PSAC with no WASH":
+                mix_scenarios(
+                    scenario_definitions.high_coverage_MDA(),
+                    scenario_definitions.expand_MDA_to_PSAC(),
+                ),
+
+            "MDA PSAC with WASH":
+                mix_scenarios(
+                    scenario_definitions.high_coverage_MDA(),
+                    scenario_definitions.expand_MDA_to_PSAC(),
+                    scenario_definitions.scaleup_WASH(),
+                ),
+
+            "MDA All with no WASH":
+                mix_scenarios(
+                    scenario_definitions.high_coverage_MDA(),
+                    scenario_definitions.expand_MDA_to_All(),
+                ),
+
+            "MDA All with WASH":
+                mix_scenarios(
+                    scenario_definitions.high_coverage_MDA(),
+                    scenario_definitions.expand_MDA_to_All(),
+                    scenario_definitions.scaleup_WASH(),
+                )
         }
 
 
 if __name__ == '__main__':
     from tlo.cli import scenario_run
+
     scenario_run([__file__])
