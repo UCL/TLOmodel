@@ -27,11 +27,16 @@ from tlo.analysis.utils import (
 )
 
 # rename scenarios
-# todo: to update once scenarios confirmed
 substitute_labels = {
     's_1': 'no_expansion',
     's_2': 'all_expansion_current',
     's_3': 'all_expansion_equal',
+    's_4': 'Clinical', 's_5': 'DCSA', 's_6': 'Nursing_and_Midwifery', 's_7': 'Pharmacy', 's_8': 'Other',
+    's_9': 'CD_equal', 's_10': 'CN_equal', 's_11': 'CP_equal', 's_12': 'CO_equal', 's_13': 'DN_equal',
+    's_14': 'DP_equal', 's_15': 'DO_equal', 's_16': 'NP_equal', 's_17': 'NO_equal', 's_18': 'PO_equal',
+    's_19': 'CDN_equal', 's_20': 'CDP_equal', 's_21': 'CDO_equal', 's_22': 'CNP_equal', 's_23': 'CNO_equal',
+    's_24': 'CPO_equal', 's_25': 'DNP_equal', 's_26': 'DNO_equal', 's_27': 'DPO_equal', 's_28': 'NPO_equal',
+    's_29': 'CDNP_equal', 's_30': 'CDNO_equal', 's_31': 'CDPO_equal', 's_32': 'CNPO_equal', 's_33': 'DNPO_equal',
 }
 
 
@@ -223,7 +228,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     def get_current_hr(cadres):
         """
-        Return current (year of 2019) staff counts and capabilities for the cadres specified.
+        Return current (year of 2018/2019) staff counts and capabilities for the cadres specified.
         """
         curr_hr_path = Path(resourcefilepath
                             / 'healthsystem' / 'human_resources' / 'actual' / 'ResourceFile_Daily_Capabilities.csv')
@@ -249,17 +254,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         return salary[cadres]
 
     # Get parameter/scenario names
-    param_names = get_parameter_names_from_scenario_file()
+    param_names = ('s_1', 's_2', 's_3')#get_parameter_names_from_scenario_file()
 
     # Define cadres in order
     cadres = ['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy',
               'Dental', 'Laboratory', 'Mental', 'Nutrition', 'Radiography']
 
-    # # Get current (year of 2019) hr counts
+    # # Get current (year of 2018/2019) hr counts
     # curr_hr = get_current_hr(cadres)
-
-    # # Get salary
-    # salary = get_hr_salary(cadres)
 
     # # Get scale up factors for all scenarios
     # scale_up_factors = extract_results(
@@ -276,6 +278,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # scale_up_factors[cadres] = scale_up_factors.value.tolist()
     # scale_up_factors.drop(columns='value', inplace=True)
 
+    # Get salary
+    salary = get_hr_salary(cadres)
+
     # Get total cost for all scenarios
     total_cost = extract_results(
         results_folder,
@@ -287,8 +292,24 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     total_cost = total_cost.iloc[:, 0].unstack().reset_index().melt(id_vars='index')
     total_cost[cadres] = total_cost.value.tolist()
     total_cost.drop(columns='value', inplace=True)
-    total_cost['all_cadres'] = total_cost[total_cost.columns[2:11]].sum(axis=1)
+    total_cost['all_cadres'] = total_cost[[c for c in total_cost.columns if c in cadres]].sum(axis=1)
     total_cost.rename(columns={'index': 'year'}, inplace=True)
+
+    # get staff count = total cost / salary
+    staff_count = total_cost.copy()
+    for c in cadres:
+        staff_count.loc[:, c] = total_cost.loc[:, c] / salary[c].values[0]
+    staff_count.loc[:, 'all_cadres'] = staff_count[[c for c in staff_count.columns if c in cadres]].sum(axis=1)
+
+    # get extra count = staff count - staff count of no expansion s_1
+    # note that annual staff increase rate = scale up factor - 1
+    extra_staff = staff_count.copy()
+    for i in staff_count.index:
+        extra_staff.iloc[i, 2:] = staff_count.iloc[i, 2:] - staff_count.iloc[0, 2:]
+
+    extra_staff_2029 = extra_staff.loc[extra_staff.year == 2029, :].copy()
+    extra_staff_2029 = extra_staff_2029.drop(index=extra_staff_2029[extra_staff_2029.draw == 's_1'].index).drop(
+        columns='year')
 
     # check total cost calculated is increased as expected
     years = range(2019, the_target_period[1].year + 1)
@@ -425,17 +446,17 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         cause: CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.get(cause, np.nan)
         for cause in num_dalys_by_cause_summarized.columns
     }
-    # officer_category_color = {
-    #     'Clinical': 'blue',
-    #     'DCSA': 'orange',
-    #     'Nursing_and_Midwifery': 'red',
-    #     'Pharmacy': 'green',
-    #     'Dental': 'gray',
-    #     'Laboratory': 'gray',
-    #     'Mental': 'gray',
-    #     'Nutrition': 'gray',
-    #     'Radiography': 'gray',
-    # }
+    officer_category_color = {
+        'Clinical': 'blue',
+        'DCSA': 'orange',
+        'Nursing_and_Midwifery': 'red',
+        'Pharmacy': 'green',
+        'Dental': 'purple',
+        'Laboratory': 'orchid',
+        'Mental': 'plum',
+        'Nutrition': 'thistle',
+        'Radiography': 'lightgray',
+    }
     # scenario_color = {
     #     's_1': 'orange',
     #     's_2': 'blue',
@@ -570,22 +591,22 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    # name_of_plot = f'Extra staff by cadre, {target_period()}'
-    # extra_staff_by_cadre_to_plot = extra_staff_by_cadre / 1e3
-    # fig, ax = plt.subplots()
-    # extra_staff_by_cadre_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
-    # ax.set_ylabel('Thousands', fontsize='small')
-    # ax.set(xlabel=None)
-    # xtick_labels = [substitute_labels[v] for v in extra_staff_by_cadre_to_plot.index]
-    # ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
-    # plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
-    #            fontsize='small')
-    # plt.title(name_of_plot)
-    # fig.tight_layout()
-    # fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-    # fig.show()
-    # plt.close(fig)
-    #
+    name_of_plot = f'Extra staff by cadre, {target_period()}'
+    extra_staff_by_cadre_to_plot = extra_staff_2029.set_index('draw').drop(columns='all_cadres') / 1e3
+    fig, ax = plt.subplots()
+    extra_staff_by_cadre_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
+    ax.set_ylabel('Thousands', fontsize='small')
+    ax.set(xlabel=None)
+    xtick_labels = [substitute_labels[v] for v in extra_staff_by_cadre_to_plot.index]
+    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
+    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
+               fontsize='small')
+    plt.title(name_of_plot)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
     # name_of_plot = f'Extra budget by cadre, {target_period()}'
     # extra_cost_by_cadre_to_plot = extra_cost_by_cadre / 1e6
     # fig, ax = plt.subplots()
@@ -679,16 +700,18 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # todo
     # Plot comparison results: there are negative changes of some appts and causes, try increase runs and see.
-    # To design more scenarios so that Pharmacy cadre can be expanded more than the 33 scenarios
-    # and so that each cadre has different scale up factor (the one in more shortage will need to be scaled up more)?
     # As we have 33 scenarios in total, \
     # design comparison groups of scenarios to examine marginal/combined productivity of cadres.
+    # To vary the HRH budget growth rate (default: 4.2%) and do sensitivity analysis \
+    # (around the best possible extra budget allocation scenario)?
     # As it is analysis of 10 year results, it would be better to consider increasing annual/minute salary? The \
     # inflation rate of GDP and health workforce budget and the increase rate of salary could be assumed to be \
     # the same, thus no need to consider the increase rate of salary if GDP inflation is not considered.
     # To plot time series of staff and budget in the target period to show \
     # how many staff and how much budget to increase yearly (choose the best scenario to illustrate)?
     # Get and plot services by short treatment id?
+    # To design more scenarios so that Pharmacy cadre can be expanded more than the 33 scenarios
+    # and so that each cadre has different scale up factor (the one in more shortage will need to be scaled up more)?
     # Later, to explain the cause of differences in scenarios, might consider hcw time flow?
     # Before submit a run, merge in the remote master.
 
