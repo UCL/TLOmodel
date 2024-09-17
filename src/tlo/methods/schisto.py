@@ -1731,6 +1731,44 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Reset the daily counts for the next month
         self.module.log_person_days.loc[:, 'person_days'] = 0
 
+
+
+        # extract prevalence of either infection by age-group and district
+        age_grp = df.loc[df['is_alive'], 'age_years'].map(self.module.age_group_mapper)
+
+        infection_mask = (df['ss_sm_infection_status'] != 'Non-infected') | (
+                df['ss_sh_infection_status'] != 'Non-infected')
+
+        # Step 2: Filter the DataFrame to include only those who are alive and infected
+        infected = df.loc[df['is_alive'] & infection_mask].groupby(
+            by=[
+                df.loc[df['is_alive'] & infection_mask, 'district_of_residence'],
+                age_grp
+            ],
+            observed=False
+        ).size()
+        infected.index.rename(['district_of_residence', 'age_group'], inplace=True)
+
+        alive = df.loc[df['is_alive']].groupby(
+            by=[
+                df.loc[df['is_alive'], 'district_of_residence'],
+                age_grp
+            ],
+            observed=False
+        ).size()
+        alive.index.rename(['district_of_residence', 'age_group'], inplace=True)
+
+        prevalence = {
+            'number_infected': infected,
+            'number_alive': alive,
+        }
+
+        logger.info(
+            key=f'infection_status',
+            data=flatten_multi_index_series_into_dict_for_logging(prevalence),
+            description='Counts of infection status with this species by age-group and district.'
+        )
+
         # WASH properties
         unimproved_sanitation = len(
             df[df.li_unimproved_sanitation & df.is_alive]

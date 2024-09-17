@@ -32,7 +32,6 @@ from tlo.analysis.utils import (
     unflatten_flattened_multi_index_in_logging,
 )
 
-
 resourcefilepath = Path("./resources")
 # outputpath = Path("./outputs")
 
@@ -40,6 +39,7 @@ output_folder = Path("./outputs/t.mangal@imperial.ac.uk")
 
 # results_folder = get_scenario_outputs("schisto_calibration.py", outputpath)[-1]
 results_folder = get_scenario_outputs("schisto_scenarios.py", output_folder)[-1]
+
 
 # Declare path for output graphs from this script
 def make_graph_file_name(name):
@@ -57,7 +57,6 @@ scenario_info = get_scenario_info(results_folder)
 
 # Extract the parameters that have varied over the set of simulations
 params = extract_params(results_folder)
-
 
 # %% FUNCTIONS ##################################################################
 TARGET_PERIOD = (Date(2025, 1, 1), Date(2035, 12, 31))
@@ -135,18 +134,104 @@ total_num_dalys_by_label_results = summarize(extract_results(
 )
 
 
-
 # todo person-years infected with low/moderate/high intensity infections by district and total
 # stacked bar plot for each scenario
 # not separate for mansoni and haematobium
 
 def get_person_years_infected(_df):
+    """Get the person-years for each draw, summed over every district """
+
+    tmp = _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)]
+
+    # limit to specific age-groups
+    if age == 'SAC':
+        df = tmp.filter(regex=r'\bSAC\b')  # matches 'SAC' exactly, not 'PSAC'
+    elif age == 'PSAC':
+        df = tmp.filter(like='PSAC')
+    elif age == 'adult':
+        df = tmp.filter(like='Adult')
+    else:
+        df = tmp  # include all age-groups
+
+    if inf == 'HML':
+        df_filtered = df.filter(regex='(High-infection|Moderate-infection|Low-infection)')
+    if inf == 'HM':
+        df_filtered = df.filter(regex='(Moderate-infection|High-infection)')
+    if inf == 'ML':
+        df_filtered = df.filter(regex='(Moderate-infection|Low-infection)')
+    if inf == 'M':
+        df_filtered = df.filter(regex='(Moderate-infection)')
+    if inf == 'L':
+        df_filtered = df.filter(regex='(Low-infection)')
+
+    person_years = df_filtered.sum(axis=1).sum() / 365.25
+
+    return pd.Series(person_years)
+
+
+age = 'SAC'  # SAC, PSAC, Adult
+inf = 'HM'  # 'HML' or any combination
+
+person_years = summarize(extract_results(
+    results_folder,
+    module="tlo.methods.schisto",
+    key="Schisto_person_days_infected",
+    custom_generate_series=get_person_years_infected,
+    do_scaling=False,  # switch to True for full runs
+    ),
+    only_mean=True
+)
+
+# todo add param_names to columns
+# person_years.index = person_years.index.year
+
+
+
+
+# todo table, rows=districts,
+# column level0 with and without WASH:
+# classify districts into low/moderate/high burden
+# columns=[HML burden, person-years of low/moderate/high infection, # PZQ tablets]
+
+
+# todo elimination
+# years to reach elimination as PH problem
+# -- Elimination as a PH problem is defined as reducing the prevalence of heavy infections to less than 1% of population
+# years to reach elimination of transmission
+# years to reach morbidity control (heavy infections below threshold)
+
+# -- morbidity control is reducing the prevalence of heavy infections to below 5% of the population
+# -- (e.g. ≥400 EPG for mansoni or ≥50 eggs/10 mL urine for haematobium).
+def get_prevalence_heavy_infection(_df):
     """Get the prevalence every year of the simulation """
 
     # select the last entry for each year
     _df.set_index('date', inplace=True)
+    df = _df.resample('Y').last()
 
-    infected = _df.sum(axis=1)
+    # df = df.filter(like='Likoma')
+
+    # limit to SAC
+    if age == 'SAC':
+        df = df.filter(like='SAC')
+    if age == 'adult':
+        df = df.filter(like='Adult')
+
+    # Aggregate the sums of infection statuses by district_of_residence and year
+    district_sum = df.sum(axis=1)
+
+    if inf == 'HML':
+        df_filtered = df.filter(regex='(High-infection|Moderate-infection|Low-infection)')
+    if inf == 'HM':
+        df_filtered = df.filter(regex='(Moderate-infection|High-infection)')
+    if inf == 'ML':
+        df_filtered = df.filter(regex='(Moderate-infection|Low-infection)')
+    if inf == 'M':
+        df_filtered = df.filter(regex='(Moderate-infection)')
+    if inf == 'L':
+        df_filtered = df.filter(regex='(Low-infection)')
+
+    infected = df_filtered.sum(axis=1)
 
     prop_infected = infected.div(district_sum)
 
@@ -158,47 +243,8 @@ inf = 'HM'
 prev = extract_results(
         results_folder,
         module="tlo.methods.schisto",
-        key="Schisto_person_days_infected",
-        custom_generate_series=get_person_years_infected_by_district,
+        key="infection_status_haematobium",
+        custom_generate_series=get_prevalence_heavy_infection,
         do_scaling=False,
 )
 prev.index = prev.index.year
-
-tmp=log["tlo.methods.schisto"]["Schisto_person_days_infected"]
-
-
-
-
-
-# todo table, rows=districts,
-# column level0 with and without WASH:
-# classify districts into low/moderate/high burden
-# columns=[HML burden, person-years of low/moderate/high infection, # PZQ tablets]
-
-
-
-
-# todo elimination
-# years to reach elimination as PH problem
-# -- Elimination as a PH problem is defined as reducing the prevalence of heavy infections to less than 1% of population
-# years to reach elimination of transmission
-# years to reach morbidity control (heavy infections below threshold)
-# -- morbidity control is reducing the prevalence of heavy infections to below 5% of the population
-# -- (e.g. ≥400 EPG for mansoni or ≥50 eggs/10 mL urine for haematobium).
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
