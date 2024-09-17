@@ -79,14 +79,32 @@ def drop_outside_period(_df):
 
 def do_bar_plot_with_ci(_df, annotations=None, xticklabels_horizontal_and_wrapped=False):
     """Make a vertical bar plot for each row of _df, using the columns to identify the height of the bar and the
-     extent of the error bar."""
+    extent of the error bar."""
+
     yerr = np.array([
         (_df['mean'] - _df['lower']).values,
         (_df['upper'] - _df['mean']).values,
     ])
 
     xticks = {(i + 0.5): k for i, k in enumerate(_df.index)}
-    colors = plt.get_cmap('tab20')(np.linspace(0, 1, len(params['value'])))  # Generate different colors for each bar
+
+    # Define color mapping based on index values
+    color_mapping = {
+          'Actual': '#1f77b4',
+          'General consumables':'#ff7f0e',
+          'Vital medicines': '#2ca02c',
+          'Pharmacist-managed':'#d62728',
+          '75th percentile facility':'#9467bd',
+          '90th percentile facility':'#8c564b',
+          'Best facility': '#e377c2',
+          'Best facility (including DHO)': '#7f7f7f',
+          'HIV supply chain': '#bcbd22',
+          'EPI supply chain': '#17becf',
+          'Perfect':'#31a354'
+    }
+
+    colors = [_df.index[i] in color_mapping for i in range(len(_df.index))]
+    color_values = [color_mapping.get(idx, 'default_color') for idx in _df.index]
 
     fig, ax = plt.subplots()
     ax.bar(
@@ -94,22 +112,22 @@ def do_bar_plot_with_ci(_df, annotations=None, xticklabels_horizontal_and_wrappe
         _df['mean'].values,
         yerr=yerr,
         alpha=1,
-        color = colors,
+        color=color_values,
         ecolor='black',
         capsize=10,
         label=xticks.values()
     )
     if annotations:
         for xpos, ypos, text in zip(xticks.keys(), _df['upper'].values, annotations):
-            ax.text(xpos, ypos * 1.05, text, horizontalalignment='center', fontsize = 9)
+            ax.text(xpos, ypos * 1.05, text, horizontalalignment='center', fontsize=9)
+
     ax.set_xticks(list(xticks.keys()))
     if not xticklabels_horizontal_and_wrapped:
-        # xticklabels will be vertical and not wrapped
         wrapped_labs = ["\n".join(textwrap.wrap(_lab, 20)) for _lab in xticks.values()]
-        ax.set_xticklabels(wrapped_labs, rotation=45, ha = 'right')
+        ax.set_xticklabels(wrapped_labs, rotation=45, ha='right', fontsize=10)
     else:
         wrapped_labs = ["\n".join(textwrap.wrap(_lab, 20)) for _lab in xticks.values()]
-        ax.set_xticklabels(wrapped_labs)
+        ax.set_xticklabels(wrapped_labs, fontsize=10)
 
     # Set font size for y-tick labels
     ax.tick_params(axis='y', labelsize=10)
@@ -983,4 +1001,3 @@ hsi_by_short_treatment_id = counts_of_hsi_by_treatment_id_short.unstack().reset_
 hsi_by_short_treatment_id = hsi_by_short_treatment_id.rename(columns = {'level_2': 'Short_Treatment_ID', 0: 'qty_of_HSIs'})
 
 # Cost of consumables?
-
