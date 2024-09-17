@@ -376,7 +376,7 @@ params_dict  = {'default': 'Actual', 'scenario1': 'General consumables', 'scenar
 params_dict_df = pd.DataFrame.from_dict(params_dict, orient='index', columns=['name_of_scenario']).reset_index().rename(columns = {'index': 'value'})
 params = params.merge(params_dict_df, on = 'value', how = 'left', validate = '1:1')
 scenarios = params['name_of_scenario'] #range(len(params))  # X-axis values representing time periods
-drop_scenarios = ['Level 1b', 'CHAM', 'HIV moved to Govt supply chain'] # Drops scenarios which are no longer considered important for comparison
+drop_scenarios = ['Level 1b', 'CHAM', 'Best facility (including DHO)',  'HIV moved to Govt supply chain'] # Drops scenarios which are no longer considered important for comparison
 
 # %% Extracting results from run
 
