@@ -99,7 +99,7 @@ total_num_dalys = extract_results(
     results_folder,
     module='tlo.methods.healthburden',
     key='dalys_stacked',
-    custom_generate_series=get_total_num_dalys(),
+    custom_generate_series=get_total_num_dalys,
     do_scaling=True
 )
 
@@ -125,19 +125,49 @@ def get_total_num_dalys_by_label(_df):
     return y.groupby(by=causes_relabels).sum()[list(causes.values())]
 
 
-total_num_dalys_by_label_results = extract_results(
+total_num_dalys_by_label_results = summarize(extract_results(
     results_folder,
     module="tlo.methods.healthburden",
     key="dalys_by_wealth_stacked_by_age_and_time",
     custom_generate_series=get_total_num_dalys_by_label,
     do_scaling=True,
+), only_mean=True
 )
 
 
 
-# todo person-years infected with low/moderate/high intensity infections
+# todo person-years infected with low/moderate/high intensity infections by district and total
 # stacked bar plot for each scenario
-# separate for mansoni and haematobium
+# not separate for mansoni and haematobium
+
+def get_person_years_infected(_df):
+    """Get the prevalence every year of the simulation """
+
+    # select the last entry for each year
+    _df.set_index('date', inplace=True)
+
+    infected = _df.sum(axis=1)
+
+    prop_infected = infected.div(district_sum)
+
+    return prop_infected
+
+
+age = 'SAC'  # SAC, adult, all
+inf = 'HM'
+prev = extract_results(
+        results_folder,
+        module="tlo.methods.schisto",
+        key="Schisto_person_days_infected",
+        custom_generate_series=get_person_years_infected_by_district,
+        do_scaling=False,
+)
+prev.index = prev.index.year
+
+tmp=log["tlo.methods.schisto"]["Schisto_person_days_infected"]
+
+
+
 
 
 # todo table, rows=districts,
