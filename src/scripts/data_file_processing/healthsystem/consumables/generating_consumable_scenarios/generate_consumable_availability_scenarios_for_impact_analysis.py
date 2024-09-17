@@ -608,9 +608,21 @@ figurespath = outputfilepath / 'consumable_scenario_analysis'
 if not os.path.exists(figurespath):
     os.makedirs(figurespath)
 
-# Creating the line plot with ggplot
+# Prepare the availability dataframe for descriptive plots
 df_for_plots = full_df_with_scenario.merge(mfl[['Facility_ID', 'Facility_Level']], on = 'Facility_ID', how = 'left', validate = "m:1")
 df_for_plots = df_for_plots.merge(program_item_mapping, on = 'item_code', how = 'left', validate = "m:1")
+scenario_list = [1,2,3,6,7,8,10,11]
+chosen_availability_columns = ['available_prop'] + [f'available_prop_scenario{i}' for i in
+                                             scenario_list]
+scenario_names_dict = {'available_prop': 'Actual', 'available_prop_scenario1': 'General consumables', 'available_prop_scenario2': 'Vital medicines',
+                'available_prop_scenario3': 'Pharmacist-managed', 'available_prop_scenario4': 'Level 1b', 'available_prop_scenario5': 'CHAM',
+                'available_prop_scenario6': '75th percentile facility', 'available_prop_scenario7': '90th percentile facility', 'available_prop_scenario8': 'Best facility',
+                'available_prop_scenario9': 'Best facility (including DHO)','available_prop_scenario10': 'HIV supply chain', 'available_prop_scenario11': 'EPI supply chain',
+                'available_prop_scenario12': 'HIV moved to Govt supply chain'}
+# recreate the chosen columns list based on the mapping above
+chosen_availability_columns = [scenario_names_dict[col] for col in chosen_availability_columns]
+df_for_plots = df_for_plots.rename(columns = scenario_names_dict)
+
 def generate_barplot_of_scenarios(_df, _x_axis_var, _filename):
     df_for_line_plot = _df.groupby([_x_axis_var])[['available_prop'] + final_list_of_scenario_vars].mean()
     df_for_line_plot = df_for_line_plot.reset_index().melt(id_vars=[_x_axis_var], value_vars=['available_prop'] + final_list_of_scenario_vars,
@@ -629,19 +641,15 @@ generate_barplot_of_scenarios(_df = df_for_plots, _x_axis_var = 'item_category',
 generate_barplot_of_scenarios(_df = df_for_plots, _x_axis_var = 'Facility_Level', _filename = 'availability_by_level.png')
 
 # Create heatmaps by Facility_Level of average availability by item_category across chosen scenarios
-number_of_scenarios = 12
-availability_columns = ['available_prop'] + [f'available_prop_scenario{i}' for i in
-                                             range(1, number_of_scenarios + 1)]
-
 for level in fac_levels:
     # Generate a heatmap
     # Pivot the DataFrame
-    aggregated_df = df_for_plots.groupby(['item_category', 'Facility_Level'])[availability_columns].mean().reset_index()
+    aggregated_df = df_for_plots.groupby(['item_category', 'Facility_Level'])[chosen_availability_columns].mean().reset_index()
     aggregated_df = aggregated_df[aggregated_df.Facility_Level.isin([level])]
     heatmap_data = aggregated_df.set_index('item_category').drop(columns = 'Facility_Level')
 
     # Calculate the aggregate row and column
-    aggregate_col= aggregated_df[availability_columns].mean()
+    aggregate_col= aggregated_df[chosen_availability_columns].mean()
     #overall_aggregate = aggregate_col.mean()
 
     # Add aggregate row and column
@@ -650,7 +658,7 @@ for level in fac_levels:
     heatmap_data.loc['Average'] = aggregate_col
 
     # Generate the heatmap
-    sns.set(font_scale=0.5)
+    sns.set(font_scale=1.2)
     plt.figure(figsize=(10, 8))
     sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn', cbar_kws={'label': 'Proportion of days on which consumable is available'})
 
@@ -666,9 +674,6 @@ for level in fac_levels:
     plt.close()
 
 # Create heatmap of average availability by Facility_Level across chosen scenarios
-scenario_list = [1,2,3,6,7,8,9,10,11]
-chosen_availability_columns = ['available_prop'] + [f'available_prop_scenario{i}' for i in
-                                             scenario_list]
 # Pivot the DataFrame
 aggregated_df = df_for_plots.groupby(['Facility_Level'])[chosen_availability_columns].mean().reset_index()
 heatmap_data = aggregated_df.set_index('Facility_Level')
@@ -683,7 +688,7 @@ aggregate_col= aggregated_df[chosen_availability_columns].mean()
 heatmap_data.loc['Average'] = aggregate_col
 
 # Generate the heatmap
-sns.set(font_scale=0.5)
+sns.set(font_scale=1.2)
 plt.figure(figsize=(10, 8))
 sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn', cbar_kws={'label': 'Proportion of days on which consumable is available'})
 
@@ -699,15 +704,6 @@ plt.show()
 plt.close()
 
 # Create heatmap of average availability by item_category across chosen scenarios
-scenario_list = [1,2,3,6,7,8,10,11]
-chosen_availability_columns = ['available_prop'] + [f'available_prop_scenario{i}' for i in
-                                             scenario_list]
-scenario_names_dict = {'available_prop': 'Actual', 'available_prop_scenario1': 'General consumables', 'available_prop_scenario2': 'Vital medicines',
-                'available_prop_scenario3': 'Pharmacist-managed', 'available_prop_scenario4': 'Level 1b', 'available_prop_scenario5': 'CHAM',
-                'available_prop_scenario6': '75th percentile facility', 'available_prop_scenario7': '90th percentile facility', 'available_prop_scenario8': 'Best facility',
-                'available_prop_scenario9': 'Best facility (including DHO)','available_prop_scenario10': 'HIV supply chain', 'available_prop_scenario11': 'EPI supply chain',
-                'available_prop_scenario12': 'HIV moved to Govt supply chain'}
-
 # Pivot the DataFrame
 aggregated_df = df_for_plots.groupby(['item_category'])[chosen_availability_columns].mean().reset_index()
 heatmap_data = aggregated_df.set_index('item_category')
@@ -722,7 +718,6 @@ aggregate_col['Perfect'] = 1
 heatmap_data.loc['Perfect'] = aggregate_col
 
 # Update column names for x-axis labels
-heatmap_data = heatmap_data.rename(columns = scenario_names_dict)
 # Generate the heatmap
 sns.set(font_scale=1.2)
 plt.figure(figsize=(10, 8))
