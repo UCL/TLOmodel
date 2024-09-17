@@ -21,7 +21,7 @@ class ScenarioDefinitions:
             # stop all future MDA activities
             {
                 "Schisto": {
-                    "mda_coverage": 0,  # default is 0.7
+                    "mda_coverage": 0.0,  # default is 0.7
                     "scaleup_WASH": 0,  # although this is BOOL, python changes type when reading in from Excel
                 }
             },

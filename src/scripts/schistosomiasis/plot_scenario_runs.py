@@ -13,6 +13,7 @@ import statsmodels.api as sm
 import seaborn as sns
 from collections import defaultdict
 import textwrap
+from typing import Tuple
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import (
@@ -60,7 +61,18 @@ params = extract_params(results_folder)
 
 # %% FUNCTIONS ##################################################################
 TARGET_PERIOD = (Date(2025, 1, 1), Date(2035, 12, 31))
-param_names = []  # todo can use params to label scenarios??
+
+
+def get_parameter_names_from_scenario_file() -> Tuple[str]:
+    """Get the tuple of names of the scenarios from `Scenario` class used to create the results."""
+    from scripts.schistosomiasis.scenario_runs import (
+        SchistoScenarios,
+    )
+    e = SchistoScenarios()
+    return tuple(e._scenarios.keys())
+
+
+param_names = get_parameter_names_from_scenario_file()
 
 
 def target_period() -> str:
@@ -104,6 +116,8 @@ def get_total_num_dalys_by_label(_df):
         'Schistosomiasis': 'Schisto',
         'AIDS': 'HIV/AIDS',
         'Cancer (Bladder)': 'Bladder cancer',
+        'Childhood Diarrhoea': 'Diarrhoea',
+        'Lower respiratory infections': 'ALRI',
         '': 'Other',  # defined in order to use this dict to determine ordering of the causes in output
     }
     causes_relabels = y.index.map(causes).fillna('Other')

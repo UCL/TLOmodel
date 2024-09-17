@@ -46,7 +46,7 @@ from scripts.schistosomiasis.schisto_scenario_definitions import (
 from tlo.analysis.utils import mix_scenarios
 
 
-class TestScenario(BaseScenario):
+class SchistoScenarios(BaseScenario):
 
     def __init__(self):
         super().__init__()
@@ -54,9 +54,9 @@ class TestScenario(BaseScenario):
         self.start_date = Date(2010, 1, 1)
 
         # todo reset
-        self.end_date = Date(2035, 12, 31)
-        self.pop_size = 5_000  # todo if equal_allocation_by_district, 64,000=2k per district
-        self.runs_per_draw = 1
+        self.end_date = Date(2035, 12, 31)  # 10 years of projections
+        self.pop_size = 64_000  # todo if equal_allocation_by_district, 64,000=2k per district
+        self.runs_per_draw = 3
 
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
@@ -66,9 +66,9 @@ class TestScenario(BaseScenario):
         # self.coverage_options = [0.0, 0.8]
         # self.wash_options = [0, 1]  # although this is BOOL, python changes type when reading in from Excel
 
-        self.mda_execute = True  # todo reset
-        self.single_district = True
-        self.equal_allocation_by_district = True
+        self.mda_execute = True  # determines whether future MDA activities can occur
+        self.single_district = True  # allocates all population to one district (Zomba)
+        self.equal_allocation_by_district = True  # puts equal population sizes in each district
 
         # Calculate the total number of combinations
         # self.number_of_draws = len(self.coverage_options) * len(self.target_group_options) * len(self.wash_options)
