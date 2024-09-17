@@ -581,7 +581,7 @@ old_vars = ['Facility_ID', 'month', 'item_code']
 full_df_with_scenario = df_new_scenarios6to8[old_vars + ['available_prop'] + [col for col in list_of_scenario_variables_first_stage if col != 'available_prop_scenario9']].reset_index().drop('index', axis = 1)
 full_df_with_scenario = full_df_with_scenario.merge(df_new_scenarios9[old_vars + ['available_prop_scenario9']], on = old_vars, how = 'left', validate = "1:1")
 
-list_of_scenario_suffixes_second_stage = list_of_scenario_suffixes_first_stage + ['scenario10', 'scenario11', 'scenario12']
+list_of_scenario_suffixes_second_stage = list_of_scenario_suffixes_first_stage + ['c', 'scenario11', 'scenario12']
 final_list_of_scenario_vars = ['available_prop_' + item for item in list_of_scenario_suffixes_second_stage]
 full_df_with_scenario = full_df_with_scenario.merge(hiv_scenario_df[old_vars + ['available_prop_scenario10']], on = old_vars, how = 'left', validate = "1:1")
 full_df_with_scenario = full_df_with_scenario.merge(epi_scenario_df[old_vars + ['available_prop_scenario11']], on = old_vars, how = 'left', validate = "1:1")
@@ -601,6 +601,8 @@ full_df_with_scenario.to_csv(
 
 # 8. Plot new availability estimates by scenario
 #*********************************************************************************************
+full_df_with_scenario = pd.read_csv(path_for_new_resourcefiles / "ResourceFile_Consumables_availability_small.csv")
+
 # Create the directory if it doesn't exist
 figurespath = outputfilepath / 'consumable_scenario_analysis'
 if not os.path.exists(figurespath):
@@ -696,6 +698,48 @@ plt.savefig(figurespath /f'consumable_availability_heatmap_alllevels.png', dpi=3
 plt.show()
 plt.close()
 
+# Create heatmap of average availability by item_category across chosen scenarios
+scenario_list = [1,2,3,6,7,8,10,11]
+chosen_availability_columns = ['available_prop'] + [f'available_prop_scenario{i}' for i in
+                                             scenario_list]
+scenario_names_dict = {'available_prop': 'Actual', 'available_prop_scenario1': 'General consumables', 'available_prop_scenario2': 'Vital medicines',
+                'available_prop_scenario3': 'Pharmacist-managed', 'available_prop_scenario4': 'Level 1b', 'available_prop_scenario5': 'CHAM',
+                'available_prop_scenario6': '75th percentile facility', 'available_prop_scenario7': '90th percentile facility', 'available_prop_scenario8': 'Best facility',
+                'available_prop_scenario9': 'Best facility (including DHO)','available_prop_scenario10': 'HIV supply chain', 'available_prop_scenario11': 'EPI supply chain',
+                'available_prop_scenario12': 'HIV moved to Govt supply chain'}
+
+# Pivot the DataFrame
+aggregated_df = df_for_plots.groupby(['item_category'])[chosen_availability_columns].mean().reset_index()
+heatmap_data = aggregated_df.set_index('item_category')
+
+# Calculate the aggregate row and column
+aggregate_col= aggregated_df[chosen_availability_columns].mean()
+#overall_aggregate = aggregate_col.mean()
+
+# Add aggregate row and column
+heatmap_data['Perfect'] = 1 # Add a column representing the perfect scenario
+aggregate_col['Perfect'] = 1
+heatmap_data.loc['Perfect'] = aggregate_col
+
+# Update column names for x-axis labels
+heatmap_data = heatmap_data.rename(columns = scenario_names_dict)
+# Generate the heatmap
+sns.set(font_scale=1.2)
+plt.figure(figsize=(10, 8))
+sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn', cbar_kws={'label': 'Proportion of days on which consumable is available'})
+
+# Customize the plot
+plt.title(f'Availability across scenarios')
+plt.xlabel('Scenarios')
+plt.ylabel(f'Facility Level')
+plt.xticks(rotation=90)
+plt.yticks(rotation=0)
+
+plt.savefig(figurespath /f'consumable_availability_heatmap_bycategory_withoutDHO.png', dpi=300, bbox_inches='tight')
+plt.show()
+plt.close()
+
+'''
 # Create heatmap of average availability by Facility_Level just showing scenario 12
 scenario_list = [12]
 chosen_availability_columns = ['available_prop'] + [f'available_prop_scenario{i}' for i in
@@ -730,7 +774,7 @@ plt.close()
 # Scenario on the X axis, program on the Y axis
 # TODO add heat maps i. heatmap by item_category across the sceanrios
 
-'''
+
 # 2.3.2. Browse missingness in the availability_change_prop variable
 #------------------------------------------------------
 pivot_table = pd.pivot_table(scenario_availability_df,
