@@ -39,6 +39,18 @@ substitute_labels = {
     's_29': 'CDNP_equal', 's_30': 'CDNO_equal', 's_31': 'CDPO_equal', 's_32': 'CNPO_equal', 's_33': 'DNPO_equal',
 }
 
+# group scenarios for presentation
+scenario_groups = {
+    'no_expansion': 's_1',
+    'all_cadres_expansion': {'s_2', 's_3'},
+    'one_cadre_expansion': {'s_4', 's_5', 's_6', 's_7', 's_8'},
+    'two_cadres_expansion': {'s_9', 's_10', 's_11', 's_12', 's_13',
+                             's_14', 's_15', 's_16', 's_17', 's_18'},
+    'three_cadres_expansion': {'s_19', 's_20', 's_21', 's_22', 's_23',
+                               's_24', 's_25', 's_26', 's_27', 's_28'},
+    'four_cadres_expansion': {'s_29', 's_30', 's_31', 's_32', 's_33'}
+}
+
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None,
           the_target_period: Tuple[Date, Date] = None):
@@ -294,6 +306,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     total_cost.drop(columns='value', inplace=True)
     total_cost['all_cadres'] = total_cost[[c for c in total_cost.columns if c in cadres]].sum(axis=1)
     total_cost.rename(columns={'index': 'year'}, inplace=True)
+
+    # get extra count = staff count - staff count of no expansion s_1
+    # note that annual staff increase rate = scale up factor - 1
+    extra_cost = total_cost.copy()
+    for i in total_cost.index:
+        extra_cost.iloc[i, 2:] = extra_cost.iloc[i, 2:] - extra_cost.iloc[0, 2:]
+
+    extra_cost_2029 = extra_cost.loc[extra_cost.year == 2029, :].copy()
+    extra_cost_2029 = extra_cost_2029.drop(index=extra_cost_2029[extra_cost_2029.draw == 's_1'].index).drop(
+        columns='year')
 
     # get staff count = total cost / salary
     staff_count = total_cost.copy()
@@ -591,7 +613,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    name_of_plot = f'Extra staff by cadre, {target_period()}'
+    name_of_plot = f'Extra staff by cadre against no expansion, {target_period()}'
     extra_staff_by_cadre_to_plot = extra_staff_2029.set_index('draw').drop(columns='all_cadres') / 1e3
     fig, ax = plt.subplots()
     extra_staff_by_cadre_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
@@ -607,21 +629,21 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    # name_of_plot = f'Extra budget by cadre, {target_period()}'
-    # extra_cost_by_cadre_to_plot = extra_cost_by_cadre / 1e6
-    # fig, ax = plt.subplots()
-    # extra_cost_by_cadre_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
-    # ax.set_ylabel('Millions', fontsize='small')
-    # ax.set(xlabel=None)
-    # xtick_labels = [substitute_labels[v] for v in extra_cost_by_cadre_to_plot.index]
-    # ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
-    # plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
-    #            fontsize='small')
-    # plt.title(name_of_plot)
-    # fig.tight_layout()
-    # fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-    # fig.show()
-    # plt.close(fig)
+    name_of_plot = f'Extra budget by cadre against no expansion, {target_period()}'
+    extra_cost_by_cadre_to_plot = extra_cost_2029.set_index('draw').drop(columns='all_cadres') / 1e6
+    fig, ax = plt.subplots()
+    extra_cost_by_cadre_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
+    ax.set_ylabel('Millions', fontsize='small')
+    ax.set(xlabel=None)
+    xtick_labels = [substitute_labels[v] for v in extra_cost_by_cadre_to_plot.index]
+    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
+    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
+               fontsize='small')
+    plt.title(name_of_plot)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
 
     name_of_plot = f'Services increased by appointment type \n against no expansion, {target_period()}'
     num_appts_increased_in_millions = num_appts_increased / 1e6
