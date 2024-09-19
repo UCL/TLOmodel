@@ -38,14 +38,14 @@ class ScenarioDefinitions:
     def expand_MDA_to_PSAC(self) -> Dict:
         return {
             'Schisto': {
-                "mda_target_group": 'PSAC',
+                "mda_target_group": 'PSAC_SAC',
             }
         }
 
     def expand_MDA_to_All(self) -> Dict:
         return {
             'Schisto': {
-                "mda_target_group": 'All',
+                "mda_target_group": 'ALL',
             }
         }
 

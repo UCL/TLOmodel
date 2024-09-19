@@ -94,12 +94,13 @@ def get_total_num_dalys(_df):
     )
 
 
-total_num_dalys = extract_results(
+total_num_dalys = summarize(extract_results(
     results_folder,
     module='tlo.methods.healthburden',
     key='dalys_stacked',
     custom_generate_series=get_total_num_dalys,
     do_scaling=True
+), only_mean=False
 )
 
 
