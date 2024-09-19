@@ -614,11 +614,11 @@ df_for_plots = df_for_plots.merge(program_item_mapping, on = 'item_code', how = 
 scenario_list = [1,2,3,6,7,8,10,11]
 chosen_availability_columns = ['available_prop'] + [f'available_prop_scenario{i}' for i in
                                              scenario_list]
-scenario_names_dict = {'available_prop': 'Actual', 'available_prop_scenario1': 'General consumables', 'available_prop_scenario2': 'Vital medicines',
-                'available_prop_scenario3': 'Pharmacist-managed', 'available_prop_scenario4': 'Level 1b', 'available_prop_scenario5': 'CHAM',
-                'available_prop_scenario6': '75th percentile facility', 'available_prop_scenario7': '90th percentile facility', 'available_prop_scenario8': 'Best facility',
-                'available_prop_scenario9': 'Best facility (including DHO)','available_prop_scenario10': 'HIV supply chain', 'available_prop_scenario11': 'EPI supply chain',
-                'available_prop_scenario12': 'HIV moved to Govt supply chain'}
+scenario_names_dict = {'available_prop': 'Actual', 'available_prop_scenario1': 'General \n consumables', 'available_prop_scenario2': 'Vital medicines',
+                'available_prop_scenario3': 'Pharmacist-\n managed', 'available_prop_scenario4': 'Level 1b', 'available_prop_scenario5': 'CHAM',
+                'available_prop_scenario6': '75th percentile\n  facility', 'available_prop_scenario7': '90th percentile \n facility', 'available_prop_scenario8': 'Best \n facility',
+                'available_prop_scenario9': 'Best facility \n (including DHO)','available_prop_scenario10': 'HIV supply \n chain', 'available_prop_scenario11': 'EPI supply \n chain',
+                'available_prop_scenario12': 'HIV moved to \n Govt supply chain'}
 # recreate the chosen columns list based on the mapping above
 chosen_availability_columns = [scenario_names_dict[col] for col in chosen_availability_columns]
 df_for_plots = df_for_plots.rename(columns = scenario_names_dict)
@@ -703,36 +703,96 @@ plt.savefig(figurespath /f'consumable_availability_heatmap_alllevels.png', dpi=3
 plt.show()
 plt.close()
 
-# Create heatmap of average availability by item_category across chosen scenarios
-# Pivot the DataFrame
-aggregated_df = df_for_plots.groupby(['item_category'])[chosen_availability_columns].mean().reset_index()
-heatmap_data = aggregated_df.set_index('item_category')
+# Create a heatmap of average availability by item_category and scenario
+# Base scenario list
+base_scenarios = [['Actual']]
+# Additional scenarios to add iteratively
+additional_scenarios = [
+    ['General \n consumables', 'Vital medicines', 'Pharmacist-\n managed'],
+    ['75th percentile\n  facility', '90th percentile \n facility', 'Best \n facility'],
+    ['HIV supply \n chain', 'EPI supply \n chain']
+]
+# Generate iteratively chosen availability columns
+iteratively_chosen_availability_columns = [
+    base_scenarios[0] + sum(additional_scenarios[:i], []) for i in range(len(additional_scenarios) + 1)
+]
 
-# Calculate the aggregate row and column
-aggregate_col= aggregated_df[chosen_availability_columns].mean()
-#overall_aggregate = aggregate_col.mean()
+i = 1
+for column_list in iteratively_chosen_availability_columns:
+    # Create heatmap of average availability by item_category across chosen scenarios
+    # Pivot the DataFrame
+    chosen_levels = ['1a', '1b']
+    aggregated_df = df_for_plots[df_for_plots.Facility_Level.isin(chosen_levels)]
+    aggregated_df = aggregated_df.groupby(['item_category'])[column_list].mean().reset_index()
+    heatmap_data = aggregated_df.set_index('item_category')
 
-# Add aggregate row and column
-heatmap_data['Perfect'] = 1 # Add a column representing the perfect scenario
-aggregate_col['Perfect'] = 1
-heatmap_data.loc['Perfect'] = aggregate_col
+    # Calculate the aggregate row and column
+    aggregate_col= aggregated_df[column_list].mean()
+    #overall_aggregate = aggregate_col.mean()
 
-# Update column names for x-axis labels
-# Generate the heatmap
-sns.set(font_scale=1.2)
-plt.figure(figsize=(10, 8))
-sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn', cbar_kws={'label': 'Proportion of days on which consumable is available'})
+    # Add aggregate row and column
+    heatmap_data['Perfect'] = 1 # Add a column representing the perfect scenario
+    aggregate_col['Perfect'] = 1
+    heatmap_data.loc['Average'] = aggregate_col
 
-# Customize the plot
-plt.title(f'Availability across scenarios')
-plt.xlabel('Scenarios')
-plt.ylabel(f'Facility Level')
-plt.xticks(rotation=90)
-plt.yticks(rotation=0)
+    # Ensure all scenarios are represented for consistent column widths
+    all_scenarios = chosen_availability_columns + ['Perfect']
+    heatmap_data = heatmap_data.reindex(columns=all_scenarios)
 
-plt.savefig(figurespath /f'consumable_availability_heatmap_bycategory_withoutDHO.png', dpi=300, bbox_inches='tight')
-plt.show()
-plt.close()
+    # Update column names for x-axis labels
+    # Generate the heatmap
+    sns.set(font_scale=1.2)
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn', cbar_kws={'label': 'Proportion of days on which consumable is available'})
+
+    # Customize the plot
+    plt.title(f'Availability across scenarios')
+    plt.xlabel('Scenarios')
+    plt.ylabel(f'Facility Level')
+    plt.xticks(rotation=90)
+    plt.yticks(rotation=0)
+
+    plt.savefig(figurespath /f'consumable_availability_heatmap_bycategory_iter{i}.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    i = i + 1
+
+# Create a barplot of average consumable availability based on the colours used in analysis_impact_of_consumable_scenarios
+average_availability = df_for_plots[chosen_availability_columns].mean().reset_index()
+average_availability.columns = ['scenario', 'average_availability']
+# Define color mapping for each scenario
+color_mapping = {
+    'Actual': '#1f77b4',
+    'General \n consumables': '#ff7f0e',
+    'Vital medicines': '#2ca02c',
+    'Pharmacist-\n managed': '#d62728',
+    '75th percentile\n  facility': '#9467bd',
+    '90th percentile \n facility': '#8c564b',
+    'Best \n facility': '#e377c2',
+    'Best facility \n (including DHO)': '#7f7f7f',
+    'HIV supply \n chain': '#bcbd22',
+    'EPI supply \n chain': '#17becf',
+    'Perfect': '#31a354'
+}
+# Create a color list for the bars
+colors = [color_mapping[scenario] for scenario in average_availability['scenario']]
+# Create the bar plot and capture the bars
+plt.figure(figsize=(10, 6))
+bars = plt.bar(average_availability['scenario'], average_availability['average_availability'], color=colors)
+plt.title('Average Availability by Scenario')
+plt.xlabel('Scenario')
+plt.ylabel('Average Availability')
+plt.xticks(rotation=45)
+plt.ylim(0, 1)  # Adjust based on your data range
+plt.grid(axis='y')
+# Add data labels
+for bar in bars:
+    yval = bar.get_height()
+    plt.text(bar.get_x() + bar.get_width() / 2, yval + 0.02, round(yval, 2), ha='center', va='bottom')
+
+# Save the plot
+plt.tight_layout()
+plt.tight_layout()
+plt.savefig(figurespath / 'scenarios_average_availability.png', dpi=300, bbox_inches='tight')
 
 '''
 # Create heatmap of average availability by Facility_Level just showing scenario 12

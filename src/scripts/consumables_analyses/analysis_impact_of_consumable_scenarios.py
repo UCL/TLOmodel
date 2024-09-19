@@ -119,7 +119,7 @@ def do_bar_plot_with_ci(_df, annotations=None, xticklabels_horizontal_and_wrappe
     )
     if annotations:
         for xpos, ypos, text in zip(xticks.keys(), _df['upper'].values, annotations):
-            ax.text(xpos, ypos * 1.05, text, horizontalalignment='center', fontsize=9)
+            ax.text(xpos, ypos * 1.05, text, horizontalalignment='center', fontsize=11)
 
     ax.set_xticks(list(xticks.keys()))
     if not xticklabels_horizontal_and_wrapped:
@@ -130,8 +130,8 @@ def do_bar_plot_with_ci(_df, annotations=None, xticklabels_horizontal_and_wrappe
         ax.set_xticklabels(wrapped_labs, fontsize=10)
 
     # Set font size for y-tick labels
-    ax.tick_params(axis='y', labelsize=10)
-    ax.tick_params(axis='x', labelsize=10)
+    ax.tick_params(axis='y', labelsize=12)
+    ax.tick_params(axis='x', labelsize=11)
 
     ax.grid(axis="y")
     ax.spines['top'].set_visible(False)
@@ -397,6 +397,7 @@ num_dalys = extract_results(
 num_dalys_summarized = summarize(num_dalys).loc[0].unstack()
 num_dalys_summarized['scenario'] = scenarios.to_list()
 num_dalys_summarized = num_dalys_summarized.set_index('scenario')
+num_dalys_summarized.to_csv(figurespath/ 'num_dalys_summarized.csv')
 
 # Plot DALYS accrued (with xtickabels horizontal and wrapped)
 name_of_plot = f'Total DALYs accrued, {target_period()}'
@@ -479,6 +480,7 @@ num_dalys_by_cause_summarized = summarize(num_dalys_by_cause).unstack(level = 0)
 num_dalys_by_cause_summarized = num_dalys_by_cause_summarized.reset_index()
 num_dalys_by_cause_summarized = num_dalys_by_cause_summarized.rename(columns = {'level_2':'cause', 0: 'DALYs_accrued'})
 num_dalys_by_cause_summarized = num_dalys_by_cause_summarized.pivot(index=['draw','cause'], columns='stat', values='DALYs_accrued')
+num_dalys_by_cause_summarized.to_csv(figurespath / 'num_dalys_by_cause_summarized.csv')
 
 # Get top 10 causes until Actual
 num_dalys_by_cause_actual = num_dalys_by_cause_summarized[num_dalys_by_cause_summarized.index.get_level_values(0) == 0]
@@ -613,7 +615,7 @@ chosen_pct_dalys_averted_per_person_year = pct_dalys_averted_per_person_year[~pc
 fig, ax = do_bar_plot_with_ci(
     (chosen_num_dalys_averted_per_person_year).clip(lower=0.0),
     annotations=[
-        f"{round(row['mean'], 1)} % \n ({round(row['lower'], 1)}-{round(row['upper'], 1)}) %"
+        f"{round(row['mean'], 1)} % \n ({round(row['lower'], 1)}- \n {round(row['upper'], 1)}) %"
         for _, row in chosen_pct_dalys_averted_per_person_year.clip(lower=0.0).iterrows()
     ],
     xticklabels_horizontal_and_wrapped=False,
@@ -780,28 +782,37 @@ program_item_mapping = program_item_mapping.rename(columns ={'Item_Code': 'item_
 tlo_availability_df = tlo_availability_df.merge(program_item_mapping,on = ['item_code'], how='left')
 
 # First a heatmap of current availability
-fac_levels = {'0': 'Health Post', '1a': 'Health Centers', '1b': 'Rural/Community Hospitals', '2': 'District Hospitals', '3': 'Central Hospitals', '4': 'Mental Hospital'}
-df_for_plots = tlo_availability_df
+fac_levels = {'0': 'Health Post', '1a': 'Health Centers', '1b': 'Rural/Community \n Hospitals', '2': 'District Hospitals', '3': 'Central Hospitals', '4': 'Mental Hospital'}
+chosen_fac_levels_for_plot = ['0', '1a', '1b', '2', '3', '4']
+correct_order_of_levels = ['Health Post', 'Health Centers', 'Rural/Community \n Hospitals', 'District Hospitals', 'Central Hospitals','Mental Hospital']
+df_for_plots = tlo_availability_df[tlo_availability_df.Facility_Level.isin(chosen_fac_levels_for_plot)]
+df_for_plots['Facility_Level'] = df_for_plots['Facility_Level'].map(fac_levels)
 
-availability_scenarios = ['available_prop',
-       'available_prop_scenario1', 'available_prop_scenario2',
-       'available_prop_scenario3', 'available_prop_scenario4',
-       'available_prop_scenario5', 'available_prop_scenario6',
-       'available_prop_scenario7', 'available_prop_scenario8']
+scenario_list = [1,2,3,6,7,8,10,11]
+chosen_availability_columns = ['available_prop'] + [f'available_prop_scenario{i}' for i in
+                                             scenario_list]
+scenario_names_dict = {'available_prop': 'Actual', 'available_prop_scenario1': 'General consumables', 'available_prop_scenario2': 'Vital medicines',
+                'available_prop_scenario3': 'Pharmacist- managed', 'available_prop_scenario4': 'Level 1b', 'available_prop_scenario5': 'CHAM',
+                'available_prop_scenario6': '75th percentile  facility', 'available_prop_scenario7': '90th percentile  facility', 'available_prop_scenario8': 'Best facility',
+                'available_prop_scenario9': 'Best facility (including DHO)','available_prop_scenario10': 'HIV supply  chain', 'available_prop_scenario11': 'EPI supply chain',
+                'available_prop_scenario12': 'HIV moved to Govt supply chain'}
+# recreate the chosen columns list based on the mapping above
+chosen_availability_columns = [scenario_names_dict[col] for col in chosen_availability_columns]
+df_for_plots = df_for_plots.rename(columns = scenario_names_dict)
+
 i = 0
-for avail_scenario in availability_scenarios:
+for avail_scenario in chosen_availability_columns:
     # Generate a heatmap
     # Pivot the DataFrame
-    aggregated_df = tlo_availability_df.groupby(['category', 'Facility_Level'])[avail_scenario].mean().reset_index()
-    aggregated_df = aggregated_df[aggregated_df.Facility_Level.isin(['1a', '1b'])]
-    aggregated_df.loc[aggregated_df.Facility_Level == '1a','Facility_Level'] = 'Health centres'
-    aggregated_df.loc[aggregated_df.Facility_Level == '1b','Facility_Level'] = 'Hospitals'
-    heatmap_data = aggregated_df.pivot("category", "Facility_Level", avail_scenario)
+    aggregated_df = df_for_plots.groupby(['item_category', 'Facility_Level'])[avail_scenario].mean().reset_index()
+    heatmap_data = aggregated_df.pivot("item_category", "Facility_Level", avail_scenario)
+    heatmap_data = heatmap_data[correct_order_of_levels] # Maintain the order
 
     # Calculate the aggregate row and column
     aggregate_col= aggregated_df.groupby('Facility_Level')[avail_scenario].mean()
-    aggregate_row = aggregated_df.groupby('category')[avail_scenario].mean()
-    overall_aggregate = aggregated_df[avail_scenario].mean()
+    aggregate_col = aggregate_col[correct_order_of_levels]
+    aggregate_row = aggregated_df.groupby('item_category')[avail_scenario].mean()
+    overall_aggregate = df_for_plots[avail_scenario].mean()
 
     # Add aggregate row and column
     heatmap_data['Average'] = aggregate_row
@@ -817,11 +828,11 @@ for avail_scenario in availability_scenarios:
     plt.title(scenarios[i])
     plt.xlabel('Facility Level')
     plt.ylabel(f'Disease/Public health \n program')
-    plt.xticks(rotation=45)
+    plt.xticks(rotation=90)
     plt.yticks(rotation=0)
 
-    plt.savefig(figurespath /f'consumable_availability_heatmap_1a_2_{avail_scenario}.png', dpi=300, bbox_inches='tight')
-    plt.show()
+    plt.savefig(figurespath /f'consumable_availability_heatmap_{avail_scenario}.png', dpi=300, bbox_inches='tight')
+    #plt.show()
     plt.close()
     i = i + 1
 
