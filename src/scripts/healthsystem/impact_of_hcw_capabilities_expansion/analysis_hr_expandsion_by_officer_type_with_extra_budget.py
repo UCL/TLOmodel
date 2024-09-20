@@ -160,14 +160,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         xticks = {(i + 0.5): k for i, k in enumerate(_df.index)}
 
-        # Define colormap (used only with option `put_labels_in_legend=True`)
-        # todo: could re-define colors for each scenario once scenarios are confirmed
-        if put_labels_in_legend and len(xticks) == 3:
-            colors = ['orange', 'blue', 'green']
-        elif put_labels_in_legend and len(xticks) == 2:
-            colors = ['blue', 'green']
-        else:
-            colors = None
+        colors = None
 
         fig, ax = plt.subplots(figsize=(10, 5))
         ax.bar(
@@ -182,24 +175,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             zorder=100,
         )
         if annotations:
-            for xpos, ypos, text in zip(xticks.keys(), _df['upper'].values, annotations):
+            for xpos, ypos, text in zip(xticks.keys(), _df['mean'].values, annotations):
                 ax.text(xpos, ypos*1.15, text, horizontalalignment='center', rotation='vertical', fontsize='x-small')
+
         ax.set_xticks(list(xticks.keys()))
 
-        if put_labels_in_legend:
-            # Set x-axis labels as simple scenario names
-            # Insert legend to explain scenarios
-            xtick_legend = [f'{v}: {substitute_labels[v]}' for v in xticks.values()]
-            h, _ = ax.get_legend_handles_labels()
-            ax.legend(h, xtick_legend, loc='center left', fontsize='small', bbox_to_anchor=(1, 0.5))
-            ax.set_xticklabels(list(xticks.values()))
-        else:
-            if not xticklabels_horizontal_and_wrapped:
-                # xticklabels will be vertical and not wrapped
-                ax.set_xticklabels(list(xticks.values()), rotation=90)
-            else:
-                wrapped_labs = ["\n".join(textwrap.wrap(_lab, 20)) for _lab in xticks.values()]
-                ax.set_xticklabels(wrapped_labs)
+        xtick_label_detail = [substitute_labels[v] for v in xticks.values()]
+        ax.set_xticklabels(xtick_label_detail, rotation=90)
 
         ax.grid(axis="y")
         ax.spines['top'].set_visible(False)
@@ -208,20 +190,20 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         return fig, ax
 
-    def get_scale_up_factor(_df):
-        """
-        Return a series of yearly scale up factors for all cadres,
-        with index of year and value of list of scale up factors.
-        """
-        _df = _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD), ['year_of_scale_up', 'scale_up_factor']
-                      ].set_index('year_of_scale_up')
-        _df = _df['scale_up_factor'].apply(pd.Series)
-        assert (_df.columns == cadres).all()
-        _dict = {idx: [list(_df.loc[idx, :])] for idx in _df.index}
-        _df_1 = pd.DataFrame(data=_dict).T
-        return pd.Series(
-            _df_1.loc[:, 0], index=_df_1.index
-        )
+    # def get_scale_up_factor(_df):
+    #     """
+    #     Return a series of yearly scale up factors for all cadres,
+    #     with index of year and value of list of scale up factors.
+    #     """
+    #     _df = _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD), ['year_of_scale_up', 'scale_up_factor']
+    #                   ].set_index('year_of_scale_up')
+    #     _df = _df['scale_up_factor'].apply(pd.Series)
+    #     assert (_df.columns == cadres).all()
+    #     _dict = {idx: [list(_df.loc[idx, :])] for idx in _df.index}
+    #     _df_1 = pd.DataFrame(data=_dict).T
+    #     return pd.Series(
+    #         _df_1.loc[:, 0], index=_df_1.index
+    #     )
 
     def get_total_cost(_df):
         """
@@ -266,7 +248,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         return salary[cadres]
 
     # Get parameter/scenario names
-    param_names = ('s_1', 's_2', 's_3')#get_parameter_names_from_scenario_file()
+    param_names = get_parameter_names_from_scenario_file()
 
     # Define cadres in order
     cadres = ['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy',
@@ -311,11 +293,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # note that annual staff increase rate = scale up factor - 1
     extra_cost = total_cost.copy()
     for i in total_cost.index:
-        extra_cost.iloc[i, 2:] = extra_cost.iloc[i, 2:] - extra_cost.iloc[0, 2:]
-
-    extra_cost_2029 = extra_cost.loc[extra_cost.year == 2029, :].copy()
-    extra_cost_2029 = extra_cost_2029.drop(index=extra_cost_2029[extra_cost_2029.draw == 's_1'].index).drop(
-        columns='year')
+        extra_cost.iloc[i, 2:] = total_cost.iloc[i, 2:] - total_cost.iloc[0, 2:]
 
     # get staff count = total cost / salary
     staff_count = total_cost.copy()
@@ -331,7 +309,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     extra_staff_2029 = extra_staff.loc[extra_staff.year == 2029, :].copy()
     extra_staff_2029 = extra_staff_2029.drop(index=extra_staff_2029[extra_staff_2029.draw == 's_1'].index).drop(
-        columns='year')
+        columns='year').set_index('draw')
 
     # check total cost calculated is increased as expected
     years = range(2019, the_target_period[1].year + 1)
@@ -384,13 +362,22 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ).pipe(set_param_names_as_column_index_level_0)
 
     # get absolute numbers for scenarios
-    num_dalys_summarized = summarize(num_dalys).loc[0].unstack().reindex(param_names)
-    num_dalys_by_cause_summarized = summarize(num_dalys_by_cause, only_mean=True).T.reindex(param_names)
+    # sort the scenarios according to their DALYs values, in ascending order
+    num_dalys_summarized = summarize(num_dalys).loc[0].unstack().reindex(param_names).sort_values(by='mean')
+    num_dalys_by_cause_summarized = summarize(num_dalys_by_cause, only_mean=True).T.reindex(param_names).reindex(
+        num_dalys_summarized.index
+    )
 
-    num_deaths_summarized = summarize(num_deaths).loc[0].unstack().reindex(param_names)
+    num_deaths_summarized = summarize(num_deaths).loc[0].unstack().reindex(param_names).reindex(
+        num_dalys_summarized.index
+    )
 
-    num_services_summarized = summarize(num_services).loc[0].unstack().reindex(param_names)
-    num_appts_summarized = summarize(num_appts, only_mean=True).T.reindex(param_names)
+    num_services_summarized = summarize(num_services).loc[0].unstack().reindex(param_names).reindex(
+        num_dalys_summarized.index
+    )
+    num_appts_summarized = summarize(num_appts, only_mean=True).T.reindex(param_names).reindex(
+        num_dalys_summarized.index
+    )
 
     # get relative numbers for scenarios, compared to no_expansion scenario: s_1
     num_services_increased = summarize(
@@ -399,7 +386,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 num_services.loc[0],
                 comparison='s_1')
         ).T
-    ).iloc[0].unstack().reindex(param_names).drop(['s_1'])
+    ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_1'])
 
     num_deaths_averted = summarize(
         -1.0 *
@@ -408,7 +395,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 num_deaths.loc[0],
                 comparison='s_1')
         ).T
-    ).iloc[0].unstack().reindex(param_names).drop(['s_1'])
+    ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_1'])
 
     num_dalys_averted = summarize(
         -1.0 *
@@ -417,7 +404,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 num_dalys.loc[0],
                 comparison='s_1')
         ).T
-    ).iloc[0].unstack().reindex(param_names).drop(['s_1'])
+    ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_1'])
 
     num_dalys_by_cause_averted = summarize(
         -1.0 * find_difference_relative_to_comparison_dataframe(
@@ -425,7 +412,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             comparison='s_1',
         ),
         only_mean=True
-    ).T
+    ).T.reindex(num_dalys_summarized.index).drop(['s_1'])
 
     num_appts_increased = summarize(
         find_difference_relative_to_comparison_dataframe(
@@ -433,7 +420,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             comparison='s_1',
         ),
         only_mean=True
-    ).T
+    ).T.reindex(num_dalys_summarized.index).drop(['s_1'])
 
     # Check that when we sum across the causes/appt types,
     # we get the same total as calculated when we didn't split by cause/appt type.
@@ -449,16 +436,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
          ) < 1e-6
     ).all()
 
-    # # get Return (in terms of DALYs averted) On Investment (extra cost) for all expansion scenarios, excluding s_1
-    # # get Cost-Effectiveness, i.e., cost of every daly averted, for all expansion scenarios
-    # ROI = pd.DataFrame(index=num_deaths_averted.index, columns=num_dalys_averted.columns)
-    # CE = pd.DataFrame(index=num_deaths_averted.index, columns=num_dalys_averted.columns)
-    # assert (ROI.index == extra_cost.index).all()
+    # get Return (in terms of DALYs averted) On Investment (extra cost) for all expansion scenarios, excluding s_1
+    # get Cost-Effectiveness, i.e., cost of every daly averted, for all expansion scenarios
+    # ROI = pd.DataFrame(index=num_dalys_averted.index, columns=num_dalys_averted.columns)
+    # todo: for the bad scenarios, the dalys averted are negative (to find out why), thus CE does not make sense.
+    # CE = pd.DataFrame(index=num_dalys_averted.index, columns=num_dalys_averted.columns)
     # for i in ROI.index:
-    #     ROI.loc[i, :] = num_dalys_averted.loc[i, :] / extra_cost.loc[i, 'all_cadres']
-    #     CE.loc[i, 'mean'] = extra_cost.loc[i, 'all_cadres'] / num_dalys_averted.loc[i, 'mean']
-    #     CE.loc[i, 'lower'] = extra_cost.loc[i, 'all_cadres'] / num_dalys_averted.loc[i, 'upper']
-    #     CE.loc[i, 'upper'] = extra_cost.loc[i, 'all_cadres'] / num_dalys_averted.loc[i, 'lower']
+    #     ROI.loc[i, :] = num_dalys_averted.loc[i, :] / extra_cost_2029.loc[i, 'all_cadres']
+    #     CE.loc[i, 'mean'] = extra_cost_2029.loc[i, 'all_cadres'] / num_dalys_averted.loc[i, 'mean']
+    #     CE.loc[i, 'lower'] = extra_cost_2029.loc[i, 'all_cadres'] / num_dalys_averted.loc[i, 'upper']
+    #     CE.loc[i, 'upper'] = extra_cost_2029.loc[i, 'all_cadres'] / num_dalys_averted.loc[i, 'lower']
 
     # prepare colors for plots
     appt_color = {
@@ -479,11 +466,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         'Nutrition': 'thistle',
         'Radiography': 'lightgray',
     }
-    # scenario_color = {
-    #     's_1': 'orange',
-    #     's_2': 'blue',
-    #     's_3': 'green',
-    # }
 
     # plot absolute numbers for scenarios
 
@@ -515,7 +497,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ])/1e6
     fig, ax = plt.subplots()
     num_appts_summarized_in_millions.plot(kind='bar', stacked=True, color=appt_color, rot=0, ax=ax)
-    ax.errorbar([0, 1, 2], num_services_summarized['mean'].values / 1e6, yerr=yerr_services,
+    ax.errorbar(range(len(param_names)), num_services_summarized['mean'].values / 1e6, yerr=yerr_services,
                 fmt=".", color="black", zorder=100)
     ax.set_ylabel('Millions', fontsize='small')
     ax.set(xlabel=None)
@@ -544,7 +526,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     # fig.show()
     # plt.close(fig)
-    #
+
     # name_of_plot = f'Total budget in USD dollars by cadre, {target_period()}'
     # total_cost_to_plot = (total_cost / 1e6).drop(columns='all_cadres')
     # fig, ax = plt.subplots()
@@ -569,7 +551,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ])/1e6
     fig, ax = plt.subplots()
     num_dalys_by_cause_summarized_in_millions.plot(kind='bar', stacked=True, color=cause_color, rot=0, ax=ax)
-    ax.errorbar([0, 1, 2], num_dalys_summarized['mean'].values / 1e6, yerr=yerr_dalys,
+    ax.errorbar(range(len(param_names)), num_dalys_summarized['mean'].values / 1e6, yerr=yerr_dalys,
                 fmt=".", color="black", zorder=100)
     ax.set_ylabel('Millions', fontsize='small')
     ax.set(xlabel=None)
@@ -614,7 +596,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     plt.close(fig)
 
     name_of_plot = f'Extra staff by cadre against no expansion, {target_period()}'
-    extra_staff_by_cadre_to_plot = extra_staff_2029.set_index('draw').drop(columns='all_cadres') / 1e3
+    extra_staff_by_cadre_to_plot = extra_staff_2029.drop(columns='all_cadres').reindex(
+        num_dalys_summarized.index).drop(['s_1']) / 1e3
     fig, ax = plt.subplots()
     extra_staff_by_cadre_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
     ax.set_ylabel('Thousands', fontsize='small')
@@ -629,23 +612,24 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    name_of_plot = f'Extra budget by cadre against no expansion, {target_period()}'
-    extra_cost_by_cadre_to_plot = extra_cost_2029.set_index('draw').drop(columns='all_cadres') / 1e6
-    fig, ax = plt.subplots()
-    extra_cost_by_cadre_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
-    ax.set_ylabel('Millions', fontsize='small')
-    ax.set(xlabel=None)
-    xtick_labels = [substitute_labels[v] for v in extra_cost_by_cadre_to_plot.index]
-    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
-    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
-               fontsize='small')
-    plt.title(name_of_plot)
-    fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-    fig.show()
-    plt.close(fig)
+    # name_of_plot = f'Extra budget by cadre against no expansion, {target_period()}'
+    # extra_cost_by_cadre_to_plot = extra_cost_2029.drop(columns='all_cadres').reindex(
+    #     num_dalys_summarized.index).drop(['s_1']) / 1e6
+    # fig, ax = plt.subplots()
+    # extra_cost_by_cadre_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
+    # ax.set_ylabel('Millions', fontsize='small')
+    # ax.set(xlabel=None)
+    # xtick_labels = [substitute_labels[v] for v in extra_cost_by_cadre_to_plot.index]
+    # ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
+    # plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
+    #            fontsize='small')
+    # plt.title(name_of_plot)
+    # fig.tight_layout()
+    # fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    # fig.show()
+    # plt.close(fig)
 
-    name_of_plot = f'Services increased by appointment type \n against no expansion, {target_period()}'
+    name_of_plot = f'Services increased by appointment type \nagainst no expansion, {target_period()}'
     num_appts_increased_in_millions = num_appts_increased / 1e6
     yerr_services = np.array([
         (num_services_increased['mean'].values - num_services_increased['lower']).values,
@@ -653,7 +637,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ]) / 1e6
     fig, ax = plt.subplots()
     num_appts_increased_in_millions.plot(kind='bar', stacked=True, color=appt_color, rot=0, ax=ax)
-    ax.errorbar([0, 1], num_services_increased['mean'].values / 1e6, yerr=yerr_services,
+    ax.errorbar(range(len(param_names)-1), num_services_increased['mean'].values / 1e6, yerr=yerr_services,
                 fmt=".", color="black", zorder=100)
     ax.set_ylabel('Millions', fontsize='small')
     ax.set(xlabel=None)
@@ -677,7 +661,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ]) / 1e6
     fig, ax = plt.subplots()
     num_dalys_by_cause_averted_in_millions.plot(kind='bar', stacked=True, color=cause_color, rot=0, ax=ax)
-    ax.errorbar([0, 1], num_dalys_averted['mean'].values / 1e6, yerr=yerr_dalys,
+    ax.errorbar(range(len(param_names)-1), num_dalys_averted['mean'].values / 1e6, yerr=yerr_dalys,
                 fmt=".", color="black", zorder=100)
     ax.set_ylabel('Millions', fontsize='small')
     ax.set(xlabel=None)
@@ -699,8 +683,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    # # plot ROI and CE for all expansion scenarios
-    #
+    # plot ROI and CE for all expansion scenarios
+
     # name_of_plot = f'DALYs averted per extra USD dollar invested, {target_period()}'
     # fig, ax = do_bar_plot_with_ci(ROI, xticklabels_horizontal_and_wrapped=True,
     #                               put_labels_in_legend=True)
@@ -709,7 +693,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     # fig.show()
     # plt.close(fig)
-    #
+
     # name_of_plot = f'Cost per DALY averted, {target_period()}'
     # fig, ax = do_bar_plot_with_ci(CE, xticklabels_horizontal_and_wrapped=True,
     #                               put_labels_in_legend=True)
@@ -736,6 +720,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # and so that each cadre has different scale up factor (the one in more shortage will need to be scaled up more)?
     # Later, to explain the cause of differences in scenarios, might consider hcw time flow?
     # Before submit a run, merge in the remote master.
+    # When calculate total cost and extra budget, should submit over all years from start to end
 
 
 if __name__ == "__main__":
