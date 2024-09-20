@@ -29,7 +29,7 @@ from tlo.analysis.utils import (
 PREFIX_ON_FILENAME = '3'
 
 # Declare period for which the results will be generated (defined inclusively)
-min_year = 2010
+min_year = 2020
 max_year = 2040
 spacing_of_years = 1
 
@@ -807,7 +807,7 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
     df_all_years = pd.DataFrame(all_years_data)
     # Normalizing by the first column (first year in the sequence)
     df_normalized = df_all_years.div(df_all_years.iloc[:, 0], axis=0)
-
+    print(df_normalized)
     # Plotting
     fig, axes = plt.subplots(1, 2, figsize=(25, 10))  # Two panels side by side
 
@@ -828,7 +828,7 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
                             df_all_years.index][i])
     axes[1].set_title('Panel B: Normalized HSI Events by TREATMENT_ID (Short) All Years Trend')
     axes[1].set_xlabel('Year')
-    axes[1].set_ylabel('Normalized Counts (First Year = 2010)')
+    axes[1].set_ylabel('Normalized Counts (First Year = 2020)')
     axes[1].legend(title='Treatment ID', bbox_to_anchor=(1, 1), loc='upper left')
     axes[1].grid(True)
 
@@ -946,7 +946,7 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
         axes[1].plot(df_normalized_cadre.columns, df_normalized_cadre.loc[treatment_id], marker='o', label=treatment_id)
     axes[1].set_title('Panel B: Normalized Time Required by Cadre')
     axes[1].set_xlabel('Year')
-    axes[1].set_ylabel('Increase in Demand from 2010')
+    axes[1].set_ylabel('Increase in Demand from 2020')
     axes[1].legend(title='Cadre', bbox_to_anchor=(1, 1), loc='upper left')
     axes[1].grid(True)
 
