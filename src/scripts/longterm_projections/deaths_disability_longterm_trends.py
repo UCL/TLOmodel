@@ -17,7 +17,7 @@ from tlo.analysis.utils import (
     summarize,
 )
 
-min_year = 2010
+min_year = 2020
 max_year = 2040  # have to censure for dummy runs
 spacing_of_years = 1
 PREFIX_ON_FILENAME = '1'
@@ -155,7 +155,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.savefig(make_graph_file_name('Trend_Deaths_and_DALYs_by_condition_All_Years_Panel_A_and_B'))
     plt.close(fig)
 
-    # NORMALIZED DEATHS AND DALYS - TO 2010
+    # NORMALIZED DEATHS AND DALYS - TO 2020
     fig, axes = plt.subplots(1, 2, figsize=(25, 10))  # Two panels side by side
 
     df_death_normalized = df_all_years_deaths.div(df_all_years_deaths.iloc[:, 0], axis=0)
@@ -167,7 +167,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                                              df_all_years_deaths.index][i])
     axes[0].set_title('Panel A: Deaths by Cause')
     axes[0].set_xlabel('Year')
-    axes[0].set_ylabel('Fold change in deaths compared to 2010')
+    axes[0].set_ylabel('Fold change in deaths compared to 2020')
     axes[0].grid(True)
 
     # Panel B: DALYs
@@ -177,7 +177,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                             df_DALY_normalized.index][i])
     axes[1].set_title('Panel B: DALYs by cause')
     axes[1].set_xlabel('Year')
-    axes[1].set_ylabel('Fold change in DALYs compared to 2010')
+    axes[1].set_ylabel('Fold change in DALYs compared to 2020')
     axes[1].legend(title='Condition', bbox_to_anchor=(1.05, 1), loc='upper left')
     axes[1].grid(True)
     fig.savefig(make_graph_file_name('Trend_Deaths_and_DALYs_by_condition_All_Years_Normalized_Panel_A_and_B'))
