@@ -31,7 +31,7 @@ class HRHExpansionByCadreWithExtraBudget(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2030, 1, 1)
+        self.end_date = Date(2031, 1, 1)
         self.pop_size = 100_000  # todo: TBC
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
@@ -60,7 +60,7 @@ class HRHExpansionByCadreWithExtraBudget(BaseScenario):
     def _get_scenarios(self) -> Dict[str, Dict]:
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
 
-        self.YEAR_OF_CHANGE = 2019  # This is the year to change run settings and to start hr expansion.
+        self.YEAR_OF_CHANGE = 2025  # This is the year to change run settings and to start hr expansion.
 
         self.scenarios = extra_budget_fracs
 
@@ -86,7 +86,7 @@ class HRHExpansionByCadreWithExtraBudget(BaseScenario):
                 'cons_availability': 'default',
                 'cons_availability_postSwitch': 'all',  # todo: how to argue for this setting?
                 'year_cons_availability_switch': self.YEAR_OF_CHANGE,
-                'yearly_HR_scaling_mode': 'no_scaling',
+                'yearly_HR_scaling_mode': 'historical_scaling',
                 'start_year_HR_expansion_by_officer_type': self.YEAR_OF_CHANGE,
                 'end_year_HR_expansion_by_officer_type': self.end_date.year,
                 "policy_name": "Naive",

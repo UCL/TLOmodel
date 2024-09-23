@@ -667,8 +667,8 @@ class HealthSystem(Module):
             'Dental': 0, 'Laboratory': 0, 'Mental': 0, 'Nutrition': 0, 'Radiography': 0
         }
         self.parameters['HR_budget_growth_rate'] = 0.042
-        self.parameters['start_year_HR_expansion_by_officer_type'] = 2019
-        self.parameters['end_year_HR_expansion_by_officer_type'] = 2030
+        self.parameters['start_year_HR_expansion_by_officer_type'] = 2025
+        self.parameters['end_year_HR_expansion_by_officer_type'] = 2031
 
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
