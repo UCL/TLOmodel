@@ -443,7 +443,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # get Return (in terms of DALYs averted) On Investment (extra cost) for all expansion scenarios, excluding s_1
     # get Cost-Effectiveness, i.e., cost of every daly averted, for all expansion scenarios
     ROI = pd.DataFrame(index=num_dalys_averted.index, columns=num_dalys_averted.columns)
-    # todo: for the bad scenarios, the dalys averted are negative (to find out why), thus CE does not make sense.
+    # todo: for the bad scenarios (s_5, s_8, s_15), the dalys averted are negative
+    #  (maybe only due to statistical variation; relative difference to s_1 are close to 0%),
+    #  thus CE does not make sense.
     # CE = pd.DataFrame(index=num_dalys_averted.index, columns=num_dalys_averted.columns)
     for i in ROI.index:
         ROI.loc[i, :] = num_dalys_averted.loc[i, :] / extra_cost_all_yrs.loc[i, 'all_cadres']
@@ -723,7 +725,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # and so that each cadre has different scale up factor (the one in more shortage will need to be scaled up more)?
     # Later, to explain the cause of differences in scenarios, might consider hcw time flow?
     # Before submit a run, merge in the remote master.
-    # When calculate total cost and extra budget, should submit over all years from start to end
+    # Think about a measure of Universal Health Service Coverage for the scenarios.
 
 
 if __name__ == "__main__":
