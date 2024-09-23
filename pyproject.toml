@@ -123,6 +123,10 @@ markers = ["group2", "slow"]
 target-version = "py38"
 line-length = 120
 
+[tool.ruff.lint]
+select = ["E", "F"]
+per-file-ignores = {"src/scripts/**" = ["E501"]}
+
 [tool.setuptools.packages.find]
 where = ["src"]
 
