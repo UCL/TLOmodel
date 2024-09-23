@@ -124,7 +124,7 @@ target-version = "py38"
 line-length = 120
 
 [tool.ruff.lint]
-select = ["E", "F"]
+select = ["E", "F", "I"]
 per-file-ignores = {"src/scripts/**" = ["E501"]}
 
 [tool.setuptools.packages.find]
