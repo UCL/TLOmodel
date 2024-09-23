@@ -3955,7 +3955,9 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self._number_of_times_this_event_has_run = 0
-        self._maximum_number_times_event_should_run = self.module.parameters['maximum_number_of_times_HSI_events_should_run']
+        self._maximum_number_times_event_should_run = self.module.parameters[
+            "maximum_number_of_times_HSI_events_should_run"
+        ]
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -4840,7 +4842,9 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({})
         self._number_of_times_this_event_has_run = 0
-        self._maximum_number_times_event_should_run = self.module.parameters['maximum_number_of_times_HSI_events_should_run']
+        self._maximum_number_times_event_should_run = self.module.parameters[
+            "maximum_number_of_times_HSI_events_should_run"
+        ]
 
         p = self.module.parameters
         self.prob_perm_disability_with_treatment_severe_TBI = p['prob_perm_disability_with_treatment_severe_TBI']

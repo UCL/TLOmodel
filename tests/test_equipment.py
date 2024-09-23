@@ -241,7 +241,6 @@ def run_simulation_and_return_log(
     return parse_log_file(sim.log_filepath)["tlo.methods.healthsystem.summary"]
 
 
-
 def test_equipment_use_is_logged(seed, tmpdir):
     """Check that an HSI that after an HSI is run, the logs reflect the use of the equipment (and correctly record the
      name of the HSI and the facility_level at which ran).
@@ -477,4 +476,7 @@ def test_logging_of_equipment_from_multiple_hsi(seed, tmpdir):
     df['EquipmentEverUsed'] = df['EquipmentEverUsed'].apply(eval).apply(list)
 
     # Check that equipment used at each level matches expectations
-    assert item_code_needed_at_each_level == df.groupby('Facility_Level')['EquipmentEverUsed'].sum().apply(set).to_dict()
+    assert (
+        item_code_needed_at_each_level
+        == df.groupby("Facility_Level")["EquipmentEverUsed"].sum().apply(set).to_dict()
+    )
