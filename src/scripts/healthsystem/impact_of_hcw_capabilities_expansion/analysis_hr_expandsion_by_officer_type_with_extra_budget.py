@@ -6,7 +6,6 @@ The scenarios are defined in scenario_of_expanding_current_hcw_by_officer_type_w
 """
 
 import argparse
-import textwrap
 from pathlib import Path
 from typing import Tuple
 
