@@ -19,7 +19,7 @@ from typing import (
 
 import numpy as np
 import pandas as pd
-from numpy.dtypes import BytesDType
+from numpy.dtypes import BytesDType  # pylint: disable=E0611
 from numpy.typing import NDArray
 from pandas._typing import TakeIndexer, type_t
 from pandas.core.arrays.base import ExtensionArray

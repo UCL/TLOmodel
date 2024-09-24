@@ -11,7 +11,7 @@ from typing import List, Set
 
 import numpy as np
 import pytest
-from numpy.dtypes import BytesDType
+from numpy.dtypes import BytesDType  # pylint: disable=E0611
 from numpy.random import PCG64, Generator
 from numpy.typing import NDArray
 
