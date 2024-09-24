@@ -225,16 +225,16 @@ class Equipment:
 
         mfl = self.master_facilities_list
 
-        def set_of_keys_or_empty_set(x: Union[set, dict]):
-            if isinstance(x, set):
-                return x
-            elif isinstance(x, dict):
-                return set(x.keys())
+        def sorted_keys_or_empty_list(x: Union[dict, None]) -> list:
+            if isinstance(x, dict):
+                return sorted(x.keys())
             else:
-                return set()
+                return []
 
         set_of_equipment_ever_used_at_each_facility_id = pd.Series({
-            fac_id: set_of_keys_or_empty_set(self._record_of_equipment_used_by_facility_id.get(fac_id, set()))
+            fac_id: sorted_keys_or_empty_list(
+                self._record_of_equipment_used_by_facility_id.get(fac_id)
+            )
             for fac_id in mfl['Facility_ID']
         }, name='EquipmentEverUsed').astype(str)
 

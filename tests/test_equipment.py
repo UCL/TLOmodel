@@ -1,5 +1,6 @@
 """This file contains all the tests to do with Equipment."""
 import os
+from ast import literal_eval
 from pathlib import Path
 from typing import Dict
 
@@ -258,7 +259,7 @@ def test_equipment_use_is_logged(seed, tmpdir):
         (at any facility)."""
         s = set()
         for i in log["EquipmentEverUsed_ByFacilityID"]['EquipmentEverUsed']:
-            s.update(eval(i))
+            s.update(literal_eval(i))
         return s
 
     # * An HSI that declares no use of any equipment (logs should be empty).
@@ -473,7 +474,7 @@ def test_logging_of_equipment_from_multiple_hsi(seed, tmpdir):
     # Read log to find what equipment used
     df = parse_log_file(sim.log_filepath)["tlo.methods.healthsystem.summary"]['EquipmentEverUsed_ByFacilityID']
     df = df.drop(index=df.index[~df['Facility_Level'].isin(item_code_needed_at_each_level.keys())])
-    df['EquipmentEverUsed'] = df['EquipmentEverUsed'].apply(eval).apply(list)
+    df['EquipmentEverUsed'] = df['EquipmentEverUsed'].apply(literal_eval)
 
     # Check that equipment used at each level matches expectations
     assert (
