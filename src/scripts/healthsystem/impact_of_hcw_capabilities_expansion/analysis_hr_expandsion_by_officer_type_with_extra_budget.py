@@ -148,9 +148,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             for _idx, row in _df.iterrows()
         }, axis=1).T
 
-    def do_bar_plot_with_ci(_df, annotations=None, xticklabels_horizontal_and_wrapped=False, put_labels_in_legend=True):
+    def do_bar_plot_with_ci(_df, _df_percent=None, annotation=False):
         """Make a vertical bar plot for each row of _df, using the columns to identify the height of the bar and the
-         extent of the error bar."""
+         extent of the error bar.
+         Annotated with percent statistics from _df_percent, if annotation=True and _df_percent not None."""
 
         yerr = np.array([
             (_df['mean'] - _df['lower']).values,
@@ -161,7 +162,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         colors = None
 
-        fig, ax = plt.subplots(figsize=(10, 5))
+        fig, ax = plt.subplots(figsize=(18, 6))
         ax.bar(
             xticks.keys(),
             _df['mean'].values,
@@ -173,9 +174,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             label=xticks.values(),
             zorder=100,
         )
-        if annotations:
-            for xpos, ypos, text in zip(xticks.keys(), _df['mean'].values, annotations):
-                ax.text(xpos, ypos*1.15, text, horizontalalignment='center', rotation='vertical', fontsize='x-small')
+
+        if annotation:
+            assert (_df.index == _df_percent.index).all()
+            for xpos, ypos, text1, text2, text3 in zip(xticks.keys(), _df['upper'].values,
+                                                       _df_percent['mean'].values,
+                                                       _df_percent['lower'].values,
+                                                       _df_percent['upper'].values):
+                text = f"{int(round(text1 * 100, 2))}%\n{[round(text2, 2),round(text3, 2)]}"
+                ax.text(xpos, ypos * 1.05, text, horizontalalignment='center', fontsize='xx-small')
 
         ax.set_xticks(list(xticks.keys()))
 
@@ -409,6 +416,17 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ).T
     ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_1'])
 
+    num_dalys_averted_percent = summarize(
+        -1.0 *
+        pd.DataFrame(
+            find_difference_relative_to_comparison_series(
+                num_dalys.loc[0],
+                comparison='s_1',
+                scaled=True
+            )
+        ).T
+    ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_1'])
+
     num_dalys_by_cause_averted = summarize(
         -1.0 * find_difference_relative_to_comparison_dataframe(
             num_dalys_by_cause,
@@ -475,8 +493,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # plot absolute numbers for scenarios
 
     name_of_plot = f'Deaths, {target_period()}'
-    fig, ax = do_bar_plot_with_ci(num_deaths_summarized / 1e6, xticklabels_horizontal_and_wrapped=True,
-                                  put_labels_in_legend=True)
+    fig, ax = do_bar_plot_with_ci(num_deaths_summarized / 1e6)
     ax.set_title(name_of_plot)
     ax.set_ylabel('(Millions)')
     fig.tight_layout()
@@ -485,8 +502,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     plt.close(fig)
 
     name_of_plot = f'DALYs, {target_period()}'
-    fig, ax = do_bar_plot_with_ci(num_dalys_summarized / 1e6, xticklabels_horizontal_and_wrapped=True,
-                                  put_labels_in_legend=True)
+    fig, ax = do_bar_plot_with_ci(num_dalys_summarized / 1e6)
     ax.set_title(name_of_plot)
     ax.set_ylabel('(Millions)')
     fig.tight_layout()
@@ -581,8 +597,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # plot relative numbers for scenarios
     name_of_plot = f'DALYs averted against no expansion, {target_period()}'
-    fig, ax = do_bar_plot_with_ci(num_dalys_averted / 1e6, xticklabels_horizontal_and_wrapped=True,
-                                  put_labels_in_legend=True)
+    fig, ax = do_bar_plot_with_ci(num_dalys_averted / 1e6, num_dalys_averted_percent, annotation=True)
     ax.set_title(name_of_plot)
     ax.set_ylabel('(Millions)')
     fig.tight_layout()
@@ -591,8 +606,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     plt.close(fig)
 
     name_of_plot = f'Deaths averted against no expansion, {target_period()}'
-    fig, ax = do_bar_plot_with_ci(num_deaths_averted / 1e6, xticklabels_horizontal_and_wrapped=True,
-                                  put_labels_in_legend=True)
+    fig, ax = do_bar_plot_with_ci(num_deaths_averted / 1e6)
     ax.set_title(name_of_plot)
     ax.set_ylabel('(Millions)')
     fig.tight_layout()
@@ -690,8 +704,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # plot ROI and CE for all expansion scenarios
 
     name_of_plot = f'DALYs averted per extra USD dollar invested, {target_period()}'
-    fig, ax = do_bar_plot_with_ci(ROI, xticklabels_horizontal_and_wrapped=True,
-                                  put_labels_in_legend=True)
+    fig, ax = do_bar_plot_with_ci(ROI)
     ax.set_title(name_of_plot)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
@@ -699,8 +712,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     plt.close(fig)
 
     # name_of_plot = f'Cost per DALY averted, {target_period()}'
-    # fig, ax = do_bar_plot_with_ci(CE, xticklabels_horizontal_and_wrapped=True,
-    #                               put_labels_in_legend=True)
+    # fig, ax = do_bar_plot_with_ci(CE)
     # ax.set_title(name_of_plot)
     # ax.set_ylabel('USD dollars')
     # fig.tight_layout()
