@@ -59,11 +59,11 @@ def get_dataframe_row_as_dict_for_logging(
     columns: Optional[Iterable[str]] = None,
 ) -> dict:
     """Get row of a pandas dataframe in a format suitable for logging.
-    
+
     Retrieves entries for all or a subset of columns for a particular row in a dataframe
     and returns a dict keyed by column name, with values NumPy or pandas extension types
     which should be the same for all rows in dataframe.
-    
+
     :param dataframe: Population properties dataframe to get properties from.
     :param row_label: Unique index label identifying row in dataframe.
     :param columns: Set of column names to extract - if ``None``, the default, all

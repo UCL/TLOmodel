@@ -266,7 +266,7 @@ class Consumables:
 
     def on_simulation_end(self):
         """Do tasks at the end of the simulation.
-         
+
         Raise warnings and enter to log about item_codes not recognised.
         """
         if self._not_recognised_item_codes:

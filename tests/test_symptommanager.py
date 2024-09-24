@@ -237,7 +237,7 @@ def test_has_what_via_individual_properties(seed, supply_disease_module: bool):
     5     0           1           0
     6     0           0           1
     7     0           0           0
-    
+
     We will then assert that has_what returns the expected symptoms for the
     individuals, and that supplying either the person_id keyword or the
     individual_properties keyword gives the same answer.

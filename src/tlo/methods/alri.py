@@ -3040,7 +3040,7 @@ class AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia(AlriIncidentCase):
 
         assert 'fast_breathing_pneumonia' == \
                self.module.get_imci_classification_based_on_symptoms(
-                   child_is_younger_than_2_months=False, 
+                   child_is_younger_than_2_months=False,
                    symptoms=self.sim.modules['SymptomManager'].has_what(person_id=person_id)
                )
 
