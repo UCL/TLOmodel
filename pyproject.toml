@@ -125,7 +125,7 @@ line-length = 120
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W"]
-per-file-ignores = {"src/scripts/**" = ["E501"]}
+per-file-ignores = {"src/scripts/**" = ["E501", "W"]}
 
 [tool.setuptools.packages.find]
 where = ["src"]
