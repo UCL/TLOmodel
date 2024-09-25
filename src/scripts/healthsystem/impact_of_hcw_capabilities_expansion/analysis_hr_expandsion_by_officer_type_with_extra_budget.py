@@ -21,6 +21,7 @@ from tlo.analysis.utils import (
     APPT_TYPE_TO_COARSE_APPT_TYPE_MAP,
     CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP,
     COARSE_APPT_TYPE_TO_COLOR_MAP,
+    SHORT_TREATMENT_ID_TO_COLOR_MAP,
     extract_results,
     summarize,
 )
@@ -86,6 +87,20 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             data=_df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD), 'Number_By_Appt_Type_Code']
             .apply(pd.Series).sum().sum()
         )
+
+    def get_num_treatments(_df):
+        """Return the number of treatments by short treatment id (total within the TARGET_PERIOD)"""
+        _df = _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD), 'TREATMENT_ID'].apply(pd.Series).sum()
+        _df.index = _df.index.map(lambda x: x.split('_')[0] + "*")
+        _df = _df.groupby(level=0).sum()
+        return _df
+
+    def get_num_treatments_total(_df):
+        """Return the number of treatments in total of all treatments (total within the TARGET_PERIOD)"""
+        _df = _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD), 'TREATMENT_ID'].apply(pd.Series).sum()
+        _df.index = _df.index.map(lambda x: x.split('_')[0] + "*")
+        _df = _df.groupby(level=0).sum().sum()
+        return pd.Series(_df)
 
     def get_num_deaths(_df):
         """Return total number of Deaths (total within the TARGET_PERIOD)"""
@@ -371,6 +386,22 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         do_scaling=True
     ).pipe(set_param_names_as_column_index_level_0)
 
+    num_treatments = extract_results(
+        results_folder,
+        module='tlo.methods.healthsystem.summary',
+        key='HSI_Event',
+        custom_generate_series=get_num_treatments,
+        do_scaling=True
+    ).pipe(set_param_names_as_column_index_level_0)
+
+    num_treatments_total = extract_results(
+        results_folder,
+        module='tlo.methods.healthsystem.summary',
+        key='HSI_Event',
+        custom_generate_series=get_num_treatments_total,
+        do_scaling=True
+    ).pipe(set_param_names_as_column_index_level_0)
+
     # get absolute numbers for scenarios
     # sort the scenarios according to their DALYs values, in ascending order
     num_dalys_summarized = summarize(num_dalys).loc[0].unstack().reindex(param_names).sort_values(by='mean')
@@ -386,6 +417,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         num_dalys_summarized.index
     )
     num_appts_summarized = summarize(num_appts, only_mean=True).T.reindex(param_names).reindex(
+        num_dalys_summarized.index
+    )
+    num_treatments_summarized = summarize(num_treatments, only_mean=True).T.reindex(param_names).reindex(
+        num_dalys_summarized.index
+    )
+    num_treatments_total_summarized = summarize(num_treatments_total).loc[0].unstack().reindex(param_names).reindex(
         num_dalys_summarized.index
     )
 
@@ -443,6 +480,22 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         only_mean=True
     ).T.reindex(num_dalys_summarized.index).drop(['s_1'])
 
+    num_treatments_increased = summarize(
+        find_difference_relative_to_comparison_dataframe(
+            num_treatments,
+            comparison='s_1',
+        ),
+        only_mean=True
+    ).T.reindex(num_dalys_summarized.index).drop(['s_1'])
+
+    num_treatments_total_increased = summarize(
+        pd.DataFrame(
+            find_difference_relative_to_comparison_series(
+                num_treatments_total.loc[0],
+                comparison='s_1')
+        ).T
+    ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_1'])
+
     # Check that when we sum across the causes/appt types,
     # we get the same total as calculated when we didn't split by cause/appt type.
     assert (
@@ -454,6 +507,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     assert (
         (num_dalys_by_cause_averted.sum(axis=1).sort_index()
          - num_dalys_averted['mean'].sort_index()
+         ) < 1e-6
+    ).all()
+
+    assert (
+        (num_treatments_increased.sum(axis=1).sort_index()
+         - num_treatments_total_increased['mean'].sort_index()
          ) < 1e-6
     ).all()
 
@@ -473,6 +532,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # prepare colors for plots
     appt_color = {
         appt: COARSE_APPT_TYPE_TO_COLOR_MAP.get(appt, np.nan) for appt in num_appts_summarized.columns
+    }
+    treatment_color = {
+        treatment: SHORT_TREATMENT_ID_TO_COLOR_MAP.get(treatment, np.nan)
+        for treatment in num_treatments_summarized.columns
     }
     cause_color = {
         cause: CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.get(cause, np.nan)
@@ -525,6 +588,28 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     xtick_labels = [substitute_labels[v] for v in num_appts_summarized_in_millions.index]
     ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
     plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Appointment type', title_fontsize='small',
+               fontsize='small', reverse=True)
+    plt.title(name_of_plot)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
+    name_of_plot = f'Services by treatment type, {target_period()}'
+    num_treatments_summarized_in_millions = num_treatments_summarized / 1e6
+    yerr_services = np.array([
+        (num_treatments_total_summarized['mean'].values - num_treatments_total_summarized['lower']).values,
+        (num_treatments_total_summarized['upper'].values - num_treatments_total_summarized['mean']).values,
+    ]) / 1e6
+    fig, ax = plt.subplots(figsize=(10, 6))
+    num_treatments_summarized_in_millions.plot(kind='bar', stacked=True, color=treatment_color, rot=0, ax=ax)
+    ax.errorbar(range(len(param_names)), num_treatments_total_summarized['mean'].values / 1e6, yerr=yerr_services,
+                fmt=".", color="black", zorder=100)
+    ax.set_ylabel('Millions', fontsize='small')
+    ax.set(xlabel=None)
+    xtick_labels = [substitute_labels[v] for v in num_treatments_summarized_in_millions.index]
+    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
+    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.4), title='Treatment type', title_fontsize='small',
                fontsize='small', reverse=True)
     plt.title(name_of_plot)
     fig.tight_layout()
@@ -671,6 +756,30 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
+    name_of_plot = f'Services increased by treatment type \nagainst no expansion, {target_period()}'
+    num_treatments_increased_in_millions = num_treatments_increased / 1e6
+    yerr_services = np.array([
+        (num_treatments_total_increased['mean'].values - num_treatments_total_increased['lower']).values,
+        (num_treatments_total_increased['upper'].values - num_treatments_total_increased['mean']).values,
+    ]) / 1e6
+    fig, ax = plt.subplots(figsize=(10, 6))
+    num_treatments_increased_in_millions.plot(kind='bar', stacked=True, color=treatment_color, rot=0, ax=ax)
+    ax.errorbar(range(len(param_names)-1), num_treatments_total_increased['mean'].values / 1e6, yerr=yerr_services,
+                fmt=".", color="black", zorder=100)
+    ax.set_ylabel('Millions', fontsize='small')
+    ax.set(xlabel=None)
+    xtick_labels = [substitute_labels[v] for v in num_treatments_increased_in_millions.index]
+    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
+    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.4), title='Treatment type', title_fontsize='small',
+               fontsize='small', reverse=True)
+    plt.title(name_of_plot)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(
+        name_of_plot.replace(' ', '_').replace(',', '').replace('\n', ''))
+    )
+    fig.show()
+    plt.close(fig)
+
     name_of_plot = f'DALYs averted by cause against no expansion, {target_period()}'
     num_dalys_by_cause_averted_in_millions = num_dalys_by_cause_averted / 1e6
     yerr_dalys = np.array([
@@ -721,7 +830,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # plt.close(fig)
 
     # todo
-    # Plot comparison results: there are negative changes of some appts and causes, try increase runs and see.
     # As we have 33 scenarios in total, \
     # design comparison groups of scenarios to examine marginal/combined productivity of cadres.
     # To vary the HRH budget growth rate (default: 4.2%) and do sensitivity analysis \
