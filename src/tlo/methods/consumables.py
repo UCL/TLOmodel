@@ -267,12 +267,12 @@ class Consumables:
 
     def on_simulation_end(self):
         """Do tasks at the end of the simulation.
-         
+
         Raise warnings and enter to log about item_codes not recognised.
         """
         if len(self._not_recognised_item_codes) > 0:
             not_recognised_item_codes = {
-                treatment_id if treatment_id is not None else "": sorted(codes) 
+                treatment_id if treatment_id is not None else "": sorted(codes)
                 for treatment_id, codes in self._not_recognised_item_codes.items()
             }
             warnings.warn(

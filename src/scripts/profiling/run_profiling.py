@@ -295,7 +295,7 @@ def run_profiling(
         print(f"Writing {output_ipysession_file}", end="...", flush=True)
         scale_run_session.save(output_ipysession_file)
         print("done")
-        
+
     if write_flat_html:
         output_html_file = output_dir / f"{output_name}.flat.html"
         console_renderer = ConsoleRenderer(

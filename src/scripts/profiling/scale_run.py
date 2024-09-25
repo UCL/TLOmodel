@@ -26,10 +26,10 @@ def save_arguments_to_json(arguments_dict: dict, output_path: Path):
     with open(output_path, "w") as f:
         json.dump(
             {
-                k: str(v) if isinstance(v, Path) else v 
+                k: str(v) if isinstance(v, Path) else v
                 for k, v in arguments_dict.items()
-            }, 
-            f, 
+            },
+            f,
             indent=4
         )
 

@@ -134,7 +134,7 @@ class Demography(Module):
         ),
 
         'district_num_of_residence': Property(
-            Types.CATEGORICAL, 
+            Types.CATEGORICAL,
             'The district number in which the person is resident',
             categories=['SET_AT_RUNTIME']
         ),

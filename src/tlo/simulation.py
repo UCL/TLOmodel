@@ -75,7 +75,6 @@ class Simulation:
             log_config = {}
         self._custom_log_levels = None
         self._log_filepath = self._configure_logging(**log_config)
-        
 
         # random number generator
         seed_from = 'auto' if seed is None else 'user'
@@ -132,7 +131,13 @@ class Simulation:
         """The path to the log file, if one has been set."""
         return self._log_filepath
 
-    def register(self, *modules, sort_modules=True, check_all_dependencies=True, auto_register_dependencies: bool = False):
+    def register(
+        self,
+        *modules,
+        sort_modules=True,
+        check_all_dependencies=True,
+        auto_register_dependencies: bool = False,
+    ):
         """Register one or more disease modules with the simulation.
 
         :param modules: the disease module(s) to use as part of this simulation.
@@ -151,7 +156,7 @@ class Simulation:
             modules to be registered. A ``ModuleDependencyError`` exception will
             be raised if there are missing dependencies.
         :param auto_register_dependencies: Whether to register missing module dependencies or not. If this argument is
-         set to True, all module dependencies will be automatically registered.
+            set to True, all module dependencies will be automatically registered.
         """
         if auto_register_dependencies:
             modules = [
