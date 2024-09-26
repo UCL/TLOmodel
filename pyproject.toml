@@ -55,7 +55,7 @@ dev = [
     # Profiling
     "ansi2html",
     "psutil",
-    "pyinstrument>=4.3",
+    "pyinstrument>=4.7",
     # Building requirements files
     "pip-tools",
 ]
