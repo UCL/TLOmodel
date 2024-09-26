@@ -19,13 +19,13 @@ from tlo.analysis.utils import (
     get_parameters_for_improved_healthsystem_and_healthcare_seeking,
     get_parameters_for_status_quo,
     get_root_path,
+    merge_log_files,
     mix_scenarios,
     order_of_coarse_appt,
     order_of_short_treatment_ids,
     parse_log_file,
     summarize,
     unflatten_flattened_multi_index_in_logging,
-    merge_log_files
 )
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.methods import demography
