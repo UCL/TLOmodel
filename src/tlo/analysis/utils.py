@@ -1,6 +1,7 @@
 """
 General utility functions for TLO analysis
 """
+import fileinput
 import gzip
 import json
 import os
@@ -94,22 +95,29 @@ def merge_log_files(log_path_1: Path, log_path_2: Path, output_path: Path) -> No
     :param log_path_2: Path to second log file to merge. Records from this log file will
         appear after those in log file at `log_path_1` and any header lines in this file
         which are also present in log file at `log_path_1` will be skipped.
-    :param output_path: Path to write merged log file to. Can be one of `log_path_1` or
-        `log_path_2` as data is read from files before writing.
+    :param output_path: Path to write merged log file to. Must not be one of `log_path_1`
+        or `log_path_2` as data is read from files while writing to this path.
     """
-    with log_path_1.open("r") as log_file_1:
-        log_lines_1 = log_file_1.readlines()
-    with log_path_2.open("r") as log_file_2:
-        log_lines_2 = log_file_2.readlines()
-    with output_path.open("w") as output_file:
-        output_file.writelines(log_lines_1)
-        for log_line in log_lines_2:
-            log_data = json.loads(log_line)
-            if not (
-                "type" in log_data
-                and log_data["type"] == "header"
-                and log_line in log_lines_1
-            ):
+    if output_path == log_path_1 or output_path == log_path_2:
+        msg = "output_path must not be equal to log_path_1 or log_path_2"
+        raise ValueError(msg)
+    with fileinput.input(files=(log_path_1, log_path_2), mode="r") as log_lines:
+        with output_path.open("w") as output_file:
+            written_header_lines = {}
+            for log_line in log_lines:
+                log_data = json.loads(log_line)
+                if "type" in log_data and log_data["type"] == "header":
+                    if log_data["uuid"] in written_header_lines:
+                        previous_header_line = written_header_lines[log_data["uuid"]]
+                        if  previous_header_line == log_line:
+                            continue
+                        else:
+                            msg = (
+                                "Inconsistent header lines with matching UUIDs found when merging logs:\n"
+                                f"{previous_header_line}\n{log_line}\n"
+                            )
+                            raise RuntimeError(msg)
+                    written_header_lines[log_data["uuid"]] = log_line
                 output_file.write(log_line)
 
 
