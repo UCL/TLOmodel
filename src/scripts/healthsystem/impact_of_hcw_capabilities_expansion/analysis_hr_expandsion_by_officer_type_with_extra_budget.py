@@ -812,6 +812,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     name_of_plot = f'Extra staff by cadre against no expansion, {TARGET_PERIOD[1].year}'
     extra_staff_by_cadre_to_plot = extra_staff_2029.drop(columns='all_cadres').reindex(
         num_dalys_summarized.index).drop(['s_1']) / 1e3
+    column_dcsa = extra_staff_by_cadre_to_plot.pop('DCSA')
+    extra_staff_by_cadre_to_plot.insert(3, "DCSA", column_dcsa)
     fig, ax = plt.subplots(figsize=(9, 6))
     extra_staff_by_cadre_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
     ax.set_ylabel('Thousands', fontsize='small')
@@ -819,7 +821,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     xtick_labels = [substitute_labels[v] for v in extra_staff_by_cadre_to_plot.index]
     ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
     plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
-               fontsize='small')
+               fontsize='small', reverse=True)
     plt.title(name_of_plot)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
@@ -836,7 +838,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     xtick_labels = [substitute_labels[v] for v in extra_cost_by_cadre_to_plot.index]
     ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
     plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
-               fontsize='small')
+               fontsize='small', reverse=True)
     plt.title(name_of_plot)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
@@ -913,7 +915,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         title='Cause of death or injury',
         title_fontsize='x-small',
         fontsize='x-small',
-        ncol=1
+        ncol=1,
+        reverse=True
     )
     plt.title(name_of_plot)
     fig.tight_layout()
