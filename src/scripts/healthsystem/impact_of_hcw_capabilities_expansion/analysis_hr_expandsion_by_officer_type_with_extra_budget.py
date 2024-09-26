@@ -476,6 +476,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ).T
     ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_1'])
 
+    num_deaths_averted_percent = summarize(
+        -1.0 *
+        pd.DataFrame(
+            find_difference_relative_to_comparison_series(
+                num_deaths.loc[0],
+                comparison='s_1',
+                scaled=True)
+        ).T
+    ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_1'])
+
     num_dalys_averted = summarize(
         -1.0 *
         pd.DataFrame(
@@ -677,7 +687,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         (num_services_summarized['mean'].values - num_services_summarized['lower']).values,
         (num_services_summarized['upper'].values - num_services_summarized['mean']).values,
     ])/1e6
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(9, 6))
     num_appts_summarized_in_millions.plot(kind='bar', stacked=True, color=appt_color, rot=0, ax=ax)
     ax.errorbar(range(len(param_names)), num_services_summarized['mean'].values / 1e6, yerr=yerr_services,
                 fmt=".", color="black", zorder=100)
@@ -719,7 +729,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     total_staff_to_plot = (staff_count_2029 / 1000).drop(columns='all_cadres').reindex(num_dalys_summarized.index)
     column_dcsa = total_staff_to_plot.pop('DCSA')
     total_staff_to_plot.insert(3, "DCSA", column_dcsa)
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(9, 6))
     total_staff_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
     ax.set_ylabel('Thousands', fontsize='small')
     ax.set(xlabel=None)
@@ -735,7 +745,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     name_of_plot = f'Total budget in USD dollars by cadre, {target_period()}'
     total_cost_to_plot = (total_cost_all_yrs / 1e6).drop(columns='all_cadres').reindex(num_dalys_summarized.index)
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(9, 6))
     total_cost_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
     ax.set_ylabel('Millions', fontsize='small')
     ax.set(xlabel=None)
@@ -755,7 +765,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         (num_dalys_summarized['mean'].values - num_dalys_summarized['lower']).values,
         (num_dalys_summarized['upper'].values - num_dalys_summarized['mean']).values,
     ])/1e6
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(9, 6))
     num_dalys_by_cause_summarized_in_millions.plot(kind='bar', stacked=True, color=cause_color, rot=0, ax=ax)
     ax.errorbar(range(len(param_names)), num_dalys_summarized['mean'].values / 1e6, yerr=yerr_dalys,
                 fmt=".", color="black", zorder=100)
@@ -766,7 +776,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.subplots_adjust(right=0.7)
     ax.legend(
         loc="center left",
-        bbox_to_anchor=(0.705, 0.520),
+        bbox_to_anchor=(0.750, 0.6),
         bbox_transform=fig.transFigure,
         title='Cause of death or injury',
         title_fontsize='x-small',
@@ -791,7 +801,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     plt.close(fig)
 
     name_of_plot = f'Deaths averted against no expansion, {target_period()}'
-    fig, ax = do_bar_plot_with_ci(num_deaths_averted / 1e6)
+    fig, ax = do_bar_plot_with_ci(num_deaths_averted / 1e6, num_deaths_averted_percent, annotation=True)
     ax.set_title(name_of_plot)
     ax.set_ylabel('(Millions)')
     fig.tight_layout()
@@ -802,7 +812,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     name_of_plot = f'Extra staff by cadre against no expansion, {TARGET_PERIOD[1].year}'
     extra_staff_by_cadre_to_plot = extra_staff_2029.drop(columns='all_cadres').reindex(
         num_dalys_summarized.index).drop(['s_1']) / 1e3
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(9, 6))
     extra_staff_by_cadre_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
     ax.set_ylabel('Thousands', fontsize='small')
     ax.set(xlabel=None)
@@ -819,7 +829,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     name_of_plot = f'Extra budget by cadre against no expansion, {target_period()}'
     extra_cost_by_cadre_to_plot = extra_cost_all_yrs.drop(columns='all_cadres').reindex(
         num_dalys_summarized.index).drop(index='s_1') / 1e6
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(9, 6))
     extra_cost_by_cadre_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
     ax.set_ylabel('Millions', fontsize='small')
     ax.set(xlabel=None)
@@ -839,7 +849,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         (num_services_increased['mean'].values - num_services_increased['lower']).values,
         (num_services_increased['upper'].values - num_services_increased['mean']).values,
     ]) / 1e6
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(9, 6))
     num_appts_increased_in_millions.plot(kind='bar', stacked=True, color=appt_color, rot=0, ax=ax)
     ax.errorbar(range(len(param_names)-1), num_services_increased['mean'].values / 1e6, yerr=yerr_services,
                 fmt=".", color="black", zorder=100)
@@ -887,7 +897,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         (num_dalys_averted['mean'].values - num_dalys_averted['lower']).values,
         (num_dalys_averted['upper'].values - num_dalys_averted['mean']).values,
     ]) / 1e6
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(9, 6))
     num_dalys_by_cause_averted_in_millions.plot(kind='bar', stacked=True, color=cause_color, rot=0, ax=ax)
     ax.errorbar(range(len(param_names)-1), num_dalys_averted['mean'].values / 1e6, yerr=yerr_dalys,
                 fmt=".", color="black", zorder=100)
@@ -898,7 +908,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.subplots_adjust(right=0.7)
     ax.legend(
         loc="center left",
-        bbox_to_anchor=(0.705, 0.520),
+        bbox_to_anchor=(0.750, 0.6),
         bbox_transform=fig.transFigure,
         title='Cause of death or injury',
         title_fontsize='x-small',
