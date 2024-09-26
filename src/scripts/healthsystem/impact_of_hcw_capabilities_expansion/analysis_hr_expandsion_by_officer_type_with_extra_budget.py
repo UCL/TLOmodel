@@ -41,7 +41,7 @@ substitute_labels = {
 
 # group scenarios for presentation
 scenario_groups = {
-    'no_expansion': 's_1',
+    'no_expansion': {'s_1'},
     'all_cadres_expansion': {'s_2', 's_3'},
     'one_cadre_expansion': {'s_4', 's_5', 's_6', 's_7', 's_8'},
     'two_cadres_expansion': {'s_9', 's_10', 's_11', 's_12', 's_13',
@@ -175,7 +175,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         xticks = {(i + 0.5): k for i, k in enumerate(_df.index)}
 
-        colors = None
+        colors = [scenario_color[s] for s in _df.index]
 
         fig, ax = plt.subplots(figsize=(18, 6))
         ax.bar(
@@ -203,6 +203,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         xtick_label_detail = [substitute_labels[v] for v in xticks.values()]
         ax.set_xticklabels(xtick_label_detail, rotation=90)
+
+        legend_labels = list(scenario_groups_color.keys())
+        legend_handles = [plt.Rectangle((0, 0), 1, 1,
+                                        color=scenario_groups_color[label]) for label in legend_labels]
+        ax.legend(legend_handles, legend_labels, loc='center left', fontsize='small', bbox_to_anchor=(1, 0.5))
 
         ax.grid(axis="y")
         ax.spines['top'].set_visible(False)
@@ -552,6 +557,19 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         'Nutrition': 'thistle',
         'Radiography': 'lightgray',
     }
+    scenario_groups_color = {
+        'no_expansion': 'gray',
+        'one_cadre_expansion': 'lightpink',
+        'two_cadres_expansion': 'violet',
+        'three_cadres_expansion': 'darkorchid',
+        'four_cadres_expansion': 'paleturquoise',
+        'all_cadres_expansion': 'darkturquoise'
+    }
+    scenario_color = {}
+    for s in param_names:
+        for k in scenario_groups_color.keys():
+            if s in scenario_groups[k]:
+                scenario_color[s] = scenario_groups_color[k]
 
     # plot absolute numbers for scenarios
 
@@ -717,7 +735,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     plt.close(fig)
 
     name_of_plot = f'Extra budget by cadre against no expansion, {target_period()}'
-    extra_cost_by_cadre_to_plot = extra_cost_all_yrs.drop(columns='all_cadres') / 1e6
+    extra_cost_by_cadre_to_plot = extra_cost_all_yrs.drop(columns='all_cadres').reindex(
+        num_dalys_summarized.index).drop(index='s_1') / 1e6
     fig, ax = plt.subplots()
     extra_cost_by_cadre_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
     ax.set_ylabel('Millions', fontsize='small')
