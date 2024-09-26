@@ -150,7 +150,7 @@ def resource_file_path():
 
 @pytest.fixture(scope="module")
 def initial_population_size():
-    return 1000
+    return 5000
 
 
 @pytest.fixture(scope="module")
@@ -160,7 +160,7 @@ def start_date():
 
 @pytest.fixture(scope="module")
 def end_date(start_date):
-    return start_date + DateOffset(days=60)
+    return start_date + DateOffset(days=180)
 
 
 @pytest.fixture(scope="module")
