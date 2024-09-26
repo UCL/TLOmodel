@@ -745,6 +745,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     name_of_plot = f'Total budget in USD dollars by cadre, {target_period()}'
     total_cost_to_plot = (total_cost_all_yrs / 1e6).drop(columns='all_cadres').reindex(num_dalys_summarized.index)
+    column_dcsa = total_cost_to_plot.pop('DCSA')
+    total_cost_to_plot.insert(3, "DCSA", column_dcsa)
     fig, ax = plt.subplots(figsize=(9, 6))
     total_cost_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
     ax.set_ylabel('Millions', fontsize='small')
@@ -831,6 +833,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     name_of_plot = f'Extra budget by cadre against no expansion, {target_period()}'
     extra_cost_by_cadre_to_plot = extra_cost_all_yrs.drop(columns='all_cadres').reindex(
         num_dalys_summarized.index).drop(index='s_1') / 1e6
+    column_dcsa = extra_cost_by_cadre_to_plot.pop('DCSA')
+    extra_cost_by_cadre_to_plot.insert(3, "DCSA", column_dcsa)
     fig, ax = plt.subplots(figsize=(9, 6))
     extra_cost_by_cadre_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
     ax.set_ylabel('Millions', fontsize='small')
@@ -860,7 +864,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     xtick_labels = [substitute_labels[v] for v in num_appts_increased_in_millions.index]
     ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
     plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Appointment type', title_fontsize='small',
-               fontsize='small')
+               fontsize='small', reverse=True)
     plt.title(name_of_plot)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(
