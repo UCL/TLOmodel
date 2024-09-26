@@ -435,11 +435,13 @@ class SampleRunner:
             and self.scenario.suspend_date is not None
         ):
             sim.run_simulation_to(to_date=self.scenario.suspend_date)
-            sim.save_to_pickle(
-                pickle_path=Path(log_config["directory"])
-                / "suspended_simulation.pickle"
-            )
+            suspended_simulation_path = Path(log_config["directory"]) / "suspended_simulation.pickle"
+            sim.save_to_pickle(pickle_path=suspended_simulation_path)
             sim.close_output_file()
+            logger.info(
+                key="message",
+                data=f"Simulation suspended at {self.scenario.suspend_date} and saved to {suspended_simulation_path}",
+            )
         else:
             sim.run_simulation_to(to_date=self.scenario.end_date)
             sim.finalise()
