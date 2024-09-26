@@ -403,13 +403,17 @@ class SampleRunner:
             hasattr(self.scenario, "resume_simulation")
             and self.scenario.resume_simulation is not None
         ):
-            sim = Simulation.load_from_pickle(
-                pickle_path=Path(self.scenario.resume_simulation)
+            suspended_simulation_path = (
+                Path(self.scenario.resume_simulation)
                 / str(draw_number)
                 / str(sample_number)
-                / "suspended_simulation.pickle",
-                log_config=log_config,
+                / "suspended_simulation.pickle"
             )
+            logger.info(
+                key="message",
+                data=f"Loading pickled suspended simulation from {suspended_simulation_path}",
+            )
+            sim = Simulation.load_from_pickle(pickle_path=suspended_simulation_path, log_config=log_config)
         else:
             sim = Simulation(
                 start_date=self.scenario.start_date,
