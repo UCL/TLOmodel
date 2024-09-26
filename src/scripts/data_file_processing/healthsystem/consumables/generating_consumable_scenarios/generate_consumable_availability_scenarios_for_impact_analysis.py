@@ -756,6 +756,9 @@ for column_list in iteratively_chosen_availability_columns:
 # Create a barplot of average consumable availability based on the colours used in analysis_impact_of_consumable_scenarios
 average_availability = df_for_plots[chosen_availability_columns].mean().reset_index()
 average_availability.columns = ['scenario', 'average_availability']
+new_row = pd.DataFrame([['Perfect', 1]], columns=['scenario', 'average_availability']) # new row for perfect availability
+average_availability = pd.concat([average_availability, new_row], axis=0, ignore_index=True) # Concatenate the new row with the existing DataFrame
+
 # Define color mapping for each scenario
 color_mapping = {
     'Actual': '#1f77b4',
@@ -768,6 +771,7 @@ color_mapping = {
     'Best facility \n (including DHO)': '#7f7f7f',
     'HIV supply \n chain': '#bcbd22',
     'EPI supply \n chain': '#17becf',
+    'HIV moved to \n Govt supply chain':'#ff6347',
     'Perfect': '#31a354'
 }
 # Create a color list for the bars
