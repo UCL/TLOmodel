@@ -611,7 +611,7 @@ df_for_plots = df_for_plots.merge(program_item_mapping, on = 'item_code', how = 
 scenario_list = [1,2,3,6,7,8,10,11,12]
 chosen_availability_columns = ['available_prop'] + [f'available_prop_scenario{i}' for i in
                                              scenario_list]
-scenario_names_dict = {'available_prop': 'Actual', 'available_prop_scenario1': 'General \n consumables', 'available_prop_scenario2': 'Vital medicines',
+scenario_names_dict = {'available_prop': 'Actual', 'available_prop_scenario1': 'Non-therapeutic \n consumables', 'available_prop_scenario2': 'Vital medicines',
                 'available_prop_scenario3': 'Pharmacist-\n managed', 'available_prop_scenario4': 'Level 1b', 'available_prop_scenario5': 'CHAM',
                 'available_prop_scenario6': '75th percentile\n  facility', 'available_prop_scenario7': '90th percentile \n facility', 'available_prop_scenario8': 'Best \n facility',
                 'available_prop_scenario9': 'Best facility \n (including DHO)','available_prop_scenario10': 'HIV supply \n chain', 'available_prop_scenario11': 'EPI supply \n chain',
@@ -620,11 +620,12 @@ scenario_names_dict = {'available_prop': 'Actual', 'available_prop_scenario1': '
 chosen_availability_columns = [scenario_names_dict[col] for col in chosen_availability_columns]
 df_for_plots = df_for_plots.rename(columns = scenario_names_dict)
 
+# Generate a bar plot of average availability under each scenario by item_category and Facility_Level
 def generate_barplot_of_scenarios(_df, _x_axis_var, _filename):
-    df_for_line_plot = _df.groupby([_x_axis_var])[['available_prop'] + final_list_of_scenario_vars].mean()
-    df_for_line_plot = df_for_line_plot.reset_index().melt(id_vars=[_x_axis_var], value_vars=['available_prop'] + final_list_of_scenario_vars,
+    df_for_bar_plot = _df.groupby([_x_axis_var])[chosen_availability_columns].mean()
+    df_for_bar_plot = df_for_bar_plot.reset_index().melt(id_vars=[_x_axis_var], value_vars=chosen_availability_columns,
                         var_name='Scenario', value_name='Value')
-    plot = (ggplot(df_for_line_plot.reset_index(), aes(x=_x_axis_var, y='Value', fill = 'Scenario'))
+    plot = (ggplot(df_for_bar_plot.reset_index(), aes(x=_x_axis_var, y='Value', fill = 'Scenario'))
             + geom_bar(stat='identity', position='dodge')
             + ylim(0, 1)
             + labs(title = "Probability of availability across scenarios",
@@ -704,7 +705,7 @@ plt.close()
 base_scenarios = [['Actual']]
 # Additional scenarios to add iteratively
 additional_scenarios = [
-    ['General \n consumables', 'Vital medicines', 'Pharmacist-\n managed'],
+    ['Non-therapeutic \n consumables', 'Vital medicines', 'Pharmacist-\n managed'],
     ['75th percentile\n  facility', '90th percentile \n facility', 'Best \n facility'],
     ['HIV supply \n chain', 'EPI supply \n chain',  'HIV moved to \n Govt supply chain']
 ]
@@ -758,7 +759,7 @@ average_availability.columns = ['scenario', 'average_availability']
 # Define color mapping for each scenario
 color_mapping = {
     'Actual': '#1f77b4',
-    'General \n consumables': '#ff7f0e',
+    'Non-therapeutic \n consumables': '#ff7f0e',
     'Vital medicines': '#2ca02c',
     'Pharmacist-\n managed': '#d62728',
     '75th percentile\n  facility': '#9467bd',
