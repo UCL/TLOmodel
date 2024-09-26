@@ -120,6 +120,20 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             .sum().sum()
         )
 
+    def get_num_dalys_yearly(_df):
+        """Return total number of DALYS (Stacked) for every year in the TARGET_PERIOD.
+        Throw error if not a record for every year in the TARGET PERIOD (to guard against inadvertently using
+        results from runs that crashed mid-way through the simulation).
+        """
+        years_needed = [i.year for i in TARGET_PERIOD]
+        assert set(_df.year.unique()).issuperset(years_needed), "Some years are not recorded."
+        _df = (_df.loc[_df.year.between(*years_needed)]
+               .drop(columns=['date', 'sex', 'age_range'])
+               .groupby('year').sum()
+               .sum(axis=1)
+               )
+        return _df
+
     def get_num_dalys_by_cause(_df):
         """Return total number of DALYS by cause (Stacked) (total within the TARGET_PERIOD).
         Throw error if not a record for every year in the TARGET PERIOD (to guard against inadvertently using
@@ -367,6 +381,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         do_scaling=True
     ).pipe(set_param_names_as_column_index_level_0)
 
+    num_dalys_yearly = extract_results(
+        results_folder,
+        module='tlo.methods.healthburden',
+        key='dalys_stacked',
+        custom_generate_series=get_num_dalys_yearly,
+        do_scaling=True
+    ).pipe(set_param_names_as_column_index_level_0)
+
     num_dalys_by_cause = extract_results(
         results_folder,
         module="tlo.methods.healthburden",
@@ -413,6 +435,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     num_dalys_by_cause_summarized = summarize(num_dalys_by_cause, only_mean=True).T.reindex(param_names).reindex(
         num_dalys_summarized.index
     )
+
+    num_dalys_yearly_summarized = (summarize(num_dalys_yearly)
+                                   .stack([0, 1])
+                                   .rename_axis(['year', 'scenario', 'stat'])
+                                   .reset_index(name='count'))
 
     num_deaths_summarized = summarize(num_deaths).loc[0].unstack().reindex(param_names).reindex(
         num_dalys_summarized.index
@@ -571,6 +598,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             if s in scenario_groups[k]:
                 scenario_color[s] = scenario_groups_color[k]
 
+    best_scenarios_color = {'s_1': 'black'}
+    cmap_list = list(map(plt.get_cmap("Set1"), range(9)))
+    for i in range(9):
+        best_scenarios_color[num_dalys_summarized.index[i]] = cmap_list[i]
+
     # plot absolute numbers for scenarios
 
     name_of_plot = f'Deaths, {target_period()}'
@@ -586,6 +618,54 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig, ax = do_bar_plot_with_ci(num_dalys_summarized / 1e6)
     ax.set_title(name_of_plot)
     ax.set_ylabel('(Millions)')
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
+    # plot yearly DALYs for best 9 scenarios
+    name_of_plot = f'Yearly DALYs, {target_period()}'
+    fig, ax = plt.subplots(figsize=(9, 6))
+    best_scenarios = list(num_dalys_summarized.index[0:9]) + ['s_1']
+    for s in best_scenarios:
+        data = (num_dalys_yearly_summarized.loc[num_dalys_yearly_summarized.scenario == s, :]
+                .drop(columns='scenario')
+                .pivot(index='year', columns='stat')
+                .droplevel(0, axis=1))
+        ax.plot(data.index, data['mean'] / 1e6, label=substitute_labels[s], color=best_scenarios_color[s])
+        # ax.fill_between(data.index.to_numpy(),
+        #                 (data['lower'] / 1e6).to_numpy(),
+        #                 (data['upper'] / 1e6).to_numpy(),
+        #                 color=best_scenarios_color[s],
+        #                 alpha=0.2)
+    ax.set_title(name_of_plot)
+    ax.set_ylabel('(Millions)')
+    ax.set_xticks(data.index)
+    legend_labels = [substitute_labels[v] for v in best_scenarios]
+    legend_handles = [plt.Rectangle((0, 0), 1, 1,
+                                    color=best_scenarios_color[v]) for v in best_scenarios]
+    ax.legend(legend_handles, legend_labels, loc='center left', fontsize='small', bbox_to_anchor=(1, 0.5))
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
+    # plot yearly staff count (Clinical/Pharmacy/Nursing and Midwifery) for best 9 scenarios
+    best_cadres = ['Clinical', 'Pharmacy', 'Nursing_and_Midwifery']
+    name_of_plot = f'Yearly staff count for C+P+N, {target_period()}'
+    fig, ax = plt.subplots(figsize=(9, 6))
+    best_scenarios = list(num_dalys_summarized.index[0:9]) + ['s_1']
+    for s in best_scenarios:
+        data = staff_count.loc[staff_count.draw == s].set_index('year').drop(columns='draw').loc[:, best_cadres].sum(
+            axis=1)
+        ax.plot(data.index, data.values / 1e3, label=substitute_labels[s], color=best_scenarios_color[s])
+    ax.set_title(name_of_plot)
+    ax.set_ylabel('(Thousands)')
+    ax.set_xticks(data.index)
+    legend_labels = [substitute_labels[v] for v in best_scenarios]
+    legend_handles = [plt.Rectangle((0, 0), 1, 1,
+                                    color=best_scenarios_color[v]) for v in best_scenarios]
+    ax.legend(legend_handles, legend_labels, loc='center left', fontsize='small', bbox_to_anchor=(1, 0.5))
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     fig.show()
@@ -637,6 +717,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     name_of_plot = f'Number of staff by cadre, {TARGET_PERIOD[1].year}'
     total_staff_to_plot = (staff_count_2029 / 1000).drop(columns='all_cadres').reindex(num_dalys_summarized.index)
+    column_dcsa = total_staff_to_plot.pop('DCSA')
+    total_staff_to_plot.insert(3, "DCSA", column_dcsa)
     fig, ax = plt.subplots()
     total_staff_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
     ax.set_ylabel('Thousands', fontsize='small')
