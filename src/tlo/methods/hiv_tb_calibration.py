@@ -6,6 +6,7 @@ for a given set of parameters using outputs from the demography (deaths), HIV an
 
 """
 import math
+from pathlib import Path
 from collections import defaultdict
 
 import pandas as pd
@@ -22,9 +23,8 @@ class Deviance(Module):
     a deviance measure is calculated and returned on simulation end
     """
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
 
         self.data_dict = dict()
         self.model_dict = dict()
@@ -44,23 +44,11 @@ class Deviance(Module):
     # No properties to declare
     PROPERTIES = {}
 
-    def read_parameters(self, data_folder):
-        pass
-
-    def initialise_population(self, population):
-        pass
-
-    def initialise_simulation(self, sim):
-        pass
-
-    def on_birth(self, mother_id, child_id):
-        pass
-
-    def read_data_files(self):
+    def read_parameters(self, resourcefilepath=None):
         """Make a dict of all data to be used in calculating calibration score"""
 
         # # HIV read in resource files for data
-        xls = pd.ExcelFile(self.resourcefilepath / "ResourceFile_HIV.xlsx")
+        xls = pd.ExcelFile(Path(resourcefilepath) / "ResourceFile_HIV.xlsx")
 
         # MPHIA HIV data - age-structured
         data_hiv_mphia_inc = pd.read_excel(xls, sheet_name="MPHIA_incidence2015")
@@ -100,7 +88,7 @@ class Deviance(Module):
 
         # TB
         # TB WHO data: 2010-
-        xls_tb = pd.ExcelFile(self.resourcefilepath / "ResourceFile_TB.xlsx")
+        xls_tb = pd.ExcelFile(Path(resourcefilepath) / "ResourceFile_TB.xlsx")
 
         # TB active incidence per 100k 2010-2017
         data_tb_who = pd.read_excel(xls_tb, sheet_name="WHO_activeTB2023")
@@ -112,6 +100,18 @@ class Deviance(Module):
         self.data_dict["who_tb_deaths_per_100k"] = data_tb_who.loc[
             (data_tb_who.year >= 2010), "mortality_tb_excl_hiv_per_100k"
         ]
+
+    def initialise_population(self, population):
+        pass
+
+    def initialise_simulation(self, sim):
+        pass
+
+    def on_birth(self, mother_id, child_id):
+        pass
+
+    def read_data_files(self):
+        pass
 
     def read_model_outputs(self):
         hiv = self.sim.modules['Hiv'].hiv_outputs
