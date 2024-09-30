@@ -399,7 +399,7 @@ class SampleRunner:
             start_date=self.scenario.start_date,
             seed=sample["simulation_seed"],
             log_config=log_config,
-            resourcefilepath=self.scenario.resourcefilepath
+            resourcefilepath=self.scenario.resourcefilepath)
 
         logger.info(
             key="message",

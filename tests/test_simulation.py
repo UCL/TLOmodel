@@ -187,9 +187,7 @@ def _simulation_factory(
         log_config=log_config,
     )
     simulation.register(
-        *fullmodel(
-            resourcefilepath=resource_file_path,
-        )
+        *fullmodel()
     )
     return simulation
 
