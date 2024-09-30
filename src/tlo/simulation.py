@@ -43,8 +43,8 @@ class Simulation:
         with independent state.
     """
 
-    def __init__(self, *, start_date: Date, seed: int = None, log_config: dict = None,
-                 show_progress_bar=False, resourcefilepath: str = None):
+    def __init__(self, *, start_date: Date, seed: int = None,
+                 log_config: dict = None, show_progress_bar=False, resourcefilepath: str = None):
         """Create a new simulation.
 
         :param start_date: the date the simulation begins; must be given as
@@ -70,7 +70,7 @@ class Simulation:
             log_config = {}
         self._custom_log_levels = None
         self._log_filepath = self._configure_logging(**log_config)
-        
+
 
         # random number generator
         seed_from = 'auto' if seed is None else 'user'
