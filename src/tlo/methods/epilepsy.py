@@ -248,7 +248,7 @@ class Epilepsy(Module, GenericFirstAppointmentsMixin):
             df[(df['is_alive']) & (df['ep_seiz_stat'] != '0')]
         ) / len(df[df['is_alive']])
 
-        return total_prev
+        return {'Epilepsy': total_prev}
 
 
     def transition_seizure_stat(self):

@@ -1105,7 +1105,8 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         }
 
         intrapartum_stillbirth_for_month = len(filtered_stillbirths)
-        return intrapartum_stillbirth_for_month
+
+        return {'Intrapartum stillbirth': intrapartum_stillbirth_for_month}
 
     # ===================================== HELPER AND TESTING FUNCTIONS ==============================================
     def set_date_of_labour(self, individual_id):

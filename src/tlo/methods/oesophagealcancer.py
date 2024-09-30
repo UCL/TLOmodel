@@ -583,7 +583,7 @@ class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
         total_prev = len(
             df[(df['is_alive']) & (df['oc_status'] != 'none')]) / len(df[df['is_alive']])
 
-        return total_prev
+        return {'Oesophageal Cancer': total_prev}
     def do_at_generic_first_appt(
         self,
         person_id: int,

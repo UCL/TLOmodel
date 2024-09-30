@@ -41,6 +41,7 @@ class HealthBurden(Module):
         self.years_lived_with_disability = None
         self.prevalence_of_diseases = None
         self.recognised_modules_names = None
+        self.recognised_modules_names_for_prevalence = None
         self.causes_of_disability = None
         self._causes_of_yll = None
         self._causes_of_dalys = None
@@ -60,7 +61,8 @@ class HealthBurden(Module):
             Types.REAL, 'The age up to which deaths are recorded as having induced a lost of life years'),
         'gbd_causes_of_disability': Parameter(
             Types.LIST, 'List of the strings of causes of disability defined in the GBD data'),
-        'logging_frequency_prevalence': Parameter(Types.BOOL, 'Set to the frequency at which we want to make calculations of the prevalence logger')
+        'logging_frequency_prevalence': Parameter(Types.STRING,
+                                                  'Set to the frequency at which we want to make calculations of the prevalence logger')
     }
 
     PROPERTIES = {}
@@ -93,6 +95,9 @@ class HealthBurden(Module):
         age_index = self.sim.modules['Demography'].AGE_RANGE_CATEGORIES
         wealth_index = sim.modules['Lifestyle'].PROPERTIES['li_wealth'].categories
         year_index = list(range(self.sim.start_date.year, self.sim.end_date.year + 1))
+        month_index = list(range(self.sim.start_date.month, self.sim.end_date.month + 1))
+        day_index = list(range(self.sim.start_date.day, self.sim.end_date.day + 1))
+
         self.multi_index_for_age_and_wealth_and_time = pd.MultiIndex.from_product(
             [sex_index, age_index, wealth_index, year_index], names=['sex', 'age_range', 'li_wealth', 'year'])
 
@@ -101,39 +106,55 @@ class HealthBurden(Module):
         self.years_life_lost_stacked_time = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time)
         self.years_life_lost_stacked_age_and_time = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time)
         self.years_lived_with_disability = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time)
-        self.prevalence_of_diseases = pd.DataFrame(index=year_index)
+        if self.parameters['logging_frequency_prevalence'] == 'day':
+            self.prevalence_of_diseases = pd.DataFrame(index=day_index)
+        elif self.parameters['logging_frequency_prevalence'] == 'month':
+            self.prevalence_of_diseases = pd.DataFrame(index=month_index)
+        else:
+            self.prevalence_of_diseases = pd.DataFrame(index=year_index)
 
         # 2) Collect the module that will use this HealthBurden module
         self.recognised_modules_names = [
             m.name for m in self.sim.modules.values() if Metadata.USES_HEALTHBURDEN in m.METADATA
         ]
+        # 2) Collect the module that are expected to return prevalences
 
-        # Check that all registered disease modules have the report_daly_values() function
+        self.recognised_modules_names_for_prevalence = self.recognised_modules_names + ['Demography']
+
+        # Check that all registered disease modules have the report_daly_values() and report_prevalence() functions
         for module_name in self.recognised_modules_names:
             assert getattr(self.sim.modules[module_name], 'report_daly_values', None) and \
                    callable(self.sim.modules[module_name].report_daly_values), 'A module that declares use of ' \
                                                                                'HealthBurden module must have a ' \
                                                                                'callable function "report_daly_values"'
+            if not module_name.startswith('DiseaseThatCauses'):
+                assert getattr(self.sim.modules[module_name], 'report_prevalence', None) and \
+                       callable(self.sim.modules[module_name].report_prevalence), 'A module that declares use of ' \
+                                                                                  'HealthBurden module must have a ' \
+                                                                                  'callable function "report_prevalence"'
 
         # 3) Process the declarations of causes of disability and DALYS made by the disease modules
         self.process_causes_of_disability()
         self.process_causes_of_dalys()
 
-        # 4) Launch the DALY and Prevalence Logger to run every month, starting with the end of the first month of simulation
-        # 5) Schedule `Healthburden_WriteToLog` that will write to log annually
+        # 4) Launch the DALY to run every month, starting with the end of the first month of simulation
         sim.schedule_event(Get_Current_DALYS(self), sim.date + DateOffset(months=1))
+
+        # 5) Schedule 'Get_Current_Prevalence_Write_to_Log', which collects prevalence at a set frequency and writes
+        # them to the log at that frequency
         if self.parameters['logging_frequency_prevalence'] == 'day':
-            sim.schedule_event(Get_Current_Prevalence(self), sim.date + DateOffset(days=0))
-            sim.schedule_event(Healthburden_WriteToLog_Prevalences(self), sim.date + DateOffset(days=0))
+            sim.schedule_event(GetCurrentPrevalenceWriteToLog(self, frequency=DateOffset(days=1)),
+                               sim.date + DateOffset(days=0))
 
         elif self.parameters['logging_frequency_prevalence'] == 'month':
-            sim.schedule_event(Get_Current_Prevalence(self), sim.date + DateOffset(months=1))
-            sim.schedule_event(Healthburden_WriteToLog_Prevalences(self), sim.date + DateOffset(months=1))
+            sim.schedule_event(GetCurrentPrevalenceWriteToLog(self, frequency=DateOffset(months=1)),
+                               sim.date + DateOffset(months=1))
 
         else:
-            sim.schedule_event(Get_Current_Prevalence(self), sim.date + DateOffset(year=1))
-            sim.schedule_event(Healthburden_WriteToLog_Prevalences(self), sim.date + DateOffset(year=1))
+            sim.schedule_event(GetCurrentPrevalenceWriteToLog(self, frequency=DateOffset(year=1)),
+                               sim.date + DateOffset(years=1))
 
+        # 6) Schedule `Healthburden_WriteToLog` that will write to log annually
         last_day_of_the_year = Date(sim.date.year, 12, 31)
         sim.schedule_event(Healthburden_WriteToLog(self), last_day_of_the_year)
 
@@ -422,12 +443,25 @@ class HealthBurden(Module):
 
         return period
 
+    def log_df_line_by_line(self, key, description, df, force_cols=None) -> None:
+        """Log each line of a dataframe to `logger.info`. Each row of the dataframe is one logged entry.
+            `force_cols` is the names of the colums that must be included in each logging line (As the parsing of the
+            log requires the name of the format of each row to be uniform.)."""
+        df[sorted(set(force_cols) - set(df.columns))] = 0.0  # Force the addition of any missing causes
+        df = df[sorted(df.columns)]  # sort the columns so that they are always in same order
+        for _, row in df.iterrows():
+            logger.info(
+                key=key,
+                data=row.to_dict(),
+                description=description,
+            )
+
     def write_to_log(self, year: int):
         """Write to the log the YLL, YLD and DALYS for a specific year.
         N.B. This is called at the end of the simulation as well as at the end of each year, so we need to check that
         the year is not being written to the log more than once."""
         if year in self._years_written_to_log:
-                return  # Skip if the year has already been logged
+            return  # Skip if the year has already been logged
 
         def summarise_results_for_this_year(df, level=[0, 1]) -> pd.DataFrame:
             """Return pd.DataFrame that gives the summary of the `df` for the `year` by certain levels in the df's
@@ -439,24 +473,11 @@ class HealthBurden(Module):
                 .reset_index() \
                 .assign(year=year)
 
-        def log_df_line_by_line(key, description, df, force_cols=None) -> None:
-            """Log each line of a dataframe to `logger.info`. Each row of the dataframe is one logged entry.
-            `force_cols` is the names of the colums that must be included in each logging line (As the parsing of the
-            log requires the name of the format of each row to be uniform.)."""
-            df[sorted(set(force_cols) - set(df.columns))] = 0.0  # Force the addition of any missing causes
-            df = df[sorted(df.columns)]  # sort the columns so that they are always in same order
-            for _, row in df.iterrows():
-                logger.info(
-                    key=key,
-                    data=row.to_dict(),
-                    description=description,
-                )
-
         # Check that the format of the internal storage is as expected.
         self.check_multi_index()
 
         # 1) Log the Years Lived With Disability (YLD) (by the 'causes of disability' declared by disease modules).
-        log_df_line_by_line(
+        self.log_df_line_by_line(
             key='yld_by_causes_of_disability',
             description='Years lived with disability by the declared cause_of_disability, '
                         'broken down by year, sex, age-group',
@@ -465,7 +486,7 @@ class HealthBurden(Module):
         )
 
         # 2) Log the Years of Live Lost (YLL) (by the 'causes of death' declared by disease modules).
-        log_df_line_by_line(
+        self.log_df_line_by_line(
             key='yll_by_causes_of_death',
             description='Years of life lost by the declared cause_of_death, '
                         'broken down by year, sex, age-group. '
@@ -474,7 +495,7 @@ class HealthBurden(Module):
             df=(yll := summarise_results_for_this_year(self.years_life_lost)),
             force_cols=self._causes_of_yll,
         )
-        log_df_line_by_line(
+        self.log_df_line_by_line(
             key='yll_by_causes_of_death_stacked',
             description='Years of life lost by the declared cause_of_death, '
                         'broken down by year, sex, age-group. '
@@ -484,7 +505,7 @@ class HealthBurden(Module):
             df=(yll_stacked_by_time := summarise_results_for_this_year(self.years_life_lost_stacked_time)),
             force_cols=self._causes_of_yll,
         )
-        log_df_line_by_line(
+        self.log_df_line_by_line(
             key='yll_by_causes_of_death_stacked_by_age_and_time',
             description='Years of life lost by the declared cause_of_death, '
                         'broken down by year, sex, age-group. '
@@ -496,7 +517,7 @@ class HealthBurden(Module):
         )
 
         # 3) Log total DALYS recorded (YLD + LYL) (by the labels declared)
-        log_df_line_by_line(
+        self.log_df_line_by_line(
             key='dalys',
             description='DALYS, by the labels are that are declared for each cause_of_death and cause_of_disability'
                         ', broken down by year, sex, age-group. '
@@ -505,7 +526,7 @@ class HealthBurden(Module):
             df=self.get_dalys(yld=yld, yll=yll),
             force_cols=self._causes_of_dalys,
         )
-        log_df_line_by_line(
+        self.log_df_line_by_line(
             key='dalys_stacked',
             description='DALYS, by the labels are that are declared for each cause_of_death and cause_of_disability'
                         ', broken down by year, sex, age-group. '
@@ -515,7 +536,7 @@ class HealthBurden(Module):
             df=self.get_dalys(yld=yld, yll=yll_stacked_by_time),
             force_cols=self._causes_of_dalys,
         )
-        log_df_line_by_line(
+        self.log_df_line_by_line(
             key='dalys_stacked_by_age_and_time',
             description='DALYS, by the labels are that are declared for each cause_of_death and cause_of_disability'
                         ', broken down by year, sex, age-group. '
@@ -534,7 +555,7 @@ class HealthBurden(Module):
             self.years_life_lost_stacked_age_and_time, level=2
         )
 
-        log_df_line_by_line(
+        self.log_df_line_by_line(
             key='dalys_by_wealth_stacked_by_age_and_time',
             description='DALYS, by the labels are that are declared for each cause_of_death and cause_of_disability'
                         ', broken down by year and wealth category.'
@@ -543,37 +564,18 @@ class HealthBurden(Module):
             df=self.get_dalys(yld=yld_by_wealth, yll=yll_by_wealth),
             force_cols=self._causes_of_dalys,
         )
-        # 5) Log the prevalence of each disease
-        log_df_line_by_line(
-            key='prevalence_of_diseases',
-            description='Prevalence of each disease.',
-            df=self.prevalence_of_diseases,
-            force_cols=self.recognised_modules_names,
-        )
+
         self._years_written_to_log += [year]
+
     def write_to_log_prevalence(self):
         """Write to the log the prevalence of conditions .
         N.B. This is called at the end of the simulation as well as at the end of each month, so we need to check that
         the year is not being written to the log more than once."""
-        def log_df_line_by_line(key, description, df, force_cols=None) -> None:
-            """Log each line of a dataframe to `logger.info`. Each row of the dataframe is one logged entry.
-            `force_cols` is the names of the colums that must be included in each logging line (As the parsing of the
-            log requires the name of the format of each row to be uniform.)."""
-            df[sorted(set(force_cols) - set(df.columns))] = 0.0  # Force the addition of any missing causes
-            df = df[sorted(df.columns)]  # sort the columns so that they are always in same order
-            for _, row in df.iterrows():
-                logger.info(
-                    key=key,
-                    data=row.to_dict(),
-                    description=description,
-                )
-
         # Check that the format of the internal storage is as expected.
         self.check_multi_index()
-
-        log_df_line_by_line(
+        self.log_df_line_by_line(
             key='prevalence_of_diseases',
-            description='Prevalence of each disease. ALRI: '
+            description='Prevalence of each disease. ALRI: individuals who have ri_current_infection_status = True'
                         'Bladder_Cancer: individuals who have bc_status != none. '
                         'Breast Cancer: individuals who have brc_stus != none'
                         'chronic_ischemic_hd, chronic_kidney_disease, chronic_lower_back_pain, diabetes, hypertension (all in CMD): all individuals with nc_{condition} as True'
@@ -596,7 +598,7 @@ class HealthBurden(Module):
                         'schisto: individuals who have Low-infection or High-infection, any parasite'
                         'TB: individuals who have tb_inf = active',
             df=self.prevalence_of_diseases,
-            force_cols=self.recognised_modules_names,
+            force_cols=self.prevalence_of_diseases.columns
         )
 
     def check_multi_index(self):
@@ -719,60 +721,6 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
         self.module.check_multi_index()
 
 
-class Get_Current_Prevalence(RegularEvent, PopulationScopeEventMixin):
-    """
-    This event runs every month and asks each disease module to report the prevalence of each disease
-    during the previous month.
-    """
-
-    def __init__(self, module):
-            super().__init__(module, frequency=DateOffset(months=1))
-
-    def apply(self, population):
-        if not self.module.recognised_modules_names or not self.module.causes_of_disability:
-            return
-
-        # Calculate the population size
-        population_size = len(self.sim.population.props[self.sim.population.props['is_alive']])
-
-        # Create a DataFrame with one row and assign the population size
-        prevalence_from_each_disease_module = pd.DataFrame({'population': [population_size]})
-        for disease_module_name in self.module.recognised_modules_names:
-            if disease_module_name in ['NewbornOutcomes', 'PostnatalSupervisor', 'DiseaseThatCausesA',
-                                       'ChronicSyndrome']:
-                continue
-
-            disease_module = self.sim.modules[disease_module_name]
-            prevalence_from_disease_module = disease_module.report_prevalence()
-
-            if disease_module_name == "CardioMetabolicDisorders":
-                for i, column_name in enumerate(prevalence_from_disease_module.columns):
-                    prevalence_from_each_disease_module[column_name] = prevalence_from_disease_module.iloc[:, i]
-            else:
-                prevalence_from_disease_module = pd.DataFrame([[prevalence_from_disease_module]])
-
-                column_name = ("Intrapartum stillbirth" if disease_module_name == "Labour" else
-                               "Antenatal stillbirth" if disease_module_name == "PregnancySupervisor" else
-                               disease_module_name)
-
-                # Add the prevalence data as a new column to the DataFrame
-                prevalence_from_each_disease_module[column_name] = prevalence_from_disease_module.iloc[:, 0]
-
-        neonatal_maternal_mortality = pd.DataFrame(
-            self.sim.modules['Demography'].report_prevalence())  # Already a dataframe
-        prevalence_from_each_disease_module['NMR'] = neonatal_maternal_mortality.iloc[:, 0]
-        prevalence_from_each_disease_module['MMR'] = neonatal_maternal_mortality.iloc[:, 1]
-        prevalence_from_each_disease_module['live_births'] = neonatal_maternal_mortality.iloc[:, 2]
-
-        prevalence_from_each_disease_module.drop(
-            prevalence_from_each_disease_module.index.intersection(
-                ['NewbornOutcomes', 'PostnatalSupervisor', 'DiseaseThatCausesA', 'ChronicSyndrome']
-            ),
-            axis=0, inplace=True
-        )
-        self.module.prevalence_of_diseases = prevalence_from_each_disease_module
-
-
 class Healthburden_WriteToLog(RegularEvent, PopulationScopeEventMixin):
     """ This event runs every year, as the last event on the last day of the year, and writes to the log the YLD, YLL
     and DALYS accrued in that year."""
@@ -783,16 +731,39 @@ class Healthburden_WriteToLog(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         self.module.write_to_log(year=self.sim.date.year)
 
-class Healthburden_WriteToLog_Prevalences(RegularEvent, PopulationScopeEventMixin):
-    """ This event with a specified frequency to record the prevalence logger
-    Added test to log daily if it is a test"""
-    def __init__(self, module):
-        if module.parameters['logging_frequency_prevalence'] == 'day':
-            super().__init__(module, frequency=DateOffset(days=1), priority=Priority.END_OF_DAY)
-        elif module.parameters['logging_frequency_prevalence'] == 'month':
-            super().__init__(module, frequency=DateOffset(months=1), priority=Priority.END_OF_DAY)
-        else:
-            super().__init__(module, frequency=DateOffset(years=1), priority=Priority.END_OF_DAY)
-    def apply(self, population):
-        self.module.write_to_log_prevalence()
 
+class GetCurrentPrevalenceWriteToLog(RegularEvent, PopulationScopeEventMixin):
+    """
+    This event runs every month and asks each disease module to report the prevalence of each disease
+    during the previous month.
+    """
+
+    def __init__(self, module, frequency: pd.DateOffset):
+        super().__init__(module, frequency=frequency)
+
+    def apply(self, population):
+        if not self.module.recognised_modules_names:
+            return
+        else:
+            # Calculate the population size
+            population_size = len(self.sim.population.props[self.sim.population.props['is_alive']])
+            prevalence_from_each_disease_module = {'population': [population_size]}
+            for disease_module_name in self.module.recognised_modules_names_for_prevalence:
+                if disease_module_name in ['DiseaseThatCausesA']:
+                    continue
+                else:
+                    disease_module = self.sim.modules[disease_module_name]
+                    prevalence_from_disease_module = disease_module.report_prevalence()
+                    if prevalence_from_disease_module is None:
+                        continue
+                    for key, value in prevalence_from_disease_module.items():
+                        prevalence_from_each_disease_module[key] = value
+        prevalence_from_each_disease_module = pd.DataFrame([prevalence_from_each_disease_module])
+        prevalence_from_each_disease_module.drop(
+                prevalence_from_each_disease_module.index.intersection(
+                    ['DiseaseThatCausesA']
+                ),
+                axis=0, inplace=True
+            )
+        self.module.prevalence_of_diseases = prevalence_from_each_disease_module
+        self.module.write_to_log_prevalence()

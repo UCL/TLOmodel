@@ -388,7 +388,7 @@ class Demography(Module):
         This function reports the prevalence of maternal death and neonatal deaths for this module generated in the previous month.
         Returns a dataframe with these values.
         """
-        if 'SimplifiedBirths' not in self.sim.modules or 'Contraception' not in self.sim.modules:
+        if 'SimplifiedBirths' in self.sim.modules:
             neonatal_mortality_rate = None
             maternal_mortality_rate = None
             live_births = None
@@ -401,7 +401,7 @@ class Demography(Module):
             else:
                 neonatal_deaths = len(df[(df['age_days'] < 29) & (df['age_years'] == 0) & ~(df['is_alive']) & (
                         df['date_of_death'] >= (self.sim.date - DateOffset(months=1)))])
-                live_births = len(df[(df['age_days'] < 29) & (df['age_years'] == 0)])
+                live_births = len(df[(df['age_days'] < 29)])
                 neonatal_mortality_rate = neonatal_deaths/live_births * 1000
                 maternal_direct_deaths = len(df.loc[
                                                  (df['cause_of_death'] == 'Maternal Disorders') &
@@ -422,14 +422,14 @@ class Demography(Module):
                 indirect_deaths_hiv = indirect_deaths_hiv * 0.3  # https://www.who.int/publications/i/item/9789240068759
                 maternal_deaths = maternal_direct_deaths + indirect_deaths_non_hiv + indirect_deaths_hiv
                 maternal_mortality_rate = maternal_deaths/live_births * 1000
+            print(live_births)
 
-        health_values_df = pd.DataFrame({
-            'NMR': [neonatal_mortality_rate],
-            'MMR': [maternal_mortality_rate],
-            'live_births': [live_births]
-        })
-
-        return health_values_df
+        metrics_dict = {
+            'NMR': neonatal_mortality_rate,
+            'MMR': maternal_mortality_rate,
+            'live_births': live_births
+        }
+        return metrics_dict
 
     def _edit_init_pop_to_prevent_persons_greater_than_max_age(self, df, max_age: int):
         """Return an edited version of the `pd.DataFrame` describing the probability of persons in the population being

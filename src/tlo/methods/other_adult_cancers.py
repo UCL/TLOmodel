@@ -581,7 +581,7 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
             df[(df['is_alive']) & (df['oac_status'] != 'none')]
         ) / len(df[df['is_alive']])
 
-        return total_prev
+        return {'Other Adult Cancers': total_prev}
 
     def do_at_generic_first_appt(
         self,

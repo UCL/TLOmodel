@@ -1,8 +1,6 @@
 {
-  "scenario_script_path": "src/scripts/longterm_projections/longterm_projections.py",
   "scenario_seed": 0,
   "arguments": [],
-  "runs_per_draw": 10,
   "draws": [
     {
       "draw_number": 0,
@@ -38,6 +36,4 @@
       }
     }
   ],
-  "commit": "8020b27cf98b1f58c3e61c2155470f6d19ea5c0c",
-  "github": "https://github.com/UCL/TLOmodel/tree/8020b27cf98b1f58c3e61c2155470f6d19ea5c0c"
 }

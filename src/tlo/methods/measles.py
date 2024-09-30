@@ -204,7 +204,7 @@ class Measles(Module, GenericFirstAppointmentsMixin):
             df[df.is_alive & df.me_has_measles]
         ) / len(df[df.is_alive])
 
-        return total_prev
+        return {'Measles': total_prev}
 
     def process_parameters(self):
         """Process the parameters (following being read-in) prior to the simulation starting.

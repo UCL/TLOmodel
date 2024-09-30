@@ -567,7 +567,7 @@ class Depression(Module, GenericFirstAppointmentsMixin):
         total_prev = len(
             any_depr_in_the_last_month
         ) / len(df[df.is_alive])
-        return total_prev
+        return {'Depression': total_prev}
     def _check_for_suspected_depression(
         self, symptoms: List[str], treatment_id: str, has_even_been_diagnosed: bool
     ):
