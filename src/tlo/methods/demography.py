@@ -315,9 +315,10 @@ class Demography(Module):
         # Launch the repeating event that will store statistics about the population structure
         sim.schedule_event(DemographyLoggingEvent(self), sim.date)
 
-        # Create (and store pointer to) the OtherDeathPoll and schedule first occurrence immediately
-        self.other_death_poll = OtherDeathPoll(self)
-        sim.schedule_event(self.other_death_poll, sim.date)
+        if sim.generate_data is False:
+            # Create (and store pointer to) the OtherDeathPoll and schedule first occurrence immediately
+            self.other_death_poll = OtherDeathPoll(self)
+            sim.schedule_event(self.other_death_poll, sim.date)
 
         # Log the initial population scaling-factor (to the logger of this module and that of `tlo.methods.population`)
         for _logger in (logger, logger_scale_factor):

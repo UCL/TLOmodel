@@ -7,7 +7,7 @@ import time
 from collections import OrderedDict
 from pathlib import Path
 from typing import Dict, Optional, Union
-
+import pandas as pd
 import numpy as np
 
 from tlo import Date, Population, logging
@@ -63,9 +63,11 @@ class Simulation:
         self.date = self.start_date = start_date
         self.modules = OrderedDict()
         self.event_queue = EventQueue()
+        self.generate_data = None
         self.end_date = None
         self.output_file = None
         self.population: Optional[Population] = None
+        self.event_chains: Optinoal[Population] = None
 
         self.show_progress_bar = show_progress_bar
         self.resourcefilepath = resourcefilepath
@@ -209,6 +211,8 @@ class Simulation:
             module.initialise_population(self.population)
             logger.debug(key='debug', data=f'{module.name}.initialise_population() {time.time() - start1} s')
 
+        self.event_chains = pd.DataFrame(columns= list(self.population.props.columns)+['person_ID'] + ['event'] + ['event_date'] + ['when'])
+
         end = time.time()
         logger.info(key='info', data=f'make_initial_population() {end - start} s')
 
@@ -221,7 +225,14 @@ class Simulation:
         """
         start = time.time()
         self.end_date = end_date  # store the end_date so that others can reference it
+        self.generate_data = True # for now ensure we're always aiming to print data
 
+        f = open('output.txt', mode='a')
+        #df_event_chains = pd.DataFrame(columns= list(self.population.props.columns)+['person_ID'] + ['event'] + ['event_date'] + ['when'])
+
+        # Reorder columns to place the new columns at the front
+        pd.set_option('display.max_columns', None)
+        print(self.event_chains.columns)
         for module in self.modules.values():
             module.initialise_simulation(self)
 
@@ -250,17 +261,72 @@ class Simulation:
 
             if date >= end_date:
                 self.date = end_date
+                self.event_chains.to_csv('output.csv', index=False)
                 break
-                
+
             #if event.target != self.population:
             #    print("Event: ", event)
-
-            if event.module == self.modules['RTI']:
-                 print("RTI event ", event)
-                 print("   target ", event.target)
-                 if event.target != self.population:
-                    self.population.props.at[event.tar]
+            go_ahead = False
+            df_before = []
+            
+            # Only print events relevant to modules of interest
+            # Do not want to compare before/after in births because it may expand the pop dataframe
+            print_output = True
+            if print_output:
+                if (event.module == self.modules['Tb'] or event.module == self.modules['Hiv']) and 'TbActiveCasePollGenerateData' not in str(event) and 'HivPollingEventForDataGeneration' not in str(event) and "SimplifiedBirthsPoll" not in str(event) and "AgeUpdateEvent" not in str(event) and "HealthSystemScheduler" not in str(event):
+                #if 'TbActiveCasePollGenerateData' not in str(event) and 'HivPollingEventForDataGeneration' not in str(event) and "SimplifiedBirthsPoll" not in str(event) and "AgeUpdateEvent" not in str(event):
+                    go_ahead = True
+                    if event.target != self.population:
+                        row = self.population.props.iloc[[event.target]]
+                        row['person_ID'] = event.target
+                        row['event'] = event
+                        row['event_date'] = date
+                        row['when'] = 'Before'
+                        self.event_chains = pd.concat([self.event_chains, row], ignore_index=True)
+                    else:
+                        df_before = self.population.props.copy()
+                    
             self.fire_single_event(event, date)
+            
+            if print_output:
+                if go_ahead == True:
+                    if event.target != self.population:
+                        row = self.population.props.iloc[[event.target]]
+                        row['person_ID'] = event.target
+                        row['event'] = event
+                        row['event_date'] = date
+                        row['when'] = 'After'
+                        self.event_chains = pd.concat([self.event_chains, row], ignore_index=True)
+                    else:
+                        df_after = self.population.props.copy()
+                       # if not df_before.columns.equals(df_after.columns):
+                       #     print("Number of columns in pop dataframe", len(self.population.props.columns))
+                       #     print("Before", df_before.columns)
+                       #     print("After", df_after.columns#)
+                      #      exit(-1)
+                      #  if not df_before.index.equals(df_after.index):
+                       #     print("Number of indices in pop dataframe", len(self.population.props.index))
+                      #      print("----> ", event)
+                      #      print("Before", df_before.index#)
+                      #      print("After", df_after.index)
+                      #      exit(-1)
+                            
+                        change = df_before.compare(df_after)
+                        if ~change.empty:
+                            indices = change.index
+                            new_rows_before = df_before.loc[indices]
+                            new_rows_before['person_ID'] = new_rows_before.index
+                            new_rows_before['event'] = event
+                            new_rows_before['event_date'] = date
+                            new_rows_before['when'] = 'Before'
+                            new_rows_after = df_after.loc[indices]
+                            new_rows_after['person_ID'] = new_rows_after.index
+                            new_rows_after['event'] = event
+                            new_rows_after['event_date'] = date
+                            new_rows_after['when'] = 'After'
+
+                            self.event_chains = pd.concat([self.event_chains,new_rows_before], ignore_index=True)
+                            self.event_chains = pd.concat([self.event_chains,new_rows_after], ignore_index=True)
 
         # The simulation has ended.
         if self.show_progress_bar:

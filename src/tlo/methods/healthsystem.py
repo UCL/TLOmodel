@@ -2033,8 +2033,26 @@ class HealthSystem(Module):
                     assert event.facility_info is not None, \
                         f"Cannot run HSI {event.TREATMENT_ID} without facility_info being defined."
 
+                    go_ahead = False
+                    if (event.module == self.sim.modules['Tb'] or event.module == self.sim.modules['Hiv']):
+                        go_ahead = True
+                        row = self.sim.population.props.iloc[[event.target]]
+                        row['person_ID'] = event.target
+                        row['event'] = event
+                        row['event_date'] = self.sim.date
+                        row['when'] = 'Before'
+                        self.sim.event_chains = pd.concat([self.sim.event_chains, row], ignore_index=True)
+
                     # Run the HSI event (allowing it to return an updated appt_footprint)
                     actual_appt_footprint = event.run(squeeze_factor=squeeze_factor)
+                    
+                    if go_ahead:
+                        row = self.sim.population.props.iloc[[event.target]]
+                        row['person_ID'] = event.target
+                        row['event'] = event
+                        row['event_date'] = self.sim.date
+                        row['when'] = 'After'
+                        self.sim.event_chains = pd.concat([self.sim.event_chains, row], ignore_index=True)
 
                     # Check if the HSI event returned updated appt_footprint
                     if actual_appt_footprint is not None:
