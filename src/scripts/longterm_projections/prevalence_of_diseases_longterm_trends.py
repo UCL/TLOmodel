@@ -178,7 +178,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # Convert the accumulated data into a DataFrame for plotting
 
     df_all_years_prevalence = pd.DataFrame(all_years_data_prevalence)
-    print(df_all_years_prevalence)
     df_all_years_prevalence = df_all_years_prevalence.drop(['live_births', 'population'], axis=0)  # extra data
     df_all_years_prevalence = df_all_years_prevalence.drop(['PostnatalSupervisor', 'PregnancySupervisor',
                                                             'CardioMetabolicDisorders', 'NewbornOutcomes', 'Labour'],
