@@ -127,7 +127,6 @@ class HealthBurden(Module):
                    callable(self.sim.modules[module_name].report_daly_values), 'A module that declares use of ' \
                                                                                'HealthBurden module must have a ' \
                                                                                'callable function "report_daly_values"'
-            print(module_name)
             if not module_name.startswith('DiseaseThatCauses'):
                 assert getattr(self.sim.modules[module_name], 'report_prevalence', None) and \
                        callable(self.sim.modules[module_name].report_prevalence), 'A module that declares use of ' \
