@@ -2443,8 +2443,8 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         # This returns dataframe that reports on the prevalence of RTIs for all individuals
         df = self.sim.population.props
         total_prev = len(
-            df[(df['is_alive']) & (df['rt_inj_severity'] != 'none')]
-        ) / len(df[df['is_alive']])
+            df[(df['is_alive']) & (df['rt_inj_severity'] != 'none') & (df['rt_date_inj'] >= (self.sim.date - DateOffset(months=1)))]
+            / len(df[df['is_alive']]))
 
         return {'RTI': total_prev}
 
