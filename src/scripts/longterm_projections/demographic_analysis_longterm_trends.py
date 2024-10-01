@@ -959,7 +959,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # 5) Deaths and Life Expectancy
 
 
-    fig, ax = plt.subplots(1, 2, figsize=(25, 10))
+    fig, ax = plt.subplots(1, 2, figsize=(15, 7.5))
 
     ax[0].plot(
         deaths_by_period.index,
