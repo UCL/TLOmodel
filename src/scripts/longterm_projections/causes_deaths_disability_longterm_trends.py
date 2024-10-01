@@ -2,7 +2,6 @@ import argparse
 from pathlib import Path
 from typing import Tuple
 
-import numpy as np
 import pandas as pd
 from longterm_projections import LongRun
 from matplotlib import pyplot as plt
