@@ -12,7 +12,6 @@ from typing import TYPE_CHECKING, List
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.core import IndividualPropertyUpdates
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -21,16 +20,18 @@ from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
+from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
 
 if TYPE_CHECKING:
-    from tlo.population import PatientDetails
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
+    from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class ProstateCancer(Module):
+class ProstateCancer(Module, GenericFirstAppointmentsMixin):
     """Prostate Cancer Disease Module"""
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -590,29 +591,30 @@ class ProstateCancer(Module):
 
     def do_at_generic_first_appt(
         self,
-        patient_id: int,
-        patient_details: PatientDetails,
+        person_id: int,
+        individual_properties: IndividualProperties,
         symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
         **kwargs
-    ) -> IndividualPropertyUpdates:
+    ) -> None:
         # If the patient is not a child, and symptoms are indicative,
         # begin investigation for prostate cancer
         scheduling_options = {
             "priority": 0,
             "topen": self.sim.date,
         }
-        if patient_details.age_years > 5:
+        if individual_properties["age_years"] > 5:
             if "urinary" in symptoms:
                 event = HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms(
-                    person_id=patient_id, module=self
+                    person_id=person_id, module=self
                 )
-                self.healthsystem.schedule_hsi_event(event, **scheduling_options)
+                schedule_hsi_event(event, **scheduling_options)
 
             if "pelvic_pain" in symptoms:
                 event = HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(
-                    person_id=patient_id, module=self
+                    person_id=person_id, module=self
                 )
-                self.healthsystem.schedule_hsi_event(event, **scheduling_options)
+                schedule_hsi_event(event, **scheduling_options)
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -717,7 +719,7 @@ class HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms(HSI_Event, Ind
             return hs.get_blank_appt_footprint()
 
         # Check that this event has been called for someone with the urinary symptoms
-        assert 'urinary' in self.sim.modules['SymptomManager'].has_what(person_id)
+        assert 'urinary' in self.sim.modules['SymptomManager'].has_what(person_id=person_id)
 
         # If the person is already diagnosed, then take no action:
         if not pd.isnull(df.at[person_id, "pc_date_diagnosis"]):
@@ -765,7 +767,7 @@ class HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(HSI_Event, Individu
             return hs.get_blank_appt_footprint()
 
         # Check that this event has been called for someone with the pelvic pain
-        assert 'pelvic_pain' in self.sim.modules['SymptomManager'].has_what(person_id)
+        assert 'pelvic_pain' in self.sim.modules['SymptomManager'].has_what(person_id=person_id)
 
         # If the person is already diagnosed, then take no action:
         if not pd.isnull(df.at[person_id, "pc_date_diagnosis"]):
@@ -780,7 +782,6 @@ class HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(HSI_Event, Individu
             hsi_event=self
         )
 
-        # TODO: replace with PSA test when added to cons list
         cons_avail = self.get_consumables(item_codes=self.module.item_codes_prostate_can['screening_psa_test_optional'])
 
         if dx_result and cons_avail:
@@ -822,9 +823,12 @@ class HSI_ProstateCancer_Investigation_Following_psa_positive(HSI_Event, Individ
 
         cons_available = self.get_consumables(item_codes=self.module.item_codes_prostate_can['screening_biopsy_core'],
                                               optional_item_codes=self.module.item_codes_prostate_can[
-                                              'screening_biopsy_optional'])
+                                              'screening_biopsy_endoscopy_cystoscopy_optional'])
 
         if cons_available:
+            # If consumables are available update the use of equipment and run the dx_test representing the biopsy
+            self.add_equipment({'Ultrasound scanning machine', 'Ordinary Microscope'})
+
             # Use a biopsy  to assess whether the person has prostate cancer:
             dx_result = hs.dx_manager.run_dx_test(
                 dx_tests_to_run='biopsy_for_prostate_cancer',
@@ -912,7 +916,8 @@ class HSI_ProstateCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                                                   'treatment_surgery_optional'])
 
         if cons_available:
-            # If consumables are available the treatment will go ahead
+            # If consumables are available and the treatment will go ahead - update the equipment
+            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
 
             # Record date and stage of starting treatment
             df.at[person_id, "pc_date_treatment"] = self.sim.date
@@ -1016,7 +1021,8 @@ class HSI_ProstateCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
             item_codes=self.module.item_codes_prostate_can['palliation'])
 
         if cons_available:
-            # If consumables are available and the treatment will go ahead
+            # If consumables are available and the treatment will go ahead - update the equipment
+            self.add_equipment({'Infusion pump', 'Drip stand'})
 
             # Record the start of palliative care if this is first appointment
             if pd.isnull(df.at[person_id, "pc_date_palliative_care"]):

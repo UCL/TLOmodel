@@ -646,23 +646,60 @@ class Contraception(Module):
 
     def get_item_code_for_each_contraceptive(self):
         """Get the item_code for each contraceptive and for contraceptive initiation."""
-        # TODO: update with optional items (currently all considered essential)
 
-        get_items_from_pkg = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
+        # ### Get item codes from item names and define number of units per case here
+        get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
 
         _cons_codes = dict()
-        # items for each method that requires an HSI to switch to
-        _cons_codes['pill'] = get_items_from_pkg('Pill')
-        _cons_codes['male_condom'] = get_items_from_pkg('Male condom')
-        _cons_codes['other_modern'] = get_items_from_pkg('Female Condom')
-        # NB. The consumable female condom is used for the contraceptive state of "other_modern method"
-        _cons_codes['IUD'] = get_items_from_pkg('IUD')
-        _cons_codes['injections'] = get_items_from_pkg('Injectable')
-        _cons_codes['implant'] = get_items_from_pkg('Implant')
-        _cons_codes['female_sterilization'] = get_items_from_pkg('Female sterilization')
+        # # items for each method that requires an HSI to switch to
+        # in 80% cases combined pills administrated
+        # in other 20% cases same amount of progesterone-only pills ("Levonorgestrel 0.0375 mg, cycle") administrated
+        # (omitted in here)
+        _cons_codes['pill'] = \
+            {get_item_code("Levonorgestrel 0.15 mg + Ethinyl estradiol 30 mcg (Microgynon), cycle"): 21 * 3.75}
+        _cons_codes['male_condom'] =\
+            {get_item_code("Condom, male"): 30}
+        _cons_codes['other_modern'] =\
+            {get_item_code("Female Condom_Each_CMST"): 30}
+        _cons_codes['IUD'] =\
+            {get_item_code("Glove disposable powdered latex medium_100_CMST"): 2,
+             get_item_code("IUD, Copper T-380A"): 1}
+        _cons_codes['injections'] = \
+            {get_item_code("Depot-Medroxyprogesterone Acetate 150 mg - 3 monthly"): 1,
+             get_item_code("Glove disposable powdered latex medium_100_CMST"): 1,
+             get_item_code("Water for injection, 10ml_Each_CMST"): 1,
+             get_item_code("Povidone iodine, solution, 10 %, 5 ml per injection"): 5,
+             get_item_code("Gauze, swabs 8-ply 10cm x 10cm_100_CMST"): 1}
+        _cons_codes['implant'] =\
+            {get_item_code("Glove disposable powdered latex medium_100_CMST"): 3,
+             get_item_code("Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml"): 2,
+             get_item_code("Povidone iodine, solution, 10 %, 5 ml per injection"): 1*5,  # unit: 1 ml
+             get_item_code("Syringe, needle + swab"): 2,
+             get_item_code("Trocar"): 1,
+             get_item_code("Needle suture intestinal round bodied ½ circle trocar_6_CMST"): 1,
+             # in 50% cases Jadelle administrated
+             # in other 50% cases other type of implant ("Implanon (Etonogestrel 68 mg)") administrated
+             # (omitted in here)
+             get_item_code("Jadelle (implant), box of 2_CMST"): 1,
+             get_item_code("Gauze, swabs 8-ply 10cm x 10cm_100_CMST"): 1}
+        _cons_codes['female_sterilization'] =\
+            {get_item_code("Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml"): 1,
+             get_item_code("Atropine sulphate  600 micrograms/ml, 1ml_each_CMST"): 0.5,  # 1 unit used only in 50% cases
+             # approximated by 0.5 unit each time
+             get_item_code("Diazepam, injection, 5 mg/ml, in 2 ml ampoule"): 1,
+             get_item_code("Syringe, autodestruct, 5ml, disposable, hypoluer with 21g needle_each_CMST"): 3,
+             get_item_code("Gauze, swabs 8-ply 10cm x 10cm_100_CMST"): 2,
+             get_item_code("Needle, suture, assorted sizes, round body"): 3,
+             get_item_code("Suture, catgut, chromic, 0, 150 cm"): 3,
+             get_item_code("Tape, adhesive, 2.5 cm wide, zinc oxide, 5 m roll"): 125,  # unit: 1 cm long (2.5 cm wide)
+             get_item_code("Glove surgeon's size 7 sterile_2_CMST"): 2,
+             get_item_code("Paracetamol, tablet, 500 mg"): 8*500,  # unit: 1 mg
+             get_item_code("Povidone iodine, solution, 10 %, 5 ml per injection"): 2*5,  # unit: 1 ml
+             get_item_code("Cotton wool, 500g_1_CMST"): 100}  # unit: 1 g
+
         assert set(_cons_codes.keys()) == set(self.states_that_may_require_HSI_to_switch_to)
         # items used when initiating a modern reliable method after not using or switching from non-reliable method
-        _cons_codes['co_initiation'] = get_items_from_pkg('Contraception initiation')
+        _cons_codes['co_initiation'] = {get_item_code('Pregnancy slide test kit_100_CMST'): 1}
 
         return _cons_codes
 
@@ -1150,8 +1187,12 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         # Record the date that Family Planning Appointment happened for this person
         self.sim.population.props.at[person_id, "co_date_of_last_fp_appt"] = self.sim.date
 
+        # Measure weight, height and BP even if contraception not administrated
+        self.add_equipment({
+            'Weighing scale', 'Height Pole (Stadiometer)', 'Blood pressure machine'
+        })
+
         # Determine essential and optional items
-        # TODO: we don't distinguish essential X optional for contraception methods yet, will need to update once we do
         items_essential = self.module.cons_codes[self.new_contraceptive]
         items_optional = {}
         # Record use of consumables and default the person to "not_using" if the consumable is not available.
@@ -1176,7 +1217,8 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         items_all = {**items_essential, **items_optional}
 
         # Determine whether the contraception is administrated (ie all essential items are available),
-        # if so do log the availability of all items, if not set the contraception to "not_using":
+        # if so do log the availability of all items and update used equipment if any, if not set the contraception to
+        # "not_using":
         co_administrated = all(v for k, v in cons_available.items() if k in items_essential)
 
         if co_administrated:
@@ -1200,6 +1242,18 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
                              )
 
             _new_contraceptive = self.new_contraceptive
+
+            # Add used equipment
+            if _new_contraceptive == 'female_sterilization':
+                self.add_equipment({
+                    'Cusco’s/ bivalved Speculum (small, medium, large)', 'Lamp, Anglepoise'
+                })
+                self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Minor Surgery'))
+            elif _new_contraceptive == 'IUD':
+                self.add_equipment({
+                    'Cusco’s/ bivalved Speculum (small, medium, large)', 'Sponge Holding Forceps'
+                })
+
         else:
             _new_contraceptive = "not_using"
 

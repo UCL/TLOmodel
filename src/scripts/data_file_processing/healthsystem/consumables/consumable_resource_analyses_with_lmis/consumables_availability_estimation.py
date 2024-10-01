@@ -277,14 +277,10 @@ def rename_items_to_address_inconsistentencies(_df, item_dict):
     return _collapsed_df
 
 # Hold out the dataframe with no naming inconsistencies
-list_of_items_with_inconsistent_names_zipped = list(
-    zip(inconsistent_item_names_mapping.keys(), inconsistent_item_names_mapping.values()))
-list_of_items_with_inconsistent_names = [
-    item for sublist in list_of_items_with_inconsistent_names_zipped for item in sublist]
-df_with_consistent_item_names =  lmis_df_wide_flat[~lmis_df_wide_flat[('item',)].isin(
-    list_of_items_with_inconsistent_names)]
-df_without_consistent_item_names = lmis_df_wide_flat[lmis_df_wide_flat[('item',)].isin(
-    list_of_items_with_inconsistent_names)]
+list_of_items_with_inconsistent_names_zipped = set(zip(inconsistent_item_names_mapping.keys(), inconsistent_item_names_mapping.values()))
+list_of_items_with_inconsistent_names = [item for sublist in list_of_items_with_inconsistent_names_zipped for item in sublist]
+df_with_consistent_item_names =  lmis_df_wide_flat[~lmis_df_wide_flat[('item',)].isin(list_of_items_with_inconsistent_names)]
+df_without_consistent_item_names = lmis_df_wide_flat[lmis_df_wide_flat[('item',)].isin(list_of_items_with_inconsistent_names)]
 # Make inconsistently named drugs uniform across the dataframe
 df_without_consistent_item_names_corrected = rename_items_to_address_inconsistentencies(
     df_without_consistent_item_names, inconsistent_item_names_mapping)

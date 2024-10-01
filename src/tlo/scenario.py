@@ -60,17 +60,20 @@ In summary:
 """
 
 import abc
+import argparse
 import datetime
 import json
 import pickle
+from collections.abc import Iterable
 from itertools import product
 from pathlib import Path, PurePosixPath
-from typing import Optional
+from typing import List, Optional
 
 import numpy as np
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
+from tlo.util import str_to_pandas_date
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -125,6 +128,57 @@ class BaseScenario(abc.ABC):
         self.resources = resources_path
         self.rng = None
         self.scenario_path = None
+        self.arguments = []
+
+    def parse_arguments(self, extra_arguments: List[str]) -> None:
+        """Base class command line arguments handling for scenarios. This should not be overridden by subclasses.
+        Subclasses can add argument handling to their classes by implementing the `add_arguments` method."""
+
+        if extra_arguments is None:
+            return
+
+        assert isinstance(extra_arguments, Iterable), "Arguments must be a list of strings"
+
+        self.arguments = extra_arguments
+
+        parser = argparse.ArgumentParser()
+        parser.add_argument(
+            "--resume-simulation",
+            type=str,
+            help="Directory containing suspended state files to resume simulation from",
+        )
+        parser.add_argument(
+            "--suspend-date",
+            type=str_to_pandas_date,
+            help="Date to suspend the simulation at",
+        )
+
+        # add arguments from the subclass
+        self.add_arguments(parser)
+
+        arguments = parser.parse_args(self.arguments)
+
+        # set the arguments as attributes of the scenario
+        for key, value in vars(arguments).items():
+            if value is not None:
+                if hasattr(self, key):
+                    logger.info(key="message", data=f"Overriding attribute: {key}: {getattr(self, key)} -> {value}")
+                setattr(self, key, value)
+
+    def add_arguments(self, parser: argparse.ArgumentParser) -> None:
+        """Add scenario-specific arguments that can be passed to scenario from the command line.
+
+        This method is called to add scenario-specific arguments to the command line parser. The method should add
+        arguments to the parser using the `add_argument` method. Arguments that have a value of None are not set or
+        overridden.
+
+        :param parser: An instance of `argparse.ArgumentParser` to which arguments should be added.
+
+        Example::
+
+            parser.add_argument('--pop-size', type=int, default=20_000, help='Population size')
+        """
+        pass
 
     @abc.abstractmethod
     def log_configuration(self, **kwargs):
@@ -282,11 +336,13 @@ class DrawGenerator:
         return {
             "scenario_script_path": str(PurePosixPath(scenario_path)),
             "scenario_seed": self.scenario.seed,
+            "arguments": self.scenario.arguments,
             "runs_per_draw": self.runs_per_draw,
             "draws": self.draws,
         }
 
-    def save_config(self, config, output_path):
+    @staticmethod
+    def save_config(config, output_path):
         with open(output_path, "w") as f:
             f.write(json.dumps(config, indent=2))
 
@@ -297,6 +353,8 @@ class SampleRunner:
         with open(run_configuration_path, "r") as f:
             self.run_config = json.load(f)
         self.scenario = ScenarioLoader(self.run_config["scenario_script_path"]).get_scenario()
+        if self.run_config["arguments"] is not None:
+            self.scenario.parse_arguments(self.run_config["arguments"])
         logger.info(key="message", data=f"Loaded scenario using {run_configuration_path}")
         logger.info(key="message", data=f"Found {self.number_of_draws} draws; {self.runs_per_draw} runs/draw")
 
@@ -335,20 +393,58 @@ class SampleRunner:
         sample = self.get_sample(draw, sample_number)
         log_config = self.scenario.get_log_config(output_directory)
 
-        logger.info(key="message", data=f"Running draw {sample['draw_number']}, sample {sample['sample_number']}")
-
-        sim = Simulation(
-            start_date=self.scenario.start_date,
-            seed=sample["simulation_seed"],
-            log_config=log_config
+        logger.info(
+            key="message",
+            data=f"Running draw {sample['draw_number']}, sample {sample['sample_number']}",
         )
-        sim.register(*self.scenario.modules())
 
-        if sample["parameters"] is not None:
-            self.override_parameters(sim, sample["parameters"])
+        # if user has specified a restore simulation, we load it from a pickle file
+        if (
+            hasattr(self.scenario, "resume_simulation")
+            and self.scenario.resume_simulation is not None
+        ):
+            suspended_simulation_path = (
+                Path(self.scenario.resume_simulation)
+                / str(draw_number)
+                / str(sample_number)
+                / "suspended_simulation.pickle"
+            )
+            logger.info(
+                key="message",
+                data=f"Loading pickled suspended simulation from {suspended_simulation_path}",
+            )
+            sim = Simulation.load_from_pickle(pickle_path=suspended_simulation_path, log_config=log_config)
+        else:
+            sim = Simulation(
+                start_date=self.scenario.start_date,
+                seed=sample["simulation_seed"],
+                log_config=log_config,
+            )
+            sim.register(*self.scenario.modules())
 
-        sim.make_initial_population(n=self.scenario.pop_size)
-        sim.simulate(end_date=self.scenario.end_date)
+            if sample["parameters"] is not None:
+                self.override_parameters(sim, sample["parameters"])
+
+            sim.make_initial_population(n=self.scenario.pop_size)
+            sim.initialise(end_date=self.scenario.end_date)
+
+        # if user has specified a suspend date, we run the simulation to that date and
+        # save it to a pickle file
+        if (
+            hasattr(self.scenario, "suspend_date")
+            and self.scenario.suspend_date is not None
+        ):
+            sim.run_simulation_to(to_date=self.scenario.suspend_date)
+            suspended_simulation_path = Path(log_config["directory"]) / "suspended_simulation.pickle"
+            sim.save_to_pickle(pickle_path=suspended_simulation_path)
+            sim.close_output_file()
+            logger.info(
+                key="message",
+                data=f"Simulation suspended at {self.scenario.suspend_date} and saved to {suspended_simulation_path}",
+            )
+        else:
+            sim.run_simulation_to(to_date=self.scenario.end_date)
+            sim.finalise()
 
         if sim.log_filepath is not None:
             outputs = parse_log_file(sim.log_filepath)
