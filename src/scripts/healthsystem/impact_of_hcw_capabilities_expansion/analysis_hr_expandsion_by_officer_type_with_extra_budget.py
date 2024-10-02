@@ -29,14 +29,16 @@ from tlo.analysis.utils import (
 # rename scenarios
 substitute_labels = {
     's_1': 'no_expansion',
-    's_2': 'all_expansion_current',
-    's_3': 'all_expansion_equal',
-    's_4': 'Clinical', 's_5': 'DCSA', 's_6': 'Nursing_and_Midwifery', 's_7': 'Pharmacy', 's_8': 'Other',
-    's_9': 'CD_equal', 's_10': 'CN_equal', 's_11': 'CP_equal', 's_12': 'CO_equal', 's_13': 'DN_equal',
-    's_14': 'DP_equal', 's_15': 'DO_equal', 's_16': 'NP_equal', 's_17': 'NO_equal', 's_18': 'PO_equal',
-    's_19': 'CDN_equal', 's_20': 'CDP_equal', 's_21': 'CDO_equal', 's_22': 'CNP_equal', 's_23': 'CNO_equal',
-    's_24': 'CPO_equal', 's_25': 'DNP_equal', 's_26': 'DNO_equal', 's_27': 'DPO_equal', 's_28': 'NPO_equal',
-    's_29': 'CDNP_equal', 's_30': 'CDNO_equal', 's_31': 'CDPO_equal', 's_32': 'CNPO_equal', 's_33': 'DNPO_equal',
+    's_2': 'all_cadres_current_allocation',
+    's_3': 'all_cadres_equal_allocation',
+    's_4': 'Clinical (C)', 's_5': 'DCSA (D)', 's_6': 'Nursing_and_Midwifery (N&M)', 's_7': 'Pharmacy (P)',
+    's_8': 'Other (O)',
+    's_9': 'C + D', 's_10': 'C + N&M', 's_11': 'C + P', 's_12': 'C + O', 's_13': 'D + N&M',
+    's_14': 'D + P', 's_15': 'D + O', 's_16': 'N&M + P', 's_17': 'N&M + O', 's_18': 'P + O',
+    's_19': 'C + D + N&M', 's_20': 'C + D + P', 's_21': 'C + D + O', 's_22': 'C + N&M + P', 's_23': 'C + N&M + O',
+    's_24': 'C + P + O', 's_25': 'D + N&M + P', 's_26': 'D + N&M + O', 's_27': 'D + P + O', 's_28': 'N&M + P + O',
+    's_29': 'C + D + N&M + P', 's_30': 'C + D + N&M + O', 's_31': 'C + D + P + O', 's_32': 'C + N&M + P + O',
+    's_33': 'D + N&M + P + O',
 }
 
 # group scenarios for presentation
@@ -467,6 +469,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ).T
     ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_1'])
 
+    # num_services_increased_percent = summarize(
+    #     pd.DataFrame(
+    #         find_difference_relative_to_comparison_series(
+    #             num_services.loc[0],
+    #             comparison='s_1',
+    #             scaled=True)
+    #     ).T
+    # ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_1'])
+
     num_deaths_averted = summarize(
         -1.0 *
         pd.DataFrame(
@@ -514,6 +525,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         only_mean=True
     ).T.reindex(num_dalys_summarized.index).drop(['s_1'])
 
+    # num_dalys_by_cause_averted_percent = summarize(
+    #     -1.0 * find_difference_relative_to_comparison_dataframe(
+    #         num_dalys_by_cause,
+    #         comparison='s_1',
+    #         scaled=True
+    #     ),
+    #     only_mean=True
+    # ).T.reindex(num_dalys_summarized.index).drop(['s_1'])
+
     num_appts_increased = summarize(
         find_difference_relative_to_comparison_dataframe(
             num_appts,
@@ -521,6 +541,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ),
         only_mean=True
     ).T.reindex(num_dalys_summarized.index).drop(['s_1'])
+
+    # num_appts_increased_percent = summarize(
+    #     find_difference_relative_to_comparison_dataframe(
+    #         num_appts,
+    #         comparison='s_1',
+    #         scaled=True
+    #     ),
+    #     only_mean=True
+    # ).T.reindex(num_dalys_summarized.index).drop(['s_1'])
 
     num_treatments_increased = summarize(
         find_difference_relative_to_comparison_dataframe(
@@ -537,6 +566,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 comparison='s_1')
         ).T
     ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_1'])
+
+    # num_treatments_total_increased_percent = summarize(
+    #     pd.DataFrame(
+    #         find_difference_relative_to_comparison_series(
+    #             num_treatments_total.loc[0],
+    #             comparison='s_1',
+    #             scaled=True)
+    #     ).T
+    # ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_1'])
 
     # Check that when we sum across the causes/appt types,
     # we get the same total as calculated when we didn't split by cause/appt type.
@@ -642,7 +680,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 .drop(columns='scenario')
                 .pivot(index='year', columns='stat')
                 .droplevel(0, axis=1))
-        ax.plot(data.index, data['mean'] / 1e6, label=substitute_labels[s], color=best_scenarios_color[s])
+        ax.plot(data.index, data['mean'] / 1e6, label=substitute_labels[s], color=best_scenarios_color[s], linewidth=2)
         # ax.fill_between(data.index.to_numpy(),
         #                 (data['lower'] / 1e6).to_numpy(),
         #                 (data['upper'] / 1e6).to_numpy(),
