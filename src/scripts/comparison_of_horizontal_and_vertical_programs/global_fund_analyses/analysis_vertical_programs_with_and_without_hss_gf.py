@@ -2,7 +2,12 @@
 scenarios (scenario_impact_of_healthsystem.py)
 
 job ID:
-htm_with_and_without_hss-2024-08-19T105753Z
+results for FCDO and GF presentations Sept 2024:
+htm_with_and_without_hss-2024-09-04T143044Z
+
+results for updates 30Sept2024 (IRS in high-risk distr and reduced gen pop RDT):
+htm_with_and_without_hss-2024-09-17T083150Z
+
 
 """
 
@@ -103,8 +108,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         substitute_labels = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
         yerr = np.array([
-            (_df['mean'] - _df['lower']).values,
-            (_df['upper'] - _df['mean']).values,
+            (_df['median'] - _df['lower']).values,
+            (_df['upper'] - _df['median']).values,
         ])
 
         xticks = {(i + 0.5): k for i, k in enumerate(_df.index)}
@@ -124,7 +129,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig, ax = plt.subplots(figsize=(10, 5))
         ax.bar(
             xticks.keys(),
-            _df['mean'].values,
+            _df['median'].values,
             yerr=yerr,
             # alpha=0.8,
             ecolor='black',
@@ -236,6 +241,18 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         return fig, ax
 
+    color_map = {
+        'Baseline': '#9e0142',
+         'FULL HSS PACKAGE':  '#d8434e',
+         'HIV Programs Scale-up WITHOUT HSS PACKAGE': '#f67a49',
+         'HIV Programs Scale-up WITH HSS PACKAGE': '#fdbf6f',
+         'TB Programs Scale-up WITHOUT HSS PACKAGE': '#feeda1',
+         'TB Programs Scale-up WITH HSS PACKAGE': '#f1f9a9',
+         'Malaria Programs Scale-up WITHOUT HSS PACKAGE': '#bfe5a0',
+         'Malaria Programs Scale-up WITH HSS PACKAGE': '#74c7a5',
+         'HIV/Tb/Malaria Programs Scale-up WITHOUT HSS PACKAGE': '#378ebb',
+         'HIV/Tb/Malaria Programs Scale-up WITH HSS PACKAGE': '#5e4fa2',
+    }
     # %% Define parameter names
     param_names = get_parameter_names_from_scenario_file()
 
@@ -270,7 +287,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.set_title(name_of_plot)
     ax.set_ylabel('(Millions)')
     fig.tight_layout()
-    ax.axhline(num_deaths_summarized.loc['Baseline', 'mean'] / 1e6, color='black', linestyle='--', alpha=0.5)
+    ax.axhline(num_deaths_summarized.loc['Baseline', 'median'] / 1e6, color='black', linestyle='--', alpha=0.5)
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     fig.show()
     plt.close(fig)
@@ -279,7 +296,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig, ax = do_bar_plot_with_ci(num_dalys_summarized / 1e6)
     ax.set_title(name_of_plot)
     ax.set_ylabel('(Millions)')
-    ax.axhline(num_dalys_summarized.loc['Baseline', 'mean'] / 1e6, color='black', linestyle='--', alpha=0.5)
+    ax.axhline(num_dalys_summarized.loc['Baseline', 'median'] / 1e6, color='black', linestyle='--', alpha=0.5)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     fig.show()
@@ -295,7 +312,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.set_title(name_of_plot)
     ax.set_ylabel('(Millions)')
     fig.tight_layout()
-    ax.axhline(num_deaths_summarized.loc['Baseline', 'mean'] / 1e6, color='black', linestyle='--', alpha=0.5)
+    ax.axhline(num_deaths_summarized.loc['Baseline', 'median'] / 1e6, color='black', linestyle='--', alpha=0.5)
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     fig.show()
     plt.close(fig)
@@ -307,7 +324,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig, ax = do_bar_plot_with_ci(filtered_num_dalys_summarized / 1e6)
     ax.set_title(name_of_plot)
     ax.set_ylabel('(Millions)')
-    ax.axhline(num_dalys_summarized.loc['Baseline', 'mean'] / 1e6, color='black', linestyle='--', alpha=0.5)
+    ax.axhline(num_dalys_summarized.loc['Baseline', 'median'] / 1e6, color='black', linestyle='--', alpha=0.5)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     fig.show()
@@ -323,7 +340,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ).T
     ).iloc[0].unstack().reindex(param_names).drop(['Baseline'])
     num_deaths_averted.to_csv(results_folder / 'num_deaths_averted.csv')
-
 
     pc_deaths_averted = 100.0 * summarize(
         -1.0 *
@@ -362,7 +378,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig, ax = do_bar_plot_with_ci(
         num_deaths_averted.clip(lower=0.0),
         annotations=[
-            f"{round(row['mean'], 0)}% ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
+            f"{round(row['median'], 0)}% ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
             for _, row in pc_deaths_averted.clip(lower=0.0).iterrows()
         ]
     )
@@ -378,7 +394,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig, ax = do_bar_plot_with_ci(
         (num_dalys_averted / 1e6).clip(lower=0.0),
         annotations=[
-            f"{round(row['mean'])}% ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
+            f"{round(row['median'])}% ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
             for _, row in pc_dalys_averted.clip(lower=0.0).iterrows()
         ]
     )
@@ -423,10 +439,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         key="dalys_by_wealth_stacked_by_age_and_time",
         custom_generate_series=get_total_num_dalys_by_label,
         do_scaling=True,
-    ).pipe(set_param_names_as_column_index_level_0), only_mean=True
+    ).pipe(set_param_names_as_column_index_level_0), only_median=True
     )
     summarise_total_num_dalys_by_label_results.to_csv(results_folder / 'summarise_total_num_dalys_by_label_results.csv')
-
 
     pc_dalys_averted_by_label = 100.0 * summarize(
         -1.0 *
@@ -439,13 +454,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     )
     pc_dalys_averted_by_label.to_csv(results_folder / 'pc_dalys_averted_by_label.csv')
 
-
     total_num_dalys_by_label_results_averted_vs_baseline = summarize(
         -1.0 * find_difference_relative_to_comparison_series_dataframe(
             total_num_dalys_by_label_results,
             comparison='Baseline'
         ),
-        only_mean=True
+        only_median=True
     )
     total_num_dalys_by_label_results_averted_vs_baseline.to_csv(results_folder / 'total_num_dalys_by_label_results_averted_vs_baseline.csv')
 
@@ -462,9 +476,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         return reordered_df
 
     # Check that when we sum across the causes, we get the same total as calculated when we didn't split by cause.
+    # this assertion fails since moving from mean to median
     assert (
         (total_num_dalys_by_label_results_averted_vs_baseline.sum(axis=0).sort_index()
-         - num_dalys_averted['mean'].sort_index()
+         - num_dalys_averted['median'].sort_index()
          ) < 1e-6
     ).all()
 
@@ -663,7 +678,94 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         plt.close(fig)
 
 
-    data_for_plot = pc_dalys_averted_by_label.loc[:, pc_dalys_averted_by_label.columns.get_level_values(1) == 'mean']
+    # Define  custom x_labels and shared_labels
+    x_labels = [
+        'FULL HSS',
+        'WITHOUT \nRSSH',
+        'WITH \nRSSH',
+        'WITHOUT \nRSSH',
+        'WITH \nRSSH',
+        'WITHOUT \nRSSH',
+        'WITH \nRSSH',
+        'WITHOUT \nRSSH',
+        'WITH \nRSSH',
+    ]
+    shared_labels = [
+        '',  # No shared label for the first bar
+        'HIV Scale-up',  # Shared label for the second and third bars
+        '',  # Shared label for the second and third bars
+        'TB Scale-up',  # Shared label for the fourth and fifth bars
+        '',  # Shared label for the fourth and fifth bars
+        'Malaria Scale-up',  # Shared label for the sixth and seventh bars
+        '',  # Shared label for the sixth and seventh bars
+        'HTM Scale-up',  # Shared label for the eighth and ninth bars
+        '',  # Shared label for the eighth and ninth bars
+    ]
+
+    def plot_percentage_dalys_averted(percentage_df, x_labels, shared_labels):
+        """
+        Plots the percentage of dalys averted by cause for each draw.
+
+        Parameters:
+        percentage_df (pd.DataFrame): DataFrame containing percentage values with MultiIndex (draw, label).
+        x_labels (list): Custom labels for the x-axis.
+        shared_labels (list): Shared labels for groups of x-axis categories.
+        """
+        combined_plot_name = 'Percentage DALYS Averted vs Baseline'
+        # Reset index to convert MultiIndex DataFrame to a suitable format for plotting
+        percentage_data = percentage_df.reset_index()
+
+        # Melt the DataFrame for easier plotting
+        percentage_data = percentage_data.melt(id_vars=percentage_data.columns[0], var_name='draw',
+                                               value_name='Percentage')
+
+        # Reorder the draws according to the color_map keys
+        draw_order = list(color_map.keys())[1:]  # Exclude the first label
+        percentage_data['draw'] = pd.Categorical(percentage_data['draw'], categories=draw_order, ordered=True)
+
+        # Sort the DataFrame based on the draw category
+        percentage_data.sort_values('draw', inplace=True)
+
+        # Get colors for causes using Set1 palette
+        cause_colors = sns.color_palette('Set1', 4)  # We have 4 categories
+        cause_color_map = {label: cause_colors[i] for i, label in enumerate(percentage_data['index'].unique())}
+
+        # Create a bar plot
+        plt.figure(figsize=(12, 6))
+        sns.barplot(data=percentage_data, x='draw', y='Percentage', hue='index', palette=cause_color_map)
+
+        # Add vertical dashed grey lines between draws
+        vertical_lines = [1, 3, 5, 7, 9]  # Positions for vertical lines
+        for line in vertical_lines:
+            plt.axvline(x=line - 0.5, color='grey', linestyle='--', linewidth=1)
+
+        # Set y-axis limit
+        plt.ylim(0, 110)
+
+        # Rotate x-axis labels for better visibility
+        plt.xticks(rotation=0)
+
+        # Set custom x-axis labels
+        plt.xticks(ticks=range(len(x_labels)), labels=x_labels)
+
+        for i, label in enumerate(shared_labels):
+            if label:  # Only add text if there's a label
+                plt.text(i, 105, label, ha='left', va='bottom', fontsize=10, rotation=0,
+                        color='black')
+
+
+        # Add labels and title
+        plt.xlabel('')
+        plt.ylabel('Percentage of DALYs Averted')
+        plt.title(combined_plot_name)
+        plt.legend(title='Cause', bbox_to_anchor=(1.05, 1), loc='upper left')  # Legend outside the plot
+
+        # Show the plot
+        plt.tight_layout()
+        plt.savefig(make_graph_file_name(combined_plot_name.replace(' ', '_').replace(',', '')))
+        plt.show()
+
+    data_for_plot = pc_dalys_averted_by_label.loc[:, pc_dalys_averted_by_label.columns.get_level_values(1) == 'median']
     data_for_plot.columns = data_for_plot.columns.droplevel(1)
     data_for_plot = sort_order_of_columns(data_for_plot)
     filtered_df = data_for_plot.drop(
@@ -672,8 +774,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             'Hiv/Tb Programs Scale-up WITH HSS PACKAGE'
         ]
     )
-    plot_pc_DALYS_combined_programs_scale_up(filtered_df)
-
+    plot_percentage_dalys_averted(filtered_df, x_labels, shared_labels)
 
 
     def get_num_dalys_by_year(_df):
@@ -741,6 +842,175 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         plt.close(fig)
 
 
+    # get numbers of deaths by cause
+    def summarise_deaths_by_cause(results_folder):
+        """ returns mean deaths for each year of the simulation
+        values are aggregated across the runs of each draw
+        for the specified cause
+        """
+
+        def get_num_deaths_by_label(_df):
+            """Return total number of Deaths by label within the TARGET_PERIOD
+            values are summed for all ages
+            df returned: rows=COD, columns=draw
+            """
+            return _df \
+                .loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)] \
+                .groupby(_df['label']) \
+                .size()
+
+        num_deaths_by_label = extract_results(
+            results_folder,
+            module="tlo.methods.demography",
+            key="death",
+            custom_generate_series=get_num_deaths_by_label,
+            do_scaling=True,
+        ).pipe(set_param_names_as_column_index_level_0)
+
+        causes = {
+            'AIDS': 'HIV/AIDS',
+            'TB (non-AIDS)': 'TB',
+            'Malaria': 'Malaria',
+            '': 'Other',  # defined in order to use this dict to determine ordering of the causes in output
+        }
+
+        causes_relabels = num_deaths_by_label.index.map(causes).fillna('Other')
+
+        grouped_deaths = num_deaths_by_label.groupby(causes_relabels).sum()
+        # Reorder based on the causes keys that are in the grouped data
+        ordered_causes = [cause for cause in causes.values() if cause in grouped_deaths.index]
+        test = grouped_deaths.reindex(ordered_causes)
+
+        return summarize(test)
+
+    num_deaths_by_cause = summarise_deaths_by_cause(results_folder)
+
+    def calculate_deaths_averted(_df):
+        """Calculate the number of deaths averted compared to the Baseline for each draw."""
+
+        # Extract the median values
+        median_values = _df.xs('median', level=1, axis=1)
+
+        # Get the median values for the 'Baseline' draw
+        baseline_values = median_values['Baseline']
+
+        # Calculate diff in number of deaths
+        deaths_diff = median_values.subtract(baseline_values, axis=0)
+
+        # Multiply by -1 to get deaths averted
+        return deaths_diff * -1
+
+    # Use the function with your data
+    deaths_averted_by_cause = calculate_deaths_averted(num_deaths_by_cause)
+    deaths_averted_by_cause.to_csv(results_folder / 'deaths_averted_by_cause.csv')
+
+    def calculate_percentage_deaths_averted(_df):
+        """Calculate the percentage of deaths averted compared to the Baseline for each draw."""
+
+        # Extract the median values
+        median_values = _df.xs('median', level=1, axis=1)
+        baseline_values = median_values['Baseline']
+
+        # Calculate diff in number of deaths
+        deaths_diff = median_values.subtract(baseline_values, axis=0)
+
+        # Multiply by -1 to get deaths averted
+        percentage_deaths_averted = -1 * (deaths_diff.iloc[:, 1:].divide(baseline_values, axis=0) * 100)
+
+        return percentage_deaths_averted
+
+    percentage_deaths_averted = calculate_percentage_deaths_averted(num_deaths_by_cause)
+    percentage_deaths_averted.to_csv(results_folder / 'percentage_deaths_averted.csv')
+
+    def plot_percentage_deaths_averted(percentage_df, x_labels, shared_labels):
+        """
+        Plots the percentage of deaths averted by cause for each draw.
+
+        Parameters:
+        percentage_df (pd.DataFrame): DataFrame containing percentage values with MultiIndex (draw, label).
+        x_labels (list): Custom labels for the x-axis.
+        shared_labels (list): Shared labels for groups of x-axis categories.
+        """
+        # Reset index to convert MultiIndex DataFrame to a suitable format for plotting
+        percentage_data = percentage_df.reset_index()
+
+        # Melt the DataFrame for easier plotting
+        percentage_data = percentage_data.melt(id_vars='label', var_name='draw', value_name='Percentage')
+        # Reorder the draws according to the color_map keys
+        draw_order = list(color_map.keys())[1:]  # Exclude the first label
+        percentage_data['draw'] = pd.Categorical(percentage_data['draw'], categories=draw_order, ordered=True)
+
+        # Sort the DataFrame based on the draw category
+        percentage_data.sort_values('draw', inplace=True)
+
+        # Get colors for causes using Set1 palette
+        cause_colors = sns.color_palette('Set1', 4)  # We have 4 categories
+        cause_color_map = {label: cause_colors[i] for i, label in enumerate(percentage_data['label'].unique())}
+
+        # Create a bar plot
+        plt.figure(figsize=(12, 6))
+        sns.barplot(data=percentage_data, x='draw', y='Percentage', hue='label', palette=cause_color_map)
+
+        # Add vertical dashed grey lines between draws
+        vertical_lines = [1, 3, 5, 7, 9]  # Positions for vertical lines
+        for line in vertical_lines:
+            plt.axvline(x=line - 0.5, color='grey', linestyle='--', linewidth=1)
+
+        # Set y-axis limit
+        plt.ylim(0, 100)
+
+        # Rotate x-axis labels for better visibility
+        plt.xticks(rotation=0)
+
+        # Set custom x-axis labels
+        plt.xticks(ticks=range(len(x_labels)), labels=x_labels)
+
+        for i, label in enumerate(shared_labels):
+            if label:  # Only add text if there's a label
+                plt.text(i, 95, label, ha='left', va='bottom', fontsize=10, rotation=0,
+                        color='black')
+
+
+        # Add labels and title
+        plt.xlabel('')
+        plt.ylabel('Percentage of Deaths Averted')
+        plt.title('Percentage of Deaths Averted by Cause')
+        plt.legend(title='Cause', bbox_to_anchor=(1.05, 1), loc='upper left')  # Legend outside the plot
+
+        # Show the plot
+        plt.tight_layout()
+        plt.show()
+
+    # Define your custom x_labels and shared_labels
+    x_labels = [
+        'FULL HSS',
+        'WITHOUT \nRSSH',
+        'WITH \nRSSH',
+        'WITHOUT \nRSSH',
+        'WITH \nRSSH',
+        'WITHOUT \nRSSH',
+        'WITH \nRSSH',
+        'WITHOUT \nRSSH',
+        'WITH \nRSSH',
+    ]
+    shared_labels = [
+        '',  # No shared label for the first bar
+        'HIV Scale-up',  # Shared label for the second and third bars
+        '',  # Shared label for the second and third bars
+        'TB Scale-up',  # Shared label for the fourth and fifth bars
+        '',  # Shared label for the fourth and fifth bars
+        'Malaria Scale-up',  # Shared label for the sixth and seventh bars
+        '',  # Shared label for the sixth and seventh bars
+        'HTM Scale-up',  # Shared label for the eighth and ninth bars
+        '',  # Shared label for the eighth and ninth bars
+    ]
+
+    filtered_percentage_deaths_averted = percentage_deaths_averted.drop(
+        columns=['Hiv/Tb Programs Scale-up WITHOUT HSS PACKAGE', 'Hiv/Tb Programs Scale-up WITH HSS PACKAGE']
+    )
+    plot_percentage_deaths_averted(filtered_percentage_deaths_averted, x_labels, shared_labels)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("results_folder", type=Path)  # outputs/horizontal_and_vertical_programs-2024-05-16
@@ -751,3 +1021,192 @@ if __name__ == "__main__":
         output_folder=args.results_folder,
         resourcefilepath=Path('./resources')
     )
+
+
+# tmp checks
+log_BASELINE = load_pickled_dataframes(results_folder, draw=0, run=0)
+log_HTM_WITHOUT_HSS = load_pickled_dataframes(results_folder, draw=10, run=0)
+
+summarise_hiv_prev = summarize(extract_results(
+    results_folder,
+    module="tlo.methods.hiv",
+    key="summary_inc_and_prev_for_adults_and_children_and_fsw",
+    column="hiv_prev_adult_1549",
+    do_scaling=False,
+).pipe(set_param_names_as_column_index_level_0), only_median=True)
+summarise_hiv_prev.to_csv(results_folder / 'summarise_hiv_prev.csv')
+
+summarise_hiv_inc = summarize(extract_results(
+    results_folder,
+    module="tlo.methods.hiv",
+    key="summary_inc_and_prev_for_adults_and_children_and_fsw",
+    column="hiv_adult_inc_15plus",
+    do_scaling=False,
+).pipe(set_param_names_as_column_index_level_0), only_median=True)
+summarise_hiv_inc.to_csv(results_folder / 'summarise_hiv_inc.csv')
+
+summarise_hiv_tx = summarize(extract_results(
+    results_folder,
+    module="tlo.methods.hiv",
+    key="hiv_program_coverage",
+    column="art_coverage_adult_VL_suppression",
+    do_scaling=False,
+).pipe(set_param_names_as_column_index_level_0), only_median=True)
+summarise_hiv_tx.to_csv(results_folder / 'summarise_hiv_tx.csv')
+
+
+summarise_hiv_tx_num = summarize(extract_results(
+    results_folder,
+    module="tlo.methods.hiv",
+    key="hiv_program_coverage",
+    column="n_on_art_total",
+    do_scaling=False,
+).pipe(set_param_names_as_column_index_level_0), only_median=True)
+summarise_hiv_tx_num.to_csv(results_folder / 'summarise_hiv_tx_num.csv')
+
+
+########################################
+# extract numbers of appts
+# years_of_simulation = 20
+#
+# def summarise_appt_outputs(df_list, treatment_id):
+#     """ summarise the treatment counts across all draws/runs for one results folder
+#         requires a list of dataframes with all treatments listed with associated counts
+#     """
+#     number_runs = len(df_list)
+#     number_HSI_by_run = pd.DataFrame(index=np.arange(years_of_simulation), columns=np.arange(number_runs))
+#     column_names = [
+#         treatment_id + "_mean",
+#         treatment_id + "_lower",
+#         treatment_id + "_upper"]
+#     out = pd.DataFrame(columns=column_names)
+#
+#     for i in range(number_runs):
+#         if treatment_id in df_list[i].columns:
+#             number_HSI_by_run.iloc[:, i] = pd.Series(df_list[i].loc[:, treatment_id])
+#
+#     out.iloc[:, 0] = number_HSI_by_run.quantile(q=0.5, axis=1)
+#     out.iloc[:, 1] = number_HSI_by_run.quantile(q=0.025, axis=1)
+#     out.iloc[:, 2] = number_HSI_by_run.quantile(q=0.975, axis=1)
+#
+#     return out
+#
+# def extract_appt_details(results_folder, module, key, column, draw):
+#     """
+#     extract list of dataframes with all treatments listed with associated counts
+#     """
+#
+#     info = get_scenario_info(results_folder)
+#
+#     df_list = list()
+#
+#     for run in range(info['runs_per_draw']):
+#         df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
+#
+#         new = df[['date', column]].copy()
+#         df_list.append(pd.DataFrame(new[column].to_list()))
+#
+#     # for column in each df, get median
+#     # list of treatment IDs
+#     list_tx_id = list(df_list[0].columns)
+#     results = pd.DataFrame(index=np.arange(years_of_simulation))
+#
+#     # produce a list of numbers of every treatment_id
+#     for treatment_id in list_tx_id:
+#         tmp = summarise_appt_outputs(df_list, treatment_id)
+#
+#         # append output to dataframe
+#         results = results.join(tmp)
+#
+#     return results
+
+
+
+def sum_appt_by_id(results_folder, module, key, column, draw):
+    """
+    sum occurrences of each treatment_id over the simulation period for every run within a draw
+    """
+
+    info = get_scenario_info(results_folder)
+    # create emtpy dataframe
+    results = pd.DataFrame()
+
+    for run in range(info['runs_per_draw']):
+        df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
+
+        new = df[['date', column]].copy()
+        tmp = pd.DataFrame(new[column].to_list())
+
+        # sum each column to get total appts of each type over the simulation
+        tmp2 = pd.DataFrame(tmp.sum())
+        # add results to dataframe for output
+        results = pd.concat([results, tmp2], axis=1)
+
+    return results
+
+
+module = "tlo.methods.healthsystem.summary"
+key = 'Never_ran_HSI_Event'
+column = 'TREATMENT_ID'
+
+baseline_never_ran_hsi = sum_appt_by_id(results_folder,
+                      module=module, key=key, column=column, draw=0)
+baseline_never_ran_hsi['mean'] = baseline_never_ran_hsi.mean(axis=1)
+
+hiv_scaleup_WITHOUT_HSS_never_ran_hsi = sum_appt_by_id(results_folder,
+                      module=module, key=key, column=column, draw=2)
+hiv_scaleup_WITHOUT_HSS_never_ran_hsi['mean'] = hiv_scaleup_WITHOUT_HSS_never_ran_hsi.mean(axis=1)
+
+htm_scaleup_WITHOUT_HSS_never_ran_hsi = sum_appt_by_id(results_folder,
+                      module=module, key=key, column=column, draw=10)
+htm_scaleup_WITHOUT_HSS_never_ran_hsi['mean'] = htm_scaleup_WITHOUT_HSS_never_ran_hsi.mean(axis=1)
+
+combined_df = pd.DataFrame({
+    'Baseline': baseline_never_ran_hsi['mean'],
+    'HIV Scale-up WITHOUT HSS': hiv_scaleup_WITHOUT_HSS_never_ran_hsi['mean'],
+    'HTM Scale-up WITHOUT HSS': htm_scaleup_WITHOUT_HSS_never_ran_hsi['mean']
+})
+
+# Display the combined DataFrame
+combined_df.head()
+combined_df.to_csv(results_folder / 'hsi_never_ran.csv')
+
+
+
+
+module = "tlo.methods.healthsystem.summary"
+key = 'HSI_Event'
+column = 'TREATMENT_ID'
+
+baseline_hsi = sum_appt_by_id(results_folder,
+                      module=module, key=key, column=column, draw=0)
+baseline_hsi['mean'] = baseline_hsi.mean(axis=1)
+
+hiv_scaleup_WITHOUT_HSS_hsi = sum_appt_by_id(results_folder,
+                      module=module, key=key, column=column, draw=2)
+hiv_scaleup_WITHOUT_HSS_hsi['mean'] = hiv_scaleup_WITHOUT_HSS_hsi.mean(axis=1)
+
+mal_scaleup_WITHOUT_HSS_hsi = sum_appt_by_id(results_folder,
+                      module=module, key=key, column=column, draw=8)
+mal_scaleup_WITHOUT_HSS_hsi['mean'] = mal_scaleup_WITHOUT_HSS_hsi.mean(axis=1)
+
+
+htm_scaleup_WITHOUT_HSS_hsi = sum_appt_by_id(results_folder,
+                      module=module, key=key, column=column, draw=10)
+htm_scaleup_WITHOUT_HSS_hsi['mean'] = htm_scaleup_WITHOUT_HSS_hsi.mean(axis=1)
+
+combined_df = pd.DataFrame({
+    'Baseline': baseline_hsi['mean'],
+    'HIV Scale-up WITHOUT HSS': hiv_scaleup_WITHOUT_HSS_hsi['mean'],
+    'Malaria Scale-up WITHOUT HSS': mal_scaleup_WITHOUT_HSS_hsi['mean'],
+    'HTM Scale-up WITHOUT HSS': htm_scaleup_WITHOUT_HSS_hsi['mean']
+})
+
+# Display the combined DataFrame
+combined_df.head()
+combined_df.to_csv(results_folder / 'hsi_ran.csv')
+
+
+
+
+

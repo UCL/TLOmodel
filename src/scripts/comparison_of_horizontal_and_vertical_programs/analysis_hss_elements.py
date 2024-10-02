@@ -1,5 +1,11 @@
-"""Produce plots to show the impact each the healthcare system (overall health impact) when running under different
-scenarios (scenario_impact_of_healthsystem.py)"""
+"""
+Produce plots to show the impact each the healthcare system (overall health impact) when running under different
+scenarios (scenario_impact_of_healthsystem.py)
+
+results for FCDO and GF presentations Sept 2024:
+hss_elements-2024-09-04T142900Z
+
+"""
 
 import argparse
 import textwrap
