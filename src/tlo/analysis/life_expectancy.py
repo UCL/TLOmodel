@@ -269,7 +269,8 @@ def _calculate_probability_of_premature_death_for_single_run(
 ) -> Dict[str, float]:
     """
     For a single run, estimate the probability of dying before the defined premature age for males and females.
-    Returns: Dict (keys by "M" and "F" for the sex, values the estimated probability of dying before the defined premature age).
+    Returns: Dict (keys by "M" and "F" for the sex, values the estimated probability of dying before the defined
+    premature age).
     """
     probability_of_premature_death = dict()
 

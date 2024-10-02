@@ -10,8 +10,6 @@ from tlo.analysis.life_expectancy import (
     get_life_expectancy_estimates,
     get_probability_of_premature_death,
 )
-from tlo.analysis.utils import extract_results
-
 
 def test_get_life_expectancy():
     """Use `get_life_expectancy_estimates` to generate estimate of life-expectancy from the dummy simulation data."""
@@ -45,10 +43,11 @@ def test_probability_premature_death(tmpdir, age_before_which_death_is_defined_a
     """
     Test the calculation of the probability of premature death from a simulated cohort.
 
-    This function loads results from a dummy cohort (N = 100, with 37 F and 63 M) simulation where all individuals start at age 0.
-    The simulation was then run for 70 years (2010 - 2080), during which individuals could die but nobody could be born.
-    In this dummy data set, 6 F die and 23 M die prematurely, giving a probability of premature death as 0.16 and 0.37, respectively.
-    The premature deaths amongst these individuals is then the number that have died before the age of 70 (default value).
+    This function loads results from a dummy cohort (N = 100, with 37 F and 63 M) simulation where all individuals start
+    at age 0. The simulation was then run for 70 years (2010 - 2080), during which individuals could die but nobody
+    could be born. In this dummy data set, 6 F die and 23 M die prematurely, giving a probability of premature death as
+    0.16 and 0.37, respectively. The premature deaths amongst these individuals is then the number that have died
+    before the age of 70 (default value).
     This test uses the calculates the probability of premature death separately for males and females using the
     data from this simulated run and the function get_probability_of_premature_death.
     It then compares these simulated probabilities against the total number of deaths before the age of 70 (default)
