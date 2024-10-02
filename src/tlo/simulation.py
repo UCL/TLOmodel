@@ -277,7 +277,7 @@ class Simulation:
             if self.generate_event_chains:
                 # Only print event if it belongs to modules of interest and if it is not in the list of events to ignore
                 if (event.module in self.generate_event_chains_modules_of_interest) and all(sub not in str(event) for sub in self.generate_event_chains_ignore_events):
-                    go_ahead = True
+                    print_chains = True
                     if event.target != self.population:
                         row = self.population.props.iloc[[event.target]]
                         row['person_ID'] = event.target
@@ -290,33 +290,32 @@ class Simulation:
                     
             self.fire_single_event(event, date)
             
-            if go_ahead:
-                if go_ahead == True:
-                    if event.target != self.population:
-                        row = self.population.props.iloc[[event.target]]
-                        row['person_ID'] = event.target
-                        row['event'] = event
-                        row['event_date'] = date
-                        row['when'] = 'After'
-                        self.event_chains = pd.concat([self.event_chains, row], ignore_index=True)
-                    else:
-                        df_after = self.population.props.copy()
-                        change = df_before.compare(df_after)
-                        if ~change.empty:
-                            indices = change.index
-                            new_rows_before = df_before.loc[indices]
-                            new_rows_before['person_ID'] = new_rows_before.index
-                            new_rows_before['event'] = event
-                            new_rows_before['event_date'] = date
-                            new_rows_before['when'] = 'Before'
-                            new_rows_after = df_after.loc[indices]
-                            new_rows_after['person_ID'] = new_rows_after.index
-                            new_rows_after['event'] = event
-                            new_rows_after['event_date'] = date
-                            new_rows_after['when'] = 'After'
+            if print_chains:
+                if event.target != self.population:
+                    row = self.population.props.iloc[[event.target]]
+                    row['person_ID'] = event.target
+                    row['event'] = event
+                    row['event_date'] = date
+                    row['when'] = 'After'
+                    self.event_chains = pd.concat([self.event_chains, row], ignore_index=True)
+                else:
+                    df_after = self.population.props.copy()
+                    change = df_before.compare(df_after)
+                    if ~change.empty:
+                        indices = change.index
+                        new_rows_before = df_before.loc[indices]
+                        new_rows_before['person_ID'] = new_rows_before.index
+                        new_rows_before['event'] = event
+                        new_rows_before['event_date'] = date
+                        new_rows_before['when'] = 'Before'
+                        new_rows_after = df_after.loc[indices]
+                        new_rows_after['person_ID'] = new_rows_after.index
+                        new_rows_after['event'] = event
+                        new_rows_after['event_date'] = date
+                        new_rows_after['when'] = 'After'
 
-                            self.event_chains = pd.concat([self.event_chains,new_rows_before], ignore_index=True)
-                            self.event_chains = pd.concat([self.event_chains,new_rows_after], ignore_index=True)
+                        self.event_chains = pd.concat([self.event_chains,new_rows_before], ignore_index=True)
+                        self.event_chains = pd.concat([self.event_chains,new_rows_after], ignore_index=True)
 
         # The simulation has ended.
         if self.show_progress_bar:
