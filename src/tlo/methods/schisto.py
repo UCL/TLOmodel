@@ -1758,16 +1758,6 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         ).size()
         alive.index.rename(['district_of_residence', 'age_group'], inplace=True)
 
-        # prevalence = {
-        #     'number_infected': infected,
-        #     'number_alive': alive,
-        # }
-
-        # logger.info(
-        #     key=f'infection_status',
-        #     data=flatten_multi_index_series_into_dict_for_logging(prevalence),
-        #     description='Counts of infection status with this species by age-group and district.'
-        # )
         logger.info(
             key=f'number_infected_any_species',
             description='Counts of infection status with this species by age-group and district.',
