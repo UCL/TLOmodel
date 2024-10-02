@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Dict, List, Literal, Optional, Tuple, Union
 
 import numpy as np
-from psutil import disk_io_counters
+from psutil import Process, disk_io_counters
 from pyinstrument import Profiler
 from pyinstrument.renderers import ConsoleRenderer, HTMLRenderer
 from pyinstrument.session import Session
@@ -119,6 +119,29 @@ def disk_statistics(
     }
 
 
+def memory_statistics() -> Dict[str, float]:
+    """
+    Extract memory usage statistics in current process using `psutil`.
+    Statistics are returned as a dictionary.
+    
+    Key / value pairs are:
+    memory_rss_MiB: float
+        Resident set size in mebibytes. The non-swapped physical memory the process has used.
+    memory_vms_MiB: float
+        Virtual memory size in mebibytes. The total amount of virtual memory used by the process.
+    memory_uss_MiB: float
+        Unique set size in mebibytes. The memory which is unique to a process and which would be freed if the process
+        was terminated right now
+    """
+    process = Process()
+    memory_info = process.memory_full_info()
+    return {
+        "memory_rss_MiB": memory_info.rss / 2**20,
+        "memory_vms_MiB": memory_info.vms / 2**20,
+        "memory_uss_MiB": memory_info.uss / 2**20,
+    }
+
+
 def profiling_session_statistics(
     session: Session,
 ) -> Dict[str, float]:
@@ -168,6 +191,8 @@ def record_run_statistics(
         **profiling_session_statistics(profiling_session),
         # Disk input/output statistics
         **disk_statistics(disk_usage),
+        # Process memory statistics
+        **memory_statistics(),
         # Statistics from end end-state of the simulation
         **simulation_statistics(completed_sim),
         # User-defined additional stats (if any)
