@@ -306,7 +306,7 @@ def get_probability_of_premature_death(
     results_folder: Path,
     target_period: Tuple[datetime.date, datetime.date],
     summary: bool = True,
-    age_before_which_death_is_defined_as_premature: int = 70  # defined in Norheim et al (2015)
+    age_before_which_death_is_defined_as_premature: int = 70
 ) -> pd.DataFrame:
     """
     Produces sets of probability of premature death for each draw/run.
@@ -316,6 +316,7 @@ def get_probability_of_premature_death(
     - target period (tuple of dates): Declare the date range (inclusively) in which the probability is to be estimated.
     - summary (bool): Declare whether to return a summarized value (mean with 95% uncertainty intervals)
         or return the estimate for each draw/run.
+    - age_before_which_death_is_defined_as_premature (int): proposed in defined in Norheim et al.(2015) to be 70 years
 
     Returns:
     - pd.DataFrame: The DataFrame with the probability estimates for every draw/run in the results folder;
