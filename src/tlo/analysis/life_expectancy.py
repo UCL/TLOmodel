@@ -262,17 +262,18 @@ def get_life_expectancy_estimates(
         return summarize(results=output, only_mean=False, collapse_columns=False)
 
 
-def _calculate_probability_of_premature_death_for_single_run(AGE_BEFORE_WHICH_DEATH_IS_DEFINED_AS_PREMATURE: int,
-                                                             _person_years_at_risk: pd.Series,
-                                                             _number_of_deaths_in_interval: pd.Series
-                                                             ) -> Dict[str, float]:
+def _calculate_probability_of_premature_death_for_single_run(
+    age_before_which_death_is_defined_as_premature: int,
+    person_years_at_risk: pd.Series,
+    number_of_deaths_in_interval: pd.Series
+) -> Dict[str, float]:
     """
     For a single run, estimate the probability of dying before the defined premature age for males and females.
     Returns: Dict (keys by "M" and "F" for the sex, values the estimated probability of dying before the defined premature age).
     """
     probability_of_premature_death = dict()
 
-    age_group_labels = _person_years_at_risk.index.get_level_values('age_group').unique()
+    age_group_labels = person_years_at_risk.index.get_level_values('age_group').unique()
     interval_width = [
         5 if '90' in interval else int(interval.split('-')[1]) - int(interval.split('-')[0]) + 1
         if '-' in interval else 1 for interval in age_group_labels.categories
@@ -284,15 +285,15 @@ def _calculate_probability_of_premature_death_for_single_run(AGE_BEFORE_WHICH_DE
         probability_of_dying_in_interval, death_rate_in_interval = calculate_probability_of_dying(interval_width,
                                                                                                   fraction_of_last_age_survived,
                                                                                                   sex,
-                                                                                                  _person_years_at_risk,
-                                                                                                  _number_of_deaths_in_interval)
+                                                                                                  person_years_at_risk,
+                                                                                                  number_of_deaths_in_interval)
 
         # Calculate cumulative probability of dying before the defined premature age
         cumulative_probability_of_dying = 0
         proportion_alive_at_start_of_interval = 1.0
 
         for age_group, prob in probability_of_dying_in_interval.items():
-            if int(age_group.split('-')[0]) >= AGE_BEFORE_WHICH_DEATH_IS_DEFINED_AS_PREMATURE:
+            if int(age_group.split('-')[0]) >= age_before_which_death_is_defined_as_premature:
                 break
             cumulative_probability_of_dying += proportion_alive_at_start_of_interval * prob
             proportion_alive_at_start_of_interval *= (1 - prob)
@@ -331,9 +332,9 @@ def get_probability_of_premature_death(
     for draw in range(info['number_of_draws']):
         for run in range(info['runs_per_draw']):
             prob_for_each_draw_and_run[(draw, run)] = _calculate_probability_of_premature_death_for_single_run(
-                age_before_which_death_is_defined_as_premature,
-                _number_of_deaths_in_interval=deaths[(draw, run)],
-                _person_years_at_risk=person_years[(draw, run)]
+                age_before_which_death_is_defined_as_premature=age_before_which_death_is_defined_as_premature,
+                number_of_deaths_in_interval=deaths[(draw, run)],
+                person_years_at_risk=person_years[(draw, run)]
             )
 
     output = pd.DataFrame.from_dict(prob_for_each_draw_and_run)
