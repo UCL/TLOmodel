@@ -79,7 +79,6 @@ class SchistoScenarios(BaseScenario):
             'directory': './outputs',
             'custom_levels': {
                 '*': logging.WARNING,
-                "tlo.methods.hiv": logging.INFO,
                 "tlo.methods.enhanced_lifestyle": logging.INFO,
                 "tlo.methods.schisto": logging.INFO,
                 "tlo.methods.healthsystem.summary": logging.INFO,
@@ -117,23 +116,6 @@ class SchistoScenarios(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         if draw_number < len(self._scenarios):
             return list(self._scenarios.values())[draw_number]
-
-    # def draw_parameters(self, draw_number, rng):
-    #
-    #     # Determine indices for each parameter
-    #     coverage_index = draw_number % len(self.coverage_options)
-    #     target_group_index = (draw_number // len(self.coverage_options)) % len(self.target_group_options)
-    #     wash_index = (draw_number // (len(self.coverage_options) * len(self.target_group_options))) % len(self.wash_options)
-    #
-    #     return {
-    #         'Schisto': {
-    #             'mda_coverage': self.coverage_options[coverage_index],
-    #             'mda_target_group': self.target_group_options[target_group_index],
-    #             'mda_frequency_months': 12,
-    #             'scaleup_WASH': self.wash_options[wash_index],
-    #             'scaleup_WASH_start_year': 2025,
-    #         },
-    #     }
 
     def _get_scenarios(self) -> Dict[str, Dict]:
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
