@@ -5,6 +5,7 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.methods import Metadata
 from tlo.analysis.utils import parse_log_file
+from tlo.events import Event, IndividualScopeEventMixin
 
 
 logger = logging.getLogger(__name__)
@@ -63,9 +64,6 @@ class MaternalNewbornHealthCohort(Module):
         :param population: the population of individuals
         """
 
-        # TODO: CURRENT ISSUE - INDIVIDUALS IN THE POPULATION ARE SCHEDULED HSIs IN INITIALISE_POP/SIM BY OTHER MODULES,
-        #  THEIR PROPERTIES ARE THEN OVER WRITTEN BY THIS MODULE AND ITS CRASHING HSIs
-
         log_file = parse_log_file(
              '/Users/j_collins/PycharmProjects/TLOmodel/outputs/sejjj49@ucl.ac.uk/'
              'fullmodel_200k_cohort-2024-04-24T072206Z/0/0/fullmodel_200k_cohort__2024-04-24T072516.log',
@@ -88,6 +86,7 @@ class MaternalNewbornHealthCohort(Module):
         df.loc[population.index, 'date_of_last_pregnancy'] = self.sim.start_date
         df.loc[population.index, 'co_contraception'] = "not_using"
 
+
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
 
@@ -96,31 +95,17 @@ class MaternalNewbornHealthCohort(Module):
         It is a good place to add initial events to the event queue.
 
         """
-        pass
-        # # cohort_prop_df = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_PregnancyCohort.xlsx')
-        # from tlo.analysis.utils import parse_log_file, load_pickled_dataframes, get_scenario_outputs
-        #
-        # log_file = parse_log_file(
-        #      '/Users/j_collins/PycharmProjects/TLOmodel/outputs/sejjj49@ucl.ac.uk/'
-        #      'fullmodel_200k_cohort-2024-04-24T072206Z/0/0/fullmodel_200k_cohort__2024-04-24T072516.log',
-        #      level=logging.DEBUG)['tlo.methods.contraception']
-        #
-        # all_pregnancies = log_file['properties_of_pregnant_person'].loc[
-        #     log_file['properties_of_pregnant_person'].date.dt.year == 2024].drop(columns=['date'])
-        # all_pregnancies.index = [x for x in range(len(all_pregnancies))]
-        #
-        # preg_pop = all_pregnancies.loc[0:(len(self.sim.population.props))-1]
-        #
-        # props_dtypes = self.sim.population.props.dtypes
-        # preg_pop_final = preg_pop.astype(props_dtypes.to_dict())
-        # preg_pop_final.index.name = 'person'
-        #
-        # self.sim.population.props = preg_pop_final
-        #
-        # df = self.sim.population.props
-        # population = df.loc[df.is_alive]
-        # df.loc[population.index, 'date_of_last_pregnancy'] = sim.start_date
-        # df.loc[population.index, 'co_contraception'] = "not_using"
+        df = self.sim.population.props
+
+        sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
+
+        for item in self.sim.event_queue.queue:
+            if isinstance(item[3], IndividualScopeEventMixin):
+                self.sim.event_queue.queue.remove(item)
+
+        for person in df.index:
+                self.sim.modules['Labour'].set_date_of_labour(person)
+
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
