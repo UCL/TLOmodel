@@ -2033,9 +2033,9 @@ class HealthSystem(Module):
                     assert event.facility_info is not None, \
                         f"Cannot run HSI {event.TREATMENT_ID} without facility_info being defined."
 
-                    go_ahead = False
-                    if (event.module == self.sim.modules['Tb'] or event.module == self.sim.modules['Hiv']):
-                        go_ahead = True
+                    print_chains = False
+                    if event.module in self.sim.generate_event_chains_modules_of_interest and all(sub not in str(event) for sub in self.sim.generate_event_chains_ignore_events):
+                        print_chains = True
                         row = self.sim.population.props.iloc[[event.target]]
                         row['person_ID'] = event.target
                         row['event'] = event
@@ -2046,7 +2046,7 @@ class HealthSystem(Module):
                     # Run the HSI event (allowing it to return an updated appt_footprint)
                     actual_appt_footprint = event.run(squeeze_factor=squeeze_factor)
                     
-                    if go_ahead:
+                    if print_chains:
                         row = self.sim.population.props.iloc[[event.target]]
                         row['person_ID'] = event.target
                         row['event'] = event

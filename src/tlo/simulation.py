@@ -63,7 +63,9 @@ class Simulation:
         self.date = self.start_date = start_date
         self.modules = OrderedDict()
         self.event_queue = EventQueue()
-        self.generate_data = None
+        self.generate_event_chains = None
+        self.generate_event_chains_modules_of_interest = []
+        self.generate_event_chains_ignore_events = []
         self.end_date = None
         self.output_file = None
         self.population: Optional[Population] = None
@@ -216,7 +218,7 @@ class Simulation:
         end = time.time()
         logger.info(key='info', data=f'make_initial_population() {end - start} s')
 
-    def simulate(self, *, end_date):
+    def simulate(self, *, end_date, generate_event_chains = False):
         """Simulation until the given end date
 
         :param end_date: when to stop simulating. Only events strictly before this
@@ -225,7 +227,11 @@ class Simulation:
         """
         start = time.time()
         self.end_date = end_date  # store the end_date so that others can reference it
-        self.generate_data = True # for now ensure we're always aiming to print data
+        self.generate_event_chains = generate_event_chains # for now ensure we're always aiming to print data
+        if self.generate_event_chains:
+            # For now keep these fixed, eventually they will be input from user
+            self.generate_event_chains_modules_of_interest = [self.modules['Tb'], self.modules['Hiv'], self.modules['CardioMetabolicDisorders']]
+            self.generate_event_chains_ignore_events = ['TbActiveCasePollGenerateData','HivPollingEventForDataGeneration','SimplifiedBirthsPoll', 'AgeUpdateEvent', 'HealthSystemScheduler']
 
         f = open('output.txt', mode='a')
         #df_event_chains = pd.DataFrame(columns= list(self.population.props.columns)+['person_ID'] + ['event'] + ['event_date'] + ['when'])
@@ -264,17 +270,13 @@ class Simulation:
                 self.event_chains.to_csv('output.csv', index=False)
                 break
 
-            #if event.target != self.population:
-            #    print("Event: ", event)
-            go_ahead = False
+
+            print_chains = False
             df_before = []
             
-            # Only print events relevant to modules of interest
-            # Do not want to compare before/after in births because it may expand the pop dataframe
-            print_output = True
-            if print_output:
-                if (event.module == self.modules['Tb'] or event.module == self.modules['Hiv']) and 'TbActiveCasePollGenerateData' not in str(event) and 'HivPollingEventForDataGeneration' not in str(event) and "SimplifiedBirthsPoll" not in str(event) and "AgeUpdateEvent" not in str(event) and "HealthSystemScheduler" not in str(event):
-                #if 'TbActiveCasePollGenerateData' not in str(event) and 'HivPollingEventForDataGeneration' not in str(event) and "SimplifiedBirthsPoll" not in str(event) and "AgeUpdateEvent" not in str(event):
+            if self.generate_event_chains:
+                # Only print event if it belongs to modules of interest and if it is not in the list of events to ignore
+                if (event.module in self.generate_event_chains_modules_of_interest) and all(sub not in str(event) for sub in self.generate_event_chains_ignore_events):
                     go_ahead = True
                     if event.target != self.population:
                         row = self.population.props.iloc[[event.target]]
@@ -288,7 +290,7 @@ class Simulation:
                     
             self.fire_single_event(event, date)
             
-            if print_output:
+            if go_ahead:
                 if go_ahead == True:
                     if event.target != self.population:
                         row = self.population.props.iloc[[event.target]]
@@ -299,18 +301,6 @@ class Simulation:
                         self.event_chains = pd.concat([self.event_chains, row], ignore_index=True)
                     else:
                         df_after = self.population.props.copy()
-                       # if not df_before.columns.equals(df_after.columns):
-                       #     print("Number of columns in pop dataframe", len(self.population.props.columns))
-                       #     print("Before", df_before.columns)
-                       #     print("After", df_after.columns#)
-                      #      exit(-1)
-                      #  if not df_before.index.equals(df_after.index):
-                       #     print("Number of indices in pop dataframe", len(self.population.props.index))
-                      #      print("----> ", event)
-                      #      print("Before", df_before.index#)
-                      #      print("After", df_after.index)
-                      #      exit(-1)
-                            
                         change = df_before.compare(df_after)
                         if ~change.empty:
                             indices = change.index
@@ -385,6 +375,13 @@ class Simulation:
         child_id = self.population.do_birth()
         for module in self.modules.values():
             module.on_birth(mother_id, child_id)
+        if self.generate_event_chains:
+            row = self.population.props.iloc[[child_id]]
+            row['person_ID'] = child_id
+            row['event'] = 'Birth'
+            row['event_date'] = self.date
+            row['when'] = 'After'
+            self.event_chains = pd.concat([self.event_chains, row], ignore_index=True)
         return child_id
 
     def find_events_for_person(self, person_id: int):

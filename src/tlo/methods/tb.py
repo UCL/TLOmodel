@@ -833,7 +833,7 @@ class Tb(Module):
         df["tb_date_ipt"] = pd.NaT
 
         # # ------------------ infection status ------------------ #
-        if self.sim.generate_data is False:
+        if self.sim.generate_event_chains is False:
             # WHO estimates of active TB for 2010 to get infected initial population
             # don't need to scale or include treated proportion as no-one on treatment yet
             inc_estimates = p["who_incidence_estimates"]
@@ -869,7 +869,7 @@ class Tb(Module):
         sim.schedule_event(TbRegularEvents(self), sim.date)
         sim.schedule_event(TbSelfCureEvent(self), sim.date)
 
-        if sim.generate_data is False:
+        if sim.generate_event_chains is False:
             sim.schedule_event(TbActiveCasePoll(self), sim.date + DateOffset(years=1))
         else:
             sim.schedule_event(TbActiveCasePollGenerateData(self), sim.date + DateOffset(days=0))

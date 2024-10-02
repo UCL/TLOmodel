@@ -315,7 +315,7 @@ class Demography(Module):
         # Launch the repeating event that will store statistics about the population structure
         sim.schedule_event(DemographyLoggingEvent(self), sim.date)
 
-        if sim.generate_data is False:
+        if sim.generate_event_chains is False:
             # Create (and store pointer to) the OtherDeathPoll and schedule first occurrence immediately
             self.other_death_poll = OtherDeathPoll(self)
             sim.schedule_event(self.other_death_poll, sim.date)
