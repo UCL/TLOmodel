@@ -79,6 +79,9 @@ def test_probability_premature_death(tmpdir, age_before_which_death_is_defined_a
     )
 
     # Confirm both methods gives the same answer
+    # (Absolute tolerance of this test is reasonably large (1%) as small assumptions made in the calculation of the
+    # cumulative probability of death in each age-group mean that the manual computation done here and the calculation
+    # performed in the utility function are not expected to agree perfectly.)
     assert np.isclose(
         probability_premature_death_summary.loc["F"].loc[(0, 'mean')],
         prob_premature_death['F'],
