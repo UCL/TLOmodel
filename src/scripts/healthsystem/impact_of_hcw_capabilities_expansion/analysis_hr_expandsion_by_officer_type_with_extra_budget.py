@@ -349,12 +349,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # get extra count = staff count - staff count of no expansion s_1
     # note that annual staff increase rate = scale up factor - 1
     extra_staff = staff_count.copy()
+    extra_staff_percent = staff_count.copy()
     for i in staff_count.index:
         extra_staff.iloc[i, 2:] = staff_count.iloc[i, 2:] - staff_count.iloc[0, 2:]
+        extra_staff_percent.iloc[i, 2:] = (staff_count.iloc[i, 2:] - staff_count.iloc[0, 2:]) / staff_count.iloc[0, 2:]
 
     extra_staff_2029 = extra_staff.loc[extra_staff.year == 2029, :].drop(columns='year').set_index('draw').drop(
         index='s_1'
     )
+    extra_staff_percent_2029 = extra_staff_percent.loc[extra_staff_percent.year == 2029, :].drop(
+        columns='year').set_index('draw').drop(index='s_1')
     staff_count_2029 = staff_count.loc[staff_count.year == 2029, :].drop(columns='year').set_index('draw')
 
     # check total cost calculated is increased as expected
@@ -650,6 +654,25 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     cmap_list = list(map(plt.get_cmap("Set1"), range(9)))
     for i in range(9):
         best_scenarios_color[num_dalys_summarized.index[i]] = cmap_list[i]
+
+    # plot 4D data: relative increases of Clinical, Pharmacy, and Nursing_and_Midwifery as three coordinates,\
+    # percentage of DALYs averted decides the color of that scatter point
+    heat_data = pd.merge(num_dalys_averted_percent['mean'],
+                         extra_staff_percent_2029[['Clinical', 'Pharmacy', 'Nursing_and_Midwifery']],
+                         left_index=True, right_index=True, how='inner')
+    scenarios_with_CNP_only = ['s_4', 's_6', 's_7', 's_10', 's_11', 's_16', 's_22']
+    heat_data = heat_data.loc[heat_data.index.isin(scenarios_with_CNP_only)]
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    img = ax.scatter(heat_data['Clinical'], heat_data['Pharmacy'], heat_data['Nursing_and_Midwifery'],
+                     marker='o', s=heat_data['mean'] * 2000,
+                     c=heat_data['mean'] * 100, cmap='viridis', alpha=0.5)
+    ax.set_xlabel('relative increase of Clinical cadre')
+    ax.set_ylabel('Pharmacy cadre')
+    ax.set_zlabel('Nursing and Midwifery')
+    plt.colorbar(img, orientation='horizontal', fraction=0.046, pad=0.15)
+    plt.title('DALYs averted (%) against no expansion, 2019-2029')
+    plt.show()
 
     # plot absolute numbers for scenarios
 
