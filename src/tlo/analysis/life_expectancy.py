@@ -17,7 +17,6 @@ from tlo.analysis.utils import (
     summarize,
 )
 
-# Declare the age before which death is defined as premature
 
 def _map_age_to_age_group(age: pd.Series) -> pd.Series:
     """
@@ -82,9 +81,9 @@ def _aggregate_person_years_by_age(results_folder, target_period) -> pd.DataFram
             # Compute PY within time-period and summing within age-group, for each sex
             py_by_sex_and_agegroup[(draw, run)] = pd.concat({
                 sex: _df.loc[mask, sex]
-                .apply(pd.Series)
-                .sum(axis=0)
-                .pipe(lambda x: x.groupby(_map_age_to_age_group(x.index.astype(float))).sum())
+                        .apply(pd.Series)
+                        .sum(axis=0)
+                        .pipe(lambda x: x.groupby(_map_age_to_age_group(x.index.astype(float))).sum())
                 for sex in ["M", "F"]}
             )
 
@@ -307,7 +306,7 @@ def get_probability_of_premature_death(
     results_folder: Path,
     target_period: Tuple[datetime.date, datetime.date],
     summary: bool = True,
-    AGE_BEFORE_WHICH_DEATH_IS_DEFINED_AS_PREMATURE: int = 70  # defined in Norheim et al (2015)
+    age_before_which_death_is_defined_as_premature: int = 70  # defined in Norheim et al (2015)
 ) -> pd.DataFrame:
     """
     Produces sets of probability of premature death for each draw/run.
@@ -331,7 +330,7 @@ def get_probability_of_premature_death(
     for draw in range(info['number_of_draws']):
         for run in range(info['runs_per_draw']):
             prob_for_each_draw_and_run[(draw, run)] = _calculate_probability_of_premature_death_for_single_run(
-                AGE_BEFORE_WHICH_DEATH_IS_DEFINED_AS_PREMATURE,
+                age_before_which_death_is_defined_as_premature,
                 _number_of_deaths_in_interval=deaths[(draw, run)],
                 _person_years_at_risk=person_years[(draw, run)]
             )
