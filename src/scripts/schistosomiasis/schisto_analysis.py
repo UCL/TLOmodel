@@ -20,7 +20,7 @@ def run_simulation(popsize=10000, haem=True, mansoni=True, mda_execute=True):
     # The resource files
     resourcefilepath = Path("./resources")
     start_date = Date(2010, 1, 1)
-    end_date = Date(2011, 2, 1)
+    end_date = Date(2015, 2, 1)
     popsize = popsize
 
     # Sets all modules to WARNING threshold, then alters schisto to INFO
