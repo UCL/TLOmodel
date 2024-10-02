@@ -13,7 +13,7 @@ except NameError:
     # running interactively
     resourcefilepath = Path('./resources')
 
-start_date = Date(2010, 1, 1)
+start_date = Date(2024, 1, 1)
 
 
 def register_modules(sim):
@@ -31,7 +31,7 @@ def test_run_sim_with_mnh_cohort(tmpdir, seed):
 
     register_modules(sim)
     sim.make_initial_population(n=1000)
-    sim.simulate(end_date=Date(2024, 1, 1))
+    sim.simulate(end_date=Date(2025, 1, 1))
 
     output= parse_log_file(sim.log_filepath)
     live_births = len(output['tlo.methods.demography']['on_birth'])
