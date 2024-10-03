@@ -6,8 +6,8 @@ for a given set of parameters using outputs from the demography (deaths), HIV an
 
 """
 import math
-from pathlib import Path
 from collections import defaultdict
+from pathlib import Path
 
 import pandas as pd
 
