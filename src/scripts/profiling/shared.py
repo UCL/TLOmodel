@@ -23,16 +23,12 @@ def memory_statistics() -> dict[str, float]:
         Resident set size in mebibytes. The non-swapped physical memory the process has used.
     memory_vms_MiB: float
         Virtual memory size in mebibytes. The total amount of virtual memory used by the process.
-    memory_uss_MiB: float
-        Unique set size in mebibytes. The memory which is unique to a process and which would be freed if the process
-        was terminated right now
     """
     process = psutil.Process()
-    memory_info = process.memory_full_info()
+    memory_info = process.memory_info()
     return {
         "memory_rss_MiB": memory_info.rss / 2**20,
         "memory_vms_MiB": memory_info.vms / 2**20,
-        "memory_uss_MiB": memory_info.uss / 2**20,
     }
 
 
