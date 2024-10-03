@@ -3,7 +3,11 @@ import random
 import time
 
 import pandas as pd
-import psutil
+
+try:
+    import psutil
+except ImportError:
+    psutil = None
 
 from tlo import DateOffset, Simulation, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
@@ -15,8 +19,8 @@ logger.setLevel(logging.INFO)
 
 def memory_statistics() -> dict[str, float]:
     """
-    Extract memory usage statistics in current process using `psutil`.
-    Statistics are returned as a dictionary.
+    Extract memory usage statistics in current process using `psutil` if available.
+    Statistics are returned as a dictionary. If `psutil` not installed an empty dict is returned.
     
     Key / value pairs are:
     memory_rss_MiB: float
@@ -27,6 +31,8 @@ def memory_statistics() -> dict[str, float]:
         Unique set size in mebibytes. The memory which is unique to a process and which would be freed if the process
         was terminated right now
     """
+    if psutil is None:
+        return {}
     process = psutil.Process()
     memory_info = process.memory_full_info()
     return {
