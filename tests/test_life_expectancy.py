@@ -11,6 +11,7 @@ from tlo.analysis.life_expectancy import (
     get_probability_of_premature_death,
 )
 
+
 def test_get_life_expectancy():
     """Use `get_life_expectancy_estimates` to generate estimate of life-expectancy from the dummy simulation data."""
 
