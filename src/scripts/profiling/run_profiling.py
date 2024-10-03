@@ -7,11 +7,12 @@ from pathlib import Path
 from typing import Dict, List, Literal, Optional, Tuple, Union
 
 import numpy as np
-from psutil import Process, disk_io_counters
+from psutil import disk_io_counters
 from pyinstrument import Profiler
 from pyinstrument.renderers import ConsoleRenderer, HTMLRenderer
 from pyinstrument.session import Session
 from scale_run import save_arguments_to_json, scale_run
+from shared import memory_statistics
 
 try:
     from ansi2html import Ansi2HTMLConverter
@@ -116,29 +117,6 @@ def disk_statistics(
         "disk_write_MB": disk_usage["write_bytes"] / 1e6,
         "disk_read_s": disk_usage["read_time"] / 1e3,
         "disk_write_s": disk_usage["write_time"] / 1e3,
-    }
-
-
-def memory_statistics() -> Dict[str, float]:
-    """
-    Extract memory usage statistics in current process using `psutil`.
-    Statistics are returned as a dictionary.
-    
-    Key / value pairs are:
-    memory_rss_MiB: float
-        Resident set size in mebibytes. The non-swapped physical memory the process has used.
-    memory_vms_MiB: float
-        Virtual memory size in mebibytes. The total amount of virtual memory used by the process.
-    memory_uss_MiB: float
-        Unique set size in mebibytes. The memory which is unique to a process and which would be freed if the process
-        was terminated right now
-    """
-    process = Process()
-    memory_info = process.memory_full_info()
-    return {
-        "memory_rss_MiB": memory_info.rss / 2**20,
-        "memory_vms_MiB": memory_info.vms / 2**20,
-        "memory_uss_MiB": memory_info.uss / 2**20,
     }
 
 
@@ -247,7 +225,7 @@ def run_profiling(
         "initial_population": initial_population,
         "log_filename": "scale_run_profiling",
         "log_level": "WARNING",
-        "parse_log_file": False,
+        "parse_log_file": True,
         "show_progress_bar": show_progress_bar,
         "seed": 0,
         "disable_health_system": False,
@@ -270,7 +248,7 @@ def run_profiling(
 
     # Profile scale_run
     disk_at_start = disk_io_counters()
-    completed_simulation = scale_run(
+    completed_simulation, logs_dict = scale_run(
         **scale_run_args, output_dir=output_dir, profiler=profiler
     )
     disk_at_end = disk_io_counters()
@@ -348,6 +326,13 @@ def run_profiling(
         additional_stats=additional_stats,
     )
     print("done")
+    
+    # Write out logged profiling statistics
+    logged_statistics_file = output_dir / f"{output_name}.logged-stats.csv"
+    print(f"Writing {logged_statistics_file}", end="...", flush=True)
+    logs_dict["tlo.profiling"]["stats"].to_csv(logged_statistics_file, index=False)
+    print("done")
+
 
 
 if __name__ == "__main__":
