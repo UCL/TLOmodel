@@ -13,7 +13,8 @@ if TYPE_CHECKING:
 from shared import print_checksum, schedule_profile_log
 
 from tlo import Date, Simulation, logging
-from tlo.analysis.utils import parse_log_file as parse_log_file_fn, LogsDict
+from tlo.analysis.utils import LogsDict
+from tlo.analysis.utils import parse_log_file as parse_log_file_fn
 from tlo.methods.fullmodel import fullmodel
 
 _TLO_ROOT: Path = Path(__file__).parents[3].resolve()
