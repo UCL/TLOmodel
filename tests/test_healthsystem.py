@@ -2572,10 +2572,11 @@ def test_logging_of_only_hsi_events_with_non_blank_footprints(tmpdir):
                 sim.modules['HealthSystem'].schedule_hsi_event(hsi_event=hsi_event, topen=sim.date, priority=0)
 
         start_date = Date(2010, 1, 1)
-        sim = Simulation(start_date=start_date, seed=0, log_config={'filename': 'tmp', 'directory': tmpdir})
+        sim = Simulation(start_date=start_date, seed=0, log_config={'filename': 'tmp', 'directory': tmpdir},
+                         resourcefilepath=resourcefilepath)
         sim.register(
-            demography.Demography(resourcefilepath=resourcefilepath),
-            healthsystem.HealthSystem(resourcefilepath=resourcefilepath, mode_appt_constraints=0),
+            demography.Demography(),
+            healthsystem.HealthSystem(mode_appt_constraints=0),
             DummyModule(),
             # Disable sorting + checks to avoid error due to missing dependencies
             sort_modules=False,

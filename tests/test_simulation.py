@@ -185,6 +185,7 @@ def _simulation_factory(
         start_date=start_date,
         seed=seed,
         log_config=log_config,
+        resourcefilepath=resource_file_path
     )
     simulation.register(
         *fullmodel()

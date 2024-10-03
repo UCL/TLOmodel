@@ -310,7 +310,7 @@ def test_auto_register_module_dependencies(tmpdir):
             # configure simulation
             sim = Simulation(start_date=start_date, seed=0, log_config=log_config, resourcefilepath=resourcefilepath)
             # the lines below should fail with missing dependencies
-            sim.register(hiv.Hiv(resourcefilepath=resourcefilepath))
+            sim.register(hiv.Hiv())
 
     def register_disease_modules_using_labour_modules_for_births():
         """ Test registering disease modules without including all dependencies and not using simplified births
@@ -319,7 +319,7 @@ def test_auto_register_module_dependencies(tmpdir):
         # configure simulation
         sim = Simulation(start_date=start_date, seed=0, log_config=log_config, resourcefilepath=resourcefilepath)
         # re-register modules with auto-register-module argument set to True and using labour modules for births
-        sim.register(hiv.Hiv(resourcefilepath=resourcefilepath),
+        sim.register(hiv.Hiv(),
                      auto_register_dependencies=True)
         # get module dependencies
         required_dependencies = get_all_required_dependencies(sim.modules["Hiv"])
@@ -334,8 +334,8 @@ def test_auto_register_module_dependencies(tmpdir):
         except labour modules since we're using simplified births """
         # configure simulation
         sim = Simulation(start_date=start_date, seed=0, log_config=log_config, resourcefilepath=resourcefilepath)
-        sim.register(hiv.Hiv(resourcefilepath=resourcefilepath),
-                     simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+        sim.register(hiv.Hiv(),
+                     simplified_births.SimplifiedBirths(),
                      auto_register_dependencies=True
                      )
         # now that we're using simplified births we want to ensure that all alternative dependencies are not registered
