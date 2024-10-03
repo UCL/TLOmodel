@@ -79,6 +79,32 @@ def target_period() -> str:
     return "-".join(str(t.year) for t in TARGET_PERIOD)
 
 
+def set_param_names_as_column_index_level_0(_df):
+    """Set the columns index (level 0) as the param_names."""
+    ordered_param_names_no_prefix = {i: x for i, x in enumerate(param_names)}
+    names_of_cols_level0 = [ordered_param_names_no_prefix.get(col) for col in _df.columns.levels[0]]
+    assert len(names_of_cols_level0) == len(_df.columns.levels[0])
+    _df.columns = _df.columns.set_levels(names_of_cols_level0, level=0)
+    return _df
+
+
+def find_difference_relative_to_comparison(_ser: pd.Series,
+                                           comparison: str,
+                                           scaled: bool = False,
+                                           drop_comparison: bool = True,
+                                           ):
+    """Find the difference in the values in a pd.Series with a multi-index, between the draws (level 0)
+    within the runs (level 1), relative to where draw = `comparison`.
+    The comparison is `X - COMPARISON`."""
+    return _ser \
+        .unstack(level=0) \
+        .apply(lambda x: (x - x[comparison]) / (x[comparison] if scaled else 1.0), axis=1) \
+        .drop(columns=([comparison] if drop_comparison else [])) \
+        .stack()
+
+
+
+
 def get_total_num_dalys(_df):
     """Return total number of DALYS (Stacked) by label (total within the TARGET_PERIOD).
     Throw error if not a record for every year in the TARGET PERIOD (to guard against inadvertently using
@@ -94,14 +120,14 @@ def get_total_num_dalys(_df):
     )
 
 
-total_num_dalys = summarize(extract_results(
+total_num_dalys = extract_results(
     results_folder,
     module='tlo.methods.healthburden',
     key='dalys_stacked',
     custom_generate_series=get_total_num_dalys,
     do_scaling=True
-), only_mean=False
-)
+).pipe(set_param_names_as_column_index_level_0)
+num_dalys_summarized = summarize(total_num_dalys).loc[0].unstack().reindex(param_names)
 
 
 def get_total_num_dalys_by_label(_df):
@@ -125,14 +151,135 @@ def get_total_num_dalys_by_label(_df):
     return y.groupby(by=causes_relabels).sum()[list(causes.values())]
 
 
-total_num_dalys_by_label_results = summarize(extract_results(
+total_num_dalys_by_label = extract_results(
     results_folder,
     module="tlo.methods.healthburden",
     key="dalys_by_wealth_stacked_by_age_and_time",
     custom_generate_series=get_total_num_dalys_by_label,
     do_scaling=True,
-), only_mean=True
+).pipe(set_param_names_as_column_index_level_0)
+total_num_dalys_by_label_summarized = summarize(total_num_dalys_by_label)
+
+# %% Deaths and DALYS averted relative to Status Quo
+def find_difference_relative_to_comparison_series(
+    _ser: pd.Series,
+    comparison: str,
+    scaled: bool = False,
+    drop_comparison: bool = True,
+):
+    """Find the difference in the values in a pd.Series with a multi-index, between the draws (level 0)
+    within the runs (level 1), relative to where draw = `comparison`.
+    The comparison is `X - COMPARISON`."""
+    return _ser \
+        .unstack(level=0) \
+        .apply(lambda x: (x - x[comparison]) / (x[comparison] if scaled else 1.0), axis=1) \
+        .drop(columns=([comparison] if drop_comparison else [])) \
+        .stack()
+
+
+def find_difference_relative_to_comparison_series_dataframe(_df: pd.DataFrame, **kwargs):
+    """Apply `find_difference_relative_to_comparison_series` to each row in a dataframe"""
+    return pd.concat({
+        _idx: find_difference_relative_to_comparison_series(row, **kwargs)
+        for _idx, row in _df.iterrows()
+    }, axis=1).T
+
+
+total_num_dalys_by_label_results_averted_vs_baseline = summarize(
+    -1.0 * find_difference_relative_to_comparison_series_dataframe(
+        total_num_dalys_by_label,
+        comparison='Baseline'
+    ),
+    only_mean=True
 )
+
+pc_dalys_averted = 100.0 * summarize(
+    -1.0 * find_difference_relative_to_comparison_series_dataframe(
+            total_num_dalys_by_label,
+            comparison='Baseline',
+            scaled=True
+    ),
+    only_mean=False
+)
+
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+
+def plot_clustered_bars_with_error_bars(df: pd.DataFrame):
+    """
+    Plots a clustered bar chart with error bars based on a multi-index DataFrame.
+
+    Parameters:
+    df (pd.DataFrame): DataFrame with MultiIndex columns (draw names and 'stat' levels 'lower', 'mean', 'upper')
+                       and a row index representing categories.
+    """
+    # Choose a color palette
+    colors = plt.cm.get_cmap('Spectral', len(df.columns.levels[0]))
+
+    # Extract the data for plotting
+    means = df.xs('mean', level='stat', axis=1)
+    lowers = df.xs('lower', level='stat', axis=1)
+    uppers = df.xs('upper', level='stat', axis=1)
+
+    # Number of draws and groups (row index)
+    n_draws = means.shape[1]
+    n_groups = means.shape[0]
+
+    # Set up the figure and axes
+    fig, ax = plt.subplots(figsize=(12, 6))
+
+    # Calculate the positions of the bars
+    index = np.arange(n_groups)
+    bar_width = 0.15  # Reduced width to prevent overlap
+
+    # Plot each draw's mean with error bars
+    for i, draw in enumerate(means.columns):
+        # Plot each draw's bar with error bars (yerr)
+        ax.bar(index + (i * bar_width), means[draw], bar_width,
+               label=draw,
+               yerr=[means[draw] - lowers[draw], uppers[draw] - means[draw]],
+               color=colors(i),
+               capsize=4)
+
+    # Add vertical dashed lines between clusters
+    for i in range(1, n_groups):
+        ax.axvline(x=i - 0.5 * bar_width, color='grey', linestyle='--')
+
+    # Labeling
+    ax.set_xlabel('')
+    ax.set_ylabel('Percentage change in DALYs from baseline')
+    ax.set_title('Clustered Bar Plot with Error Bars for DALYs by Category')
+    ax.set_xticks(index + (n_draws - 1) * bar_width / 2)
+    ax.set_xticklabels(df.index, rotation=0)  # Set rotation to 0 for horizontal labels
+
+    # Add a legend for the draws
+    ax.legend(title='Scenario')
+
+    # Tight layout for better spacing
+    plt.tight_layout()
+    plt.show()
+
+# Example usage
+plot_clustered_bars_with_error_bars(pc_dalys_averted)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 # todo person-years infected with low/moderate/high intensity infections by district and total
