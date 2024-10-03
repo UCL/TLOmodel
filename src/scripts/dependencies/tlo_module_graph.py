@@ -4,12 +4,8 @@ import argparse
 from pathlib import Path
 from typing import Dict, Set
 
+from tlo.dependencies import DependencyGetter, get_all_dependencies, get_module_class_map
 from tlo.methods import Metadata
-from tlo.dependencies import (
-    DependencyGetter,
-    get_module_class_map,
-    get_all_dependencies,
-)
 
 try:
     import pydot
