@@ -10,6 +10,8 @@ on:
       - requirements/**
       - resources/**
       - src/tlo/**
+      - src/scripts/profiling/scale_run.py
+      - src/scripts/profiling/shared.py
       - tests/**
       - pyproject.toml
       - tox.ini

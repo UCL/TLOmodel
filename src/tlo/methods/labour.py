@@ -83,7 +83,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
     ADDITIONAL_DEPENDENCIES = {
         'PostnatalSupervisor', 'CareOfWomenDuringPregnancy', 'Lifestyle', 'PregnancySupervisor',
         'HealthSystem', 'Contraception',
-        'NewbornOutcomes',
+        'NewbornOutcomes', 'Depression', 'Hiv'
     }
 
     METADATA = {

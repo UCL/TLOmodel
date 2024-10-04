@@ -81,7 +81,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
     OPTIONAL_INIT_DEPENDENCIES = {"HealthBurden"}
 
-    ADDITIONAL_DEPENDENCIES = {'Tb', 'NewbornOutcomes'}
+    ADDITIONAL_DEPENDENCIES = {'Tb', 'NewbornOutcomes', 'Schisto', 'CardioMetabolicDisorders'}
 
     METADATA = {
         Metadata.DISEASE_MODULE,
