@@ -20,6 +20,7 @@ from scripts.healthsystem.impact_of_hcw_capabilities_expansion.prepare_minute_sa
 from scripts.healthsystem.impact_of_hcw_capabilities_expansion.scenario_of_expanding_current_hcw_by_officer_type_with_extra_budget import (
     HRHExpansionByCadreWithExtraBudget,
 )
+import statsmodels.api as sm
 from tlo import Date
 from tlo.analysis.utils import (
     APPT_TYPE_TO_COARSE_APPT_TYPE_MAP,
@@ -353,16 +354,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # get extra count = staff count - staff count of no expansion s_1
     # note that annual staff increase rate = scale up factor - 1
     extra_staff = staff_count.copy()
-    extra_staff_percent = staff_count.copy()
     for i in staff_count.index:
         extra_staff.iloc[i, 2:] = staff_count.iloc[i, 2:] - staff_count.iloc[0, 2:]
-        extra_staff_percent.iloc[i, 2:] = (staff_count.iloc[i, 2:] - staff_count.iloc[0, 2:]) / staff_count.iloc[0, 2:]
 
     extra_staff_2029 = extra_staff.loc[extra_staff.year == 2029, :].drop(columns='year').set_index('draw').drop(
         index='s_1'
     )
-    extra_staff_percent_2029 = extra_staff_percent.loc[extra_staff_percent.year == 2029, :].drop(
-        columns='year').set_index('draw').drop(index='s_1')
     staff_count_2029 = staff_count.loc[staff_count.year == 2029, :].drop(columns='year').set_index('draw')
 
     # check total cost calculated is increased as expected
@@ -663,7 +660,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # percentage of DALYs averted decides the color of that scatter point
     extra_budget_allocation = extra_budget_fracs.T
     heat_data = pd.merge(num_dalys_averted_percent['mean'],
-                         #extra_staff_percent_2029[['Clinical', 'Pharmacy', 'Nursing_and_Midwifery']],
                          extra_budget_allocation[['Clinical', 'Pharmacy', 'Nursing_and_Midwifery']],
                          left_index=True, right_index=True, how='inner')
     scenarios_with_CNP_only = ['s_4', 's_6', 's_7', 's_10', 's_11', 's_16', 's_22']
@@ -698,6 +694,23 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     fig.show()
     plt.close(fig)
+
+    # do some linear regression to see the marginal effects of individual cadres and combined effects of C, N, P cadres
+    regression_data = pd.merge(num_dalys_averted_percent['mean'],
+                               extra_budget_allocation,
+                               left_index=True, right_index=True, how='inner')
+    regression_data['C*P'] = regression_data['Clinical'] * regression_data['Pharmacy']
+    regression_data['C*N'] = regression_data['Clinical'] * regression_data['Nursing_and_Midwifery']
+    regression_data['N*P'] = regression_data['Pharmacy'] * regression_data['Nursing_and_Midwifery']
+    regression_data['C*N*P'] = (regression_data['Clinical'] * regression_data['Pharmacy']
+                                * regression_data['Nursing_and_Midwifery'])
+    cadres_to_drop_due_to_multicollinearity = ['Dental', 'Laboratory', 'Mental', 'Nutrition', 'Radiography']
+    regression_data.drop(columns=cadres_to_drop_due_to_multicollinearity, inplace=True)
+    predictor = regression_data[regression_data.columns[1:]]
+    outcome = regression_data['mean']
+    predictor = sm.add_constant(predictor)
+    est = sm.OLS(outcome.astype(float), predictor.astype(float)).fit()
+    print(est.summary())
 
     # plot absolute numbers for scenarios
 
