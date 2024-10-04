@@ -57,9 +57,9 @@ class CareOfWomenDuringPregnancy(Module):
         # Finally set up a counter for ANC visits.
         self.anc_counter = dict()
 
-    INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'PregnancySupervisor'}
+    INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'PregnancySupervisor', 'Hiv', 'Depression', 'Epi', 'Malaria'}
 
-    ADDITIONAL_DEPENDENCIES = {'Contraception', 'Labour', 'Lifestyle', 'Hiv', 'Depression', 'Epi', 'Malaria'}
+    ADDITIONAL_DEPENDENCIES = {'Contraception', 'Labour', 'Lifestyle'}
 
     METADATA = {
         Metadata.USES_HEALTHSYSTEM,
