@@ -27,7 +27,7 @@ class Measles(Module, GenericFirstAppointmentsMixin):
 
     INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
 
-    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'Epi'}
 
     # declare metadata
     METADATA = {
