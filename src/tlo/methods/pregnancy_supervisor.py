@@ -523,13 +523,19 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
                            sim.date + DateOffset(years=1))
 
         # ...and register and schedule the parameter update event
-        sim.schedule_event(ParameterUpdateEvent(self),
-                           Date(2015, 1, 1))
+        if self.sim.date.year < 2015:
+            sim.schedule_event(ParameterUpdateEvent(self),
+                               Date(2015, 1, 1))
+        else:
+            sim.schedule_event(ParameterUpdateEvent(self),
+                               Date(self.sim.date.year, 1, 1))
 
         # ... and finally register and schedule the parameter override event. This is used in analysis scripts to change
         # key parameters after the simulation 'burn in' period. The event is schedule to run even when analysis is not
         # conducted but no changes to parameters can be made.
-        sim.schedule_event(PregnancyAnalysisEvent(self), Date(params['analysis_year'], 1, 1))
+
+        if self.sim.date.year <= params['analysis_year']:
+            sim.schedule_event(PregnancyAnalysisEvent(self), Date(params['analysis_year'], 1, 1))
 
         # ==================================== LINEAR MODEL EQUATIONS =================================================
         # Next we scale linear models according to distribution of predictors in the dataframe at baseline

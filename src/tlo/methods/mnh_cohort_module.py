@@ -99,9 +99,10 @@ class MaternalNewbornHealthCohort(Module):
 
         sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
 
-        for item in self.sim.event_queue.queue:
-            if isinstance(item[3], IndividualScopeEventMixin):
-                self.sim.event_queue.queue.remove(item)
+        updated_event_queue = [item for item in self.sim.event_queue.queue
+                               if not isinstance(item[3], IndividualScopeEventMixin)]
+
+        self.sim.event_queue.queue = updated_event_queue
 
         for person in df.index:
                 self.sim.modules['Labour'].set_date_of_labour(person)

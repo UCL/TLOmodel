@@ -30,14 +30,14 @@ def test_run_sim_with_mnh_cohort(tmpdir, seed):
                 "*": logging.DEBUG},"directory": tmpdir})
 
     register_modules(sim)
-    sim.make_initial_population(n=1000)
+    sim.make_initial_population(n=5000)
     sim.simulate(end_date=Date(2025, 1, 1))
 
     output= parse_log_file(sim.log_filepath)
     live_births = len(output['tlo.methods.demography']['on_birth'])
 
     deaths_df = output['tlo.methods.demography']['death']
-    prop_deaths_df = ['tlo.methods.demography.detail']['properties_of_deceased_persons']
+    prop_deaths_df = output['tlo.methods.demography.detail']['properties_of_deceased_persons']
 
     dir_mat_deaths = deaths_df.loc[(deaths_df['label'] == 'Maternal Disorders')]
     init_indir_mat_deaths = prop_deaths_df.loc[(prop_deaths_df['is_pregnant'] | prop_deaths_df['la_is_postpartum']) &
@@ -50,9 +50,18 @@ def test_run_sim_with_mnh_cohort(tmpdir, seed):
                               (prop_deaths_df['cause_of_death'].str.contains('AIDS_non_TB|AIDS_TB'))]
 
     indir_mat_deaths = len(init_indir_mat_deaths) + (len(hiv_mat_deaths) * 0.3)
+    total_deaths = len(dir_mat_deaths) + indir_mat_deaths
 
     # TOTAL_DEATHS
-    mmr = (len(dir_mat_deaths) + indir_mat_deaths) / live_births * 100_000
+    mmr = (total_deaths / live_births) * 100_000
+
+    print(f'The MMR for this simulation is {mmr}')
+    print(f'The maternal deaths for this simulation (unscaled) are {total_deaths}')
+    print(f'The total maternal deaths for this simulation (scaled) are '
+          f'{total_deaths * output["tlo.methods.population"]["scaling_factor"]["scaling_factor"].values[0]}')
+
+    maternal_dalys = output['tlo.methods.healthburden']['dalys_stacked']['Maternal Disorders'].sum()
+    print(f'The maternal DALYs for this simulation (unscaled) are {maternal_dalys}')
 
 
 

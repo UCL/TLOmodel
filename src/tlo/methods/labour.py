@@ -878,8 +878,9 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         sim.schedule_event(LabourLoggingEvent(self), sim.date + DateOffset(days=1))
 
         # Schedule analysis event
-        sim.schedule_event(LabourAndPostnatalCareAnalysisEvent(self),
-                           Date(self.current_parameters['analysis_year'], 1, 1))
+        if self.sim.date.year <= self.current_parameters['analysis_year']:
+            sim.schedule_event(LabourAndPostnatalCareAnalysisEvent(self),
+                               Date(self.current_parameters['analysis_year'], 1, 1))
 
         # This list contains all the women who are currently in labour and is used for checks/testing
         self.women_in_labour = []
