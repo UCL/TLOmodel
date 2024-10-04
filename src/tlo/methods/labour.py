@@ -78,11 +78,11 @@ class Labour(Module, GenericFirstAppointmentsMixin):
 
     INIT_DEPENDENCIES = {'Demography'}
 
-    OPTIONAL_INIT_DEPENDENCIES = {'Stunting', 'NewbornOutcomes', 'Depression', 'Hiv'}
+    OPTIONAL_INIT_DEPENDENCIES = {'Stunting'}
 
     ADDITIONAL_DEPENDENCIES = {
         'PostnatalSupervisor', 'CareOfWomenDuringPregnancy', 'Lifestyle', 'PregnancySupervisor',
-        'HealthSystem', 'Contraception'
+        'HealthSystem', 'Contraception', 'NewbornOutcomes', 'Depression', 'Hiv'
     }
 
     METADATA = {

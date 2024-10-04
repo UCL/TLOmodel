@@ -44,9 +44,8 @@ class PostnatalSupervisor(Module):
 
     INIT_DEPENDENCIES = {'Demography', 'HealthSystem'}
 
-    ADDITIONAL_DEPENDENCIES = {'Labour', 'Lifestyle', 'NewbornOutcomes', 'PregnancySupervisor'}
-
-    OPTIONAL_INIT_DEPENDENCIES = {'Hiv', 'CareOfWomenDuringPregnancy'}
+    ADDITIONAL_DEPENDENCIES = {'Labour', 'Lifestyle', 'NewbornOutcomes', 'PregnancySupervisor',
+                               'Hiv', 'CareOfWomenDuringPregnancy'}
 
     METADATA = {Metadata.DISEASE_MODULE,
                 Metadata.USES_HEALTHSYSTEM,
