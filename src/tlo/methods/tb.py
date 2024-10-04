@@ -56,7 +56,9 @@ class Tb(Module):
         "Epi",
     }
 
-    OPTIONAL_INIT_DEPENDENCIES = {"CardioMetabolicDisorders", "HealthBurden", "Hiv"}
+    OPTIONAL_INIT_DEPENDENCIES = {"HealthBurden", "Hiv"}
+
+    ADDITIONAL_DEPENDENCIES = {"CardioMetabolicDisorders", }
 
     METADATA = {
         Metadata.DISEASE_MODULE,

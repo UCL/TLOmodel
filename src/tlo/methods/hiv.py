@@ -79,9 +79,9 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
     INIT_DEPENDENCIES = {"Demography", "HealthSystem", "Lifestyle", "SymptomManager"}
 
-    OPTIONAL_INIT_DEPENDENCIES = {"HealthBurden",  'Schisto', 'CardioMetabolicDisorders'}
+    OPTIONAL_INIT_DEPENDENCIES = {"HealthBurden",  'Schisto'}
 
-    ADDITIONAL_DEPENDENCIES = {'Tb', 'NewbornOutcomes'}
+    ADDITIONAL_DEPENDENCIES = {'Tb', 'NewbornOutcomes', 'CardioMetabolicDisorders'}
 
     METADATA = {
         Metadata.DISEASE_MODULE,
