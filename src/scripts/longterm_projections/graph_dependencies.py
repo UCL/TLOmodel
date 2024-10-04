@@ -137,8 +137,9 @@ def get_module_class_map_set_sequence(excluded_modules: Set[str]) -> dict[str, T
     # Add any remaining modules that weren't in the specified lists
     remaining_modules = {name: module for name, module in module_classes.items() if name not in ordered_module_classes}
     ordered_module_classes.update(remaining_modules)
-    print(ordered_module_classes)
     return ordered_module_classes
+
+
 def construct_module_dependency_graph(
     excluded_modules: Set[str],
     disease_module_node_defaults: dict,
@@ -165,18 +166,6 @@ def construct_module_dependency_graph(
 
     module_class_map = get_module_class_map_set_sequence(excluded_modules)
     module_graph = pydot.Dot("modules", graph_type="digraph")
-
-    # Subgraphs for different groups of modules
-    disease_module_subgraph = pydot.Subgraph("disease_modules")
-    module_graph.add_subgraph(disease_module_subgraph)
-
-    other_module_subgraph = pydot.Subgraph("other_modules")
-    module_graph.add_subgraph(other_module_subgraph)
-
-    # Subgraph for grouped modules
-    #grouped_modules_subgraph = pydot.Subgraph("grouped_modules")
-    #grouped_modules_subgraph.set_rank('same')
-    #module_graph.add_subgraph(grouped_modules_subgraph)
 
     # Set default styles for nodes
     disease_module_node_defaults["style"] = "filled"
