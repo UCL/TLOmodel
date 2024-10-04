@@ -25,9 +25,9 @@ logger.setLevel(logging.INFO)
 class Measles(Module, GenericFirstAppointmentsMixin):
     """This module represents measles infections and disease."""
 
-    INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
+    INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager', 'Epi'}
 
-    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'Epi'}
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
 
     # declare metadata
     METADATA = {
