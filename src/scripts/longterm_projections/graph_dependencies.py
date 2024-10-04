@@ -57,7 +57,7 @@ SHORT_TREATMENT_ID_TO_COLOR_MAP = MappingProxyType({
     'Epilepsy*': 'red',
     'Copd*': 'lightcoral',
     'RTI*': 'lightsalmon',
-    'Lifestyle*': '',
+    'Lifestyle*': 'silver',
 })
 
 
@@ -167,6 +167,46 @@ def construct_module_dependency_graph(
     module_class_map = get_module_class_map_set_sequence(excluded_modules)
     module_graph = pydot.Dot("modules", graph_type="digraph")
 
+    # Subgraphs for different groups of modules
+    disease_module_subgraph = pydot.Subgraph("disease_modules")
+    module_graph.add_subgraph(disease_module_subgraph)
+
+    other_module_subgraph = pydot.Subgraph("other_modules")
+    module_graph.add_subgraph(other_module_subgraph)
+
+    # Subgraph for grouped modules (e.g., Pregnancy-related modules) as a cluster
+    grouped_modules_subgraph = pydot.Subgraph(
+        "cluster_grouped_modules",
+        label="Grouped Modules",
+        style="filled",
+        color="lightgreen"
+    )
+    module_graph.add_subgraph(grouped_modules_subgraph)
+
+    # List of modules to group together
+    grouped_modules = ['Contraception*', 'Labour*', 'PregnancySupervisor*',
+                       'PostnatalSupervisor*', 'NewbornOutcomes*', 'CareOfWomenDuringPregnancy*']
+
+    # Add nodes to the subgraph
+    previous_node = None
+    for name, module_class in module_class_map.items():
+        if name in grouped_modules:
+            # Create the node with determined attributes
+            colour = get_color_short_treatment_id(name)
+            node_attributes = {
+                "fillcolor": colour,
+                "color": "black",  # Outline color
+                "fontname": "Arial",
+                "shape": "ellipse"  # or whatever shape you want
+            }
+            grouped_modules_subgraph.add_node(pydot.Node(name, **node_attributes))
+
+            # Add invisible edge between consecutive nodes
+            if previous_node:
+                invisible_edge = pydot.Edge(previous_node, name, style="invis")
+                module_graph.add_edge(invisible_edge)
+            previous_node = name
+
     # Set default styles for nodes
     disease_module_node_defaults["style"] = "filled"
     other_module_node_defaults["style"] = "filled"
@@ -196,6 +236,8 @@ def construct_module_dependency_graph(
         for dependency in get_dependencies(module, module_class_map.keys()):
             if dependency not in excluded_modules:
                 module_graph.add_edge(pydot.Edge(dependency, key))
+
+
 
     return module_graph
 
