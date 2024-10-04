@@ -144,12 +144,15 @@ def construct_module_dependency_graph(
     excluded_modules: Set[str],
     disease_module_node_defaults: dict,
     other_module_node_defaults: dict,
+    pregnancy_related_module_node_defaults: dict,
     get_dependencies: DependencyGetter = get_all_dependencies,
 ):
     """Construct a pydot object representing module dependency graph.
     :param excluded_modules: Set of ``Module`` subclass names to not included in graph.
     :param disease_module_node_defaults: Any dot node attributes to apply to by default
         to disease module nodes.
+    :param pregnancy_related_module_node_defaults: Any dot node attributes to apply to by default
+        to pregnancy/birth related module nodes.
     :param other_module_node_defaults: Any dot node attributes to apply to by default
         to non-disease module nodes.
     :param get_dependencies:  Function which given a module gets the set of module
@@ -159,13 +162,13 @@ def construct_module_dependency_graph(
     if pydot is None:
         raise RuntimeError("pydot package must be installed")
 
-    grouped_module_names = [
-        'Contraception*', 'Labour*', 'PregnancySupervisor*',
-        'PostnatalSupervisor*', 'NewbornOutcomes*', 'CareOfWomenDuringPregnancy*'
+    pregnancy_module_names = [
+        'Contraception', 'Labour', 'PregnancySupervisor',
+        'PostnatalSupervisor', 'NewbornOutcomes', 'CareOfWomenDuringPregnancy'
     ]
 
     module_class_map = get_module_class_map_set_sequence(excluded_modules)
-    module_graph = pydot.Dot("modules", graph_type="digraph")
+    module_graph = pydot.Dot("modules", graph_type="digraph", size="15,15")
 
     # Subgraphs for different groups of modules
     disease_module_subgraph = pydot.Subgraph("disease_modules")
@@ -174,42 +177,14 @@ def construct_module_dependency_graph(
     other_module_subgraph = pydot.Subgraph("other_modules")
     module_graph.add_subgraph(other_module_subgraph)
 
-    # Subgraph for grouped modules (e.g., Pregnancy-related modules) as a cluster
-    grouped_modules_subgraph = pydot.Subgraph(
-        "cluster_grouped_modules",
-        label="Grouped Modules",
-        style="filled",
-        color="lightgreen"
-    )
-    module_graph.add_subgraph(grouped_modules_subgraph)
-
-    # List of modules to group together
-    grouped_modules = ['Contraception*', 'Labour*', 'PregnancySupervisor*',
-                       'PostnatalSupervisor*', 'NewbornOutcomes*', 'CareOfWomenDuringPregnancy*']
-
-    # Add nodes to the subgraph
-    previous_node = None
-    for name, module_class in module_class_map.items():
-        if name in grouped_modules:
-            # Create the node with determined attributes
-            colour = get_color_short_treatment_id(name)
-            node_attributes = {
-                "fillcolor": colour,
-                "color": "black",  # Outline color
-                "fontname": "Arial",
-                "shape": "ellipse"  # or whatever shape you want
-            }
-            grouped_modules_subgraph.add_node(pydot.Node(name, **node_attributes))
-
-            # Add invisible edge between consecutive nodes
-            if previous_node:
-                invisible_edge = pydot.Edge(previous_node, name, style="invis")
-                module_graph.add_edge(invisible_edge)
-            previous_node = name
+    # Subgraph for pregnancy-related modules as a cluster for neatness
+    pregnancy_modules_subgraph = pydot.Subgraph("pregnancy_modules")
+    module_graph.add_subgraph(pregnancy_modules_subgraph)
 
     # Set default styles for nodes
     disease_module_node_defaults["style"] = "filled"
     other_module_node_defaults["style"] = "filled"
+    pregnancy_related_module_node_defaults["style"] = "filled"
 
     # List of modules to group together
     for name, module_class in module_class_map.items():
@@ -223,21 +198,26 @@ def construct_module_dependency_graph(
             "fontname": "Arial",
         }
 
-        if Metadata.DISEASE_MODULE in module_class.METADATA:
-            node_attributes.update(disease_module_node_defaults)
-            node_attributes["shape"] = "box"  # Disease modules
-            disease_module_subgraph.add_node(pydot.Node(name, **node_attributes))
-        else:
+        if name in pregnancy_module_names:
+            node_attributes.update(pregnancy_related_module_node_defaults)
+            node_attributes["shape"] = "diamond"  # Pregnancy modules
+            node_attributes["group"] = "pregnancy"
+            pregnancy_modules_subgraph.add_node(pydot.Node(name, **node_attributes))
+
+        elif Metadata.DISEASE_MODULE not in module_class.METADATA:
             node_attributes.update(other_module_node_defaults)
             node_attributes["shape"] = "ellipse"  # Other modules
             other_module_subgraph.add_node(pydot.Node(name, **node_attributes))
+
+        else:
+            node_attributes.update(disease_module_node_defaults)
+            node_attributes["shape"] = "box"  # Disease modules
+            disease_module_subgraph.add_node(pydot.Node(name, **node_attributes))
 
     for key, module in module_class_map.items():
         for dependency in get_dependencies(module, module_class_map.keys()):
             if dependency not in excluded_modules:
                 module_graph.add_edge(pydot.Edge(dependency, key))
-
-
 
     return module_graph
 
@@ -275,6 +255,7 @@ if __name__ == "__main__":
         excluded_modules,
         disease_module_node_defaults={"shape": "box"},
         other_module_node_defaults={"shape": "ellipse"},
+        pregnancy_related_module_node_defaults={"shape": "diamond"}
     )
 
     format = (
