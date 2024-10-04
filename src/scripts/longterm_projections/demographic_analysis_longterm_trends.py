@@ -2,11 +2,12 @@ import argparse
 import datetime
 from pathlib import Path
 
+import imageio
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
-import imageio
+
 from tlo.analysis.life_expectancy import get_life_expectancy_estimates
 from tlo.analysis.utils import (
     extract_results,
