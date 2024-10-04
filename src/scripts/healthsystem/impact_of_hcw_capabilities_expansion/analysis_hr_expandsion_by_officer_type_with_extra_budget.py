@@ -13,6 +13,10 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
+from scripts.healthsystem.impact_of_hcw_capabilities_expansion.prepare_minute_salary_and_extra_budget_frac_data import (
+    extra_budget_fracs,
+)
+
 from scripts.healthsystem.impact_of_hcw_capabilities_expansion.scenario_of_expanding_current_hcw_by_officer_type_with_extra_budget import (
     HRHExpansionByCadreWithExtraBudget,
 )
@@ -657,22 +661,43 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # plot 4D data: relative increases of Clinical, Pharmacy, and Nursing_and_Midwifery as three coordinates,\
     # percentage of DALYs averted decides the color of that scatter point
+    extra_budget_allocation = extra_budget_fracs.T
     heat_data = pd.merge(num_dalys_averted_percent['mean'],
-                         extra_staff_percent_2029[['Clinical', 'Pharmacy', 'Nursing_and_Midwifery']],
+                         #extra_staff_percent_2029[['Clinical', 'Pharmacy', 'Nursing_and_Midwifery']],
+                         extra_budget_allocation[['Clinical', 'Pharmacy', 'Nursing_and_Midwifery']],
                          left_index=True, right_index=True, how='inner')
     scenarios_with_CNP_only = ['s_4', 's_6', 's_7', 's_10', 's_11', 's_16', 's_22']
     heat_data = heat_data.loc[heat_data.index.isin(scenarios_with_CNP_only)]
+    name_of_plot = f'DALYs averted (%) against no expansion, {target_period()}'
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     img = ax.scatter(heat_data['Clinical'], heat_data['Pharmacy'], heat_data['Nursing_and_Midwifery'],
-                     marker='o', s=heat_data['mean'] * 2000,
-                     c=heat_data['mean'] * 100, cmap='viridis', alpha=0.5)
-    ax.set_xlabel('relative increase of Clinical cadre')
+                     alpha=0.8, marker='o', #s=heat_data['mean'] * 2000,
+                     c=heat_data['mean'] * 100, cmap='viridis')
+    # plot lines from the best point to three axes panes
+    ax.plot3D([heat_data['Clinical'][0], heat_data['Clinical'][0]],
+              [heat_data['Pharmacy'][0], heat_data['Pharmacy'][0]],
+              [0, heat_data['Nursing_and_Midwifery'][0]],
+              linestyle='--', color='gray', alpha=0.8)
+    ax.plot3D([heat_data['Clinical'][0], heat_data['Clinical'][0]],
+              [0, heat_data['Pharmacy'][0]],
+              [heat_data['Nursing_and_Midwifery'][0], heat_data['Nursing_and_Midwifery'][0]],
+              linestyle='--', color='gray', alpha=0.8)
+    ax.plot3D([0, heat_data['Clinical'][0]],
+              [heat_data['Pharmacy'][0], heat_data['Pharmacy'][0]],
+              [heat_data['Nursing_and_Midwifery'][0], heat_data['Nursing_and_Midwifery'][0]],
+              linestyle='--', color='gray', alpha=0.8)
+    ax.set_xlabel('Fraction of extra budget allocated to \nClinical cadre')
     ax.set_ylabel('Pharmacy cadre')
+    #ax.invert_yaxis()
     ax.set_zlabel('Nursing and Midwifery')
-    plt.colorbar(img, orientation='horizontal', fraction=0.046, pad=0.15)
-    plt.title('DALYs averted (%) against no expansion, 2019-2029')
-    plt.show()
+    ax.plot3D([0, 1], [0, 1], [0, 1], linestyle='--', color='red', alpha=0.3, label='the line x=y=z')
+    plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2))
+    plt.colorbar(img, orientation='horizontal', fraction=0.046, pad=0.25)
+    plt.title(name_of_plot)
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
 
     # plot absolute numbers for scenarios
 
