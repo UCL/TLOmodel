@@ -145,6 +145,8 @@ def construct_module_dependency_graph(
     disease_module_node_defaults: dict,
     other_module_node_defaults: dict,
     pregnancy_related_module_node_defaults: dict,
+    cancer_related_module_node_defaults: dict,
+    infection_related_module_node_defaults: dict,
     get_dependencies: DependencyGetter = get_all_dependencies,
 ):
     """Construct a pydot object representing module dependency graph.
@@ -153,8 +155,12 @@ def construct_module_dependency_graph(
         to disease module nodes.
     :param pregnancy_related_module_node_defaults: Any dot node attributes to apply to by default
         to pregnancy/birth related module nodes.
+    :param cancer_related_module_node_defaults: Any dot node attributes to apply to by default
+        to cancer related module nodes.
     :param other_module_node_defaults: Any dot node attributes to apply to by default
         to non-disease module nodes.
+    :param infection_module_node_defaults: Any dot node attributes to apply to by default
+        to  infectious disease module nodes.
     :param get_dependencies:  Function which given a module gets the set of module
         dependencies. Defaults to extracting all dependencies.
     :return: Pydot directed graph representing module dependencies.
@@ -162,29 +168,50 @@ def construct_module_dependency_graph(
     if pydot is None:
         raise RuntimeError("pydot package must be installed")
 
+    cancer_module_names = [
+        'BladderCancer', 'BreastCancer', 'OtherAdultCancer',
+        'OesophagealCancer', 'ProstateCancer'
+    ]
+
     pregnancy_module_names = [
         'Contraception', 'Labour', 'PregnancySupervisor',
         'PostnatalSupervisor', 'NewbornOutcomes', 'CareOfWomenDuringPregnancy'
     ]
 
+    infectious_diseases_names = [
+        'Hiv', 'Tb', 'Malaria', 'Measles',
+    ]
+
     module_class_map = get_module_class_map_set_sequence(excluded_modules)
-    module_graph = pydot.Dot("modules", graph_type="digraph", size="15,15")
+    module_graph = pydot.Dot("modules", graph_type="digraph", rankdir='LR')
 
     # Subgraphs for different groups of modules
     disease_module_subgraph = pydot.Subgraph("disease_modules")
+    #disease_module_subgraph.set_rank('same')
     module_graph.add_subgraph(disease_module_subgraph)
 
+    pregnancy_modules_subgraph = pydot.Subgraph("pregnancy_modules")
+    pregnancy_modules_subgraph.set_rank('same')
+    module_graph.add_subgraph(pregnancy_modules_subgraph)
+
     other_module_subgraph = pydot.Subgraph("other_modules")
+    other_module_subgraph.set_rank('same')
     module_graph.add_subgraph(other_module_subgraph)
 
-    # Subgraph for pregnancy-related modules as a cluster for neatness
-    pregnancy_modules_subgraph = pydot.Subgraph("pregnancy_modules")
-    module_graph.add_subgraph(pregnancy_modules_subgraph)
+    cancer_modules_subgraph = pydot.Subgraph("cancer_modules")
+    cancer_modules_subgraph.set_rank('same')
+    module_graph.add_subgraph(cancer_modules_subgraph)
+
+    infectious_diseases_subgraph = pydot.Subgraph("infectious_diseases")
+    infectious_diseases_subgraph.set_rank('same')
+    module_graph.add_subgraph(infectious_diseases_subgraph)
 
     # Set default styles for nodes
     disease_module_node_defaults["style"] = "filled"
     other_module_node_defaults["style"] = "filled"
     pregnancy_related_module_node_defaults["style"] = "filled"
+    cancer_related_module_node_defaults["style"] = "filled"
+    infection_related_module_node_defaults["style"] = "filled"
 
     # List of modules to group together
     for name, module_class in module_class_map.items():
@@ -201,8 +228,12 @@ def construct_module_dependency_graph(
         if name in pregnancy_module_names:
             node_attributes.update(pregnancy_related_module_node_defaults)
             node_attributes["shape"] = "diamond"  # Pregnancy modules
-            node_attributes["group"] = "pregnancy"
             pregnancy_modules_subgraph.add_node(pydot.Node(name, **node_attributes))
+
+        elif name in cancer_module_names:
+            node_attributes.update(cancer_related_module_node_defaults)
+            node_attributes["shape"] = "invtrapezium"  # Cancer modules
+            cancer_modules_subgraph.add_node(pydot.Node(name, **node_attributes))
 
         elif Metadata.DISEASE_MODULE not in module_class.METADATA:
             node_attributes.update(other_module_node_defaults)
@@ -255,7 +286,8 @@ if __name__ == "__main__":
         excluded_modules,
         disease_module_node_defaults={"shape": "box"},
         other_module_node_defaults={"shape": "ellipse"},
-        pregnancy_related_module_node_defaults={"shape": "diamond"}
+        pregnancy_related_module_node_defaults={"shape": "diamond"},
+        cancer_related_module_node_defaults={"shape": "invtrapezium"}
     )
 
     format = (
