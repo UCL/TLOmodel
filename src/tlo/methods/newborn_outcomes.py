@@ -43,12 +43,13 @@ class NewbornOutcomes(Module):
 
     INIT_DEPENDENCIES = {'Demography', 'HealthSystem'}
 
-    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'PregnancySupervisor', 'Hiv'}
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'Hiv'}
 
     ADDITIONAL_DEPENDENCIES = {
         'CareOfWomenDuringPregnancy',
         'Labour',
         'PostnatalSupervisor',
+        'PregnancySupervisor'
     }
 
     METADATA = {
