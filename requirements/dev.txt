@@ -74,8 +74,10 @@ cryptography==41.0.3
     #   pyjwt
 cycler==0.11.0
     # via matplotlib
-dill==0.3.7
-    # via pylint
+dill==0.3.8
+    # via
+    #   pylint
+    #   tlo (pyproject.toml)
 distlib==0.3.7
     # via virtualenv
 et-xmlfile==1.1.0
