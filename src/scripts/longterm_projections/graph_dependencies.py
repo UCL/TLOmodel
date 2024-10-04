@@ -174,9 +174,9 @@ def construct_module_dependency_graph(
     module_graph.add_subgraph(other_module_subgraph)
 
     # Subgraph for grouped modules
-    grouped_modules_subgraph = pydot.Subgraph("grouped_modules")
-    grouped_modules_subgraph.set_rank('same')
-    module_graph.add_subgraph(grouped_modules_subgraph)
+    #grouped_modules_subgraph = pydot.Subgraph("grouped_modules")
+    #grouped_modules_subgraph.set_rank('same')
+    #module_graph.add_subgraph(grouped_modules_subgraph)
 
     # Set default styles for nodes
     disease_module_node_defaults["style"] = "filled"
