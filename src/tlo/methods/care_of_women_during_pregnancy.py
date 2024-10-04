@@ -59,9 +59,7 @@ class CareOfWomenDuringPregnancy(Module):
 
     INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'PregnancySupervisor'}
 
-    OPTIONAL_INIT_DEPENDENCIES = {'Hiv', 'Depression', 'Epi', 'Malaria'}
-
-    ADDITIONAL_DEPENDENCIES = {'Contraception', 'Labour', 'Lifestyle'}
+    ADDITIONAL_DEPENDENCIES = {'Contraception', 'Labour', 'Lifestyle', 'Hiv', 'Epi', 'Depression', 'Malaria'}
 
     METADATA = {
         Metadata.USES_HEALTHSYSTEM,
