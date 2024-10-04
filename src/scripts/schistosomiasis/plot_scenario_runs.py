@@ -88,23 +88,6 @@ def set_param_names_as_column_index_level_0(_df):
     return _df
 
 
-def find_difference_relative_to_comparison(_ser: pd.Series,
-                                           comparison: str,
-                                           scaled: bool = False,
-                                           drop_comparison: bool = True,
-                                           ):
-    """Find the difference in the values in a pd.Series with a multi-index, between the draws (level 0)
-    within the runs (level 1), relative to where draw = `comparison`.
-    The comparison is `X - COMPARISON`."""
-    return _ser \
-        .unstack(level=0) \
-        .apply(lambda x: (x - x[comparison]) / (x[comparison] if scaled else 1.0), axis=1) \
-        .drop(columns=([comparison] if drop_comparison else [])) \
-        .stack()
-
-
-
-
 def get_total_num_dalys(_df):
     """Return total number of DALYS (Stacked) by label (total within the TARGET_PERIOD).
     Throw error if not a record for every year in the TARGET PERIOD (to guard against inadvertently using
@@ -177,7 +160,7 @@ def find_difference_relative_to_comparison_series(
         .stack()
 
 
-def find_difference_relative_to_comparison_series_dataframe(_df: pd.DataFrame, **kwargs):
+def find_difference_relative_to_comparison_dataframe(_df: pd.DataFrame, **kwargs):
     """Apply `find_difference_relative_to_comparison_series` to each row in a dataframe"""
     return pd.concat({
         _idx: find_difference_relative_to_comparison_series(row, **kwargs)
@@ -186,7 +169,7 @@ def find_difference_relative_to_comparison_series_dataframe(_df: pd.DataFrame, *
 
 
 total_num_dalys_by_label_results_averted_vs_baseline = summarize(
-    -1.0 * find_difference_relative_to_comparison_series_dataframe(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
         total_num_dalys_by_label,
         comparison='Baseline'
     ),
@@ -203,11 +186,6 @@ pc_dalys_averted = 100.0 * summarize(
 )
 
 
-
-import numpy as np
-import matplotlib.pyplot as plt
-import pandas as pd
-
 def plot_clustered_bars_with_error_bars(df: pd.DataFrame):
     """
     Plots a clustered bar chart with error bars based on a multi-index DataFrame.
@@ -215,9 +193,13 @@ def plot_clustered_bars_with_error_bars(df: pd.DataFrame):
     Parameters:
     df (pd.DataFrame): DataFrame with MultiIndex columns (draw names and 'stat' levels 'lower', 'mean', 'upper')
                        and a row index representing categories.
+    Returns:
+    fig, ax: The figure and axes of the plot.
     """
     # Choose a color palette
-    colors = plt.cm.get_cmap('Spectral', len(df.columns.levels[0]))
+    colors = plt.colormaps['Spectral']  # Get the Spectral colormap
+    n_draws = df.columns.levels[0].shape[0]  # Number of draws
+    color_list = [colors(i / n_draws) for i in range(n_draws)]  # Create a list of colors for each draw
 
     # Extract the data for plotting
     means = df.xs('mean', level='stat', axis=1)
@@ -225,7 +207,6 @@ def plot_clustered_bars_with_error_bars(df: pd.DataFrame):
     uppers = df.xs('upper', level='stat', axis=1)
 
     # Number of draws and groups (row index)
-    n_draws = means.shape[1]
     n_groups = means.shape[0]
 
     # Set up the figure and axes
@@ -241,29 +222,39 @@ def plot_clustered_bars_with_error_bars(df: pd.DataFrame):
         ax.bar(index + (i * bar_width), means[draw], bar_width,
                label=draw,
                yerr=[means[draw] - lowers[draw], uppers[draw] - means[draw]],
-               color=colors(i),
+               color=color_list[i],  # Use the corresponding color from color_list
                capsize=4)
 
     # Add vertical dashed lines between clusters
     for i in range(1, n_groups):
         ax.axvline(x=i - 0.5 * bar_width, color='grey', linestyle='--')
 
+    # Add horizontal line at y=0
+    ax.axhline(y=0, color='grey', linestyle='-')
+
     # Labeling
     ax.set_xlabel('')
-    ax.set_ylabel('Percentage change in DALYs from baseline')
-    ax.set_title('Clustered Bar Plot with Error Bars for DALYs by Category')
     ax.set_xticks(index + (n_draws - 1) * bar_width / 2)
     ax.set_xticklabels(df.index, rotation=0)  # Set rotation to 0 for horizontal labels
 
     # Add a legend for the draws
     ax.legend(title='Scenario')
 
-    # Tight layout for better spacing
-    plt.tight_layout()
-    plt.show()
+    # Return the figure and axes
+    return fig, ax
 
-# Example usage
-plot_clustered_bars_with_error_bars(pc_dalys_averted)
+
+name_of_plot = f'Percentage change in DALYs from baseline {target_period()}'
+fig, ax = plot_clustered_bars_with_error_bars(pc_dalys_averted)
+ax.set_title(name_of_plot)
+ax.set_ylabel('Percentage change in DALYs')
+fig.tight_layout()
+fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+fig.show()
+plt.close(fig)
+
+
+
 
 
 
@@ -317,29 +308,135 @@ def get_person_years_infected(_df):
     return pd.Series(person_years)
 
 
-age = 'SAC'  # SAC, PSAC, Adult
-inf = 'HM'  # 'HML' or any combination
+# produce dataframes of PY averted for each age-group
+ages = ['PSAC', 'SAC', 'Adults', 'All']
+inf = 'HML'  # 'HML' or any combination
 
-person_years = summarize(extract_results(
-    results_folder,
-    module="tlo.methods.schisto",
-    key="Schisto_person_days_infected",
-    custom_generate_series=get_person_years_infected,
-    do_scaling=False,  # switch to True for full runs
-    ),
-    only_mean=True
-)
+# Initialise empty lists to hold the results for each age group
+total_num_py_averted_results = []
+pc_py_averted_results = []
 
-# todo add param_names to columns
-# person_years.index = person_years.index.year
+for age in ages:
+    person_years = extract_results(
+        results_folder,
+        module="tlo.methods.schisto",
+        key="Schisto_person_days_infected",
+        custom_generate_series=get_person_years_infected,
+        do_scaling=False,  # switch to True for full runs
+    ).pipe(set_param_names_as_column_index_level_0)
+
+    person_years_summary = summarize(person_years, only_mean=True)
+
+    total_num_py_averted_vs_baseline = summarize(
+        -1.0 * find_difference_relative_to_comparison_dataframe(
+            person_years,
+            comparison='Baseline'
+        ),
+        only_mean=True
+    )
+
+    pc_py_averted = 100.0 * summarize(
+        -1.0 * find_difference_relative_to_comparison_dataframe(
+            person_years,
+            comparison='Baseline',
+            scaled=True
+        ),
+        only_mean=False
+    )
+
+    # Append the results to the corresponding lists
+    total_num_py_averted_results.append(total_num_py_averted_vs_baseline)
+    pc_py_averted_results.append(pc_py_averted)
+
+# Combine results into two DataFrames, with age groups as a single-level row index
+total_num_py_averted_df = pd.concat(total_num_py_averted_results, keys=ages, axis=0)
+pc_py_averted_df = pd.concat(pc_py_averted_results, keys=ages, axis=0)
+
+total_num_py_averted_df.index = total_num_py_averted_df.index.get_level_values(0)
+pc_py_averted_df.index = pc_py_averted_df.index.get_level_values(0)
 
 
+def plot_averted_points_with_errorbars(_df):
+    # Set the color palette for the age groups
+    age_groups = _df.index
+    num_age_groups = len(age_groups)
+    age_colors = sns.color_palette("Spectral", num_age_groups)
+
+    # Create the plot
+    fig, ax = plt.subplots(figsize=(12, 6))
+
+    # X positions for each draw
+    x_positions = np.arange(len(_df.columns.levels[0]))
+
+    # Stagger points slightly for each age group
+    stagger = np.linspace(-0.2, 0.2, num_age_groups)
+
+    # Loop over each draw (column level 0)
+    for i, draw in enumerate(_df.columns.levels[0]):
+        mean_values = _df[(draw, 'mean')]
+        lower_values = _df[(draw, 'lower')]
+        upper_values = _df[(draw, 'upper')]
+
+        # Plot each age group with staggered x positions for clarity
+        for j, age_group in enumerate(age_groups):
+            ax.errorbar(
+                x=x_positions[i] + stagger[j],  # Stagger points for clarity
+                y=mean_values[age_group],
+                yerr=[[mean_values[age_group] - lower_values[age_group]],
+                      [upper_values[age_group] - mean_values[age_group]]],
+                fmt='o',  # Points for the mean values
+                color=age_colors[j],  # Assign color per age group
+                capsize=5,
+                label=age_group if i == 0 else ""  # Only label age groups once
+            )
+
+    # Add grey vertical dashed lines between each draw
+    for i in range(1, len(x_positions)):
+        ax.axvline(x_positions[i] - 0.5, color='grey', linestyle='--')
+
+    # Add horizontal grey line at y=0
+    ax.axhline(0, color='grey', linestyle='-')
+
+    # Customize ticks and labels
+    ax.set_xticks(x_positions)
+    ax.set_xticklabels(_df.columns.levels[0], rotation=45, ha='right')
+
+    # Add legend for age groups
+    handles = [plt.Line2D([0], [0], marker='o', color=color, linestyle='', label=age_group)
+               for age_group, color in zip(age_groups, age_colors)]
+    ax.legend(handles=handles, title="Age Group")
+
+    return fig, ax
 
 
-# todo table, rows=districts,
+name_of_plot = f'Percentage change in person-years infected with Schisto from baseline {target_period()}'
+fig, ax = plot_averted_points_with_errorbars(pc_py_averted_df)
+ax.set_title(name_of_plot)
+ax.set_ylabel('Percentage change in Person-Years')
+fig.tight_layout()
+fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+fig.show()
+plt.close(fig)
+
+
+# todo table, rows=districts, columns=diff in PY for each scenario 2035
+# both species combined, all ages
 # column level0 with and without WASH:
 # classify districts into low/moderate/high burden
 # columns=[HML burden, person-years of low/moderate/high infection, # PZQ tablets]
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 # todo elimination
