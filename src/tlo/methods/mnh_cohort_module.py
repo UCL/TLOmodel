@@ -97,16 +97,22 @@ class MaternalNewbornHealthCohort(Module):
         """
         df = self.sim.population.props
 
+        # Clear HSI queue for events scheduled during initialisation
         sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
 
+        # Clear HSI queue for events scheduled during initialisation
         updated_event_queue = [item for item in self.sim.event_queue.queue
                                if not isinstance(item[3], IndividualScopeEventMixin)]
 
         self.sim.event_queue.queue = updated_event_queue
 
+        # Prevent additional pregnancies from occurring
+        self.sim.modules['Contraception'].processed_params['p_pregnancy_with_contraception_per_month'].iloc[:] = 0
+        self.sim.modules['Contraception'].processed_params['p_pregnancy_no_contraception_per_month'].iloc[:] = 0
+
+        # Set labour date for cohort women
         for person in df.index:
                 self.sim.modules['Labour'].set_date_of_labour(person)
-
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
