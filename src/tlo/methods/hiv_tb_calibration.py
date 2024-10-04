@@ -51,8 +51,8 @@ class Deviance(Module):
         xls = pd.ExcelFile(Path(resourcefilepath) / "ResourceFile_HIV.xlsx")
 
         # MPHIA HIV data - age-structured
-        data_hiv_mphia_inc = pd.read_excel(xls, sheet_name="MPHIA_incidence2015")
-        data_hiv_mphia_prev = pd.read_excel(xls, sheet_name="MPHIA_prevalence_art2015")
+        data_hiv_mphia_inc = pd.read_excel(xls, sheet_name="MPHIA_incidence2020")
+        data_hiv_mphia_prev = pd.read_excel(xls, sheet_name="MPHIA_prevalence_art2020")
 
         # hiv prevalence
         self.data_dict["mphia_prev_2015_adult"] = data_hiv_mphia_prev.loc[

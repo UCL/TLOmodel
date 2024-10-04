@@ -320,3 +320,6 @@ def test_initialise_simulation_twice_raises(
     simulation.initialise(end_date=end_date)
     with pytest.raises(SimulationPreviouslyInitialisedError):
         simulation.initialise(end_date=end_date)
+
+def test_resourcefilepath_is_set_correctly(simulation, resource_file_path):
+    assert simulation.resourcefilepath == resource_file_path
