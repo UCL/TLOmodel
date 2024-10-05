@@ -219,7 +219,7 @@ class Simulation:
         if auto_register_dependencies:
             modules = [
                 *modules,
-                *initialise_missing_dependencies(modules, resourcefilepath=self.resourcefilepath)
+                *initialise_missing_dependencies(modules)
             ]
 
         if sort_modules:
