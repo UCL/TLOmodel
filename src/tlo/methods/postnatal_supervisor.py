@@ -358,6 +358,7 @@ class PostnatalSupervisor(Module):
                 logger.info(key='maternal_complication', data={'person': mother_id,
                                                                'type': f'{fistula_type}_fistula',
                                                                'timing': 'postnatal'})
+                self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[f'{fistula_type}_fistula'] += 1
 
                 # Determine if she will seek care for repair
                 care_seeking_for_repair = self.pn_linear_models[
@@ -503,6 +504,7 @@ class PostnatalSupervisor(Module):
             logger.info(key='maternal_complication', data={'person': person,
                                                            'type': 'sepsis',
                                                            'timing': 'postnatal'})
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['sepsis_postnatal'] += 1
 
         # ------------------------------------ SECONDARY PPH ----------------------------------------------------------
         # Next we determine if any women will experience postnatal bleeding
@@ -518,6 +520,7 @@ class PostnatalSupervisor(Module):
             logger.info(key='maternal_complication', data={'person': person,
                                                            'type': 'secondary_postpartum_haemorrhage',
                                                            'timing': 'postnatal'})
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['secondary_postpartum_haemorrhage'] += 1
 
         # ---------------------------------------------  ANAEMIA --------------------------------------------------
         # We apply a risk of anaemia developing in this week, and determine its severity
@@ -597,6 +600,7 @@ class PostnatalSupervisor(Module):
                         logger.info(key='maternal_complication', data={'person': person,
                                                                        'type': disease,
                                                                        'timing': 'postnatal'})
+                        self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[disease] += 1
 
                         if disease == 'severe_pre_eclamp':
                             mni[person]['new_onset_spe'] = True
@@ -642,6 +646,7 @@ class PostnatalSupervisor(Module):
             logger.info(key='maternal_complication', data={'person': person,
                                                            'type': 'mild_pre_eclamp',
                                                            'timing': 'postnatal'})
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['mild_pre_eclamp'] += 1
 
         #  -------------------------------- RISK OF GESTATIONAL HYPERTENSION --------------------------------------
         gest_hypertension = self.apply_linear_model(
@@ -655,6 +660,7 @@ class PostnatalSupervisor(Module):
             logger.info(key='maternal_complication', data={'person': person,
                                                            'type': 'mild_gest_htn',
                                                            'timing': 'postnatal'})
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['mild_gest_htn'] += 1
 
         # -------------------------------- RISK OF DEATH SEVERE HYPERTENSION ------------------------------------------
         # Risk of death is applied to women with severe hypertensive disease
@@ -747,6 +753,7 @@ class PostnatalSupervisor(Module):
 
             logger.info(key='newborn_complication', data={'newborn': child_id,
                                                           'type': 'early_onset_sepsis'})
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['early_onset_sepsis'] += 1
 
     def set_postnatal_complications_neonates(self, upper_and_lower_day_limits):
         """
@@ -774,6 +781,7 @@ class PostnatalSupervisor(Module):
 
             logger.info(key='newborn_complication', data={'newborn': person,
                                                           'type': 'late_onset_sepsis'})
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['late_onset_sepsis'] += 1
 
         # Then we determine if care will be sought for newly septic newborns
         care_seeking = pd.Series(
@@ -1030,6 +1038,7 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
 
             logger.info(key='maternal_complication', data={'person': individual_id, 'type': 'sepsis',
                                                            'timing': 'postnatal'})
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['sepsis_postnatal'] += 1
 
             # Sepsis secondary to endometritis is stored within the mni as it is used as a predictor in a linear model
             if endo_result:
@@ -1049,6 +1058,7 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
             logger.info(key='maternal_complication', data={'person': individual_id,
                                                            'type': 'secondary_postpartum_haemorrhage',
                                                            'timing': 'postnatal'})
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['secondary_postpartum_haemorrhage'] += 1
 
         # ------------------------------------------------ NEW ONSET ANAEMIA ------------------------------------------
         # And then risk of developing anaemia...
@@ -1117,6 +1127,8 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
                             logger.info(key='maternal_complication', data={'person': person,
                                                                            'type': disease,
                                                                            'timing': 'postnatal'})
+                            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[disease] += 1
+
                             if disease == 'severe_pre_eclamp':
                                 mni[person]['new_onset_spe'] = True
 
@@ -1139,6 +1151,7 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
 
                 logger.info(key='maternal_complication', data={'person': individual_id, 'type': 'mild_pre_eclamp',
                                                                'timing': 'postnatal'})
+                self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['mild_pre_eclamp'] += 1
 
             else:
                 risk_gh_after_pregnancy = self.module.pn_linear_models['gest_htn_pn'].predict(df.loc[[
@@ -1149,6 +1162,7 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
                     logger.info(key='maternal_complication', data={'person': individual_id,
                                                                    'type': 'mild_gest_htn',
                                                                    'timing': 'postnatal'})
+                self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['mild_gest_htn'] += 1
 
         # ======================================  POSTNATAL CHECK  ==================================================
         # Import the HSI which represents postnatal care

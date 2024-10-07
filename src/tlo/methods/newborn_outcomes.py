@@ -525,26 +525,31 @@ class NewbornOutcomes(Module):
             self.congeintal_anomalies.set(child_id, 'heart')
             logger.info(key='newborn_complication', data={'newborn': child_id,
                                                           'type': 'congenital_heart_anomaly'})
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['congenital_heart_anomaly'] += 1
 
         if self.rng.random_sample() < params['prob_limb_musc_skeletal_anomaly']:
             self.congeintal_anomalies.set(child_id, 'limb_musc_skeletal')
             logger.info(key='newborn_complication', data={'newborn': child_id,
                                                           'type': 'limb_or_musculoskeletal_anomaly'})
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['limb_or_musculoskeletal_anomaly'] += 1
 
         if self.rng.random_sample() < params['prob_urogenital_anomaly']:
             self.congeintal_anomalies.set(child_id, 'urogenital')
             logger.info(key='newborn_complication', data={'newborn': child_id,
                                                           'type': 'urogenital_anomaly'})
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['urogenital_anomaly'] += 1
 
         if self.rng.random_sample() < params['prob_digestive_anomaly']:
             self.congeintal_anomalies.set(child_id, 'digestive')
             logger.info(key='newborn_complication', data={'newborn': child_id,
                                                           'type': 'digestive_anomaly'})
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['digestive_anomaly'] += 1
 
         if self.rng.random_sample() < params['prob_other_anomaly']:
             self.congeintal_anomalies.set(child_id, 'other')
             logger.info(key='newborn_complication', data={'newborn': child_id,
                                                           'type': 'other_anomaly'})
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['other_anomaly'] += 1
 
     def apply_risk_of_neonatal_infection_and_sepsis(self, child_id):
         """
@@ -561,6 +566,7 @@ class NewbornOutcomes(Module):
 
             logger.info(key='newborn_complication', data={'newborn': child_id,
                                                           'type': 'early_onset_sepsis'})
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['early_onset_sepsis'] += 1
 
     def apply_risk_of_encephalopathy(self, child_id, timing):
         """
@@ -594,6 +600,7 @@ class NewbornOutcomes(Module):
 
             logger.info(key='newborn_complication', data={'newborn': child_id,
                                                           'type': f'{df.at[child_id, "nb_encephalopathy"]}'})
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[f'{df.at[child_id, "nb_encephalopathy"]}'] += 1
 
             # Check all encephalopathy cases receive a grade
             if df.at[child_id, 'nb_encephalopathy'] == 'none':
@@ -619,6 +626,7 @@ class NewbornOutcomes(Module):
 
             logger.info(key='newborn_complication', data={'newborn': child_id,
                                                           'type': 'respiratory_distress_syndrome'})
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['respiratory_distress_syndrome'] += 1
 
     def apply_risk_of_not_breathing_at_birth(self, child_id):
         """
@@ -641,6 +649,7 @@ class NewbornOutcomes(Module):
 
             logger.info(key='newborn_complication', data={'newborn': child_id,
                                                           'type': 'not_breathing_at_birth'})
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['not_breathing_at_birth'] += 1
 
     def scheduled_week_one_postnatal_event(self, individual_id):
         """
@@ -1158,13 +1167,16 @@ class NewbornOutcomes(Module):
             (df.at[child_id, 'nb_low_birth_weight_status'] == 'very_low_birth_weight') or\
            (df.at[child_id, 'nb_low_birth_weight_status'] == 'extremely_low_birth_weight'):
             logger.info(key='newborn_complication', data={'newborn': child_id, 'type': 'low_birth_weight'})
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['low_birth_weight'] += 1
 
         elif df.at[child_id, 'nb_low_birth_weight_status'] == 'macrosomia':
             logger.info(key='newborn_complication', data={'newborn': child_id, 'type': 'macrosomia'})
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['macrosomia'] += 1
 
         df.at[child_id, 'nb_size_for_gestational_age'] = mni[mother_id]['birth_size']
         if df.at[child_id, 'nb_size_for_gestational_age'] == 'small_for_gestational_age':
             logger.info(key='newborn_complication', data={'newborn': child_id, 'type': 'small_for_gestational_age'})
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['small_for_gestational_age'] += 1
 
         df.at[child_id, 'nb_early_init_breastfeeding'] = False
         df.at[child_id, 'nb_breastfeeding_status'] = 'none'
