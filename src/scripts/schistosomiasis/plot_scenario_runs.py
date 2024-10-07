@@ -33,13 +33,11 @@ from tlo.analysis.utils import (
 )
 
 resourcefilepath = Path("./resources")
-# outputpath = Path("./outputs")
 
 output_folder = Path("./outputs/t.mangal@imperial.ac.uk")
 
 # results_folder = get_scenario_outputs("schisto_calibration.py", outputpath)[-1]
 results_folder = get_scenario_outputs("schisto_scenarios.py", output_folder)[-1]
-
 
 # Declare path for output graphs from this script
 def make_graph_file_name(name):
@@ -111,7 +109,7 @@ total_num_dalys = extract_results(
     do_scaling=True
 ).pipe(set_param_names_as_column_index_level_0)
 num_dalys_summarized = summarize(total_num_dalys).loc[0].unstack().reindex(param_names)
-
+num_dalys_summarized.to_csv(results_folder / f'total_num_dalys_{target_period()}.csv')
 
 def get_total_num_dalys_by_label(_df):
     """Return the total number of DALYS in the TARGET_PERIOD by wealth and cause label."""
@@ -177,7 +175,7 @@ total_num_dalys_by_label_results_averted_vs_baseline = summarize(
 )
 
 pc_dalys_averted = 100.0 * summarize(
-    -1.0 * find_difference_relative_to_comparison_series_dataframe(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
             total_num_dalys_by_label,
             comparison='Baseline',
             scaled=True
@@ -309,7 +307,7 @@ def get_person_years_infected(_df):
 
 
 # produce dataframes of PY averted for each age-group
-ages = ['PSAC', 'SAC', 'Adults', 'All']
+ages = ['PSAC', 'SAC', 'Adults']
 inf = 'HML'  # 'HML' or any combination
 
 # Initialise empty lists to hold the results for each age group
@@ -360,7 +358,7 @@ def plot_averted_points_with_errorbars(_df):
     # Set the color palette for the age groups
     age_groups = _df.index
     num_age_groups = len(age_groups)
-    age_colors = sns.color_palette("Spectral", num_age_groups)
+    age_colors = sns.color_palette("Set2", num_age_groups)
 
     # Create the plot
     fig, ax = plt.subplots(figsize=(12, 6))
@@ -377,10 +375,10 @@ def plot_averted_points_with_errorbars(_df):
         lower_values = _df[(draw, 'lower')]
         upper_values = _df[(draw, 'upper')]
 
-        # Plot each age group with staggered x positions for clarity
+        # Plot each age group with staggered x positions
         for j, age_group in enumerate(age_groups):
             ax.errorbar(
-                x=x_positions[i] + stagger[j],  # Stagger points for clarity
+                x=x_positions[i] + stagger[j],
                 y=mean_values[age_group],
                 yerr=[[mean_values[age_group] - lower_values[age_group]],
                       [upper_values[age_group] - mean_values[age_group]]],
