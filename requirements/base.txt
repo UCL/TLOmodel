@@ -56,6 +56,8 @@ cryptography==41.0.3
     #   pyjwt
 cycler==0.11.0
     # via matplotlib
+dill==0.3.8
+    # via tlo (pyproject.toml)
 et-xmlfile==1.1.0
     # via openpyxl
 fonttools==4.42.1
@@ -112,6 +114,7 @@ pyjwt[crypto]==2.8.0
     # via
     #   adal
     #   msal
+    #   pyjwt
 pyparsing==3.1.1
     # via matplotlib
 pyshp==2.3.1

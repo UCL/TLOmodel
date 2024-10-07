@@ -10,6 +10,8 @@ on:
       - requirements/**
       - resources/**
       - src/tlo/**
+      - src/scripts/profiling/scale_run.py
+      - src/scripts/profiling/shared.py
       - tests/**
       - pyproject.toml
       - tox.ini
@@ -75,4 +77,12 @@ jobs:
           tox --version
       - name: Test with tox
         run: |
-          tox -v -e py311,report -- pytest --cov --cov-report=term-missing -vv "${{ matrix.file }}"
+          tox -v -e py311 -- pytest --show-capture=no -vv "${{ matrix.file }}" --junit-xml="${{ matrix.file }}.results.xml"
+      - name: Generate test report
+        if: always()
+        uses: pmeier/pytest-results-action@fc6576eced1f411ea48ab10e917d9cfce2960e29
+        with:
+          path: ${{ matrix.file }}.results.xml
+          summary: true
+          display-options: fEX
+          title: Results for ${{ matrix.file }}

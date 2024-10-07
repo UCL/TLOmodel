@@ -15,6 +15,8 @@ Overview of the Model
 Analyses Using The Model
 ========================
 
+* `A new approach to Health Benefits Package design: an application of the Thanzi La Onse model in Malawi <https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1012462>`_
+
 * `The Changes in Health Service Utilisation in Malawi During the COVID-19 Pandemic <https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0290823>`_
 
 * `Modeling Contraception and Pregnancy in Malawi: A Thanzi La Onse Mathematical Modeling Study <https://onlinelibrary.wiley.com/doi/10.1111/sifp.12255>`_
