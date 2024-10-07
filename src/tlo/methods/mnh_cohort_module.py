@@ -63,10 +63,10 @@ class MaternalNewbornHealthCohort(Module):
 
         :param population: the population of individuals
         """
-
+        # todo: we need to think of a better way to do this
         log_file = parse_log_file(
-             '/Users/j_collins/PycharmProjects/TLOmodel/outputs/sejjj49@ucl.ac.uk/'
-             'fullmodel_200k_cohort-2024-04-24T072206Z/0/0/fullmodel_200k_cohort__2024-04-24T072516.log',
+             '/Users/j_collins/PycharmProjects/TLOmodel/resources/maternal cohort/'
+             'fullmodel_200k_cohort__2024-04-24T072516.log',
              level=logging.DEBUG)['tlo.methods.contraception']
 
         all_pregnancies = log_file['properties_of_pregnant_person'].loc[
