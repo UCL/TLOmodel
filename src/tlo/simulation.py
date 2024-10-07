@@ -298,14 +298,17 @@ class Simulation:
         self.date = self.start_date
         self.end_date = end_date  # store the end_date so that others can reference it
 
-        self.generate_event_chains = generate_event_chains # for now ensure we're always aiming to print data
-        self.generate_event_chains_overwrite_epi = False
+        self.generate_event_chains = generate_event_chains
         if self.generate_event_chains:
+            # Eventually this can be made an option
+            self.generate_event_chains_overwrite_epi = True
             # For now keep these fixed, eventually they will be input from user
             self.generate_event_chains_modules_of_interest = [self.modules['Tb'], self.modules['Hiv'], self.modules['CardioMetabolicDisorders']]
             self.generate_event_chains_ignore_events =  ['AgeUpdateEvent','HealthSystemScheduler', 'DirectBirth'] #['TbActiveCasePollGenerateData','HivPollingEventForDataGeneration','SimplifiedBirthsPoll', 'AgeUpdateEvent', 'HealthSystemScheduler']
+        else:
+            # If not using to print chains, cannot ignore epi
+            self.generate_event_chains_overwrite_epi = False
 
-        #df_event_chains = pd.DataFrame(columns= list(self.population.props.columns)+['person_ID'] + ['event'] + ['event_date'] + ['when'])
 
         # Reorder columns to place the new columns at the front
         pd.set_option('display.max_columns', None)

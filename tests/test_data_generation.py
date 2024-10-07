@@ -32,7 +32,7 @@ from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstAppt
 
 # create simulation parameters
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
+end_date = Date(2014, 1, 1)
 popsize = 100
 
 @pytest.mark.slow

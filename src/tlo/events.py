@@ -74,7 +74,7 @@ class Event:
             if (self.module in self.sim.generate_event_chains_modules_of_interest) and all(sub not in str(self) for sub in self.sim.generate_event_chains_ignore_events):
                 print_chains = True
                 if self.target != self.sim.population:
-                    row = self.sim.population.props.iloc[[self.target]]
+                    row = self.sim.population.props.loc[[self.target]]
                     row['person_ID'] = self.target
                     row['event'] = self
                     row['event_date'] = self.sim.date
@@ -83,13 +83,12 @@ class Event:
                 else:
                     df_before = self.sim.population.props.copy()
         
-        
         self.apply(self.target)
         self.post_apply_hook()
                 
         if print_chains:
             if self.target != self.sim.population:
-                row = self.sim.population.props.iloc[[self.target]]
+                row = self.sim.population.props.loc[[self.target]]
                 row['person_ID'] = self.target
                 row['event'] = self
                 row['event_date'] = self.sim.date

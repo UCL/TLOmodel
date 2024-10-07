@@ -201,7 +201,7 @@ class HSI_Event:
 
                 print_chains = True
                 if self.target != self.sim.population:
-                    row = self.sim.population.props.iloc[[self.target]]
+                    row = self.sim.population.props.loc[[self.target]]
                     row['person_ID'] = self.target
                     row['event'] = self
                     row['event_date'] = self.sim.date
@@ -216,7 +216,7 @@ class HSI_Event:
         
         if print_chains:
             if self.target != self.sim.population:
-                row = self.sim.population.props.iloc[[self.target]]
+                row = self.sim.population.props.loc[[self.target]]
                 row['person_ID'] = self.target
                 row['event'] = self
                 row['event_date'] = self.sim.date
