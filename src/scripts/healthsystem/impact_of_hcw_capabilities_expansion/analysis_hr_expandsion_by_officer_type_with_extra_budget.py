@@ -47,7 +47,7 @@ substitute_labels = {
 }
 
 # group scenarios for presentation
-scenario_groups = {
+scenario_groups_init = {
     'no_expansion': {'s_1'},
     'all_cadres_expansion': {'s_2', 's_3'},
     'one_cadre_expansion': {'s_4', 's_5', 's_6', 's_7', 's_8'},
@@ -56,6 +56,14 @@ scenario_groups = {
     'three_cadres_expansion': {'s_19', 's_20', 's_21', 's_22', 's_23',
                                's_24', 's_25', 's_26', 's_27', 's_28'},
     'four_cadres_expansion': {'s_29', 's_30', 's_31', 's_32', 's_33'}
+}
+
+# group scenarios based on whether expand Clinical/Pharmacy
+scenario_groups = {
+    'C + P + D/N&M/O/None': {'s_2', 's_3', 's_11', 's_20', 's_22', 's_24', 's_29', 's_31', 's_32'},
+    'C + D/N&M/O/None': {'s_4', 's_9', 's_10', 's_12', 's_19', 's_21', 's_23', 's_30'},
+    'P + D/N&M/O/None': {'s_7', 's_14', 's_16', 's_18', 's_25', 's_27', 's_28', 's_33'},
+    'D/N&M/O/None': {'s_5', 's_6', 's_8', 's_13', 's_15', 's_17', 's_26', 's_1'}
 }
 
 
@@ -294,6 +302,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ].set_index('Officer_Category').T
         return salary[cadres]
 
+    # def get_hcw_time_usage(_df):
+    #     """Return the number of treatments by short treatment id (total within the TARGET_PERIOD)"""
+    #     _df = _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD), 'TREATMENT_ID'].apply(pd.Series).sum()
+    #     _df.index = _df.index.map(lambda x: x.split('_')[0] + "*")
+    #     _df = _df.groupby(level=0).sum()
+    #     return _df
+
     # Get parameter/scenario names
     param_names = get_parameter_names_from_scenario_file()
 
@@ -407,7 +422,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     num_appts = extract_results(
         results_folder,
         module='tlo.methods.healthsystem.summary',
-        key='HSI_Event',
+        key='HSI_Event_non_blank_appt_footprint',
         custom_generate_series=get_num_appts,
         do_scaling=True
         ).pipe(set_param_names_as_column_index_level_0)
@@ -415,7 +430,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     num_services = extract_results(
         results_folder,
         module='tlo.methods.healthsystem.summary',
-        key='HSI_Event',
+        key='HSI_Event_non_blank_appt_footprint',
         custom_generate_series=get_num_services,
         do_scaling=True
     ).pipe(set_param_names_as_column_index_level_0)
@@ -423,7 +438,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     num_treatments = extract_results(
         results_folder,
         module='tlo.methods.healthsystem.summary',
-        key='HSI_Event',
+        key='HSI_Event_non_blank_appt_footprint',
         custom_generate_series=get_num_treatments,
         do_scaling=True
     ).pipe(set_param_names_as_column_index_level_0)
@@ -431,10 +446,55 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     num_treatments_total = extract_results(
         results_folder,
         module='tlo.methods.healthsystem.summary',
-        key='HSI_Event',
+        key='HSI_Event_non_blank_appt_footprint',
         custom_generate_series=get_num_treatments_total,
         do_scaling=True
     ).pipe(set_param_names_as_column_index_level_0)
+
+    num_never_ran_appts = extract_results(
+        results_folder,
+        module='tlo.methods.healthsystem.summary',
+        key='Never_ran_HSI_Event',
+        custom_generate_series=get_num_appts,
+        do_scaling=True
+    ).pipe(set_param_names_as_column_index_level_0)
+
+    num_never_ran_services = extract_results(
+        results_folder,
+        module='tlo.methods.healthsystem.summary',
+        key='Never_ran_HSI_Event',
+        custom_generate_series=get_num_services,
+        do_scaling=True
+    ).pipe(set_param_names_as_column_index_level_0)
+
+    num_never_ran_treatments_total = extract_results(
+        results_folder,
+        module='tlo.methods.healthsystem.summary',
+        key='Never_ran_HSI_Event',
+        custom_generate_series=get_num_treatments_total,
+        do_scaling=True
+    ).pipe(set_param_names_as_column_index_level_0)
+
+    num_never_ran_treatments = extract_results(
+        results_folder,
+        module='tlo.methods.healthsystem.summary',
+        key='Never_ran_HSI_Event',
+        custom_generate_series=get_num_treatments,
+        do_scaling=True
+    ).pipe(set_param_names_as_column_index_level_0)
+
+    assert len(num_services) == len(num_never_ran_services) == 1
+    assert (num_services.columns == num_never_ran_services.columns).all()
+    num_services_demand = num_services + num_never_ran_services
+    ratio_services = num_services / num_services_demand
+
+    # hcw_time_usage = extract_results(
+    #     results_folder,
+    #     module='tlo.methods.healthsystem.summary',
+    #     key='Capacity',#'Capacity_By_OfficerType_And_FacilityLevel',
+    #     custom_generate_series=get_hcw_time_usage,
+    #     do_scaling=False
+    # ).pipe(set_param_names_as_column_index_level_0)
 
     # get absolute numbers for scenarios
     # sort the scenarios according to their DALYs values, in ascending order
@@ -465,6 +525,25 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         num_dalys_summarized.index
     )
 
+    num_never_ran_services_summarized = summarize(num_never_ran_services).loc[0].unstack().reindex(param_names).reindex(
+        num_dalys_summarized.index
+    )
+    num_never_ran_appts_summarized = summarize(num_never_ran_appts, only_mean=True).T.reindex(param_names).reindex(
+        num_dalys_summarized.index
+    )
+    num_never_ran_treatments_summarized = summarize(num_never_ran_treatments, only_mean=True).T.reindex(param_names).reindex(
+        num_dalys_summarized.index
+    )
+    num_never_ran_treatments_total_summarized = summarize(num_never_ran_treatments_total).loc[0].unstack().reindex(param_names).reindex(
+        num_dalys_summarized.index
+    )
+    num_service_demand_summarized = summarize(num_services_demand).loc[0].unstack().reindex(param_names).reindex(
+        num_dalys_summarized.index
+    )
+    ratio_service_summarized = summarize(ratio_services).loc[0].unstack().reindex(param_names).reindex(
+        num_dalys_summarized.index
+    )
+
     # get relative numbers for scenarios, compared to no_expansion scenario: s_1
     num_services_increased = summarize(
         pd.DataFrame(
@@ -474,14 +553,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ).T
     ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_1'])
 
-    # num_services_increased_percent = summarize(
-    #     pd.DataFrame(
-    #         find_difference_relative_to_comparison_series(
-    #             num_services.loc[0],
-    #             comparison='s_1',
-    #             scaled=True)
-    #     ).T
-    # ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_1'])
+    num_services_increased_percent = summarize(
+        pd.DataFrame(
+            find_difference_relative_to_comparison_series(
+                num_services.loc[0],
+                comparison='s_1',
+                scaled=True)
+        ).T
+    ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_1'])
 
     num_deaths_averted = summarize(
         -1.0 *
@@ -530,14 +609,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         only_mean=True
     ).T.reindex(num_dalys_summarized.index).drop(['s_1'])
 
-    # num_dalys_by_cause_averted_percent = summarize(
-    #     -1.0 * find_difference_relative_to_comparison_dataframe(
-    #         num_dalys_by_cause,
-    #         comparison='s_1',
-    #         scaled=True
-    #     ),
-    #     only_mean=True
-    # ).T.reindex(num_dalys_summarized.index).drop(['s_1'])
+    num_dalys_by_cause_averted_percent = summarize(
+        -1.0 * find_difference_relative_to_comparison_dataframe(
+            num_dalys_by_cause,
+            comparison='s_1',
+            scaled=True
+        ),
+        only_mean=True
+    ).T.reindex(num_dalys_summarized.index).drop(['s_1'])
 
     num_appts_increased = summarize(
         find_difference_relative_to_comparison_dataframe(
@@ -547,19 +626,28 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         only_mean=True
     ).T.reindex(num_dalys_summarized.index).drop(['s_1'])
 
-    # num_appts_increased_percent = summarize(
-    #     find_difference_relative_to_comparison_dataframe(
-    #         num_appts,
-    #         comparison='s_1',
-    #         scaled=True
-    #     ),
-    #     only_mean=True
-    # ).T.reindex(num_dalys_summarized.index).drop(['s_1'])
+    num_appts_increased_percent = summarize(
+        find_difference_relative_to_comparison_dataframe(
+            num_appts,
+            comparison='s_1',
+            scaled=True
+        ),
+        only_mean=True
+    ).T.reindex(num_dalys_summarized.index).drop(['s_1'])
 
     num_treatments_increased = summarize(
         find_difference_relative_to_comparison_dataframe(
             num_treatments,
             comparison='s_1',
+        ),
+        only_mean=True
+    ).T.reindex(num_dalys_summarized.index).drop(['s_1'])
+
+    num_treatments_increased_percent = summarize(
+        find_difference_relative_to_comparison_dataframe(
+            num_treatments,
+            comparison='s_1',
+            scaled=True
         ),
         only_mean=True
     ).T.reindex(num_dalys_summarized.index).drop(['s_1'])
@@ -572,14 +660,31 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ).T
     ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_1'])
 
-    # num_treatments_total_increased_percent = summarize(
-    #     pd.DataFrame(
-    #         find_difference_relative_to_comparison_series(
-    #             num_treatments_total.loc[0],
-    #             comparison='s_1',
-    #             scaled=True)
-    #     ).T
-    # ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_1'])
+    num_treatments_total_increased_percent = summarize(
+        pd.DataFrame(
+            find_difference_relative_to_comparison_series(
+                num_treatments_total.loc[0],
+                comparison='s_1',
+                scaled=True)
+        ).T
+    ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_1'])
+
+    service_ratio_increased = summarize(
+        pd.DataFrame(
+            find_difference_relative_to_comparison_series(
+                ratio_services.loc[0],
+                comparison='s_1')
+        ).T
+    ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_1'])
+
+    service_ratio_increased_percent = summarize(
+        pd.DataFrame(
+            find_difference_relative_to_comparison_series(
+                ratio_services.loc[0],
+                comparison='s_1',
+                scaled=True)
+        ).T
+    ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_1'])
 
     # Check that when we sum across the causes/appt types,
     # we get the same total as calculated when we didn't split by cause/appt type.
@@ -637,7 +742,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         'Nutrition': 'thistle',
         'Radiography': 'lightgray',
     }
-    scenario_groups_color = {
+    scenario_groups_color_init = {
         'no_expansion': 'gray',
         'one_cadre_expansion': 'lightpink',
         'two_cadres_expansion': 'violet',
@@ -645,6 +750,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         'four_cadres_expansion': 'paleturquoise',
         'all_cadres_expansion': 'darkturquoise'
     }
+    scenario_groups_color = {
+        'D/N&M/O/None': 'lightpink',
+        'P + D/N&M/O/None': 'violet',
+        'C + D/N&M/O/None': 'darkorchid',
+        'C + P + D/N&M/O/None': 'darkturquoise',
+    }
+
     scenario_color = {}
     for s in param_names:
         for k in scenario_groups_color.keys():
@@ -659,44 +771,152 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # plot 4D data: relative increases of Clinical, Pharmacy, and Nursing_and_Midwifery as three coordinates,\
     # percentage of DALYs averted decides the color of that scatter point
     extra_budget_allocation = extra_budget_fracs.T
+    name_of_plot = f'Dalys averted (%) against no expansion, {target_period()}'
     heat_data = pd.merge(num_dalys_averted_percent['mean'],
                          extra_budget_allocation[['Clinical', 'Pharmacy', 'Nursing_and_Midwifery']],
                          left_index=True, right_index=True, how='inner')
-    scenarios_with_CNP_only = ['s_4', 's_6', 's_7', 's_10', 's_11', 's_16', 's_22']
-    heat_data = heat_data.loc[heat_data.index.isin(scenarios_with_CNP_only)]
-    name_of_plot = f'DALYs averted (%) against no expansion, {target_period()}'
+    # scenarios_with_CNP_only = ['s_4', 's_6', 's_7', 's_10', 's_11', 's_16', 's_22']
+    # heat_data = heat_data.loc[heat_data.index.isin(scenarios_with_CNP_only)]
+    colors = [scenario_color[s] for s in heat_data.index]
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     img = ax.scatter(heat_data['Clinical'], heat_data['Pharmacy'], heat_data['Nursing_and_Midwifery'],
-                     alpha=0.8, marker='o', #s=heat_data['mean'] * 2000,
-                     c=heat_data['mean'] * 100, cmap='viridis')
+                     alpha=0.8, marker='o', s=heat_data['mean'] * 2000,
+                     #c=heat_data['mean'] * 100, cmap='viridis',
+                     c=colors)
     # plot lines from the best point to three axes panes
-    ax.plot3D([heat_data['Clinical'][0], heat_data['Clinical'][0]],
-              [heat_data['Pharmacy'][0], heat_data['Pharmacy'][0]],
-              [0, heat_data['Nursing_and_Midwifery'][0]],
-              linestyle='--', color='gray', alpha=0.8)
-    ax.plot3D([heat_data['Clinical'][0], heat_data['Clinical'][0]],
-              [0, heat_data['Pharmacy'][0]],
-              [heat_data['Nursing_and_Midwifery'][0], heat_data['Nursing_and_Midwifery'][0]],
-              linestyle='--', color='gray', alpha=0.8)
-    ax.plot3D([0, heat_data['Clinical'][0]],
-              [heat_data['Pharmacy'][0], heat_data['Pharmacy'][0]],
-              [heat_data['Nursing_and_Midwifery'][0], heat_data['Nursing_and_Midwifery'][0]],
-              linestyle='--', color='gray', alpha=0.8)
-    ax.set_xlabel('Fraction of extra budget allocated to \nClinical cadre')
-    ax.set_ylabel('Pharmacy cadre')
-    #ax.invert_yaxis()
-    ax.set_zlabel('Nursing and Midwifery')
-    ax.plot3D([0, 1], [0, 1], [0, 1], linestyle='--', color='red', alpha=0.3, label='the line x=y=z')
-    plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2))
-    plt.colorbar(img, orientation='horizontal', fraction=0.046, pad=0.25)
+    # ax.plot3D([heat_data['Clinical'][0], heat_data['Clinical'][0]],
+    #           [heat_data['Pharmacy'][0], heat_data['Pharmacy'][0]],
+    #           [0, heat_data['Nursing_and_Midwifery'][0]],
+    #           linestyle='--', color='gray', alpha=0.8)
+    # ax.plot3D([heat_data['Clinical'][0], heat_data['Clinical'][0]],
+    #           [0, heat_data['Pharmacy'][0]],
+    #           [heat_data['Nursing_and_Midwifery'][0], heat_data['Nursing_and_Midwifery'][0]],
+    #           linestyle='--', color='gray', alpha=0.8)
+    # ax.plot3D([0, heat_data['Clinical'][0]],
+    #           [heat_data['Pharmacy'][0], heat_data['Pharmacy'][0]],
+    #           [heat_data['Nursing_and_Midwifery'][0], heat_data['Nursing_and_Midwifery'][0]],
+    #           linestyle='--', color='gray', alpha=0.8)
+    ax.set_xlabel('Fraction of extra budget allocated to \nClinical cadre (C)')
+    ax.set_ylabel('Pharmacy cadre (P)')
+    #ax.invert_xaxis()
+    ax.invert_yaxis()
+    ax.set_zlabel('Nursing and Midwifery (N&M)')
+    ax.plot3D([0, 1], [0, 1], [0, 1], linestyle='-', color='orange', alpha=1.0, linewidth=2)
+    legend_labels = list(scenario_groups_color.keys()) + ['line of C = P = N&M']
+    legend_handles = [plt.Line2D([0, 0], [0, 0],
+                                 linestyle='none', marker='o', color=scenario_groups_color[label]
+                                 ) for label in legend_labels[0:len(legend_labels) - 1]
+                      ] + [plt.Line2D([0, 1], [0, 0], linestyle='-', color='orange')]
+    plt.legend(legend_handles, legend_labels, loc='upper center', fontsize='small', bbox_to_anchor=(0.5, -0.2), ncol=2)
+    # plt.colorbar(img, orientation='horizontal', fraction=0.046, pad=0.25)
     plt.title(name_of_plot)
+    plt.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
+    name_of_plot = f'1 Dalys averted, Services increased and Treatment increased, {target_period()}'
+    heat_data = pd.concat([num_dalys_averted_percent['mean'], num_services_increased_percent['mean'],
+                           num_treatments_total_increased_percent['mean']], axis=1)
+    # scenarios_with_CNP_only = ['s_4', 's_6', 's_7', 's_10', 's_11', 's_16', 's_22']
+    # heat_data = heat_data.loc[heat_data.index.isin(scenarios_with_CNP_only)]
+    colors = [scenario_color[s] for s in heat_data.index]
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(100 * heat_data.iloc[:, 1], 100 * heat_data.iloc[:, 2], 100 * heat_data.iloc[:, 0],
+               alpha=0.8, marker='o',
+               c=colors)
+    ax.set_xlabel('Services increased %')
+    ax.set_ylabel('Treatments increased %')
+    ax.set_zlabel('DALYs averted %')
+    legend_labels = list(scenario_groups_color.keys())
+    legend_handles = [plt.Line2D([0, 0], [0, 0],
+                                 linestyle='none', marker='o', color=scenario_groups_color[label]
+                                 ) for label in legend_labels
+                      ]
+    plt.legend(legend_handles, legend_labels, loc='upper center', fontsize='small', bbox_to_anchor=(0.5, -0.2), ncol=2)
+    plt.title(name_of_plot)
+    plt.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
+    name_of_plot = f'0 Dalys averted, Services increased and Treatment increased, {target_period()}'
+    heat_data = pd.concat([num_dalys_averted_percent['mean'], num_services_increased_percent['mean'],
+                           num_treatments_total_increased_percent['mean']], axis=1)
+    # scenarios_with_CNP_only = ['s_4', 's_6', 's_7', 's_10', 's_11', 's_16', 's_22']
+    # heat_data = heat_data.loc[heat_data.index.isin(scenarios_with_CNP_only)]
+    colors = [scenario_color[s] for s in heat_data.index]
+    fig, ax = plt.subplots()
+    ax.scatter(100 * heat_data.iloc[:, 1], 100 * heat_data.iloc[:, 2],
+               alpha=0.8, marker='o', s=2000 * heat_data.iloc[:, 0],
+               c=colors)
+    ax.set_xlabel('Services increased %')
+    ax.set_ylabel('Treatments increased %')
+    legend_labels = list(scenario_groups_color.keys())
+    legend_handles = [plt.Line2D([0, 0], [0, 0],
+                                 linestyle='none', marker='o', color=scenario_groups_color[label]
+                                 ) for label in legend_labels
+                      ]
+    plt.legend(legend_handles, legend_labels, loc='upper center', fontsize='small', bbox_to_anchor=(0.5, -0.2), ncol=2)
+    plt.title(name_of_plot)
+    plt.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
+    name_of_plot = f'Dalys averted and Services increased, {target_period()}'
+    heat_data = pd.concat([num_dalys_averted_percent['mean'], num_services_increased_percent['mean'],
+                           num_treatments_total_increased_percent['mean']], axis=1)
+    # scenarios_with_CNP_only = ['s_4', 's_6', 's_7', 's_10', 's_11', 's_16', 's_22']
+    # heat_data = heat_data.loc[heat_data.index.isin(scenarios_with_CNP_only)]
+    colors = [scenario_color[s] for s in heat_data.index]
+    fig, ax = plt.subplots()
+    ax.scatter(100 * heat_data.iloc[:, 1], 100 * heat_data.iloc[:, 0],
+               alpha=0.8, marker='o', c=colors)
+    ax.set_xlabel('Services increased %')
+    ax.set_ylabel('DLAYs averted %')
+    legend_labels = list(scenario_groups_color.keys())
+    legend_handles = [plt.Line2D([0, 0], [0, 0],
+                                 linestyle='none', marker='o', color=scenario_groups_color[label]
+                                 ) for label in legend_labels
+                      ]
+    plt.legend(legend_handles, legend_labels, loc='upper center', fontsize='small', bbox_to_anchor=(0.5, -0.2), ncol=2)
+    plt.title(name_of_plot)
+    plt.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
+    name_of_plot = f'Dalys averted and Treatments increased, {target_period()}'
+    heat_data = pd.concat([num_dalys_averted_percent['mean'], num_services_increased_percent['mean'],
+                           num_treatments_total_increased_percent['mean']], axis=1)
+    # scenarios_with_CNP_only = ['s_4', 's_6', 's_7', 's_10', 's_11', 's_16', 's_22']
+    # heat_data = heat_data.loc[heat_data.index.isin(scenarios_with_CNP_only)]
+    colors = [scenario_color[s] for s in heat_data.index]
+    fig, ax = plt.subplots()
+    ax.scatter(100 * heat_data.iloc[:, 2], 100 * heat_data.iloc[:, 0],
+               alpha=0.8, marker='o', c=colors)
+    ax.set_xlabel('Treatments increased %')
+    ax.set_ylabel('DLAYs averted %')
+    legend_labels = list(scenario_groups_color.keys())
+    legend_handles = [plt.Line2D([0, 0], [0, 0],
+                                 linestyle='none', marker='o', color=scenario_groups_color[label]
+                                 ) for label in legend_labels
+                      ]
+    plt.legend(legend_handles, legend_labels, loc='upper center', fontsize='small', bbox_to_anchor=(0.5, -0.2), ncol=2)
+    plt.title(name_of_plot)
+    plt.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     fig.show()
     plt.close(fig)
 
     # do some linear regression to see the marginal effects of individual cadres and combined effects of C, N, P cadres
-    regression_data = pd.merge(num_dalys_averted_percent['mean'],
+    outcome_data = num_dalys_averted_percent['mean']
+    # outcome = num_services_increased_percent['mean']
+    # outcome = num_treatments_total_increased_percent['mean']
+    regression_data = pd.merge(outcome_data,
                                extra_budget_allocation,
                                left_index=True, right_index=True, how='inner')
     regression_data['C*P'] = regression_data['Clinical'] * regression_data['Pharmacy']
@@ -727,6 +947,24 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig, ax = do_bar_plot_with_ci(num_dalys_summarized / 1e6)
     ax.set_title(name_of_plot)
     ax.set_ylabel('(Millions)')
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
+    name_of_plot = f'Service demand, {target_period()}'
+    fig, ax = do_bar_plot_with_ci(num_service_demand_summarized / 1e6)
+    ax.set_title(name_of_plot)
+    ax.set_ylabel('(Millions)')
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
+    name_of_plot = f'Service delivery ratio, {target_period()}'
+    fig, ax = do_bar_plot_with_ci(ratio_service_summarized)
+    ax.set_title(name_of_plot)
+    ax.set_ylabel('services delivered / demand')
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     fig.show()
@@ -905,6 +1143,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig, ax = do_bar_plot_with_ci(num_deaths_averted / 1e6, num_deaths_averted_percent, annotation=True)
     ax.set_title(name_of_plot)
     ax.set_ylabel('(Millions)')
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
+    name_of_plot = f'Service delivery ratio against no expansion, {target_period()}'
+    fig, ax = do_bar_plot_with_ci(service_ratio_increased * 100, service_ratio_increased_percent, annotation=True)
+    ax.set_title(name_of_plot)
+    ax.set_ylabel('Percentage')
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     fig.show()
