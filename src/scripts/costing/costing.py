@@ -37,7 +37,7 @@ print('Script Start', datetime.datetime.now().strftime('%H:%M'))
 # define a pathway to the data folder (note: currently outside the TLO model directory)
 # remember to set working directory to TLOmodel/
 #outputfilepath = Path('./outputs/sakshi.mohan@york.ac.uk')
-outputfilepath = Path('./outputs/tbh03@ic.ac.uk')
+outputfilepath = Path('./outputs/t.mangal@imperial.ac.uk')
 resourcefilepath = Path("./resources")
 path_for_new_resourcefiles = resourcefilepath / "healthsystem/consumables"
 costing_outputs_folder = Path('./outputs/costing')
@@ -57,14 +57,16 @@ def drop_outside_period(_df):
 # Load result files
 #-------------------
 #results_folder = get_scenario_outputs('example_costing_scenario.py', outputfilepath)[0] # impact_of_cons_regression_scenarios
-results_folder = get_scenario_outputs('long_run_all_diseases.py', outputfilepath)[0] # impact_of_cons_regression_scenarios
+#results_folder = get_scenario_outputs('long_run_all_diseases.py', outputfilepath)[0] # impact_of_cons_regression_scenarios
+results_folder = get_scenario_outputs('htm_with_and_without_hss-2024-09-04T143044Z.py', outputfilepath)[0] # Tara's FCDO scenarios
 #results_folder = get_scenario_outputs('scenario_impact_of_consumables_availability.py', outputfilepath)[0] # impact_of_cons_regression_scenarios
-equipment_results_folder = Path('./outputs/sakshi.mohan@york.ac.uk/021_long_run_all_diseases_run')
-consumables_results_folder = Path('./outputs/sakshi.mohan@york.ac.uk/impact_of_consumables_scenarios-2024-06-11T204007Z/')
+
+#equipment_results_folder = Path('./outputs/sakshi.mohan@york.ac.uk/021_long_run_all_diseases_run')
+#consumables_results_folder = Path('./outputs/sakshi.mohan@york.ac.uk/impact_of_consumables_scenarios-2024-06-11T204007Z/')
 # TODO When the costing module is ready the above results_folder should be the same for the calculation of all costs
 
 # check can read results from draw=0, run=0
-log_equipment = load_pickled_dataframes(equipment_results_folder, 0, 0)
+#log_equipment = load_pickled_dataframes(equipment_results_folder, 0, 0)
 
 # look at one log (so can decide what to extract)
 log = load_pickled_dataframes(results_folder)
@@ -74,6 +76,8 @@ info = get_scenario_info(results_folder)
 
 # 1) Extract the parameters that have varied over the set of simulations
 params = extract_params(results_folder)
+final_year_of_simulation = max(log['tlo.simulation']['info']['date']).year
+first_year_of_simulation = min(log['tlo.simulation']['info']['date']).year
 
 # Load cost input files
 #------------------------
@@ -93,18 +97,68 @@ hr_cost_parameters = workbook_cost["human_resources"]
 hr_cost_parameters['Facility_Level'] =  hr_cost_parameters['Facility_Level'].astype(str)
 hr_annual_salary = hr_cost_parameters[hr_cost_parameters['Parameter_name'] == 'salary_usd']
 hr_annual_salary['OfficerType_FacilityLevel'] = 'Officer_Type=' + hr_annual_salary['Officer_Category'].astype(str) + '|Facility_Level=' + hr_annual_salary['Facility_Level'].astype(str) # create column for merging with model log
+hr_annual_salary = hr_annual_salary.rename({'Value':'Annual_Salary'}, axis = 1)
 
-# Load scenario staffing level
-hr_scenario = log[ 'tlo.scenario']['override_parameter']['new_value'][log[ 'tlo.scenario'][ 'override_parameter']['name'] == 'use_funded_or_actual_staffing']
+# Load scenario staffing level for each year and draw
+use_funded_or_actual_staffing = params[params.module_param == 'HealthSystem:use_funded_or_actual_staffing'].reset_index()
+HR_scaling_by_level_and_officer_type_mode  = params[params.module_param == 'HealthSystem:HR_scaling_by_level_and_officer_type_mode'].reset_index()
+year_HR_scaling_by_level_and_officer_type = params[params.module_param == 'HealthSystem:year_HR_scaling_by_level_and_officer_type'].reset_index()
+yearly_HR_scaling_mode  = params[params.module_param == 'HealthSystem:yearly_HR_scaling_mode'].reset_index()
 
-if hr_scenario.empty:
-    staff_count = pd.read_csv(
-        resourcefilepath / "healthsystem/human_resources/actual/ResourceFile_Daily_Capabilities.csv") # if missing default to reading actual capabilities
-else:
-    staff_count = pd.read_csv(
-        resourcefilepath / 'healthsystem'/ 'human_resources' / f'{hr_scenario[2]}' / 'ResourceFile_Daily_Capabilities.csv')
+draws = params.index.unique().tolist() # list of draws
+years = list(range(first_year_of_simulation, final_year_of_simulation + 1))
 
-staff_count_by_level_and_officer_type = staff_count.groupby(['Facility_Level', 'Officer_Category'])[
+# TODO add the following parameters to estimate HR availability per year - HealthSystem:yearly_HR_scaling_mode, HealthSystem:HR_scaling_by_level_and_officer_type_mode, HealthSystem:year_HR_scaling_by_level_and_officer_type
+hr_df_columns = pd.read_csv(resourcefilepath / "healthsystem/human_resources/actual/ResourceFile_Daily_Capabilities.csv").columns.drop(['Facility_ID', 'Officer_Category'])
+facilities = pd.read_csv(resourcefilepath / "healthsystem/human_resources/actual/ResourceFile_Daily_Capabilities.csv")['Facility_ID'].unique().tolist()
+officer_categories = pd.read_csv(resourcefilepath / "healthsystem/human_resources/actual/ResourceFile_Daily_Capabilities.csv")['Officer_Category'].unique().tolist()
+staff_count = pd.DataFrame(columns = hr_df_columns, index=pd.MultiIndex.from_product([draws, years, facilities, officer_categories], names=['draw', 'year', 'Facility_ID ', 'Officer_Category'])) # Create the empty DataFrame staff_count with multi-level index ['draw', 'year']
+
+for d in draws:
+    year_of_switch = (
+        year_HR_scaling_by_level_and_officer_type.loc[
+            year_HR_scaling_by_level_and_officer_type.draw == d, 'value'
+        ].iloc[0] if not year_HR_scaling_by_level_and_officer_type.loc[
+            year_HR_scaling_by_level_and_officer_type.draw == d, 'value'
+        ].empty else final_year_of_simulation
+    )
+    chosen_hr_scenario = use_funded_or_actual_staffing.loc[use_funded_or_actual_staffing.draw == d,'value'].iloc[0] if not use_funded_or_actual_staffing.loc[use_funded_or_actual_staffing.draw == d,'value'].empty else ''
+    condition_draw = staff_count.index.get_level_values('draw') == d  # Condition for draw
+    condition_before_switch = staff_count.index.get_level_values('year') < year_of_switch  # Condition for year
+
+    for year in years:
+        condition_draw = staff_count.index.get_level_values('draw') == d  # Condition for draw
+        condition_year = staff_count.index.get_level_values('year') == year  # Condition for the specific year
+
+        if year < year_of_switch:
+            if chosen_hr_scenario == '':
+                new_data = pd.read_csv(
+                    resourcefilepath / "healthsystem/human_resources/actual/ResourceFile_Daily_Capabilities.csv"
+                )
+            else:
+                new_data = pd.read_csv(
+                    resourcefilepath / 'healthsystem' / 'human_resources' / f'{chosen_hr_scenario}' / 'ResourceFile_Daily_Capabilities.csv'
+                )  # Use the chosen HR scenario
+        else:
+            if chosen_hr_scenario == '':
+                new_data = pd.read_csv(
+                    resourcefilepath / "healthsystem/human_resources/actual/ResourceFile_Daily_Capabilities.csv"
+                )  # If missing default to reading actual capabilities
+            else:
+                new_data = pd.read_csv(
+                    resourcefilepath / "healthsystem/human_resources/actual/ResourceFile_Daily_Capabilities.csv"
+                )  # If missing default to reading actual capabilities
+
+        # Set the 'draw' and 'year' in new_data
+        new_data['draw'] = d
+        new_data['year'] = year
+        new_data = new_data.set_index(['draw', 'year', 'Facility_ID', 'Officer_Category'])
+
+        # Replace empty values in staff_count with values from new_data
+        staff_count.loc[condition_draw & condition_year] = staff_count.loc[
+            condition_draw & condition_year].fillna(new_data)
+
+staff_count_by_level_and_officer_type = staff_count.groupby(['draw', 'year', 'Facility_Level', 'Officer_Category'])[
     'Staff_Count'].sum().reset_index()
 staff_count_by_level_and_officer_type['Facility_Level'] = staff_count_by_level_and_officer_type['Facility_Level'].astype(str)
 
@@ -115,69 +169,48 @@ def expand_capacity_by_officer_type_and_facility_level(_df: pd.Series) -> pd.Ser
     _df.index.name = 'year'
     return unflatten_flattened_multi_index_in_logging(_df).stack(level=[0, 1])  # expanded flattened axis
 
-annual_capacity_used_by_cadre_and_level = summarize(extract_results(
+annual_capacity_used_by_cadre_and_level = extract_results(
     Path(results_folder),
     module='tlo.methods.healthsystem.summary',
     key='Capacity_By_OfficerType_And_FacilityLevel',
     custom_generate_series=expand_capacity_by_officer_type_and_facility_level,
     do_scaling=False,
-), only_mean=True, collapse_columns=True)
+) #, only_mean=True, collapse_columns=True
 
-# Take mean across the entire simulation
+# Prepare capacity used dataframe to be multiplied by staff count
 average_capacity_used_by_cadre_and_level = annual_capacity_used_by_cadre_and_level.groupby(['OfficerType', 'FacilityLevel']).mean().reset_index(drop=False)
+average_capacity_used_by_cadre_and_level.reset_index(drop=True) # Flatten multi=index column
+average_capacity_used_by_cadre_and_level = average_capacity_used_by_cadre_and_level.melt(id_vars=['OfficerType', 'FacilityLevel'],
+                        var_name=['draw', 'run'],
+                        value_name='capacity_used')
 # Unstack to make it look like a nice table
 average_capacity_used_by_cadre_and_level['OfficerType_FacilityLevel'] = 'Officer_Type=' + average_capacity_used_by_cadre_and_level['OfficerType'].astype(str) + '|Facility_Level=' + average_capacity_used_by_cadre_and_level['FacilityLevel'].astype(str)
-list_of_cadre_and_level_combinations_used = average_capacity_used_by_cadre_and_level[average_capacity_used_by_cadre_and_level['mean'] != 0]['OfficerType_FacilityLevel']
-print(f"Out of {len(average_capacity_used_by_cadre_and_level)} cadre and level combinations available, {len(list_of_cadre_and_level_combinations_used)} are used in the simulation")
+list_of_cadre_and_level_combinations_used = average_capacity_used_by_cadre_and_level[average_capacity_used_by_cadre_and_level['capacity_used'] != 0][['OfficerType_FacilityLevel', 'draw', 'run']]
+print(f"Out of {len(average_capacity_used_by_cadre_and_level.OfficerType_FacilityLevel.unique())} cadre and level combinations available, {len(list_of_cadre_and_level_combinations_used.OfficerType_FacilityLevel.unique())} are used across the simulations")
 
 # Subset scenario staffing level to only include cadre-level combinations used in the simulation
 staff_count_by_level_and_officer_type['OfficerType_FacilityLevel'] = 'Officer_Type=' + staff_count_by_level_and_officer_type['Officer_Category'].astype(str) + '|Facility_Level=' + staff_count_by_level_and_officer_type['Facility_Level'].astype(str)
-used_staff_count_by_level_and_officer_type = staff_count_by_level_and_officer_type[staff_count_by_level_and_officer_type['OfficerType_FacilityLevel'].isin(list_of_cadre_and_level_combinations_used)]
+used_staff_count_by_level_and_officer_type = staff_count_by_level_and_officer_type.merge(list_of_cadre_and_level_combinations_used, on = ['draw', 'OfficerType_FacilityLevel'], how = 'right', validate = 'm:m')
 
 # Calculate various components of HR cost
 # 1.1 Salary cost for current total staff
 #---------------------------------------------------------------------------------------------------------------
 staff_count_by_level_and_officer_type = staff_count_by_level_and_officer_type.drop(staff_count_by_level_and_officer_type[staff_count_by_level_and_officer_type.Facility_Level == '5'].index) # drop headquarters because we're only concerned with staff engaged in service delivery
-salary_for_all_staff = pd.merge(staff_count_by_level_and_officer_type[['OfficerType_FacilityLevel', 'Staff_Count']],
-                                     hr_annual_salary[['OfficerType_FacilityLevel', 'Value']], on = ['OfficerType_FacilityLevel'], how = "left")
-salary_for_all_staff['Cost'] = salary_for_all_staff['Value'] * salary_for_all_staff['Staff_Count']
-total_salary_for_all_staff = salary_for_all_staff['Cost'].sum()
+salary_for_all_staff = pd.merge(staff_count_by_level_and_officer_type[['draw', 'year', 'OfficerType_FacilityLevel', 'Staff_Count']],
+                                     hr_annual_salary[['OfficerType_FacilityLevel', 'Annual_Salary']], on = ['OfficerType_FacilityLevel'], how = "left", validate = 'm:1')
+salary_for_all_staff['Cost'] = salary_for_all_staff['Annual_Salary'] * salary_for_all_staff['Staff_Count']
+total_salary_for_all_staff = salary_for_all_staff.groupby(['draw', 'year'])['Cost'].sum()
 
 # 1.2 Salary cost for health workforce cadres used in the simulation (Staff count X Annual salary)
 #---------------------------------------------------------------------------------------------------------------
-salary_for_staff_used_in_scenario = pd.merge(used_staff_count_by_level_and_officer_type[['OfficerType_FacilityLevel', 'Staff_Count']],
-                                     hr_annual_salary[['OfficerType_FacilityLevel', 'Value']], on = ['OfficerType_FacilityLevel'], how = "left")
-salary_for_staff_used_in_scenario['Cost'] = salary_for_staff_used_in_scenario['Value'] * salary_for_staff_used_in_scenario['Staff_Count']
-total_salary_for_staff_used_in_scenario = salary_for_staff_used_in_scenario['Cost'].sum()
-
-# Bar chart of salaries by cadre which goes into the HR folder in outputs (stacked for levels of care and two series for modelled and all)
-def get_level_and_cadre_from_concatenated_value(_df, varname):
-    _df['Cadre'] = _df[varname].str.extract(r'=(.*?)\|')
-    _df['Facility_Level'] = _df[varname].str.extract(r'^[^=]*=[^|]*\|[^=]*=([^|]*)')
-    return _df
-def plot_cost_by_cadre_and_level(_df, figname_prefix, figname_suffix):
-    if ('Facility_Level' in _df.columns) & ('Cadre' in _df.columns):
-        pass
-    else:
-        _df = get_level_and_cadre_from_concatenated_value(_df, 'OfficerType_FacilityLevel')
-
-    pivot_df = _df.pivot_table(index='Cadre', columns='Facility_Level', values='Cost',
-                               aggfunc='sum', fill_value=0)
-    total_salary = round(_df['Cost'].sum(), 0)
-    total_salary = f"{total_salary:,.0f}"
-    ax  = pivot_df.plot(kind='bar', stacked=True, title='Stacked Bar Graph by Cadre and Facility Level')
-    plt.ylabel(f'US Dollars')
-    plt.title(f"Annual {figname_prefix} cost by cadre and facility level")
-    plt.xticks(rotation=45)
-    plt.yticks(rotation=0)
-    plt.text(x=0.3, y=-0.5, s=f"Total {figname_prefix} cost = USD {total_salary}", transform=ax.transAxes,
-             horizontalalignment='center', fontsize=12, weight='bold', color='black')
-    plt.savefig(figurespath / f'{figname_prefix}_by_cadre_and_level_{figname_suffix}.png', dpi=100,
-                bbox_inches='tight')
-    plt.close()
-
-plot_cost_by_cadre_and_level(salary_for_all_staff,figname_prefix = "salary", figname_suffix= "all_staff")
-plot_cost_by_cadre_and_level(salary_for_staff_used_in_scenario,figname_prefix = "salary", figname_suffix= "staff_used_in_scenario")
+used_staff_count_by_level_and_officer_type = used_staff_count_by_level_and_officer_type.drop(used_staff_count_by_level_and_officer_type[used_staff_count_by_level_and_officer_type.Facility_Level == '5'].index)
+salary_for_staff_used_in_scenario = pd.merge(used_staff_count_by_level_and_officer_type[['draw', 'run', 'year', 'OfficerType_FacilityLevel', 'Staff_Count']],
+                                     hr_annual_salary[['OfficerType_FacilityLevel', 'Annual_Salary']], on = ['OfficerType_FacilityLevel'], how = "left")
+salary_for_staff_used_in_scenario['Cost'] = salary_for_staff_used_in_scenario['Annual_Salary'] * salary_for_staff_used_in_scenario['Staff_Count']
+salary_for_staff_used_in_scenario = salary_for_staff_used_in_scenario[['draw', 'run', 'year', 'OfficerType_FacilityLevel', 'Cost']].set_index(['draw', 'run', 'year', 'OfficerType_FacilityLevel']).unstack(level=['draw', 'run'])
+salary_for_staff_used_in_scenario = salary_for_staff_used_in_scenario.apply(lambda x: pd.to_numeric(x, errors='coerce'))
+salary_for_staff_used_in_scenario  = summarize(salary_for_staff_used_in_scenario, only_mean = True, collapse_columns=True)
+total_salary_for_staff_used_in_scenario = salary_for_staff_used_in_scenario.groupby(['year']).sum()
 
 # 1.3 Recruitment cost to fill gap created by attrition
 #---------------------------------------------------------------------------------------------------------------
@@ -196,17 +229,18 @@ def merge_cost_and_model_data(cost_df, model_df, varnames):
             merged_df = pd.merge(merged_df, new_cost_df, on=['Officer_Category', 'Facility_Level'], how="left")
     return merged_df
 
-recruitment_cost = merge_cost_and_model_data(cost_df = hr_cost_parameters, model_df = staff_count_by_level_and_officer_type,
+recruitment_cost = merge_cost_and_model_data(cost_df = hr_cost_parameters, model_df = used_staff_count_by_level_and_officer_type,
                                                      varnames = ['annual_attrition_rate', 'recruitment_cost_per_person_recruited_usd'])
 recruitment_cost['Cost'] = recruitment_cost['annual_attrition_rate'] * recruitment_cost['Staff_Count'] * \
                       recruitment_cost['recruitment_cost_per_person_recruited_usd']
-total_recruitment_cost_for_attrited_workers = recruitment_cost['Cost'].sum()
-
-plot_cost_by_cadre_and_level(recruitment_cost, figname_prefix = "recruitment", figname_suffix= "all_staff")
+recruitment_cost = recruitment_cost[['draw', 'run', 'year', 'OfficerType_FacilityLevel', 'Cost']].set_index(['draw', 'run', 'year', 'OfficerType_FacilityLevel']).unstack(level=['draw', 'run'])
+recruitment_cost = recruitment_cost.apply(lambda x: pd.to_numeric(x, errors='coerce'))
+recruitment_cost  = summarize(recruitment_cost, only_mean = True, collapse_columns=True)
+total_recruitment_cost_for_attrited_workers = recruitment_cost.groupby(['year']).sum()
 
 # 1.4 Pre-service training cost to fill gap created by attrition
 #---------------------------------------------------------------------------------------------------------------
-preservice_training_cost = merge_cost_and_model_data(cost_df = hr_cost_parameters, model_df = staff_count_by_level_and_officer_type,
+preservice_training_cost = merge_cost_and_model_data(cost_df = hr_cost_parameters, model_df = used_staff_count_by_level_and_officer_type,
                                                      varnames = ['annual_attrition_rate',
                                                                  'licensure_exam_passing_rate', 'graduation_rate',
                                                                  'absorption_rate_of_students_into_public_workforce', 'proportion_of_workforce_recruited_from_abroad',
@@ -215,64 +249,46 @@ preservice_training_cost['Cost'] = preservice_training_cost['annual_attrition_ra
                                                 (1/(preservice_training_cost['absorption_rate_of_students_into_public_workforce'] + preservice_training_cost['proportion_of_workforce_recruited_from_abroad'])) * \
                                                 (1/preservice_training_cost['graduation_rate']) * (1/preservice_training_cost['licensure_exam_passing_rate']) * \
                                                 preservice_training_cost['annual_preservice_training_cost_percapita_usd']
-preservice_training_cost_for_attrited_workers = preservice_training_cost['Cost'].sum()
-
-plot_cost_by_cadre_and_level(preservice_training_cost, figname_prefix = "pre-service training", figname_suffix= "all_staff")
+preservice_training_cost = preservice_training_cost[['draw', 'run', 'year', 'OfficerType_FacilityLevel', 'Cost']].set_index(['draw', 'run', 'year', 'OfficerType_FacilityLevel']).unstack(level=['draw', 'run'])
+preservice_training_cost = preservice_training_cost.apply(lambda x: pd.to_numeric(x, errors='coerce'))
+preservice_training_cost  = summarize(preservice_training_cost, only_mean = True, collapse_columns=True)
+preservice_training_cost_for_attrited_workers = preservice_training_cost.groupby(['year']).sum()
 
 # 1.5 In-service training cost to train all staff
 #---------------------------------------------------------------------------------------------------------------
-inservice_training_cost = merge_cost_and_model_data(cost_df = hr_cost_parameters, model_df = staff_count_by_level_and_officer_type,
+inservice_training_cost = merge_cost_and_model_data(cost_df = hr_cost_parameters, model_df = used_staff_count_by_level_and_officer_type,
                                                      varnames = ['annual_inservice_training_cost_usd'])
 inservice_training_cost['Cost'] = inservice_training_cost['Staff_Count'] * inservice_training_cost['annual_inservice_training_cost_usd']
-inservice_training_cost_for_all_staff = inservice_training_cost['Cost'].sum()
-
-plot_cost_by_cadre_and_level(inservice_training_cost, figname_prefix = "in-service training", figname_suffix= "all_staff")
+inservice_training_cost = inservice_training_cost[['draw', 'run', 'year', 'OfficerType_FacilityLevel', 'Cost']].set_index(['draw', 'run', 'year', 'OfficerType_FacilityLevel']).unstack(level=['draw', 'run'])
+inservice_training_cost = inservice_training_cost.apply(lambda x: pd.to_numeric(x, errors='coerce'))
+inservice_training_cost  = summarize(inservice_training_cost, only_mean = True, collapse_columns=True)
+inservice_training_cost_for_all_staff = inservice_training_cost.groupby(['year']).sum()
 
 # TODO check why annual_inservice_training_cost for DCSA is NaN in the merged_df
 
 # Create a dataframe to store financial costs
-hr_cost_subcategories = ['salary_for_all_staff', 'recruitment_cost',
-                         'preservice_training_cost', 'inservice_training_cost']
-scenario_cost = pd.DataFrame({
-    'Cost_Category': ['Human Resources for Health'] * len(hr_cost_subcategories),
-    'Cost_Sub-category': hr_cost_subcategories,
-    'Cost': [salary_for_all_staff['Cost'].sum(), recruitment_cost['Cost'].sum(),
-                      preservice_training_cost['Cost'].sum(), preservice_training_cost['Cost'].sum()]
-})
-# TODO 'Value_2023USD' - use hr_cost_subcategories rather than the hardcoded list
+# Function to melt and label the cost category
+def melt_and_label(df, label):
+    melted_df = pd.melt(df.reset_index(), id_vars='year')
+    melted_df['Cost_Sub-category'] = label
+    return melted_df
+
+# Initialize scenario_cost with the salary data
+scenario_cost = melt_and_label(total_salary_for_staff_used_in_scenario, 'salary_for_used_cadres')
+
+# Concatenate additional cost categories
+additional_costs = [
+    (total_recruitment_cost_for_attrited_workers, 'recruitment_cost_for_attrited_workers'),
+    (preservice_training_cost_for_attrited_workers, 'preservice_training_cost_for_attrited_workers'),
+    (inservice_training_cost_for_all_staff, 'inservice_training_cost_for_all_staff')
+]
+# Iterate through additional costs, melt and concatenate
+for df, label in additional_costs:
+    melted = melt_and_label(df, label)
+    scenario_cost = pd.concat([scenario_cost, melted])
+scenario_cost['Cost_Category'] = 'Human Resources for Health'
 # TODO Consider calculating economic cost of HR by multiplying salary times staff count with cadres_utilisation_rate
-
-def plot_components_of_cost_category(_df, cost_category, figname_suffix):
-    pivot_df = _df[_df['Cost_Category'] == cost_category].pivot_table(index='Cost_Sub-category', values='Cost',
-                               aggfunc='sum', fill_value=0)
-    ax = pivot_df.plot(kind='bar', stacked=False, title='Scenario Cost by Category')
-    plt.ylabel(f'US Dollars')
-    plt.title(f"Annual {cost_category} cost")
-    plt.xticks(rotation=45)
-    plt.yticks(rotation=0)
-
-    # Add text labels on the bars
-    total_cost = pivot_df['Cost'].sum()
-    rects = ax.patches
-    for rect, cost in zip(rects, pivot_df['Cost']):
-        cost_millions = cost / 1e6
-        percentage = (cost / total_cost) * 100
-        label_text = f"{cost_millions:.1f}M ({percentage:.1f}%)"
-        # Place text at the top of the bar
-        x = rect.get_x() + rect.get_width() / 2
-        y = rect.get_height()
-        ax.text(x, y, label_text, ha='center', va='bottom', fontsize=8, rotation=0)
-
-    total_cost = f"{total_cost:,.0f}"
-    plt.text(x=0.3, y=-0.5, s=f"Total {cost_category} cost = USD {total_cost}", transform=ax.transAxes,
-             horizontalalignment='center', fontsize=12, weight='bold', color='black')
-
-    plt.savefig(figurespath / f'{cost_category}_by_cadre_and_level_{figname_suffix}.png', dpi=100,
-                bbox_inches='tight')
-    plt.close()
-
-plot_components_of_cost_category(_df = scenario_cost, cost_category = 'Human Resources for Health', figname_suffix = "all_staff")
-
+scenario_cost.to_csv(figurespath / 'scenario_cost.csv')
 # %%
 # 2. Consumables cost
 def get_quantity_of_consumables_dispensed(results_folder):
@@ -645,6 +661,74 @@ plot_most_expensive_equipment(equipment_cost)
 
 # Extract all costs to a .csv
 scenario_cost.to_csv(costing_outputs_folder / 'scenario_cost.csv')
+
+# Plot costs
+####################################################
+# TODO all these HR plots need to be looked at
+# 1. HR
+# Stacked bar chart of salaries by cadre
+def get_level_and_cadre_from_concatenated_value(_df, varname):
+    _df['Cadre'] = _df[varname].str.extract(r'=(.*?)\|')
+    _df['Facility_Level'] = _df[varname].str.extract(r'^[^=]*=[^|]*\|[^=]*=([^|]*)')
+    return _df
+def plot_cost_by_cadre_and_level(_df, figname_prefix, figname_suffix, draw):
+    if ('Facility_Level' in _df.columns) & ('Cadre' in _df.columns):
+        pass
+    else:
+        _df = get_level_and_cadre_from_concatenated_value(_df, 'OfficerType_FacilityLevel')
+
+    _df = _df[_df.draw == draw]
+    pivot_df = _df.pivot_table(index='Cadre', columns='Facility_Level', values='Cost',
+                               aggfunc='sum', fill_value=0)
+    total_salary = round(_df['Cost'].sum(), 0)
+    total_salary = f"{total_salary:,.0f}"
+    ax  = pivot_df.plot(kind='bar', stacked=True, title='Stacked Bar Graph by Cadre and Facility Level')
+    plt.ylabel(f'US Dollars')
+    plt.title(f"Annual {figname_prefix} cost by cadre and facility level")
+    plt.xticks(rotation=45)
+    plt.yticks(rotation=0)
+    plt.text(x=0.3, y=-0.5, s=f"Total {figname_prefix} cost = USD {total_salary}", transform=ax.transAxes,
+             horizontalalignment='center', fontsize=12, weight='bold', color='black')
+    plt.savefig(figurespath / f'{figname_prefix}_by_cadre_and_level_{figname_suffix}{draw}.png', dpi=100,
+                bbox_inches='tight')
+    plt.close()
+
+plot_cost_by_cadre_and_level(salary_for_all_staff,figname_prefix = "salary", figname_suffix= f"all_staff_draw", draw = 0)
+plot_cost_by_cadre_and_level(salary_for_staff_used_in_scenario.reset_index(),figname_prefix = "salary", figname_suffix= "staff_used_in_scenario_draw", draw = 0)
+plot_cost_by_cadre_and_level(recruitment_cost, figname_prefix = "recruitment", figname_suffix= "all_staff")
+plot_cost_by_cadre_and_level(preservice_training_cost, figname_prefix = "pre-service training", figname_suffix= "all_staff")
+plot_cost_by_cadre_and_level(inservice_training_cost, figname_prefix = "in-service training", figname_suffix= "all_staff")
+
+def plot_components_of_cost_category(_df, cost_category, figname_suffix):
+    pivot_df = _df[_df['Cost_Category'] == cost_category].pivot_table(index='Cost_Sub-category', values='Cost',
+                               aggfunc='sum', fill_value=0)
+    ax = pivot_df.plot(kind='bar', stacked=False, title='Scenario Cost by Category')
+    plt.ylabel(f'US Dollars')
+    plt.title(f"Annual {cost_category} cost")
+    plt.xticks(rotation=45)
+    plt.yticks(rotation=0)
+
+    # Add text labels on the bars
+    total_cost = pivot_df['Cost'].sum()
+    rects = ax.patches
+    for rect, cost in zip(rects, pivot_df['Cost']):
+        cost_millions = cost / 1e6
+        percentage = (cost / total_cost) * 100
+        label_text = f"{cost_millions:.1f}M ({percentage:.1f}%)"
+        # Place text at the top of the bar
+        x = rect.get_x() + rect.get_width() / 2
+        y = rect.get_height()
+        ax.text(x, y, label_text, ha='center', va='bottom', fontsize=8, rotation=0)
+
+    total_cost = f"{total_cost:,.0f}"
+    plt.text(x=0.3, y=-0.5, s=f"Total {cost_category} cost = USD {total_cost}", transform=ax.transAxes,
+             horizontalalignment='center', fontsize=12, weight='bold', color='black')
+
+    plt.savefig(figurespath / f'{cost_category}_by_cadre_and_level_{figname_suffix}.png', dpi=100,
+                bbox_inches='tight')
+    plt.close()
+
+plot_components_of_cost_category(_df = scenario_cost, cost_category = 'Human Resources for Health', figname_suffix = "all_staff")
 
 
 # Compare financial costs with actual budget data
