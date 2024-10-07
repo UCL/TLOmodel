@@ -196,9 +196,7 @@ class HSI_Event:
 
         if self.sim.generate_event_chains:
             # Only print event if it belongs to modules of interest and if it is not in the list of events to ignore
-            #if (self.module in self.sim.generate_event_chains_modules_of_interest) and
-            if all(sub not in str(self) for sub in self.sim.generate_event_chains_ignore_events):
-
+            if (self.module in self.sim.generate_event_chains_modules_of_interest) and not set(self.sim.generate_event_chains_ignore_events).intersect(str(self)):
                 print_chains = True
                 if self.target != self.sim.population:
                     row = self.sim.population.props.loc[[self.target]]
