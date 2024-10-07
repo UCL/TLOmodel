@@ -193,10 +193,12 @@ class HSI_Event:
         
         print_chains = False
         df_before = []
-        
+
         if self.sim.generate_event_chains:
             # Only print event if it belongs to modules of interest and if it is not in the list of events to ignore
-            if (self.module in self.sim.generate_event_chains_modules_of_interest) and all(sub not in str(self) for sub in self.sim.generate_event_chains_ignore_events):
+            #if (self.module in self.sim.generate_event_chains_modules_of_interest) and
+            if all(sub not in str(self) for sub in self.sim.generate_event_chains_ignore_events):
+
                 print_chains = True
                 if self.target != self.sim.population:
                     row = self.sim.population.props.iloc[[self.target]]
@@ -204,7 +206,7 @@ class HSI_Event:
                     row['event'] = self
                     row['event_date'] = self.sim.date
                     row['when'] = 'Before'
-                    self.event_chains = pd.concat([self.sim.event_chains, row], ignore_index=True)
+                    self.sim.event_chains = pd.concat([self.sim.event_chains, row], ignore_index=True)
                 else:
                     df_before = self.sim.population.props.copy()
         
@@ -219,7 +221,7 @@ class HSI_Event:
                 row['event'] = self
                 row['event_date'] = self.sim.date
                 row['when'] = 'After'
-                self.event_chains = pd.concat([self.sim.event_chains, row], ignore_index=True)
+                self.sim.event_chains = pd.concat([self.sim.event_chains, row], ignore_index=True)
             else:
                 df_after = self.sim.population.props.copy()
                 change = df_before.compare(df_after)
@@ -236,8 +238,8 @@ class HSI_Event:
                     new_rows_after['event_date'] = self.sim.date
                     new_rows_after['when'] = 'After'
 
-                    self.event_chains = pd.concat([self.sim.event_chains,new_rows_before], ignore_index=True)
-                    self.event_chains = pd.concat([self.sim.event_chains,new_rows_after], ignore_index=True)
+                    self.sim.event_chains = pd.concat([self.sim.event_chains,new_rows_before], ignore_index=True)
+                    self.sim.event_chains = pd.concat([self.sim.event_chains,new_rows_after], ignore_index=True)
         return updated_appt_footprint
 
     def get_consumables(

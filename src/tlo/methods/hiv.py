@@ -631,7 +631,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         df.loc[df.is_alive, "hv_date_treated"] = pd.NaT
         df.loc[df.is_alive, "hv_date_last_ART"] = pd.NaT
 
-        if self.sim.generate_event_chains is False:
+        if self.sim.generate_event_chains is False or self.sim.generate_event_chains is None or self.sim.generate_event_chains_overwrite_epi is False:
             # Launch sub-routines for allocating the right number of people into each category
             self.initialise_baseline_prevalence(population)  # allocate baseline prevalence
 
@@ -906,7 +906,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         df = sim.population.props
         p = self.parameters
 
-        if self.sim.generate_event_chains:
+        if self.sim.generate_event_chains is True and self.sim.generate_event_chains_overwrite_epi:
             print("Should be generating data")
             sim.schedule_event(
                 HivPollingEventForDataGeneration(self), sim.date + DateOffset(days=0)
@@ -1901,7 +1901,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                     priority=0,
                 )
 
-        if self.sim.generate_event_chains is False:
+        if self.sim.generate_event_chains is False or self.sim.generate_event_chains is None or self.sim.generate_event_chains_overwrite_epi is False:
             # Horizontal transmission: Male --> Female
             horizontal_transmission(from_sex="M", to_sex="F")
 

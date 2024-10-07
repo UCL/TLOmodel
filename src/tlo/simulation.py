@@ -105,6 +105,7 @@ class Simulation:
         self.modules = OrderedDict()
         self.event_queue = EventQueue()
         self.generate_event_chains = None
+        self.generate_event_chains_overwrite_epi = None
         self.generate_event_chains_modules_of_interest = []
         self.generate_event_chains_ignore_events = []
         self.end_date = None
@@ -298,10 +299,11 @@ class Simulation:
         self.end_date = end_date  # store the end_date so that others can reference it
 
         self.generate_event_chains = generate_event_chains # for now ensure we're always aiming to print data
+        self.generate_event_chains_overwrite_epi = False
         if self.generate_event_chains:
             # For now keep these fixed, eventually they will be input from user
             self.generate_event_chains_modules_of_interest = [self.modules['Tb'], self.modules['Hiv'], self.modules['CardioMetabolicDisorders']]
-            self.generate_event_chains_ignore_events = ['TbActiveCasePollGenerateData','HivPollingEventForDataGeneration','SimplifiedBirthsPoll', 'AgeUpdateEvent', 'HealthSystemScheduler']
+            self.generate_event_chains_ignore_events =  ['AgeUpdateEvent','HealthSystemScheduler', 'DirectBirth'] #['TbActiveCasePollGenerateData','HivPollingEventForDataGeneration','SimplifiedBirthsPoll', 'AgeUpdateEvent', 'HealthSystemScheduler']
 
         #df_event_chains = pd.DataFrame(columns= list(self.population.props.columns)+['person_ID'] + ['event'] + ['event_date'] + ['when'])
 
