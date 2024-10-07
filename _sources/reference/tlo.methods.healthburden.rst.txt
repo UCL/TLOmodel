@@ -38,6 +38,8 @@ tlo.methods.healthburden module
 
      METADATA : {}
 
+     __annotations__ : {}
+
      **Functions (defined or overridden in class HealthBurden):**
 
      .. automethod:: __init__

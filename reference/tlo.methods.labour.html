@@ -1,25 +1,23 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="../">
 <head>
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.labour module &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
+  <title>tlo.methods.labour module &mdash; TLOmodel 0.1.dev2456+g2221089.d20241007 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
-      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=7ab3649f" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
 
   
     <link rel="shortcut icon" href="../_static/favicon.png"/>
-  <!--[if lt IE 9]>
-    <script src="../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="../_static/jquery.js?v=5d32c60e"></script>
-        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=f3d69a25"></script>
-        <script src="../_static/doctools.js?v=9a2dae69"></script>
-        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=363ca9bd"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -38,9 +36,6 @@
           <a href="../index.html" class="icon icon-home">
             TLOmodel
           </a>
-              <div class="version">
-                0.1
-              </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
@@ -58,6 +53,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../resources/index.html">Resource files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../parameters.html">Parameters</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../learning.html">Learning Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contributors.html">Contributors</a></li>
@@ -112,6 +108,14 @@ Following birth this module manages postnatal care delivered via HSI_Labour_Rece
 PostnatalWeekOneMaternalEvent which represents the start of a womans postnatal period.</p>
 </div></blockquote>
 </div></blockquote>
+<p>Construct a new disease module ready to be included in a simulation.</p>
+<p>Initialises an empty parameters dictionary and module-specific random number
+generator.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name</strong> – the name to use for this module. Defaults to the concrete subclass’ name.</p>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.core.Module</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_generic_first_appts.GenericFirstAppointmentsMixin</span></code></p>
 <p><strong>PARAMETERS:</strong></p>
 <table class="docutils align-default">
@@ -958,12 +962,13 @@ PostnatalWeekOneMaternalEvent which represents the start of a womans postnatal p
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ADDITIONAL_DEPENDENCIES : {‘HealthSystem’, ‘CareOfWomenDuringPregnancy’, ‘PostnatalSupervisor’, ‘PregnancySupervisor’, ‘NewbornOutcomes’, ‘Lifestyle’, ‘Contraception’}</p>
-<p>CAUSES_OF_DEATH : {‘uterine_rupture’: &lt;tlo.methods.causes.Cause object at 0x12a3fd850&gt;, ‘intrapartum_sepsis’: &lt;tlo.methods.causes.Cause object at 0x12a3ffad0&gt;, ‘antepartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x12a3fda50&gt;, ‘postpartum_sepsis’: &lt;tlo.methods.causes.Cause object at 0x12a3ffc10&gt;, ‘postpartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x12a3fff10&gt;, ‘secondary_postpartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x12a3fc690&gt;, ‘severe_pre_eclampsia’: &lt;tlo.methods.causes.Cause object at 0x12a3fead0&gt;, ‘eclampsia’: &lt;tlo.methods.causes.Cause object at 0x12a3febd0&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘maternal’: &lt;tlo.methods.causes.Cause object at 0x12a3fd3d0&gt;}</p>
+<p>ADDITIONAL_DEPENDENCIES : {‘Lifestyle’, ‘PregnancySupervisor’, ‘NewbornOutcomes’, ‘Contraception’, ‘HealthSystem’, ‘PostnatalSupervisor’, ‘CareOfWomenDuringPregnancy’}</p>
+<p>CAUSES_OF_DEATH : {‘uterine_rupture’: &lt;tlo.methods.causes.Cause object at 0x1356a3e90&gt;, ‘intrapartum_sepsis’: &lt;tlo.methods.causes.Cause object at 0x1356a2490&gt;, ‘antepartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x1356a3290&gt;, ‘postpartum_sepsis’: &lt;tlo.methods.causes.Cause object at 0x1356a0f10&gt;, ‘postpartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x1356a3150&gt;, ‘secondary_postpartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x1356a3a90&gt;, ‘severe_pre_eclampsia’: &lt;tlo.methods.causes.Cause object at 0x1356a1b90&gt;, ‘eclampsia’: &lt;tlo.methods.causes.Cause object at 0x1356a1f10&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘maternal’: &lt;tlo.methods.causes.Cause object at 0x1356a2a50&gt;}</p>
 <p>INIT_DEPENDENCIES : {‘Demography’}</p>
-<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
+<p>METADATA : {&lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘Stunting’}</p>
+<p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class Labour):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.__init__">
@@ -995,15 +1000,25 @@ Typically, modules would read a particular file within here.</p>
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.initialise_population">
 <span class="sig-name descname"><span class="pre">initialise_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.initialise_population" title="Link to this definition"></a></dt>
 <dd><p>Set our property values for the initial population.</p>
-<p>Must be implemented by subclasses.</p>
 <p>This method is called by the simulation when creating the initial population, and is
 responsible for assigning initial values, for every individual, of those properties
 ‘owned’ by this module, i.e. those declared in its PROPERTIES dictionary.</p>
+<p>By default, all <code class="docutils literal notranslate"><span class="pre">Property``s</span> <span class="pre">in</span> <span class="pre">``self.PROPERTIES</span></code> will have
+their columns in the population dataframe set to the default value.</p>
+<p>Modules that wish to implement this behaviour do not need to implement this method,
+it will be inherited automatically. Modules that wish to perform additional steps
+during the initialise_population stage should reimplement this method and call</p>
+<p><code class="docutils literal notranslate"><span class="pre">`python</span>
+<span class="pre">super().initialise_population(population=population)</span>
+<span class="pre">`</span></code></p>
+<p>at the beginning of the method, then proceed with their additional steps. Modules that
+do not wish to inherit this default behaviour should re-implement initialise_population
+without the call to <code class="docutils literal notranslate"><span class="pre">super()</span></code> above.</p>
 <p>TODO: We probably need to declare somehow which properties we ‘read’ here, so the
 simulation knows what order to initialise modules in!</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>population</strong> – the population of individuals</p>
+<dd class="field-odd"><p><strong>population</strong> – The population of individuals in the simulation.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1442,6 +1457,19 @@ different functions including populating the mni dictionary to store additional 
 and HSIs, determining if and where a woman will seek care for delivery, schedules the LabourAtHome event and the
 HSI_Labour_PresentsForSkilledAttendance at birth (depending on care seeking), the BirthAndPostnatalEvent and the
 LabourDeathAndStillBirthEvent.</p>
+<p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Functions (defined or overridden in class LabourOnsetEvent):</strong></p>
 <dl class="py method">
@@ -1486,6 +1514,19 @@ complications associated with the intrapartum phase of labour and makes the appr
 <div><p>Additionally, this event applies a probability that women who develop complications during a home birth may choose
 to seek care from at a health facility. In that case the appropriate HSI is scheduled.</p>
 </div></blockquote>
+<p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Functions (defined or overridden in class LabourAtHomeEvent):</strong></p>
 <dl class="py method">
@@ -1527,6 +1568,19 @@ constructor, but may also take further keyword arguments.</p></li>
 module following the application of complications (and possibly treatment) for women who have given birth at home
 OR in a facility . This event determines if women who have experienced complications in labour will die or
 experience an intrapartum stillbirth.</p>
+<p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Functions (defined or overridden in class LabourDeathAndStillBirthEvent):</strong></p>
 <dl class="py method">
@@ -1568,6 +1622,19 @@ constructor, but may also take further keyword arguments.</p></li>
 calls the do_birth function for all women who have gone into labour to generate a newborn within the simulation.
 Additionally, this event applies the incidence of complications immediately following birth and determines if each
 woman will receive a full postnatal check-up and when.</p>
+<p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Functions (defined or overridden in class BirthAndPostnatalOutcomesEvent):</strong></p>
 <dl class="py method">
@@ -1623,6 +1690,16 @@ antibiotics, intravenous anticonvulsants and assisted vaginal delivery. Addition
 antihypertensives in line with Malawi’s EHP. Interventions will only be attempted to be delivered if the squeeze
 factor of the HSI is below a predetermined threshold of each intervention. CEmONC level interventions are managed
 within HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare</p>
+<p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event" title="tlo.methods.hsi_event.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_event.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
 <p>__annotations__ : {}</p>
@@ -1678,6 +1755,16 @@ PostnatalSupervisorEvent for women who require PNC later in the postnatal period
 postpartum care contact after delivery and includes assessment and treatment of severe pre-eclampsia, hypertension,
 sepsis and postpartum bleeding. In addition woman are scheduled HIV screening if appropriate and started on
 postnatal iron tablets</p>
+<p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event" title="tlo.methods.hsi_event.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_event.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
 <p>__annotations__ : {}</p>
@@ -1736,6 +1823,16 @@ to allow the rescheduling. This is called each time that the event is tried to b
 required to be delivered at a CEmONC level facility including caesarean section, blood transfusion and surgery
 during or following labour Currently we assume that if this even runs and the consumables are available then the
 intervention is delivered i.e. we dont apply squeeze factor threshold.</p>
+<p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event" title="tlo.methods.hsi_event.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_event.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
 <p>__annotations__ : {}</p>
@@ -1788,6 +1885,16 @@ to allow the rescheduling. This is called each time that the event is tried to b
 <dd><p>This is HSI_Labour_PostnatalWardInpatientCare. It is scheduled by HSI_Labour_ReceivesPostnatalCheck for all women
 require treatment as inpatients after delivery. The primary function of this event is to capture inpatient bed
 days</p>
+<p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event" title="tlo.methods.hsi_event.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_event.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
 <p>__annotations__ : {}</p>
@@ -1837,6 +1944,19 @@ to allow the rescheduling. This is called each time that the event is tried to b
 </dl>
 <p>are overridden to alter the coverage and/or quality of either B/CEmONC interventions or Postnatal Care for mothers
 and newborns.</p>
+<p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
 <p>__annotations__ : {}</p>
@@ -1878,6 +1998,16 @@ constructor, but may also take further keyword arguments.</p></li>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">LabourLoggingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#LabourLoggingEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.LabourLoggingEvent" title="Link to this definition"></a></dt>
 <dd><p>This is the LabourLoggingEvent. It uses the data frame and the labour_tracker to produce summary statistics which
 are processed and presented by different analysis scripts</p>
+<p>Create a new regular event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event</p></li>
+<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
+(must be supplied as a keyword argument)</p></li>
+</ul>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
 <p>__annotations__ : {}</p>
@@ -1925,7 +2055,7 @@ are processed and presented by different analysis scripts</p>
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Aug 02, 2024.
+      <span class="lastupdated">Last updated on Oct 07, 2024.
       </span></p>
   </div>
 

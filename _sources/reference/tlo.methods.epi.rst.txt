@@ -109,9 +109,11 @@ tlo.methods.epi module
 
      **Class attributes:**
 
-     INIT_DEPENDENCIES : {'Demography', 'HealthSystem'}
+     INIT_DEPENDENCIES : {'HealthSystem', 'Demography'}
 
      METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>}
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class Epi):**
 
@@ -169,7 +171,7 @@ tlo.methods.epi module
 
      **Class attributes:**
 
-     EXPECTED_APPT_FOOTPRINT : <property object at 0x118ff07c0>
+     EXPECTED_APPT_FOOTPRINT : <property object at 0x124343d30>
 
      __annotations__ : {}
 

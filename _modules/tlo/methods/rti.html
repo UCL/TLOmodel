@@ -1,24 +1,22 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="../../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.rti &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
+  <title>tlo.methods.rti &mdash; TLOmodel 0.1.dev2456+g2221089.d20241007 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
-      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=7ab3649f" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
 
   
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
-  <!--[if lt IE 9]>
-    <script src="../../../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
-        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../../_static/documentation_options.js?v=f3d69a25"></script>
-        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
-        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=363ca9bd"></script>
+      <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -35,9 +33,6 @@
           <a href="../../../index.html" class="icon icon-home">
             TLOmodel
           </a>
-              <div class="version">
-                0.1
-              </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
@@ -55,6 +50,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../reference/index.html">Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../resources/index.html">Resource files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../parameters.html">Parameters</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../learning.html">Learning Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../contributors.html">Contributors</a></li>
@@ -134,7 +130,7 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span> <span class="o">=</span> <span class="n">resourcefilepath</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ASSIGN_INJURIES_AND_DALY_CHANGES</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># (Will store consumable item codes)</span></div>
 
 
     <span class="n">INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;SymptomManager&quot;</span><span class="p">,</span>
@@ -1633,7 +1629,9 @@
         <span class="c1"># Begin checking whether those with untreated injuries die</span>
         <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">RTI_Check_Death_No_Med</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
         <span class="c1"># Begin logging the RTI events</span>
-        <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">RTI_Logging_Event</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span></div>
+        <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">RTI_Logging_Event</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+        <span class="c1"># Look-up consumable item codes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">look_up_consumable_item_codes</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="RTI.rti_do_when_diagnosed">
@@ -2459,6 +2457,132 @@
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;rt_date_death_no_med&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;rt_debugging_DALY_wt&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;rt_injuries_left_untreated&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span></div>
+
+
+<div class="viewcode-block" id="RTI.look_up_consumable_item_codes">
+<a class="viewcode-back" href="../../../reference/tlo.methods.rti.html#tlo.methods.rti.RTI.look_up_consumable_item_codes">[docs]</a>
+    <span class="k">def</span> <span class="nf">look_up_consumable_item_codes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Look up the item codes that used in the HSI in the module&quot;&quot;&quot;</span>
+        <span class="n">get_item_codes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;shock_treatment_child&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;ringer&#39;s lactate (Hartmann&#39;s solution), 1000 ml_12_IDA&quot;</span><span class="p">):</span> <span class="mi">500</span><span class="p">,</span>
+                <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;Dextrose (glucose) 5%, 1000ml_each_CMST&quot;</span><span class="p">):</span> <span class="mi">500</span><span class="p">,</span>
+                <span class="n">get_item_codes</span><span class="p">(</span><span class="s1">&#39;Cannula iv  (winged with injection pot) 18_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="n">get_item_codes</span><span class="p">(</span><span class="s1">&#39;Blood, one unit&#39;</span><span class="p">):</span> <span class="mi">2</span><span class="p">,</span>
+                <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;Oxygen, 1000 liters, primarily with oxygen cylinders&quot;</span><span class="p">):</span> <span class="mi">23_040</span>
+            <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;shock_treatment_adult&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;ringer&#39;s lactate (Hartmann&#39;s solution), 1000 ml_12_IDA&quot;</span><span class="p">):</span> <span class="mi">2000</span><span class="p">,</span>
+                <span class="n">get_item_codes</span><span class="p">(</span><span class="s1">&#39;Cannula iv  (winged with injection pot) 18_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="n">get_item_codes</span><span class="p">(</span><span class="s1">&#39;Blood, one unit&#39;</span><span class="p">):</span> <span class="mi">2</span><span class="p">,</span>
+                <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;Oxygen, 1000 liters, primarily with oxygen cylinders&quot;</span><span class="p">):</span> <span class="mi">23_040</span>
+            <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;fracture_treatment_plaster&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">get_item_codes</span><span class="p">(</span><span class="s1">&#39;Plaster of Paris (POP) 10cm x 7.5cm slab_12_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span>
+            <span class="c1"># This is for one fracture.</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;fracture_treatment_bandage&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">get_item_codes</span><span class="p">(</span><span class="s1">&#39;Bandage, crepe 7.5cm x 1.4m long , when stretched&#39;</span><span class="p">):</span> <span class="mi">200</span><span class="p">,</span>
+            <span class="c1"># (The 200 is a standard assumption for the amount of bandage needed, irrespective of the number of</span>
+            <span class="c1"># fractures.)</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;open_fracture_treatment&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">get_item_codes</span><span class="p">(</span><span class="s1">&#39;Ceftriaxone 1g, PFR_each_CMST&#39;</span><span class="p">):</span> <span class="mi">2000</span><span class="p">,</span>
+                <span class="n">get_item_codes</span><span class="p">(</span><span class="s1">&#39;Cetrimide 15</span><span class="si">% + c</span><span class="s1">hlorhexidine 1.5</span><span class="si">% s</span><span class="s1">olution.for dilution _5_CMST&#39;</span><span class="p">):</span> <span class="mi">500</span><span class="p">,</span>
+                <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;Gauze, absorbent 90cm x 40m_each_CMST&quot;</span><span class="p">):</span> <span class="mi">100</span><span class="p">,</span>
+                <span class="n">get_item_codes</span><span class="p">(</span><span class="s1">&#39;Suture pack&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s2">&quot;open_fracture_treatment_additional_if_contaminated&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">get_item_codes</span><span class="p">(</span><span class="s1">&#39;Metronidazole, injection, 500 mg in 100 ml vial&#39;</span><span class="p">):</span> <span class="mi">1500</span>
+            <span class="p">}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;laceration_treatment_suture_pack&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">get_item_codes</span><span class="p">(</span><span class="s1">&#39;Suture pack&#39;</span><span class="p">):</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;laceration_treatment_cetrimide_chlorhexidine&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">get_item_codes</span><span class="p">(</span><span class="s1">&#39;Cetrimide 15</span><span class="si">% + c</span><span class="s1">hlorhexidine 1.5</span><span class="si">% s</span><span class="s1">olution.for dilution _5_CMST&#39;</span><span class="p">):</span> <span class="mi">500</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;burn_treatment_per_burn&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;Gauze, absorbent 90cm x 40m_each_CMST&quot;</span><span class="p">):</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="n">get_item_codes</span><span class="p">(</span><span class="s1">&#39;Cetrimide 15</span><span class="si">% + c</span><span class="s1">hlorhexidine 1.5</span><span class="si">% s</span><span class="s1">olution.for dilution _5_CMST&#39;</span><span class="p">):</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;ringers lactate for multiple burns&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;ringer&#39;s lactate (Hartmann&#39;s solution), 1000 ml_12_IDA&quot;</span><span class="p">):</span> <span class="mi">4000</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;tetanus_treatment&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">get_item_codes</span><span class="p">(</span><span class="s1">&#39;Tetanus toxoid, injection&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;pain_management_mild_under_16&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;Paracetamol 500mg_1000_CMST&quot;</span><span class="p">):</span> <span class="mi">8000</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;pain_management_mild_above_16&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;diclofenac sodium 25 mg, enteric coated_1000_IDA&quot;</span><span class="p">):</span> <span class="mi">300</span>
+                <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;pain_management_moderate&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;tramadol HCl 100 mg/2 ml, for injection_100_IDA&quot;</span><span class="p">):</span> <span class="mi">300</span>
+            <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;pain_management_severe&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;morphine sulphate 10 mg/ml, 1 ml, injection (nt)_10_IDA&quot;</span><span class="p">):</span> <span class="mi">120</span>
+            <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;major_surgery&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="c1"># request a general anaesthetic</span>
+            <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;Halothane (fluothane)_250ml_CMST&quot;</span><span class="p">):</span> <span class="mi">100</span><span class="p">,</span>
+            <span class="c1"># clean the site of the surgery</span>
+            <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;Chlorhexidine 1.5</span><span class="si">% s</span><span class="s2">olution_5_CMST&quot;</span><span class="p">):</span> <span class="mi">500</span><span class="p">,</span>
+            <span class="c1"># tools to begin surgery</span>
+            <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;Scalpel blade size 22 (individually wrapped)_100_CMST&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="c1"># administer an IV</span>
+            <span class="n">get_item_codes</span><span class="p">(</span><span class="s1">&#39;Cannula iv  (winged with injection pot) 18_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;Giving set iv administration + needle 15 drops/ml_each_CMST&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;ringer&#39;s lactate (Hartmann&#39;s solution), 1000 ml_12_IDA&quot;</span><span class="p">):</span> <span class="mi">2000</span><span class="p">,</span>
+            <span class="c1"># repair incision made</span>
+            <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;Suture pack&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;Gauze, absorbent 90cm x 40m_each_CMST&quot;</span><span class="p">):</span> <span class="mi">100</span><span class="p">,</span>
+            <span class="c1"># administer pain killer</span>
+            <span class="n">get_item_codes</span><span class="p">(</span><span class="s1">&#39;Pethidine, 50 mg/ml, 2 ml ampoule&#39;</span><span class="p">):</span> <span class="mi">6</span><span class="p">,</span>
+            <span class="c1"># administer antibiotic</span>
+            <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;Ampicillin injection 500mg, PFR_each_CMST&quot;</span><span class="p">):</span> <span class="mi">1000</span><span class="p">,</span>
+            <span class="c1"># equipment used by surgeon, gloves and facemask</span>
+            <span class="n">get_item_codes</span><span class="p">(</span><span class="s1">&#39;Disposables gloves, powder free, 100 pieces per box&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">get_item_codes</span><span class="p">(</span><span class="s1">&#39;surgical face mask, disp., with metal nose piece_50_IDA&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="c1"># request syringe</span>
+            <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;Syringe, Autodisable SoloShot IX &quot;</span><span class="p">):</span> <span class="mi">1</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;minor_surgery&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="c1"># request a local anaesthetic</span>
+            <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;Halothane (fluothane)_250ml_CMST&quot;</span><span class="p">):</span> <span class="mi">100</span><span class="p">,</span>
+            <span class="c1"># clean the site of the surgery</span>
+            <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;Chlorhexidine 1.5</span><span class="si">% s</span><span class="s2">olution_5_CMST&quot;</span><span class="p">):</span> <span class="mi">500</span><span class="p">,</span>
+            <span class="c1"># tools to begin surgery</span>
+            <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;Scalpel blade size 22 (individually wrapped)_100_CMST&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="c1"># administer an IV</span>
+            <span class="n">get_item_codes</span><span class="p">(</span><span class="s1">&#39;Cannula iv  (winged with injection pot) 18_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;Giving set iv administration + needle 15 drops/ml_each_CMST&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;ringer&#39;s lactate (Hartmann&#39;s solution), 1000 ml_12_IDA&quot;</span><span class="p">):</span> <span class="mi">2000</span><span class="p">,</span>
+            <span class="c1"># repair incision made</span>
+            <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;Suture pack&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;Gauze, absorbent 90cm x 40m_each_CMST&quot;</span><span class="p">):</span> <span class="mi">100</span><span class="p">,</span>
+            <span class="c1"># administer pain killer</span>
+            <span class="n">get_item_codes</span><span class="p">(</span><span class="s1">&#39;Pethidine, 50 mg/ml, 2 ml ampoule&#39;</span><span class="p">):</span> <span class="mi">6</span><span class="p">,</span>
+            <span class="c1"># administer antibiotic</span>
+            <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;Ampicillin injection 500mg, PFR_each_CMST&quot;</span><span class="p">):</span> <span class="mi">1000</span><span class="p">,</span>
+            <span class="c1"># equipment used by surgeon, gloves and facemask</span>
+            <span class="n">get_item_codes</span><span class="p">(</span><span class="s1">&#39;Disposables gloves, powder free, 100 pieces per box&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">get_item_codes</span><span class="p">(</span><span class="s1">&#39;surgical face mask, disp., with metal nose piece_50_IDA&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="c1"># request syringe</span>
+            <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;Syringe, Autodisable SoloShot IX &quot;</span><span class="p">):</span> <span class="mi">1</span>
+        <span class="p">}</span>
+        <span class="c1"># Function to get the consumables for fracture treatment, which depends on the number of fractures:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;fracture_treatment&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">num_fractures</span><span class="p">:</span> <span class="p">{</span>
+            <span class="o">**</span><span class="p">{</span><span class="n">item</span><span class="p">:</span> <span class="n">num_fractures</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;fracture_treatment_plaster&#39;</span><span class="p">]},</span>
+            <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;fracture_treatment_bandage&#39;</span><span class="p">]</span>
+        <span class="p">}</span>
+        <span class="c1"># Function to get the consumables for laceration treatment, which depends on the number of lacerations:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;laceration_treatment&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">num_laceration</span><span class="p">:</span> <span class="p">{</span>
+            <span class="o">**</span><span class="p">{</span><span class="n">item</span><span class="p">:</span> <span class="n">num_laceration</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;laceration_treatment_suture_pack&#39;</span><span class="p">]},</span>
+            <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;laceration_treatment_cetrimide_chlorhexidine&#39;</span><span class="p">]</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;burn_treatment&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">num_burns</span><span class="p">:</span> <span class="p">{</span>
+            <span class="n">item</span><span class="p">:</span> <span class="n">num_burns</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;burn_treatment_per_burn&#39;</span><span class="p">]</span>
+        <span class="p">}</span></div>
 
 
 <div class="viewcode-block" id="RTI.on_hsi_alert">
@@ -4085,28 +4209,15 @@
             <span class="n">is_child</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;is_alive&#39;</span><span class="p">]:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({})</span>
-        <span class="n">get_item_code</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span>
+
         <span class="c1"># TODO: find a more complete list of required consumables for adults</span>
         <span class="k">if</span> <span class="n">is_child</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;shock_treatment_child&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;ringer&#39;s lactate (Hartmann&#39;s solution), 1000 ml_12_IDA&quot;</span><span class="p">):</span> <span class="mi">500</span><span class="p">,</span>
-                <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Dextrose (glucose) 5%, 1000ml_each_CMST&quot;</span><span class="p">):</span> <span class="mi">500</span><span class="p">,</span>
-                <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Cannula iv  (winged with injection pot) 18_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
-                <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Blood, one unit&#39;</span><span class="p">):</span> <span class="mi">2</span><span class="p">,</span>
-                <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Oxygen, 1000 liters, primarily with oxygen cylinders&quot;</span><span class="p">):</span> <span class="mi">23_040</span>
-            <span class="p">}</span>
             <span class="n">is_cons_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;shock_treatment_child&#39;</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;shock_treatment_child&#39;</span><span class="p">]</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;shock_treatment_adult&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;ringer&#39;s lactate (Hartmann&#39;s solution), 1000 ml_12_IDA&quot;</span><span class="p">):</span> <span class="mi">2000</span><span class="p">,</span>
-                <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Cannula iv  (winged with injection pot) 18_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
-                <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Blood, one unit&#39;</span><span class="p">):</span> <span class="mi">2</span><span class="p">,</span>
-                <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Oxygen, 1000 liters, primarily with oxygen cylinders&quot;</span><span class="p">):</span> <span class="mi">23_040</span>
-            <span class="p">}</span>
             <span class="n">is_cons_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;shock_treatment_adult&#39;</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;shock_treatment_adult&#39;</span><span class="p">]</span>
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">is_cons_available</span><span class="p">:</span>
@@ -4190,12 +4301,12 @@
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">p</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_number_of_times_this_event_has_run</span> <span class="o">+=</span> <span class="mi">1</span>
+
         <span class="c1"># if the person isn&#39;t alive return a blank footprint</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;is_alive&#39;</span><span class="p">]:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({})</span>
         <span class="c1"># get a shorthand reference to RTI and consumables modules</span>
         <span class="n">road_traffic_injuries</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;RTI&#39;</span><span class="p">]</span>
-        <span class="n">get_item_code</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span>
         <span class="c1"># isolate the relevant injury information</span>
         <span class="c1"># Find the untreated injuries</span>
         <span class="n">untreated_injury_cols</span> <span class="o">=</span> <span class="n">_get_untreated_injury_columns</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
@@ -4216,14 +4327,13 @@
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;rt_injuries_to_cast&#39;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span>
         <span class="c1"># Check this injury assigned to be treated here is actually had by the person</span>
         <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">injuries</span> <span class="ow">in</span> <span class="n">person_injuries</span><span class="o">.</span><span class="n">values</span> <span class="k">for</span> <span class="n">injuries</span> <span class="ow">in</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rt_injuries_to_cast&#39;</span><span class="p">])</span>
-        <span class="c1"># If they have a fracture that needs a cast, ask for plaster of paris</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;fracture_treatment&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Plaster of Paris (POP) 10cm x 7.5cm slab_12_CMST&#39;</span><span class="p">):</span> <span class="n">fracturecastcounts</span><span class="p">,</span>
-            <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Bandage, crepe 7.5cm x 1.4m long , when stretched&#39;</span><span class="p">):</span> <span class="mi">200</span><span class="p">,</span>
-        <span class="p">}</span>
+
+        <span class="c1"># If they have a fracture that needs a cast, ask for consumables, updating to match the number of</span>
+        <span class="c1"># fractures).</span>
         <span class="n">is_cons_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;fracture_treatment&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;fracture_treatment&#39;</span><span class="p">](</span><span class="n">fracturecastcounts</span><span class="p">)</span>
         <span class="p">)</span>
+
         <span class="c1"># if the consumables are available then the appointment can run</span>
         <span class="k">if</span> <span class="n">is_cons_available</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;rti_general_message&#39;</span><span class="p">,</span>
@@ -4347,7 +4457,6 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;is_alive&#39;</span><span class="p">]:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({})</span>
         <span class="n">road_traffic_injuries</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;RTI&#39;</span><span class="p">]</span>
-        <span class="n">get_item_code</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span>
         <span class="c1"># isolate the relevant injury information</span>
         <span class="n">person_injuries</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[[</span><span class="n">person_id</span><span class="p">],</span> <span class="n">RTI</span><span class="o">.</span><span class="n">INJURY_COLUMNS</span><span class="p">]</span>
         <span class="c1"># check if they have a fracture that requires a cast</span>
@@ -4360,27 +4469,16 @@
         <span class="k">assert</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_med_int&#39;</span><span class="p">],</span> <span class="s1">&#39;person sent here has not been treated&#39;</span>
 
         <span class="c1"># If they have an open fracture, ask for consumables to treat fracture</span>
-        <span class="k">if</span> <span class="n">open_fracture_counts</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;open_fracture_treatment&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Ceftriaxone 1g, PFR_each_CMST&#39;</span><span class="p">):</span> <span class="mi">2000</span><span class="p">,</span>
-                <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Cetrimide 15</span><span class="si">% + c</span><span class="s1">hlorhexidine 1.5</span><span class="si">% s</span><span class="s1">olution.for dilution _5_CMST&#39;</span><span class="p">):</span> <span class="mi">500</span><span class="p">,</span>
-                <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Gauze, absorbent 90cm x 40m_each_CMST&quot;</span><span class="p">):</span> <span class="mi">100</span><span class="p">,</span>
-                <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Suture pack&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
-            <span class="p">}</span>
-            <span class="c1"># If wound is &quot;grossly contaminated&quot; administer Metronidazole</span>
-            <span class="c1"># todo: parameterise the probability of wound contamination</span>
-            <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span>
-            <span class="n">prob_open_fracture_contaminated</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;prob_open_fracture_contaminated&#39;</span><span class="p">]</span>
-            <span class="n">rand_for_contamination</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-            <span class="c1"># NB: Dose used below from BNF is for surgical prophylaxsis</span>
-            <span class="k">if</span> <span class="n">rand_for_contamination</span> <span class="o">&lt;</span> <span class="n">prob_open_fracture_contaminated</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;open_fracture_treatment&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
-                    <span class="p">{</span><span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Metronidazole, injection, 500 mg in 100 ml vial&#39;</span><span class="p">):</span> <span class="mi">1500</span><span class="p">}</span>
-                <span class="p">)</span>
-        <span class="c1"># Check that there are enough consumables to treat this person&#39;s fractures</span>
-        <span class="n">is_cons_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;open_fracture_treatment&#39;</span><span class="p">]</span>
+        <span class="n">wound_contaminated</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">(</span><span class="n">open_fracture_counts</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;prob_open_fracture_contaminated&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">())</span>
         <span class="p">)</span>
+
+        <span class="c1"># Check that there are enough consumables to treat this person&#39;s fractures</span>
+        <span class="n">is_cons_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s2">&quot;open_fracture_treatment&quot;</span><span class="p">])</span> <span class="ow">and</span> <span class="p">(</span>
+            <span class="c1"># If wound is &quot;grossly contaminated&quot; administer Metronidazole, else ignore</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s2">&quot;open_fracture_treatment_additional_if_contaminated&quot;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">wound_contaminated</span> <span class="k">else</span> <span class="kc">True</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">is_cons_available</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;rti_general_message&#39;</span><span class="p">,</span>
@@ -4476,7 +4574,6 @@
 <div class="viewcode-block" id="HSI_RTI_Suture.apply">
 <a class="viewcode-back" href="../../../reference/tlo.methods.rti.html#tlo.methods.rti.HSI_RTI_Suture.apply">[docs]</a>
     <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
-        <span class="n">get_item_code</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_number_of_times_this_event_has_run</span> <span class="o">+=</span> <span class="mi">1</span>
 
@@ -4493,15 +4590,10 @@
         <span class="c1"># Check that the person sent here has an injury that is treated by this HSI event</span>
         <span class="k">assert</span> <span class="n">lacerationcounts</span> <span class="o">&gt;</span> <span class="mi">0</span>
         <span class="k">if</span> <span class="n">lacerationcounts</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;laceration_treatment&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Suture pack&#39;</span><span class="p">):</span> <span class="n">lacerationcounts</span><span class="p">,</span>
-                <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Cetrimide 15</span><span class="si">% + c</span><span class="s1">hlorhexidine 1.5</span><span class="si">% s</span><span class="s1">olution.for dilution _5_CMST&#39;</span><span class="p">):</span> <span class="mi">500</span><span class="p">,</span>
 
-            <span class="p">}</span>
             <span class="c1"># check the number of suture kits required and request them</span>
             <span class="n">is_cons_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;laceration_treatment&#39;</span><span class="p">]</span>
-            <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;laceration_treatment&#39;</span><span class="p">](</span><span class="n">lacerationcounts</span><span class="p">))</span>
 
             <span class="c1"># Availability of consumables determines if the intervention is delivered...</span>
             <span class="k">if</span> <span class="n">is_cons_available</span><span class="p">:</span>
@@ -4589,7 +4681,6 @@
 <div class="viewcode-block" id="HSI_RTI_Burn_Management.apply">
 <a class="viewcode-back" href="../../../reference/tlo.methods.rti.html#tlo.methods.rti.HSI_RTI_Burn_Management.apply">[docs]</a>
     <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
-        <span class="n">get_item_code</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_number_of_times_this_event_has_run</span> <span class="o">+=</span> <span class="mi">1</span>
 
@@ -4607,11 +4698,8 @@
         <span class="k">assert</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_med_int&#39;</span><span class="p">],</span> <span class="s1">&#39;this person has not been treated&#39;</span>
         <span class="k">if</span> <span class="n">burncounts</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="c1"># Request materials for burn treatment</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;burn_treatment&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Gauze, absorbent 90cm x 40m_each_CMST&quot;</span><span class="p">):</span> <span class="n">burncounts</span><span class="p">,</span>
-                <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Cetrimide 15</span><span class="si">% + c</span><span class="s1">hlorhexidine 1.5</span><span class="si">% s</span><span class="s1">olution.for dilution _5_CMST&#39;</span><span class="p">):</span> <span class="n">burncounts</span><span class="p">,</span>
+            <span class="n">cons_needed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;burn_treatment&#39;</span><span class="p">](</span><span class="n">burncounts</span><span class="p">)</span>
 
-            <span class="p">}</span>
             <span class="n">possible_large_TBSA_burn_codes</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;7113&#39;</span><span class="p">,</span> <span class="s1">&#39;8113&#39;</span><span class="p">,</span> <span class="s1">&#39;4113&#39;</span><span class="p">,</span> <span class="s1">&#39;5113&#39;</span><span class="p">]</span>
             <span class="n">idx2</span><span class="p">,</span> <span class="n">bigburncounts</span> <span class="o">=</span> \
                 <span class="n">road_traffic_injuries</span><span class="o">.</span><span class="n">rti_find_and_count_injuries</span><span class="p">(</span><span class="n">person_injuries</span><span class="p">,</span> <span class="n">possible_large_TBSA_burn_codes</span><span class="p">)</span>
@@ -4620,13 +4708,11 @@
             <span class="k">if</span> <span class="p">(</span><span class="n">burncounts</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">or</span> <span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">idx2</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">random_for_severe_burn</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">prob_mild_burns</span><span class="p">)):</span>
                 <span class="c1"># check if they have multiple burns, which implies a higher burned total body surface area (TBSA) which</span>
                 <span class="c1"># will alter the treatment plan</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;burn_treatment&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
-                    <span class="p">{</span><span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;ringer&#39;s lactate (Hartmann&#39;s solution), 1000 ml_12_IDA&quot;</span><span class="p">):</span> <span class="mi">4000</span><span class="p">}</span>
+                <span class="n">cons_needed</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;ringers lactate for multiple burns&#39;</span><span class="p">]</span>
                 <span class="p">)</span>
 
-            <span class="n">is_cons_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;burn_treatment&#39;</span><span class="p">]</span>
-            <span class="p">)</span>
+            <span class="n">is_cons_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">cons_needed</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">is_cons_available</span><span class="p">:</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;rti_general_message&#39;</span><span class="p">,</span>
                              <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;This facility has burn treatment available which has been used for person &quot;</span>
@@ -4730,13 +4816,7 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({})</span>
         <span class="c1"># If they have a laceration/burn ask request the tetanus vaccine</span>
         <span class="k">if</span> <span class="n">counts</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">get_item_code</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;tetanus_treatment&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Tetanus toxoid, injection&#39;</span><span class="p">):</span> <span class="mi">1</span>
-            <span class="p">}</span>
-            <span class="n">is_tetanus_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;tetanus_treatment&#39;</span><span class="p">]</span>
-            <span class="p">)</span>
+            <span class="n">is_tetanus_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;tetanus_treatment&#39;</span><span class="p">])</span>
             <span class="k">if</span> <span class="n">is_tetanus_available</span><span class="p">:</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;rti_general_message&#39;</span><span class="p">,</span>
                              <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Tetanus vaccine requested for person </span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s2"> and given&quot;</span><span class="p">)</span>
@@ -4798,7 +4878,6 @@
         <span class="k">assert</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_diagnosed&#39;</span><span class="p">],</span> <span class="s1">&#39;This person has not been through a and e&#39;</span>
         <span class="k">assert</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_med_int&#39;</span><span class="p">],</span> <span class="s1">&#39;This person has not been through rti med int&#39;</span>
         <span class="n">person_injuries</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[[</span><span class="n">person_id</span><span class="p">],</span> <span class="n">RTI</span><span class="o">.</span><span class="n">INJURY_COLUMNS</span><span class="p">]</span>
-        <span class="n">get_item_code</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span>
         <span class="n">road_traffic_injuries</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;RTI&#39;</span><span class="p">]</span>
         <span class="n">pain_level</span> <span class="o">=</span> <span class="s2">&quot;none&quot;</span>
         <span class="c1"># create a dictionary to associate the level of pain to the codes</span>
@@ -4842,25 +4921,12 @@
                         <span class="n">data</span><span class="o">=</span><span class="n">dict_to_output</span><span class="p">,</span>
                         <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Summary of the pain medicine requested by each person&#39;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;age_years&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">16</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;pain_management&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                    <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Paracetamol 500mg_1000_CMST&quot;</span><span class="p">):</span> <span class="mi">8000</span>
-                <span class="p">}</span>
                 <span class="n">cond</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;pain_management&#39;</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;pain_management_mild_under_16&#39;</span><span class="p">]</span>
                 <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;pain_management&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                    <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;diclofenac sodium 25 mg, enteric coated_1000_IDA&quot;</span><span class="p">):</span> <span class="mi">300</span>
-                <span class="p">}</span>
-                <span class="n">cond1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;pain_management&#39;</span><span class="p">]</span>
-                <span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;pain_management&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                    <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Paracetamol 500mg_1000_CMST&quot;</span><span class="p">):</span> <span class="mi">8000</span>
-                <span class="p">}</span>
-                <span class="n">cond2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;pain_management&#39;</span><span class="p">]</span>
-                <span class="p">)</span>
+                <span class="n">cond1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;pain_management_mild_above_16&#39;</span><span class="p">])</span>
+                <span class="n">cond2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;pain_management_mild_under_16&#39;</span><span class="p">])</span>
                 <span class="k">if</span> <span class="p">(</span><span class="n">cond1</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">cond2</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">):</span>
                     <span class="n">which</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
                     <span class="k">if</span> <span class="n">which</span> <span class="o">&lt;=</span> <span class="mf">0.5</span><span class="p">:</span>
@@ -4913,12 +4979,8 @@
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;Requested_Pain_Management&#39;</span><span class="p">,</span>
                         <span class="n">data</span><span class="o">=</span><span class="n">dict_to_output</span><span class="p">,</span>
                         <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Summary of the pain medicine requested by each person&#39;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;pain_management&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;tramadol HCl 100 mg/2 ml, for injection_100_IDA&quot;</span><span class="p">):</span> <span class="mi">300</span>
-            <span class="p">}</span>
-            <span class="n">is_cons_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;pain_management&#39;</span><span class="p">]</span>
-            <span class="p">)</span>
+
+            <span class="n">is_cons_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;pain_management_moderate&#39;</span><span class="p">])</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;rti_general_message&#39;</span><span class="p">,</span>
                          <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Person </span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s2"> has requested tramadol for moderate pain relief&quot;</span><span class="p">)</span>
 
@@ -4946,11 +5008,8 @@
                         <span class="n">data</span><span class="o">=</span><span class="n">dict_to_output</span><span class="p">,</span>
                         <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Summary of the pain medicine requested by each person&#39;</span><span class="p">)</span>
             <span class="c1"># give morphine</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;pain_management&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;morphine sulphate 10 mg/ml, 1 ml, injection (nt)_10_IDA&quot;</span><span class="p">):</span> <span class="mi">120</span>
-            <span class="p">}</span>
             <span class="n">is_cons_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;pain_management&#39;</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;pain_management_severe&#39;</span><span class="p">]</span>
             <span class="p">)</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;rti_general_message&#39;</span><span class="p">,</span>
                          <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Person </span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s2"> has requested morphine for severe pain relief&quot;</span><span class="p">)</span>
@@ -5119,35 +5178,10 @@
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">rng</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span>
         <span class="n">road_traffic_injuries</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;RTI&#39;</span><span class="p">]</span>
-        <span class="n">get_item_code</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span>
-        <span class="c1"># Request first draft of consumables used in major surgery</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;major_surgery&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="c1"># request a general anaesthetic</span>
-            <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Halothane (fluothane)_250ml_CMST&quot;</span><span class="p">):</span> <span class="mi">100</span><span class="p">,</span>
-            <span class="c1"># clean the site of the surgery</span>
-            <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Chlorhexidine 1.5</span><span class="si">% s</span><span class="s2">olution_5_CMST&quot;</span><span class="p">):</span> <span class="mi">500</span><span class="p">,</span>
-            <span class="c1"># tools to begin surgery</span>
-            <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Scalpel blade size 22 (individually wrapped)_100_CMST&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
-            <span class="c1"># administer an IV</span>
-            <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Cannula iv  (winged with injection pot) 18_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
-            <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Giving set iv administration + needle 15 drops/ml_each_CMST&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
-            <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;ringer&#39;s lactate (Hartmann&#39;s solution), 1000 ml_12_IDA&quot;</span><span class="p">):</span> <span class="mi">2000</span><span class="p">,</span>
-            <span class="c1"># repair incision made</span>
-            <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Suture pack&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
-            <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Gauze, absorbent 90cm x 40m_each_CMST&quot;</span><span class="p">):</span> <span class="mi">100</span><span class="p">,</span>
-            <span class="c1"># administer pain killer</span>
-            <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Pethidine, 50 mg/ml, 2 ml ampoule&#39;</span><span class="p">):</span> <span class="mi">6</span><span class="p">,</span>
-            <span class="c1"># administer antibiotic</span>
-            <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Ampicillin injection 500mg, PFR_each_CMST&quot;</span><span class="p">):</span> <span class="mi">1000</span><span class="p">,</span>
-            <span class="c1"># equipment used by surgeon, gloves and facemask</span>
-            <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Disposables gloves, powder free, 100 pieces per box&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
-            <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;surgical face mask, disp., with metal nose piece_50_IDA&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
-            <span class="c1"># request syringe</span>
-            <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Syringe, Autodisable SoloShot IX &quot;</span><span class="p">):</span> <span class="mi">1</span>
-        <span class="p">}</span>
 
+        <span class="c1"># Request first draft of consumables used in major surgery</span>
         <span class="n">request_outcome</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;major_surgery&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;major_surgery&#39;</span><span class="p">]</span>
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;is_alive&#39;</span><span class="p">]:</span>
@@ -5476,32 +5510,7 @@
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;is_alive&#39;</span><span class="p">]:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({})</span>
-        <span class="n">get_item_code</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span>
-        <span class="c1"># Request first draft of consumables used in major surgery</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;minor_surgery&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="c1"># request a local anaesthetic</span>
-            <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Halothane (fluothane)_250ml_CMST&quot;</span><span class="p">):</span> <span class="mi">100</span><span class="p">,</span>
-            <span class="c1"># clean the site of the surgery</span>
-            <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Chlorhexidine 1.5</span><span class="si">% s</span><span class="s2">olution_5_CMST&quot;</span><span class="p">):</span> <span class="mi">500</span><span class="p">,</span>
-            <span class="c1"># tools to begin surgery</span>
-            <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Scalpel blade size 22 (individually wrapped)_100_CMST&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
-            <span class="c1"># administer an IV</span>
-            <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Cannula iv  (winged with injection pot) 18_each_CMST&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
-            <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Giving set iv administration + needle 15 drops/ml_each_CMST&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
-            <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;ringer&#39;s lactate (Hartmann&#39;s solution), 1000 ml_12_IDA&quot;</span><span class="p">):</span> <span class="mi">2000</span><span class="p">,</span>
-            <span class="c1"># repair incision made</span>
-            <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Suture pack&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
-            <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Gauze, absorbent 90cm x 40m_each_CMST&quot;</span><span class="p">):</span> <span class="mi">100</span><span class="p">,</span>
-            <span class="c1"># administer pain killer</span>
-            <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Pethidine, 50 mg/ml, 2 ml ampoule&#39;</span><span class="p">):</span> <span class="mi">6</span><span class="p">,</span>
-            <span class="c1"># administer antibiotic</span>
-            <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Ampicillin injection 500mg, PFR_each_CMST&quot;</span><span class="p">):</span> <span class="mi">1000</span><span class="p">,</span>
-            <span class="c1"># equipment used by surgeon, gloves and facemask</span>
-            <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Disposables gloves, powder free, 100 pieces per box&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
-            <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;surgical face mask, disp., with metal nose piece_50_IDA&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
-            <span class="c1"># request syringe</span>
-            <span class="n">get_item_code</span><span class="p">(</span><span class="s2">&quot;Syringe, Autodisable SoloShot IX &quot;</span><span class="p">):</span> <span class="mi">1</span>
-        <span class="p">}</span>
+
         <span class="n">rng</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span>
         <span class="n">road_traffic_injuries</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;RTI&#39;</span><span class="p">]</span>
         <span class="n">surgically_treated_codes</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;322&#39;</span><span class="p">,</span> <span class="s1">&#39;211&#39;</span><span class="p">,</span> <span class="s1">&#39;212&#39;</span><span class="p">,</span> <span class="s1">&#39;323&#39;</span><span class="p">,</span> <span class="s1">&#39;722&#39;</span><span class="p">,</span> <span class="s1">&#39;291&#39;</span><span class="p">,</span> <span class="s1">&#39;241&#39;</span><span class="p">,</span> <span class="s1">&#39;811&#39;</span><span class="p">,</span> <span class="s1">&#39;812&#39;</span><span class="p">,</span> <span class="s1">&#39;813a&#39;</span><span class="p">,</span> <span class="s1">&#39;813b&#39;</span><span class="p">,</span>
@@ -5527,9 +5536,7 @@
         <span class="n">treated_code</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">relevant_codes</span><span class="p">)</span>
         <span class="c1"># need to determine whether this person has an injury which will treated with external fixation</span>
         <span class="c1"># external_fixation_codes = [&#39;811&#39;, &#39;812&#39;, &#39;813a&#39;, &#39;813b&#39;, &#39;813c&#39;]</span>
-        <span class="n">request_outcome</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;minor_surgery&#39;</span><span class="p">]</span>
-        <span class="p">)</span>
+        <span class="n">request_outcome</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;minor_surgery&#39;</span><span class="p">])</span>
         <span class="c1"># todo: think about consequences of certain consumables not being available for minor surgery and model health</span>
         <span class="c1">#  outcomes</span>
         <span class="k">if</span> <span class="n">request_outcome</span><span class="p">:</span>
@@ -6130,7 +6137,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Aug 02, 2024.
+      <span class="lastupdated">Last updated on Oct 07, 2024.
       </span></p>
   </div>
 

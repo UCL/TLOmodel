@@ -1,25 +1,23 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="../">
 <head>
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.cardio_metabolic_disorders module &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
+  <title>tlo.methods.cardio_metabolic_disorders module &mdash; TLOmodel 0.1.dev2456+g2221089.d20241007 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
-      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=7ab3649f" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
 
   
     <link rel="shortcut icon" href="../_static/favicon.png"/>
-  <!--[if lt IE 9]>
-    <script src="../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="../_static/jquery.js?v=5d32c60e"></script>
-        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=f3d69a25"></script>
-        <script src="../_static/doctools.js?v=9a2dae69"></script>
-        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=363ca9bd"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -38,9 +36,6 @@
           <a href="../index.html" class="icon icon-home">
             TLOmodel
           </a>
-              <div class="version">
-                0.1
-              </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
@@ -58,6 +53,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../resources/index.html">Resource files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../parameters.html">Parameters</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../learning.html">Learning Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contributors.html">Contributors</a></li>
@@ -108,6 +104,14 @@
 <dd><p>CardioMetabolicDisorders module covers a subset of cardio-metabolic conditions and events. Conditions are binary
 and individuals experience a risk of acquiring or losing a condition based on annual probability and
 demographic/lifestyle risk factors.</p>
+<p>Construct a new disease module ready to be included in a simulation.</p>
+<p>Initialises an empty parameters dictionary and module-specific random number
+generator.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name</strong> – the name to use for this module. Defaults to the concrete subclass’ name.</p>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.core.Module</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_generic_first_appts.GenericFirstAppointmentsMixin</span></code></p>
 <p><strong>PARAMETERS:</strong></p>
 <table class="docutils align-default">
@@ -467,11 +471,12 @@ demographic/lifestyle risk factors.</p>
 </table>
 <p><strong>Class attributes:</strong></p>
 <p>ADDITIONAL_DEPENDENCIES : {‘Depression’}</p>
-<p>CAUSES_OF_DEATH : {‘diabetes’: &lt;tlo.methods.causes.Cause object at 0x12a684e10&gt;, ‘chronic_ischemic_hd’: &lt;tlo.methods.causes.Cause object at 0x12a6878d0&gt;, ‘ever_heart_attack’: &lt;tlo.methods.causes.Cause object at 0x12a687a50&gt;, ‘ever_stroke’: &lt;tlo.methods.causes.Cause object at 0x12a687d90&gt;, ‘chronic_kidney_disease’: &lt;tlo.methods.causes.Cause object at 0x12a684210&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘diabetes’: &lt;tlo.methods.causes.Cause object at 0x12a686fd0&gt;, ‘chronic_ischemic_hd’: &lt;tlo.methods.causes.Cause object at 0x12a685210&gt;, ‘heart_attack’: &lt;tlo.methods.causes.Cause object at 0x12a685750&gt;, ‘stroke’: &lt;tlo.methods.causes.Cause object at 0x12a686d90&gt;, ‘chronic_kidney_disease’: &lt;tlo.methods.causes.Cause object at 0x12a686b90&gt;, ‘lower_back_pain’: &lt;tlo.methods.causes.Cause object at 0x12a687c90&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘Demography’, ‘HealthSystem’, ‘SymptomManager’, ‘Lifestyle’}</p>
-<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;}</p>
+<p>CAUSES_OF_DEATH : {‘diabetes’: &lt;tlo.methods.causes.Cause object at 0x13576e910&gt;, ‘chronic_ischemic_hd’: &lt;tlo.methods.causes.Cause object at 0x13576ea50&gt;, ‘ever_heart_attack’: &lt;tlo.methods.causes.Cause object at 0x13576f210&gt;, ‘ever_stroke’: &lt;tlo.methods.causes.Cause object at 0x13576e590&gt;, ‘chronic_kidney_disease’: &lt;tlo.methods.causes.Cause object at 0x13576f650&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘diabetes’: &lt;tlo.methods.causes.Cause object at 0x13576ebd0&gt;, ‘chronic_ischemic_hd’: &lt;tlo.methods.causes.Cause object at 0x13576e510&gt;, ‘heart_attack’: &lt;tlo.methods.causes.Cause object at 0x13576f250&gt;, ‘stroke’: &lt;tlo.methods.causes.Cause object at 0x13576f810&gt;, ‘chronic_kidney_disease’: &lt;tlo.methods.causes.Cause object at 0x13576eed0&gt;, ‘lower_back_pain’: &lt;tlo.methods.causes.Cause object at 0x13576f6d0&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘Lifestyle’, ‘HealthSystem’, ‘SymptomManager’, ‘Demography’}</p>
+<p>METADATA : {&lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’, ‘Hiv’}</p>
+<p>__annotations__ : {}</p>
 <p>condition_date_diagnosis_list : {‘nc_diabetes_date_diagnosis’: DATE === When someone has been diagnosed with diabetes, ‘nc_hypertension_date_diagnosis’: DATE === When someone has been diagnosed with hypertension, ‘nc_chronic_kidney_disease_date_diagnosis’: DATE === When someone has been diagnosed with chronic_kidney_disease, ‘nc_chronic_lower_back_pain_date_diagnosis’: DATE === When someone has been diagnosed with chronic_lower_back_pain, ‘nc_chronic_ischemic_hd_date_diagnosis’: DATE === When someone has been diagnosed with chronic_ischemic_hd}</p>
 <p>condition_date_of_last_test_list : {‘nc_diabetes_date_last_test’: DATE === When someone has last been tested for diabetes, ‘nc_hypertension_date_last_test’: DATE === When someone has last been tested for hypertension, ‘nc_chronic_kidney_disease_date_last_test’: DATE === When someone has last been tested for chronic_kidney_disease, ‘nc_chronic_lower_back_pain_date_last_test’: DATE === When someone has last been tested for chronic_lower_back_pain, ‘nc_chronic_ischemic_hd_date_last_test’: DATE === When someone has last been tested for chronic_ischemic_hd}</p>
 <p>condition_diagnosis_list : {‘nc_diabetes_ever_diagnosed’: BOOL === Whether or not someone has ever been diagnosed with diabetes, ‘nc_hypertension_ever_diagnosed’: BOOL === Whether or not someone has ever been diagnosed with hypertension, ‘nc_chronic_kidney_disease_ever_diagnosed’: BOOL === Whether or not someone has ever been diagnosed with chronic_kidney_disease, ‘nc_chronic_lower_back_pain_ever_diagnosed’: BOOL === Whether or not someone has ever been diagnosed with chronic_lower_back_pain, ‘nc_chronic_ischemic_hd_ever_diagnosed’: BOOL === Whether or not someone has ever been diagnosed with chronic_ischemic_hd}</p>
@@ -650,6 +655,12 @@ condition.</p>
 * Establishes onset of each condition
 * Establishes removal of each condition
 * Schedules events that arise, according the condition.</p>
+<p>The Main Polling Event of the CardioMetabolicDisorders Module</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event</p>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
 <p>__annotations__ : {}</p>
@@ -684,6 +695,19 @@ condition.</p>
 <dd><p>This is an Cardio Metabolic Disorders event (indicating an emergency occurrence of stroke or heart attack).
 It has been scheduled to occur by the CardioMetabolicDisorders_MainPollingEvent.
 :param event: the event occurring</p>
+<p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Functions (defined or overridden in class CardioMetabolicDisordersEvent):</strong></p>
 <dl class="py method">
@@ -723,6 +747,19 @@ constructor, but may also take further keyword arguments.</p></li>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CardioMetabolicDisordersDeathEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">originating_cause</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/cardio_metabolic_disorders.html#CardioMetabolicDisordersDeathEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisordersDeathEvent" title="Link to this definition"></a></dt>
 <dd><p>Performs the Death operation on an individual and logs it.
 :param originating_cause: the originating cause of the death, which can be a condition or an event</p>
+<p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Functions (defined or overridden in class CardioMetabolicDisordersDeathEvent):</strong></p>
 <dl class="py method">
@@ -770,6 +807,19 @@ that treatment will intercede in an prevent death from the event).</p>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CardioMetabolicDisordersWeightLossEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/cardio_metabolic_disorders.html#CardioMetabolicDisordersWeightLossEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisordersWeightLossEvent" title="Link to this definition"></a></dt>
 <dd><p>Gives an individual a probability of losing weight (via a reduction in li_bmi) and records the change in
 population.props</p>
+<p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Functions (defined or overridden in class CardioMetabolicDisordersWeightLossEvent):</strong></p>
 <dl class="py method">
@@ -807,7 +857,8 @@ constructor, but may also take further keyword arguments.</p></li>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders_LoggingEvent">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CardioMetabolicDisorders_LoggingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/cardio_metabolic_disorders.html#CardioMetabolicDisorders_LoggingEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders_LoggingEvent" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<dd><p>Produce a summary of the numbers of people with respect to the action of this module.</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
 <p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class CardioMetabolicDisorders_LoggingEvent):</strong></p>
@@ -837,6 +888,16 @@ constructor, but may also take further keyword arguments.</p></li>
 <dd><p>This event is scheduled by HSI_GenericFirstApptAtFacilityLevel1 following presentation for care with any symptoms.
 This event results in a blood pressure measurement being taken that may result in diagnosis and the scheduling of
 treatment for a condition.</p>
+<p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event" title="tlo.methods.hsi_event.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_event.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
 <p>__annotations__ : {}</p>
@@ -874,6 +935,16 @@ NB. If a treatment is needed, this does lead to multiple HSI to be scheduled for
 condition).
 :param conditions_to_investigate: list of the condition to investigate.
 :param has_any_cmd_symptom: bool to indicate whether the person has any symptoms that prompted the investigation</p>
+<p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event" title="tlo.methods.hsi_event.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_event.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
 <p>__annotations__ : {}</p>
@@ -915,6 +986,16 @@ has been scheduled.</p>
 <dd><p>This is a Health System Interaction Event in which a person receives a recommendation of weight loss.
 This results in an individual having a probability of reducing their BMI by one category in the next 6-12 months.
 :param condition: the condition to start medication for</p>
+<p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event" title="tlo.methods.hsi_event.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_event.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
 <p>__annotations__ : {}</p>
@@ -951,6 +1032,16 @@ The next refill of medication is also scheduled.
 If the person is flagged as not being on medication, then the event does nothing and returns a blank footprint.
 If it does not run, then person ceases to be on medication and no further refill HSI are scheduled.
 :param condition: the condition to refill medication for</p>
+<p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event" title="tlo.methods.hsi_event.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_event.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
 <p>__annotations__ : {}</p>
@@ -994,6 +1085,16 @@ It is the event when a person is investigated for certain condition following an
 may be scheduled from this event, and this may take the form of multiple streams of HSI event if more than one
 condition is to be treated.
 :param events_to_investigate: list of the events for which emergency care is sought</p>
+<p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event" title="tlo.methods.hsi_event.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_event.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
 <p>__annotations__ : {}</p>
@@ -1049,7 +1150,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Aug 02, 2024.
+      <span class="lastupdated">Last updated on Oct 07, 2024.
       </span></p>
   </div>
 

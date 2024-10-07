@@ -1,25 +1,23 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="../">
 <head>
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.alri module &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
+  <title>tlo.methods.alri module &mdash; TLOmodel 0.1.dev2456+g2221089.d20241007 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
-      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=7ab3649f" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
 
   
     <link rel="shortcut icon" href="../_static/favicon.png"/>
-  <!--[if lt IE 9]>
-    <script src="../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="../_static/jquery.js?v=5d32c60e"></script>
-        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=f3d69a25"></script>
-        <script src="../_static/doctools.js?v=9a2dae69"></script>
-        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=363ca9bd"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -38,9 +36,6 @@
           <a href="../index.html" class="icon icon-home">
             TLOmodel
           </a>
-              <div class="version">
-                0.1
-              </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
@@ -58,6 +53,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../resources/index.html">Resource files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../parameters.html">Parameters</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../learning.html">Learning Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contributors.html">Contributors</a></li>
@@ -113,6 +109,14 @@ death is lowered and the person is “cured” (symptom resolved) some days late
 <dt class="sig sig-object py" id="tlo.methods.alri.Alri">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Alri</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_indivdual</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_checks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#Alri"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.Alri" title="Link to this definition"></a></dt>
 <dd><p>This is the disease module for Acute Lower Respiratory Infections.</p>
+<p>Construct a new disease module ready to be included in a simulation.</p>
+<p>Initialises an empty parameters dictionary and module-specific random number
+generator.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name</strong> – the name to use for this module. Defaults to the concrete subclass’ name.</p>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.core.Module</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_generic_first_appts.GenericFirstAppointmentsMixin</span></code></p>
 <p><strong>PARAMETERS:</strong></p>
 <table class="docutils align-default">
@@ -663,11 +667,12 @@ death is lowered and the person is “cured” (symptom resolved) some days late
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>CAUSES_OF_DEATH : {‘ALRI_Enterobacteriaceae’: &lt;tlo.methods.causes.Cause object at 0x118f79090&gt;, ‘ALRI_H.influenzae_non_type_b’: &lt;tlo.methods.causes.Cause object at 0x118f790d0&gt;, ‘ALRI_HMPV’: &lt;tlo.methods.causes.Cause object at 0x118f79190&gt;, ‘ALRI_Hib’: &lt;tlo.methods.causes.Cause object at 0x118f79210&gt;, ‘ALRI_Influenza’: &lt;tlo.methods.causes.Cause object at 0x118f79290&gt;, ‘ALRI_P.jirovecii’: &lt;tlo.methods.causes.Cause object at 0x118f792d0&gt;, ‘ALRI_Parainfluenza’: &lt;tlo.methods.causes.Cause object at 0x118f79310&gt;, ‘ALRI_RSV’: &lt;tlo.methods.causes.Cause object at 0x118f79390&gt;, ‘ALRI_Rhinovirus’: &lt;tlo.methods.causes.Cause object at 0x118f79410&gt;, ‘ALRI_Staph_aureus’: &lt;tlo.methods.causes.Cause object at 0x118f79450&gt;, ‘ALRI_Strep_pneumoniae_PCV13’: &lt;tlo.methods.causes.Cause object at 0x118f79490&gt;, ‘ALRI_Strep_pneumoniae_non_PCV13’: &lt;tlo.methods.causes.Cause object at 0x118f794d0&gt;, ‘ALRI_other_Strepto_Enterococci’: &lt;tlo.methods.causes.Cause object at 0x118f79510&gt;, ‘ALRI_other_bacterial_pathogens’: &lt;tlo.methods.causes.Cause object at 0x118f79550&gt;, ‘ALRI_other_pathogens_NoS’: &lt;tlo.methods.causes.Cause object at 0x118f79590&gt;, ‘ALRI_other_viral_pathogens’: &lt;tlo.methods.causes.Cause object at 0x118f795d0&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘ALRI_Enterobacteriaceae’: &lt;tlo.methods.causes.Cause object at 0x118f79650&gt;, ‘ALRI_H.influenzae_non_type_b’: &lt;tlo.methods.causes.Cause object at 0x118f79690&gt;, ‘ALRI_HMPV’: &lt;tlo.methods.causes.Cause object at 0x118f79710&gt;, ‘ALRI_Hib’: &lt;tlo.methods.causes.Cause object at 0x118f79790&gt;, ‘ALRI_Influenza’: &lt;tlo.methods.causes.Cause object at 0x118f79810&gt;, ‘ALRI_P.jirovecii’: &lt;tlo.methods.causes.Cause object at 0x118f79850&gt;, ‘ALRI_Parainfluenza’: &lt;tlo.methods.causes.Cause object at 0x118f79890&gt;, ‘ALRI_RSV’: &lt;tlo.methods.causes.Cause object at 0x118f79910&gt;, ‘ALRI_Rhinovirus’: &lt;tlo.methods.causes.Cause object at 0x118f799d0&gt;, ‘ALRI_Staph_aureus’: &lt;tlo.methods.causes.Cause object at 0x118f79a10&gt;, ‘ALRI_Strep_pneumoniae_PCV13’: &lt;tlo.methods.causes.Cause object at 0x118f79a50&gt;, ‘ALRI_Strep_pneumoniae_non_PCV13’: &lt;tlo.methods.causes.Cause object at 0x118f79a90&gt;, ‘ALRI_other_Strepto_Enterococci’: &lt;tlo.methods.causes.Cause object at 0x118f79ad0&gt;, ‘ALRI_other_bacterial_pathogens’: &lt;tlo.methods.causes.Cause object at 0x118f79b10&gt;, ‘ALRI_other_pathogens_NoS’: &lt;tlo.methods.causes.Cause object at 0x118f79b50&gt;, ‘ALRI_other_viral_pathogens’: &lt;tlo.methods.causes.Cause object at 0x118f79b90&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘Epi’, ‘Wasting’, ‘Hiv’, ‘Demography’, ‘SymptomManager’, ‘NewbornOutcomes’, ‘Lifestyle’}</p>
-<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;}</p>
+<p>CAUSES_OF_DEATH : {‘ALRI_Enterobacteriaceae’: &lt;tlo.methods.causes.Cause object at 0x12426fc50&gt;, ‘ALRI_H.influenzae_non_type_b’: &lt;tlo.methods.causes.Cause object at 0x12426fc90&gt;, ‘ALRI_HMPV’: &lt;tlo.methods.causes.Cause object at 0x12426fd50&gt;, ‘ALRI_Hib’: &lt;tlo.methods.causes.Cause object at 0x12426fdd0&gt;, ‘ALRI_Influenza’: &lt;tlo.methods.causes.Cause object at 0x12426fe50&gt;, ‘ALRI_P.jirovecii’: &lt;tlo.methods.causes.Cause object at 0x12426fe90&gt;, ‘ALRI_Parainfluenza’: &lt;tlo.methods.causes.Cause object at 0x12426fed0&gt;, ‘ALRI_RSV’: &lt;tlo.methods.causes.Cause object at 0x12426ff50&gt;, ‘ALRI_Rhinovirus’: &lt;tlo.methods.causes.Cause object at 0x12426ffd0&gt;, ‘ALRI_Staph_aureus’: &lt;tlo.methods.causes.Cause object at 0x124284050&gt;, ‘ALRI_Strep_pneumoniae_PCV13’: &lt;tlo.methods.causes.Cause object at 0x124284090&gt;, ‘ALRI_Strep_pneumoniae_non_PCV13’: &lt;tlo.methods.causes.Cause object at 0x1242840d0&gt;, ‘ALRI_other_Strepto_Enterococci’: &lt;tlo.methods.causes.Cause object at 0x124284110&gt;, ‘ALRI_other_bacterial_pathogens’: &lt;tlo.methods.causes.Cause object at 0x124284150&gt;, ‘ALRI_other_pathogens_NoS’: &lt;tlo.methods.causes.Cause object at 0x124284190&gt;, ‘ALRI_other_viral_pathogens’: &lt;tlo.methods.causes.Cause object at 0x1242841d0&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘ALRI_Enterobacteriaceae’: &lt;tlo.methods.causes.Cause object at 0x124284250&gt;, ‘ALRI_H.influenzae_non_type_b’: &lt;tlo.methods.causes.Cause object at 0x124284290&gt;, ‘ALRI_HMPV’: &lt;tlo.methods.causes.Cause object at 0x124284310&gt;, ‘ALRI_Hib’: &lt;tlo.methods.causes.Cause object at 0x124284390&gt;, ‘ALRI_Influenza’: &lt;tlo.methods.causes.Cause object at 0x124284410&gt;, ‘ALRI_P.jirovecii’: &lt;tlo.methods.causes.Cause object at 0x124284450&gt;, ‘ALRI_Parainfluenza’: &lt;tlo.methods.causes.Cause object at 0x124284490&gt;, ‘ALRI_RSV’: &lt;tlo.methods.causes.Cause object at 0x124284510&gt;, ‘ALRI_Rhinovirus’: &lt;tlo.methods.causes.Cause object at 0x1242845d0&gt;, ‘ALRI_Staph_aureus’: &lt;tlo.methods.causes.Cause object at 0x124284610&gt;, ‘ALRI_Strep_pneumoniae_PCV13’: &lt;tlo.methods.causes.Cause object at 0x124284650&gt;, ‘ALRI_Strep_pneumoniae_non_PCV13’: &lt;tlo.methods.causes.Cause object at 0x124284690&gt;, ‘ALRI_other_Strepto_Enterococci’: &lt;tlo.methods.causes.Cause object at 0x1242846d0&gt;, ‘ALRI_other_bacterial_pathogens’: &lt;tlo.methods.causes.Cause object at 0x124284710&gt;, ‘ALRI_other_pathogens_NoS’: &lt;tlo.methods.causes.Cause object at 0x124284750&gt;, ‘ALRI_other_viral_pathogens’: &lt;tlo.methods.causes.Cause object at 0x124284790&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘Lifestyle’, ‘Hiv’, ‘NewbornOutcomes’, ‘Epi’, ‘SymptomManager’, ‘Demography’, ‘Wasting’}</p>
+<p>METADATA : {&lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’}</p>
+<p>__annotations__ : {}</p>
 <p>all_pathogens : [‘Enterobacteriaceae’, ‘H.influenzae_non_type_b’, ‘HMPV’, ‘Hib’, ‘Influenza’, ‘P.jirovecii’, ‘Parainfluenza’, ‘RSV’, ‘Rhinovirus’, ‘Staph_aureus’, ‘Strep_pneumoniae_PCV13’, ‘Strep_pneumoniae_non_PCV13’, ‘other_Strepto_Enterococci’, ‘other_bacterial_pathogens’, ‘other_pathogens_NoS’, ‘other_viral_pathogens’]</p>
 <p>all_symptoms : [‘chest_indrawing’, ‘cough’, ‘cyanosis’, ‘danger_signs’, ‘difficult_breathing’, ‘fever’, ‘tachypnoea’]</p>
 <p>antibiotics : [‘1st_line_IV_antibiotics’, ‘Amoxicillin_tablet_or_suspension_3days’, ‘Amoxicillin_tablet_or_suspension_5days’, ‘Amoxicillin_tablet_or_suspension_7days’]</p>
@@ -889,10 +894,20 @@ It determines who is infected and when and schedules individual IncidentCase eve
 later when the children will be slightly older. This means that when comparing the model output with data, the
 model slightly under-represents incidence among younger age-groups and over-represents incidence among older
 age-groups. This is a small effect when the frequency of the polling event is high.</p>
+<p>Create a new regular event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event</p></li>
+<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
+(must be supplied as a keyword argument)</p></li>
+</ul>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
 <p>__annotations__ : {}</p>
-<p>fraction_of_year_between_polling_event : &lt;property object at 0x118f80bd0&gt;</p>
+<p>fraction_of_year_between_polling_event : &lt;property object at 0x124280b30&gt;</p>
 <p><strong>Functions (defined or overridden in class AlriPollingEvent):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.alri.AlriPollingEvent.__init__">
@@ -935,6 +950,19 @@ what pathogen.</p>
 <dt class="sig sig-object py" id="tlo.methods.alri.AlriIncidentCase">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AlriIncidentCase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pathogen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriIncidentCase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriIncidentCase" title="Link to this definition"></a></dt>
 <dd><p>This Event is for the onset of the infection that causes Alri. It is scheduled by the AlriPollingEvent.</p>
+<p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Functions (defined or overridden in class AlriIncidentCase):</strong></p>
 <dl class="py method">
@@ -990,6 +1018,19 @@ the case.</p>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AlriNaturalRecoveryEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriNaturalRecoveryEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriNaturalRecoveryEvent" title="Link to this definition"></a></dt>
 <dd><p>This is the Natural Recovery event. It is scheduled by the AlriIncidentCase Event for someone who will recover
 from the infection even if no care received. It calls the ‘end_infection’ function.</p>
+<p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Functions (defined or overridden in class AlriNaturalRecoveryEvent):</strong></p>
 <dl class="py method">
@@ -1029,6 +1070,19 @@ constructor, but may also take further keyword arguments.</p></li>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AlriCureEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriCureEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriCureEvent" title="Link to this definition"></a></dt>
 <dd><p>This is the cure event. It is scheduled by an HSI treatment event. It enacts the actual “cure” of the person
 that is caused (after some delay) by the treatment administered.</p>
+<p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Functions (defined or overridden in class AlriCureEvent):</strong></p>
 <dl class="py method">
@@ -1067,6 +1121,19 @@ constructor, but may also take further keyword arguments.</p></li>
 <dt class="sig sig-object py" id="tlo.methods.alri.AlriDeathEvent">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AlriDeathEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriDeathEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriDeathEvent" title="Link to this definition"></a></dt>
 <dd><p>This Event is for the death of someone that is caused by the infection with a pathogen that causes Alri.</p>
+<p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Functions (defined or overridden in class AlriDeathEvent):</strong></p>
 <dl class="py method">
@@ -1106,10 +1173,20 @@ constructor, but may also take further keyword arguments.</p></li>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Alri_Treatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><span class="pre">Module</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inpatient</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_followup_following_treatment_failure</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#HSI_Alri_Treatment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.HSI_Alri_Treatment" title="Link to this definition"></a></dt>
 <dd><p>HSI event for treating uncomplicated pneumonia. This event runs for every presentation and represents all the
 interactions with the healthcare system at all the levels.</p>
+<p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event" title="tlo.methods.hsi_event.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_event.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
 <p>__annotations__ : {}</p>
-<p>_is_as_in_patient : &lt;property object at 0x118f80e50&gt;</p>
+<p>_is_as_in_patient : &lt;property object at 0x124280db0&gt;</p>
 <p><strong>Functions (defined or overridden in class HSI_Alri_Treatment):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.alri.HSI_Alri_Treatment.__init__">
@@ -1292,6 +1369,16 @@ A further drug will be used but this will have no effect on the chance of the pe
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AlriLoggingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriLoggingEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriLoggingEvent" title="Link to this definition"></a></dt>
 <dd><p>This Event logs the number of incident cases that have occurred since the previous logging event.
 Analysis scripts expect that the frequency of this logging event is once per year.</p>
+<p>Create a new regular event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event</p></li>
+<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
+(must be supplied as a keyword argument)</p></li>
+</ul>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
 <p>__annotations__ : {}</p>
@@ -1370,6 +1457,16 @@ Analysis scripts expect that the frequency of this logging event is once per yea
 <dt class="sig sig-object py" id="tlo.methods.alri.AlriCheckPropertiesEvent">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AlriCheckPropertiesEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriCheckPropertiesEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriCheckPropertiesEvent" title="Link to this definition"></a></dt>
 <dd><p>This event runs daily and checks properties are in the right configuration. Only use whilst debugging!</p>
+<p>Create a new regular event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event</p></li>
+<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
+(must be supplied as a keyword argument)</p></li>
+</ul>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
 <p>__annotations__ : {}</p>
@@ -1407,6 +1504,16 @@ Analysis scripts expect that the frequency of this logging event is once per yea
 <dt class="sig sig-object py" id="tlo.methods.alri.AlriIndividualLoggingEvent">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AlriIndividualLoggingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriIndividualLoggingEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriIndividualLoggingEvent" title="Link to this definition"></a></dt>
 <dd><p>This Event logs the daily occurrence to a single individual child.</p>
+<p>Create a new regular event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event</p></li>
+<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
+(must be supplied as a keyword argument)</p></li>
+</ul>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
 <p>__annotations__ : {}</p>
@@ -1436,8 +1543,16 @@ Analysis scripts expect that the frequency of this logging event is once per yea
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.alri.AlriPropertiesOfOtherModules">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AlriPropertiesOfOtherModules</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriPropertiesOfOtherModules"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriPropertiesOfOtherModules" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AlriPropertiesOfOtherModules</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriPropertiesOfOtherModules"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriPropertiesOfOtherModules" title="Link to this definition"></a></dt>
 <dd><p>For the purpose of the testing, this module generates the properties upon which the Alri module relies</p>
+<p>Construct a new disease module ready to be included in a simulation.</p>
+<p>Initialises an empty parameters dictionary and module-specific random number
+generator.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name</strong> – the name to use for this module. Defaults to the concrete subclass’ name.</p>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.core.Module</span></code></a></p>
 <p><strong>PROPERTIES:</strong></p>
 <table class="docutils align-default">
@@ -1488,8 +1603,9 @@ Analysis scripts expect that the frequency of this logging event is once per yea
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ALTERNATIVE_TO : {‘Epi’, ‘Wasting’, ‘Hiv’}</p>
+<p>ALTERNATIVE_TO : {‘Hiv’, ‘Wasting’, ‘Epi’}</p>
 <p>INIT_DEPENDENCIES : {‘Demography’}</p>
+<p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class AlriPropertiesOfOtherModules):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.alri.AlriPropertiesOfOtherModules.read_parameters">
@@ -1508,15 +1624,25 @@ Typically, modules would read a particular file within here.</p>
 <dt class="sig sig-object py" id="tlo.methods.alri.AlriPropertiesOfOtherModules.initialise_population">
 <span class="sig-name descname"><span class="pre">initialise_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriPropertiesOfOtherModules.initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriPropertiesOfOtherModules.initialise_population" title="Link to this definition"></a></dt>
 <dd><p>Set our property values for the initial population.</p>
-<p>Must be implemented by subclasses.</p>
 <p>This method is called by the simulation when creating the initial population, and is
 responsible for assigning initial values, for every individual, of those properties
 ‘owned’ by this module, i.e. those declared in its PROPERTIES dictionary.</p>
+<p>By default, all <code class="docutils literal notranslate"><span class="pre">Property``s</span> <span class="pre">in</span> <span class="pre">``self.PROPERTIES</span></code> will have
+their columns in the population dataframe set to the default value.</p>
+<p>Modules that wish to implement this behaviour do not need to implement this method,
+it will be inherited automatically. Modules that wish to perform additional steps
+during the initialise_population stage should reimplement this method and call</p>
+<p><code class="docutils literal notranslate"><span class="pre">`python</span>
+<span class="pre">super().initialise_population(population=population)</span>
+<span class="pre">`</span></code></p>
+<p>at the beginning of the method, then proceed with their additional steps. Modules that
+do not wish to inherit this default behaviour should re-implement initialise_population
+without the call to <code class="docutils literal notranslate"><span class="pre">super()</span></code> above.</p>
 <p>TODO: We probably need to declare somehow which properties we ‘read’ here, so the
 simulation knows what order to initialise modules in!</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>population</strong> – the population of individuals</p>
+<dd class="field-odd"><p><strong>population</strong> – The population of individuals in the simulation.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1554,6 +1680,19 @@ It is a good place to add initial events to the event queue.</p>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AlriIncidentCase_Lethal_DangerSigns_Pneumonia</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pathogen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriIncidentCase_Lethal_DangerSigns_Pneumonia"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriIncidentCase_Lethal_DangerSigns_Pneumonia" title="Link to this definition"></a></dt>
 <dd><p>This Event can be used for testing and is a drop-in replacement of <cite>AlriIncidentCase</cite>. It always produces an
 infection that will be lethal and should be classified as ‘danger_signs_pneumonia’</p>
+<p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="#tlo.methods.alri.AlriIncidentCase" title="tlo.methods.alri.AlriIncidentCase"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.alri.AlriIncidentCase</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Functions (defined or overridden in class AlriIncidentCase_Lethal_DangerSigns_Pneumonia):</strong></p>
 <dl class="py method">
@@ -1587,6 +1726,19 @@ constructor, but may also take further keyword arguments.</p></li>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pathogen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia" title="Link to this definition"></a></dt>
 <dd><p>This Event can be used for testing and is a drop-in replacement of <cite>AlriIncidentCase</cite>. It always produces an
 infection that will be non-lethal and should be classified as a fast_breathing_pneumonia.</p>
+<p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="#tlo.methods.alri.AlriIncidentCase" title="tlo.methods.alri.AlriIncidentCase"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.alri.AlriIncidentCase</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Functions (defined or overridden in class AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia):</strong></p>
 <dl class="py method">
@@ -1629,7 +1781,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Aug 02, 2024.
+      <span class="lastupdated">Last updated on Oct 07, 2024.
       </span></p>
   </div>
 

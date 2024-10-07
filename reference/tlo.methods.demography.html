@@ -1,25 +1,23 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="../">
 <head>
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.demography module &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
+  <title>tlo.methods.demography module &mdash; TLOmodel 0.1.dev2456+g2221089.d20241007 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
-      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=7ab3649f" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
 
   
     <link rel="shortcut icon" href="../_static/favicon.png"/>
-  <!--[if lt IE 9]>
-    <script src="../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="../_static/jquery.js?v=5d32c60e"></script>
-        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=f3d69a25"></script>
-        <script src="../_static/doctools.js?v=9a2dae69"></script>
-        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=363ca9bd"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -38,9 +36,6 @@
           <a href="../index.html" class="icon icon-home">
             TLOmodel
           </a>
-              <div class="version">
-                0.1
-              </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
@@ -58,6 +53,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../resources/index.html">Resource files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../parameters.html">Parameters</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../learning.html">Learning Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contributors.html">Contributors</a></li>
@@ -101,6 +97,14 @@
 <dt class="sig sig-object py" id="tlo.methods.demography.Demography">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Demography</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">equal_allocation_by_district</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#Demography"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.Demography" title="Link to this definition"></a></dt>
 <dd><p>The core demography module.</p>
+<p>Construct a new disease module ready to be included in a simulation.</p>
+<p>Initialises an empty parameters dictionary and module-specific random number
+generator.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name</strong> – the name to use for this module. Defaults to the concrete subclass’ name.</p>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.core.Module</span></code></a></p>
 <p><strong>PARAMETERS:</strong></p>
 <table class="docutils align-default">
@@ -222,6 +226,7 @@
 <p>AGE_RANGE_CATEGORIES : [‘0-4’, ‘5-9’, ‘10-14’, ‘15-19’, ‘20-24’, ‘25-29’, ‘30-34’, ‘35-39’, ‘40-44’, ‘45-49’, ‘50-54’, ‘55-59’, ‘60-64’, ‘65-69’, ‘70-74’, ‘75-79’, ‘80-84’, ‘85-89’, ‘90-94’, ‘95-99’, ‘100+’]</p>
 <p>AGE_RANGE_LOOKUP : {0: ‘0-4’, 1: ‘0-4’, 2: ‘0-4’, 3: ‘0-4’, 4: ‘0-4’, 5: ‘5-9’, 6: ‘5-9’, 7: ‘5-9’, 8: ‘5-9’, 9: ‘5-9’, 10: ‘10-14’, 11: ‘10-14’, 12: ‘10-14’, 13: ‘10-14’, 14: ‘10-14’, 15: ‘15-19’, 16: ‘15-19’, 17: ‘15-19’, 18: ‘15-19’, 19: ‘15-19’, 20: ‘20-24’, 21: ‘20-24’, 22: ‘20-24’, 23: ‘20-24’, 24: ‘20-24’, 25: ‘25-29’, 26: ‘25-29’, 27: ‘25-29’, 28: ‘25-29’, 29: ‘25-29’, 30: ‘30-34’, 31: ‘30-34’, 32: ‘30-34’, 33: ‘30-34’, 34: ‘30-34’, 35: ‘35-39’, 36: ‘35-39’, 37: ‘35-39’, 38: ‘35-39’, 39: ‘35-39’, 40: ‘40-44’, 41: ‘40-44’, 42: ‘40-44’, 43: ‘40-44’, 44: ‘40-44’, 45: ‘45-49’, 46: ‘45-49’, 47: ‘45-49’, 48: ‘45-49’, 49: ‘45-49’, 50: ‘50-54’, 51: ‘50-54’, 52: ‘50-54’, 53: ‘50-54’, 54: ‘50-54’, 55: ‘55-59’, 56: ‘55-59’, 57: ‘55-59’, 58: ‘55-59’, 59: ‘55-59’, 60: ‘60-64’, 61: ‘60-64’, 62: ‘60-64’, 63: ‘60-64’, 64: ‘60-64’, 65: ‘65-69’, 66: ‘65-69’, 67: ‘65-69’, 68: ‘65-69’, 69: ‘65-69’, 70: ‘70-74’, 71: ‘70-74’, 72: ‘70-74’, 73: ‘70-74’, 74: ‘70-74’, 75: ‘75-79’, 76: ‘75-79’, 77: ‘75-79’, 78: ‘75-79’, 79: ‘75-79’, 80: ‘80-84’, 81: ‘80-84’, 82: ‘80-84’, 83: ‘80-84’, 84: ‘80-84’, 85: ‘85-89’, 86: ‘85-89’, 87: ‘85-89’, 88: ‘85-89’, 89: ‘85-89’, 90: ‘90-94’, 91: ‘90-94’, 92: ‘90-94’, 93: ‘90-94’, 94: ‘90-94’, 95: ‘95-99’, 96: ‘95-99’, 97: ‘95-99’, 98: ‘95-99’, 99: ‘95-99’}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘ImprovedHealthSystemAndCareSeekingScenarioSwitcher’}</p>
+<p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class Demography):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.demography.Demography.__init__">
@@ -356,6 +361,16 @@ corresponding to the 2010 projected population from <a class="reference internal
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AgeUpdateEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">age_range_lookup</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#AgeUpdateEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.AgeUpdateEvent" title="Link to this definition"></a></dt>
 <dd><p>This event updates the age_exact_years, age_years and age_range columns for the population based
 on the current simulation date</p>
+<p>Create a new regular event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event</p></li>
+<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
+(must be supplied as a keyword argument)</p></li>
+</ul>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
 <p>__annotations__ : {}</p>
@@ -395,6 +410,16 @@ on the current simulation date</p>
 <dd><p>This event causes deaths to persons from cause that are _not_ being modelled explicitly by a disease module.
 It does this by computing the GBD death rates that are implied by all the causes of death other than those that are
 represented in the disease module registered in this simulation.</p>
+<p>Create a new regular event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event</p></li>
+<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
+(must be supplied as a keyword argument)</p></li>
+</ul>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
 <p>__annotations__ : {}</p>
@@ -452,6 +477,19 @@ by the disease modules).</p>
 <p>The ‘individual_id’ is the index in the population.props dataframe. It is for _one_ person only.
 The ‘cause’ is the cause that is defined by the disease module (aka, “tlo cause”).
 The ‘module’ passed to this event is the disease module that is causing the death.</p>
+<p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Functions (defined or overridden in class InstantaneousDeath):</strong></p>
 <dl class="py method">
@@ -489,7 +527,10 @@ constructor, but may also take further keyword arguments.</p></li>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.demography.DemographyLoggingEvent">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DemographyLoggingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#DemographyLoggingEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.DemographyLoggingEvent" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<dd><p>Logging event running every year.
+* Update internal storage of population size
+* Output statistics to the log</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
 <p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class DemographyLoggingEvent):</strong></p>
@@ -529,7 +570,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Aug 02, 2024.
+      <span class="lastupdated">Last updated on Oct 07, 2024.
       </span></p>
   </div>
 

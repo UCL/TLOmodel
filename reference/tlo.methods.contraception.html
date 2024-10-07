@@ -1,25 +1,23 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="../">
 <head>
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.contraception module &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
+  <title>tlo.methods.contraception module &mdash; TLOmodel 0.1.dev2456+g2221089.d20241007 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
-      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=7ab3649f" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
 
   
     <link rel="shortcut icon" href="../_static/favicon.png"/>
-  <!--[if lt IE 9]>
-    <script src="../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="../_static/jquery.js?v=5d32c60e"></script>
-        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=f3d69a25"></script>
-        <script src="../_static/doctools.js?v=9a2dae69"></script>
-        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=363ca9bd"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -38,9 +36,6 @@
           <a href="../index.html" class="icon icon-home">
             TLOmodel
           </a>
-              <div class="version">
-                0.1
-              </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
@@ -58,6 +53,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../resources/index.html">Resource files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../parameters.html">Parameters</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../learning.html">Learning Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contributors.html">Contributors</a></li>
@@ -105,6 +101,14 @@ Calibration is done in two stages:
 </div></blockquote>
 <p>(ii) Trends over time in the risk of starting (<cite>time_age_trend_in_initiation</cite>) and stopping
 (<cite>time_age_trend_in_stopping</cite>) of contraceptives are used to induce the correct trend in the number of births.</p>
+<p>Construct a new disease module ready to be included in a simulation.</p>
+<p>Initialises an empty parameters dictionary and module-specific random number
+generator.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name</strong> – the name to use for this module. Defaults to the concrete subclass’ name.</p>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.core.Module</span></code></a></p>
 <p><strong>PARAMETERS:</strong></p>
 <table class="docutils align-default">
@@ -243,12 +247,13 @@ Calibration is done in two stages:
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ADDITIONAL_DEPENDENCIES : {‘Labour’, ‘Hiv’}</p>
+<p>ADDITIONAL_DEPENDENCIES : {‘Hiv’, ‘Labour’}</p>
 <p>INIT_DEPENDENCIES : {‘Demography’}</p>
 <p>METADATA : {}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthSystem’}</p>
-<p>all_contraception_states : {‘IUD’, ‘male_condom’, ‘pill’, ‘other_modern’, ‘not_using’, ‘injections’, ‘implant’, ‘withdrawal’, ‘female_sterilization’, ‘other_traditional’, ‘periodic_abstinence’}</p>
-<p>contraceptives_initiated_with_additional_items : {‘IUD’, ‘implant’, ‘pill’, ‘female_sterilization’, ‘injections’}</p>
+<p>__annotations__ : {}</p>
+<p>all_contraception_states : {‘other_modern’, ‘implant’, ‘IUD’, ‘male_condom’, ‘periodic_abstinence’, ‘female_sterilization’, ‘withdrawal’, ‘other_traditional’, ‘injections’, ‘pill’, ‘not_using’}</p>
+<p>contraceptives_initiated_with_additional_items : {‘implant’, ‘injections’, ‘IUD’, ‘pill’, ‘female_sterilization’}</p>
 <p><strong>Functions (defined or overridden in class Contraception):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.contraception.Contraception.__init__">
@@ -383,6 +388,19 @@ when under 30 years old.</p>
 <dt class="sig sig-object py" id="tlo.methods.contraception.DirectBirth">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DirectBirth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/contraception.html#DirectBirth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.contraception.DirectBirth" title="Link to this definition"></a></dt>
 <dd><p>Do birth, with the mother_id set to person_id*(-1) to reflect that this was a <cite>DirectBirth</cite>.</p>
+<p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Functions (defined or overridden in class DirectBirth):</strong></p>
 <dl class="py method">
@@ -423,6 +441,16 @@ constructor, but may also take further keyword arguments.</p></li>
 <dd><p>The regular poll (monthly) for the Contraceptive Module:
 * Determines contraceptive start / stops / switches
 * Determines the onset of pregnancy</p>
+<p>Create a new regular event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event</p></li>
+<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
+(must be supplied as a keyword argument)</p></li>
+</ul>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
 <p>__annotations__ : {}</p>
@@ -498,7 +526,8 @@ method fails).</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.contraception.ContraceptionLoggingEvent">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ContraceptionLoggingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/contraception.html#ContraceptionLoggingEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.contraception.ContraceptionLoggingEvent" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<dd><p>Logs state of contraceptive usage in the population at a point in time.</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
 <p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class ContraceptionLoggingEvent):</strong></p>
@@ -527,9 +556,19 @@ method fails).</p>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Contraception_FamilyPlanningAppt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_contraceptive</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/contraception.html#HSI_Contraception_FamilyPlanningAppt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.contraception.HSI_Contraception_FamilyPlanningAppt" title="Link to this definition"></a></dt>
 <dd><p>HSI event for the starting a contraceptive method, maintaining use of a method of a contraceptive, or switching
 between contraceptives.</p>
+<p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event" title="tlo.methods.hsi_event.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_event.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
-<p>EXPECTED_APPT_FOOTPRINT : &lt;property object at 0x12a7228e0&gt;</p>
+<p>EXPECTED_APPT_FOOTPRINT : &lt;property object at 0x135a80860&gt;</p>
 <p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class HSI_Contraception_FamilyPlanningAppt):</strong></p>
 <dl class="py method">
@@ -578,6 +617,19 @@ constructor, but may also take further keyword arguments.</p>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">StartInterventions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/contraception.html#StartInterventions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.contraception.StartInterventions" title="Link to this definition"></a></dt>
 <dd><p>This event is run by Contraception module exactly once when interventions are introduced, or never if interventions
 are not used. If run, it updates parameters changed to reflect the FP interventions to be used from now on.</p>
+<p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
 <p>__annotations__ : {}</p>
@@ -621,6 +673,14 @@ constructor, but may also take further keyword arguments.</p></li>
 testing/calibrating the Contraception Module. The module calls itself Labour and provides the method
 <cite>set_date_of_labour</cite>, which is called by the Contraception Module at the onset of pregnancy. It schedules an event
 for the end of the pregnancy (approximately 9 months later) which may or may not result in a live birth.</p>
+<p>Construct a new disease module ready to be included in a simulation.</p>
+<p>Initialises an empty parameters dictionary and module-specific random number
+generator.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name</strong> – the name to use for this module. Defaults to the concrete subclass’ name.</p>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.core.Module</span></code></a></p>
 <p><strong>PARAMETERS:</strong></p>
 <table class="docutils align-default">
@@ -678,6 +738,7 @@ for the end of the pregnancy (approximately 9 months later) which may or may not
 <p>ALTERNATIVE_TO : {‘Labour’}</p>
 <p>INIT_DEPENDENCIES : {‘Contraception’}</p>
 <p>METADATA : {}</p>
+<p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class SimplifiedPregnancyAndLabour):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.contraception.SimplifiedPregnancyAndLabour.__init__">
@@ -709,15 +770,25 @@ Typically, modules would read a particular file within here.</p>
 <dt class="sig sig-object py" id="tlo.methods.contraception.SimplifiedPregnancyAndLabour.initialise_population">
 <span class="sig-name descname"><span class="pre">initialise_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/contraception.html#SimplifiedPregnancyAndLabour.initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.contraception.SimplifiedPregnancyAndLabour.initialise_population" title="Link to this definition"></a></dt>
 <dd><p>Set our property values for the initial population.</p>
-<p>Must be implemented by subclasses.</p>
 <p>This method is called by the simulation when creating the initial population, and is
 responsible for assigning initial values, for every individual, of those properties
 ‘owned’ by this module, i.e. those declared in its PROPERTIES dictionary.</p>
+<p>By default, all <code class="docutils literal notranslate"><span class="pre">Property``s</span> <span class="pre">in</span> <span class="pre">``self.PROPERTIES</span></code> will have
+their columns in the population dataframe set to the default value.</p>
+<p>Modules that wish to implement this behaviour do not need to implement this method,
+it will be inherited automatically. Modules that wish to perform additional steps
+during the initialise_population stage should reimplement this method and call</p>
+<p><code class="docutils literal notranslate"><span class="pre">`python</span>
+<span class="pre">super().initialise_population(population=population)</span>
+<span class="pre">`</span></code></p>
+<p>at the beginning of the method, then proceed with their additional steps. Modules that
+do not wish to inherit this default behaviour should re-implement initialise_population
+without the call to <code class="docutils literal notranslate"><span class="pre">super()</span></code> above.</p>
 <p>TODO: We probably need to declare somehow which properties we ‘read’ here, so the
 simulation knows what order to initialise modules in!</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>population</strong> – the population of individuals</p>
+<dd class="field-odd"><p><strong>population</strong> – The population of individuals in the simulation.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -761,6 +832,19 @@ of a pregnancy.</p>
 <dt class="sig sig-object py" id="tlo.methods.contraception.EndOfPregnancyEvent">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">EndOfPregnancyEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">live_birth</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/contraception.html#EndOfPregnancyEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.contraception.EndOfPregnancyEvent" title="Link to this definition"></a></dt>
 <dd><p>This event signals the end of the pregnancy, which may or may not result in a live-birth</p>
+<p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Functions (defined or overridden in class EndOfPregnancyEvent):</strong></p>
 <dl class="py method">
@@ -803,7 +887,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Aug 02, 2024.
+      <span class="lastupdated">Last updated on Oct 07, 2024.
       </span></p>
   </div>
 

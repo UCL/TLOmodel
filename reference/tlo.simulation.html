@@ -1,25 +1,23 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="../">
 <head>
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.simulation module &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
+  <title>tlo.simulation module &mdash; TLOmodel 0.1.dev2456+g2221089.d20241007 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
-      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=7ab3649f" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
 
   
     <link rel="shortcut icon" href="../_static/favicon.png"/>
-  <!--[if lt IE 9]>
-    <script src="../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="../_static/jquery.js?v=5d32c60e"></script>
-        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=f3d69a25"></script>
-        <script src="../_static/doctools.js?v=9a2dae69"></script>
-        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=363ca9bd"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -38,9 +36,6 @@
           <a href="../index.html" class="icon icon-home">
             TLOmodel
           </a>
-              <div class="version">
-                0.1
-              </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
@@ -58,6 +53,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../resources/index.html">Resource files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../parameters.html">Parameters</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../learning.html">Learning Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contributors.html">Contributors</a></li>
@@ -93,55 +89,107 @@
   <section id="module-tlo.simulation">
 <span id="tlo-simulation-module"></span><h1>tlo.simulation module<a class="headerlink" href="#module-tlo.simulation" title="Link to this heading"></a></h1>
 <p>The main simulation controller.</p>
+<dl class="py exception">
+<dt class="sig sig-object py" id="tlo.simulation.SimulationPreviouslyInitialisedError">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SimulationPreviouslyInitialisedError</span></span><a class="reference internal" href="../_modules/tlo/simulation.html#SimulationPreviouslyInitialisedError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.simulation.SimulationPreviouslyInitialisedError" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+<p>Exception raised when trying to initialise an already initialised simulation.</p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="tlo.simulation.SimulationNotInitialisedError">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SimulationNotInitialisedError</span></span><a class="reference internal" href="../_modules/tlo/simulation.html#SimulationNotInitialisedError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.simulation.SimulationNotInitialisedError" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+<p>Exception raised when trying to run simulation before initialising.</p>
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.simulation.Simulation">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_date</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Timestamp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_progress_bar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/simulation.html#Simulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.simulation.Simulation" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_date</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Timestamp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_progress_bar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/simulation.html#Simulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.simulation.Simulation" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>The main control centre for a simulation.</p>
-<p>This class contains the core simulation logic and event queue, and holds
-references to all the information required to run a complete simulation:
-the population, disease modules, etc.</p>
+<p>This class contains the core simulation logic and event queue, and holds references
+to all the information required to run a complete simulation: the population,
+disease modules, etc.</p>
 <p>Key attributes include:</p>
-<dl class="simple">
-<dt><cite>date</cite></dt><dd><p>The current simulation date.</p>
-</dd>
-<dt><cite>modules</cite></dt><dd><p>A list of the disease modules contributing to this simulation.</p>
-</dd>
-<dt><cite>population</cite></dt><dd><p>The Population being simulated.</p>
-</dd>
-<dt><cite>rng</cite></dt><dd><p>The simulation-level random number generator.
-Note that individual modules also have their own random number generator
-with independent state.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>date</strong> – The current simulation date.</p></li>
+<li><p><strong>modules</strong> – A dictionary of the disease modules used in this simulation, keyed
+by the module name.</p></li>
+<li><p><strong>population</strong> – The population being simulated.</p></li>
+<li><p><strong>rng</strong> – The simulation-level random number generator.</p></li>
+</ul>
 </dd>
 </dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Individual modules also have their own random number generator with independent
+state.</p>
+</div>
+<p>Create a new simulation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>start_date</strong> – The date the simulation begins; must be given as
+a keyword parameter for clarity.</p></li>
+<li><p><strong>seed</strong> – The seed for random number generator. class will create one if not
+supplied</p></li>
+<li><p><strong>log_config</strong> – Dictionary specifying logging configuration for this
+simulation. Can have entries: <cite>filename</cite> - prefix for log file name, final
+file name will have a date time appended, if not present default is to not
+output log to a file; <cite>directory</cite> - path to output directory to write log
+file to, default if not specified is to output to the <cite>outputs</cite> folder;
+<cite>custom_levels</cite> - dictionary to set logging levels, ‘*’ can be used as a key
+for all registered modules; <cite>suppress_stdout</cite> -  if <cite>True</cite>, suppresses
+logging to standard output stream (default is <cite>False</cite>).</p></li>
+<li><p><strong>show_progress_bar</strong> – Whether to show a progress bar instead of the logger
+output during the simulation.</p></li>
+<li><p><strong>resourcefilepath</strong> – Path to resource files folder. Assign <a href="#id1"><span class="problematic" id="id2">``</span></a>None` if no
+path is provided.</p></li>
+</ul>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <cite>custom_levels</cite> entry in <cite>log_config</cite> argument can be used to disable
+logging on all disease modules by setting a high level to <cite>*</cite>, and then
+enabling logging on one module of interest by setting a low level, for
+example <code class="docutils literal notranslate"><span class="pre">{'*':</span> <span class="pre">logging.CRITICAL</span> <span class="pre">'tlo.methods.hiv':</span> <span class="pre">logging.INFO}</span></code>.</p>
+</div>
 <dl class="py property">
 <dt class="sig sig-object py" id="tlo.simulation.Simulation.log_filepath">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">log_filepath</span></span><a class="headerlink" href="#tlo.simulation.Simulation.log_filepath" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">log_filepath</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Path</span></em><a class="headerlink" href="#tlo.simulation.Simulation.log_filepath" title="Link to this definition"></a></dt>
 <dd><p>The path to the log file, if one has been set.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.simulation.Simulation.register">
-<span class="sig-name descname"><span class="pre">register</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">modules</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sort_modules</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">check_all_dependencies</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/simulation.html#Simulation.register"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.simulation.Simulation.register" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">register</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">modules</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><span class="pre">Module</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">sort_modules</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">check_all_dependencies</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">auto_register_dependencies</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/tlo/simulation.html#Simulation.register"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.simulation.Simulation.register" title="Link to this definition"></a></dt>
 <dd><p>Register one or more disease modules with the simulation.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>modules</strong> – the disease module(s) to use as part of this simulation.
+<li><p><strong>modules</strong> – The disease module(s) to use as part of this simulation.
 Multiple modules may be given as separate arguments to one call.</p></li>
 <li><p><strong>sort_modules</strong> – Whether to topologically sort the modules so that any
 initialisation dependencies (specified by the <code class="docutils literal notranslate"><span class="pre">INIT_DEPENDENCIES</span></code>
 attribute) of a module are initialised before the module itself is. A
-<code class="docutils literal notranslate"><span class="pre">ModuleDependencyError</span></code> exception will be raised if there are missing
-initialisation dependencies or circular initialisation dependencies between
-modules that cannot be resolved. If this flag is set to <code class="docutils literal notranslate"><span class="pre">True</span></code> there is
-also a requirement that at most one instance of each module is registered
-and <code class="docutils literal notranslate"><span class="pre">MultipleModuleInstanceError</span></code> will be raised if this is not the case.</p></li>
+<a class="reference internal" href="tlo.dependencies.html#tlo.dependencies.ModuleDependencyError" title="tlo.dependencies.ModuleDependencyError"><code class="xref py py-exc docutils literal notranslate"><span class="pre">ModuleDependencyError</span></code></a> exception will be raised if there are
+missing initialisation dependencies or circular initialisation dependencies
+between modules that cannot be resolved. If this flag is set to <code class="docutils literal notranslate"><span class="pre">True</span></code>
+there is also a requirement that at most one instance of each module is
+registered and <a class="reference internal" href="tlo.dependencies.html#tlo.dependencies.MultipleModuleInstanceError" title="tlo.dependencies.MultipleModuleInstanceError"><code class="xref py py-exc docutils literal notranslate"><span class="pre">MultipleModuleInstanceError</span></code></a> will be raised if this
+is not the case.</p></li>
 <li><p><strong>check_all_dependencies</strong> – Whether to check if all of each module’s declared
 dependencies (that is, the union of the <code class="docutils literal notranslate"><span class="pre">INIT_DEPENDENCIES</span></code> and
 <code class="docutils literal notranslate"><span class="pre">ADDITIONAL_DEPENDENCIES</span></code> attributes) have been included in the set of
-modules to be registered. A <code class="docutils literal notranslate"><span class="pre">ModuleDependencyError</span></code> exception will
+modules to be registered. A <a class="reference internal" href="tlo.dependencies.html#tlo.dependencies.ModuleDependencyError" title="tlo.dependencies.ModuleDependencyError"><code class="xref py py-exc docutils literal notranslate"><span class="pre">ModuleDependencyError</span></code></a> exception will
 be raised if there are missing dependencies.</p></li>
+<li><p><strong>auto_register_dependencies</strong> – Whether to register missing module dependencies
+or not. If this argument is set to True, all module dependencies will be
+automatically registered.</p></li>
 </ul>
 </dd>
 </dl>
@@ -149,38 +197,87 @@ be raised if there are missing dependencies.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.simulation.Simulation.make_initial_population">
-<span class="sig-name descname"><span class="pre">make_initial_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/simulation.html#Simulation.make_initial_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.simulation.Simulation.make_initial_population" title="Link to this definition"></a></dt>
-<dd><p>Create the initial population to simulate.</p>
+<span class="sig-name descname"><span class="pre">make_initial_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataframe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/tlo/simulation.html#Simulation.make_initial_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.simulation.Simulation.make_initial_population" title="Link to this definition"></a></dt>
+<dd><p>Create the initial population to simulate. You can either provide a number of individuals
+or a dataframe containing information for the population.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>n</strong> – the number of individuals to create; must be given as
-a keyword parameter for clarity</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n</strong> – The number of individuals to create; must be given as a keyword parameter.</p></li>
+<li><p><strong>dataframe</strong> – The population dataframe to use; must be given as a keyword parameter.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.simulation.Simulation.initialise">
+<span class="sig-name descname"><span class="pre">initialise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_date</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Timestamp</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/tlo/simulation.html#Simulation.initialise"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.simulation.Simulation.initialise" title="Link to this definition"></a></dt>
+<dd><p>Initialise all modules in simulation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>end_date</strong> – Date to end simulation on - accessible to modules to allow
+initialising data structures which may depend (in size for example) on the
+date range being simulated.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.simulation.Simulation.finalise">
+<span class="sig-name descname"><span class="pre">finalise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wall_clock_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/tlo/simulation.html#Simulation.finalise"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.simulation.Simulation.finalise" title="Link to this definition"></a></dt>
+<dd><p>Finalise all modules in simulation and close logging file if open.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>wall_clock_time</strong> – Optional argument specifying total time taken to
+simulate, to be written out to log before closing.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.simulation.Simulation.close_output_file">
+<span class="sig-name descname"><span class="pre">close_output_file</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/tlo/simulation.html#Simulation.close_output_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.simulation.Simulation.close_output_file" title="Link to this definition"></a></dt>
+<dd><p>Close logging file if open.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.simulation.Simulation.run_simulation_to">
+<span class="sig-name descname"><span class="pre">run_simulation_to</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to_date</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Timestamp</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/tlo/simulation.html#Simulation.run_simulation_to"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.simulation.Simulation.run_simulation_to" title="Link to this definition"></a></dt>
+<dd><p>Run simulation up to a specified date.</p>
+<p>Unlike <a class="reference internal" href="#tlo.simulation.Simulation.simulate" title="tlo.simulation.Simulation.simulate"><code class="xref py py-meth docutils literal notranslate"><span class="pre">simulate()</span></code></a> this method does not initialise or finalise
+simulation and the date simulated to can be any date before or equal to
+simulation end date.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>to_date</strong> – Date to simulate up to but not including - must be before or
+equal to simulation end date specified in call to <a class="reference internal" href="#tlo.simulation.Simulation.initialise" title="tlo.simulation.Simulation.initialise"><code class="xref py py-meth docutils literal notranslate"><span class="pre">initialise()</span></code></a>.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.simulation.Simulation.simulate">
-<span class="sig-name descname"><span class="pre">simulate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_date</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/simulation.html#Simulation.simulate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.simulation.Simulation.simulate" title="Link to this definition"></a></dt>
-<dd><p>Simulation until the given end date</p>
+<span class="sig-name descname"><span class="pre">simulate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_date</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Timestamp</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/tlo/simulation.html#Simulation.simulate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.simulation.Simulation.simulate" title="Link to this definition"></a></dt>
+<dd><p>Simulate until the given end date</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>end_date</strong> – when to stop simulating. Only events strictly before this
-date will be allowed to occur.
-Must be given as a keyword parameter for clarity.</p>
+<dd class="field-odd"><p><strong>end_date</strong> – When to stop simulating. Only events strictly before this
+date will be allowed to occur. Must be given as a keyword parameter for
+clarity.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.simulation.Simulation.schedule_event">
-<span class="sig-name descname"><span class="pre">schedule_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/simulation.html#Simulation.schedule_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.simulation.Simulation.schedule_event" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">schedule_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><span class="pre">Event</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Timestamp</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/tlo/simulation.html#Simulation.schedule_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.simulation.Simulation.schedule_event" title="Link to this definition"></a></dt>
 <dd><p>Schedule an event to happen on the given future date.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>event</strong> – the Event to schedule</p></li>
-<li><p><strong>date</strong> – when the event should happen</p></li>
+<li><p><strong>event</strong> – The event to schedule.</p></li>
+<li><p><strong>date</strong> – wWen the event should happen.</p></li>
 </ul>
 </dd>
 </dl>
@@ -188,13 +285,13 @@ Must be given as a keyword parameter for clarity.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.simulation.Simulation.fire_single_event">
-<span class="sig-name descname"><span class="pre">fire_single_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/simulation.html#Simulation.fire_single_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.simulation.Simulation.fire_single_event" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">fire_single_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><span class="pre">Event</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Timestamp</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/tlo/simulation.html#Simulation.fire_single_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.simulation.Simulation.fire_single_event" title="Link to this definition"></a></dt>
 <dd><p>Fires the event once for the given date</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>event</strong> – <code class="xref py py-class docutils literal notranslate"><span class="pre">Event</span></code> to fire</p></li>
-<li><p><strong>date</strong> – the date of the event</p></li>
+<li><p><strong>event</strong> – <code class="xref py py-class docutils literal notranslate"><span class="pre">Event</span></code> to fire.</p></li>
+<li><p><strong>date</strong> – The date of the event.</p></li>
 </ul>
 </dd>
 </dl>
@@ -202,27 +299,69 @@ Must be given as a keyword parameter for clarity.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.simulation.Simulation.do_birth">
-<span class="sig-name descname"><span class="pre">do_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/simulation.html#Simulation.do_birth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.simulation.Simulation.do_birth" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">do_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="../_modules/tlo/simulation.html#Simulation.do_birth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.simulation.Simulation.do_birth" title="Link to this definition"></a></dt>
 <dd><p>Create a new child person.</p>
 <p>We create a new person in the population and then call the <cite>on_birth</cite> method in
 all modules to initialise the child’s properties.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>mother_id</strong> – the maternal parent</p>
+<dd class="field-odd"><p><strong>mother_id</strong> – Row index label of the maternal parent.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>the new child</p>
+<dd class="field-even"><p>Row index label of the new child.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.simulation.Simulation.find_events_for_person">
-<span class="sig-name descname"><span class="pre">find_events_for_person</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/simulation.html#Simulation.find_events_for_person"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.simulation.Simulation.find_events_for_person" title="Link to this definition"></a></dt>
-<dd><p>Find the events in the queue for a particular person.
-:param person_id: the person_id of interest
-:returns list of tuples (date_of_event, event) for that person_id in the queue.</p>
-<p>NB. This is for debugging and testing only - not for use in real simulations as it is slow</p>
+<span class="sig-name descname"><span class="pre">find_events_for_person</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Timestamp</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><span class="pre">Event</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/tlo/simulation.html#Simulation.find_events_for_person"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.simulation.Simulation.find_events_for_person" title="Link to this definition"></a></dt>
+<dd><p>Find the events in the queue for a particular person.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>person_id</strong> – The row index of the person of interest.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of tuples <cite>(date_of_event, event)</cite> for that <cite>person_id</cite> in the
+queue.</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This is for debugging and testing only. Not for use in real simulations as it
+is slow.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.simulation.Simulation.save_to_pickle">
+<span class="sig-name descname"><span class="pre">save_to_pickle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pickle_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/tlo/simulation.html#Simulation.save_to_pickle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.simulation.Simulation.save_to_pickle" title="Link to this definition"></a></dt>
+<dd><p>Save simulation state to a pickle file using <code class="xref py py-mod docutils literal notranslate"><span class="pre">dill</span></code>.</p>
+<p>Requires <code class="xref py py-mod docutils literal notranslate"><span class="pre">dill</span></code> to be importable.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>pickle_path</strong> – File path to save simulation state to.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.simulation.Simulation.load_from_pickle">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load_from_pickle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pickle_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#tlo.simulation.Simulation" title="tlo.simulation.Simulation"><span class="pre">Simulation</span></a></span></span><a class="reference internal" href="../_modules/tlo/simulation.html#Simulation.load_from_pickle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.simulation.Simulation.load_from_pickle" title="Link to this definition"></a></dt>
+<dd><p>Load simulation state from a pickle file using <code class="xref py py-mod docutils literal notranslate"><span class="pre">dill</span></code>.</p>
+<p>Requires <code class="xref py py-mod docutils literal notranslate"><span class="pre">dill</span></code> to be importable.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pickle_path</strong> – File path to load simulation state from.</p></li>
+<li><p><strong>log_config</strong> – New log configuration to override previous configuration. If
+<cite>None</cite> previous configuration (including output file) will be retained.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Loaded <a class="reference internal" href="#tlo.simulation.Simulation" title="tlo.simulation.Simulation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Simulation</span></code></a> object.</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
@@ -233,27 +372,39 @@ all modules to initialise the child’s properties.</p>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>A simple priority queue for events.</p>
 <p>This doesn’t really care what events and dates are, provided dates are comparable.</p>
+<p>Create an empty event queue.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.simulation.EventQueue.schedule">
-<span class="sig-name descname"><span class="pre">schedule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/simulation.html#EventQueue.schedule"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.simulation.EventQueue.schedule" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">schedule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><span class="pre">Event</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Timestamp</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/tlo/simulation.html#EventQueue.schedule"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.simulation.EventQueue.schedule" title="Link to this definition"></a></dt>
 <dd><p>Schedule a new event.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>event</strong> – the event to schedule</p></li>
-<li><p><strong>date</strong> – when it should happen</p></li>
+<li><p><strong>event</strong> – The event to schedule.</p></li>
+<li><p><strong>date</strong> – When it should happen.</p></li>
 </ul>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.simulation.EventQueue.next_event">
-<span class="sig-name descname"><span class="pre">next_event</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/simulation.html#EventQueue.next_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.simulation.EventQueue.next_event" title="Link to this definition"></a></dt>
-<dd><p>Get the earliest event in the queue.</p>
+<dt class="sig sig-object py" id="tlo.simulation.EventQueue.pop_next_event_and_date">
+<span class="sig-name descname"><span class="pre">pop_next_event_and_date</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><span class="pre">Event</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Timestamp</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/tlo/simulation.html#EventQueue.pop_next_event_and_date"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.simulation.EventQueue.pop_next_event_and_date" title="Link to this definition"></a></dt>
+<dd><p>Get and remove the earliest event and corresponding date in the queue.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>an (event, date) pair</p>
+<dd class="field-odd"><p>An <cite>(event, date)</cite> pair.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="tlo.simulation.EventQueue.date_of_next_event">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">date_of_next_event</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Timestamp</span></em><a class="headerlink" href="#tlo.simulation.EventQueue.date_of_next_event" title="Link to this definition"></a></dt>
+<dd><p>Get the date of the earliest event in queue without removing from queue.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Date of next event in queue.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -274,7 +425,7 @@ all modules to initialise the child’s properties.</p>
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Aug 02, 2024.
+      <span class="lastupdated">Last updated on Oct 07, 2024.
       </span></p>
   </div>
 

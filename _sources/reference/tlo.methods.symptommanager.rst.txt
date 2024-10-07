@@ -33,6 +33,8 @@ tlo.methods.symptommanager module
 
      METADATA : {}
 
+     __annotations__ : {}
+
      **Functions (defined or overridden in class SymptomManager):**
 
      .. automethod:: __init__

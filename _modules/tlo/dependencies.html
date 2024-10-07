@@ -1,24 +1,22 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.dependencies &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
+  <title>tlo.dependencies &mdash; TLOmodel 0.1.dev2456+g2221089.d20241007 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d10597a4" />
-      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=7ab3649f" />
       <link rel="stylesheet" type="text/css" href="../../_static/theme_overrides.css?v=6ea10ece" />
 
   
     <link rel="shortcut icon" href="../../_static/favicon.png"/>
-  <!--[if lt IE 9]>
-    <script src="../../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="../../_static/jquery.js?v=5d32c60e"></script>
-        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../_static/documentation_options.js?v=f3d69a25"></script>
-        <script src="../../_static/doctools.js?v=9a2dae69"></script>
-        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=363ca9bd"></script>
+      <script src="../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
@@ -35,9 +33,6 @@
           <a href="../../index.html" class="icon icon-home">
             TLOmodel
           </a>
-              <div class="version">
-                0.1
-              </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
@@ -55,6 +50,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../resources/index.html">Resource files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../parameters.html">Parameters</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../learning.html">Learning Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors</a></li>
@@ -157,6 +153,73 @@
 
 
 
+<div class="viewcode-block" id="get_missing_dependencies">
+<a class="viewcode-back" href="../../reference/tlo.dependencies.html#tlo.dependencies.get_missing_dependencies">[docs]</a>
+<span class="k">def</span> <span class="nf">get_missing_dependencies</span><span class="p">(</span>
+    <span class="n">module_instances</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Module</span><span class="p">],</span>
+    <span class="n">get_dependencies</span><span class="p">:</span> <span class="n">DependencyGetter</span> <span class="o">=</span> <span class="n">get_all_dependencies</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the set of missing required dependencies if any from an iterable of modules.</span>
+
+<span class="sd">    :param module_instances: Iterable of ``Module`` subclass instances to get missing</span>
+<span class="sd">        dependencies for.</span>
+<span class="sd">    :param get_dependencies: Callable which extracts the set of dependencies to check</span>
+<span class="sd">        for from a module instance. Defaults to extracting all dependencies.</span>
+<span class="sd">    :return: Set of ``Module`` subclass names corresponding to missing dependencies.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">module_instances</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">module_instances</span><span class="p">)</span>
+    <span class="n">modules_present</span> <span class="o">=</span> <span class="p">{</span><span class="nb">type</span><span class="p">(</span><span class="n">module</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span> <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="n">module_instances</span><span class="p">}</span>
+    <span class="n">modules_present_are_alternatives_to</span> <span class="o">=</span> <span class="nb">set</span><span class="o">.</span><span class="n">union</span><span class="p">(</span>
+        <span class="c1"># Force conversion to set to avoid errors when using set.union with frozenset</span>
+        <span class="o">*</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">module</span><span class="o">.</span><span class="n">ALTERNATIVE_TO</span><span class="p">)</span> <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="n">module_instances</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">modules_required</span> <span class="o">=</span> <span class="nb">set</span><span class="o">.</span><span class="n">union</span><span class="p">(</span>
+        <span class="o">*</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">get_dependencies</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">modules_present</span><span class="p">))</span> <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="n">module_instances</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="n">missing_dependencies</span> <span class="o">=</span> <span class="n">modules_required</span> <span class="o">-</span> <span class="n">modules_present</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">missing_dependencies</span> <span class="o">-</span> <span class="n">modules_present_are_alternatives_to</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="initialise_missing_dependencies">
+<a class="viewcode-back" href="../../reference/tlo.dependencies.html#tlo.dependencies.initialise_missing_dependencies">[docs]</a>
+<span class="k">def</span> <span class="nf">initialise_missing_dependencies</span><span class="p">(</span><span class="n">modules</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Module</span><span class="p">],</span> <span class="o">**</span><span class="n">module_kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Set</span><span class="p">[</span><span class="n">Module</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get list of initialised instances of any missing dependencies for an iterable of modules.</span>
+
+<span class="sd">    :param modules: Iterable of ``Module`` subclass instances to get instances of missing</span>
+<span class="sd">        dependencies for.</span>
+<span class="sd">    :param module_kwargs: Any keyword arguments to use when initialising missing</span>
+<span class="sd">        module dependencies.</span>
+<span class="sd">    :return: Set of ``Module`` subclass instances corresponding to missing dependencies.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">module_class_map</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Type</span><span class="p">[</span><span class="n">Module</span><span class="p">]]</span> <span class="o">=</span> <span class="n">get_module_class_map</span><span class="p">(</span><span class="nb">set</span><span class="p">())</span>
+    <span class="n">all_module_instances</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Module</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">modules</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">add_missing_module_instances</span><span class="p">(</span><span class="n">modules</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Module</span><span class="p">],</span> <span class="n">all_missing_module_names</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; add missing module instances to all_module_instances list</span>
+<span class="sd">        :param modules: Iterable of registered modules</span>
+<span class="sd">        :param all_missing_module_names: Set of missing module names</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">missing_dependencies</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_missing_dependencies</span><span class="p">(</span>
+            <span class="n">modules</span><span class="p">,</span> <span class="n">get_all_dependencies</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">missing_dependencies</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">all_missing_module_names</span> <span class="o">|=</span> <span class="n">missing_dependencies</span>
+            <span class="n">missing_module_instances</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Module</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">module_class_map</span><span class="p">[</span><span class="n">dependency</span><span class="p">](</span><span class="o">**</span><span class="n">module_kwargs</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">dependency</span> <span class="ow">in</span> <span class="n">missing_dependencies</span>
+            <span class="p">]</span>
+            <span class="n">modules</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">missing_module_instances</span><span class="p">)</span>
+            <span class="n">add_missing_module_instances</span><span class="p">(</span><span class="n">modules</span><span class="p">,</span> <span class="n">all_missing_module_names</span><span class="p">)</span>
+
+    <span class="n">add_missing_module_instances</span><span class="p">(</span><span class="n">all_module_instances</span><span class="p">,</span> <span class="nb">set</span><span class="p">())</span>
+    <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="n">all_module_instances</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">modules</span><span class="p">)</span></div>
+
+
+
 <div class="viewcode-block" id="get_all_required_dependencies">
 <a class="viewcode-back" href="../../reference/tlo.dependencies.html#tlo.dependencies.get_all_required_dependencies">[docs]</a>
 <span class="k">def</span> <span class="nf">get_all_required_dependencies</span><span class="p">(</span>
@@ -181,7 +244,7 @@
 <a class="viewcode-back" href="../../reference/tlo.dependencies.html#tlo.dependencies.topologically_sort_modules">[docs]</a>
 <span class="k">def</span> <span class="nf">topologically_sort_modules</span><span class="p">(</span>
     <span class="n">module_instances</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Module</span><span class="p">],</span>
-    <span class="n">get_dependencies</span><span class="p">:</span> <span class="n">DependencyGetter</span> <span class="o">=</span> <span class="n">get_init_dependencies</span><span class="p">,</span>
+    <span class="n">get_dependencies</span><span class="p">:</span> <span class="n">DependencyGetter</span> <span class="o">=</span> <span class="n">get_init_dependencies</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">Module</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Generator which yields topological sort of modules based on their dependencies.</span>
 
@@ -225,6 +288,7 @@
             <span class="n">dependencies</span> <span class="o">=</span> <span class="n">get_dependencies</span><span class="p">(</span>
                 <span class="n">module_instance_map</span><span class="p">[</span><span class="n">module</span><span class="p">],</span> <span class="n">module_instance_map</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
             <span class="p">)</span>
+
             <span class="k">for</span> <span class="n">dependency</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">dependencies</span><span class="p">):</span>
                 <span class="k">if</span> <span class="n">dependency</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">module_instance_map</span><span class="p">:</span>
                     <span class="n">alternatives_with_instances</span> <span class="o">=</span> <span class="p">[</span>
@@ -381,25 +445,14 @@
 
 <span class="sd">    :raises ModuleDependencyError: Raised if any dependencies are missing.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">module_instances</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">module_instances</span><span class="p">)</span>
-    <span class="n">modules_present</span> <span class="o">=</span> <span class="p">{</span><span class="nb">type</span><span class="p">(</span><span class="n">module</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span> <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="n">module_instances</span><span class="p">}</span>
-    <span class="n">modules_present_are_alternatives_to</span> <span class="o">=</span> <span class="nb">set</span><span class="o">.</span><span class="n">union</span><span class="p">(</span>
-        <span class="c1"># Force conversion to set to avoid errors when using set.union with frozenset</span>
-        <span class="o">*</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">module</span><span class="o">.</span><span class="n">ALTERNATIVE_TO</span><span class="p">)</span> <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="n">module_instances</span><span class="p">)</span>
+    <span class="n">missing_dependencies</span> <span class="o">=</span> <span class="n">get_missing_dependencies</span><span class="p">(</span>
+        <span class="n">module_instances</span><span class="p">,</span> <span class="n">get_dependencies</span>
     <span class="p">)</span>
-    <span class="n">modules_required</span> <span class="o">=</span> <span class="nb">set</span><span class="o">.</span><span class="n">union</span><span class="p">(</span>
-        <span class="o">*</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">get_dependencies</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">modules_present</span><span class="p">))</span> <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="n">module_instances</span><span class="p">)</span>
-    <span class="p">)</span>
-    <span class="n">missing_dependencies</span> <span class="o">=</span> <span class="n">modules_required</span> <span class="o">-</span> <span class="n">modules_present</span>
-    <span class="n">missing_dependencies_without_alternatives_present</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">missing_dependencies</span> <span class="o">-</span> <span class="n">modules_present_are_alternatives_to</span>
-    <span class="p">)</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">missing_dependencies_without_alternatives_present</span> <span class="o">==</span> <span class="nb">set</span><span class="p">():</span>
-
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">missing_dependencies</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">raise</span> <span class="n">ModuleDependencyError</span><span class="p">(</span>
             <span class="s1">&#39;One or more required dependency is missing from the module list and no &#39;</span>
             <span class="s1">&#39;alternative to this / these modules are available either: &#39;</span>
-            <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">missing_dependencies_without_alternatives_present</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">missing_dependencies</span><span class="si">}</span><span class="s1">&#39;</span>
         <span class="p">)</span></div>
 
 </pre></div>
@@ -412,7 +465,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Aug 02, 2024.
+      <span class="lastupdated">Last updated on Oct 07, 2024.
       </span></p>
   </div>
 

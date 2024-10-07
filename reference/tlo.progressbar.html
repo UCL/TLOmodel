@@ -1,25 +1,23 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="../">
 <head>
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.progressbar module &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
+  <title>tlo.progressbar module &mdash; TLOmodel 0.1.dev2456+g2221089.d20241007 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
-      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=7ab3649f" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
 
   
     <link rel="shortcut icon" href="../_static/favicon.png"/>
-  <!--[if lt IE 9]>
-    <script src="../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="../_static/jquery.js?v=5d32c60e"></script>
-        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=f3d69a25"></script>
-        <script src="../_static/doctools.js?v=9a2dae69"></script>
-        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=363ca9bd"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -38,9 +36,6 @@
           <a href="../index.html" class="icon icon-home">
             TLOmodel
           </a>
-              <div class="version">
-                0.1
-              </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
@@ -58,6 +53,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../resources/index.html">Resource files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../parameters.html">Parameters</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../learning.html">Learning Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contributors.html">Contributors</a></li>
@@ -101,6 +97,19 @@
 <p>Implements both string and HTML representations to allow richer
 display in interfaces which support HTML output, for example Jupyter
 notebooks or interactive terminals.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_step</strong> – Total number of steps in task.</p></li>
+<li><p><strong>description</strong> – Description of task to prefix progress bar with.</p></li>
+<li><p><strong>n_col</strong> – Number of columns (characters) to use in string
+representation of progress bar.</p></li>
+<li><p><strong>unit</strong> – String describing unit of each step.</p></li>
+<li><p><strong>min_referesh_time</strong> – Minimum time in seconds between each
+refresh of progress bar visual representation.</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tlo.progressbar.ProgressBar.GLYPHS">
 <span class="sig-name descname"><span class="pre">GLYPHS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'</span> <span class="pre">▏▎▍▌▋▊▉█'</span></em><a class="headerlink" href="#tlo.progressbar.ProgressBar.GLYPHS" title="Link to this definition"></a></dt>
@@ -268,6 +277,11 @@ update postfix stats.</p></li>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">StreamDisplay</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">io</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">TextIO</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/progressbar.html#StreamDisplay"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.progressbar.StreamDisplay" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Base class for using I/O streams as an updatable display.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>io</strong> – I/O stream to write updates to. Defaults to <cite>sys.stdout</cite> if <cite>None</cite>.</p>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.progressbar.StreamDisplay.close">
 <span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/progressbar.html#StreamDisplay.close"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.progressbar.StreamDisplay.close" title="Link to this definition"></a></dt>
@@ -286,6 +300,11 @@ update postfix stats.</p></li>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AnsiStreamDisplay</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">io</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">TextIO</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/progressbar.html#AnsiStreamDisplay"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.progressbar.AnsiStreamDisplay" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#tlo.progressbar.StreamDisplay" title="tlo.progressbar.StreamDisplay"><code class="xref py py-class docutils literal notranslate"><span class="pre">StreamDisplay</span></code></a></p>
 <p>Use I/O stream which supports ANSI escape sequences as an updatable display.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>io</strong> – I/O stream to write updates to. Defaults to <cite>sys.stdout</cite> if <cite>None</cite>.</p>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.progressbar.AnsiStreamDisplay.update">
 <span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/progressbar.html#AnsiStreamDisplay.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.progressbar.AnsiStreamDisplay.update" title="Link to this definition"></a></dt>
@@ -299,6 +318,11 @@ update postfix stats.</p></li>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">BasicStreamDisplay</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">io</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">TextIO</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/progressbar.html#BasicStreamDisplay"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.progressbar.BasicStreamDisplay" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#tlo.progressbar.StreamDisplay" title="tlo.progressbar.StreamDisplay"><code class="xref py py-class docutils literal notranslate"><span class="pre">StreamDisplay</span></code></a></p>
 <p>Use I/O stream without ANSI escape sequence support as an updatable display.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>io</strong> – I/O stream to write updates to. Defaults to <cite>sys.stdout</cite> if <cite>None</cite>.</p>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.progressbar.BasicStreamDisplay.update">
 <span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/progressbar.html#BasicStreamDisplay.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.progressbar.BasicStreamDisplay.update" title="Link to this definition"></a></dt>
@@ -321,7 +345,7 @@ update postfix stats.</p></li>
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Aug 02, 2024.
+      <span class="lastupdated">Last updated on Oct 07, 2024.
       </span></p>
   </div>
 

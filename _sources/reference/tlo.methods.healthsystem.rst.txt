@@ -44,7 +44,7 @@ tlo.methods.healthsystem module
           - The capabilities (minutes of time available of each type of officer in each facility) based on the _potential_ number and distribution of staff estimated, with adjustments to permit each appointment type that should be run at facility level to do so in every district.
         * - use_funded_or_actual_staffing
           - STRING
-          - If `actual`, then use the numbers and distribution of staff estimated to be available currently; If `funded`, then use the numbers and distribution of staff that are potentially available. If 'funded_plus`, then use a dataset in which the allocation of staff to facilities is tweaked so as to allow each appointment type to run at each facility_level in each district for which it is defined. N.B. This parameter is over-ridden if an argument is provided to the module initialiser.
+          - If `actual`, then use the numbers and distribution of staff estimated to be available currently; If `funded`, then use the numbers and distribution of staff that are potentially available. If `funded_plus`, then use a dataset in which the allocation of staff to facilities is tweaked so as to allow each appointment type to run at each facility_level in each district for which it is defined. N.B. This parameter is over-ridden if an argument is provided to the module initialiser.
         * - item_and_package_code_lookups
           - DATA_FRAME
           - Data imported from the OneHealth Tool on consumable items, packages and costs.
@@ -162,13 +162,15 @@ tlo.methods.healthsystem module
 
      INIT_DEPENDENCIES : {'Demography'}
 
-     capabilities_today : <property object at 0x118f00680>
+     __annotations__ : {}
 
-     hsi_event_counts : <property object at 0x118f008b0>
+     capabilities_today : <property object at 0x124210680>
 
-     never_ran_hsi_event_counts : <property object at 0x118f00900>
+     hsi_event_counts : <property object at 0x1242108b0>
 
-     use_funded_or_actual_staffing : <property object at 0x118f00770>
+     never_ran_hsi_event_counts : <property object at 0x124210900>
+
+     use_funded_or_actual_staffing : <property object at 0x124210770>
 
      **Functions (defined or overridden in class HealthSystem):**
 
@@ -345,7 +347,7 @@ tlo.methods.healthsystem module
 
      __annotations__ : {}
 
-     current_pop_size : <property object at 0x118f00bd0>
+     current_pop_size : <property object at 0x124210bd0>
 
      **Functions (defined or overridden in class DynamicRescalingHRCapabilities):**
 

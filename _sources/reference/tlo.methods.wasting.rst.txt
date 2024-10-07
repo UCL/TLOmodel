@@ -31,6 +31,8 @@ tlo.methods.wasting module
 
      INIT_DEPENDENCIES : {'Demography'}
 
+     __annotations__ : {}
+
      **Functions (defined or overridden in class Wasting):**
 
      .. automethod:: __init__

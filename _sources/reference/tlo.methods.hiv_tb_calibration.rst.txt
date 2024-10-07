@@ -12,9 +12,11 @@ tlo.methods.hiv_tb_calibration module
 
      **Class attributes:**
 
-     INIT_DEPENDENCIES : {'Demography', 'Hiv', 'Tb'}
+     INIT_DEPENDENCIES : {'Hiv', 'Demography', 'Tb'}
 
      METADATA : {}
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class Deviance):**
 

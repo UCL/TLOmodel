@@ -1,25 +1,23 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="../">
 <head>
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.lm module &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
+  <title>tlo.lm module &mdash; TLOmodel 0.1.dev2456+g2221089.d20241007 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
-      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=7ab3649f" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
 
   
     <link rel="shortcut icon" href="../_static/favicon.png"/>
-  <!--[if lt IE 9]>
-    <script src="../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="../_static/jquery.js?v=5d32c60e"></script>
-        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=f3d69a25"></script>
-        <script src="../_static/doctools.js?v=9a2dae69"></script>
-        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=363ca9bd"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -38,9 +36,6 @@
           <a href="../index.html" class="icon icon-home">
             TLOmodel
           </a>
-              <div class="version">
-                0.1
-              </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
@@ -58,6 +53,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../resources/index.html">Resource files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../parameters.html">Parameters</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../learning.html">Learning Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contributors.html">Contributors</a></li>
@@ -96,6 +92,36 @@
 <dt class="sig sig-object py" id="tlo.lm.Predictor">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Predictor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">property_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">external</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conditions_are_mutually_exclusive</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conditions_are_exhaustive</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/lm.html#Predictor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.lm.Predictor" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A Predictor variable for the regression model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>property_name</strong> – A property of the population dataframe e.g. age, sex, etc.
+or if <code class="docutils literal notranslate"><span class="pre">external=True</span></code> the name of the external property that will be
+passed as a keyword argument to the <code class="docutils literal notranslate"><span class="pre">LinearModel.predict</span></code> method.</p></li>
+<li><p><strong>external</strong> – Whether the named property is external (<code class="docutils literal notranslate"><span class="pre">True</span></code>) and so will
+be passed as a keyword argument to the <code class="docutils literal notranslate"><span class="pre">LinearModel.predict</span></code> method) or is
+a property of the population dataframe (<code class="docutils literal notranslate"><span class="pre">False</span></code>).</p></li>
+<li><p><strong>conditions_are_mutually_exclusive</strong> – Whether the set of conditions that
+are declared for this predictor are all mutually exclusive, that is, for any
+pair of conditions, one condition evaluating to <code class="docutils literal notranslate"><span class="pre">True</span></code> implies the other
+must evaluate to <code class="docutils literal notranslate"><span class="pre">False</span></code>. If this is declared to be the case a more
+efficient method of evaluation will be used in <code class="docutils literal notranslate"><span class="pre">LinearModel.predict</span></code>. Note
+however that the validity of this declaration will not be checked so if this
+is set to <code class="docutils literal notranslate"><span class="pre">True</span></code> for predictors with non-mutually exclusive conditions,
+the model output will be erroneous.</p></li>
+<li><p><strong>conditions_are_exhaustive</strong> – Whether the set of conditions that are
+declared for this predictor are all exhaustive, that is at least one
+condition will always be <code class="docutils literal notranslate"><span class="pre">True</span></code> irrespective of the value of the property.
+If this is declared to be the case, a more efficient method of evaluation
+maye be used in <code class="docutils literal notranslate"><span class="pre">LinearModel.predict`,</span> <span class="pre">though</span> <span class="pre">if</span> <span class="pre">a</span> <span class="pre">catch-all</span> <span class="pre">``otherwise</span></code>
+condition is included this flag will provide no benefit. Note that the
+validity of this declaration will not be checked so if this is set to
+<code class="docutils literal notranslate"><span class="pre">True</span></code> for predictors with non-exhaustive conditions, the model output
+will be erroneous.</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.lm.Predictor.when">
 <span class="sig-name descname"><span class="pre">when</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#tlo.lm.Predictor" title="tlo.lm.Predictor"><span class="pre">Predictor</span></a></span></span><a class="reference internal" href="../_modules/tlo/lm.html#Predictor.when"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.lm.Predictor.when" title="Link to this definition"></a></dt>
@@ -149,6 +175,17 @@ and the prediction is a probability.]
 <dt class="sig sig-object py" id="tlo.lm.LinearModel">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">LinearModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lm_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#tlo.lm.LinearModelType" title="tlo.lm.LinearModelType"><span class="pre">LinearModelType</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">intercept</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">predictors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#tlo.lm.Predictor" title="tlo.lm.Predictor"><span class="pre">Predictor</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/lm.html#LinearModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.lm.LinearModel" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A linear model has an intercept and zero or more <code class="docutils literal notranslate"><span class="pre">Predictor</span></code> variables.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lm_type</strong> – Model type to use.</p></li>
+<li><p><strong>intercept</strong> – Intercept term for the model.</p></li>
+<li><p><strong>*predictors</strong> – <p>Any <code class="docutils literal notranslate"><span class="pre">Predictor</span></code> instances to use in computing output.</p>
+</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py property">
 <dt class="sig sig-object py" id="tlo.lm.LinearModel.lm_type">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">lm_type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#tlo.lm.LinearModelType" title="tlo.lm.LinearModelType"><span class="pre">LinearModelType</span></a></em><a class="headerlink" href="#tlo.lm.LinearModel.lm_type" title="Link to this definition"></a></dt>
@@ -189,7 +226,7 @@ implement the interface:</p>
 <dt>(</dt><dd><p>self: LinearModel,
 df: Union[pd.DataFrame, pd.Series],
 rng: Optional[np.random.RandomState] = None,
-<a href="#id1"><span class="problematic" id="id2">**</span></a>kwargs</p>
+<a href="#id3"><span class="problematic" id="id4">**</span></a>kwargs</p>
 </dd>
 </dl>
 <p>) -&gt; pd.Series</p>
@@ -239,7 +276,7 @@ predictors.</p>
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Aug 02, 2024.
+      <span class="lastupdated">Last updated on Oct 07, 2024.
       </span></p>
   </div>
 

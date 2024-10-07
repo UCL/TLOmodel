@@ -124,15 +124,17 @@ tlo.methods.other_adult_cancers module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'OtherAdultCancer': <tlo.methods.causes.Cause object at 0x12a81b650>}
+     CAUSES_OF_DEATH : {'OtherAdultCancer': <tlo.methods.causes.Cause object at 0x135cb6910>}
 
-     CAUSES_OF_DISABILITY : {'OtherAdultCancer': <tlo.methods.causes.Cause object at 0x12a685e90>}
+     CAUSES_OF_DISABILITY : {'OtherAdultCancer': <tlo.methods.causes.Cause object at 0x135cb6050>}
 
-     INIT_DEPENDENCIES : {'Demography', 'HealthSystem', 'SymptomManager'}
+     INIT_DEPENDENCIES : {'HealthSystem', 'SymptomManager', 'Demography'}
 
-     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>}
+     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden', 'Hiv'}
+
+     __annotations__ : {}
 
      gbd_causes_of_cancer_represented_in_this_module : ['Other malignant neoplasms', 'Nasopharynx cancer', 'Other pharynx cancer', 'Gallbladder and biliary tract cancer', 'Pancreatic cancer', 'Malignant skin melanoma', 'Non-melanoma skin cancer', 'Ovarian cancer', 'Testicular cancer', 'Kidney cancer', 'Thyroid cancer', 'Mesothelioma', 'Hodgkin lymphoma', 'Non-Hodgkin lymphoma', 'Multiple myeloma', 'Leukemia', 'Other neoplasms', 'Cervical cancer', 'Uterine cancer', 'Colon and rectum cancer', 'Lip and oral cavity cancer', 'Stomach cancer', 'Liver cancer']
 

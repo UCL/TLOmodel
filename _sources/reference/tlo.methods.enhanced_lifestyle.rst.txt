@@ -506,6 +506,8 @@ tlo.methods.enhanced_lifestyle module
 
      METADATA : {}
 
+     __annotations__ : {}
+
      **Functions (defined or overridden in class Lifestyle):**
 
      .. automethod:: __init__

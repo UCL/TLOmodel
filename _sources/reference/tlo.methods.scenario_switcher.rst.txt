@@ -38,6 +38,8 @@ tlo.methods.scenario_switcher module
 
      OPTIONAL_INIT_DEPENDENCIES : set()
 
+     __annotations__ : {}
+
      **Functions (defined or overridden in class ImprovedHealthSystemAndCareSeekingScenarioSwitcher):**
 
      .. automethod:: __init__

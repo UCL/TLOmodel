@@ -103,6 +103,8 @@ tlo.methods.demography module
 
      OPTIONAL_INIT_DEPENDENCIES : {'ImprovedHealthSystemAndCareSeekingScenarioSwitcher'}
 
+     __annotations__ : {}
+
      **Functions (defined or overridden in class Demography):**
 
      .. automethod:: __init__

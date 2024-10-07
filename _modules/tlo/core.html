@@ -1,24 +1,22 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.core &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
+  <title>tlo.core &mdash; TLOmodel 0.1.dev2456+g2221089.d20241007 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d10597a4" />
-      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=7ab3649f" />
       <link rel="stylesheet" type="text/css" href="../../_static/theme_overrides.css?v=6ea10ece" />
 
   
     <link rel="shortcut icon" href="../../_static/favicon.png"/>
-  <!--[if lt IE 9]>
-    <script src="../../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="../../_static/jquery.js?v=5d32c60e"></script>
-        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../_static/documentation_options.js?v=f3d69a25"></script>
-        <script src="../../_static/doctools.js?v=9a2dae69"></script>
-        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=363ca9bd"></script>
+      <script src="../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
@@ -35,9 +33,6 @@
           <a href="../../index.html" class="icon icon-home">
             TLOmodel
           </a>
-              <div class="version">
-                0.1
-              </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
@@ -55,6 +50,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../resources/index.html">Resource files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../parameters.html">Parameters</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../learning.html">Learning Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors</a></li>
@@ -96,14 +92,18 @@
 
 <span class="kn">import</span> <span class="nn">json</span>
 <span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">auto</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">FrozenSet</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
     <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
 
+    <span class="kn">from</span> <span class="nn">tlo.methods</span> <span class="kn">import</span> <span class="n">Metadata</span>
+    <span class="kn">from</span> <span class="nn">tlo.methods.causes</span> <span class="kn">import</span> <span class="n">Cause</span>
+    <span class="kn">from</span> <span class="nn">tlo.population</span> <span class="kn">import</span> <span class="n">Population</span>
     <span class="kn">from</span> <span class="nn">tlo.simulation</span> <span class="kn">import</span> <span class="n">Simulation</span>
 
 <div class="viewcode-block" id="Types">
@@ -169,7 +169,7 @@
         <span class="n">Types</span><span class="o">.</span><span class="n">BITSET</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="p">}</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">categories</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_</span><span class="p">:</span> <span class="n">Types</span><span class="p">,</span> <span class="n">description</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">categories</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a new Specifiable.</span>
 
 <span class="sd">        :param type_: an instance of Types giving the type of allowed values</span>
@@ -187,16 +187,16 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">categories</span> <span class="o">=</span> <span class="n">categories</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">python_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">python_type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the Python type corresponding to this Specifiable.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">PYTHON_TYPE_MAP</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">type_</span><span class="p">]</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">pandas_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">pandas_type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the Pandas type corresponding to this Specifiable.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">PANDAS_TYPE_MAP</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">type_</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return detailed description of Specifiable.&quot;&quot;&quot;</span>
 
         <span class="n">delimiter</span> <span class="o">=</span> <span class="s2">&quot; === &quot;</span>
@@ -230,8 +230,17 @@
         <span class="nb">object</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">),</span>
         <span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
     <span class="p">}</span>
+    <span class="n">_default_value_override</span><span class="p">:</span> <span class="n">Any</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">categories</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">ordered</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">type_</span><span class="p">:</span> <span class="n">Types</span><span class="p">,</span>
+        <span class="n">description</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">categories</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">ordered</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">default_value</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a new property specification.</span>
 
 <span class="sd">        :param type_: An instance of ``Types`` giving the type of allowed values of this</span>
@@ -241,19 +250,55 @@
 <span class="sd">            ``Types.CATEGORICAL``.</span>
 <span class="sd">        :param ordered: Whether categories are ordered  if ``type_`` is</span>
 <span class="sd">            ``Types.CATEGORICAL``.</span>
+<span class="sd">        :param default_value: The default value for the property.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">type_</span> <span class="ow">in</span> <span class="p">[</span><span class="n">Types</span><span class="o">.</span><span class="n">SERIES</span><span class="p">,</span> <span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">]:</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Property cannot be of type SERIES or DATA_FRAME.&quot;</span><span class="p">)</span>
+
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">type_</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">categories</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ordered</span> <span class="o">=</span> <span class="n">ordered</span>
+        <span class="c1"># Use _default_value setter method to set property initial value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_default_value</span> <span class="o">=</span> <span class="n">default_value</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">_default_value</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">PANDAS_TYPE_DEFAULT_VALUE_MAP</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">pandas_type</span><span class="p">]</span>
+    <span class="k">def</span> <span class="nf">_default_value</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Default value for this property, which will be used to fill the respective columns</span>
+<span class="sd">        of the population dataframe, for example.</span>
+<span class="sd">        </span>
+<span class="sd">        If not explicitly set, it will fall back on the ``PANDAS_TYPE_DEFAULT_TYPE_MAP``.</span>
+<span class="sd">        If a value is provided, it must:</span>
+
+<span class="sd">        - Be of the corresponding TYPE for the property.</span>
+<span class="sd">        - If ``type_`` is ``Types.CATEGORICAL``, it must also be a possible category.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">PANDAS_TYPE_DEFAULT_VALUE_MAP</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">pandas_type</span><span class="p">]</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_value_override</span> <span class="ow">is</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_value_override</span>
+        <span class="p">)</span>
+
+    <span class="nd">@_default_value</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">_default_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_val</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">new_val</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Check for valid category</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">type_</span> <span class="ow">is</span> <span class="n">Types</span><span class="o">.</span><span class="n">CATEGORICAL</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">new_val</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">categories</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Value </span><span class="si">{</span><span class="n">new_val</span><span class="si">}</span><span class="s2"> is not a valid category, so cannot be set as the default.&quot;</span>
+                    <span class="p">)</span>
+            <span class="c1"># If not categorical, check for valid data type for default</span>
+            <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">new_val</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">python_type</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Trying to set a default value of type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">new_val</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">, &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;which is different from Property&#39;s type of </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">python_type</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="p">)</span>
+        <span class="c1"># Outside block so that providing new_val = None reverts to Property-wide default.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_default_value_override</span> <span class="o">=</span> <span class="n">new_val</span>
 
 <div class="viewcode-block" id="Property.create_series">
 <a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Property.create_series">[docs]</a>
-    <span class="k">def</span> <span class="nf">create_series</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">create_series</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a Pandas Series for this property.</span>
 
 <span class="sd">        The values will be left uninitialised.</span>
@@ -306,48 +351,47 @@
     <span class="c1"># Subclasses can override this to declare the set of initialisation dependencies</span>
     <span class="c1"># Declares modules that need to be registered in simulation and initialised before</span>
     <span class="c1"># this module</span>
-    <span class="n">INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">()</span>
+    <span class="n">INIT_DEPENDENCIES</span><span class="p">:</span> <span class="n">FrozenSet</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">()</span>
 
     <span class="c1"># Subclasses can override this to declare the set of optional init. dependencies</span>
     <span class="c1"># Declares modules that need to be registered in simulation and initialised before</span>
     <span class="c1"># this module if they are present, but are not required otherwise</span>
-    <span class="n">OPTIONAL_INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">()</span>
+    <span class="n">OPTIONAL_INIT_DEPENDENCIES</span><span class="p">:</span> <span class="n">FrozenSet</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">()</span>
 
     <span class="c1"># Subclasses can override this to declare the set of additional dependencies</span>
     <span class="c1"># Declares any modules that need to be registered in simulation in addition to those</span>
     <span class="c1"># in INIT_DEPENDENCIES to allow running simulation</span>
-    <span class="n">ADDITIONAL_DEPENDENCIES</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">()</span>
+    <span class="n">ADDITIONAL_DEPENDENCIES</span><span class="p">:</span> <span class="n">FrozenSet</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">()</span>
 
     <span class="c1"># Subclasses can override this to declare the set of modules that this module can be</span>
     <span class="c1"># used in place of as a dependency</span>
-    <span class="n">ALTERNATIVE_TO</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">()</span>
+    <span class="n">ALTERNATIVE_TO</span><span class="p">:</span> <span class="n">FrozenSet</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">()</span>
 
     <span class="c1"># Subclasses can override this set to add metadata tags to their class</span>
     <span class="c1"># See tlo.methods.Metadata class</span>
-    <span class="n">METADATA</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">METADATA</span><span class="p">:</span> <span class="n">FrozenSet</span><span class="p">[</span><span class="n">Metadata</span><span class="p">]</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">()</span>
 
-    <span class="c1"># Subclasses can override this set to declare the causes death that this module contributes to</span>
+    <span class="c1"># Subclasses can override this dict to declare the causes death that this module contributes to</span>
     <span class="c1"># This is a dict of the form {&lt;name_used_by_the_module : Cause()}: see core.Cause</span>
-    <span class="n">CAUSES_OF_DEATH</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">CAUSES_OF_DEATH</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Cause</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="c1"># Subclasses can override this set to declare the causes disability that this module contributes to</span>
     <span class="c1"># This is a dict of the form {&lt;name_used_by_the_module : Cause()}: see core.Cause</span>
-    <span class="n">CAUSES_OF_DISABILITY</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">CAUSES_OF_DISABILITY</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Cause</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="c1"># Subclasses may declare this dictionary to specify module-level parameters.</span>
     <span class="c1"># We give an empty definition here as default.</span>
-    <span class="n">PARAMETERS</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">PARAMETERS</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="c1"># Subclasses may declare this dictionary to specify properties of individuals.</span>
     <span class="c1"># We give an empty definition here as default.</span>
-    <span class="n">PROPERTIES</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">PROPERTIES</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Property</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="c1"># The explicit attributes of the module. We list these to distinguish dynamic</span>
     <span class="c1"># parameters created from the PARAMETERS specification.</span>
     <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;parameters&#39;</span><span class="p">,</span> <span class="s1">&#39;rng&#39;</span><span class="p">,</span> <span class="s1">&#39;sim&#39;</span><span class="p">)</span>
 
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Construct a new disease module ready to be included in a simulation.</span>
 
 <span class="sd">        Initialises an empty parameters dictionary and module-specific random number</span>
@@ -362,7 +406,7 @@
 
 <div class="viewcode-block" id="Module.load_parameters_from_dataframe">
 <a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Module.load_parameters_from_dataframe">[docs]</a>
-    <span class="k">def</span> <span class="nf">load_parameters_from_dataframe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">resource</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">load_parameters_from_dataframe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">resource</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Automatically load parameters from resource dataframe, updating the class parameter dictionary</span>
 
 <span class="sd">        Goes through parameters dict self.PARAMETERS and updates the self.parameters with values</span>
@@ -426,7 +470,7 @@
 
 <div class="viewcode-block" id="Module.read_parameters">
 <a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Module.read_parameters">[docs]</a>
-    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Read parameter values from file, if required.</span>
 
 <span class="sd">        Must be implemented by subclasses.</span>
@@ -439,26 +483,44 @@
 
 <div class="viewcode-block" id="Module.initialise_population">
 <a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Module.initialise_population">[docs]</a>
-    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">:</span> <span class="n">Population</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set our property values for the initial population.</span>
-
-<span class="sd">        Must be implemented by subclasses.</span>
 
 <span class="sd">        This method is called by the simulation when creating the initial population, and is</span>
 <span class="sd">        responsible for assigning initial values, for every individual, of those properties</span>
 <span class="sd">        &#39;owned&#39; by this module, i.e. those declared in its PROPERTIES dictionary.</span>
 
+<span class="sd">        By default, all ``Property``s in ``self.PROPERTIES`` will have</span>
+<span class="sd">        their columns in the population dataframe set to the default value.</span>
+
+<span class="sd">        Modules that wish to implement this behaviour do not need to implement this method,</span>
+<span class="sd">        it will be inherited automatically. Modules that wish to perform additional steps</span>
+<span class="sd">        during the initialise_population stage should reimplement this method and call </span>
+<span class="sd">        </span>
+<span class="sd">        ```python</span>
+<span class="sd">        super().initialise_population(population=population)</span>
+<span class="sd">        ```</span>
+
+<span class="sd">        at the beginning of the method, then proceed with their additional steps. Modules that</span>
+<span class="sd">        do not wish to inherit this default behaviour should re-implement initialise_population</span>
+<span class="sd">        without the call to ``super()`` above.</span>
+
 <span class="sd">        TODO: We probably need to declare somehow which properties we &#39;read&#39; here, so the</span>
 <span class="sd">        simulation knows what order to initialise modules in!</span>
 
-<span class="sd">        :param population: the population of individuals</span>
+<span class="sd">        :param population: The population of individuals in the simulation.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
+
+        <span class="k">for</span> <span class="n">property_name</span><span class="p">,</span> <span class="nb">property</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">PROPERTIES</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="n">property_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="nb">property</span><span class="o">.</span><span class="n">_default_value</span>
+            <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Module.initialise_simulation">
 <a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Module.initialise_simulation">[docs]</a>
-    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">:</span> <span class="n">Simulation</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get ready for simulation start.</span>
 
 <span class="sd">        Must be implemented by subclasses.</span>
@@ -472,7 +534,7 @@
 
 <div class="viewcode-block" id="Module.pre_initialise_population">
 <a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Module.pre_initialise_population">[docs]</a>
-    <span class="k">def</span> <span class="nf">pre_initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">pre_initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Carry out any work before any populations have been initialised</span>
 
 <span class="sd">        This optional method allows access to all other registered modules, before any of</span>
@@ -483,7 +545,7 @@
 
 <div class="viewcode-block" id="Module.on_birth">
 <a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Module.on_birth">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">child_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialise our properties for a newborn individual.</span>
 
 <span class="sd">        Must be implemented by subclasses.</span>
@@ -498,7 +560,7 @@
 
 <div class="viewcode-block" id="Module.on_simulation_end">
 <a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Module.on_simulation_end">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_simulation_end</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">on_simulation_end</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;This is called after the simulation has ended.</span>
 <span class="sd">        Modules do not need to declare this.&quot;&quot;&quot;</span></div>
 </div>
@@ -513,7 +575,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Aug 02, 2024.
+      <span class="lastupdated">Last updated on Oct 07, 2024.
       </span></p>
   </div>
 

@@ -1,24 +1,22 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="../../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.analysis.life_expectancy &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
+  <title>tlo.analysis.life_expectancy &mdash; TLOmodel 0.1.dev2456+g2221089.d20241007 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
-      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=7ab3649f" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
 
   
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
-  <!--[if lt IE 9]>
-    <script src="../../../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
-        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../../_static/documentation_options.js?v=f3d69a25"></script>
-        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
-        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=363ca9bd"></script>
+      <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -35,9 +33,6 @@
           <a href="../../../index.html" class="icon icon-home">
             TLOmodel
           </a>
-              <div class="version">
-                0.1
-              </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
@@ -55,6 +50,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../reference/index.html">Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../resources/index.html">Resource files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../parameters.html">Parameters</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../learning.html">Learning Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../contributors.html">Contributors</a></li>
@@ -187,6 +183,39 @@
     <span class="k">return</span> <span class="n">py_by_sex_and_agegroup</span>
 
 
+<div class="viewcode-block" id="calculate_probability_of_dying">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.life_expectancy.html#tlo.analysis.life_expectancy.calculate_probability_of_dying">[docs]</a>
+<span class="k">def</span> <span class="nf">calculate_probability_of_dying</span><span class="p">(</span><span class="n">interval_width</span><span class="p">,</span> <span class="n">fraction_of_last_age_survived</span><span class="p">,</span> <span class="n">sex</span><span class="p">,</span> <span class="n">_person_years_at_risk</span><span class="p">,</span>
+                                   <span class="n">_number_of_deaths_in_interval</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the probability of dying in each interval&quot;&quot;&quot;</span>
+
+    <span class="n">person_years_by_sex</span> <span class="o">=</span> <span class="n">_person_years_at_risk</span><span class="o">.</span><span class="n">xs</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">sex</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s1">&#39;sex&#39;</span><span class="p">)</span>
+
+    <span class="n">number_of_deaths_by_sex</span> <span class="o">=</span> <span class="n">_number_of_deaths_in_interval</span><span class="o">.</span><span class="n">xs</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">sex</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s1">&#39;sex&#39;</span><span class="p">)</span>
+
+    <span class="n">death_rate_in_interval</span> <span class="o">=</span> <span class="n">number_of_deaths_by_sex</span> <span class="o">/</span> <span class="n">person_years_by_sex</span>
+
+    <span class="n">death_rate_in_interval</span> <span class="o">=</span> <span class="n">death_rate_in_interval</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">death_rate_in_interval</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;90&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">death_rate_in_interval</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;90&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">death_rate_in_interval</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;85-89&#39;</span><span class="p">]</span>
+
+    <span class="n">condition</span> <span class="o">=</span> <span class="n">number_of_deaths_by_sex</span> <span class="o">&gt;</span> <span class="p">(</span>
+
+        <span class="n">person_years_by_sex</span> <span class="o">/</span> <span class="n">interval_width</span> <span class="o">/</span> <span class="n">interval_width</span><span class="p">)</span>
+
+    <span class="n">probability_of_dying_in_interval</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">number_of_deaths_by_sex</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+
+    <span class="n">probability_of_dying_in_interval</span><span class="p">[</span><span class="n">condition</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="n">probability_of_dying_in_interval</span><span class="p">[</span><span class="o">~</span><span class="n">condition</span><span class="p">]</span> <span class="o">=</span> <span class="n">interval_width</span> <span class="o">*</span> <span class="n">death_rate_in_interval</span> <span class="o">/</span> <span class="p">(</span>
+
+        <span class="mi">1</span> <span class="o">+</span> <span class="n">interval_width</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">fraction_of_last_age_survived</span><span class="p">)</span> <span class="o">*</span> <span class="n">death_rate_in_interval</span><span class="p">)</span>
+
+    <span class="n">probability_of_dying_in_interval</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="s1">&#39;90&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">probability_of_dying_in_interval</span><span class="p">,</span> <span class="n">death_rate_in_interval</span></div>
+
+
 
 <span class="k">def</span> <span class="nf">_estimate_life_expectancy</span><span class="p">(</span>
     <span class="n">_person_years_at_risk</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
@@ -212,29 +241,11 @@
 
     <span class="c1"># separate male and female data</span>
     <span class="k">for</span> <span class="n">sex</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;M&#39;</span><span class="p">,</span> <span class="s1">&#39;F&#39;</span><span class="p">]:</span>
-        <span class="n">person_years_by_sex</span> <span class="o">=</span> <span class="n">_person_years_at_risk</span><span class="o">.</span><span class="n">xs</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">sex</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s1">&#39;sex&#39;</span><span class="p">)</span>
-        <span class="n">number_of_deaths_by_sex</span> <span class="o">=</span> <span class="n">_number_of_deaths_in_interval</span><span class="o">.</span><span class="n">xs</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">sex</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s1">&#39;sex&#39;</span><span class="p">)</span>
-
-        <span class="n">death_rate_in_interval</span> <span class="o">=</span> <span class="n">number_of_deaths_by_sex</span> <span class="o">/</span> <span class="n">person_years_by_sex</span>
-        <span class="c1"># if no deaths or person-years, produces nan</span>
-        <span class="n">death_rate_in_interval</span> <span class="o">=</span> <span class="n">death_rate_in_interval</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-        <span class="c1"># if no deaths in age 90+, set death rate equal to value in age 85-89</span>
-        <span class="k">if</span> <span class="n">death_rate_in_interval</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;90&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">death_rate_in_interval</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;90&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">death_rate_in_interval</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;85-89&#39;</span><span class="p">]</span>
-
-        <span class="c1"># Calculate the probability of dying in the interval</span>
-        <span class="c1"># condition checks whether the observed number deaths is significantly higher than would be expected</span>
-        <span class="c1"># based on population years at risk and survival fraction</span>
-        <span class="c1"># if true, suggests very high mortality rates and returns value 1</span>
-        <span class="n">condition</span> <span class="o">=</span> <span class="n">number_of_deaths_by_sex</span> <span class="o">&gt;</span> <span class="p">(</span>
-            <span class="n">person_years_by_sex</span> <span class="o">/</span> <span class="n">interval_width</span> <span class="o">/</span> <span class="n">fraction_of_last_age_survived</span><span class="p">)</span>
-        <span class="n">probability_of_dying_in_interval</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">number_of_deaths_by_sex</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-        <span class="n">probability_of_dying_in_interval</span><span class="p">[</span><span class="n">condition</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-        <span class="n">probability_of_dying_in_interval</span><span class="p">[</span><span class="o">~</span><span class="n">condition</span><span class="p">]</span> <span class="o">=</span> <span class="n">interval_width</span> <span class="o">*</span> <span class="n">death_rate_in_interval</span> <span class="o">/</span> <span class="p">(</span>
-            <span class="mi">1</span> <span class="o">+</span> <span class="n">interval_width</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">fraction_of_last_age_survived</span><span class="p">)</span> <span class="o">*</span> <span class="n">death_rate_in_interval</span><span class="p">)</span>
-        <span class="c1"># all those surviving to final interval die during this interval</span>
-        <span class="n">probability_of_dying_in_interval</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="s1">&#39;90&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-
+        <span class="n">probability_of_dying_in_interval</span><span class="p">,</span> <span class="n">death_rate_in_interval</span> <span class="o">=</span> <span class="n">calculate_probability_of_dying</span><span class="p">(</span><span class="n">interval_width</span><span class="p">,</span>
+                                                                                                  <span class="n">fraction_of_last_age_survived</span><span class="p">,</span>
+                                                                                                  <span class="n">sex</span><span class="p">,</span>
+                                                                                                  <span class="n">_person_years_at_risk</span><span class="p">,</span>
+                                                                                                  <span class="n">_number_of_deaths_in_interval</span><span class="p">)</span>
         <span class="c1"># number_alive_at_start_of_interval</span>
         <span class="c1"># keep dtype as float in case using aggregated outputs</span>
         <span class="c1"># note range stops BEFORE the specified number</span>
@@ -339,6 +350,96 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">summarize</span><span class="p">(</span><span class="n">results</span><span class="o">=</span><span class="n">output</span><span class="p">,</span> <span class="n">only_mean</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">collapse_columns</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
 
+
+
+<span class="k">def</span> <span class="nf">_calculate_probability_of_premature_death_for_single_run</span><span class="p">(</span>
+    <span class="n">age_before_which_death_is_defined_as_premature</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">person_years_at_risk</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+    <span class="n">number_of_deaths_in_interval</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    For a single run, estimate the probability of dying before the defined premature age for males and females.</span>
+<span class="sd">    Returns: Dict (keys by &quot;M&quot; and &quot;F&quot; for the sex, values the estimated probability of dying before the defined</span>
+<span class="sd">    premature age).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">probability_of_premature_death</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+    <span class="n">age_group_labels</span> <span class="o">=</span> <span class="n">person_years_at_risk</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">get_level_values</span><span class="p">(</span><span class="s1">&#39;age_group&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+    <span class="n">interval_width</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="mi">5</span> <span class="k">if</span> <span class="s1">&#39;90&#39;</span> <span class="ow">in</span> <span class="n">interval</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">interval</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="n">interval</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="s1">&#39;-&#39;</span> <span class="ow">in</span> <span class="n">interval</span> <span class="k">else</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">interval</span> <span class="ow">in</span> <span class="n">age_group_labels</span><span class="o">.</span><span class="n">categories</span>
+    <span class="p">]</span>
+    <span class="n">number_age_groups</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">interval_width</span><span class="p">)</span>
+    <span class="n">fraction_of_last_age_survived</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">([</span><span class="mf">0.5</span><span class="p">]</span> <span class="o">*</span> <span class="n">number_age_groups</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">age_group_labels</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">sex</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;M&#39;</span><span class="p">,</span> <span class="s1">&#39;F&#39;</span><span class="p">]:</span>
+        <span class="n">probability_of_dying_in_interval</span><span class="p">,</span> <span class="n">death_rate_in_interval</span> <span class="o">=</span> <span class="n">calculate_probability_of_dying</span><span class="p">(</span><span class="n">interval_width</span><span class="p">,</span>
+                                                                                                  <span class="n">fraction_of_last_age_survived</span><span class="p">,</span>
+                                                                                                  <span class="n">sex</span><span class="p">,</span>
+                                                                                                  <span class="n">person_years_at_risk</span><span class="p">,</span>
+                                                                                                  <span class="n">number_of_deaths_in_interval</span><span class="p">)</span>
+
+        <span class="c1"># Calculate cumulative probability of dying before the defined premature age</span>
+        <span class="n">cumulative_probability_of_dying</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">proportion_alive_at_start_of_interval</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+        <span class="k">for</span> <span class="n">age_group</span><span class="p">,</span> <span class="n">prob</span> <span class="ow">in</span> <span class="n">probability_of_dying_in_interval</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">age_group</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&gt;=</span> <span class="n">age_before_which_death_is_defined_as_premature</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="n">cumulative_probability_of_dying</span> <span class="o">+=</span> <span class="n">proportion_alive_at_start_of_interval</span> <span class="o">*</span> <span class="n">prob</span>
+            <span class="n">proportion_alive_at_start_of_interval</span> <span class="o">*=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">prob</span><span class="p">)</span>
+
+        <span class="n">probability_of_premature_death</span><span class="p">[</span><span class="n">sex</span><span class="p">]</span> <span class="o">=</span> <span class="n">cumulative_probability_of_dying</span>
+
+    <span class="k">return</span> <span class="n">probability_of_premature_death</span>
+
+
+<div class="viewcode-block" id="get_probability_of_premature_death">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.life_expectancy.html#tlo.analysis.life_expectancy.get_probability_of_premature_death">[docs]</a>
+<span class="k">def</span> <span class="nf">get_probability_of_premature_death</span><span class="p">(</span>
+    <span class="n">results_folder</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
+    <span class="n">target_period</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">],</span>
+    <span class="n">summary</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">age_before_which_death_is_defined_as_premature</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">70</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Produces sets of probability of premature death for each draw/run.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">    - results_folder (PosixPath): The path to the results folder containing log, `tlo.methods.demography`</span>
+<span class="sd">    - target period (tuple of dates): Declare the date range (inclusively) in which the probability is to be estimated.</span>
+<span class="sd">    - summary (bool): Declare whether to return a summarized value (mean with 95% uncertainty intervals)</span>
+<span class="sd">        or return the estimate for each draw/run.</span>
+<span class="sd">    - age_before_which_death_is_defined_as_premature (int): proposed in defined in Norheim et al.(2015) to be 70 years</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    - pd.DataFrame: The DataFrame with the probability estimates for every draw/run in the results folder;</span>
+<span class="sd">     or, with option `summary=True`, summarized (central, lower, upper estimates) for each draw.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">info</span> <span class="o">=</span> <span class="n">get_scenario_info</span><span class="p">(</span><span class="n">results_folder</span><span class="p">)</span>
+    <span class="n">deaths</span> <span class="o">=</span> <span class="n">_num_deaths_by_age_group</span><span class="p">(</span><span class="n">results_folder</span><span class="p">,</span> <span class="n">target_period</span><span class="p">)</span>
+    <span class="n">person_years</span> <span class="o">=</span> <span class="n">_aggregate_person_years_by_age</span><span class="p">(</span><span class="n">results_folder</span><span class="p">,</span> <span class="n">target_period</span><span class="p">)</span>
+
+    <span class="n">prob_for_each_draw_and_run</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">draw</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;number_of_draws&#39;</span><span class="p">]):</span>
+        <span class="k">for</span> <span class="n">run</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;runs_per_draw&#39;</span><span class="p">]):</span>
+            <span class="n">prob_for_each_draw_and_run</span><span class="p">[(</span><span class="n">draw</span><span class="p">,</span> <span class="n">run</span><span class="p">)]</span> <span class="o">=</span> <span class="n">_calculate_probability_of_premature_death_for_single_run</span><span class="p">(</span>
+                <span class="n">age_before_which_death_is_defined_as_premature</span><span class="o">=</span><span class="n">age_before_which_death_is_defined_as_premature</span><span class="p">,</span>
+                <span class="n">number_of_deaths_in_interval</span><span class="o">=</span><span class="n">deaths</span><span class="p">[(</span><span class="n">draw</span><span class="p">,</span> <span class="n">run</span><span class="p">)],</span>
+                <span class="n">person_years_at_risk</span><span class="o">=</span><span class="n">person_years</span><span class="p">[(</span><span class="n">draw</span><span class="p">,</span> <span class="n">run</span><span class="p">)]</span>
+            <span class="p">)</span>
+
+    <span class="n">output</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">prob_for_each_draw_and_run</span><span class="p">)</span>
+    <span class="n">output</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;sex&quot;</span>
+    <span class="n">output</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">set_names</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;draw&#39;</span><span class="p">,</span> <span class="s1">&#39;run&#39;</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">summary</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">output</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">summarize</span><span class="p">(</span><span class="n">results</span><span class="o">=</span><span class="n">output</span><span class="p">,</span> <span class="n">only_mean</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">collapse_columns</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
 </pre></div>
 
            </div>
@@ -349,7 +450,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Aug 02, 2024.
+      <span class="lastupdated">Last updated on Oct 07, 2024.
       </span></p>
   </div>
 

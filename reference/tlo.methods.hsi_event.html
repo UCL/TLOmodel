@@ -1,25 +1,23 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="../">
 <head>
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.hsi_event module &mdash; TLOmodel 0.1.dev2435+gd9d3f62 documentation</title>
+  <title>tlo.methods.hsi_event module &mdash; TLOmodel 0.1.dev2456+g2221089.d20241007 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
-      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=7ab3649f" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
 
   
     <link rel="shortcut icon" href="../_static/favicon.png"/>
-  <!--[if lt IE 9]>
-    <script src="../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="../_static/jquery.js?v=5d32c60e"></script>
-        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=f3d69a25"></script>
-        <script src="../_static/doctools.js?v=9a2dae69"></script>
-        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=363ca9bd"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -38,9 +36,6 @@
           <a href="../index.html" class="icon icon-home">
             TLOmodel
           </a>
-              <div class="version">
-                0.1
-              </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
@@ -58,6 +53,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../resources/index.html">Resource files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../parameters.html">Parameters</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../learning.html">Learning Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contributors.html">Contributors</a></li>
@@ -100,15 +96,25 @@
 <p>Concrete subclasses should also inherit from one of the EventMixin classes
 defined in <cite>src/tlo/events.py</cite>, and implement at least an <cite>apply</cite> and
 <cite>did_not_run</cite> method.</p>
+<p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
 <p><strong>Class attributes:</strong></p>
 <p>__annotations__ : {‘module’: ‘Module’, ‘target’: ‘int’, ‘TREATMENT_ID’: ‘str’, ‘ACCEPTED_FACILITY_LEVEL’: ‘str’, ‘BEDDAYS_FOOTPRINT’: ‘Dict[str, Union[float, int]]’, ‘_received_info_about_bed_days’: ‘Dict[str, Union[float, int]]’, ‘expected_time_requests’: ‘Counter’, ‘facility_info’: ‘FacilityInfo’}</p>
 <p>_received_info_about_bed_days : None</p>
-<p>bed_days_allocated_to_this_event : &lt;property object at 0x118f002c0&gt;</p>
+<p>bed_days_allocated_to_this_event : &lt;property object at 0x1242102c0&gt;</p>
 <p>expected_time_requests : {}</p>
 <p>facility_info : None</p>
-<p>healthcare_system : &lt;property object at 0x118f00360&gt;</p>
-<p>is_all_declared_equipment_available : &lt;property object at 0x118f003b0&gt;</p>
-<p>sim : &lt;property object at 0x118f00310&gt;</p>
+<p>healthcare_system : &lt;property object at 0x124210360&gt;</p>
+<p>is_all_declared_equipment_available : &lt;property object at 0x1242103b0&gt;</p>
+<p>sim : &lt;property object at 0x124210310&gt;</p>
 <p><strong>Functions (defined or overridden in class HSI_Event):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.hsi_event.HSI_Event.__init__">
@@ -288,6 +294,19 @@ method is run on the date of <cite>tclose</cite>.
 3) When an HSI has been submitted to <cite>schedule_hsi_event</cite> but the service is not available.</p>
 </dd>
 </dl>
+<p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
+</dd>
+</dl>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a></p>
 <p><strong>Functions (defined or overridden in class HSIEventWrapper):</strong></p>
 <dl class="py method">
@@ -330,7 +349,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Aug 02, 2024.
+      <span class="lastupdated">Last updated on Oct 07, 2024.
       </span></p>
   </div>
 
