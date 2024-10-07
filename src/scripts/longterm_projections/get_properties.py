@@ -124,47 +124,15 @@ def get_module_property_map(excluded_modules: Set[str]) -> Mapping[str, Set[Type
         for _, obj in inspect.getmembers(methods_module):
             if is_valid_tlo_module_subclass(obj, excluded_modules):
                 properties_dictionary[obj.__name__] = obj
-    #             for _, property_module_name, _ in pkgutil.iter_modules([methods_package_path]):
-    #                 property_module = importlib.import_module(f'tlo.methods.{property_module_name}')
-    #                 for _, property_obj in inspect.getmembers(property_module):
-    #                     if is_valid_tlo_module_subclass(property_obj, excluded_modules):
-    #                         #if property_obj.__name__ in included_classes:
-    #                             #print(property_obj.__name__)
-    #                             #print(property_obj)
-    #                             properties_of_module = get_properties(property_obj)
-    #                             properties_dictionary[obj.__name__].add(check_properties_in_module(obj, properties_of_module))
-    # #print(properties_dictionary)
     return properties_dictionary
 
-excluded_modules = {
-        "Mockitis",
-        "ChronicSyndrome",
-        "Skeleton",
-        "AlriPropertiesOfOtherModules",
-        "DiarrhoeaPropertiesOfOtherModules",
-        "DummyHivModule",
-        "SimplifiedBirths",
-        "Demography",
-        "HealthBurden",
-        "SymptomManager",
-        "DummyTbModule",
-        "ImprovedHealthSystemAndCareSeekingScenarioSwitcher",
-        "HealthSeekingBehaviour",
-        "HealthSystem",
-        "Deviance",
-        "SimplifiedPregnancyAndLabour",
-        "DummyDisease"
-    }
-included_classes = {"Alri", "Tb", "Hiv", "Rti", "BreastCancer", "BladderCancer"}
-map = get_module_property_map(excluded_modules)
-
-####### Full model #################
 def construct_property_dependency_graph(
     excluded_modules: Set[str],
     disease_module_node_defaults: dict,
     other_module_node_defaults: dict,
     pregnancy_related_module_node_defaults: dict,
     cancer_related_module_node_defaults: dict,
+    properies_node_defaults: dict,
     get_dependencies: DependencyGetter = get_properties,
 ):
     """Construct a pydot object representing module dependency graph.
@@ -177,7 +145,7 @@ def construct_property_dependency_graph(
         raise RuntimeError("pydot package must be installed")
 
     property_class_map = get_module_property_map(excluded_modules)
-    property_graph = pydot.Dot("properties", graph_type="digraph", )#, rankdir='LR')
+    property_graph = pydot.Dot("properties", graph_type="digraph", rankdir='LR')
 
     cancer_module_names = [
         'BladderCancer', 'BreastCancer', 'OtherAdultCancer',
@@ -188,6 +156,7 @@ def construct_property_dependency_graph(
         'Contraception', 'Labour', 'PregnancySupervisor',
         'PostnatalSupervisor', 'NewbornOutcomes', 'CareOfWomenDuringPregnancy'
     ]
+
 
     # Subgraphs for different groups of modules
     disease_module_subgraph = pydot.Subgraph("disease_modules")
@@ -210,16 +179,19 @@ def construct_property_dependency_graph(
     #infectious_diseases_subgraph.set_rank('same')
     property_graph.add_subgraph(infectious_diseases_subgraph)
 
+    properties_diseases_subgraph = pydot.Subgraph("properties")
+    property_graph.add_subgraph(properties_diseases_subgraph)
+
     # Set default styles for nodes
     disease_module_node_defaults["style"] = "filled"
     other_module_node_defaults["style"] = "filled"
     pregnancy_related_module_node_defaults["style"] = "filled"
     cancer_related_module_node_defaults["style"] = "filled"
+    properies_node_defaults["style"] = "filled"
 
-    for name, module_class in property_class_map.items():
+    for name, module_class in property_class_map.items(): # only works for keys, not the properties themselves
         # Determine the color based on the module name
         colour = get_color_short_treatment_id(name)
-
         # Create the node with determined attributes, including outlines
         node_attributes = {
             "fillcolor": colour,
@@ -241,11 +213,13 @@ def construct_property_dependency_graph(
             node_attributes.update(other_module_node_defaults)
             node_attributes["shape"] = "ellipse"  # Other modules
             other_module_subgraph.add_node(pydot.Node(name, **node_attributes))
-
         else:
             node_attributes.update(disease_module_node_defaults)
             node_attributes["shape"] = "box"  # Disease modules
             disease_module_subgraph.add_node(pydot.Node(name, **node_attributes))
+
+
+
 
     for key, property_module in property_class_map.items():
         if property_module not in excluded_modules:
@@ -254,6 +228,24 @@ def construct_property_dependency_graph(
                 if property_module != dependent_module:
                     used_properties = check_properties_in_module(dependent_module, properties_of_module)
                     for property in used_properties:
+                        #colour = get_color_short_treatment_id(property)
+                        # Create the node with determined attributes, including outlines
+                        if property.startswith("ri"):
+                            node_attributes = {
+                                "fillcolor": "darkorange",
+                                "color": "black",  # Outline color
+                                "fontname": "Arial",
+                            }
+                        else:
+                            node_attributes = {
+                                "fillcolor": "white",
+                                "color": "black",  # Outline color
+                                "fontname": "Arial",
+                            }
+                        node_attributes.update(properies_node_defaults)
+                        node_attributes["shape"] = "square"
+                        properties_diseases_subgraph.add_node(pydot.Node(property, **node_attributes))
+                        properties_diseases_subgraph.set_rank('same')
                         property_graph.add_edge(pydot.Edge(property, key))
 
     return property_graph
@@ -285,7 +277,8 @@ if __name__ == "__main__":
         "HealthSystem",
         "Deviance",
         "SimplifiedPregnancyAndLabour",
-        "DummyDisease"
+        "DummyDisease",
+        "Module"
     }
 
     module_graph = construct_property_dependency_graph(
@@ -293,7 +286,8 @@ if __name__ == "__main__":
         disease_module_node_defaults={"shape": "box"},
         other_module_node_defaults={"shape": "ellipse"},
         pregnancy_related_module_node_defaults={"shape": "diamond"},
-        cancer_related_module_node_defaults={"shape": "invtrapezium"}
+        cancer_related_module_node_defaults={"shape": "invtrapezium"},
+        properies_node_defaults={"shape": "square"}
     )
 
     format = (

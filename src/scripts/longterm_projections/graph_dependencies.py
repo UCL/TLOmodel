@@ -146,7 +146,7 @@ def construct_module_dependency_graph(
     other_module_node_defaults: dict,
     pregnancy_related_module_node_defaults: dict,
     cancer_related_module_node_defaults: dict,
-    infection_related_module_node_defaults: dict,
+    #infection_related_module_node_defaults: dict,
     get_dependencies: DependencyGetter = get_all_dependencies,
 ):
     """Construct a pydot object representing module dependency graph.
@@ -211,7 +211,7 @@ def construct_module_dependency_graph(
     other_module_node_defaults["style"] = "filled"
     pregnancy_related_module_node_defaults["style"] = "filled"
     cancer_related_module_node_defaults["style"] = "filled"
-    infection_related_module_node_defaults["style"] = "filled"
+    #infection_related_module_node_defaults["style"] = "filled"
 
     # List of modules to group together
     for name, module_class in module_class_map.items():
