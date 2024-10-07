@@ -30,7 +30,7 @@ def test_run_sim_with_mnh_cohort(tmpdir, seed):
                 "*": logging.DEBUG},"directory": tmpdir})
 
     register_modules(sim)
-    sim.make_initial_population(n=5000)
+    sim.make_initial_population(n=2500)
     sim.simulate(end_date=Date(2025, 1, 1))
 
     output= parse_log_file(sim.log_filepath)

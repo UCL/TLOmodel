@@ -63,21 +63,30 @@ class MaternalNewbornHealthCohort(Module):
 
         :param population: the population of individuals
         """
-        # todo: we need to think of a better way to do this
-        log_file = parse_log_file(
-             '/Users/j_collins/PycharmProjects/TLOmodel/resources/maternal cohort/'
-             'fullmodel_200k_cohort__2024-04-24T072516.log',
-             level=logging.DEBUG)['tlo.methods.contraception']
 
-        all_pregnancies = log_file['properties_of_pregnant_person'].loc[
-            log_file['properties_of_pregnant_person'].date.dt.year == 2024].drop(columns=['date'])
-        all_pregnancies.index = [x for x in range(len(all_pregnancies))]
+        # log_file = parse_log_file(
+        #      '/Users/j_collins/PycharmProjects/TLOmodel/resources/maternal cohort/'
+        #      'fullmodel_200k_cohort__2024-04-24T072516.log',
+        #      level=logging.DEBUG)['tlo.methods.contraception']
+        #
+        # all_pregnancies = log_file['properties_of_pregnant_person'].loc[
+        #     log_file['properties_of_pregnant_person'].date.dt.year == 2024].drop(columns=['date'])
+        # all_pregnancies.index = [x for x in range(len(all_pregnancies))]
 
-        preg_pop = all_pregnancies.loc[0:(len(self.sim.population.props))-1]
+        all_preg_df = pd.read_excel(Path(f'{self.resourcefilepath}/maternal cohort') /
+                                    'ResourceFile_All2024PregnanciesCohortModel.xlsx')
+        preg_pop = all_preg_df.loc[0:(len(self.sim.population.props))-1]
 
         props_dtypes = self.sim.population.props.dtypes
+
         preg_pop_final = preg_pop.astype(props_dtypes.to_dict())
         preg_pop_final.index.name = 'person'
+
+
+        for column in ['rt_injuries_for_minor_surgery', 'rt_injuries_for_major_surgery',
+                       'rt_injuries_to_heal_with_time', 'rt_injuries_for_open_fracture_treatment',
+                       'rt_injuries_left_untreated', 'rt_injuries_to_cast']:
+            preg_pop_final[column] = [[] for _ in range(len(preg_pop_final))]
 
         self.sim.population.props = preg_pop_final
 
