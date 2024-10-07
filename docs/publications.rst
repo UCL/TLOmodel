@@ -14,6 +14,7 @@ Overview of the Model
 
 Analyses Using The Model
 ========================
+* `Health workforce needs in Malawi: analysis of the Thanzi La Onse integrated epidemiological model of care <https://human-resources-health.biomedcentral.com/articles/10.1186/s12960-024-00949-2>`_
 
 * `A new approach to Health Benefits Package design: an application of the Thanzi La Onse model in Malawi <https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1012462>`_
 
