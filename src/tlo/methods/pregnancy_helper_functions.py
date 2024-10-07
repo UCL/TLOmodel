@@ -37,7 +37,8 @@ def generate_mnh_outcome_counter():
 
     mnh_outcome_counter = {k: 0 for k in outcome_list}
 
-    return mnh_outcome_counter
+    return {'counter': mnh_outcome_counter,
+            'outcomes': outcome_list}
 
 def get_list_of_items(self, item_list):
     """

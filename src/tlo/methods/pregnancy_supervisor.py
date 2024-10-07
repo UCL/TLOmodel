@@ -63,7 +63,8 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         self.abortion_complications = None
 
         # Finally we create a dictionary to capture the frequency of key outcomes for logging
-        self.mnh_outcome_counter = pregnancy_helper_functions.generate_mnh_outcome_counter()
+        mnh_oc = pregnancy_helper_functions.generate_mnh_outcome_counter()
+        self.mnh_outcome_counter = mnh_oc['counter']
 
     INIT_DEPENDENCIES = {'Demography'}
 
@@ -2263,18 +2264,66 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         df = self.sim.population.props
+        counter = self.module.mnh_outcome_counter
 
         # Complication incidence
         # Denominators
-        # yrly_live_births = len(df.index[(df.date_of_birth.year == self.sim.date.year)])
-        # yrly_pregnancies = len(df.index[(df.date_of_last_pregnancy.year == self.sim.date.year)])
-        # yrly_comp_pregnancies = []
+        yrly_live_births = len(df[(df['date_of_birth'].dt.year == self.sim.date.year - 1) & (df['mother_id'] >= 0)])
+        yrly_pregnancies =len(df[df['date_of_last_pregnancy'].dt.year == self.sim.date.year - 1])
 
-        # # Lets only do purely antenatal stuff here, purely labour stuff in labour and everything else in postnatal/newborn
-        #
-        # ectopic_incidence = (self.module.mnh_outcome_counter[''] / yrly_pregnancies) * 1000
-        # abortion_incidence =
-        # miscarriage_incidence =
+        yrly_comp_pregnancies = (counter['ectopic_unruptured'] + counter['spontaneous_abortion'] +
+                                 counter['induced_abortion'] + counter['antenatal_stillbirth'] +
+                                 counter['intrapartum_stillbirth'] + yrly_live_births)
+
+        yrly_total_births = yrly_live_births + counter['antenatal_stillbirth'] + counter['intrapartum_stillbirth']
+
+        logger.info(key='yrl_counter_dict',
+                    data=counter)
+
+        # MATERNAL COMPLICATIONS
+        logger.info(key='mat_comp_incidence',
+                    data= {k:(counter[k]/denom) * 1000 for k, denom in
+                           zip(['ectopic_unruptured', 'induced_abortion', 'spontaneous_abortion',
+                                'placenta_praevia', 'gest_diab', 'syphilis'],
+                               [yrly_pregnancies, yrly_comp_pregnancies, yrly_comp_pregnancies, yrly_pregnancies,
+                                yrly_comp_pregnancies,  yrly_comp_pregnancies,])})
+
+        logger.info(key='mat_comp_incidence',
+                    data={k: (counter[k] / yrly_live_births) * 1000 for k in
+                          ['obstructed_labour', 'uterine_rupture', 'sepsis_intrapartum',
+                            'mild_mod_antepartum_haemorrhage', 'severe_antepartum_haemorrhage',
+                           'mild_pre_eclamp', 'mild_gest_htn', 'mild_gest_htn', 'severe_pre_eclamp',
+                           'severe_gest_htn', 'eclampsia', 'sepsis_postnatal', 'primary_postpartum_haemorrhage',
+                           'secondary_postpartum_haemorrhage', 'vesicovaginal_fistula', 'rectovaginal_fistula']})
+
+        logger.info(key='mat_comp_incidence',
+                    data={'antepartum_haemorrhage': ((counter['mild_mod_antepartum_haemorrhage'] +
+                                                     counter['severe_antepartum_haemorrhage']) /
+                                                     yrly_live_births) * 1000})
+
+        logger.info(key='mat_comp_incidence',
+                    data={k: (counter[k] / yrly_live_births) * 100 for k in
+                          ['early_preterm_labour', 'late_preterm_labour', 'post_term_labour']})
+
+        # NEWBORN COMPLICATIONS
+        logger.info(key='nb_incidence',
+                    data={k: (counter[k] / yrly_live_births) * 1000 for k in
+                          ['congenital_heart_anomaly', 'limb_or_musculoskeletal_anomaly', 'urogenital_anomaly',
+                           'digestive_anomaly', 'other_anomaly', 'mild_enceph', 'moderate_enceph', 'severe_enceph',
+                           'respiratory_distress_syndrome', 'not_breathing_at_birth', 'low_birth_weight', 'macrosomia',
+                           'small_for_gestational_age', 'early_onset_sepsis', 'late_onset_sepsis']})
+
+
+        neonatal_deaths = len(df[(df['date_of_death'].dt.year == self.sim.date.year - 1) & (df['age_days'] <= 28)])
+        direct_maternal_deaths = []
+
+        # DIRECT MATERNAL DEATHS, NEWBORN DEATHS AND STILLBIRTH
+        logger.info(key='deaths_and_stillbirths',
+                    data={'antenatal_stillbirth': (counter['antenatal_stillbirth'] / yrly_total_births) * 1000,
+                          'intrapartum_stillbirth': (counter['intrapartum_stillbirth'] / yrly_total_births) * 1000,
+                          'neonatal_deaths': neonatal_deaths,
+                          'nmr' : (neonatal_deaths/yrly_live_births) * 1000,
+                          'direct_maternal_deaths': []})
 
 
 
@@ -2326,4 +2375,6 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         #                   'hysterectomy': yearly_prev_hysterectomy,
         #                   'parity': parity_list})
 
-        # self.module.mnh_outcome_counter = {k:0 for k in self.module.outcome_list}
+        mnh_oc = pregnancy_helper_functions.generate_mnh_outcome_counter()
+        outcome_list = mnh_oc['outcomes']
+        self.module.mnh_outcome_counter = {k:0 for k in outcome_list}
