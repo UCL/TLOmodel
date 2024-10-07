@@ -14,7 +14,7 @@ outputpath = Path("./outputs/cohort_testing")  # folder for convenience of stori
 population_size = 2000
 
 sim = Simulation(start_date=Date(2024, 1, 1),
-                 seed=123,
+                 seed=456,
                  log_config={"filename": "log_cohort_calibration",
                              "custom_levels": {"*": logging.DEBUG},
                              "directory": outputpath})
@@ -58,7 +58,7 @@ results = pd.DataFrame(columns=['model', 'data', 'source'],
                                'PPH'])
 
 # total_pregnancies = population_size
-total_pregnancies = 2000 + len(output['tlo.methods.contraception']['pregnancy'])
+total_pregnancies = 2000
 total_births = len(output['tlo.methods.demography']['on_birth'])
 prop_live_births = (total_births/total_pregnancies) * 100
 
@@ -89,12 +89,17 @@ an_comps = output['tlo.methods.pregnancy_supervisor']['maternal_complication']
 la_comps = output['tlo.methods.labour']['maternal_complication']
 pn_comps = output['tlo.methods.postnatal_supervisor']['maternal_complication']
 
+twin_births = len(output['tlo.methods.newborn_outcomes']['twin_birth'])
+
 total_completed_pregnancies = (len(an_comps.loc[an_comps['type'] == 'ectopic_unruptured']) +
                                len(an_comps.loc[an_comps['type'] == 'induced_abortion']) +
                                len(an_comps.loc[an_comps['type'] == 'spontaneous_abortion']) +
-                               total_births +
+                               (total_births - twin_births) +
                                len(output['tlo.methods.pregnancy_supervisor']['antenatal_stillbirth']) +
                                len(output['tlo.methods.labour']['intrapartum_stillbirth']))
+
+print(total_completed_pregnancies)  # this value may be less than the starting population size due to antenatal
+# maternal deaths
 
 # Twins (todo)
 

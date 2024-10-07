@@ -7,16 +7,16 @@ from tlo.scenario import BaseScenario
 class BaselineScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 661184
-        self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2031, 1, 1)
-        self.pop_size = 250_000
+        self.seed = 537184
+        self.start_date = Date(2024, 1, 1)
+        self.end_date = Date(2025, 1, 1)
+        self.pop_size = 5000
         self.number_of_draws = 1
-        self.runs_per_draw = 20
+        self.runs_per_draw = 10
 
     def log_configuration(self):
         return {
-            'filename': 'intervention_scenario_test', 'directory': './outputs',
+            'filename': 'cohort_test', 'directory': './outputs',
             "custom_levels": {
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
@@ -39,7 +39,6 @@ class BaselineScenario(BaseScenario):
 
     def draw_parameters(self, draw_number, rng):
         return {
-            'MaternalNewbornHealthCohort': {'blocked_intervention': 'screening (direct)'},
         }
 
 
