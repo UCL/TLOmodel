@@ -2266,9 +2266,9 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Complication incidence
         # Denominators
-        yrly_live_births = len(df.index[(df.date_of_birth.year == self.sim.date.year)])
-        yrly_pregnancies = len(df.index[(df.date_of_last_pregnancy.year == self.sim.date.year)])
-        yrly_comp_pregnancies = []
+        # yrly_live_births = len(df.index[(df.date_of_birth.year == self.sim.date.year)])
+        # yrly_pregnancies = len(df.index[(df.date_of_last_pregnancy.year == self.sim.date.year)])
+        # yrly_comp_pregnancies = []
 
         # # Lets only do purely antenatal stuff here, purely labour stuff in labour and everything else in postnatal/newborn
         #
@@ -2326,4 +2326,4 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         #                   'hysterectomy': yearly_prev_hysterectomy,
         #                   'parity': parity_list})
 
-        self.module.mnh_outcome_counter = {k:0 for k in self.module.outcome_list}
+        # self.module.mnh_outcome_counter = {k:0 for k in self.module.outcome_list}
