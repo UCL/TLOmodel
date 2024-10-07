@@ -21,6 +21,7 @@ from scripts.healthsystem.impact_of_hcw_capabilities_expansion.scenario_of_expan
     HRHExpansionByCadreWithExtraBudget,
 )
 import statsmodels.api as sm
+import statsmodels.stats as ss
 from tlo import Date
 from tlo.analysis.utils import (
     APPT_TYPE_TO_COARSE_APPT_TYPE_MAP,
@@ -912,6 +913,28 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
+    name_of_plot = f'Dalys averted and Services ratio increased, {target_period()}'
+    heat_data = pd.concat([num_dalys_averted_percent['mean'], service_ratio_increased_percent['mean']], axis=1)
+    # scenarios_with_CNP_only = ['s_4', 's_6', 's_7', 's_10', 's_11', 's_16', 's_22']
+    # heat_data = heat_data.loc[heat_data.index.isin(scenarios_with_CNP_only)]
+    colors = [scenario_color[s] for s in heat_data.index]
+    fig, ax = plt.subplots()
+    ax.scatter(100 * heat_data.iloc[:, 1], 100 * heat_data.iloc[:, 0],
+               alpha=0.8, marker='o', c=colors)
+    ax.set_xlabel('Service delivery ratio increased %')
+    ax.set_ylabel('DLAYs averted %')
+    legend_labels = list(scenario_groups_color.keys())
+    legend_handles = [plt.Line2D([0, 0], [0, 0],
+                                 linestyle='none', marker='o', color=scenario_groups_color[label]
+                                 ) for label in legend_labels
+                      ]
+    plt.legend(legend_handles, legend_labels, loc='upper center', fontsize='small', bbox_to_anchor=(0.5, -0.2), ncol=2)
+    plt.title(name_of_plot)
+    plt.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
     # do some linear regression to see the marginal effects of individual cadres and combined effects of C, N, P cadres
     outcome_data = num_dalys_averted_percent['mean']
     # outcome = num_services_increased_percent['mean']
@@ -931,6 +954,20 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     predictor = sm.add_constant(predictor)
     est = sm.OLS(outcome.astype(float), predictor.astype(float)).fit()
     print(est.summary())
+
+    # do anova analysis to test the difference of scenario groups
+    def anova_oneway(df=num_dalys_averted_percent):
+        best = df.loc[list(scenario_groups['C + P + D/N&M/O/None']), 'mean']
+        middle_C = df.loc[list(scenario_groups['C + D/N&M/O/None']), 'mean']
+        middle_P = df.loc[list(scenario_groups['P + D/N&M/O/None']), 'mean']
+        worst = df.loc[df.index.isin(scenario_groups['D/N&M/O/None']), 'mean']
+
+        return ss.oneway.anova_oneway((best, middle_C, middle_P, worst),
+                                      groups=None, use_var='unequal', welch_correction=True, trim_frac=0)
+
+    anova_dalys = anova_oneway()
+    anova_services = anova_oneway(num_services_increased_percent)
+    anova_treatments = anova_oneway(num_treatments_total_increased_percent)
 
     # plot absolute numbers for scenarios
 
