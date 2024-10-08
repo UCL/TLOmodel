@@ -396,7 +396,8 @@ class LinearModel(object):
           output directly returned.
         :param squeeze_single_row_output: If ``rng`` argument is not ``None`` and this
           argument is set to ``True``, the output for a ``df`` input with a single-row
-          will be a scalar boolean value rather than a boolean ``Series``.
+          will be a scalar boolean value rather than a boolean ``Series``, if set to
+          ``False``, the output will always be a ``Series``.
         :param **kwargs: Values for any external variables included in model
           predictors.
         """
