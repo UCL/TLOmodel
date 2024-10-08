@@ -385,7 +385,7 @@ class LinearModel(object):
         rng: Optional[np.random.RandomState] = None,
         squeeze_single_row_output=True,
         **kwargs
-    ) -> pd.Series:
+    ) -> Union[pd.Series, np.bool_]:
         """Evaluate linear model output for a given set of input data.
 
         :param df: The input ``DataFrame`` containing the input data to evaluate the
