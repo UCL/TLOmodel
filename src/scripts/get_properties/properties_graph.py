@@ -134,6 +134,7 @@ def construct_property_dependency_graph(
     :param excluded_modules: Set of ``Module`` subclass names to not included in graph.
     :param get_dependencies:  Function which given a module gets the set of property
         dependencies. Defaults to extracting all dependencies.
+    :param X_node_defaults: Defaults for specified subgraphs.
     :return: Pydot directed graph representing module dependencies.
     """
     if pydot is None:
