@@ -11,47 +11,30 @@ from tlo.events import Event, IndividualScopeEventMixin
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-# ---------------------------------------------------------------------------------------------------------
-#   MODULE DEFINITIONS
-# ---------------------------------------------------------------------------------------------------------
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
-
 class MaternalNewbornHealthCohort(Module):
     """
-
+    When registered this module overrides the population data frame with a cohort of pregnant women. Cohort properties
+    are sourced from a long run of the full model in which the properties of all newly pregnant women per year were
+    logged. The cohort represents women in 2024. The maximum population size is 13,000.
     """
 
-    # INIT_DEPENDENCIES = {'Demography'}
-    #
-    # OPTIONAL_INIT_DEPENDENCIES = {''}
-    #
-    # ADDITIONAL_DEPENDENCIES = {''}
-
-    # Declare Metadata (this is for a typical 'Disease Module')
     METADATA = {
         Metadata.DISEASE_MODULE,
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN
     }
+
     CAUSES_OF_DEATH = {}
     CAUSES_OF_DISABILITY = {}
     PARAMETERS = {}
     PROPERTIES = {}
 
     def __init__(self, name=None, resourcefilepath=None):
-        # NB. Parameters passed to the module can be inserted in the __init__ definition.
-
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
     def read_parameters(self, data_folder):
-        """Read parameter values from file, if required.
-        To access files use: Path(self.resourcefilepath) / file_name
-        """
         pass
 
     def initialise_population(self, population):
@@ -73,23 +56,28 @@ class MaternalNewbornHealthCohort(Module):
         #     log_file['properties_of_pregnant_person'].date.dt.year == 2024].drop(columns=['date'])
         # all_pregnancies.index = [x for x in range(len(all_pregnancies))]
 
+        # Read in excel sheet with cohort
         all_preg_df = pd.read_excel(Path(f'{self.resourcefilepath}/maternal cohort') /
                                     'ResourceFile_All2024PregnanciesCohortModel.xlsx')
+
+        # Only select rows equal to the desired population size
         preg_pop = all_preg_df.loc[0:(len(self.sim.population.props))-1]
 
+        # Set the dtypes and index of the cohort dataframe
         props_dtypes = self.sim.population.props.dtypes
-
         preg_pop_final = preg_pop.astype(props_dtypes.to_dict())
         preg_pop_final.index.name = 'person'
 
-
+        # For the below columns we manually overwrite the dtypes
         for column in ['rt_injuries_for_minor_surgery', 'rt_injuries_for_major_surgery',
                        'rt_injuries_to_heal_with_time', 'rt_injuries_for_open_fracture_treatment',
                        'rt_injuries_left_untreated', 'rt_injuries_to_cast']:
             preg_pop_final[column] = [[] for _ in range(len(preg_pop_final))]
 
+        # Set the population.props dataframe to the new cohort
         self.sim.population.props = preg_pop_final
 
+        # Update key pregnancy properties
         df = self.sim.population.props
         population = df.loc[df.is_alive]
         df.loc[population.index, 'date_of_last_pregnancy'] = self.sim.start_date
@@ -109,13 +97,12 @@ class MaternalNewbornHealthCohort(Module):
         # Clear HSI queue for events scheduled during initialisation
         sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
 
-        # Clear HSI queue for events scheduled during initialisation
+        # Clear the individual event queue for events scheduled during initialisation
         updated_event_queue = [item for item in self.sim.event_queue.queue
                                if not isinstance(item[3], IndividualScopeEventMixin)]
-
         self.sim.event_queue.queue = updated_event_queue
 
-        # Prevent additional pregnancies from occurring
+        # Prevent additional pregnancies from occurring during the cohort tun
         self.sim.modules['Contraception'].processed_params['p_pregnancy_with_contraception_per_month'].iloc[:] = 0
         self.sim.modules['Contraception'].processed_params['p_pregnancy_no_contraception_per_month'].iloc[:] = 0
 
@@ -124,32 +111,10 @@ class MaternalNewbornHealthCohort(Module):
                 self.sim.modules['Labour'].set_date_of_labour(person)
 
     def on_birth(self, mother_id, child_id):
-        """Initialise our properties for a newborn individual.
-
-        This is called by the simulation whenever a new person is born.
-
-        :param mother_id: the mother for this child
-        :param child_id: the new child
-        """
         pass
 
     def report_daly_values(self):
-        """
-        This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
-        experienced by persons in the previous month. Only rows for alive-persons must be returned.
-        If multiple causes in CAUSES_OF_DISABILITY are defined, a pd.DataFrame must be returned with a column
-        corresponding to each cause (but if only one cause in CAUSES_OF_DISABILITY is defined, the pd.Series does not
-        need to be given a specific name).
-
-        To return a value of 0.0 (fully health) for everyone, use:
-        df = self.sim.population.props
-        return pd.Series(index=df.index[df.is_alive],data=0.0)
-        """
         pass
 
     def on_hsi_alert(self, person_id, treatment_id):
-        """
-        This is called whenever there is an HSI event commissioned by one of the other disease modules.
-        """
-
         pass
