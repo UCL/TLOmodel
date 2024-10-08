@@ -263,7 +263,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
             # apply prevalence of wasting and categorise into moderate (-3 <= WHZ < -2) or severe (WHZ < -3) wasting
             wasted = self.wasting_models.get_wasting_prevalence(agegp=agegp).predict(
-                children_of_agegp, self.rng
+                children_of_agegp, self.rng, False
             )
             probability_of_severe = self.get_prob_severe_wasting_or_odds_wasting(agegp=agegp, get_odds=False)
             for idx in children_of_agegp.index[wasted]:
