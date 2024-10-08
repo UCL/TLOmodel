@@ -490,22 +490,18 @@ class CareOfWomenDuringPregnancy(Module):
             if anc_count > 9:
                 logger.info(key='error', data=f'Mother {mother_id} attended >8 ANC visits during her pregnancy')
 
-            # We log the total number of ANC contacts a woman has undergone at the time of birth via this dictionary
-            if 'ga_anc_one' in mni[mother_id]:
-                ga_anc_one = float(mni[mother_id]['ga_anc_one'])
-            else:
-                ga_anc_one = 0.0
-
             if anc_count > 8:
                 self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['anc8+'] += 1
             else:
                 self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[f'anc{anc_count}'] += 1
 
-            total_anc_visit_count = {'person_id': mother_id,
-                                     'total_anc': df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'],
-                                     'ga_anc_one': ga_anc_one}
+            # We log the gestational age at first ANC
+            if 'ga_anc_one' in mni[mother_id]:
+                ga_anc_one = float(mni[mother_id]['ga_anc_one'])
+            else:
+                ga_anc_one = 0.0
 
-            logger.info(key='anc_count_on_birth', data=total_anc_visit_count,
+            logger.info(key='ga_at_anc1', data={'person_id': mother_id, 'ga_anc_one': ga_anc_one},
                         description='A dictionary containing the number of ANC visits each woman has on birth')
 
     def on_hsi_alert(self, person_id, treatment_id):

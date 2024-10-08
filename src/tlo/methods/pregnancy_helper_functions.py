@@ -8,6 +8,7 @@ import pandas as pd
 
 from tlo import logging
 
+
 def generate_mnh_outcome_counter():
     outcome_list = [ # early/abortive outcomes
                     'ectopic_unruptured', 'ectopic_ruptured','multiple_pregnancy', 'twin_birth', 'placenta_praevia',

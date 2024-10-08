@@ -661,11 +661,6 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
             if df.at[mother_id, 'ps_anaemia_in_pregnancy'] != 'none':
                 self.mnh_outcome_counter[f'an_anaemia_{df.at[mother_id, "ps_anaemia_in_pregnancy"]}'] += 1
 
-            logger.info(key='conditions_on_birth', data={'mother': mother_id,
-                                                         'anaemia_status': df.at[mother_id, 'ps_anaemia_in_pregnancy'],
-                                                         'gdm_status': df.at[mother_id, 'ps_gest_diab'],
-                                                         'htn_status': df.at[mother_id, 'ps_htn_disorders']})
-
             # We currently assume that hyperglycemia due to gestational diabetes resolves following birth
             if df.at[mother_id, 'ps_gest_diab'] != 'none':
                 df.at[mother_id, 'ps_gest_diab'] = 'none'
@@ -974,9 +969,6 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         params = self.current_parameters
 
         # Log the pregnancy loss
-        logger.info(key='maternal_complication', data={'person': individual_id,
-                                                       'type': f'{type_abortion}',
-                                                       'timing': 'antenatal'})
         self.mnh_outcome_counter[type_abortion] += 1
 
         # This function officially ends a pregnancy through the contraception module (updates 'is_pregnant' and
@@ -1004,10 +996,6 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
             risk_of_complications = params['prob_complicated_ia']
 
         if self.rng.random_sample() < risk_of_complications:
-            logger.info(key='maternal_complication', data={'person': individual_id,
-                                                           'type': f'complicated_{type_abortion}',
-                                                           'timing': 'antenatal'})
-
             self.mnh_outcome_counter[f'complicated_{type_abortion}'] += 1
 
             self.apply_risk_of_abortion_complications(individual_id, f'{type_abortion}')
@@ -1026,34 +1014,22 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         if cause == 'induced_abortion':
             if self.rng.random_sample() < params['prob_injury_post_abortion']:
                 self.abortion_complications.set([individual_id], 'injury')
-                logger.info(key='maternal_complication', data={'person': individual_id,
-                                                               'type': f'{cause}_injury',
-                                                               'timing': 'antenatal'})
                 self.mnh_outcome_counter[f'{cause}_injury'] += 1
 
         if self.rng.random_sample() < params['prob_haemorrhage_post_abortion']:
             self.abortion_complications.set([individual_id], 'haemorrhage')
             pregnancy_helper_functions.store_dalys_in_mni(individual_id, mni, 'abortion_haem_onset',
                                                           self.sim.date)
-            logger.info(key='maternal_complication', data={'person': individual_id,
-                                                           'type': f'{cause}_haemorrhage',
-                                                           'timing': 'antenatal'})
             self.mnh_outcome_counter[f'{cause}_haemorrhage'] += 1
 
         if self.rng.random_sample() < params['prob_sepsis_post_abortion']:
             self.abortion_complications.set([individual_id], 'sepsis')
             pregnancy_helper_functions.store_dalys_in_mni(individual_id, mni, 'abortion_sep_onset',
                                                           self.sim.date)
-            logger.info(key='maternal_complication', data={'person': individual_id,
-                                                           'type': f'{cause}_sepsis',
-                                                           'timing': 'antenatal'})
             self.mnh_outcome_counter[f'{cause}_sepsis'] += 1
 
         if not self.abortion_complications.has_any([individual_id], 'sepsis', 'haemorrhage', 'injury', first=True):
             self.abortion_complications.set([individual_id], 'other')
-            logger.info(key='maternal_complication', data={'person': individual_id,
-                                                           'type': f'{cause}_other_comp',
-                                                           'timing': 'antenatal'})
             self.mnh_outcome_counter[f'{cause}_other_comp'] += 1
 
         # We assume only women with complicated abortions will experience disability
@@ -1113,11 +1089,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         df.loc[gest_diab.loc[gest_diab].index, 'ps_gest_diab'] = 'uncontrolled'
         df.loc[gest_diab.loc[gest_diab].index, 'ps_prev_gest_diab'] = True
 
-        for person in gest_diab.loc[gest_diab].index:
-            logger.info(key='maternal_complication', data={'person': person,
-                                                           'type': 'gest_diab',
-                                                           'timing': 'antenatal'})
-            self.mnh_outcome_counter['gest_diab'] += 1
+        self.mnh_outcome_counter['gest_diab'] += len(gest_diab.loc[gest_diab].index)
 
 
     def apply_risk_of_hypertensive_disorders(self, gestation_of_interest):
@@ -1139,11 +1111,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         df.loc[pre_eclampsia.loc[pre_eclampsia].index, 'ps_prev_pre_eclamp'] = True
         df.loc[pre_eclampsia.loc[pre_eclampsia].index, 'ps_htn_disorders'] = 'mild_pre_eclamp'
 
-        for person in pre_eclampsia.loc[pre_eclampsia].index:
-            logger.info(key='maternal_complication', data={'person': person,
-                                                           'type': 'mild_pre_eclamp',
-                                                           'timing': 'antenatal'})
-            self.mnh_outcome_counter['mild_pre_eclamp'] += 1
+        self.mnh_outcome_counter['mild_pre_eclamp'] += len(pre_eclampsia.loc[pre_eclampsia].index)
 
         #  -------------------------------- RISK OF GESTATIONAL HYPERTENSION --------------------------------------
         # For women who dont develop pre-eclampsia during this month, we apply a risk of gestational hypertension
@@ -1154,11 +1122,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
 
         df.loc[gest_hypertension.loc[gest_hypertension].index, 'ps_htn_disorders'] = 'gest_htn'
 
-        for person in gest_hypertension.loc[gest_hypertension].index:
-            logger.info(key='maternal_complication', data={'person': person,
-                                                           'type': 'mild_gest_htn',
-                                                           'timing': 'antenatal'})
-            self.mnh_outcome_counter['mild_gest_htn'] += 1
+        self.mnh_outcome_counter['mild_gest_htn'] += len(gest_hypertension.loc[gest_hypertension].inde)
 
     def apply_risk_of_progression_of_hypertension(self, gestation_of_interest):
         """
@@ -1213,9 +1177,6 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
 
                     # And log all of the new onset cases of any hypertensive disease
                     for person in new_onset_disease.index:
-                        logger.info(key='maternal_complication', data={'person': person,
-                                                                       'type': disease,
-                                                                       'timing': 'antenatal'})
                         self.mnh_outcome_counter[disease] +=1
 
                         if disease == 'severe_pre_eclamp':
@@ -1289,11 +1250,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
                    ~df['la_currently_in_labour']])
 
         df.loc[placenta_abruption.loc[placenta_abruption].index, 'ps_placental_abruption'] = True
-        for person in placenta_abruption.loc[placenta_abruption].index:
-            logger.info(key='maternal_complication', data={'person': person,
-                                                           'type': 'placental_abruption',
-                                                           'timing': 'antenatal'})
-            self.mnh_outcome_counter['placental_abruption'] += 1
+        self.mnh_outcome_counter['placental_abruption'] += len(placenta_abruption.loc[placenta_abruption].index)
 
     def apply_risk_of_antepartum_haemorrhage(self, gestation_of_interest):
         """
@@ -1331,11 +1288,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         severe_women.loc[severe_women].index.to_series().apply(
             pregnancy_helper_functions.store_dalys_in_mni, mni=mni, mni_variable='severe_aph_onset', date=self.sim.date)
 
-        for person in severe_women.loc[severe_women].index:
-            logger.info(key='maternal_complication', data={'person': person,
-                                                           'type': 'severe_antepartum_haemorrhage',
-                                                           'timing': 'antenatal'})
-            self.mnh_outcome_counter['severe_antepartum_haemorrhage'] += 1
+        self.mnh_outcome_counter['severe_antepartum_haemorrhage'] += len(severe_women.loc[severe_women].index)
 
         non_severe_women = (df.loc[antepartum_haemorrhage.loc[antepartum_haemorrhage].index,
                                    'ps_antepartum_haemorrhage'] != 'severe')
@@ -1344,12 +1297,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
             pregnancy_helper_functions.store_dalys_in_mni, mni=mni, mni_variable='mild_mod_aph_onset',
             date=self.sim.date)
 
-        for person in non_severe_women.loc[non_severe_women].index:
-            logger.info(key='maternal_complication', data={'person': person,
-                                                           'type': 'mild_mod_antepartum_haemorrhage',
-                                                           'timing': 'antenatal'})
-            self.mnh_outcome_counter['mild_mod_antepartum_haemorrhage'] += 1
-
+        self.mnh_outcome_counter['mild_mod_antepartum_haemorrhage'] += len(non_severe_women.loc[non_severe_women].index)
 
     def apply_risk_of_premature_rupture_of_membranes_and_chorioamnionitis(self, gestation_of_interest):
         """
@@ -1373,12 +1321,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
 
         # We allow women to seek care for PROM
         df.loc[prom.loc[prom].index, 'ps_emergency_event'] = True
-
-        for person in prom.loc[prom].index:
-            logger.info(key='maternal_complication', data={'person': person,
-                                                           'type': 'PROM',
-                                                           'timing': 'antenatal'})
-            self.mnh_outcome_counter['PROM'] += 1
+        self.mnh_outcome_counter['PROM'] += len(prom.loc[prom].index)
 
         # Determine if those with PROM will develop infection prior to care seeking
         infection = pd.Series(self.rng.random_sample(len(prom.loc[prom])) < params['prob_chorioamnionitis'],
@@ -1391,9 +1334,6 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
 
         for person in infection.loc[infection].index:
             self.mother_and_newborn_info[person]['chorio_in_preg'] = True
-            logger.info(key='maternal_complication', data={'person': person,
-                                                           'type': 'clinical_chorioamnionitis',
-                                                           'timing': 'antenatal'})
             self.mnh_outcome_counter['clinical_chorioamnionitis'] += 1
 
     def apply_risk_of_preterm_labour(self, gestation_of_interest):
@@ -1458,7 +1398,6 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         for person in women.index:
             self.sim.modules['Contraception'].end_pregnancy(person)
             mni[person]['delete_mni'] = True
-            logger.info(key='antenatal_stillbirth', data={'mother': person})
             self.mnh_outcome_counter['antenatal_stillbirth'] += 1
 
         # Call functions across the modules to ensure properties are rest
@@ -1481,7 +1420,6 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         df.at[individual_id, 'ps_prev_stillbirth'] = True
         mni[individual_id]['delete_mni'] = True
 
-        logger.info(key='antenatal_stillbirth', data={'mother': individual_id})
         self.mnh_outcome_counter['antenatal_stillbirth'] += 1
 
         # Reset pregnancy and schedule possible update of contraception
@@ -1794,9 +1732,6 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # For women whose pregnancy is ectopic we scheduled them to the EctopicPregnancyEvent in between 3-5 weeks
         # (this simulates time period prior to which symptoms onset- and may trigger care seeking)
         for person in ectopic_risk.loc[ectopic_risk].index:
-            logger.info(key='maternal_complication', data={'person': person,
-                                                           'type': 'ectopic_unruptured',
-                                                           'timing': 'antenatal'})
             self.module.mnh_outcome_counter['ectopic_unruptured'] += 1
 
             self.sim.schedule_event(EctopicPregnancyEvent(self.module, person),
@@ -1812,12 +1747,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
                               < params['prob_multiples'],  index=multiple_risk.loc[multiple_risk].index)
 
         df.loc[multiples.loc[multiples].index, 'ps_multiple_pregnancy'] = True
-
-        for person in multiples.loc[multiples].index:
-            logger.info(key='maternal_complication', data={'person': person,
-                                                           'type': 'multiple_pregnancy',
-                                                           'timing': 'antenatal'})
-            self.module.mnh_outcome_counter['multiple_pregnancy'] += 1
+        self.module.mnh_outcome_counter['multiple_pregnancy'] += len(multiples.loc[multiples].index)
 
         #  -----------------------------APPLYING RISK OF PLACENTA PRAEVIA  -------------------------------------------
         # Next,we apply a one off risk of placenta praevia (placenta will grow to cover the cervix either partially or
@@ -1827,12 +1757,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[new_pregnancy & (df['ps_ectopic_pregnancy'] == 'none')])
 
         df.loc[placenta_praevia.loc[placenta_praevia].index, 'ps_placenta_praevia'] = True
-
-        for person in placenta_praevia.loc[placenta_praevia].index:
-            logger.info(key='maternal_complication', data={'person': person,
-                                                           'type': 'placenta_praevia',
-                                                           'timing': 'antenatal'})
-            self.module.mnh_outcome_counter['placenta_praevia'] += 1
+        self.module.mnh_outcome_counter['placenta_praevia'] += len(placenta_praevia.loc[placenta_praevia].index)
 
         #  ------------------------- APPLYING RISK OF SYPHILIS INFECTION DURING PREGNANCY  ---------------------------
         # Finally apply risk that syphilis will develop during pregnancy
@@ -2016,9 +1941,6 @@ class EctopicPregnancyRuptureEvent(Event, IndividualScopeEventMixin):
         if not df.at[individual_id, 'is_alive'] or (df.at[individual_id, 'ps_ectopic_pregnancy'] != 'not_ruptured'):
             return
 
-        logger.info(key='maternal_complication', data={'person': individual_id,
-                                                       'type': 'ectopic_ruptured',
-                                                       'timing': 'antenatal'})
         self.module.mnh_outcome_counter['ectopic_ruptured'] += 1
 
         # Set the variable
@@ -2127,9 +2049,7 @@ class SyphilisInPregnancyEvent(Event, IndividualScopeEventMixin):
             return
 
         df.at[individual_id, 'ps_syphilis'] = True
-        logger.info(key='maternal_complication', data={'person': individual_id,
-                                                       'type': 'syphilis',
-                                                       'timing': 'antenatal'})
+
         self.module.mnh_outcome_counter['syphilis'] += 1
 
 class ParameterUpdateEvent(Event, PopulationScopeEventMixin):
@@ -2370,7 +2290,6 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
                           'm_pnc1+': rate(m_pnc1, total_births, 1000),
                           'n_pnc1+': rate(n_pnc1, total_births, 1000)})
-
 
         mnh_oc = pregnancy_helper_functions.generate_mnh_outcome_counter()
         outcome_list = mnh_oc['outcomes']
