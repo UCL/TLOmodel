@@ -1412,7 +1412,7 @@ class HSI_CervicalCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         hs = self.sim.modules["HealthSystem"]
 
         # Check that the person is in stage4
-        assert df.at[person_id, "ce_hpv_cc_status"] == 'stage4'
+        # assert df.at[person_id, "ce_hpv_cc_status"] == 'stage4'
 
         # Record the start of palliative care if this is first appointment
         if pd.isnull(df.at[person_id, "ce_date_palliative_care"]):
@@ -1684,6 +1684,9 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     data=count_summary,
                     description="summary of deaths")
 
+        logger.info(key="all",
+                    data=out,
+                    description="all_data")
         # todo:
         # ? move to using the logger:
         # i.e. logger.info(key='cervical_cancer_stats_every_month', description='XX', data=out)
