@@ -1122,7 +1122,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
 
         df.loc[gest_hypertension.loc[gest_hypertension].index, 'ps_htn_disorders'] = 'gest_htn'
 
-        self.mnh_outcome_counter['mild_gest_htn'] += len(gest_hypertension.loc[gest_hypertension].inde)
+        self.mnh_outcome_counter['mild_gest_htn'] += len(gest_hypertension.loc[gest_hypertension].index)
 
     def apply_risk_of_progression_of_hypertension(self, gestation_of_interest):
         """
