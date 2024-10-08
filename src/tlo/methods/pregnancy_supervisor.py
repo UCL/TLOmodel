@@ -2190,11 +2190,6 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         df = self.sim.population.props
         c = self.module.mnh_outcome_counter
 
-        logger.info(key='yrly_counter_dict', data=c)
-
-        def rate (count, denom, multiplier):
-            return (count/denom) * multiplier
-
         # DENOMINATORS
         live_births = len(df[(df['date_of_birth'].dt.year == self.sim.date.year - 1) & (df['mother_id'] >= 0)])
 
@@ -2208,7 +2203,15 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         total_births = live_births + c['antenatal_stillbirth'] + c['intrapartum_stillbirth']
 
+        if (live_births == 0) or (pregnancies == 0):
+            return
+
         # MATERNAL COMPLICATION INCIDENCE
+        logger.info(key='yearly_counter_dict', data=c)
+
+        def rate (count, denom, multiplier):
+            return (count/denom) * multiplier
+
         total_an_anaemia_cases = c['an_anaemia_mild'] + c['an_anaemia_moderate'] + c['an_anaemia_severe']
         total_pn_anaemia_cases = c['pn_anaemia_mild'] + c['pn_anaemia_moderate'] + c['pn_anaemia_severe']
         total_preterm_birth = c['early_preterm_labour'] + c['late_preterm_labour']
