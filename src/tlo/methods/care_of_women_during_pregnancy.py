@@ -484,8 +484,10 @@ class CareOfWomenDuringPregnancy(Module):
 
         if df.at[mother_id, 'is_alive']:
 
+            anc_count = df.at[mother_id, "ac_total_anc_visits_current_pregnancy"]
+
             #  run a check at birth to make sure no women exceed 8 visits
-            if df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'] > 9:
+            if anc_count > 9:
                 logger.info(key='error', data=f'Mother {mother_id} attended >8 ANC visits during her pregnancy')
 
             # We log the total number of ANC contacts a woman has undergone at the time of birth via this dictionary
@@ -493,6 +495,11 @@ class CareOfWomenDuringPregnancy(Module):
                 ga_anc_one = float(mni[mother_id]['ga_anc_one'])
             else:
                 ga_anc_one = 0.0
+
+            if anc_count > 8:
+                self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['anc8+'] += 1
+            else:
+                self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[f'anc{anc_count}'] += 1
 
             total_anc_visit_count = {'person_id': mother_id,
                                      'total_anc': df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'],

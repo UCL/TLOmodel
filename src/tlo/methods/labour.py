@@ -1060,6 +1060,9 @@ class Labour(Module, GenericFirstAppointmentsMixin):
                                                            'facility_type': str(mni[mother_id]['delivery_setting']),
                                                            'mode': mni[mother_id]['mode_of_delivery']})
 
+        self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[
+            f'{str(mni[mother_id]["delivery_setting"])}_delivery'] += 1
+
         # Store only live births to a mother parity
         if not df.at[mother_id, 'la_intrapartum_still_birth']:
             df.at[mother_id, 'la_parity'] += 1  # Only live births contribute to parity

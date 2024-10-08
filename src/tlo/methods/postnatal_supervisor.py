@@ -895,6 +895,7 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         store_dalys_in_mni = pregnancy_helper_functions.store_dalys_in_mni
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+        mnh_counter = self.sim.modules['PregnancySupervisor'].mnh_outcome_counter
 
         # ================================ UPDATING LENGTH OF POSTPARTUM PERIOD  IN WEEKS  ============================
         # Here we update how far into the postpartum period each woman who has recently delivered is
@@ -950,13 +951,19 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Set mni[person]['delete_mni'] to True meaning after the next DALY event each womans MNI dict is deleted
         for person in week_8_postnatal_women.loc[week_8_postnatal_women].index:
+            pn_checks = df.at[person, 'la_pn_checks_maternal']
+
             mni[person]['delete_mni'] = True
 
             self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['six_week_survivors'] += 1
 
             if df.at[person, 'pn_anaemia_following_pregnancy'] != 'none':
-                self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[
-                    f'pn_anaemia_{df.at[person, "pn_anaemia_following_pregnancy"]}'] += 1
+                mnh_counter[f'pn_anaemia_{df.at[person, "pn_anaemia_following_pregnancy"]}'] += 1
+
+            if pn_checks >= 3:
+                mnh_counter['m_pnc3+'] += 1
+            else:
+                mnh_counter[f'm_pnc{pn_checks}'] += 1
 
             logger.info(key='total_mat_pnc_visits', data={'mother': person,
                                                           'visits': df.at[person, 'la_pn_checks_maternal'],
@@ -977,6 +984,13 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
                                                                                              self.sim.start_date)
 
         for person in week_5_postnatal_neonates.loc[week_5_postnatal_neonates].index:
+            pn_checks = df.at[person, 'nb_pnc_check']
+
+            if pn_checks >= 3:
+                mnh_counter['n_pnc3+'] += 1
+            else:
+                mnh_counter[f'n_pnc{pn_checks}'] += 1
+
             self.sim.modules['NewbornOutcomes'].set_disability_status(person)
             logger.info(key='total_neo_pnc_visits', data={'child': person,
                                                           'visits': df.at[person, 'nb_pnc_check']})

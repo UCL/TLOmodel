@@ -37,7 +37,13 @@ def generate_mnh_outcome_counter():
                     'severe_enceph', 'respiratory_distress_syndrome', 'not_breathing_at_birth', 'low_birth_weight',
                     'macrosomia', 'small_for_gestational_age', 'early_onset_sepsis', 'late_onset_sepsis',
 
-                    'direct_mat_death', 'six_week_survivors'
+                    # death outcomes
+                    'direct_mat_death', 'six_week_survivors',
+
+                    # service coverage outcomes
+                    'anc0', 'anc1', 'anc2', 'anc3', 'anc4', 'anc5', 'anc6', 'anc7', 'anc8', 'anc8+',
+                    'home_birth_delivery', 'hospital_delivery', 'health_centre_delivery',
+                    'm_pnc0', 'm_pnc1', 'm_pnc2', 'm_pnc3+', 'n_pnc0', 'n_pnc1', 'n_pnc2', 'n_pnc3+',
                     ]
 
     mnh_outcome_counter = {k: 0 for k in outcome_list}
@@ -386,6 +392,7 @@ def calculate_risk_of_death_from_causes(self, risks):
         cause_of_death = self.rng.choice(list(risks.keys()), p=probs)
 
         # Return the primary cause of death so that it can be passed to the demography function
+        self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[f'{cause_of_death}_death'] += 1
         return cause_of_death
     else:
         # Return false if death will not occur

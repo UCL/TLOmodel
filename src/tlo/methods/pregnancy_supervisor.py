@@ -2348,8 +2348,29 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                           'neonatal_deaths': neonatal_deaths,
                           'nmr' : rate(neonatal_deaths, live_births, 1000),
                           'direct_maternal_deaths': c['direct_mat_death'],
-                          'direct_mmr': rate(c['direct_mat_death'], live_births, 100_000),
-                          })
+                          'direct_mmr': rate(c['direct_mat_death'], live_births, 100_000)})
+
+        anc1 = sum(c[f'anc{i}'] for i in range(1, 9)) + c['anc8+']
+        anc4 = sum(c[f'anc{i}'] for i in range(4, 9))+ c['anc8+']
+        anc8 = c['anc8'] + c['anc8+']
+
+        m_pnc1 = sum(c[f'm_pnc{i}'] for i in range(1, 3)) + c['m_pnc3+']
+        n_pnc1 = sum(c[f'm_pnc{i}'] for i in range(1, 3)) + c['m_pnc3+']
+
+        # HEALTH SERVICE COVERAGE
+        logger.info(key='service_coverage',
+                    data={'anc1+': rate(anc1 , total_births, 100),
+                          'anc4+': rate(anc4, total_births, 100),
+                          'anc8+': rate(anc8, total_births, 100),
+
+                          'fd_rate': rate(anc1 , total_births, 100),
+                          'hb_rate': rate(c['home_birth_delivery'] , total_births, 100),
+                          'hc_rate': rate(c['health_centre_delivery']  , total_births, 100),
+                          'hp_rate': rate(c['hospital_delivery']  , total_births, 100),
+
+                          'm_pnc1+': rate(m_pnc1, total_births, 1000),
+                          'n_pnc1+': rate(n_pnc1, total_births, 1000)})
+
 
         mnh_oc = pregnancy_helper_functions.generate_mnh_outcome_counter()
         outcome_list = mnh_oc['outcomes']
