@@ -456,7 +456,6 @@ class LinearModel(object):
             # pop the boolean out of the series if we have a single row,
             # otherwise return the series
             if len(outcome) == 1 and squeeze_single_row_output:
-                assert isinstance(outcome.iloc[0], pd.Series)
                 return outcome.iloc[0]
             else:
                 return outcome
