@@ -44,11 +44,12 @@ class ScenarioDefinitions:
         """
         return get_parameters_for_status_quo()  # <-- Parameters that have been the calibration targets
 
-    def double_capacity_at_primary_care(self) -> Dict:
+    def increase_capacity_at_primary_care(self) -> Dict:
         return {
             'HealthSystem': {
                 'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE_FOR_HSS,
-                'HR_scaling_by_level_and_officer_type_mode': 'x2_fac0&1',
+                'HR_scaling_by_level_and_officer_type_mode': 'x1.042_fac0&1',
+                # increase all cadres at level 0 and 1 by average of historical growth
             }
         }
 
