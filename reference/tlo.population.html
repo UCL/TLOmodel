@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.population module &mdash; TLOmodel 0.1.dev2456+g2221089.d20241007 documentation</title>
+  <title>tlo.population module &mdash; TLOmodel 0.1.dev2457+g44ac319.d20241008 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=7ab3649f" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=363ca9bd"></script>
+      <script src="../_static/documentation_options.js?v=0e657b16"></script>
       <script src="../_static/doctools.js?v=9a2dae69"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -224,7 +224,23 @@ dataframe.</p></li>
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.population.Population.overwrite_dataframe">
+<span class="sig-name descname"><span class="pre">overwrite_dataframe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/population.html#Population.overwrite_dataframe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.population.Population.overwrite_dataframe" title="Link to this definition"></a></dt>
+<dd><p>Overwrites the population dataframe with a new dataframe. There are a number of requirements for the input
+dataframe:</p>
+<ol class="arabic simple">
+<li><p>The columns and types of the columns must be identical to the existing dataframe</p></li>
+<li><p>The index must be a RangeIndex from 0 to the number of rows in the dataframe</p></li>
+</ol>
 </dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.population.are_dataframe_columns_identical">
+<span class="sig-name descname"><span class="pre">are_dataframe_columns_identical</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">first</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">second</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/population.html#are_dataframe_columns_identical"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.population.are_dataframe_columns_identical" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 </section>
 
@@ -240,7 +256,7 @@ dataframe.</p></li>
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Oct 07, 2024.
+      <span class="lastupdated">Last updated on Oct 08, 2024.
       </span></p>
   </div>
 
