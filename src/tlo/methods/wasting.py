@@ -706,35 +706,31 @@ class WastingIncidencePollingEvent(RegularEvent, PopulationScopeEventMixin):
         not_wasted = df.loc[df.is_alive & (df.age_exact_years < 5) & (
             df.un_WHZ_category == 'WHZ>=-2')]
         incidence_of_wasting = self.module.wasting_models.wasting_incidence_lm.predict(not_wasted, rng=rng)
-        not_wasted_idx = not_wasted.index
+        mod_wasting_new_cases_idx = not_wasted.index[incidence_of_wasting]
         # update the properties for new cases of wasted children
-        df.loc[not_wasted_idx[incidence_of_wasting], 'un_ever_wasted'] = True
-        df.loc[not_wasted_idx[incidence_of_wasting], 'un_last_wasting_date_of_onset'] = self.sim.date
-        # start as moderate wasting
-        df.loc[not_wasted_idx[incidence_of_wasting], 'un_WHZ_category'] = '-3<=WHZ<-2'
+        df.loc[mod_wasting_new_cases_idx, 'un_ever_wasted'] = True
+        df.loc[mod_wasting_new_cases_idx, 'un_last_wasting_date_of_onset'] = self.sim.date
+        # initiate moderate wasting
+        df.loc[mod_wasting_new_cases_idx, 'un_WHZ_category'] = '-3<=WHZ<-2'
         # start without treatment
-        df.loc[not_wasted_idx[incidence_of_wasting], 'un_am_treatment_type'] = 'none'
+        df.loc[mod_wasting_new_cases_idx, 'un_am_treatment_type'] = 'none'
         # -------------------------------------------------------------------------------------------
         # Add these incident cases to the tracker
-        for person_id in not_wasted_idx[incidence_of_wasting]:
-            wasting_severity = df.at[person_id, 'un_WHZ_category']
+        for person_id in mod_wasting_new_cases_idx:
             age_group = WastingIncidencePollingEvent.AGE_GROUPS.get(df.loc[person_id].age_years, '5+y')
-            self.module.wasting_incident_case_tracker[age_group][wasting_severity].append(self.sim.date)
+            self.module.wasting_incident_case_tracker[age_group]['-3<=WHZ<-2'].append(self.sim.date)
         # Update properties related to clinical acute malnutrition
         # (MUAC, oedema, clinical state of acute malnutrition and if SAM complications; clear symptoms if not SAM)
-        self.module.clinical_signs_acute_malnutrition(not_wasted_idx[incidence_of_wasting])
+        self.module.clinical_signs_acute_malnutrition(mod_wasting_new_cases_idx)
         # -------------------------------------------------------------------------------------------
 
         # # # PROGRESS TO SEVERE WASTING # # # # # # # # # # # # # # # # # #
         # Determine those that will progress to severe wasting (WHZ < -3) and schedule progression event ---------
-        mod_wasting = df.loc[df.is_alive & (df.age_exact_years < 5) &
-                             (df.un_WHZ_category == '-3<=WHZ<-2')]
         progression_severe_wasting = self.module.wasting_models.severe_wasting_progression_lm.predict(
-            mod_wasting, rng=rng, squeeze_single_row_output=False
+            df.loc[mod_wasting_new_cases_idx], rng=rng, squeeze_single_row_output=False
         )
 
-        # determine those individuals who will progress to severe wasting and time of progression
-        for person in mod_wasting.index[progression_severe_wasting]:
+        for person in mod_wasting_new_cases_idx[progression_severe_wasting]:
             outcome_date = self.module.date_of_outcome_for_untreated_wasting(person_id=person)
             # schedule severe wasting WHZ < -3 onset
             if outcome_date <= self.sim.date:
@@ -749,7 +745,7 @@ class WastingIncidencePollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # # # MODERATE WASTING NATURAL RECOVERY # # # # # # # # # # # # # #
         # Schedule recovery from moderate wasting for those not progressing to severe wasting ---------
-        for person in mod_wasting.index[~progression_severe_wasting]:
+        for person in mod_wasting_new_cases_idx[~progression_severe_wasting]:
             outcome_date = self.module.date_of_outcome_for_untreated_wasting(person_id=person)
             if outcome_date <= self.sim.date:
                 # schedule recovery for today
