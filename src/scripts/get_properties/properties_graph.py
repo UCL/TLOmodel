@@ -210,7 +210,7 @@ def construct_property_dependency_graph(
     for key, property_module in property_class_map.items():
         if property_module not in excluded_modules:
             properties_of_module = get_dependencies(property_module)
-            for module, dependent_module in property_class_map.items():
+            for main_module, dependent_module in property_class_map.items():
                 if property_module != dependent_module:
                     used_properties = check_properties_in_module(dependent_module, properties_of_module)
                     for property in used_properties:
@@ -230,7 +230,7 @@ def construct_property_dependency_graph(
                         node_attributes["shape"] = "square"
                         properties_diseases_subgraph.add_node(pydot.Node(property, **node_attributes))
                         properties_diseases_subgraph.set_rank('same')
-                        property_graph.add_edge(pydot.Edge(property, key))
+                        property_graph.add_edge(pydot.Edge(property, main_module))
 
     return property_graph
 
@@ -260,7 +260,7 @@ def property_dependency_map_by_module(
         if property_module not in excluded_modules:
             properties_of_module = get_dependencies(property_module)
             property_graph = pydot.Dot("properties", graph_type="digraph", rankdir='LR')
-            for module, dependent_module in property_class_map.items():
+            for key, dependent_module in property_class_map.items():
                 if property_module != dependent_module:
                     used_properties = check_properties_in_module(dependent_module, properties_of_module)
                     for property in used_properties:
@@ -269,7 +269,7 @@ def property_dependency_map_by_module(
                         property_graph.add_node(pydot.Node(property, **node_attributes))
                         property_graph.add_edge(pydot.Edge(property, key))
         graph_name = output_path/f"{key}.png"
-        print(graph_name)
+        print(property_graph)
         property_graph.write(graph_name)
 
 
@@ -302,8 +302,8 @@ if __name__ == "__main__":
         "DummyDisease",
         "Module"
     }
-    property_dependency_map_by_module(excluded_modules, properies_node_defaults={"shape": "square"},
-                                      output_path=args.output_file)
+    # property_dependency_map_by_module(excluded_modules, properies_node_defaults={"shape": "square"},
+    #                                   output_path=args.output_file)
 
     module_graph = construct_property_dependency_graph(
         excluded_modules,
@@ -317,4 +317,4 @@ if __name__ == "__main__":
     format = (
         args.output_file.suffix[1:] if args.output_file.suffix else "raw"
     )
-    module_graph.write(args.output_file/"property_graph.png", format=format)
+    module_graph.write(args.output_file, format=format)
