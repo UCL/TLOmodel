@@ -1272,7 +1272,8 @@ class WastingLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             wasted_agegrp = (under5s.age_exact_years.between(low_bound_age_in_years, high_bound_age_in_years,
                                                              inclusive='left') & (under5s.un_WHZ_category
                                                                                   != 'WHZ>=-2')).sum()
-            total_per_agegrp = (under5s.age_exact_years < high_bound_age_in_years).sum()
+            total_per_agegrp = (under5s.age_exact_years.between(low_bound_age_in_years, high_bound_age_in_years,
+                                                                inclusive='left')).sum()
             # add proportions to the dictionary
             wasting_prev_dict[f'{low_bound_mos}_{high_bound_mos}mo'] = wasted_agegrp / total_per_agegrp
 
