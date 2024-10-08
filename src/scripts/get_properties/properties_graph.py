@@ -210,7 +210,7 @@ def construct_property_dependency_graph(
     for key, property_module in property_class_map.items():
         if property_module not in excluded_modules:
             properties_of_module = get_dependencies(property_module)
-            for key, dependent_module in property_class_map.items():
+            for module, dependent_module in property_class_map.items():
                 if property_module != dependent_module:
                     used_properties = check_properties_in_module(dependent_module, properties_of_module)
                     for property in used_properties:
@@ -233,6 +233,44 @@ def construct_property_dependency_graph(
                         property_graph.add_edge(pydot.Edge(property, key))
 
     return property_graph
+
+
+def property_dependency_map_by_module(
+    excluded_modules: Set[str],
+    properies_node_defaults: dict,
+    output_path: Path,
+    get_dependencies: DependencyGetter = get_properties,
+):
+    """
+    param excluded_modules: modules for which dependencies should not be checked
+    param properies_node_defaults: default properies of a node
+    param output_path: where files write to
+    param get_dependencies:  Function which given a module gets the set of property
+        dependencies. Defaults to extracting all dependencies.
+    """
+    property_class_map = get_module_property_map(excluded_modules)
+
+    for key, property_module in property_class_map.items():
+        colour = get_color_short_treatment_id_extra_modules(key)
+        node_attributes = {
+            "fillcolor": colour,
+            "color": "black",  # Outline color
+            "fontname": "Arial",
+        }
+        if property_module not in excluded_modules:
+            properties_of_module = get_dependencies(property_module)
+            property_graph = pydot.Dot("properties", graph_type="digraph", rankdir='LR')
+            for module, dependent_module in property_class_map.items():
+                if property_module != dependent_module:
+                    used_properties = check_properties_in_module(dependent_module, properties_of_module)
+                    for property in used_properties:
+                        node_attributes.update(properies_node_defaults)
+                        node_attributes["shape"] = "square"
+                        property_graph.add_node(pydot.Node(property, **node_attributes))
+                        property_graph.add_edge(pydot.Edge(property, key))
+        graph_name = output_path/f"{key}.png"
+        print(graph_name)
+        property_graph.write(graph_name)
 
 
 if __name__ == "__main__":
@@ -264,6 +302,8 @@ if __name__ == "__main__":
         "DummyDisease",
         "Module"
     }
+    property_dependency_map_by_module(excluded_modules, properies_node_defaults={"shape": "square"},
+                                      output_path=args.output_file)
 
     module_graph = construct_property_dependency_graph(
         excluded_modules,
@@ -277,4 +317,4 @@ if __name__ == "__main__":
     format = (
         args.output_file.suffix[1:] if args.output_file.suffix else "raw"
     )
-    module_graph.write(args.output_file, format=format)
+    module_graph.write(args.output_file/"property_graph.png", format=format)
