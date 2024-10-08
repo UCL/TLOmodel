@@ -1,4 +1,4 @@
-"""Construct a graph showing dependencies between modules."""
+"""Construct a graph showing the property dependency between modules."""
 
 import argparse
 import importlib
@@ -7,22 +7,20 @@ import os
 import pkgutil
 from pathlib import Path
 from types import MappingProxyType
-from typing import Any, Callable, Generator, Iterable, Mapping, Optional, Set, Type, Union
+from typing import Any, Mapping, Set, Type, Union
 
 import numpy as np
-import pydot
 
 import tlo.methods
 from tlo import Module
-from tlo.dependencies import DependencyGetter, get_all_dependencies, is_valid_tlo_module_subclass
+from tlo.dependencies import DependencyGetter, is_valid_tlo_module_subclass
 from tlo.methods import Metadata
-from tlo.methods.hiv import Hiv
-from tlo.methods.tb import Tb
 
 try:
     import pydot
 except ImportError:
     pydot = None
+
 SHORT_TREATMENT_ID_TO_COLOR_MAP = MappingProxyType({
     '*': 'black',
     'FirstAttendance*': 'darkgrey',
