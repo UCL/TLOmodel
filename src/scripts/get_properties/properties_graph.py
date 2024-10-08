@@ -13,6 +13,7 @@ import numpy as np
 
 import tlo.methods
 from tlo import Module
+from tlo.analysis.utils import _standardize_short_treatment_id
 from tlo.dependencies import DependencyGetter, is_valid_tlo_module_subclass
 from tlo.methods import Metadata
 
@@ -21,7 +22,7 @@ try:
 except ImportError:
     pydot = None
 
-SHORT_TREATMENT_ID_TO_COLOR_MAP = MappingProxyType({
+SHORT_TREATMENT_ID_TO_COLOR_MAP_EXTRA = MappingProxyType({
     '*': 'black',
     'FirstAttendance*': 'darkgrey',
     'Inpatient*': 'silver',
@@ -60,16 +61,12 @@ SHORT_TREATMENT_ID_TO_COLOR_MAP = MappingProxyType({
 })
 
 
-def _standardize_short_treatment_id(short_treatment_id):
-    return short_treatment_id.replace('_*', '*').rstrip('*') + '*'
-
-
-def get_color_short_treatment_id(short_treatment_id: str) -> str:
-    """Return the colour assigned to this shorted TREATMENT_ID.
+def get_color_short_treatment_id_extra_modules(short_treatment_id: str) -> str:
+    """Return the colour (as matplotlib string) assigned to this shorted TREATMENT_ID.
 
     Returns `np.nan` if treatment_id is not recognised.
     """
-    return SHORT_TREATMENT_ID_TO_COLOR_MAP.get(
+    return SHORT_TREATMENT_ID_TO_COLOR_MAP_EXTRA.get(
         _standardize_short_treatment_id(short_treatment_id), np.nan
     )
 
@@ -183,7 +180,7 @@ def construct_property_dependency_graph(
     properies_node_defaults["style"] = "filled"
 
     for name, module_class in property_class_map.items():  # only works for disease modules, not properties
-        colour = get_color_short_treatment_id(name)
+        colour = get_color_short_treatment_id_extra_modules(name)
         node_attributes = {
             "fillcolor": colour,
             "color": "black",  # Outline color
