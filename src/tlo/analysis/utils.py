@@ -1,6 +1,7 @@
 """
 General utility functions for TLO analysis
 """
+import fileinput
 import gzip
 import json
 import os
@@ -84,6 +85,40 @@ def parse_log_file(log_filepath, level: int = logging.INFO):
 
     # return an object that accepts as an argument a dictionary containing paths to split logfiles
     return LogsDict({name: handle.name for name, handle in module_name_to_filehandle.items()}, level)
+
+
+def merge_log_files(log_path_1: Path, log_path_2: Path, output_path: Path) -> None:
+    """Merge two log files, skipping any repeated header lines.
+    
+    :param log_path_1: Path to first log file to merge. Records from this log file will
+        appear first in merged log file.
+    :param log_path_2: Path to second log file to merge. Records from this log file will
+        appear after those in log file at `log_path_1` and any header lines in this file
+        which are also present in log file at `log_path_1` will be skipped.
+    :param output_path: Path to write merged log file to. Must not be one of `log_path_1`
+        or `log_path_2` as data is read from files while writing to this path.
+    """
+    if output_path == log_path_1 or output_path == log_path_2:
+        msg = "output_path must not be equal to log_path_1 or log_path_2"
+        raise ValueError(msg)
+    with fileinput.input(files=(log_path_1, log_path_2), mode="r") as log_lines:
+        with output_path.open("w") as output_file:
+            written_header_lines = {}
+            for log_line in log_lines:
+                log_data = json.loads(log_line)
+                if "type" in log_data and log_data["type"] == "header":
+                    if log_data["uuid"] in written_header_lines:
+                        previous_header_line = written_header_lines[log_data["uuid"]]
+                        if  previous_header_line == log_line:
+                            continue
+                        else:
+                            msg = (
+                                "Inconsistent header lines with matching UUIDs found when merging logs:\n"
+                                f"{previous_header_line}\n{log_line}\n"
+                            )
+                            raise RuntimeError(msg)
+                    written_header_lines[log_data["uuid"]] = log_line
+                output_file.write(log_line)
 
 
 def write_log_to_excel(filename, log_dataframes):
@@ -290,7 +325,9 @@ def extract_results(results_folder: Path,
             try:
                 df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
                 output_from_eval: pd.Series = generate_series(df)
-                assert pd.Series == type(output_from_eval), 'Custom command does not generate a pd.Series'
+                assert isinstance(output_from_eval, pd.Series), (
+                    'Custom command does not generate a pd.Series'
+                )
                 if do_scaling:
                     res[draw_run] = output_from_eval * get_multiplier(draw, run)
                 else:
@@ -1129,7 +1166,7 @@ def get_parameters_for_status_quo() -> Dict:
             "equip_availability": "all",  # <--- NB. Existing calibration is assuming all equipment is available
         },
     }
-    
+
 def get_parameters_for_standard_mode2_runs() -> Dict:
     """
     Returns a dictionary of parameters and their updated values to indicate
