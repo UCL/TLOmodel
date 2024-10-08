@@ -1057,9 +1057,10 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         # log delivery setting
-        logger.info(key='delivery_setting_and_mode', data={'mother': mother_id,
-                                                           'facility_type': str(mni[mother_id]['delivery_setting']),
-                                                           'mode': mni[mother_id]['mode_of_delivery']})
+        logger.info(key='delivery_mode', data={'mother': mother_id, 'mode': mni[mother_id]['mode_of_delivery']})
+
+        self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[
+            f'{str(mni[mother_id]["delivery_setting"])}_delivery'] += 1
 
         # Store only live births to a mother parity
         if not df.at[mother_id, 'la_intrapartum_still_birth']:
@@ -1283,9 +1284,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
                 pregnancy_helper_functions.store_dalys_in_mni(individual_id, mni, 'obstructed_labour_onset',
                                                               self.sim.date)
 
-                logger.info(key='maternal_complication', data={'person': individual_id,
-                                                               'type': f'{complication}',
-                                                               'timing': 'intrapartum'})
+                self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[complication] += 1
 
                 if complication == 'obstruction_cpd':
                     mni[individual_id]['cpd'] = True
@@ -1294,9 +1293,8 @@ class Labour(Module, GenericFirstAppointmentsMixin):
             # to labour)
             elif complication == 'placental_abruption':
                 df.at[individual_id, 'la_placental_abruption'] = True
-                logger.info(key='maternal_complication', data={'person': individual_id,
-                                                               'type': 'placental_abruption',
-                                                               'timing': 'intrapartum'})
+
+                self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['placental_abruption'] += 1
 
             elif complication == 'antepartum_haem':
                 random_choice = self.rng.choice(['mild_moderate', 'severe'],
@@ -1306,33 +1304,29 @@ class Labour(Module, GenericFirstAppointmentsMixin):
                 if random_choice != 'severe':
                     pregnancy_helper_functions.store_dalys_in_mni(individual_id, mni, 'mild_mod_aph_onset',
                                                                   self.sim.date)
-                    logger.info(key='maternal_complication', data={'person': individual_id,
-                                                                   'type': 'mild_mod_antepartum_haemorrhage',
-                                                                   'timing': 'intrapartum'})
+
+                    self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['mild_mod_antepartum_haemorrhage'] += 1
 
                 else:
                     pregnancy_helper_functions.store_dalys_in_mni(individual_id, mni, 'severe_aph_onset',
                                                                   self.sim.date)
-                    logger.info(key='maternal_complication', data={'person': individual_id,
-                                                                   'type': 'severe_antepartum_haemorrhage',
-                                                                   'timing': 'intrapartum'})
+
+                    self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['severe_antepartum_haemorrhage'] += 1
 
             elif complication == 'sepsis_chorioamnionitis':
                 df.at[individual_id, 'la_sepsis'] = True
                 mni[individual_id]['chorio_in_preg'] = True
                 pregnancy_helper_functions.store_dalys_in_mni(individual_id, mni, 'sepsis_onset',
                                                               self.sim.date)
-                logger.info(key='maternal_complication', data={'person': individual_id,
-                                                               'type': 'sepsis',
-                                                               'timing': 'intrapartum'})
+
+                self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['sepsis_intrapartum'] += 1
 
             elif complication == 'uterine_rupture':
                 df.at[individual_id, 'la_uterine_rupture'] = True
                 pregnancy_helper_functions.store_dalys_in_mni(individual_id, mni, f'{complication}_onset',
                                                               self.sim.date)
-                logger.info(key='maternal_complication', data={'person': individual_id,
-                                                               'type': 'uterine_rupture',
-                                                               'timing': 'intrapartum'})
+
+                self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['uterine_rupture'] += 1
 
     def set_postpartum_complications(self, individual_id, complication):
         """
@@ -1385,9 +1379,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
                 # Set primary complication to true
                 df.at[individual_id, 'la_postpartum_haem'] = True
 
-                logger_pn.info(key='maternal_complication', data={'person': individual_id,
-                                                                  'type': f'{complication}',
-                                                                  'timing': 'postnatal'})
+                self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[complication] += 1
 
                 # Store mni variables used during treatment
                 if complication == 'pph_uterine_atony':
@@ -1520,8 +1512,11 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         # If a cause is returned death is scheduled
         if potential_cause_of_death:
             pregnancy_helper_functions.log_mni_for_maternal_death(self, individual_id)
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['direct_mat_death'] += 1
+
             self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=potential_cause_of_death,
                                                     originating_module=self.sim.modules['Labour'])
+
 
         # If she hasn't died from any complications, we reset some key properties that resolve after risk of death
         # has been applied
@@ -2424,10 +2419,7 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                                                                                         'defining_term_status'][3]:
 
                 mni[individual_id]['labour_state'] = 'early_preterm_labour'
-
-                logger.info(key='maternal_complication', data={'person': individual_id,
-                                                               'type': 'early_preterm_labour',
-                                                               'timing': 'intrapartum'})
+                self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['early_preterm_labour'] += 1
 
             elif params['list_limits_for_defining_term_status'][4] <= gestational_age_in_days <= params['list_limits'
                                                                                                         '_for_defining'
@@ -2435,18 +2427,12 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                                                                                                         'status'][5]:
 
                 mni[individual_id]['labour_state'] = 'late_preterm_labour'
-
-                logger.info(key='maternal_complication', data={'person': individual_id,
-                                                               'type': 'late_preterm_labour',
-                                                               'timing': 'intrapartum'})
+                self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['late_preterm_labour'] += 1
 
             elif gestational_age_in_days >= params['list_limits_for_defining_term_status'][6]:
 
                 mni[individual_id]['labour_state'] = 'postterm_labour'
-
-                logger.info(key='maternal_complication', data={'person': individual_id,
-                                                               'type': 'post_term_labour',
-                                                               'timing': 'intrapartum'})
+                self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['post_term_labour'] += 1
 
             labour_state = mni[individual_id]['labour_state']
 
@@ -2613,9 +2599,7 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
             self.module.set_intrapartum_complications(individual_id, complication=complication)
 
         if df.at[individual_id, 'la_obstructed_labour']:
-            logger.info(key='maternal_complication', data={'person': individual_id,
-                                                           'type': 'obstructed_labour',
-                                                           'timing': 'intrapartum'})
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['obstructed_labour'] += 1
 
         # And we determine if any existing hypertensive disorders would worsen
         self.module.progression_of_hypertensive_disorders(individual_id, property_prefix='ps')
@@ -2687,6 +2671,7 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
         # If a cause is returned death is scheduled
         if potential_cause_of_death:
             pregnancy_helper_functions.log_mni_for_maternal_death(self.module, individual_id)
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['direct_mat_death'] += 1
             self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=potential_cause_of_death,
                                                     originating_module=self.sim.modules['Labour'])
 
@@ -2730,8 +2715,7 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
             del mni[individual_id]
 
         if df.at[individual_id, 'la_intrapartum_still_birth'] or mni[individual_id]['single_twin_still_birth']:
-            logger.info(key='intrapartum_stillbirth', data={'mother_id': individual_id,
-                                                            'date_of_ip_stillbirth': self.sim.date})
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['intrapartum_stillbirth'] += 1
 
         # Reset property
         if individual_id in mni:
@@ -2819,13 +2803,10 @@ class BirthAndPostnatalOutcomesEvent(Event, IndividualScopeEventMixin):
                 self.module.set_postpartum_complications(mother_id, complication=complication)
 
             if df.at[mother_id, 'la_sepsis_pp']:
-                logger_pn.info(key='maternal_complication', data={'person': mother_id,
-                                                                  'type': 'sepsis_postnatal',
-                                                                  'timing': 'postnatal'})
+                self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['sepsis_postnatal'] += 1
+
             if df.at[mother_id, 'la_postpartum_haem']:
-                logger_pn.info(key='maternal_complication', data={'person': mother_id,
-                                                                  'type': 'primary_postpartum_haemorrhage',
-                                                                  'timing': 'postnatal'})
+                self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['primary_postpartum_haemorrhage'] += 1
 
             self.module.progression_of_hypertensive_disorders(mother_id, property_prefix='pn')
 
@@ -2978,9 +2959,7 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
             self.module.progression_of_hypertensive_disorders(person_id, property_prefix='ps')
 
             if df.at[person_id, 'la_obstructed_labour']:
-                logger.info(key='maternal_complication', data={'person': person_id,
-                                                               'type': 'obstructed_labour',
-                                                               'timing': 'intrapartum'})
+                self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['obstructed_labour'] += 1
 
         # ======================================= COMPLICATION MANAGEMENT ==========================
         # Next, women in labour are assessed for complications and treatment delivered if a need is identified and
