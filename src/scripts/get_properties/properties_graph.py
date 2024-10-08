@@ -249,27 +249,39 @@ def property_dependency_map_by_module(
         dependencies. Defaults to extracting all dependencies.
     """
     property_class_map = get_module_property_map(excluded_modules)
-
+    property_node_attributes = {
+        "fillcolor": "white",
+        "color": "black",  # Outline color
+        "fontname": "Arial",
+        "shape": "square",
+    }
+    node_attributes = {
+        "color": "black",  # Outline color
+        "fontname": "Arial",
+        "shape": "square",
+    }
     for key, dependent_module in property_class_map.items():
-        colour = get_color_short_treatment_id_extra_modules(key)
-        node_attributes = {
-            "fillcolor": colour,
-            "color": "black",  # Outline color
-            "fontname": "Arial",
-            "shape": "square",
-        }
         if dependent_module not in excluded_modules:
+            colour = get_color_short_treatment_id_extra_modules(key)
+            node_attributes = {
+                "fillcolor": colour,
+                "color": "black",
+                "fontname": "Arial",
+                "shape": "square",
+            }
             property_graph = pydot.Dot("properties", graph_type="digraph", rankdir='LR')
+            print(node_attributes)
+            property_graph.add_node(pydot.Node(key, fillcolor=***node_attributes))
             for property_key, property_module in property_class_map.items():
-                if property_module != dependent_module and property_module not in excluded_modules:
+                if key != property_key and property_module not in excluded_modules:
                     properties_of_module = get_dependencies(property_module)
                     used_properties = check_properties_in_module(dependent_module, properties_of_module)
                     for property in used_properties:
-                        property_graph.add_node(pydot.Node(property, **node_attributes))
+                        property_graph.add_node(pydot.Node(property, **property_node_attributes))
                         property_graph.add_edge(pydot.Edge(property, key))
 
         graph_name = output_path/f"{key}.png"
-        print(property_graph)
+        #print(property_graph)
         property_graph.write(graph_name,  format="png")
 
 
