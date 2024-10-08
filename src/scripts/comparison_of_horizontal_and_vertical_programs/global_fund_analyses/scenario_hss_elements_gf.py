@@ -33,7 +33,7 @@ class HSSElements(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2031, 1, 1)
+        self.end_date = Date(2036, 1, 1)
         self.pop_size = 100_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
@@ -50,9 +50,9 @@ class HSSElements(BaseScenario):
                 'tlo.methods.healthburden': logging.INFO,
                 'tlo.methods.healthsystem': logging.WARNING,
                 'tlo.methods.healthsystem.summary': logging.INFO,
-                # 'tlo.methods.hiv': logging.INFO,
-                # 'tlo.methods.tb': logging.INFO,
-                # 'tlo.methods.malaria': logging.INFO,
+                'tlo.methods.hiv': logging.INFO,
+                'tlo.methods.tb': logging.INFO,
+                'tlo.methods.malaria': logging.INFO,
             }
         }
 

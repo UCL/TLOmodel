@@ -52,6 +52,14 @@ class ScenarioDefinitions:
             }
         }
 
+    def scale_dcsa_with_historical_average(self) -> Dict:
+        return {
+            'HealthSystem': {
+                'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE_FOR_HSS,
+                'HR_scaling_by_level_and_officer_type_mode': 'dcsa_hist_average',
+            }
+        }
+
     def hrh_at_pop_growth(self) -> Dict:
         return {
             'HealthSystem': {
