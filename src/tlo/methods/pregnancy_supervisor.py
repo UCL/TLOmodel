@@ -2191,6 +2191,7 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         c = self.module.mnh_outcome_counter
 
         # DENOMINATORS
+        # Define denominators used to calculate rates, cancel the event if any are 0 to prevent division by 0 errors
         live_births = len(df[(df['date_of_birth'].dt.year == self.sim.date.year - 1) & (df['mother_id'] >= 0)])
         pregnancies =len(df[df['date_of_last_pregnancy'].dt.year == self.sim.date.year - 1])
         comp_pregnancies = (c['ectopic_unruptured'] + c['spontaneous_abortion'] +
@@ -2205,8 +2206,10 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 return
 
         # MATERNAL COMPLICATION INCIDENCE
-        logger.info(key='yearly_counter_dict', data=c)
+        # Log the yearly dictionary (allows for analyses with outcomes not used in this event)
+        logger.info(key='yearly_mnh_counter_dict', data=c)
 
+        # Calculate and store rates of key maternal and neonatal complications
         def rate (count, denom, multiplier):
             return (count/denom) * multiplier
 
@@ -2257,6 +2260,7 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                           'nb_sga': rate(c['small_for_gestational_age'], live_births, 100)})
 
         # DIRECT MATERNAL DEATHS, NEWBORN DEATHS AND STILLBIRTH
+        # Calculate and store rates of maternal and newborn death and stillbirth
         neonatal_deaths = len(df[(df['date_of_death'].dt.year == self.sim.date.year - 1) & (df['age_days'] <= 28)])
         stillbirths = c['antenatal_stillbirth'] + c['intrapartum_stillbirth']
 
@@ -2270,6 +2274,7 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                           'direct_maternal_deaths': c['direct_mat_death'],
                           'direct_mmr': rate(c['direct_mat_death'], live_births, 100_000)})
 
+        # Finally log coverage of key health services
         anc1 = sum(c[f'anc{i}'] for i in range(1, 9)) + c['anc8+']
         anc4 = sum(c[f'anc{i}'] for i in range(4, 9))+ c['anc8+']
         anc8 = c['anc8'] + c['anc8+']
@@ -2291,6 +2296,7 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                           'm_pnc1+': rate(m_pnc1, total_births, 1000),
                           'n_pnc1+': rate(n_pnc1, total_births, 1000)})
 
+        # Reset the dictionary so all values = 0
         mnh_oc = pregnancy_helper_functions.generate_mnh_outcome_counter()
         outcome_list = mnh_oc['outcomes']
         self.module.mnh_outcome_counter = {k:0 for k in outcome_list}
