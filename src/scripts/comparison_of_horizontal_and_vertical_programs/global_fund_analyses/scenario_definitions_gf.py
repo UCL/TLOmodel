@@ -44,6 +44,7 @@ class ScenarioDefinitions:
         """
         return get_parameters_for_status_quo()  # <-- Parameters that have been the calibration targets
 
+    # HRH scenarios
     def increase_capacity_at_primary_care(self) -> Dict:
         return {
             'HealthSystem': {
@@ -101,6 +102,7 @@ class ScenarioDefinitions:
             }
         }
 
+    # Behavioural scenarios
     def perfect_clinical_practices(self) -> Dict:
         return {
             'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
@@ -117,6 +119,7 @@ class ScenarioDefinitions:
             }
         }
 
+    # Supply chains scenarios
     def vital_items_available(self) -> Dict:
         return {
             'HealthSystem': {
@@ -133,6 +136,38 @@ class ScenarioDefinitions:
             }
         }
 
+    def cons_at_75th_percentile(self) -> Dict:
+        return {
+            'HealthSystem': {
+                'year_cons_availability_switch': self.YEAR_OF_CHANGE_FOR_HSS,
+                'cons_availability_postSwitch': 'scenario6',
+            }
+        }
+
+    def cons_at_90th_percentile(self) -> Dict:
+        return {
+            'HealthSystem': {
+                'year_cons_availability_switch': self.YEAR_OF_CHANGE_FOR_HSS,
+                'cons_availability_postSwitch': 'scenario7',
+            }
+        }
+
+    def cons_at_HIV_availability(self) -> Dict:
+        return {
+            'HealthSystem': {
+                'year_cons_availability_switch': self.YEAR_OF_CHANGE_FOR_HSS,
+                'cons_availability_postSwitch': 'scenario10',
+            }
+        }
+
+    def cons_at_EPI_availability(self) -> Dict:
+        return {
+            'HealthSystem': {
+                'year_cons_availability_switch': self.YEAR_OF_CHANGE_FOR_HSS,
+                'cons_availability_postSwitch': 'scenario11',
+            }
+        }
+
     def all_consumables_available(self) -> Dict:
         return {
             'HealthSystem': {
@@ -144,19 +179,18 @@ class ScenarioDefinitions:
     def hss_package(self) -> Dict:
         """The parameters for the Health System Strengthening Package"""
         return mix_scenarios(
-            self.double_capacity_at_primary_care(),  #  }
-            self.hrh_above_gdp_growth(),             #  } <-- confirmed that these two do build on one another under
-            # mode 2 rescaling: see `test_scaling_up_HRH_using_yearly_scaling_and_scaling_by_level_together`.
-            # self.perfect_clinical_practices(),
+            self.increase_capacity_at_primary_care(),
+            self.accelerated_hrh_using_historical_scaling(),
             self.perfect_healthcare_seeking(),
-            self.all_consumables_available(),
+            self.cons_at_90th_percentile(),
         )
 
+    # HTM scenarios
     def hiv_scaleup(self) -> Dict:
         """The parameters for the scale-up of the HIV program"""
         return {
             "Hiv": {
-                'type_of_scaleup': 'target',  # <--- todo: using MAXIMUM SCALE-UP as an experiment
+                'type_of_scaleup': 'target',
                 'scaleup_start_year': self.YEAR_OF_CHANGE_FOR_HTM,
             }
         }
@@ -165,7 +199,7 @@ class ScenarioDefinitions:
         """The parameters for the scale-up of the TB program"""
         return {
             "Tb": {
-                'type_of_scaleup': 'target',  # <--- todo: using MAXIMUM SCALE-UP as an experiment
+                'type_of_scaleup': 'target',
                 'scaleup_start_year': self.YEAR_OF_CHANGE_FOR_HTM,
             }
         }
@@ -174,7 +208,7 @@ class ScenarioDefinitions:
         """The parameters for the scale-up of the Malaria program"""
         return {
             'Malaria': {
-                'type_of_scaleup': 'target',  # <--- todo: using MAXIMUM SCALE-UP as an experiment
+                'type_of_scaleup': 'target',
                 'scaleup_start_year': self.YEAR_OF_CHANGE_FOR_HTM,
             }
         }
