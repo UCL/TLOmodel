@@ -1,22 +1,23 @@
 """Construct a graph showing dependencies between modules."""
 
 import argparse
-from pathlib import Path
-from types import MappingProxyType
-from typing import Any, Dict, Mapping, Set, Type, Union
-import numpy as np
 import importlib
 import inspect
 import os
 import pkgutil
+from pathlib import Path
+from types import MappingProxyType
+from typing import Any, Dict, Mapping, Set, Type, Union
+
+import numpy as np
 import pydot
 
 import tlo.methods
 from tlo import Module
-from tlo.methods.hiv import Hiv
-from tlo.methods.tb import Tb
 from tlo.dependencies import DependencyGetter, get_all_dependencies, is_valid_tlo_module_subclass
 from tlo.methods import Metadata
+from tlo.methods.hiv import Hiv
+from tlo.methods.tb import Tb
 
 SHORT_TREATMENT_ID_TO_COLOR_MAP = MappingProxyType({
     # Define your color mappings here

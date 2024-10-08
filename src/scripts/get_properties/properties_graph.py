@@ -4,18 +4,18 @@ import argparse
 import importlib
 import inspect
 import os
+import pkgutil
 from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Callable, Generator, Iterable, Mapping, Optional, Set, Type, Union
 
 import numpy as np
-import pkgutil
 import pydot
 
 import tlo.methods
 from tlo import Module
-from tlo.methods import Metadata
 from tlo.dependencies import DependencyGetter, get_all_dependencies, is_valid_tlo_module_subclass
+from tlo.methods import Metadata
 from tlo.methods.hiv import Hiv
 from tlo.methods.tb import Tb
 
@@ -61,6 +61,7 @@ SHORT_TREATMENT_ID_TO_COLOR_MAP = MappingProxyType({
     'Lifestyle*': 'silver',
 })
 
+
 def _standardize_short_treatment_id(short_treatment_id):
     return short_treatment_id.replace('_*', '*').rstrip('*') + '*'
 
@@ -74,6 +75,7 @@ def get_color_short_treatment_id(short_treatment_id: str) -> str:
         _standardize_short_treatment_id(short_treatment_id), np.nan
     )
 
+
 def get_properties(
     module: Union[Module, Type[Module]],
 ) -> Set[str]:
@@ -85,6 +87,7 @@ def get_properties(
     if hasattr(module, 'PROPERTIES'):
         return module.PROPERTIES
     return None
+
 
 def check_properties_in_module(module: Any, properties: Set[str]) -> Set[str]:
     """Check if any of the properties are used in the given module's script."""
@@ -100,10 +103,6 @@ def check_properties_in_module(module: Any, properties: Set[str]) -> Set[str]:
 
     return used_properties
 
-
-def is_valid_tlo_module_subclass(obj: Any, excluded_modules: Set[str]) -> bool:
-    """Check if the object is a valid TLO Module subclass."""
-    return isinstance(obj, type) and issubclass(obj, Module) and obj.__name__ not in excluded_modules
 
 def get_module_property_map(excluded_modules: Set[str]) -> Mapping[str, Set[Type[Module]]]:
     """Constructs a map from property names to sets of Module subclass objects.
@@ -125,6 +124,7 @@ def get_module_property_map(excluded_modules: Set[str]) -> Mapping[str, Set[Type
             if is_valid_tlo_module_subclass(obj, excluded_modules):
                 properties_dictionary[obj.__name__] = obj
     return properties_dictionary
+
 
 def construct_property_dependency_graph(
     excluded_modules: Set[str],
@@ -157,7 +157,6 @@ def construct_property_dependency_graph(
         'PostnatalSupervisor', 'NewbornOutcomes', 'CareOfWomenDuringPregnancy'
     ]
 
-
     # Subgraphs for different groups of modules - attempt at aesthetics
     disease_module_subgraph = pydot.Subgraph("disease_modules")
     property_graph.add_subgraph(disease_module_subgraph)
@@ -185,7 +184,7 @@ def construct_property_dependency_graph(
     cancer_related_module_node_defaults["style"] = "filled"
     properies_node_defaults["style"] = "filled"
 
-    for name, module_class in property_class_map.items(): # only works for disease modules, not properties
+    for name, module_class in property_class_map.items():  # only works for disease modules, not properties
         colour = get_color_short_treatment_id(name)
         node_attributes = {
             "fillcolor": colour,
@@ -211,9 +210,6 @@ def construct_property_dependency_graph(
             node_attributes.update(disease_module_node_defaults)
             node_attributes["shape"] = "box"  # Disease modules
             disease_module_subgraph.add_node(pydot.Node(name, **node_attributes))
-
-
-
 
     for key, property_module in property_class_map.items():
         if property_module not in excluded_modules:
