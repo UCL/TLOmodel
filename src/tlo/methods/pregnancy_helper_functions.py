@@ -10,13 +10,14 @@ from tlo import logging
 
 def generate_mnh_outcome_counter():
     outcome_list = [ # early/abortive outcomes
-                    'ectopic_unruptured', 'ectopic_ruptured','multiple_pregnancy', 'placenta_praevia',
+                    'ectopic_unruptured', 'ectopic_ruptured','multiple_pregnancy', 'twin_birth', 'placenta_praevia',
                     'spontaneous_abortion', 'induced_abortion', 'complicated_spontaneous_abortion',
                     'complicated_induced_abortion', 'induced_abortion_injury', 'induced_abortion_sepsis',
                     'induced_abortion_haemorrhage','induced_abortion_other_comp','spontaneous_abortion_sepsis',
                     'spontaneous_abortion_haemorrhage', 'spontaneous_abortion_other_comp',
 
                     # antenatal onset outcomes
+                    'an_anaemia_mild', 'an_anaemia_moderate', 'an_anaemia_severe',
                     'gest_diab', 'mild_pre_eclamp', 'mild_gest_htn','severe_pre_eclamp', 'eclampsia','severe_gest_htn',
                     'syphilis',  'PROM', 'clinical_chorioamnionitis', 'placental_abruption',
                     'mild_mod_antepartum_haemorrhage','severe_antepartum_haemorrhage', 'antenatal_stillbirth',
@@ -27,13 +28,17 @@ def generate_mnh_outcome_counter():
                     'sepsis_skin_soft_tissue', 'sepsis_postnatal', 'intrapartum_stillbirth', 'early_preterm_labour',
                     'late_preterm_labour', 'post_term_labour', 'pph_uterine_atony', 'pph_retained_placenta',
                     'pph_other', 'primary_postpartum_haemorrhage', 'secondary_postpartum_haemorrhage',
-                    'vesicovaginal_fistula', 'rectovaginal_fistula',
+                    'vesicovaginal_fistula', 'rectovaginal_fistula', 'pn_anaemia_mild', 'pn_anaemia_moderate',
+                    'pn_anaemia_severe',
 
                     # newborn outcomes
                     'congenital_heart_anomaly', 'limb_or_musculoskeletal_anomaly', 'urogenital_anomaly',
                     'digestive_anomaly', 'other_anomaly', 'mild_enceph', 'moderate_enceph',
                     'severe_enceph', 'respiratory_distress_syndrome', 'not_breathing_at_birth', 'low_birth_weight',
-                    'macrosomia', 'small_for_gestational_age', 'early_onset_sepsis', 'late_onset_sepsis']
+                    'macrosomia', 'small_for_gestational_age', 'early_onset_sepsis', 'late_onset_sepsis',
+
+                    'direct_mat_death', 'six_week_survivors'
+                    ]
 
     mnh_outcome_counter = {k: 0 for k in outcome_list}
 

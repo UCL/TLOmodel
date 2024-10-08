@@ -1030,6 +1030,7 @@ class NewbornOutcomes(Module):
                       'date_of_delivery': self.sim.date}
 
         logger.info(key='twin_birth', data=twin_birth, description='A record of each birth of twin pairs')
+        self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['twin_birth'] += 1
 
         # Finally we log the second live birth and add another to the womans parity
         df.at[mother_id, 'la_parity'] += 1

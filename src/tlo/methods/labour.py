@@ -1529,8 +1529,11 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         # If a cause is returned death is scheduled
         if potential_cause_of_death:
             pregnancy_helper_functions.log_mni_for_maternal_death(self, individual_id)
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['direct_mat_death'] += 1
+
             self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=potential_cause_of_death,
                                                     originating_module=self.sim.modules['Labour'])
+
 
         # If she hasn't died from any complications, we reset some key properties that resolve after risk of death
         # has been applied
@@ -2700,6 +2703,7 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
         # If a cause is returned death is scheduled
         if potential_cause_of_death:
             pregnancy_helper_functions.log_mni_for_maternal_death(self.module, individual_id)
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['direct_mat_death'] += 1
             self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=potential_cause_of_death,
                                                     originating_module=self.sim.modules['Labour'])
 

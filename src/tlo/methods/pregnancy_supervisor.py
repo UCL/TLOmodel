@@ -658,6 +658,9 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
             df.at[mother_id, 'ps_date_of_anc1'] = pd.NaT
 
             # And store her anaemia status to calculate the prevalence of anaemia on birth
+            if df.at[mother_id, 'ps_anaemia_in_pregnancy'] != 'none':
+                self.mnh_outcome_counter[f'an_anaemia_{df.at[mother_id, "ps_anaemia_in_pregnancy"]}'] += 1
+
             logger.info(key='conditions_on_birth', data={'mother': mother_id,
                                                          'anaemia_status': df.at[mother_id, 'ps_anaemia_in_pregnancy'],
                                                          'gdm_status': df.at[mother_id, 'ps_gest_diab'],
@@ -1609,6 +1612,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
             pregnancy_helper_functions.log_mni_for_maternal_death(self, individual_id)
             self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=potential_cause_of_death,
                                                     originating_module=self.sim.modules['PregnancySupervisor'])
+            self.mnh_outcome_counter['direct_mat_death'] += 1
             del mni[individual_id]
 
         # If not we reset variables and the woman survives
@@ -2264,116 +2268,88 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         df = self.sim.population.props
-        counter = self.module.mnh_outcome_counter
+        c = self.module.mnh_outcome_counter
 
-        # Complication incidence
-        # Denominators
-        yrly_live_births = len(df[(df['date_of_birth'].dt.year == self.sim.date.year - 1) & (df['mother_id'] >= 0)])
-        yrly_pregnancies =len(df[df['date_of_last_pregnancy'].dt.year == self.sim.date.year - 1])
+        logger.info(key='yrly_counter_dict', data=c)
 
-        yrly_comp_pregnancies = (counter['ectopic_unruptured'] + counter['spontaneous_abortion'] +
-                                 counter['induced_abortion'] + counter['antenatal_stillbirth'] +
-                                 counter['intrapartum_stillbirth'] + yrly_live_births)
+        def rate (count, denom, multiplier):
+            return (count/denom) * multiplier
 
-        yrly_total_births = yrly_live_births + counter['antenatal_stillbirth'] + counter['intrapartum_stillbirth']
+        # DENOMINATORS
+        live_births = len(df[(df['date_of_birth'].dt.year == self.sim.date.year - 1) & (df['mother_id'] >= 0)])
 
-        logger.info(key='yrl_counter_dict',
-                    data=counter)
+        pregnancies =len(df[df['date_of_last_pregnancy'].dt.year == self.sim.date.year - 1])
 
-        # MATERNAL COMPLICATIONS
-        logger.info(key='mat_comp_incidence',
-                    data= {k:(counter[k]/denom) * 1000 for k, denom in
-                           zip(['ectopic_unruptured', 'induced_abortion', 'spontaneous_abortion',
-                                'placenta_praevia', 'gest_diab', 'syphilis'],
-                               [yrly_pregnancies, yrly_comp_pregnancies, yrly_comp_pregnancies, yrly_pregnancies,
-                                yrly_comp_pregnancies,  yrly_comp_pregnancies,])})
+        comp_pregnancies = (c['ectopic_unruptured'] + c['spontaneous_abortion'] +
+                            c['induced_abortion'] + c['antenatal_stillbirth'] +
+                            c['intrapartum_stillbirth'] + live_births)
 
-        logger.info(key='mat_comp_incidence',
-                    data={k: (counter[k] / yrly_live_births) * 1000 for k in
-                          ['obstructed_labour', 'uterine_rupture', 'sepsis_intrapartum',
-                            'mild_mod_antepartum_haemorrhage', 'severe_antepartum_haemorrhage',
-                           'mild_pre_eclamp', 'mild_gest_htn', 'mild_gest_htn', 'severe_pre_eclamp',
-                           'severe_gest_htn', 'eclampsia', 'sepsis_postnatal', 'primary_postpartum_haemorrhage',
-                           'secondary_postpartum_haemorrhage', 'vesicovaginal_fistula', 'rectovaginal_fistula']})
+        deliveries = live_births - c['twin_birth']
 
-        logger.info(key='mat_comp_incidence',
-                    data={'antepartum_haemorrhage': ((counter['mild_mod_antepartum_haemorrhage'] +
-                                                     counter['severe_antepartum_haemorrhage']) /
-                                                     yrly_live_births) * 1000})
+        total_births = live_births + c['antenatal_stillbirth'] + c['intrapartum_stillbirth']
+
+        # MATERNAL COMPLICATION INCIDENCE
+        total_an_anaemia_cases = c['an_anaemia_mild'] + c['an_anaemia_moderate'] + c['an_anaemia_severe']
+        total_pn_anaemia_cases = c['pn_anaemia_mild'] + c['pn_anaemia_moderate'] + c['pn_anaemia_severe']
+        total_preterm_birth = c['early_preterm_labour'] + c['late_preterm_labour']
+        total_aph = c['mild_mod_antepartum_haemorrhage'] + c['severe_antepartum_haemorrhage']
+        total_sepsis = c['clinical_chorioamnionitis'] + c['sepsis_intrapartum'] + c['sepsis_postnatal']
+        total_pph = c['primary_postpartum_haemorrhage'] + c['secondary_postpartum_haemorrhage']
+        total_fistula = c['vesicovaginal_fistula'] + c['rectovaginal_fistula']
+        total_neo_sepsis = c['early_onset_sepsis'] + c['late_onset_sepsis']
+        total_neo_enceph = c['mild_enceph'] + c['moderate_enceph'] + c['severe_enceph']
+        total_neo_resp_conds = c['respiratory_distress_syndrome'] + c['not_breathing_at_birth'] + total_neo_enceph
+        total_cba = (c['congenital_heart_anomaly'] + c['limb_or_musculoskeletal_anomaly'] +
+                     c['urogenital_anomaly'] + c['digestive_anomaly'] + c['other_anomaly'])
 
         logger.info(key='mat_comp_incidence',
-                    data={k: (counter[k] / yrly_live_births) * 100 for k in
-                          ['early_preterm_labour', 'late_preterm_labour', 'post_term_labour']})
+                    data={'an_anaemia': rate(total_an_anaemia_cases, live_births, 100),
+                          'ectopic_unruptured' : rate(c['ectopic_unruptured'], pregnancies, 1000),
+                          'induced_abortion' : rate(c['induced_abortion'], comp_pregnancies, 1000),
+                          'spontaneous_abortion': rate(c['spontaneous_abortion'], comp_pregnancies, 1000),
+                          'placenta_praevia': rate(c['placenta_praevia'], pregnancies, 1000),
+                          'gest_diab': rate(c['gest_diab'], comp_pregnancies, 1000),
+                          'PROM': rate(c['PROM'], comp_pregnancies, 1000),
+                          'preterm_birth': rate(total_preterm_birth, live_births, 100),
+                          'antepartum_haem': rate(total_aph, live_births, 1000),
+                          'obstructed_labour': rate(c['obstructed_labour'], live_births, 1000),
+                          'uterine_rupture': rate(c['uterine_rupture'], live_births, 1000),
+                          'sepsis': rate(total_sepsis, live_births, 1000),
+                          'mild_pre_eclamp': rate(c['mild_pre_eclamp'], live_births, 1000),
+                          'mild_gest_htn': rate(c['mild_gest_htn'], live_births, 1000),
+                          'severe_pre_eclamp': rate(c['severe_pre_eclamp'], live_births, 1000),
+                          'severe_gest_htn': rate(c['severe_gest_htn'], live_births, 1000),
+                          'eclampsia': rate(c['eclampsia'], live_births, 1000),
+                          'postpartum_haem': rate(total_pph, live_births, 1000),
+                          'fistula': rate(total_fistula, live_births, 1000),
+                          'pn_anaemia': rate(total_pn_anaemia_cases, c['six_week_survivors'], 100)})
 
         # NEWBORN COMPLICATIONS
-        logger.info(key='nb_incidence',
-                    data={k: (counter[k] / yrly_live_births) * 1000 for k in
-                          ['congenital_heart_anomaly', 'limb_or_musculoskeletal_anomaly', 'urogenital_anomaly',
-                           'digestive_anomaly', 'other_anomaly', 'mild_enceph', 'moderate_enceph', 'severe_enceph',
-                           'respiratory_distress_syndrome', 'not_breathing_at_birth', 'low_birth_weight', 'macrosomia',
-                           'small_for_gestational_age', 'early_onset_sepsis', 'late_onset_sepsis']})
-
-
-        neonatal_deaths = len(df[(df['date_of_death'].dt.year == self.sim.date.year - 1) & (df['age_days'] <= 28)])
-        direct_maternal_deaths = []
+        logger.info(key='nb_comp_incidence',
+                    data={'twin_birth': rate(c['twin_birth'], deliveries, 100),
+                          'nb_sepsis': rate(total_neo_sepsis, live_births, 1000),
+                          'nb_enceph': rate(total_neo_enceph, live_births, 1000),
+                          'nb_resp_diff': rate(total_neo_resp_conds, live_births, 100),
+                          'nb_cba': rate(total_cba, live_births, 1000),
+                          'nb_rds': rate(c['respiratory_distress_syndrome'], total_preterm_birth, 1000),
+                          'nb_lbw': rate(c['low_birth_weight'], live_births, 100),
+                          'nb_macrosomia': rate(c['macrosomia'], live_births, 100),
+                          'nb_sga': rate(c['small_for_gestational_age'], live_births, 100)})
 
         # DIRECT MATERNAL DEATHS, NEWBORN DEATHS AND STILLBIRTH
+        neonatal_deaths = len(df[(df['date_of_death'].dt.year == self.sim.date.year - 1) & (df['age_days'] <= 28)])
+        stillbirths = c['antenatal_stillbirth'] + c['intrapartum_stillbirth']
+
         logger.info(key='deaths_and_stillbirths',
-                    data={'antenatal_stillbirth': (counter['antenatal_stillbirth'] / yrly_total_births) * 1000,
-                          'intrapartum_stillbirth': (counter['intrapartum_stillbirth'] / yrly_total_births) * 1000,
+                    data={'antenatal_sbr': rate(c['antenatal_stillbirth'], total_births, 1000),
+                          'intrapartum_sbr': rate(c['intrapartum_stillbirth'], total_births, 1000),
+                          'total_stillbirths': stillbirths,
+                          'sbr': rate(stillbirths, total_births, 1000),
                           'neonatal_deaths': neonatal_deaths,
-                          'nmr' : (neonatal_deaths/yrly_live_births) * 1000,
-                          'direct_maternal_deaths': []})
-
-
-
-
-        # logger.info(key='an_comp_incidence',
-        #             data={'women_repro_age': women_reproductive_age,
-        #                   'women_pregnant': pregnant_at_year_end,
-        #                   'prev_sa': yearly_prev_sa,
-        #                   'prev_pe': yearly_prev_pe,
-        #                   'hysterectomy': yearly_prev_hysterectomy,
-        #                   'parity': parity_list}
-        #
-        #
-        #
-        #
-        #
-        #
-        # women_reproductive_age = len(df.index[(df.is_alive & (df.sex == 'F') & (df.age_years > 14) &
-        #                                        (df.age_years < 50))])
-        # pregnant_at_year_end = len(df.index[df.is_alive & df.is_pregnant])
-        # women_with_previous_sa = len(df.index[(df.is_alive & (df.sex == 'F') & (df.age_years > 14) &
-        #                                        (df.age_years < 50) & df.ps_prev_spont_abortion)])
-        # women_with_previous_pe = len(df.index[(df.is_alive & (df.sex == 'F') & (df.age_years > 14) &
-        #                                        (df.age_years < 50) & df.ps_prev_pre_eclamp)])
-        # women_with_hysterectomy = len(df.index[(df.is_alive & (df.sex == 'F') & (df.age_years > 14) &
-        #                                        (df.age_years < 50) & df.la_has_had_hysterectomy)])
-        #
-        # yearly_prev_sa = (women_with_previous_sa / women_reproductive_age) * 100
-        # yearly_prev_pe = (women_with_previous_pe / women_reproductive_age) * 100
-        # yearly_prev_hysterectomy = (women_with_hysterectomy / women_reproductive_age) * 100
-        #
-        # parity_list = list()
-        # for parity in [0, 1, 2, 3, 4, 5]:
-        #     if parity < 5:
-        #         par = len(df.index[(df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50) &
-        #                            (df.la_parity == parity))])
-        #     else:
-        #         par = len(df.index[(df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50) &
-        #                             (df.la_parity >= parity))])
-        #
-        #     yearly_prev = (par / women_reproductive_age) * 100
-        #     parity_list.append(yearly_prev)
-        #
-        # logger.info(key='preg_info',
-        #             data={'women_repro_age': women_reproductive_age,
-        #                   'women_pregnant': pregnant_at_year_end,
-        #                   'prev_sa': yearly_prev_sa,
-        #                   'prev_pe': yearly_prev_pe,
-        #                   'hysterectomy': yearly_prev_hysterectomy,
-        #                   'parity': parity_list})
+                          'nmr' : rate(neonatal_deaths, live_births, 1000),
+                          'direct_maternal_deaths': c['direct_mat_death'],
+                          'direct_mmr': rate(c['direct_mat_death'], live_births, 100_000),
+                          })
 
         mnh_oc = pregnancy_helper_functions.generate_mnh_outcome_counter()
         outcome_list = mnh_oc['outcomes']

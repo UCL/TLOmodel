@@ -838,6 +838,7 @@ class PostnatalSupervisor(Module):
             if potential_cause_of_death:
                 mni[individual_id]['didnt_seek_care'] = True
                 pregnancy_helper_functions.log_mni_for_maternal_death(self, individual_id)
+                self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['direct_mat_death'] += 1
                 self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=potential_cause_of_death,
                                                         originating_module=self.sim.modules['PostnatalSupervisor'])
                 del mni[individual_id]
@@ -950,6 +951,13 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # Set mni[person]['delete_mni'] to True meaning after the next DALY event each womans MNI dict is deleted
         for person in week_8_postnatal_women.loc[week_8_postnatal_women].index:
             mni[person]['delete_mni'] = True
+
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['six_week_survivors'] += 1
+
+            if df.at[person, 'pn_anaemia_following_pregnancy'] != 'none':
+                self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[
+                    f'pn_anaemia_{df.at[person, "pn_anaemia_following_pregnancy"]}'] += 1
+
             logger.info(key='total_mat_pnc_visits', data={'mother': person,
                                                           'visits': df.at[person, 'la_pn_checks_maternal'],
                                                           'anaemia': df.at[person, 'pn_anaemia_following_pregnancy']})
