@@ -250,27 +250,27 @@ def property_dependency_map_by_module(
     """
     property_class_map = get_module_property_map(excluded_modules)
 
-    for key, property_module in property_class_map.items():
+    for key, dependent_module in property_class_map.items():
         colour = get_color_short_treatment_id_extra_modules(key)
         node_attributes = {
             "fillcolor": colour,
             "color": "black",  # Outline color
             "fontname": "Arial",
+            "shape": "square",
         }
-        if property_module not in excluded_modules:
-            properties_of_module = get_dependencies(property_module)
+        if dependent_module not in excluded_modules:
             property_graph = pydot.Dot("properties", graph_type="digraph", rankdir='LR')
-            for key, dependent_module in property_class_map.items():
-                if property_module != dependent_module:
+            for property_key, property_module in property_class_map.items():
+                if property_module != dependent_module and property_module not in excluded_modules:
+                    properties_of_module = get_dependencies(property_module)
                     used_properties = check_properties_in_module(dependent_module, properties_of_module)
                     for property in used_properties:
-                        node_attributes.update(properies_node_defaults)
-                        node_attributes["shape"] = "square"
                         property_graph.add_node(pydot.Node(property, **node_attributes))
                         property_graph.add_edge(pydot.Edge(property, key))
+
         graph_name = output_path/f"{key}.png"
         print(property_graph)
-        property_graph.write(graph_name)
+        property_graph.write(graph_name,  format="png")
 
 
 if __name__ == "__main__":
@@ -302,8 +302,8 @@ if __name__ == "__main__":
         "DummyDisease",
         "Module"
     }
-    # property_dependency_map_by_module(excluded_modules, properies_node_defaults={"shape": "square"},
-    #                                   output_path=args.output_file)
+    property_dependency_map_by_module(excluded_modules, properies_node_defaults={"shape": "square"},
+                                      output_path=args.output_file)
 
     module_graph = construct_property_dependency_graph(
         excluded_modules,
@@ -314,7 +314,4 @@ if __name__ == "__main__":
         properies_node_defaults={"shape": "square"}
     )
 
-    format = (
-        args.output_file.suffix[1:] if args.output_file.suffix else "raw"
-    )
-    module_graph.write(args.output_file, format=format)
+    module_graph.write(args.output_file/"property_graph_full.png", format="png")
