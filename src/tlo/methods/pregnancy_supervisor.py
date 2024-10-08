@@ -2192,19 +2192,17 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # DENOMINATORS
         live_births = len(df[(df['date_of_birth'].dt.year == self.sim.date.year - 1) & (df['mother_id'] >= 0)])
-
         pregnancies =len(df[df['date_of_last_pregnancy'].dt.year == self.sim.date.year - 1])
-
         comp_pregnancies = (c['ectopic_unruptured'] + c['spontaneous_abortion'] +
                             c['induced_abortion'] + c['antenatal_stillbirth'] +
                             c['intrapartum_stillbirth'] + live_births)
-
         deliveries = live_births - c['twin_birth']
-
         total_births = live_births + c['antenatal_stillbirth'] + c['intrapartum_stillbirth']
+        total_preterm_birth = c['early_preterm_labour'] + c['late_preterm_labour']
 
-        if (live_births == 0) or (pregnancies == 0):
-            return
+        for denom in [live_births, pregnancies, comp_pregnancies, deliveries, total_births, total_preterm_birth]:
+            if denom == 0:
+                return
 
         # MATERNAL COMPLICATION INCIDENCE
         logger.info(key='yearly_counter_dict', data=c)
@@ -2214,7 +2212,6 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         total_an_anaemia_cases = c['an_anaemia_mild'] + c['an_anaemia_moderate'] + c['an_anaemia_severe']
         total_pn_anaemia_cases = c['pn_anaemia_mild'] + c['pn_anaemia_moderate'] + c['pn_anaemia_severe']
-        total_preterm_birth = c['early_preterm_labour'] + c['late_preterm_labour']
         total_aph = c['mild_mod_antepartum_haemorrhage'] + c['severe_antepartum_haemorrhage']
         total_sepsis = c['clinical_chorioamnionitis'] + c['sepsis_intrapartum'] + c['sepsis_postnatal']
         total_pph = c['primary_postpartum_haemorrhage'] + c['secondary_postpartum_haemorrhage']
