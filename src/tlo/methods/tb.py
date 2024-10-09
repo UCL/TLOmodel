@@ -17,7 +17,7 @@ from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.symptommanager import Symptom
-from tlo.util import random_date
+from tlo.util import random_date, read_csv_files
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -399,9 +399,7 @@ class Tb(Module):
         """
 
         # 1) Read the ResourceFiles
-        workbook = pd.read_excel(
-            os.path.join(self.resourcefilepath, "ResourceFile_TB.xlsx"), sheet_name=None
-        )
+        workbook = read_csv_files(self.resourcefilepath/"ResourceFile_TB", files=None)
         self.load_parameters_from_dataframe(workbook["parameters"])
 
         p = self.parameters
