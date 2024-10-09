@@ -130,11 +130,11 @@ tlo.methods.prostate_cancer module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'ProstateCancer': <tlo.methods.causes.Cause object at 0x1349aec10>}
+     CAUSES_OF_DEATH : {'ProstateCancer': <tlo.methods.causes.Cause object at 0x1290da0d0>}
 
-     CAUSES_OF_DISABILITY : {'ProstateCancer': <tlo.methods.causes.Cause object at 0x1349aca50>}
+     CAUSES_OF_DISABILITY : {'ProstateCancer': <tlo.methods.causes.Cause object at 0x1290d92d0>}
 
-     INIT_DEPENDENCIES : {'HealthSystem', 'SymptomManager', 'Demography'}
+     INIT_DEPENDENCIES : {'SymptomManager', 'Demography', 'HealthSystem'}
 
      METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>}
 

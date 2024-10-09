@@ -159,7 +159,7 @@ tlo.methods.care_of_women_during_pregnancy module
 
      ADDITIONAL_DEPENDENCIES : {'Contraception', 'Labour', 'Lifestyle'}
 
-     INIT_DEPENDENCIES : {'HealthSystem', 'Demography', 'PregnancySupervisor'}
+     INIT_DEPENDENCIES : {'PregnancySupervisor', 'Demography', 'HealthSystem'}
 
      METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>}
 

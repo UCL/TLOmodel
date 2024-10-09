@@ -164,13 +164,13 @@ tlo.methods.healthsystem module
 
      __annotations__ : {}
 
-     capabilities_today : <property object at 0x1233737e0>
+     capabilities_today : <property object at 0x117a18c70>
 
-     hsi_event_counts : <property object at 0x123449080>
+     hsi_event_counts : <property object at 0x117a18ea0>
 
-     never_ran_hsi_event_counts : <property object at 0x1234490d0>
+     never_ran_hsi_event_counts : <property object at 0x117a18ef0>
 
-     use_funded_or_actual_staffing : <property object at 0x123448f40>
+     use_funded_or_actual_staffing : <property object at 0x117a18d60>
 
      **Functions (defined or overridden in class HealthSystem):**
 
@@ -347,7 +347,7 @@ tlo.methods.healthsystem module
 
      __annotations__ : {}
 
-     current_pop_size : <property object at 0x1234493a0>
+     current_pop_size : <property object at 0x117a191c0>
 
      **Functions (defined or overridden in class DynamicRescalingHRCapabilities):**
 

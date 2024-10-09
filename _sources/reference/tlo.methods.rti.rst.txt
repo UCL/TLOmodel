@@ -808,11 +808,11 @@ tlo.methods.rti module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'HealthSystem', 'Lifestyle', 'Demography'}
+     ADDITIONAL_DEPENDENCIES : {'Lifestyle', 'Demography', 'HealthSystem'}
 
-     CAUSES_OF_DEATH : {'RTI_death_without_med': <tlo.methods.causes.Cause object at 0x134d980d0>, 'RTI_death_with_med': <tlo.methods.causes.Cause object at 0x134d9ba10>, 'RTI_unavailable_med': <tlo.methods.causes.Cause object at 0x134d98a50>, 'RTI_imm_death': <tlo.methods.causes.Cause object at 0x134d98550>, 'RTI_death_shock': <tlo.methods.causes.Cause object at 0x134d99810>}
+     CAUSES_OF_DEATH : {'RTI_death_without_med': <tlo.methods.causes.Cause object at 0x129163750>, 'RTI_death_with_med': <tlo.methods.causes.Cause object at 0x129160710>, 'RTI_unavailable_med': <tlo.methods.causes.Cause object at 0x129162e50>, 'RTI_imm_death': <tlo.methods.causes.Cause object at 0x129163690>, 'RTI_death_shock': <tlo.methods.causes.Cause object at 0x129160d90>}
 
-     CAUSES_OF_DISABILITY : {'RTI': <tlo.methods.causes.Cause object at 0x134d986d0>}
+     CAUSES_OF_DISABILITY : {'RTI': <tlo.methods.causes.Cause object at 0x1291612d0>}
 
      DATE_TO_REMOVE_DALY_COLUMNS : ['rt_date_to_remove_daly_1', 'rt_date_to_remove_daly_2', 'rt_date_to_remove_daly_3', 'rt_date_to_remove_daly_4', 'rt_date_to_remove_daly_5', 'rt_date_to_remove_daly_6', 'rt_date_to_remove_daly_7', 'rt_date_to_remove_daly_8']
 

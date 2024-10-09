@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.util module &mdash; TLOmodel 0.1.dev2457+g44ac319.d20241008 documentation</title>
+  <title>tlo.util module &mdash; TLOmodel 0.1.dev2460+gba5f1b9.d20241009 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=7ab3649f" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=0e657b16"></script>
+      <script src="../_static/documentation_options.js?v=a61cc197"></script>
       <script src="../_static/doctools.js?v=9a2dae69"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -452,6 +452,42 @@ been specified when constructing the <code class="docutils literal notranslate">
 <dd><p>Get index of person to inherit properties from.</p>
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.util.convert_excel_files_to_csv">
+<span class="sig-name descname"><span class="pre">convert_excel_files_to_csv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">folder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">files</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delete_excel_files</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/tlo/util.html#convert_excel_files_to_csv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.util.convert_excel_files_to_csv" title="Link to this definition"></a></dt>
+<dd><p>convert Excel files to csv files.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>folder</strong> – Folder containing Excel files.</p></li>
+<li><p><strong>files</strong> – List of Excel file names to convert to csv files. When <cite>None</cite>, all Excel files in the folder and
+subsequent folders within this folder will be converted to csv files with Excel file name becoming
+folder name and sheet names becoming csv file names.</p></li>
+<li><p><strong>delete_excel_files</strong> – When true, the Excel file we are generating csv files from will get deleted.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.util.read_csv_files">
+<span class="sig-name descname"><span class="pre">read_csv_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">folder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">files</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">DataFrame</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/tlo/util.html#read_csv_files"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.util.read_csv_files" title="Link to this definition"></a></dt>
+<dd><p>A function to read CSV files in a similar way pandas reads Excel files (<code class="xref py py-func docutils literal notranslate"><span class="pre">pandas.read_excel()</span></code>).</p>
+<p>NB: Converting Excel files to csv files caused all columns that had no relevant data to simulation (i.e.
+parameter descriptions or data references) to be named <cite>Unnamed1, Unnamed2, ….., UnnamedN</cite> in the csv files.
+We are therefore using <code class="xref py py-func docutils literal notranslate"><span class="pre">pandas.filter()</span></code> to track all unnamed columns and silently drop them using
+<code class="xref py py-func docutils literal notranslate"><span class="pre">pandas.drop()</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>folder</strong> – Path to folder containing CSV files to read.</p></li>
+<li><p><strong>files</strong> – preferred csv file name(s). This is the same as sheet names in Excel file. Note that if None(no files
+selected) then all files in the containing folder will be loaded</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 
 
@@ -466,7 +502,7 @@ been specified when constructing the <code class="docutils literal notranslate">
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Oct 08, 2024.
+      <span class="lastupdated">Last updated on Oct 09, 2024.
       </span></p>
   </div>
 
