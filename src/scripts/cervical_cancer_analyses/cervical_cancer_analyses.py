@@ -47,8 +47,8 @@ log_config = {
 
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2025, 1, 1)
-pop_size = 1700
+end_date = Date(2012, 1, 1)
+pop_size = 17
 
 # This creates the Simulation instance for this run. Because we've passed the `seed` and
 # `log_config` arguments, these will override the default behaviour.
@@ -86,14 +86,27 @@ sim.simulate(end_date=end_date)
 # parse the simulation logfile to get the output dataframes
 log_df = parse_log_file(sim.log_filepath)
 
+start_year=2011
+scale_factor = 1000
 
 
 # Function to plot data
-def plot_data(log_df, year_col, columns, scale_factor=1000, start_year=2011, title="", xlabel="Year", ylabel="", ylim=None, proportion_plot=False):
+def plot_data(log_df, year_col, columns, prefix = '',scale_factor=1000, start_year=2011, title="", xlabel="Year", ylabel="", ylim=None, proportion_plot=False):
     # Filter by year and ensure only valid values
     log_df_plot = log_df["tlo.methods.cervical_cancer"]["all"]
     log_df_plot = log_df_plot[[year_col] + columns].dropna()
     log_df_plot = log_df_plot[log_df_plot[year_col] >= start_year]
+
+
+    # If proportion plot is True, calculate proportions
+    if proportion_plot:
+        total_col = log_df_plot[columns].sum(axis=1)  # Sum across the columns to get the total for each row
+        for col in columns:
+            new_col_name = col.replace(prefix, '')  # Remove the prefix
+            log_df_plot[f'proportion_{new_col_name}'] = log_df_plot[col] / total_col  # Calculate proportion
+
+            # Update columns to use proportion columns and remove those containing 'none'
+        columns = [f'proportion_{col.replace(prefix, "")}' for col in columns if 'none' not in col]
 
     # Scale values
     if not proportion_plot:
@@ -146,7 +159,8 @@ plot_data(log_df, year_col='rounded_decimal_year', columns=['n_treated_past_year
 plot_data(log_df, year_col='rounded_decimal_year', columns=['n_cured_past_year'], scale_factor=scale_factor, title='Total cured per Year', ylabel='Total cured per year', ylim=(0, 10000))
 
 # 7. Proportion of women aged 15+ with HPV, CIN, cervical cancer
-plot_data(log_df, year_col='rounded_decimal_year', columns=['proportion_hpv', 'proportion_cin1', 'proportion_cin2', 'proportion_cin3', 'proportion_stage1', 'proportion_stage2a', 'proportion_stage2b', 'proportion_stage3', 'proportion_stage4'], scale_factor=scale_factor, title='Proportion of women aged 15+ with HPV, CIN, cervical cancer', ylabel='Proportion', ylim=(0, 0.30), proportion_plot=True)
+plot_data(log_df, year_col='rounded_decimal_year', columns=['total_none', 'total_hpv', 'total_cin1', 'total_cin2', 'total_cin3', 'total_stage1',
+                        'total_stage2a', 'total_stage2b', 'total_stage3', 'total_stage4'], prefix = 'total_',scale_factor=scale_factor, title='Proportion of women aged 15+ with HPV, CIN, cervical cancer', ylabel='Proportion', ylim=(0, 0.30), proportion_plot=True)
 
 # 8. Proportion of people with cervical cancer who are HIV positive
 plot_data(log_df, year_col='rounded_decimal_year', columns=['prop_cc_hiv'], title='Proportion of people with cervical cancer who are HIV positive', ylabel='Proportion', ylim=(0, 1))
@@ -155,10 +169,12 @@ plot_data(log_df, year_col='rounded_decimal_year', columns=['prop_cc_hiv'], titl
 plot_data(log_df, year_col='rounded_decimal_year', columns=['n_women_hiv_unsuppressed'], scale_factor=scale_factor, title='Number of women living with unsuppressed HIV', ylabel='n_women_hiv_unsuppressed', ylim=(0, 300000))
 
 # 10. Proportion of HIV negative women aged 15+ with HPV, CIN, cervical cancer
-plot_data(log_df, year_col='rounded_decimal_year', columns=['proportion_hivneg_hpv', 'proportion_hivneg_cin1', 'proportion_hivneg_cin2', 'proportion_hivneg_cin3', 'proportion_hivneg_stage1', 'proportion_hivneg_stage2a', 'proportion_hivneg_stage2b', 'proportion_hivneg_stage3', 'proportion_hivneg_stage4'], title='Proportion of HIV negative women aged 15+ with HPV, CIN, cervical cancer', ylabel='Proportion', ylim=(0, 0.30), proportion_plot=True)
+plot_data(log_df, year_col='rounded_decimal_year', columns=['total_hivneg_none', 'total_hivneg_hpv', 'total_hivneg_cin1', 'total_hivneg_cin2', 'total_hivneg_cin3',
+                        'total_hivneg_stage1','total_hivneg_stage2a', 'total_hivneg_stage2b', 'total_hivneg_stage3', 'total_hivneg_stage4'], prefix = 'total_',title='Proportion of HIV negative women aged 15+ with HPV, CIN, cervical cancer', ylabel='Proportion', ylim=(0, 0.30), proportion_plot=True)
 
 # 11. Proportion of HIV positive women aged 15+ with HPV, CIN, cervical cancer
-plot_data(log_df, year_col='rounded_decimal_year', columns=['proportion_hivpos_hpv', 'proportion_hivpos_cin1', 'proportion_hivpos_cin2', 'proportion_hivpos_cin3', 'proportion_hivpos_stage1', 'proportion_hivpos_stage2a', 'proportion_hivpos_stage2b', 'proportion_hivpos_stage3', 'proportion_hivpos_stage4'], title='Proportion of HIV positive women aged 15+ with HPV, CIN, cervical cancer', ylabel='Proportion', ylim=(0, 0.30), proportion_plot=True)
+plot_data(log_df, year_col='rounded_decimal_year', columns=['total_hivpos_none', 'total_hivpos_hpv', 'total_hivpos_cin1', 'total_hivpos_cin2', 'total_hivpos_cin3',
+                        'total_hivpos_stage1','total_hivpos_stage2a', 'total_hivpos_stage2b', 'total_hivpos_stage3', 'total_hivpos_stage4'], prefix = 'total_', title='Proportion of HIV positive women aged 15+ with HPV, CIN, cervical cancer', ylabel='Proportion', ylim=(0, 0.30), proportion_plot=True)
 
 # 12. Number of HIV positive women in Stage 4
 plot_data(log_df, year_col='rounded_decimal_year', columns=['total_hivpos_stage4'], scale_factor=scale_factor, title='Number of HIV positive women in Stage 4', ylabel='total_hivpos_stage4', ylim=(0, 100))
