@@ -199,6 +199,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
+        self.prob_normal_whz = None
         self.wasting_models = None
         self.resourcefilepath = resourcefilepath
         # wasting states
@@ -265,7 +266,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             wasted = self.wasting_models.get_wasting_prevalence(agegp=agegp).predict(
                 children_of_agegp, self.rng, False
             )
-            probability_of_severe = self.get_prob_severe_wasting(agegp=agegp)
+            probability_of_severe = self.get_prob_severe_wasting_among_wasted(agegp=agegp)
             for idx in children_of_agegp.index[wasted]:
                 wasted_category = self.rng.choice(['WHZ<-3', '-3<=WHZ<-2'], p=[probability_of_severe,
                                                                                1 - probability_of_severe])
@@ -275,9 +276,13 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                 # start without treatment
                 df.at[idx, 'un_am_treatment_type'] = 'none'
 
-        # ------------------------------------------------------------------
-        # # # # # # Give MUAC category, presence of oedema, and determine acute malnutrition state # # # # #
         index_under5 = df.index[df.is_alive & (df.age_exact_years < 5)]
+        # calculate approximation of probability of having normal WHZ in children under 5 to be used later
+        self.prob_normal_whz = \
+            len(index_under5.intersection(df.index[df.un_WHZ_category == 'WHZ>=-2'])) / len(index_under5)
+        # -------------------------------------------------------------------------------------------------- #
+        # # # #    Give MUAC category, presence of oedema, and determine acute malnutrition state      # # # #
+        # # # #    and, in SAM cases, determine presence of complications                             # # # #
         self.clinical_signs_acute_malnutrition(index_under5)
 
     def initialise_simulation(self, sim):
@@ -311,7 +316,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         df.at[child_id, 'un_am_MUAC_category'] = '>=125mm'
         df.at[child_id, 'un_am_treatment_type'] = 'not_applicable'
 
-    def get_prob_severe_wasting(self, agegp: str) -> Union[float, int]:
+    def get_prob_severe_wasting_among_wasted(self, agegp: str) -> Union[float, int]:
         """
         This function will calculate the WHZ scores by categories and return probability of severe wasting
         for those with wasting status
@@ -427,10 +432,9 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         if len(children_without_wasting) == 0:
             return
         # proportion_normalWHZ_with_oedema: P(oedema|WHZ>=-2) =
-        # P(oedema & WHZ>=-2) / P(WHZ>=-2) = P(oedema) * [1 -P(WHZ<-2|oedema)] / (#WHZ>=-2 / #all under 5)
+        # P(oedema & WHZ>=-2) / P(WHZ>=-2) = P(oedema) * [1 - P(WHZ<-2|oedema)] / P(WHZ>=-2)
         proportion_normal_whz_with_oedema = \
-            p['prevalence_nutritional_oedema'] * (1 - p['proportion_oedema_with_WHZ<-2']) / \
-            (len(children_without_wasting) / len(idx))
+            p['prevalence_nutritional_oedema'] * (1 - p['proportion_oedema_with_WHZ<-2']) / self.prob_normal_whz
         oedema_in_non_wasted = self.rng.random_sample(size=len(
             children_without_wasting)) < proportion_normal_whz_with_oedema
         df.loc[children_without_wasting, 'un_am_bilateral_oedema'] = oedema_in_non_wasted

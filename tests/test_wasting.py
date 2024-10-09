@@ -216,6 +216,7 @@ def test_report_daly_weights(tmpdir):
     dur = pd.DateOffset(days=0)
     popsize = 1
     sim = get_sim(tmpdir)
+    sim.modules['Demography'].parameters['max_age_initial'] = 4.9
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=start_date + dur)
 
