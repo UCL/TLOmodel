@@ -393,7 +393,6 @@ def calculate_risk_of_death_from_causes(self, risks):
         cause_of_death = self.rng.choice(list(risks.keys()), p=probs)
 
         # Return the primary cause of death so that it can be passed to the demography function
-        self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[f'{cause_of_death}_death'] += 1
         return cause_of_death
     else:
         # Return false if death will not occur
