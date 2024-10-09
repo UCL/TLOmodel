@@ -775,6 +775,9 @@ class HealthSystem(Module):
         # whilst the actual scaling will only take effect from 2011 onwards.
         sim.schedule_event(DynamicRescalingHRCapabilities(self), Date(sim.date))
 
+        # Schedule the logger to occur at the start of every year
+        sim.schedule_event(HealthSystemLogger(self), Date(sim.date.year, 1, 1))
+
     def on_birth(self, mother_id, child_id):
         self.bed_days.on_birth(self.sim.population.props, mother_id, child_id)
 
@@ -936,22 +939,21 @@ class HealthSystem(Module):
         This is called when the value for `use_funded_or_actual_staffing` is set - at the beginning of the simulation
          and when the assumption when the underlying assumption for `use_funded_or_actual_staffing` is updated"""
         # * Store 'DailyCapabilities' in correct format and using the specified underlying assumptions
-        self._daily_capabilities = self.format_daily_capabilities(use_funded_or_actual_staffing)
+        self._daily_capabilities, self._daily_capabilities_per_staff = self.format_daily_capabilities(use_funded_or_actual_staffing)
 
         # Also, store the set of officers with non-zero daily availability
         # (This is used for checking that scheduled HSI events do not make appointment requiring officers that are
         # never available.)
         self._officers_with_availability = set(self._daily_capabilities.index[self._daily_capabilities > 0])
 
-    def format_daily_capabilities(self, use_funded_or_actual_staffing: str) -> pd.Series:
+    def format_daily_capabilities(self, use_funded_or_actual_staffing: str) -> tuple[pd.Series,pd.Series]:
         """
-        This will updates the dataframe for the self.parameters['Daily_Capabilities'] so as to include
-        every permutation of officer_type_code and facility_id, with zeros against permutations where no capacity
+        This will updates the dataframe for the self.parameters['Daily_Capabilities'] so as to:
+        1. include every permutation of officer_type_code and facility_id, with zeros against permutations where no capacity
         is available.
-
-        It also give the dataframe an index that is useful for merging on (based on Facility_ID and Officer Type)
-
+        2. Give the dataframe an index that is useful for merging on (based on Facility_ID and Officer Type)
         (This is so that its easier to track where demands are being placed where there is no capacity)
+        3. Compute daily capabilities per staff. This will be used to compute staff count in a way that is independent of assumed efficiency.
         """
 
         # Get the capabilities data imported (according to the specified underlying assumptions).
@@ -959,6 +961,10 @@ class HealthSystem(Module):
                 self.parameters[f'Daily_Capabilities_{use_funded_or_actual_staffing}']
         )
         capabilities = capabilities.rename(columns={'Officer_Category': 'Officer_Type_Code'})  # neaten
+        
+        # Create new column where capabilities per staff are computed
+        capabilities['Mins_Per_Day_Per_Staff'] = capabilities['Total_Mins_Per_Day']/capabilities['Staff_Count']
+
 
         # Create dataframe containing background information about facility and officer types
         facility_ids = self.parameters['Master_Facilities_List']['Facility_ID'].values
@@ -978,7 +984,10 @@ class HealthSystem(Module):
         # Merge in information about facility from Master Facilities List
         mfl = self.parameters['Master_Facilities_List']
         capabilities_ex = capabilities_ex.merge(mfl, on='Facility_ID', how='left')
-
+        
+        # Create a copy of this to store staff counts
+        capabilities_per_staff_ex = capabilities_ex.copy()
+        
         # Merge in information about officers
         # officer_types = self.parameters['Officer_Types_Table'][['Officer_Type_Code', 'Officer_Type']]
         # capabilities_ex = capabilities_ex.merge(officer_types, on='Officer_Type_Code', how='left')
@@ -991,9 +1000,24 @@ class HealthSystem(Module):
             how='left',
         )
         capabilities_ex = capabilities_ex.fillna(0)
+        
+        capabilities_per_staff_ex = capabilities_per_staff_ex.merge(
+            capabilities[['Facility_ID', 'Officer_Type_Code', 'Mins_Per_Day_Per_Staff']],
+            on=['Facility_ID', 'Officer_Type_Code'],
+            how='left',
+        )
+        capabilities_per_staff_ex = capabilities_per_staff_ex.fillna(0)
 
         # Give the standard index:
         capabilities_ex = capabilities_ex.set_index(
+            'FacilityID_'
+            + capabilities_ex['Facility_ID'].astype(str)
+            + '_Officer_'
+            + capabilities_ex['Officer_Type_Code']
+        )
+        
+        # Give the standard index:
+        capabilities_per_staff_ex = capabilities_per_staff_ex.set_index(
             'FacilityID_'
             + capabilities_ex['Facility_ID'].astype(str)
             + '_Officer_'
@@ -1006,9 +1030,10 @@ class HealthSystem(Module):
         # Checks
         assert abs(capabilities_ex['Total_Minutes_Per_Day'].sum() - capabilities['Total_Mins_Per_Day'].sum()) < 1e-7
         assert len(capabilities_ex) == len(facility_ids) * len(officer_type_codes)
+        assert len(capabilities_per_staff_ex) == len(facility_ids) * len(officer_type_codes)
 
         # return the pd.Series of `Total_Minutes_Per_Day' indexed for each type of officer at each facility
-        return capabilities_ex['Total_Minutes_Per_Day']
+        return capabilities_ex['Total_Minutes_Per_Day'], capabilities_per_staff_ex['Mins_Per_Day_Per_Staff']
 
     def _rescale_capabilities_to_capture_effective_capability(self):
         # Notice that capabilities will only be expanded through this process
@@ -1030,6 +1055,11 @@ class HealthSystem(Module):
             )
             if rescaling_factor > 1 and rescaling_factor != float("inf"):
                 self._daily_capabilities[officer] *= rescaling_factor
+                
+                # We assume that increased daily capabilities is a result of each staff performing more
+                # daily patient facing time per day than contracted (or equivalently performing appts more
+                # efficiently).
+                self._daily_capabilities_per_staff[officer] *= rescaling_factor
 
     def update_consumables_availability_to_represent_merging_of_levels_1b_and_2(self, df_original):
         """To represent that facility levels '1b' and '2' are merged together under the label '2', we replace the
@@ -2975,3 +3005,34 @@ class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
                          f"Now using mode: "
                          f"{self.module.mode_appt_constraints}"
                     )
+
+
+class HealthSystemLogger(RegularEvent, PopulationScopeEventMixin):
+    """ This event runs at the start of each year and does any logging jobs for the HealthSystem module."""
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(years=1))
+
+    def apply(self, population):
+        """Things to do at the start of the year"""
+        self.log_number_of_staff()
+
+    def log_number_of_staff(self):
+        """Write to the summary log with the counts of staff (by cadre/facility/level) taking into account:
+         * Any scaling of capabilities that has taken place, year-by-year, or cadre-by-cadre
+         * Any re-scaling that has taken place at the transition into Mode 2.
+        """
+
+        hs = self.module  # HealthSystem module
+
+        # Compute staff counts from available capabilities (hs.capabilities_today) and daily capabilities per staff,
+        # both of which would have been rescaled to current efficiency levels if scale_to_effective_capabilities=True
+        # This returns the number of staff counts normalised by the self.capabilities_coefficient parameter
+        current_staff_count = dict((hs.capabilities_today/hs._daily_capabilities_per_staff).sort_index())
+
+        logger_summary.info(
+            key="number_of_hcw_staff",
+            description="The number of hcw_staff this year",
+            data=current_staff_count,
+        )
+
