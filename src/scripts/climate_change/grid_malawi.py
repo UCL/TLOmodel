@@ -34,6 +34,9 @@ plt.xlabel("Longitude")
 plt.ylabel("Latitude")
 plt.show()
 
+### Intersection between the grid and the admin areas ###
+
+grid_with_facilities_with_districts = gpd.sjoin(malawi_admin2, grid, how='left', predicate='intersects')
 
 ########### Create new table with facilities and add coordinates to each facility
 
@@ -53,9 +56,9 @@ facilities_by_area.loc[facilities_by_area['Facility_Name'] == 'Headquarter', 'Di
 facilities_by_area.loc[facilities_by_area['Facility_Name'] == 'Headquarter', 'Region'] = 'Central'
 
 
-facilities_with_districts = facilities_by_area.merge(malawi_admin2,
+facilities_with_districts = facilities_by_area.merge(grid_with_facilities_with_districts,
                                                      how='left',
                                                      left_on='District',
-                                                     right_on='ADM2_EN')
+                                                     right_on='ADM2_EN') # will have what grid cell they're in
 
-print(facilities_with_districts)
+
