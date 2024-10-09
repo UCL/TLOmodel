@@ -196,12 +196,12 @@ class HSI_Event:
 
         if self.sim.generate_event_chains:
             # Only print event if it belongs to modules of interest and if it is not in the list of events to ignore
-            if (self.module in self.sim.generate_event_chains_modules_of_interest) and not set(self.sim.generate_event_chains_ignore_events).intersect(str(self)):
+            if (self.module in self.sim.generate_event_chains_modules_of_interest) and not set(self.sim.generate_event_chains_ignore_events).intersection(str(self)):
                 print_chains = True
                 if self.target != self.sim.population:
                     row = self.sim.population.props.loc[[self.target]]
                     row['person_ID'] = self.target
-                    row['event'] = self
+                    row['event'] = str(self)
                     row['event_date'] = self.sim.date
                     row['when'] = 'Before'
                     self.sim.event_chains = pd.concat([self.sim.event_chains, row], ignore_index=True)
@@ -216,7 +216,7 @@ class HSI_Event:
             if self.target != self.sim.population:
                 row = self.sim.population.props.loc[[self.target]]
                 row['person_ID'] = self.target
-                row['event'] = self
+                row['event'] = str(self)
                 row['event_date'] = self.sim.date
                 row['when'] = 'After'
                 self.sim.event_chains = pd.concat([self.sim.event_chains, row], ignore_index=True)
