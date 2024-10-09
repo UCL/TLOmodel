@@ -31,7 +31,7 @@ class HTMWithAndWithoutHSS(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2031, 1, 1)
+        self.end_date = Date(2036, 1, 1)
         self.pop_size = 100_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
@@ -112,21 +112,21 @@ class HTMWithAndWithoutHSS(BaseScenario):
                     scenario_definitions.hss_package(),
                 ),
 
-            # - - - HIV & TB SCALE-UP WITHOUT HSS PACKAGE- - -
-            "Hiv/Tb Programs Scale-up WITHOUT HSS PACKAGE":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.hiv_scaleup(),
-                    scenario_definitions.tb_scaleup(),
-                ),
-            # - - - HIV & TB SCALE-UP *WITH* HSS PACKAGE- - -
-            "Hiv/Tb Programs Scale-up WITH HSS PACKAGE":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.hiv_scaleup(),
-                    scenario_definitions.tb_scaleup(),
-                    scenario_definitions.hss_package(),
-                ),
+            # # - - - HIV & TB SCALE-UP WITHOUT HSS PACKAGE- - -
+            # "Hiv/Tb Programs Scale-up WITHOUT HSS PACKAGE":
+            #     mix_scenarios(
+            #         scenario_definitions.baseline(),
+            #         scenario_definitions.hiv_scaleup(),
+            #         scenario_definitions.tb_scaleup(),
+            #     ),
+            # # - - - HIV & TB SCALE-UP *WITH* HSS PACKAGE- - -
+            # "Hiv/Tb Programs Scale-up WITH HSS PACKAGE":
+            #     mix_scenarios(
+            #         scenario_definitions.baseline(),
+            #         scenario_definitions.hiv_scaleup(),
+            #         scenario_definitions.tb_scaleup(),
+            #         scenario_definitions.hss_package(),
+            #     ),
 
             # - - - MALARIA SCALE-UP WITHOUT HSS PACKAGE- - -
             "Malaria Programs Scale-up WITHOUT HSS PACKAGE":
@@ -143,21 +143,42 @@ class HTMWithAndWithoutHSS(BaseScenario):
                 ),
 
             # - - - HIV & TB & MALARIA SCALE-UP WITHOUT HSS PACKAGE- - -
-            "HIV/Tb/Malaria Programs Scale-up WITHOUT HSS PACKAGE":
+            "HTM Programs Scale-up WITHOUT HSS PACKAGE":
                 mix_scenarios(
                     scenario_definitions.baseline(),
                     scenario_definitions.hiv_scaleup(),
                     scenario_definitions.tb_scaleup(),
                     scenario_definitions.malaria_scaleup(),
                 ),
+
             # - - - HIV & TB & MALARIA SCALE-UP *WITH* HSS PACKAGE- - -
-            "HIV/Tb/Malaria Programs Scale-up WITH HSS PACKAGE":
+            "HTM Programs Scale-up WITH HSS PACKAGE":
                 mix_scenarios(
                     scenario_definitions.baseline(),
                     scenario_definitions.hiv_scaleup(),
                     scenario_definitions.tb_scaleup(),
                     scenario_definitions.malaria_scaleup(),
                     scenario_definitions.hss_package(),
+                ),
+
+            # - - - HIV & TB & MALARIA SCALE-UP WITH SUPPLY CHAINS- - -
+            "HTM Programs Scale-up WITH SUPPLY CHAINS":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.hiv_scaleup(),
+                    scenario_definitions.tb_scaleup(),
+                    scenario_definitions.malaria_scaleup(),
+                    scenario_definitions.cons_at_90th_percentile(),
+                ),
+
+            # - - - HIV & TB & MALARIA SCALE-UP WITH HRH- - -
+            "HTM Programs Scale-up WITH HRH":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.hiv_scaleup(),
+                    scenario_definitions.tb_scaleup(),
+                    scenario_definitions.malaria_scaleup(),
+                    scenario_definitions.accelerated_hrh_using_historical_scaling(),
                 ),
         }
 
