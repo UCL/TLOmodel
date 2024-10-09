@@ -4,7 +4,6 @@
     for eligible people (HIV+ and paediatric contacts of active TB cases
 """
 
-import os
 from functools import reduce
 
 import pandas as pd

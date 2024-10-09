@@ -25,7 +25,6 @@ If PrEP is not available due to limitations in the HealthSystem, the person defa
 """
 from __future__ import annotations
 
-import os
 from typing import TYPE_CHECKING, List
 
 import numpy as np
