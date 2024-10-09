@@ -307,6 +307,35 @@ class HealthSystem(Module):
                           "a worksheet of the file `ResourceFile_dynamic_HR_scaling.xlsx`."
         ),
 
+        'HR_expansion_by_officer_type': Parameter(
+            Types.DICT, "This DICT has keys of nine officer types, each with a float value that "
+                        "specifies the proportion of extra budget allocated to that officer type."
+                        "The extra budget for this year is (100 * HR_budget_growth_rate) of the total salary "
+                        "of these officers in last year. Given the allocated extra budget and annual salary, "
+                        "we calculate the extra minutes for these staff of this year. The expansion is done "
+                        "on 1 Jan of every year from start_year_HR_expansion_by_officer_type."
+        ),
+        "HR_budget_growth_rate": Parameter(
+            Types.REAL, "This number is the annual growth rate of HR budget. "
+                        "The default value is 0.042 (4.2%), assuming the annual GDP growth rate is 4.2% and "
+                        "the proportion of GDP expenditure on paying salaries of these staff is fixed "
+        ),
+
+        'start_year_HR_expansion_by_officer_type': Parameter(
+            Types.INT, "Year from which the HR expansion by officer type will take place. The change happens "
+                       "on 1 Jan of every year onwards."
+        ),
+
+        'end_year_HR_expansion_by_officer_type': Parameter(
+            Types.INT, "Year in which the HR expansion by officer type will stop. This happens on 1 Jan of "
+                       "that year. When submit the scenario to run, this should be the same year of the end year of "
+                       "the run."
+        ),
+
+        'minute_salary': Parameter(
+            Types.DATA_FRAME, "This specifies the minute salary in USD per officer type per facility id."
+        ),
+
         'tclose_overwrite': Parameter(
             Types.INT, "Decide whether to overwrite tclose variables assigned by disease modules"),
 
@@ -627,6 +656,20 @@ class HealthSystem(Module):
         # Ensure that a value for the year at the start of the simulation is provided.
         assert all(2010 in sheet['year'].values for sheet in self.parameters['yearly_HR_scaling'].values())
 
+        # Read in ResourceFile_Annual_Salary_Per_Cadre.csv
+        self.parameters['minute_salary'] = pd.read_csv(
+            Path(self.resourcefilepath) / 'costing' / 'Minute_Salary_HR.csv')
+
+        # Set default values for HR_expansion_by_officer_type, start_year_HR_expansion_by_officer_type,
+        # end_year_HR_expansion_by_officer_type
+        self.parameters['HR_expansion_by_officer_type'] = {
+            'Clinical': 0, 'DCSA': 0, 'Nursing_and_Midwifery': 0, 'Pharmacy': 0,
+            'Dental': 0, 'Laboratory': 0, 'Mental': 0, 'Nutrition': 0, 'Radiography': 0
+        }
+        self.parameters['HR_budget_growth_rate'] = 0.042
+        self.parameters['start_year_HR_expansion_by_officer_type'] = 2025
+        self.parameters['end_year_HR_expansion_by_officer_type'] = 2031
+
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
 
@@ -774,6 +817,12 @@ class HealthSystem(Module):
         # The first event scheduled for the start of the simulation is only used to update self.last_year_pop_size,
         # whilst the actual scaling will only take effect from 2011 onwards.
         sim.schedule_event(DynamicRescalingHRCapabilities(self), Date(sim.date))
+
+        # Schedule recurring event that expands HR by officer type
+        # from the start_year_HR_expansion_by_officer_type to the end_year_HR_expansion_by_officer_type.
+        for yr in range(self.parameters["start_year_HR_expansion_by_officer_type"],
+                        self.parameters["end_year_HR_expansion_by_officer_type"]):
+            sim.schedule_event(HRExpansionByOfficerType(self), Date(yr, 1, 1))
 
     def on_birth(self, mother_id, child_id):
         self.bed_days.on_birth(self.sim.population.props, mother_id, child_id)
@@ -1016,6 +1065,11 @@ class HealthSystem(Module):
         # Note: Currently relying on module variable rather than parameter for
         # scale_to_effective_capabilities, in order to facilitate testing. However
         # this may eventually come into conflict with the Switcher functions.
+
+        # In addition, for Class HRExpansionByOfficerType,
+        # for the purpose of keep cost not scaled, need to scale down minute salary when capabilities are scaled up
+
+        minute_salary = self.parameters['minute_salary']
         pattern = r"FacilityID_(\w+)_Officer_(\w+)"
         for officer in self._daily_capabilities.keys():
             matches = re.match(pattern, officer)
@@ -1030,6 +1084,9 @@ class HealthSystem(Module):
             )
             if rescaling_factor > 1 and rescaling_factor != float("inf"):
                 self._daily_capabilities[officer] *= rescaling_factor
+                minute_salary.loc[(minute_salary.Facility_ID == facility_id)
+                                  & (minute_salary.Officer_Type_Code == officer_type),
+                                  'Minute_Salary_USD'] /= rescaling_factor
 
     def update_consumables_availability_to_represent_merging_of_levels_1b_and_2(self, df_original):
         """To represent that facility levels '1b' and '2' are merged together under the label '2', we replace the
@@ -2949,6 +3006,70 @@ class RescaleHRCapabilities_ByDistrict(Event, PopulationScopeEventMixin):
             district = self.module._facility_by_facility_id[facility_id].district
             if district in HR_scaling_factor_by_district:
                 self.module._daily_capabilities[officer] *= HR_scaling_factor_by_district[district]
+
+
+class HRExpansionByOfficerType(Event, PopulationScopeEventMixin):
+    """ This event exists to expand the HR by officer type (Clinical, DCSA, Nursing_and_Midwifery, Pharmacy)
+    given an extra budget. This is done for daily capabilities, as a year consists of 365.25 equal days."""
+    def __init__(self, module):
+        super().__init__(module)
+
+    def apply(self, population):
+
+        # get minute salary
+        minute_salary_by_officer_facility_id = self.module.parameters['minute_salary']
+
+        # get current daily minutes and format it to be consistent with minute salary
+        daily_minutes = pd.DataFrame(self.module._daily_capabilities).reset_index().rename(
+            columns={'index': 'facilityid_officer'})
+        daily_minutes[['Facility_ID', 'Officer_Type_Code']] = daily_minutes.facilityid_officer.str.split(
+            pat='_', n=3, expand=True)[[1, 3]]
+        daily_minutes['Facility_ID'] = daily_minutes['Facility_ID'].astype(int)
+
+        # get daily cost per officer type per facility id
+        daily_cost = minute_salary_by_officer_facility_id.merge(
+            daily_minutes, on=['Facility_ID', 'Officer_Type_Code'], how='outer')
+        daily_cost['Total_Cost_Per_Day'] = daily_cost['Minute_Salary_USD'] * daily_cost['Total_Minutes_Per_Day']
+
+        # get daily cost per officer type
+        daily_cost = daily_cost.groupby('Officer_Type_Code').agg({'Total_Cost_Per_Day': 'sum'})
+
+        # get daily extra budget for this year
+        daily_extra_budget = (self.module.parameters['HR_budget_growth_rate']
+                              * daily_cost.Total_Cost_Per_Day.sum())
+
+        # get proportional daily extra budget for each officer type
+        extra_budget_fraction = pd.Series(self.module.parameters['HR_expansion_by_officer_type'])
+        assert set(extra_budget_fraction.index) == set(daily_cost.index), \
+            "Input officer types do not match the defined officer types"
+        daily_cost = daily_cost.reindex(index=extra_budget_fraction.index)
+        daily_cost['extra_budget_per_day'] = daily_extra_budget * extra_budget_fraction
+
+        # get the scale up factor for each officer type, assumed to be the same for each facility id of that
+        # officer type (note "cost = available minutes * minute salary", thus we could directly calculate
+        # scale up factor using cost)
+        daily_cost['scale_up_factor'] = (
+            (daily_cost.extra_budget_per_day + daily_cost.Total_Cost_Per_Day) / daily_cost.Total_Cost_Per_Day
+        )
+
+        # scale up the daily minutes per cadre per facility id
+        pattern = r"FacilityID_(\w+)_Officer_(\w+)"
+        for officer in self.module._daily_capabilities.keys():
+            matches = re.match(pattern, officer)
+            # Extract officer type
+            officer_type = matches.group(2)
+            self.module._daily_capabilities[officer] *= daily_cost.loc[officer_type, 'scale_up_factor']
+
+        # save the scale up factor, updated cost and updated capabilities into logger
+        total_cost_this_year = 365.25 * (daily_cost.Total_Cost_Per_Day + daily_cost.extra_budget_per_day)
+        logger_summary.info(key='HRScaling',
+                            description='The HR scale up factor by office type given fractions of an extra budget',
+                            data={
+                                'scale_up_factor': daily_cost.scale_up_factor.to_dict(),
+                                'year_of_scale_up': self.sim.date.year,
+                                'total_hr_salary': total_cost_this_year.to_dict()
+                            }
+                            )
 
 
 class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
