@@ -1504,7 +1504,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         df = self.sim.population.props
 
         # get number of tests performed in last time period
-        if self.sim.date.year == 2011:
+        if self.sim.date.year == (self.sim.start_date.year + 1):
             number_tests_new = df.hv_number_tests.sum()
             previous_test_numbers = 0
 

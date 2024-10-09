@@ -875,7 +875,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         self.get_and_store_labour_item_codes()
 
         # We set the LoggingEvent to run on the last day of each year to produce statistics for that year
-        sim.schedule_event(LabourLoggingEvent(self), sim.date + DateOffset(days=1))
+        sim.schedule_event(LabourLoggingEvent(self), sim.date + DateOffset(years=1))
 
         # Schedule analysis event
         if self.sim.date.year <= self.current_parameters['analysis_year']:
