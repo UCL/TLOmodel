@@ -97,6 +97,20 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 .groupby(level=0, axis=1).sum()
                 .sum())
 
+    def get_num_appts_by_level(_df):
+        """Return the number of services by appt type and facility level (total within the TARGET_PERIOD)"""
+        def unpack_nested_dict_in_series(_raw: pd.Series):
+            return pd.concat(
+                {
+                  idx: pd.DataFrame.from_dict(mydict) for idx, mydict in _raw.items()
+                 }
+             ).unstack().fillna(0.0).astype(int)
+
+        return _df \
+            .loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), 'Number_By_Appt_Type_Code_And_Level'] \
+            .pipe(unpack_nested_dict_in_series) \
+            .sum(axis=0)
+
     def get_num_services(_df):
         """Return the number of services in total of all appt types (total within the TARGET_PERIOD)"""
         return pd.Series(
@@ -303,6 +317,17 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ].set_index('Officer_Category').T
         return salary[cadres]
 
+    def format_appt_time():
+        """
+        Return the formatted appointment time requirements
+        """
+        file_path = Path(resourcefilepath
+                         / 'healthsystem' / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Time_Table.csv')
+        _df = pd.read_csv(file_path, index_col=False)
+        _df = _df.pivot(index=['Facility_Level', 'Appt_Type_Code'], columns='Officer_Category',
+                        values='Time_Taken_Mins').fillna(0).T
+        return _df
+
     # def get_hcw_time_usage(_df):
     #     """Return the number of treatments by short treatment id (total within the TARGET_PERIOD)"""
     #     _df = _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD), 'TREATMENT_ID'].apply(pd.Series).sum()
@@ -316,6 +341,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # Define cadres in order
     cadres = ['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy',
               'Dental', 'Laboratory', 'Mental', 'Nutrition', 'Radiography']
+
+    # Get appointment time requirement
+    appt_time = format_appt_time()
 
     # # Get current (year of 2018/2019) hr counts
     # curr_hr = get_current_hr(cadres)
@@ -460,6 +488,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         do_scaling=True
     ).pipe(set_param_names_as_column_index_level_0)
 
+    num_never_ran_appts_by_level = extract_results(
+        results_folder,
+        module='tlo.methods.healthsystem.summary',
+        key='Never_ran_HSI_Event',
+        custom_generate_series=get_num_appts_by_level,
+        do_scaling=True
+    ).pipe(set_param_names_as_column_index_level_0)
+
     num_never_ran_services = extract_results(
         results_folder,
         module='tlo.methods.healthsystem.summary',
@@ -519,6 +555,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     num_appts_summarized = summarize(num_appts, only_mean=True).T.reindex(param_names).reindex(
         num_dalys_summarized.index
     )
+    num_never_ran_appts_by_level_summarized = summarize(num_never_ran_appts_by_level, only_mean=True).T.reindex(param_names).reindex(
+        num_dalys_summarized.index
+    ).fillna(0.0)
     num_treatments_summarized = summarize(num_treatments, only_mean=True).T.reindex(param_names).reindex(
         num_dalys_summarized.index
     )
@@ -706,6 +745,25 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
          - num_treatments_total_increased['mean'].sort_index()
          ) < 1e-6
     ).all()
+
+    # get HCW time needed to run the never run appts
+    cols_1 = num_never_ran_appts_by_level_summarized.columns
+    cols_2 = appt_time.columns
+    # check that never ran appts (at a level) not in appt_time (as defined) have count 0 and drop them
+    assert (num_never_ran_appts_by_level_summarized[list(set(cols_1) - set(cols_2))] == 0).all().all()
+    num_never_ran_appts_by_level_summarized.drop(columns=list(set(cols_1) - set(cols_2)), inplace=True)
+    assert set(num_never_ran_appts_by_level_summarized.columns).issubset(set(cols_2))
+    # calculate hcw time gap
+    hcw_time_gap = pd.DataFrame(index=num_never_ran_appts_by_level_summarized.index,
+                                columns=appt_time.index)
+    for i in hcw_time_gap.index:
+        for j in hcw_time_gap.columns:
+            hcw_time_gap.loc[i, j] = num_never_ran_appts_by_level_summarized.loc[i, :].mul(
+                appt_time.loc[j, num_never_ran_appts_by_level_summarized.columns]
+            ).sum()
+    # reorder columns to be consistent with cadres
+    hcw_time_gap = hcw_time_gap[['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy',
+                                 'Dental', 'Laboratory', 'Mental', 'Radiography']]
 
     # get Return (in terms of DALYs averted) On Investment (extra cost) for all expansion scenarios, excluding s_1
     # get Cost-Effectiveness, i.e., cost of every daly averted, for all expansion scenarios
@@ -1077,6 +1135,28 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
+    name_of_plot = f'Never ran services by appointment type, {target_period()}'
+    num_never_ran_appts_summarized_in_millions = num_never_ran_appts_summarized / 1e6
+    yerr_services = np.array([
+        (num_never_ran_services_summarized['mean'].values - num_never_ran_services_summarized['lower']).values,
+        (num_never_ran_services_summarized['upper'].values - num_never_ran_services_summarized['mean']).values,
+    ])/1e6
+    fig, ax = plt.subplots(figsize=(9, 6))
+    num_never_ran_appts_summarized_in_millions.plot(kind='bar', stacked=True, color=appt_color, rot=0, ax=ax)
+    ax.errorbar(range(len(param_names)), num_never_ran_services_summarized['mean'].values / 1e6, yerr=yerr_services,
+                fmt=".", color="black", zorder=100)
+    ax.set_ylabel('Millions', fontsize='small')
+    ax.set(xlabel=None)
+    xtick_labels = [substitute_labels[v] for v in num_never_ran_appts_summarized_in_millions.index]
+    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
+    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Appointment type', title_fontsize='small',
+               fontsize='small', reverse=True)
+    plt.title(name_of_plot)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
     name_of_plot = f'Services by treatment type, {target_period()}'
     num_treatments_summarized_in_millions = num_treatments_summarized / 1e6
     yerr_services = np.array([
@@ -1108,6 +1188,24 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.set_ylabel('Thousands', fontsize='small')
     ax.set(xlabel=None)
     xtick_labels = [substitute_labels[v] for v in total_staff_to_plot.index]
+    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
+    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
+               fontsize='small', reverse=True)
+    plt.title(name_of_plot)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
+    name_of_plot = f'HCW time needed to deliver never ran appointments, {target_period()}'
+    hcw_time_gap_to_plot = (hcw_time_gap / 1e6).reindex(num_dalys_summarized.index)
+    column_dcsa =  hcw_time_gap_to_plot.pop('DCSA')
+    hcw_time_gap_to_plot.insert(3, "DCSA", column_dcsa)
+    fig, ax = plt.subplots(figsize=(9, 6))
+    hcw_time_gap_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
+    ax.set_ylabel('Minutes in Millions', fontsize='small')
+    ax.set(xlabel=None)
+    xtick_labels = [substitute_labels[v] for v in hcw_time_gap_to_plot.index]
     ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
     plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
                fontsize='small', reverse=True)
