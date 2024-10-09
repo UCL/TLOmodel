@@ -24,13 +24,15 @@ Analyses Using The Model
 
 * `Factors Associated with Consumable Stock-Outs in Malawi: Evidence from a Facility Census <https://www.sciencedirect.com/science/article/pii/S2214109X24000950>`_
 
-* `The Effects of Health System Frailties on the Projected Impact of the HIV and TB Programmes in Malawi <https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4508436>`_
+* `The Effects of Health System Frailties on the Projected Impact of the HIV and TB Programmes in Malawi <https://www.sciencedirect.com/science/article/pii/S2214109X24002596>`_
 
 * `Estimating the health burden of road traffic injuries in Malawi using an individual-based model <https://injepijournal.biomedcentral.com/articles/10.1186/s40621-022-00386-6>`_
 
 * `The potential impact of intervention strategies on COVID-19 transmission in Malawi: A mathematical modelling study. <https://bmjopen.bmj.com/content/11/7/e045196>`_
 
 * `The potential impact of including pre-school aged children in the praziquantel mass-drug administration programmes on the S.haematobium infections in Malawi: a modelling study <https://www.medrxiv.org/content/10.1101/2020.12.09.20246652v1>`_
+
+* `A Decade of Progress in HIV, Malaria, and Tuberculosis Initiatives in Malawi. <https://www.medrxiv.org/content/10.1101/2024.10.08.24315077v1>`_
 
 
 Healthcare Seeking Behaviour
