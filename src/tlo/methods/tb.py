@@ -58,6 +58,8 @@ class Tb(Module):
 
     OPTIONAL_INIT_DEPENDENCIES = {"HealthBurden", "Hiv"}
 
+    ADDITIONAL_DEPENDENCIES = {"CardioMetabolicDisorders"}
+
     METADATA = {
         Metadata.DISEASE_MODULE,
         Metadata.USES_SYMPTOMMANAGER,

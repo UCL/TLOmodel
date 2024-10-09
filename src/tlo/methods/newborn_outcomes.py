@@ -49,7 +49,8 @@ class NewbornOutcomes(Module):
         'CareOfWomenDuringPregnancy',
         'Labour',
         'PostnatalSupervisor',
-        'PregnancySupervisor'
+        'PregnancySupervisor',
+        'Hiv'
     }
 
     METADATA = {
