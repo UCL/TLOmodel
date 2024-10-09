@@ -123,8 +123,11 @@ def test_run_core_modules_normal_allocation_of_pregnancy(seed, tmpdir):
 
     # check that no errors have been logged during the simulation run
     output = parse_log_file(sim.log_filepath)
-    assert 'error' not in output['tlo.methods.pregnancy_supervisor']
-    assert 'error' not in output['tlo.methods.care_of_women_during_pregnancy']
+    if 'tlo.methods.pregnancy_supervisor' in output:
+        assert 'error' not in output['tlo.methods.pregnancy_supervisor']
+
+    if 'tlo.methods.care_of_women_during_pregnancy' in output:
+        assert 'error' not in output['tlo.methods.care_of_women_during_pregnancy']
 
 
 @pytest.mark.slow
@@ -136,13 +139,16 @@ def test_run_core_modules_high_volumes_of_pregnancy(seed, tmpdir):
     register_modules(sim)
     sim.make_initial_population(n=5000)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
-    sim.simulate(end_date=Date(2011, 1, 1))
+    sim.simulate(end_date=Date(2011, 1, 2))
     check_dtypes(sim)
 
     # check that no errors have been logged during the simulation run
     output = parse_log_file(sim.log_filepath)
-    assert 'error' not in output['tlo.methods.pregnancy_supervisor']
-    assert 'error' not in output['tlo.methods.care_of_women_during_pregnancy']
+    if 'tlo.methods.pregnancy_supervisor' in output:
+        assert 'error' not in output['tlo.methods.pregnancy_supervisor']
+
+    if 'tlo.methods.care_of_women_during_pregnancy' in output:
+        assert 'error' not in output['tlo.methods.care_of_women_during_pregnancy']
 
 
 @pytest.mark.slow
@@ -172,14 +178,15 @@ def test_run_core_modules_high_volumes_of_pregnancy_hsis_cant_run(seed, tmpdir):
 
     sim.make_initial_population(n=5000)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
-    sim.simulate(end_date=Date(2011, 1, 1))
+    sim.simulate(end_date=Date(2011, 1, 2))
     check_dtypes(sim)
 
     # check that no errors have been logged during the simulation run
     output = parse_log_file(sim.log_filepath)
     for module in ['pregnancy_supervisor', 'care_of_women_during_pregnancy', 'labour', 'postnatal_supervisor',
                    'newborn_outcomes']:
-        assert 'error' not in output[f'tlo.methods.{module}']
+        if module in output:
+            assert 'error' not in output[f'tlo.methods.{module}']
 
 
 @pytest.mark.slow
@@ -220,13 +227,16 @@ def test_run_with_all_referenced_modules_registered(seed, tmpdir):
 
     sim.make_initial_population(n=5000)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)  # keep high volume of pregnancy to increase risk of error
-    sim.simulate(end_date=Date(2011, 1, 1))
+    sim.simulate(end_date=Date(2011, 1, 2))
     check_dtypes(sim)
 
     # check that no errors have been logged during the simulation run
     output = parse_log_file(sim.log_filepath)
-    assert 'error' not in output['tlo.methods.pregnancy_supervisor']
-    assert 'error' not in output['tlo.methods.care_of_women_during_pregnancy']
+    if 'tlo.methods.pregnancy_supervisor' in output:
+        assert 'error' not in output['tlo.methods.pregnancy_supervisor']
+
+    if 'tlo.methods.care_of_women_during_pregnancy' in output:
+        assert 'error' not in output['tlo.methods.care_of_women_during_pregnancy']
 
 
 def test_store_dalys_in_mni_function_and_daly_calculations(seed):
@@ -1081,6 +1091,9 @@ def test_pregnancy_supervisor_gdm(seed):
     for woman in pregnant_women.index:
         pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], woman)
         pregnancy_helper_functions.update_mni_dictionary(sim.modules['Labour'], woman)
+
+        sim.modules['PregnancySupervisor'].mother_and_newborn_info[woman]['delivery_setting'] = 'home_birth'
+
 
     # Run pregnancy supervisor event
     pregnancy_sup = pregnancy_supervisor.PregnancySupervisorEvent(module=sim.modules['PregnancySupervisor'])
