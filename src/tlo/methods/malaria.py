@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, List, Literal, Optional, Union
 
 import pandas as pd
+import numpy as np
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
@@ -599,7 +600,7 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         sim.schedule_event(MalariaLoggingEvent(self), sim.date + DateOffset(years=1))
         sim.schedule_event(MalariaTxLoggingEvent(self), sim.date + DateOffset(years=1))
         # todo reinstate if needed
-        # sim.schedule_event(MalariaPrevDistrictLoggingEvent(self), sim.date + DateOffset(months=1))
+        sim.schedule_event(MalariaPrevDistrictLoggingEvent(self), sim.date + DateOffset(years=1))
 
         # Optional: Schedule the scale-up of programs
         if self.parameters["type_of_scaleup"] != 'none':
@@ -691,7 +692,7 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         # lookup table created in malaria read_parameters
         # produces self.itn_irs called by malaria poll to draw incidence
         # need to overwrite this
-        highrisk_distr_num = p["highrisk_districts"]["district_num"]
+        highrisk_distr_num = p["highrisk_districts"]["highest_burden_district_num"]
 
         # Find indices where District_Num is in highrisk_distr_num
         mask = self.itn_irs['irs_rate'].index.get_level_values('District_Num').isin(
@@ -699,7 +700,6 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
 
         # IRS values can be 0 or 0.8 - no other value in lookup table
         self.itn_irs['irs_rate'].loc[mask] = scaled_params["irs_district"]
-        # self.itn_irs['irs_rate'] = scaled_params["irs_district"]
 
         # set ITN for all districts
         # Set these values to 0.7 - this is the max value possible in lookup table
@@ -1747,7 +1747,8 @@ class MalariaTxLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
 class MalariaPrevDistrictLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
-        self.repeat = 1
+        # todo make monthly if needed
+        self.repeat = 12
         super().__init__(module, frequency=DateOffset(months=self.repeat))
 
     def apply(self, population):

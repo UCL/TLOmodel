@@ -177,7 +177,7 @@ class ScenarioDefinitions:
         }
 
     def hss_package(self) -> Dict:
-        """The parameters for the Health System Strengthening Package"""
+        """The parameters for the Full Health System Strengthening Package"""
         return mix_scenarios(
             self.increase_capacity_at_primary_care(),
             self.accelerated_hrh_using_historical_scaling(),

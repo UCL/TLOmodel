@@ -80,45 +80,57 @@ class HSSElements(BaseScenario):
 
             # - - - Human Resource for Health - - -
 
-            "Double Capacity at Primary Care":
+            "HRH Scale-up Following Historical Growth":
                 mix_scenarios(
                     scenario_definitions.baseline(),
-                    scenario_definitions.double_capacity_at_primary_care(),
+                    scenario_definitions.hrh_using_historical_scaling(),
                 ),
 
-            "HRH Keeps Pace with Population Growth":
+            "HRH Accelerated Scale-up (8%)":
                 mix_scenarios(
                     scenario_definitions.baseline(),
-                    scenario_definitions.hrh_at_pop_growth(),
+                    scenario_definitions.accelerated_hrh_using_historical_scaling(),
                 ),
 
-            "HRH Increases at GDP Growth":
+            "CHW Scale-up Following Historical Growth":
                 mix_scenarios(
                     scenario_definitions.baseline(),
-                    scenario_definitions.hrh_at_gdp_growth(),
+                    scenario_definitions.scale_dcsa_with_historical_average(),
                 ),
 
-            "HRH Increases above GDP Growth":
+            "Increase Capacity at Primary Care Levels":
                 mix_scenarios(
                     scenario_definitions.baseline(),
-                    scenario_definitions.hrh_above_gdp_growth(),
+                    scenario_definitions.increase_capacity_at_primary_care(),
                 ),
 
             # - - - Supply Chains - - -
-            "Perfect Availability of Vital Items":
+            "Consumables Increased to 75th Percentile":
                 mix_scenarios(
                     scenario_definitions.baseline(),
-                    scenario_definitions.vital_items_available(),
+                    scenario_definitions.cons_at_75th_percentile(),
                 ),
 
-            "Perfect Availability of Medicines":
+            "Consumables Increased to 90th Percentile":
             mix_scenarios(
                 scenario_definitions.baseline(),
-                scenario_definitions.medicines_available(),
+                scenario_definitions.cons_at_90th_percentile(),
 
             ),
 
-            "Perfect Availability of All Consumables":
+            "Consumables Available at HIV levels":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.cons_at_HIV_availability(),
+                ),
+
+            "Consumables Available at EPI levels":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.cons_at_EPI_availability(),
+                ),
+
+            "Perfect Consumables Availability":
                 mix_scenarios(
                     scenario_definitions.baseline(),
                     scenario_definitions.all_consumables_available(),
