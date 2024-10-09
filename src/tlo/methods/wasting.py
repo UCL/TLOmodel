@@ -394,11 +394,11 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             probability_over_or_equal_125 = muac_distribution_in_well_group.sf(12.5)
 
             prob_less_than_115 = 1 - probability_over_or_equal_115
-            pro_between_115_125 = probability_over_or_equal_115 - probability_over_or_equal_125
+            prob_between_115_125 = probability_over_or_equal_115 - probability_over_or_equal_125
 
             df.loc[idx, 'un_am_MUAC_category'] = df.loc[idx].apply(
                 lambda x: self.rng.choice(['<115mm', '[115-125)mm', '>=125mm'],
-                                          p=[prob_less_than_115, pro_between_115_125, probability_over_or_equal_125]),
+                                          p=[prob_less_than_115, prob_between_115_125, probability_over_or_equal_125]),
                 axis=1
             )
 
