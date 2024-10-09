@@ -32,7 +32,7 @@ Analyses Using The Model
 
 * `The potential impact of including pre-school aged children in the praziquantel mass-drug administration programmes on the S.haematobium infections in Malawi: a modelling study <https://www.medrxiv.org/content/10.1101/2020.12.09.20246652v1>`_
 
-* 'A Decade of Progress in HIV, Malaria, and Tuberculosis Initiatives in Malawi <>`_
+* `A Decade of Progress in HIV, Malaria, and Tuberculosis Initiatives in Malawi. <https://www.medrxiv.org/content/10.1101/2024.10.08.24315077v1>`_
 
 
 Healthcare Seeking Behaviour
