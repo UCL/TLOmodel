@@ -248,18 +248,14 @@ def property_dependency_map_by_module(
     param get_dependencies:  Function which given a module gets the set of property
         dependencies. Defaults to extracting all dependencies.
     """
-    property_class_map = get_module_property_map(excluded_modules)
     property_node_attributes = {
         "fillcolor": "white",
-        "color": "black",  # Outline color
+        "color": "black",
         "fontname": "Arial",
         "shape": "square",
+        "style": "filled",
     }
-    node_attributes = {
-        "color": "black",  # Outline color
-        "fontname": "Arial",
-        "shape": "square",
-    }
+    property_class_map = get_module_property_map(excluded_modules)
     for key, dependent_module in property_class_map.items():
         if dependent_module not in excluded_modules:
             colour = get_color_short_treatment_id_extra_modules(key)
@@ -268,10 +264,10 @@ def property_dependency_map_by_module(
                 "color": "black",
                 "fontname": "Arial",
                 "shape": "square",
+                "style": "filled",
             }
             property_graph = pydot.Dot("properties", graph_type="digraph", rankdir='LR')
-            print(node_attributes)
-            property_graph.add_node(pydot.Node(key, fillcolor=***node_attributes))
+            property_graph.add_node(pydot.Node(key, **node_attributes))
             for property_key, property_module in property_class_map.items():
                 if key != property_key and property_module not in excluded_modules:
                     properties_of_module = get_dependencies(property_module)
