@@ -775,6 +775,9 @@ class HealthSystem(Module):
         # whilst the actual scaling will only take effect from 2011 onwards.
         sim.schedule_event(DynamicRescalingHRCapabilities(self), Date(sim.date))
 
+        # Schedule the logger to occur at the start of every year
+        sim.schedule_event(HealthSystemLogger(self), Date(sim.date.year, 1, 1))
+
     def on_birth(self, mother_id, child_id):
         self.bed_days.on_birth(self.sim.population.props, mother_id, child_id)
 
@@ -2969,3 +2972,37 @@ class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
                          f"Now using mode: "
                          f"{self.module.mode_appt_constraints}"
                     )
+
+
+class HealthSystemLogger(RegularEvent, PopulationScopeEventMixin):
+    """ This event runs at the start of each year and does any logging jobs for the HealthSystem module."""
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(years=1))
+
+    def apply(self, population):
+        """Things to do at the start of the year"""
+        self.log_number_of_staff()
+
+    def log_number_of_staff(self):
+        """Write to the summary log with the counts of staff (by cadre/facility/level) taking into account:
+         * Any scaling of capabilities that has taken place, year-by-year, or cadre-by-cadre
+         * Any re-scaling that has taken place at the transition into Mode 2.
+        """
+
+        hs = self.module  # HealthSystem module
+
+        # Current amount of patient-facing time
+        pft_current = dict(hs.capabilities_today.sort_index())
+
+        # Rescaling
+        # todo
+
+        # Actual amount of patient-facing time
+        pft = pft_current
+
+        logger_summary.info(
+            key="number_of_hcw_staff",
+            description="The number of hcw_staff this year",
+            data=pft,
+        )
