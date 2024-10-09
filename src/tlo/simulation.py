@@ -72,7 +72,7 @@ class Simulation:
         seed: Optional[int] = None,
         log_config: Optional[dict] = None,
         show_progress_bar: bool = False,
-        resourcefilepath: str = None,
+        resourcefilepath: Optional[str | Path] = None,
     ):
         """Create a new simulation.
 

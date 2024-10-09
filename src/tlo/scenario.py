@@ -404,7 +404,6 @@ class SampleRunner:
         logger.info(
             key="message",
             data=f"Running draw {sample['draw_number']}, sample {sample['sample_number']}",
-
         )
 
         # if user has specified a restore simulation, we load it from a pickle file
