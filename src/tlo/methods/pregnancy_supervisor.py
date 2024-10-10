@@ -2299,8 +2299,8 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                           'hc_rate': rate(c['health_centre_delivery']  , total_births, 100),
                           'hp_rate': rate(c['hospital_delivery']  , total_births, 100),
 
-                          'm_pnc1+': rate(m_pnc1, total_births, 1000),
-                          'n_pnc1+': rate(n_pnc1, total_births, 1000)})
+                          'm_pnc1+': rate(m_pnc1, total_births, 100),
+                          'n_pnc1+': rate(n_pnc1, total_births, 100)})
 
         # Reset the dictionary so all values = 0
         mnh_oc = pregnancy_helper_functions.generate_mnh_outcome_counter()
