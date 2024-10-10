@@ -61,4 +61,5 @@ facilities_with_districts = facilities_by_area.merge(grid_with_facilities_with_d
                                                      left_on='District',
                                                      right_on='ADM2_EN') # will have what grid cell they're in
 
-
+# write csv file of facilities with districts
+facilities_with_districts.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/facilities_with_districts.csv")
