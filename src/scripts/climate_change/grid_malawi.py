@@ -61,7 +61,7 @@ facilities_with_districts_shap_files = facilities_by_area.merge(admin_area_with_
                                                      how='left',
                                                      left_on='District',
                                                      right_on = 'ADM2_EN') # will have what grid cell they're in
-
+# Facilities do not go smaller than region... Which may have multiple polygons
 # So, because of the fact one district may overlap with many grids, there are many "duplicates"
 # in facilities_with_districts_shap_files (as each facility is paired with any matching grid)
 # removing the duplicates PENDING a better system (e.g. assigning based on size)
@@ -71,6 +71,4 @@ facilities_with_districts_shap_files_no_duplicates.reset_index(drop=True, inplac
 
 # write csv file of facilities with districts
 facilities_with_districts_shap_files_no_duplicates.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/facilities_with_districts.csv")
-
-# Facilities do not go smaller than region... Which may have multiple polygons
 
