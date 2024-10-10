@@ -2776,7 +2776,7 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """Schedule to take place every month
         """
-        super().__init__(module, frequency=DateOffset(months=1))
+        super().__init__(module, frequency=DateOffset(months=1000))
         p = module.parameters
         # Parameters which transition the model between states
         self.base_1m_prob_rti = (p['base_rate_injrti'] / 12)
@@ -2864,9 +2864,13 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
                          .when('.between(70,79)', self.rr_injrti_age7079),
                          Predictor('li_ex_alc').when(True, self.rr_injrti_excessalcohol)
                          )
-        pred = eq.predict(df.loc[rt_current_non_ind])
+        if self.sim.generate_event_chains is True and self.sim.generate_event_chains_overwrite_epi is True:
+            pred = 1
+        else:
+            pred = eq.predict(df.loc[rt_current_non_ind])
         random_draw_in_rti = self.module.rng.random_sample(size=len(rt_current_non_ind))
         selected_for_rti = rt_current_non_ind[pred > random_draw_in_rti]
+
         # Update to say they have been involved in a rti
         df.loc[selected_for_rti, 'rt_road_traffic_inc'] = True
         # Set the date that people were injured to now

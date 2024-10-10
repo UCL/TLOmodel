@@ -281,7 +281,7 @@ class Simulation:
                 data=f"{module.name}.initialise_population() {time.time() - start1} s",
             )
 
-        self.event_chains = pd.DataFrame(columns= list(self.population.props.columns)+['person_ID'] + ['event'] + ['event_date'] + ['when'])
+        self.event_chains = pd.DataFrame(columns= list(self.population.props.columns)+['person_ID'] + ['event'] + ['event_date'] + ['when'] + ['appt_footprint'])
 
         end = time.time()
         logger.info(key="info", data=f"make_initial_population() {end - start} s")
@@ -303,8 +303,8 @@ class Simulation:
             # Eventually this can be made an option
             self.generate_event_chains_overwrite_epi = True
             # For now keep these fixed, eventually they will be input from user
-            self.generate_event_chains_modules_of_interest = [self.modules['Tb'], self.modules['Hiv'], self.modules['CardioMetabolicDisorders']]
-            self.generate_event_chains_ignore_events =  ['AgeUpdateEvent','HealthSystemScheduler', 'DirectBirth'] #['TbActiveCasePollGenerateData','HivPollingEventForDataGeneration','SimplifiedBirthsPoll', 'AgeUpdateEvent', 'HealthSystemScheduler']
+            self.generate_event_chains_modules_of_interest = [self.modules['RTI']]
+            self.generate_event_chains_ignore_events =  ['AgeUpdateEvent','HealthSystemScheduler', 'SimplifiedBirthsPoll','DirectBirth'] #['TbActiveCasePollGenerateData','HivPollingEventForDataGeneration','SimplifiedBirthsPoll', 'AgeUpdateEvent', 'HealthSystemScheduler']
         else:
             # If not using to print chains, cannot ignore epi
             self.generate_event_chains_overwrite_epi = False

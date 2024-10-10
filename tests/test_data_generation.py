@@ -25,15 +25,16 @@ from tlo.methods import (
     depression,
     tb,
     contraception,
-#    simplified_births,
+    simplified_births,
+    rti,
     symptommanager,
 )
 from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstAppt
 
 # create simulation parameters
 start_date = Date(2010, 1, 1)
-end_date = Date(2014, 1, 1)
-popsize = 100
+end_date = Date(2012, 1, 1)
+popsize = 200
 
 @pytest.mark.slow
 def test_data_harvesting(seed):
@@ -41,7 +42,7 @@ def test_data_harvesting(seed):
     This test runs a simulation to print all individual events of specific individuals
     """
     
-    module_of_interest = 'Hiv'
+    module_of_interest = 'RTI'
     # create sim object
     sim = create_basic_sim(popsize, seed)
     
@@ -55,29 +56,31 @@ def test_data_harvesting(seed):
 
     # run simulation
     sim.simulate(end_date=end_date, generate_event_chains = True)
-
+    exit(-1)
 
 def create_basic_sim(population_size, seed):
     # create the basic outline of an rti simulation object
     sim = Simulation(start_date=start_date, seed=seed)
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                contraception.Contraception(resourcefilepath=resourcefilepath),
+               # contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
+                 rti.RTI(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 epi.Epi(resourcefilepath=resourcefilepath),
-                 hiv.Hiv(resourcefilepath=resourcefilepath),
-                 tb.Tb(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+               #  epi.Epi(resourcefilepath=resourcefilepath),
+               #  hiv.Hiv(resourcefilepath=resourcefilepath),
+               #  tb.Tb(resourcefilepath=resourcefilepath),
                  cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
                  depression.Depression(resourcefilepath=resourcefilepath),
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+                # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                # care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                # labour.Labour(resourcefilepath=resourcefilepath),
+                 #postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  )
 
     sim.make_initial_population(n=population_size)
