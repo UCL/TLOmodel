@@ -303,6 +303,11 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
     def _schedule_mda_events(self) -> None:
         """Schedule MDA events, historical and prognosed."""
 
+        # todo: tara to confirm if happy with this or if there is an alternative (cant set self.mda_execute == False
+        #  when running full model?)
+        if self.sim.date.year != 2010:
+            return
+
         # Schedule the  MDA that have occurred, in each district and in each year:
         for (district, year), cov in self.parameters['MDA_coverage_historical'].iterrows():
             assert district in self.sim.modules['Demography'].districts, f'District {district} is not recognised.'
