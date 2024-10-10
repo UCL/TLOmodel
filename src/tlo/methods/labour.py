@@ -1447,9 +1447,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
                 pregnancy_helper_functions.store_dalys_in_mni(individual_id, mni, 'eclampsia_onset',
                                                               self.sim.date)
 
-                current_log.info(key='maternal_complication', data={'person': individual_id,
-                                                                    'type': 'eclampsia',
-                                                                    'timing': timing})
+                self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['eclampsia'] +=1
 
         # Or from mild to severe gestational hypertension, risk reduced by treatment
         if df.at[individual_id, f'{property_prefix}_htn_disorders'] == 'gest_htn':
@@ -1462,9 +1460,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
             if risk_prog_gh_sgh > self.rng.random_sample():
                 df.at[individual_id, f'{property_prefix}_htn_disorders'] = 'severe_gest_htn'
 
-                current_log.info(key='maternal_complication', data={'person': individual_id,
-                                                                    'type': 'severe_gest_htn',
-                                                                    'timing': timing})
+                self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['severe_gest_htn'] +=1
 
         # Or from severe gestational hypertension to severe pre-eclampsia...
         if df.at[individual_id, f'{property_prefix}_htn_disorders'] == 'severe_gest_htn':
@@ -1472,9 +1468,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
                 df.at[individual_id, f'{property_prefix}_htn_disorders'] = 'severe_pre_eclamp'
                 mni[individual_id]['new_onset_spe'] = True
 
-                current_log.info(key='maternal_complication', data={'person': individual_id,
-                                                                    'type': 'severe_pre_eclamp',
-                                                                    'timing': timing})
+                self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['severe_pre_eclamp'] +=1
 
         # Or from mild pre-eclampsia to severe pre-eclampsia...
         if df.at[individual_id, f'{property_prefix}_htn_disorders'] == 'mild_pre_eclamp':
@@ -1482,9 +1476,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
                 df.at[individual_id, f'{property_prefix}_htn_disorders'] = 'severe_pre_eclamp'
                 mni[individual_id]['new_onset_spe'] = True
 
-                current_log.info(key='maternal_complication', data={'person': individual_id,
-                                                                    'type': 'severe_pre_eclamp',
-                                                                    'timing': timing})
+                self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['severe_pre_eclamp'] +=1
 
     def apply_risk_of_early_postpartum_death(self, individual_id):
         """
