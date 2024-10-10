@@ -26,3 +26,25 @@ def get_data_frames(key):
 
 results = {k:get_data_frames(k) for k in ['mat_comp_incidence', 'nb_comp_incidence', 'deaths_and_stillbirths',
                                           'service_coverage']}
+
+
+import matplotlib.pyplot as plt
+import numpy as np
+# Sample data
+mmr_data = {
+    'int_1': [(235, 250, 265), (335, 350, 365)],
+    'int_2': [(170, 195, 200), (290, 305, 320)],
+    'int_3': [(280, 295, 310), (295 ,310, 325)],
+    'int_4': [(165, 180, 195), (385, 400, 415)]
+}
+# Plotting
+fig, ax = plt.subplots()
+for key, intervals in mmr_data.items():
+    for idx, (lower, mean, upper) in enumerate(intervals):
+        x = np.arange(len(mmr_data)) * len(intervals) + idx
+        ax.plot(x, mean, 'o', label=f'{key}' if idx == 0 else "")
+        ax.fill_between([x, x], [lower, lower], [upper, upper], alpha=0.2)
+ax.set_xticks(np.arange(len(mmr_data)) * len(intervals) + 0.5)
+ax.set_xticklabels(mmr_data.keys())
+plt.legend()
+plt.show()
