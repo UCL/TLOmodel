@@ -48,7 +48,7 @@ if not os.path.exists(figurespath):
     os.makedirs(figurespath)
 
 # Declare period for which the results will be generated (defined inclusively)
-TARGET_PERIOD = (Date(2015, 1, 1), Date(2015, 12, 31)) # TODO allow for multi-year costing
+TARGET_PERIOD = (Date(2010, 1, 1), Date(2031, 12, 31)) # TODO allow for multi-year costing
 def drop_outside_period(_df):
     """Return a dataframe which only includes for which the date is within the limits defined by TARGET_PERIOD"""
     return _df.drop(index=_df.index[~_df['date'].between(*TARGET_PERIOD)])
@@ -294,17 +294,23 @@ scenario_cost.to_csv(figurespath / 'scenario_cost.csv')
 def get_quantity_of_consumables_dispensed(results_folder):
     def get_counts_of_items_requested(_df):
         _df = drop_outside_period(_df)
-        counts_of_available = defaultdict(int)
-        counts_of_not_available = defaultdict(int)
+        counts_of_available = defaultdict(lambda: defaultdict(int))
+        counts_of_not_available = defaultdict(lambda: defaultdict(int))
+
         for _, row in _df.iterrows():
+            date = row['date']
             for item, num in row['Item_Available'].items():
-                counts_of_available[item] += num
+                counts_of_available[date][item] += num
             for item, num in row['Item_NotAvailable'].items():
-                counts_of_not_available[item] += num
-        return pd.concat(
-            {'Available': pd.Series(counts_of_available), 'Not_Available': pd.Series(counts_of_not_available)},
-            axis=1
-        ).fillna(0).astype(int).stack()
+                counts_of_not_available[date][item] += num
+        available_df = pd.DataFrame(counts_of_available).fillna(0).astype(int).stack().rename('Available')
+        not_available_df = pd.DataFrame(counts_of_not_available).fillna(0).astype(int).stack().rename('Not_Available')
+
+        # Combine the two dataframes into one series with MultiIndex (date, item, availability_status)
+        combined_df = pd.concat([available_df, not_available_df], axis=1).fillna(0).astype(int)
+
+        # Convert to a pd.Series, as expected by the custom_generate_series function
+        return combined_df.stack()
 
     cons_req = summarize(
         extract_results(
@@ -315,9 +321,94 @@ def get_quantity_of_consumables_dispensed(results_folder):
             do_scaling=True)
     )
 
-    cons_dispensed = cons_req.xs("Available", level=1) # only keep actual dispensed amount, i.e. when available
+    cons_dispensed = cons_req.xs("Available", level=2) # only keep actual dispensed amount, i.e. when available
     return cons_dispensed
+# TODO Extract year of dispensing drugs
 
+consumables_dispensed = get_quantity_of_consumables_dispensed(results_folder)
+consumables_dispensed = consumables_dispensed.reset_index().rename(columns = {'level_0': 'Item_Code', 'level_1': 'year'})
+consumables_dispensed[(     'year',      '')] = pd.to_datetime(consumables_dispensed[('year', '')]).dt.year # Extract only year from date
+consumables_dispensed[('Item_Code',      '')] = pd.to_numeric(consumables_dispensed[('Item_Code',      '')])
+quantity_columns = consumables_dispensed.columns.to_list()
+quantity_columns = [tup for tup in quantity_columns if ((tup != ('Item_Code', '')) & (tup != ('year', '')))] # exclude item_code and year columns
+
+# Load consumables cost data
+unit_price_consumable = workbook_cost["consumables"]
+unit_price_consumable = unit_price_consumable.rename(columns=unit_price_consumable.iloc[0])
+unit_price_consumable = unit_price_consumable[['Item_Code', 'Final_price_per_chosen_unit (USD, 2023)']].reset_index(drop=True).iloc[1:]
+unit_price_consumable = unit_price_consumable[unit_price_consumable['Item_Code'].notna()]
+
+# 2.1 Cost of consumables dispensed
+#---------------------------------------------------------------------------------------------------------------
+# Multiply number of items needed by cost of consumable
+cost_of_consumables_dispensed = consumables_dispensed.merge(unit_price_consumable, left_on = 'Item_Code', right_on = 'Item_Code', validate = 'm:1', how = 'left')
+price_column = 'Final_price_per_chosen_unit (USD, 2023)'
+cost_of_consumables_dispensed[quantity_columns] = cost_of_consumables_dispensed[quantity_columns].multiply(
+    cost_of_consumables_dispensed[price_column], axis=0)
+total_cost_of_consumables_dispensed = cost_of_consumables_dispensed.groupby(('year', ''))[quantity_columns].sum()
+total_cost_of_consumables_dispensed = total_cost_of_consumables_dispensed.reset_index()
+
+# 2.2 Cost of consumables stocked (quantity needed for what is dispensed)
+#---------------------------------------------------------------------------------------------------------------
+# Stocked amount should be higher than dispensed because of i. excess capacity, ii. theft, iii. expiry
+# While there are estimates in the literature of what % these might be, we agreed that it is better to rely upon
+# an empirical estimate based on OpenLMIS data
+# Estimate the stock to dispensed ratio from OpenLMIS data
+lmis_consumable_usage = pd.read_csv(path_for_new_resourcefiles / "ResourceFile_Consumables_availability_and_usage.csv")
+# Collapse individual facilities
+lmis_consumable_usage_by_item_level_month = lmis_consumable_usage.groupby(['category', 'item_code', 'district', 'fac_type_tlo', 'month'])[['closing_bal', 'dispensed', 'received']].sum()
+df = lmis_consumable_usage_by_item_level_month # Drop rows where monthly OpenLMIS data wasn't available
+df = df.loc[df.index.get_level_values('month') != "Aggregate"]
+opening_bal_january = df.loc[df.index.get_level_values('month') == 'January', 'closing_bal'] + \
+                      df.loc[df.index.get_level_values('month') == 'January', 'dispensed'] - \
+                      df.loc[df.index.get_level_values('month') == 'January', 'received']
+closing_bal_december = df.loc[df.index.get_level_values('month') == 'December', 'closing_bal']
+total_consumables_inflow_during_the_year = df.loc[df.index.get_level_values('month') != 'January', 'received'].groupby(level=[0,1,2,3]).sum() +\
+                                         opening_bal_january.reset_index(level='month', drop=True) -\
+                                         closing_bal_december.reset_index(level='month', drop=True)
+total_consumables_outflow_during_the_year  = df['dispensed'].groupby(level=[0,1,2,3]).sum()
+inflow_to_outflow_ratio = total_consumables_inflow_during_the_year.div(total_consumables_outflow_during_the_year, fill_value=1)
+
+# Edit outlier ratios
+inflow_to_outflow_ratio.loc[inflow_to_outflow_ratio < 1] = 1 # Ratio can't be less than 1
+inflow_to_outflow_ratio.loc[inflow_to_outflow_ratio > inflow_to_outflow_ratio.quantile(0.95)] = inflow_to_outflow_ratio.quantile(0.95) # Trim values greater than the 95th percentile
+average_inflow_to_outflow_ratio_ratio = inflow_to_outflow_ratio.mean()
+
+# Multiply number of items needed by cost of consumable
+inflow_to_outflow_ratio_by_consumable = inflow_to_outflow_ratio.groupby(level='item_code').mean()
+excess_stock_ratio = inflow_to_outflow_ratio_by_consumable - 1
+excess_stock_ratio = excess_stock_ratio.reset_index().rename(columns = {0: 'excess_stock_proportion_of_dispensed'})
+# TODO Consider whether a more disaggregated version of the ratio dictionary should be applied
+cost_of_excess_consumables_stocked = consumables_dispensed.merge(unit_price_consumable, left_on = 'Item_Code', right_on = 'Item_Code', validate = 'm:1', how = 'left')
+cost_of_excess_consumables_stocked = cost_of_excess_consumables_stocked.merge(excess_stock_ratio, left_on = 'Item_Code', right_on = 'item_code', validate = 'm:1', how = 'left')
+cost_of_excess_consumables_stocked.loc[cost_of_excess_consumables_stocked.excess_stock_proportion_of_dispensed.isna(), 'excess_stock_proportion_of_dispensed'] = average_inflow_to_outflow_ratio_ratio - 1# TODO disaggregate the average by program
+cost_of_excess_consumables_stocked[quantity_columns] = cost_of_excess_consumables_stocked[quantity_columns].multiply(cost_of_excess_consumables_stocked[price_column], axis=0)
+cost_of_excess_consumables_stocked[quantity_columns] = cost_of_excess_consumables_stocked[quantity_columns].multiply(cost_of_excess_consumables_stocked['excess_stock_proportion_of_dispensed'], axis=0)
+total_cost_of_excess_consumables_stocked = cost_of_excess_consumables_stocked.groupby(('year', ''))[quantity_columns].sum()
+total_cost_of_excess_consumables_stocked = total_cost_of_excess_consumables_stocked.reset_index()
+
+# Add to financial costs dataframe
+# Function to melt and label the cost category
+def melt_and_label_consumables_cost(_df, label):
+    multi_index = pd.MultiIndex.from_tuples(_df.columns)
+    _df.columns = multi_index
+    melted_df = pd.melt(_df, id_vars='year').rename(columns = {'variable_0': 'draw', 'variable_1': 'stat'})
+    melted_df['Cost_Sub-category'] = label
+    return melted_df
+
+consumable_costs = [
+    (total_cost_of_consumables_dispensed, 'cost_of_consumables_dispensed'),
+    (total_cost_of_excess_consumables_stocked, 'cost_of_consumables_stocked'),
+]
+# Iterate through additional costs, melt and concatenate
+for df, label in consumable_costs:
+    new_df = melt_and_label_consumables_cost(df, label)
+    scenario_cost = pd.concat([scenario_cost, new_df], ignore_index=True)
+scenario_cost.loc[scenario_cost.Cost_Category.isna(), 'Cost_Category'] = 'Medical consumables'
+#scenario_cost['value'] = scenario_cost['value'].apply(pd.to_numeric, errors='coerce')
+#scenario_cost.to_csv(figurespath / 'scenario_cost.csv')
+
+'''
 consumables_dispensed_under_perfect_availability = get_quantity_of_consumables_dispensed(consumables_results_folder)[9]
 consumables_dispensed_under_perfect_availability = consumables_dispensed_under_perfect_availability['mean'].to_dict() # TODO incorporate uncertainty in estimates
 consumables_dispensed_under_perfect_availability = defaultdict(int, {int(key): value for key, value in
@@ -508,16 +599,8 @@ def plot_cost_by_category(_df, suffix , figname_prefix = 'Consumables'):
 
 plot_cost_by_category(full_cons_cost_df, suffix = 'perfect_availability' , figname_prefix = 'Consumables')
 plot_cost_by_category(full_cons_cost_df, suffix = 'default_availability' , figname_prefix = 'Consumables')
+'''
 
-# Add consumable costs to the financial cost dataframe
-consumable_cost_subcategories = ['total_cost_of_consumables_dispensed', 'total_cost_of_excess_consumables_stocked']
-consumable_costs = pd.DataFrame({
-    'Cost_Category': ['Consumables'] * len(consumable_cost_subcategories),
-    'Cost_Sub-category': consumable_cost_subcategories,
-    'Cost': [total_cost_of_consumables_dispensed_under_default_availability, total_cost_of_excess_consumables_stocked_under_default_availability]
-})
-# Append new_data to scenario_cost_financial
-scenario_cost = pd.concat([scenario_cost, consumable_costs], ignore_index=True)
 
 # %%
 # 3. Equipment cost
@@ -547,6 +630,7 @@ unit_cost_equipment = unit_cost_equipment.rename(columns = {'Quantity_': 'Quanti
 #unit_cost_equipment_small  = unit_cost_equipment[['Item_code', 'Facility_Level', 'Quantity','service_fee_annual', 'spare_parts_annual', 'upfront_repair_cost_annual', 'replacement_cost_annual']]
 #equipment_cost_dict = unit_cost_equipment_small.groupby('Facility_Level').apply(lambda x: x.to_dict(orient='records')).to_dict()
 
+'''
 # Get list of equipment used by district and level
 equip = pd.DataFrame(
     log_equipment['tlo.methods.healthsystem.summary']['EquipmentEverUsed_ByFacilityID']
@@ -655,6 +739,7 @@ plot_most_expensive_equipment(equipment_cost)
 # TODO Collapse facility IDs by level of care to get the total number of facilities at each level using an item
 # TODO Multiply number of facilities by level with the quantity needed of each equipment and collapse to get total number of equipment (nationally)
 # TODO Which equipment needs to be newly purchased (currently no assumption made for equipment with cost > $250,000)
+'''
 
 # 4. Facility running costs
 # Average running costs by facility level and district times the number of facilities  in the simulation
