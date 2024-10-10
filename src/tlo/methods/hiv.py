@@ -1503,20 +1503,20 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
         df = self.sim.population.props
 
-        # get number of tests performed in last time period
-        if self.sim.date.year == (self.sim.start_date.year + 1):
-            number_tests_new = df.hv_number_tests.sum()
+        if not self.stored_test_numbers:
+            # If it's the first year, set previous_test_numbers to 0
             previous_test_numbers = 0
-
         else:
+            # For subsequent years, retrieve the last stored number
             previous_test_numbers = self.stored_test_numbers[-1]
 
-            # calculate number of tests now performed - cumulative, include those who have died
-            number_tests_new = df.hv_number_tests.sum()
+        # Calculate number of tests now performed - cumulative, include those who have died
+        number_tests_new = df.hv_number_tests.sum()
 
+        # Store the number of tests performed in this year for future reference
         self.stored_test_numbers.append(number_tests_new)
 
-        # number of tests performed in last time period
+        # Number of tests performed in the last time period
         number_tests_in_last_period = number_tests_new - previous_test_numbers
 
         # per-capita testing rate
