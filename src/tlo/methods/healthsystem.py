@@ -1046,10 +1046,16 @@ class HealthSystem(Module):
             how='left'
         )
 
+        availability_columns = ['available_prop', 'available_prop_scenario1', 'available_prop_scenario2',
+                                'available_prop_scenario3', 'available_prop_scenario4', 'available_prop_scenario5',
+                                'available_prop_scenario6', 'available_prop_scenario7', 'available_prop_scenario8',
+                                'available_prop_scenario9', 'available_prop_scenario10', 'available_prop_scenario11',
+                                'available_prop_scenario12']
+
         # compute the updated availability at the merged level '1b' and '2'
         availability_at_1b_and_2 = \
             dfx.drop(dfx.index[~dfx['Facility_Level'].isin(AVAILABILITY_OF_CONSUMABLES_AT_MERGED_LEVELS_1B_AND_2)]) \
-               .groupby(by=['District', 'month', 'item_code'])['available_prop'] \
+               .groupby(by=['District', 'month', 'item_code'])[availability_columns] \
                .mean() \
                .reset_index()\
                .assign(Facility_Level=LABEL_FOR_MERGED_FACILITY_LEVELS_1B_AND_2)
@@ -1078,7 +1084,7 @@ class HealthSystem(Module):
         # check values the same for everything apart from the facility level '2' facilities
         facilities_with_any_differences = set(
             df_updated.loc[
-                ~(df_original == df_updated).all(axis=1),
+                ~(df_original.sort_values(['Facility_ID', 'month', 'item_code']).reset_index(drop=True) == df_updated).all(axis=1),
                 'Facility_ID']
         )
         level2_facilities = set(

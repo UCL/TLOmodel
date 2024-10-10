@@ -30,14 +30,12 @@ import pandas as pd
 
 from tlo.methods.consumables import check_format_of_consumables_file
 
-# Set local Dropbox source
-path_to_dropbox = Path(  # <-- point to the TLO dropbox locally
-    '/Users/sm2511/Dropbox/Thanzi la Onse'
-    # '/Users/sejjj49/Dropbox/Thanzi la Onse'
-    # 'C:/Users/tmangal/Dropbox/Thanzi la Onse'
+# Set local shared folder source
+path_to_share = Path(  # <-- point to the shared folder
+    '/Users/sm2511/Library/CloudStorage/OneDrive-SharedLibraries-ImperialCollegeLondon/TLOModel - WP - Documents/'
 )
 
-path_to_files_in_the_tlo_dropbox = path_to_dropbox / "05 - Resources/Module-healthsystem/consumables raw files/"
+path_to_files_in_the_tlo_shared_drive = path_to_share / "07 - Data/Consumables data/"
 
 # define a timestamp for script outputs
 timestamp = datetime.datetime.now().strftime("_%Y_%m_%d_%H_%M")
@@ -68,7 +66,7 @@ def change_colnames(df, NameChangeList):  # Change column names
 #########################################################################################
 
 # Import 2018 data
-lmis_df = pd.read_csv(path_to_files_in_the_tlo_dropbox / 'ResourceFile_LMIS_2018.csv', low_memory=False)
+lmis_df = pd.read_csv(path_to_files_in_the_tlo_shared_drive / 'OpenLMIS/2018/ResourceFile_LMIS_2018.csv', low_memory=False)
 
 # 1. BASIC CLEANING ##
 # Rename columns
@@ -515,7 +513,7 @@ unmatched_consumables = pd.merge(unmatched_consumables, matched_consumables[['it
 unmatched_consumables = unmatched_consumables[unmatched_consumables['item_y'].isna()]
 
 # ** Extract stock availability data from HHFA and clean data **
-hhfa_df = pd.read_excel(path_to_files_in_the_tlo_dropbox / 'ResourceFile_hhfa_consumables.xlsx', sheet_name='hhfa_data')
+hhfa_df = pd.read_excel(path_to_files_in_the_tlo_shared_drive / 'ResourceFile_hhfa_consumables.xlsx', sheet_name='hhfa_data')
 
 # Use the ratio of availability rates between levels 1b on one hand and levels 2 and 3 on the other to extrapolate
 # availability rates for levels 2 and 3 from the HHFA data
@@ -541,7 +539,7 @@ for var in ['available_prop_hhfa_Facility_level_2', 'available_prop_hhfa_Facilit
     hhfa_df.loc[cond, var] = 1
 
 # Add further assumptions on consumable availability from other sources
-assumptions_df = pd.read_excel(open(path_to_files_in_the_tlo_dropbox / 'ResourceFile_hhfa_consumables.xlsx', 'rb'),
+assumptions_df = pd.read_excel(open(path_to_files_in_the_tlo_shared_drive / 'ResourceFile_hhfa_consumables.xlsx', 'rb'),
                                sheet_name='availability_assumptions')
 assumptions_df = assumptions_df[['item_code', 'available_prop_Facility_level_0',
                                  'available_prop_Facility_level_1a', 'available_prop_Facility_level_1b',
@@ -606,35 +604,54 @@ stkout_df = stkout_df[~cond]
 stkout_df = pd.concat([stkout_df, hhfa_fac0], axis=0, ignore_index=True)
 
 # --- 6.4 Generate new category variable for analysis --- #
-stkout_df['category'] = stkout_df['module_name'].str.lower()
-cond_RH = (stkout_df['category'].str.contains('care_of_women_during_pregnancy')) | \
-          (stkout_df['category'].str.contains('labour'))
-cond_newborn = (stkout_df['category'].str.contains('newborn'))
-cond_childhood = (stkout_df['category'] == 'acute lower respiratory infections') | \
-                 (stkout_df['category'] == 'measles') | \
-                 (stkout_df['category'] == 'diarrhoea')
-cond_rti = stkout_df['category'] == 'road traffic injuries'
-cond_cancer = stkout_df['category'].str.contains('cancer')
-cond_ncds = (stkout_df['category'] == 'epilepsy') | \
-            (stkout_df['category'] == 'depression')
-stkout_df.loc[cond_RH, 'category'] = 'reproductive_health'
-stkout_df.loc[cond_cancer, 'category'] = 'cancer'
-stkout_df.loc[cond_newborn, 'category'] = 'neonatal_health'
-stkout_df.loc[cond_childhood, 'category'] = 'other_childhood_illnesses'
-stkout_df.loc[cond_rti, 'category'] = 'road_traffic_injuries'
-stkout_df.loc[cond_ncds, 'category'] = 'ncds'
+def recategorize_modules_into_consumable_categories(_df):
+    _df['item_category'] = _df['module_name'].str.lower()
+    cond_RH = (_df['item_category'].str.contains('care_of_women_during_pregnancy')) | \
+              (_df['item_category'].str.contains('labour'))
+    cond_newborn = (_df['item_category'].str.contains('newborn'))
+    cond_newborn[cond_newborn.isna()] = False
+    cond_childhood = (_df['item_category'] == 'acute lower respiratory infections') | \
+                     (_df['item_category'] == 'measles') | \
+                     (_df['item_category'] == 'diarrhoea')
+    cond_rti = _df['item_category'] == 'road traffic injuries'
+    cond_cancer = _df['item_category'].str.contains('cancer')
+    cond_cancer[cond_cancer.isna()] = False
+    cond_ncds = (_df['item_category'] == 'epilepsy') | \
+                (_df['item_category'] == 'depression')
+    _df.loc[cond_RH, 'item_category'] = 'reproductive_health'
+    _df.loc[cond_cancer, 'item_category'] = 'cancer'
+    _df.loc[cond_newborn, 'item_category'] = 'neonatal_health'
+    _df.loc[cond_childhood, 'item_category'] = 'other_childhood_illnesses'
+    _df.loc[cond_rti, 'item_category'] = 'road_traffic_injuries'
+    _df.loc[cond_ncds, 'item_category'] = 'ncds'
+    cond_condom = _df['item_code'] == 2
+    _df.loc[cond_condom, 'item_category'] = 'contraception'
 
-cond_condom = stkout_df['item_code'] == 2
-stkout_df.loc[cond_condom, 'category'] = 'contraception'
+    # Create a general consumables category
+    general_cons_list = [300, 33, 57, 58, 141, 5, 6, 10, 21, 23, 127, 24, 80, 93, 144, 149, 154, 40, 67, 73, 76,
+                         82, 101, 103, 88, 126, 135, 71, 98, 171, 133, 134, 244, 247, 49, 112, 1933, 1960]
+    cond_general = _df['item_code'].isin(general_cons_list)
+    _df.loc[cond_general, 'item_category'] = 'general'
 
-# Create a general consumables category
-general_cons_list = [300, 33, 57, 58, 141, 5, 6, 10, 21, 23, 127, 24, 80, 93, 144, 149, 154, 40, 67, 73, 76,
-                     82, 101, 103, 88, 126, 135, 71, 98, 171, 133, 134, 244, 247]
-diagnostics_cons_list = [41, 50, 128, 216, 2008, 47, 190, 191, 196, 206, 207, 163, 175, 184,
-                         187]  # for now these have not been applied because most diagnostics are program specific
+    # Fill gaps in categories
+    dict_for_missing_categories = {292: 'acute lower respiratory infections', 293: 'acute lower respiratory infections',
+                                   307: 'reproductive_health', 2019: 'reproductive_health',
+                                   2678: 'tb', 1171: 'other_childhood_illnesses', 1237: 'cancer', 1239: 'cancer'}
+    # Use map to create a new series from item_code to fill missing values in category
+    mapped_categories = _df['item_code'].map(dict_for_missing_categories)
+    # Use fillna on the 'item_category' column to fill missing values using the mapped_categories
+    _df['item_category'] = _df['item_category'].fillna(mapped_categories)
 
-cond_general = stkout_df['item_code'].isin(general_cons_list)
-stkout_df.loc[cond_general, 'category'] = 'general'
+    return _df
+
+stkout_df = recategorize_modules_into_consumable_categories(stkout_df)
+item_code_category_mapping = stkout_df[['item_category', 'item_code']].drop_duplicates()
+
+# Add item_category to ResourceFile_Consumables_Item_Designations
+item_designations = pd.read_csv(path_for_new_resourcefiles  / 'ResourceFile_Consumables_Item_Designations.csv')
+item_designations = item_designations.drop(columns = 'item_category')
+item_designations = item_designations.merge(item_code_category_mapping, left_on = 'Item_Code', right_on = 'item_code', how = 'left', validate = '1:1')
+item_designations.drop(columns = 'item_code').to_csv(path_for_new_resourcefiles  / 'ResourceFile_Consumables_Item_Designations.csv', index = False)
 
 # --- 6.5 Replace district/fac_name/month entries where missing --- #
 for var in ['district', 'fac_name', 'month']:
@@ -822,12 +839,15 @@ for fac in fac_ids:
 # Check that there are not missing values
 assert not pd.isnull(full_set_interpolated).any().any()
 
+full_set_interpolated = full_set_interpolated.reset_index()
+#full_set_interpolated = full_set_interpolated.reset_index().merge(item_code_category_mapping, on = 'item_code', how = 'left', validate = 'm:1')
+
 # --- Check that the exported file has the properties required of it by the model code. --- #
-check_format_of_consumables_file(df=full_set_interpolated.reset_index(), fac_ids=fac_ids)
+check_format_of_consumables_file(df=full_set_interpolated, fac_ids=fac_ids)
 
 # %%
 # Save
-full_set_interpolated.reset_index().to_csv(
+full_set_interpolated.to_csv(
     path_for_new_resourcefiles / "ResourceFile_Consumables_availability_small.csv",
     index=False
 )
@@ -849,7 +869,7 @@ hhfa_comparison_df['fac_type_tlo'] = hhfa_comparison_df['fac_type_tlo'].str.repl
 hhfa_comparison_df = hhfa_comparison_df.rename({'fac_type_tlo': 'Facility_Level'}, axis=1)
 
 # ii. Collapse final model availability data by facility level
-final_availability_df = full_set_interpolated.reset_index()
+final_availability_df = full_set_interpolated
 mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "ResourceFile_Master_Facilities_List.csv")
 final_availability_df = pd.merge(final_availability_df, mfl[['District', 'Facility_Level', 'Facility_ID']], how="left",
                                  on=['Facility_ID'],
@@ -870,7 +890,6 @@ comparison_df.groupby(['Facility_Level'])[['available_prop', 'available_prop_hhf
 # Plots
 size = 10
 comparison_df['consumable_labels'] = comparison_df['consumable_name_tlo'].str[:10]
-
 
 # Define function to draw calibration plots at different levels of disaggregation
 def comparison_plot(level_of_disaggregation, group_by_var, colour):
