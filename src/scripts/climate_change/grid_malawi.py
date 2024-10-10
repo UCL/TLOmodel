@@ -10,16 +10,13 @@ malawi_admin1 = gpd.read_file("/Users/rem76/PycharmProjects/TLOmodel/resources/m
 malawi_admin2 = gpd.read_file("/Users/rem76/PycharmProjects/TLOmodel/resources/mapping/ResourceFile_mwi_admbnda_adm2_nso_20181016.shp")
 grid_size = 1
 minx, miny, maxx, maxy = malawi.total_bounds
-print(malawi.total_bounds)
 x_coords = np.arange(minx, maxx, grid_size)
 y_coords = np.arange(miny, maxy, grid_size)
 polygons = [Polygon([(x, y), (x + grid_size, y), (x + grid_size, y + grid_size), (x, y + grid_size)]) for x in x_coords for y in y_coords]
 
 grid = gpd.GeoDataFrame({'geometry': polygons}, crs=malawi.crs)
-
 grid_clipped = gpd.overlay(grid, malawi, how='intersection')
 grid_clipped_ADM1 = gpd.overlay(grid, malawi_admin1, how='intersection')
-
 
 cmap = plt.cm.get_cmap('tab20', len(grid_clipped_ADM1['ADM1_EN'].unique()))
 
@@ -35,10 +32,9 @@ plt.ylabel("Latitude")
 plt.show()
 
 ### Intersection between the grid and the admin areas ###
+grid_with_admin_areas = gpd.sjoin(malawi_admin2, grid_clipped, how='left', predicate='intersects')
 
-grid_with_facilities_with_districts = gpd.sjoin(malawi_admin2, grid, how='left', predicate='intersects')
-
-########### Create new table with facilities and add coordinates to each facility
+########### Create new table with facilities and add coordinates to each facility #########
 
 facilities_by_area = pd.read_csv("/Users/rem76/PycharmProjects/TLOmodel/resources/healthsystem/organisation/ResourceFile_Master_Facilities_List.csv")
 
@@ -54,12 +50,13 @@ facilities_by_area.loc[facilities_by_area['Facility_Name'] == 'Zomba Mental Hosp
 # HQ based in Lilongwe?
 facilities_by_area.loc[facilities_by_area['Facility_Name'] == 'Headquarter', 'District'] = 'Lilongwe City'
 facilities_by_area.loc[facilities_by_area['Facility_Name'] == 'Headquarter', 'Region'] = 'Central'
+# max/min of each polygon
 
-
-facilities_with_districts = facilities_by_area.merge(grid_with_facilities_with_districts,
+# join so each facility has a grid
+facilities_with_districts_shap_files = facilities_by_area.merge(grid_with_admin_areas,
                                                      how='left',
                                                      left_on='District',
                                                      right_on='ADM2_EN') # will have what grid cell they're in
 
 # write csv file of facilities with districts
-facilities_with_districts.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/facilities_with_districts.csv")
+facilities_with_districts_shap_files.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/facilities_with_districts.csv")
