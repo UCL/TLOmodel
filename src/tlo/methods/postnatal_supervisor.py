@@ -525,11 +525,6 @@ class PostnatalSupervisor(Module):
             store_dalys_in_mni(person, mni, f'{df.at[person, "pn_anaemia_following_pregnancy"]}_anaemia_pp_onset',
                                self.sim.date)
 
-            logger.info(key='maternal_complication', data={'person': person,
-                                                           'type': f'{df.at[person, "pn_anaemia_following_pregnancy"]}'
-                                                                   f'_anaemia',
-                                                           'timing': 'postnatal'})
-
         # --------------------------------------- HYPERTENSION ------------------------------------------
         # For women who are still experiencing a hypertensive disorder of pregnancy we determine if that will now
         # resolve
@@ -1061,11 +1056,6 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
 
                 store_dalys_in_mni(individual_id, mni, f'{df.at[individual_id, "pn_anaemia_following_pregnancy"]}_'
                                                        f'anaemia_pp_onset', self.sim.date)
-
-                logger.info(key='maternal_complication',
-                            data={'person': individual_id,
-                                  'type': f'{df.at[individual_id, "pn_anaemia_following_pregnancy"]}_anaemia',
-                                  'timing': 'postnatal'})
 
         # -------------------------------------------- HYPERTENSION -----------------------------------------------
         # For women who remain hypertensive after delivery we apply a probability that this will resolve in the
