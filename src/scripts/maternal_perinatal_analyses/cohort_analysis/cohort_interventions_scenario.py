@@ -34,7 +34,8 @@ class BaselineScenario(BaseScenario):
         }
 
     def modules(self):
-        return [*fullmodel(resourcefilepath=self.resources),
+        return [*fullmodel(resourcefilepath=self.resources,
+                           module_kwargs={'Schisto': {'mda_execute': False}}),
                  mnh_cohort_module.MaternalNewbornHealthCohort(resourcefilepath=self.resources)]
 
     def draw_parameters(self, draw_number, rng):
