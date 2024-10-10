@@ -1,16 +1,16 @@
 import geopandas as gpd
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 from shapely.geometry import Polygon
-import numpy as np
-import matplotlib.pyplot as plt
 
 # Load Malawi shapefile
 malawi = gpd.read_file("/Users/rem76/PycharmProjects/TLOmodel/resources/mapping/ResourceFile_mwi_admbnda_adm0_nso_20181016.shp")
 malawi_admin1 = gpd.read_file("/Users/rem76/PycharmProjects/TLOmodel/resources/mapping/ResourceFile_mwi_admbnda_adm1_nso_20181016.shp")
 malawi_admin2 = gpd.read_file("/Users/rem76/PycharmProjects/TLOmodel/resources/mapping/ResourceFile_mwi_admbnda_adm2_nso_20181016.shp")
-print(malawi_admin2)
 grid_size = 1
 minx, miny, maxx, maxy = malawi.total_bounds
+print(malawi.total_bounds)
 x_coords = np.arange(minx, maxx, grid_size)
 y_coords = np.arange(miny, maxy, grid_size)
 polygons = [Polygon([(x, y), (x + grid_size, y), (x + grid_size, y + grid_size), (x, y + grid_size)]) for x in x_coords for y in y_coords]

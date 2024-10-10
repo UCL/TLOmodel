@@ -49,3 +49,4 @@ for scenario in scenarios:
     scenario_directory = os.path.join(base_dir, scenario)
     unzip_all_in_directory(scenario_directory)
     extract_nc_files_from_unzipped_folders(scenario_directory)
+
