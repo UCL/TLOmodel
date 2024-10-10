@@ -1139,7 +1139,7 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
                         individual_id]])[individual_id]
                 if risk_gh_after_pregnancy > self.module.rng.random_sample():
                     df.at[individual_id, 'pn_htn_disorders'] = 'gest_htn'
-                self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['mild_gest_htn'] += 1
+                    self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['mild_gest_htn'] += 1
 
         # ======================================  POSTNATAL CHECK  ==================================================
         # Import the HSI which represents postnatal care
