@@ -14,7 +14,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 from scripts.healthsystem.impact_of_hcw_capabilities_expansion.prepare_minute_salary_and_extra_budget_frac_data import (
-    extra_budget_fracs,
+    extra_budget_fracs, Minute_Salary_by_Cadre_Level,
 )
 
 from scripts.healthsystem.impact_of_hcw_capabilities_expansion.scenario_of_expanding_current_hcw_by_officer_type_with_extra_budget import (
@@ -317,16 +317,23 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ].set_index('Officer_Category').T
         return salary[cadres]
 
-    def format_appt_time():
+    def format_appt_time_and_cost():
         """
-        Return the formatted appointment time requirements
+        Return the formatted appointment time requirements and costs per cadre
         """
         file_path = Path(resourcefilepath
                          / 'healthsystem' / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Time_Table.csv')
         _df = pd.read_csv(file_path, index_col=False)
-        _df = _df.pivot(index=['Facility_Level', 'Appt_Type_Code'], columns='Officer_Category',
-                        values='Time_Taken_Mins').fillna(0).T
-        return _df
+
+        time = _df.pivot(index=['Facility_Level', 'Appt_Type_Code'], columns='Officer_Category',
+                         values='Time_Taken_Mins').fillna(0.0).T
+        minute_salary = Minute_Salary_by_Cadre_Level
+        cost = _df.merge(minute_salary, on=['Facility_Level', 'Officer_Category'], how='left')
+        cost['cost_USD'] = cost['Time_Taken_Mins'] * cost['Minute_Salary_USD']
+        cost = cost.pivot(index=['Facility_Level', 'Appt_Type_Code'], columns='Officer_Category',
+                          values='cost_USD').fillna(0.0).T
+
+        return time, cost
 
     # def get_hcw_time_usage(_df):
     #     """Return the number of treatments by short treatment id (total within the TARGET_PERIOD)"""
@@ -342,8 +349,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     cadres = ['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy',
               'Dental', 'Laboratory', 'Mental', 'Nutrition', 'Radiography']
 
-    # Get appointment time requirement
-    appt_time = format_appt_time()
+    # Get appointment time and cost requirement
+    appt_time, appt_cost = format_appt_time_and_cost()
 
     # # Get current (year of 2018/2019) hr counts
     # curr_hr = get_current_hr(cadres)
@@ -520,10 +527,17 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         do_scaling=True
     ).pipe(set_param_names_as_column_index_level_0)
 
+    # get total service demand
     assert len(num_services) == len(num_never_ran_services) == 1
     assert (num_services.columns == num_never_ran_services.columns).all()
     num_services_demand = num_services + num_never_ran_services
     ratio_services = num_services / num_services_demand
+
+    assert (num_appts.columns == num_never_ran_appts.columns).all()
+    num_never_ran_appts.loc['Lab / Diagnostics', :] = 0
+    num_never_ran_appts = num_never_ran_appts.reindex(num_appts.index).fillna(0.0)
+    assert (num_appts.index == num_never_ran_appts.index).all()
+    num_appts_demand = num_appts + num_never_ran_appts
 
     # hcw_time_usage = extract_results(
     #     results_folder,
@@ -558,6 +572,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     num_never_ran_appts_by_level_summarized = summarize(num_never_ran_appts_by_level, only_mean=True).T.reindex(param_names).reindex(
         num_dalys_summarized.index
     ).fillna(0.0)
+    num_appts_demand_summarized = summarize(num_appts_demand, only_mean=True).T.reindex(param_names).reindex(
+        num_dalys_summarized.index
+    )
     num_treatments_summarized = summarize(num_treatments, only_mean=True).T.reindex(param_names).reindex(
         num_dalys_summarized.index
     )
@@ -666,6 +683,22 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         only_mean=True
     ).T.reindex(num_dalys_summarized.index).drop(['s_1'])
 
+    num_never_ran_appts_reduced = summarize(
+        -1.0 * find_difference_relative_to_comparison_dataframe(
+            num_never_ran_appts,
+            comparison='s_1',
+        ),
+        only_mean=True
+    ).T.reindex(num_dalys_summarized.index).drop(['s_1'])
+
+    num_never_ran_treatments_reduced = summarize(
+        -1.0 * find_difference_relative_to_comparison_dataframe(
+            num_never_ran_treatments,
+            comparison='s_1',
+        ),
+        only_mean=True
+    ).T.reindex(num_dalys_summarized.index).drop(['s_1'])
+
     num_appts_increased_percent = summarize(
         find_difference_relative_to_comparison_dataframe(
             num_appts,
@@ -746,24 +779,49 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
          ) < 1e-6
     ).all()
 
-    # get HCW time needed to run the never run appts
-    cols_1 = num_never_ran_appts_by_level_summarized.columns
-    cols_2 = appt_time.columns
-    # check that never ran appts (at a level) not in appt_time (as defined) have count 0 and drop them
-    assert (num_never_ran_appts_by_level_summarized[list(set(cols_1) - set(cols_2))] == 0).all().all()
-    num_never_ran_appts_by_level_summarized.drop(columns=list(set(cols_1) - set(cols_2)), inplace=True)
-    assert set(num_never_ran_appts_by_level_summarized.columns).issubset(set(cols_2))
-    # calculate hcw time gap
-    hcw_time_gap = pd.DataFrame(index=num_never_ran_appts_by_level_summarized.index,
-                                columns=appt_time.index)
-    for i in hcw_time_gap.index:
-        for j in hcw_time_gap.columns:
-            hcw_time_gap.loc[i, j] = num_never_ran_appts_by_level_summarized.loc[i, :].mul(
-                appt_time.loc[j, num_never_ran_appts_by_level_summarized.columns]
-            ).sum()
-    # reorder columns to be consistent with cadres
-    hcw_time_gap = hcw_time_gap[['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy',
-                                 'Dental', 'Laboratory', 'Mental', 'Radiography']]
+    # get HCW time and cost needed to run the never run appts
+    def hcw_time_or_cost_gap(_df=appt_time):
+        cols_1 = num_never_ran_appts_by_level_summarized.columns
+        cols_2 = _df.columns
+        # check that never ran appts (at a level) not in appt_time (as defined) have count 0 and drop them
+        assert (num_never_ran_appts_by_level_summarized[list(set(cols_1) - set(cols_2))] == 0).all().all()
+        num_never_ran_appts_by_level_summarized.drop(columns=list(set(cols_1) - set(cols_2)), inplace=True)
+        assert set(num_never_ran_appts_by_level_summarized.columns).issubset(set(cols_2))
+        # calculate hcw time gap
+        gap = pd.DataFrame(index=num_never_ran_appts_by_level_summarized.index,
+                           columns=_df.index)
+        for i in gap.index:
+            for j in gap.columns:
+                gap.loc[i, j] = num_never_ran_appts_by_level_summarized.loc[i, :].mul(
+                    _df.loc[j, num_never_ran_appts_by_level_summarized.columns]
+                ).sum()
+        # reorder columns to be consistent with cadres
+        gap = gap[['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy',
+                   'Dental', 'Laboratory', 'Mental', 'Radiography']]
+
+        return gap
+
+    hcw_time_gap = hcw_time_or_cost_gap(appt_time)
+    hcw_cost_gap = hcw_time_or_cost_gap(appt_cost)
+
+    # cost gap proportions of cadres within each scenario
+    hcw_cost_gap_percent = pd.DataFrame(index=hcw_cost_gap.index, columns=hcw_cost_gap.columns)
+    for i in hcw_cost_gap_percent.index:
+        hcw_cost_gap_percent.loc[i, :] = hcw_cost_gap.loc[i, :] / hcw_cost_gap.loc[i, :].sum()
+    # add a column of 'other' to sum up other cadres
+    hcw_cost_gap_percent['Other'] = hcw_cost_gap_percent[
+        ['Dental', 'Laboratory', 'Mental', 'Radiography']
+    ].sum(axis=1)
+
+    # find appts that need Clinical + Pharmacy
+    # then calculate hcw time needed for these appts (or treatments, need treatment and their appt footprint) in never run set
+    # also consider plot service demand by appt of all scenarios to see if they are similar
+    # so we can explain that expand C+P is reducing the never run appts and bring health benefits across scenarios
+    # then the next question is what proportion for C and P?
+    appts_need_C_P = []
+    for col in appt_time.columns:
+        if (appt_time.loc[['Clinical', 'Pharmacy'], col] > 0).all():
+            appts_need_C_P.append(col)
 
     # get Return (in terms of DALYs averted) On Investment (extra cost) for all expansion scenarios, excluding s_1
     # get Cost-Effectiveness, i.e., cost of every daly averted, for all expansion scenarios
@@ -800,6 +858,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         'Mental': 'plum',
         'Nutrition': 'thistle',
         'Radiography': 'lightgray',
+        'Other': 'gray'
     }
     scenario_groups_color_init = {
         'no_expansion': 'gray',
@@ -829,7 +888,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # plot 4D data: relative increases of Clinical, Pharmacy, and Nursing_and_Midwifery as three coordinates,\
     # percentage of DALYs averted decides the color of that scatter point
-    extra_budget_allocation = extra_budget_fracs.T
+    extra_budget_allocation = extra_budget_fracs.T.reindex(num_dalys_summarized.index)
+    extra_budget_allocation['Other'] = extra_budget_allocation[
+        ['Dental', 'Laboratory', 'Mental', 'Radiography']
+    ].sum(axis=1)
     name_of_plot = f'Dalys averted (%) against no expansion, {target_period()}'
     heat_data = pd.merge(num_dalys_averted_percent['mean'],
                          extra_budget_allocation[['Clinical', 'Pharmacy', 'Nursing_and_Midwifery']],
@@ -875,7 +937,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    name_of_plot = f'1 Dalys averted, Services increased and Treatment increased, {target_period()}'
+    name_of_plot = f'3D Dalys averted, Services increased and Treatment increased, {target_period()}'
     heat_data = pd.concat([num_dalys_averted_percent['mean'], num_services_increased_percent['mean'],
                            num_treatments_total_increased_percent['mean']], axis=1)
     # scenarios_with_CNP_only = ['s_4', 's_6', 's_7', 's_10', 's_11', 's_16', 's_22']
@@ -901,7 +963,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    name_of_plot = f'0 Dalys averted, Services increased and Treatment increased, {target_period()}'
+    name_of_plot = f'2D Dalys averted, Services increased and Treatment increased, {target_period()}'
     heat_data = pd.concat([num_dalys_averted_percent['mean'], num_services_increased_percent['mean'],
                            num_treatments_total_increased_percent['mean']], axis=1)
     # scenarios_with_CNP_only = ['s_4', 's_6', 's_7', 's_10', 's_11', 's_16', 's_22']
@@ -948,50 +1010,50 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    name_of_plot = f'Dalys averted and Treatments increased, {target_period()}'
-    heat_data = pd.concat([num_dalys_averted_percent['mean'], num_services_increased_percent['mean'],
-                           num_treatments_total_increased_percent['mean']], axis=1)
-    # scenarios_with_CNP_only = ['s_4', 's_6', 's_7', 's_10', 's_11', 's_16', 's_22']
-    # heat_data = heat_data.loc[heat_data.index.isin(scenarios_with_CNP_only)]
-    colors = [scenario_color[s] for s in heat_data.index]
-    fig, ax = plt.subplots()
-    ax.scatter(100 * heat_data.iloc[:, 2], 100 * heat_data.iloc[:, 0],
-               alpha=0.8, marker='o', c=colors)
-    ax.set_xlabel('Treatments increased %')
-    ax.set_ylabel('DLAYs averted %')
-    legend_labels = list(scenario_groups_color.keys())
-    legend_handles = [plt.Line2D([0, 0], [0, 0],
-                                 linestyle='none', marker='o', color=scenario_groups_color[label]
-                                 ) for label in legend_labels
-                      ]
-    plt.legend(legend_handles, legend_labels, loc='upper center', fontsize='small', bbox_to_anchor=(0.5, -0.2), ncol=2)
-    plt.title(name_of_plot)
-    plt.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-    fig.show()
-    plt.close(fig)
+    # name_of_plot = f'Dalys averted and Treatments increased, {target_period()}'
+    # heat_data = pd.concat([num_dalys_averted_percent['mean'], num_services_increased_percent['mean'],
+    #                        num_treatments_total_increased_percent['mean']], axis=1)
+    # # scenarios_with_CNP_only = ['s_4', 's_6', 's_7', 's_10', 's_11', 's_16', 's_22']
+    # # heat_data = heat_data.loc[heat_data.index.isin(scenarios_with_CNP_only)]
+    # colors = [scenario_color[s] for s in heat_data.index]
+    # fig, ax = plt.subplots()
+    # ax.scatter(100 * heat_data.iloc[:, 2], 100 * heat_data.iloc[:, 0],
+    #            alpha=0.8, marker='o', c=colors)
+    # ax.set_xlabel('Treatments increased %')
+    # ax.set_ylabel('DLAYs averted %')
+    # legend_labels = list(scenario_groups_color.keys())
+    # legend_handles = [plt.Line2D([0, 0], [0, 0],
+    #                              linestyle='none', marker='o', color=scenario_groups_color[label]
+    #                              ) for label in legend_labels
+    #                   ]
+    # plt.legend(legend_handles, legend_labels, loc='upper center', fontsize='small', bbox_to_anchor=(0.5, -0.2), ncol=2)
+    # plt.title(name_of_plot)
+    # plt.tight_layout()
+    # fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    # fig.show()
+    # plt.close(fig)
 
-    name_of_plot = f'Dalys averted and Services ratio increased, {target_period()}'
-    heat_data = pd.concat([num_dalys_averted_percent['mean'], service_ratio_increased_percent['mean']], axis=1)
-    # scenarios_with_CNP_only = ['s_4', 's_6', 's_7', 's_10', 's_11', 's_16', 's_22']
-    # heat_data = heat_data.loc[heat_data.index.isin(scenarios_with_CNP_only)]
-    colors = [scenario_color[s] for s in heat_data.index]
-    fig, ax = plt.subplots()
-    ax.scatter(100 * heat_data.iloc[:, 1], 100 * heat_data.iloc[:, 0],
-               alpha=0.8, marker='o', c=colors)
-    ax.set_xlabel('Service delivery ratio increased %')
-    ax.set_ylabel('DLAYs averted %')
-    legend_labels = list(scenario_groups_color.keys())
-    legend_handles = [plt.Line2D([0, 0], [0, 0],
-                                 linestyle='none', marker='o', color=scenario_groups_color[label]
-                                 ) for label in legend_labels
-                      ]
-    plt.legend(legend_handles, legend_labels, loc='upper center', fontsize='small', bbox_to_anchor=(0.5, -0.2), ncol=2)
-    plt.title(name_of_plot)
-    plt.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-    fig.show()
-    plt.close(fig)
+    # name_of_plot = f'Dalys averted and Services ratio increased, {target_period()}'
+    # heat_data = pd.concat([num_dalys_averted_percent['mean'], service_ratio_increased_percent['mean']], axis=1)
+    # # scenarios_with_CNP_only = ['s_4', 's_6', 's_7', 's_10', 's_11', 's_16', 's_22']
+    # # heat_data = heat_data.loc[heat_data.index.isin(scenarios_with_CNP_only)]
+    # colors = [scenario_color[s] for s in heat_data.index]
+    # fig, ax = plt.subplots()
+    # ax.scatter(100 * heat_data.iloc[:, 1], 100 * heat_data.iloc[:, 0],
+    #            alpha=0.8, marker='o', c=colors)
+    # ax.set_xlabel('Service delivery ratio increased %')
+    # ax.set_ylabel('DLAYs averted %')
+    # legend_labels = list(scenario_groups_color.keys())
+    # legend_handles = [plt.Line2D([0, 0], [0, 0],
+    #                              linestyle='none', marker='o', color=scenario_groups_color[label]
+    #                              ) for label in legend_labels
+    #                   ]
+    # plt.legend(legend_handles, legend_labels, loc='upper center', fontsize='small', bbox_to_anchor=(0.5, -0.2), ncol=2)
+    # plt.title(name_of_plot)
+    # plt.tight_layout()
+    # fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    # fig.show()
+    # plt.close(fig)
 
     # do some linear regression to see the marginal effects of individual cadres and combined effects of C, N, P cadres
     outcome_data = num_dalys_averted_percent['mean']
@@ -1005,7 +1067,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     regression_data['N*P'] = regression_data['Pharmacy'] * regression_data['Nursing_and_Midwifery']
     regression_data['C*N*P'] = (regression_data['Clinical'] * regression_data['Pharmacy']
                                 * regression_data['Nursing_and_Midwifery'])
-    cadres_to_drop_due_to_multicollinearity = ['Dental', 'Laboratory', 'Mental', 'Nutrition', 'Radiography']
+    cadres_to_drop_due_to_multicollinearity = ['Dental', 'Laboratory', 'Mental', 'Nutrition', 'Radiography', 'Other']
     regression_data.drop(columns=cadres_to_drop_due_to_multicollinearity, inplace=True)
     predictor = regression_data[regression_data.columns[1:]]
     outcome = regression_data['mean']
@@ -1029,41 +1091,41 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # plot absolute numbers for scenarios
 
-    name_of_plot = f'Deaths, {target_period()}'
-    fig, ax = do_bar_plot_with_ci(num_deaths_summarized / 1e6)
-    ax.set_title(name_of_plot)
-    ax.set_ylabel('(Millions)')
-    fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-    fig.show()
-    plt.close(fig)
+    # name_of_plot = f'Deaths, {target_period()}'
+    # fig, ax = do_bar_plot_with_ci(num_deaths_summarized / 1e6)
+    # ax.set_title(name_of_plot)
+    # ax.set_ylabel('(Millions)')
+    # fig.tight_layout()
+    # fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    # fig.show()
+    # plt.close(fig)
 
-    name_of_plot = f'DALYs, {target_period()}'
-    fig, ax = do_bar_plot_with_ci(num_dalys_summarized / 1e6)
-    ax.set_title(name_of_plot)
-    ax.set_ylabel('(Millions)')
-    fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-    fig.show()
-    plt.close(fig)
+    # name_of_plot = f'DALYs, {target_period()}'
+    # fig, ax = do_bar_plot_with_ci(num_dalys_summarized / 1e6)
+    # ax.set_title(name_of_plot)
+    # ax.set_ylabel('(Millions)')
+    # fig.tight_layout()
+    # fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    # fig.show()
+    # plt.close(fig)
 
-    name_of_plot = f'Service demand, {target_period()}'
-    fig, ax = do_bar_plot_with_ci(num_service_demand_summarized / 1e6)
-    ax.set_title(name_of_plot)
-    ax.set_ylabel('(Millions)')
-    fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-    fig.show()
-    plt.close(fig)
+    # name_of_plot = f'Service demand, {target_period()}'
+    # fig, ax = do_bar_plot_with_ci(num_service_demand_summarized / 1e6)
+    # ax.set_title(name_of_plot)
+    # ax.set_ylabel('(Millions)')
+    # fig.tight_layout()
+    # fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    # fig.show()
+    # plt.close(fig)
 
-    name_of_plot = f'Service delivery ratio, {target_period()}'
-    fig, ax = do_bar_plot_with_ci(ratio_service_summarized)
-    ax.set_title(name_of_plot)
-    ax.set_ylabel('services delivered / demand')
-    fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-    fig.show()
-    plt.close(fig)
+    # name_of_plot = f'Service delivery ratio, {target_period()}'
+    # fig, ax = do_bar_plot_with_ci(ratio_service_summarized)
+    # ax.set_title(name_of_plot)
+    # ax.set_ylabel('services delivered / demand')
+    # fig.tight_layout()
+    # fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    # fig.show()
+    # plt.close(fig)
 
     # plot yearly DALYs for best 9 scenarios
     name_of_plot = f'Yearly DALYs, {target_period()}'
@@ -1113,33 +1175,55 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    name_of_plot = f'Services by appointment type, {target_period()}'
-    num_appts_summarized_in_millions = num_appts_summarized / 1e6
-    yerr_services = np.array([
-        (num_services_summarized['mean'].values - num_services_summarized['lower']).values,
-        (num_services_summarized['upper'].values - num_services_summarized['mean']).values,
-    ])/1e6
-    fig, ax = plt.subplots(figsize=(9, 6))
-    num_appts_summarized_in_millions.plot(kind='bar', stacked=True, color=appt_color, rot=0, ax=ax)
-    ax.errorbar(range(len(param_names)), num_services_summarized['mean'].values / 1e6, yerr=yerr_services,
-                fmt=".", color="black", zorder=100)
-    ax.set_ylabel('Millions', fontsize='small')
-    ax.set(xlabel=None)
-    xtick_labels = [substitute_labels[v] for v in num_appts_summarized_in_millions.index]
-    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
-    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Appointment type', title_fontsize='small',
-               fontsize='small', reverse=True)
-    plt.title(name_of_plot)
-    fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-    fig.show()
-    plt.close(fig)
+    # name_of_plot = f'Services by appointment type, {target_period()}'
+    # num_appts_summarized_in_millions = num_appts_summarized / 1e6
+    # yerr_services = np.array([
+    #     (num_services_summarized['mean'] - num_services_summarized['lower']).values,
+    #     (num_services_summarized['upper'] - num_services_summarized['mean']).values,
+    # ])/1e6
+    # fig, ax = plt.subplots(figsize=(9, 6))
+    # num_appts_summarized_in_millions.plot(kind='bar', stacked=True, color=appt_color, rot=0, ax=ax)
+    # ax.errorbar(range(len(param_names)), num_services_summarized['mean'].values / 1e6, yerr=yerr_services,
+    #             fmt=".", color="black", zorder=100)
+    # ax.set_ylabel('Millions', fontsize='small')
+    # ax.set(xlabel=None)
+    # xtick_labels = [substitute_labels[v] for v in num_appts_summarized_in_millions.index]
+    # ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
+    # plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Appointment type', title_fontsize='small',
+    #            fontsize='small', reverse=True)
+    # plt.title(name_of_plot)
+    # fig.tight_layout()
+    # fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    # fig.show()
+    # plt.close(fig)
+
+    # name_of_plot = f'Services demand by appointment type, {target_period()}'
+    # num_appts_demand_to_plot = num_appts_demand_summarized / 1e6
+    # yerr_services = np.array([
+    #     (num_service_demand_summarized['mean'] - num_service_demand_summarized['lower']).values,
+    #     (num_service_demand_summarized['upper'] - num_service_demand_summarized['mean']).values,
+    # ]) / 1e6
+    # fig, ax = plt.subplots(figsize=(9, 6))
+    # num_appts_demand_to_plot.plot(kind='bar', stacked=True, color=appt_color, rot=0, ax=ax)
+    # ax.errorbar(range(len(param_names)), num_service_demand_summarized['mean'].values / 1e6, yerr=yerr_services,
+    #             fmt=".", color="black", zorder=100)
+    # ax.set_ylabel('Millions', fontsize='small')
+    # ax.set(xlabel=None)
+    # xtick_labels = [substitute_labels[v] for v in num_appts_demand_to_plot.index]
+    # ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
+    # plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Appointment type', title_fontsize='small',
+    #            fontsize='small', reverse=True)
+    # plt.title(name_of_plot)
+    # fig.tight_layout()
+    # fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    # fig.show()
+    # plt.close(fig)
 
     name_of_plot = f'Never ran services by appointment type, {target_period()}'
     num_never_ran_appts_summarized_in_millions = num_never_ran_appts_summarized / 1e6
     yerr_services = np.array([
-        (num_never_ran_services_summarized['mean'].values - num_never_ran_services_summarized['lower']).values,
-        (num_never_ran_services_summarized['upper'].values - num_never_ran_services_summarized['mean']).values,
+        (num_never_ran_services_summarized['mean'] - num_never_ran_services_summarized['lower']).values,
+        (num_never_ran_services_summarized['upper'] - num_never_ran_services_summarized['mean']).values,
     ])/1e6
     fig, ax = plt.subplots(figsize=(9, 6))
     num_never_ran_appts_summarized_in_millions.plot(kind='bar', stacked=True, color=appt_color, rot=0, ax=ax)
@@ -1157,49 +1241,72 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    name_of_plot = f'Services by treatment type, {target_period()}'
-    num_treatments_summarized_in_millions = num_treatments_summarized / 1e6
-    yerr_services = np.array([
-        (num_treatments_total_summarized['mean'].values - num_treatments_total_summarized['lower']).values,
-        (num_treatments_total_summarized['upper'].values - num_treatments_total_summarized['mean']).values,
-    ]) / 1e6
-    fig, ax = plt.subplots(figsize=(10, 6))
-    num_treatments_summarized_in_millions.plot(kind='bar', stacked=True, color=treatment_color, rot=0, ax=ax)
-    ax.errorbar(range(len(param_names)), num_treatments_total_summarized['mean'].values / 1e6, yerr=yerr_services,
-                fmt=".", color="black", zorder=100)
-    ax.set_ylabel('Millions', fontsize='small')
-    ax.set(xlabel=None)
-    xtick_labels = [substitute_labels[v] for v in num_treatments_summarized_in_millions.index]
-    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
-    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.4), title='Treatment type', title_fontsize='small',
-               fontsize='small', reverse=True)
-    plt.title(name_of_plot)
-    fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-    fig.show()
-    plt.close(fig)
+    # name_of_plot = f'Services by treatment type, {target_period()}'
+    # num_treatments_summarized_in_millions = num_treatments_summarized / 1e6
+    # yerr_services = np.array([
+    #     (num_treatments_total_summarized['mean'] - num_treatments_total_summarized['lower']).values,
+    #     (num_treatments_total_summarized['upper'] - num_treatments_total_summarized['mean']).values,
+    # ]) / 1e6
+    # fig, ax = plt.subplots(figsize=(10, 6))
+    # num_treatments_summarized_in_millions.plot(kind='bar', stacked=True, color=treatment_color, rot=0, ax=ax)
+    # ax.errorbar(range(len(param_names)), num_treatments_total_summarized['mean'].values / 1e6, yerr=yerr_services,
+    #             fmt=".", color="black", zorder=100)
+    # ax.set_ylabel('Millions', fontsize='small')
+    # ax.set(xlabel=None)
+    # xtick_labels = [substitute_labels[v] for v in num_treatments_summarized_in_millions.index]
+    # ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
+    # plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.4), title='Treatment type', title_fontsize='small',
+    #            fontsize='small', reverse=True)
+    # plt.title(name_of_plot)
+    # fig.tight_layout()
+    # fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    # fig.show()
+    # plt.close(fig)
 
-    name_of_plot = f'Number of staff by cadre, {TARGET_PERIOD[1].year}'
-    total_staff_to_plot = (staff_count_2029 / 1000).drop(columns='all_cadres').reindex(num_dalys_summarized.index)
-    column_dcsa = total_staff_to_plot.pop('DCSA')
-    total_staff_to_plot.insert(3, "DCSA", column_dcsa)
-    fig, ax = plt.subplots(figsize=(9, 6))
-    total_staff_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
-    ax.set_ylabel('Thousands', fontsize='small')
-    ax.set(xlabel=None)
-    xtick_labels = [substitute_labels[v] for v in total_staff_to_plot.index]
-    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
-    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
-               fontsize='small', reverse=True)
-    plt.title(name_of_plot)
-    fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-    fig.show()
-    plt.close(fig)
+    # name_of_plot = f'Never ran services by treatment type, {target_period()}'
+    # num_never_ran_treatments_summarized_in_millions = num_never_ran_treatments_summarized / 1e6
+    # yerr_services = np.array([
+    #     (num_never_ran_treatments_total_summarized['mean'] - num_never_ran_treatments_total_summarized['lower']).values,
+    #     (num_never_ran_treatments_total_summarized['upper'] - num_never_ran_treatments_total_summarized['mean']).values,
+    # ]) / 1e6
+    # fig, ax = plt.subplots(figsize=(10, 6))
+    # num_never_ran_treatments_summarized_in_millions.plot(kind='bar', stacked=True, color=treatment_color, rot=0, ax=ax)
+    # ax.errorbar(range(len(param_names)), num_never_ran_treatments_total_summarized['mean'].values / 1e6,
+    #             yerr=yerr_services,
+    #             fmt=".", color="black", zorder=100)
+    # ax.set_ylabel('Millions', fontsize='small')
+    # ax.set(xlabel=None)
+    # xtick_labels = [substitute_labels[v] for v in num_never_ran_treatments_summarized_in_millions.index]
+    # ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
+    # plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.4), title='Treatment type', title_fontsize='small',
+    #            fontsize='small', reverse=True)
+    # plt.title(name_of_plot)
+    # fig.tight_layout()
+    # fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    # fig.show()
+    # plt.close(fig)
+
+    # name_of_plot = f'Number of staff by cadre, {TARGET_PERIOD[1].year}'
+    # total_staff_to_plot = (staff_count_2029 / 1000).drop(columns='all_cadres').reindex(num_dalys_summarized.index)
+    # column_dcsa = total_staff_to_plot.pop('DCSA')
+    # total_staff_to_plot.insert(3, "DCSA", column_dcsa)
+    # fig, ax = plt.subplots(figsize=(9, 6))
+    # total_staff_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
+    # ax.set_ylabel('Thousands', fontsize='small')
+    # ax.set(xlabel=None)
+    # xtick_labels = [substitute_labels[v] for v in total_staff_to_plot.index]
+    # ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
+    # plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
+    #            fontsize='small', reverse=True)
+    # plt.title(name_of_plot)
+    # fig.tight_layout()
+    # fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    # fig.show()
+    # plt.close(fig)
 
     name_of_plot = f'HCW time needed to deliver never ran appointments, {target_period()}'
     hcw_time_gap_to_plot = (hcw_time_gap / 1e6).reindex(num_dalys_summarized.index)
-    column_dcsa =  hcw_time_gap_to_plot.pop('DCSA')
+    column_dcsa = hcw_time_gap_to_plot.pop('DCSA')
     hcw_time_gap_to_plot.insert(3, "DCSA", column_dcsa)
     fig, ax = plt.subplots(figsize=(9, 6))
     hcw_time_gap_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
@@ -1215,15 +1322,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    name_of_plot = f'Total budget in USD dollars by cadre, {target_period()}'
-    total_cost_to_plot = (total_cost_all_yrs / 1e6).drop(columns='all_cadres').reindex(num_dalys_summarized.index)
-    column_dcsa = total_cost_to_plot.pop('DCSA')
-    total_cost_to_plot.insert(3, "DCSA", column_dcsa)
+    name_of_plot = f'HCW cost needed to deliver never ran appointments, {target_period()}'
+    hcw_cost_gap_to_plot = (hcw_cost_gap / 1e6).reindex(num_dalys_summarized.index)
+    column_dcsa = hcw_cost_gap_to_plot.pop('DCSA')
+    hcw_cost_gap_to_plot.insert(3, "DCSA", column_dcsa)
     fig, ax = plt.subplots(figsize=(9, 6))
-    total_cost_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
-    ax.set_ylabel('Millions', fontsize='small')
+    hcw_cost_gap_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
+    ax.set_ylabel('USD in Millions', fontsize='small')
     ax.set(xlabel=None)
-    xtick_labels = [substitute_labels[v] for v in total_cost_to_plot.index]
+    xtick_labels = [substitute_labels[v] for v in hcw_cost_gap_to_plot.index]
     ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
     plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
                fontsize='small', reverse=True)
@@ -1233,36 +1340,92 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    name_of_plot = f'DALYs by cause, {target_period()}'
-    num_dalys_by_cause_summarized_in_millions = num_dalys_by_cause_summarized / 1e6
-    yerr_dalys = np.array([
-        (num_dalys_summarized['mean'].values - num_dalys_summarized['lower']).values,
-        (num_dalys_summarized['upper'].values - num_dalys_summarized['mean']).values,
-    ])/1e6
-    fig, ax = plt.subplots(figsize=(9, 6))
-    num_dalys_by_cause_summarized_in_millions.plot(kind='bar', stacked=True, color=cause_color, rot=0, ax=ax)
-    ax.errorbar(range(len(param_names)), num_dalys_summarized['mean'].values / 1e6, yerr=yerr_dalys,
-                fmt=".", color="black", zorder=100)
-    ax.set_ylabel('Millions', fontsize='small')
+    name_of_plot = f'HCW cost gap distribution among cadres, {target_period()}'
+    cadres_to_plot = ['Clinical', 'Nursing_and_Midwifery', 'Pharmacy', 'DCSA', 'Other']
+    hcw_cost_gap_percent_to_plot = hcw_cost_gap_percent[cadres_to_plot] * 100
+    fig, ax = plt.subplots(figsize=(12, 8))
+    hcw_cost_gap_percent_to_plot.plot(kind='bar', color=officer_category_color, rot=0, ax=ax)
+    ax.set_ylim(0, 100)
+    ax.set_ylabel('Percentage %')
     ax.set(xlabel=None)
-    xtick_labels = [substitute_labels[v] for v in num_dalys_by_cause_summarized_in_millions.index]
-    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
-    fig.subplots_adjust(right=0.7)
-    ax.legend(
-        loc="center left",
-        bbox_to_anchor=(0.750, 0.6),
-        bbox_transform=fig.transFigure,
-        title='Cause of death or injury',
-        title_fontsize='x-small',
-        fontsize='x-small',
-        reverse=True,
-        ncol=1
-    )
+    xtick_labels = [substitute_labels[v] for v in hcw_cost_gap_percent_to_plot.index]
+    ax.set_xticklabels(xtick_labels, rotation=90)
+    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category')
+    # plot the average proportions of all scenarios
+    for c in cadres_to_plot:
+        plt.axhline(y=hcw_cost_gap_percent_to_plot[c].mean(),
+                    linestyle='--', color=officer_category_color[c], alpha=0.8,
+                    label=c)
     plt.title(name_of_plot)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     fig.show()
     plt.close(fig)
+
+    name_of_plot = f'Extra budget allocation among cadres, {target_period()}'
+    cadres_to_plot = ['Clinical', 'Nursing_and_Midwifery', 'Pharmacy', 'DCSA', 'Other']
+    extra_budget_allocation_to_plot = extra_budget_allocation[cadres_to_plot] * 100
+    fig, ax = plt.subplots(figsize=(12, 8))
+    extra_budget_allocation_to_plot.plot(kind='bar', color=officer_category_color, rot=0, ax=ax)
+    ax.set_ylabel('Percentage %')
+    ax.set(xlabel=None)
+    xtick_labels = [substitute_labels[v] for v in extra_budget_allocation_to_plot.index]
+    ax.set_xticklabels(xtick_labels, rotation=90)
+    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category')
+    plt.title(name_of_plot)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
+    # name_of_plot = f'Total budget in USD dollars by cadre, {target_period()}'
+    # total_cost_to_plot = (total_cost_all_yrs / 1e6).drop(columns='all_cadres').reindex(num_dalys_summarized.index)
+    # column_dcsa = total_cost_to_plot.pop('DCSA')
+    # total_cost_to_plot.insert(3, "DCSA", column_dcsa)
+    # fig, ax = plt.subplots(figsize=(9, 6))
+    # total_cost_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
+    # ax.set_ylabel('Millions', fontsize='small')
+    # ax.set(xlabel=None)
+    # xtick_labels = [substitute_labels[v] for v in total_cost_to_plot.index]
+    # ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
+    # plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
+    #            fontsize='small', reverse=True)
+    # plt.title(name_of_plot)
+    # fig.tight_layout()
+    # fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    # fig.show()
+    # plt.close(fig)
+
+    # name_of_plot = f'DALYs by cause, {target_period()}'
+    # num_dalys_by_cause_summarized_in_millions = num_dalys_by_cause_summarized / 1e6
+    # yerr_dalys = np.array([
+    #     (num_dalys_summarized['mean'] - num_dalys_summarized['lower']).values,
+    #     (num_dalys_summarized['upper'] - num_dalys_summarized['mean']).values,
+    # ])/1e6
+    # fig, ax = plt.subplots(figsize=(9, 6))
+    # num_dalys_by_cause_summarized_in_millions.plot(kind='bar', stacked=True, color=cause_color, rot=0, ax=ax)
+    # ax.errorbar(range(len(param_names)), num_dalys_summarized['mean'].values / 1e6, yerr=yerr_dalys,
+    #             fmt=".", color="black", zorder=100)
+    # ax.set_ylabel('Millions', fontsize='small')
+    # ax.set(xlabel=None)
+    # xtick_labels = [substitute_labels[v] for v in num_dalys_by_cause_summarized_in_millions.index]
+    # ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
+    # fig.subplots_adjust(right=0.7)
+    # ax.legend(
+    #     loc="center left",
+    #     bbox_to_anchor=(0.750, 0.6),
+    #     bbox_transform=fig.transFigure,
+    #     title='Cause of death or injury',
+    #     title_fontsize='x-small',
+    #     fontsize='x-small',
+    #     reverse=True,
+    #     ncol=1
+    # )
+    # plt.title(name_of_plot)
+    # fig.tight_layout()
+    # fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    # fig.show()
+    # plt.close(fig)
 
     # plot relative numbers for scenarios
     name_of_plot = f'DALYs averted against no expansion, {target_period()}'
@@ -1283,14 +1446,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    name_of_plot = f'Service delivery ratio against no expansion, {target_period()}'
-    fig, ax = do_bar_plot_with_ci(service_ratio_increased * 100, service_ratio_increased_percent, annotation=True)
-    ax.set_title(name_of_plot)
-    ax.set_ylabel('Percentage')
-    fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-    fig.show()
-    plt.close(fig)
+    # name_of_plot = f'Service delivery ratio against no expansion, {target_period()}'
+    # fig, ax = do_bar_plot_with_ci(service_ratio_increased * 100, service_ratio_increased_percent, annotation=True)
+    # ax.set_title(name_of_plot)
+    # ax.set_ylabel('Percentage')
+    # fig.tight_layout()
+    # fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    # fig.show()
+    # plt.close(fig)
 
     name_of_plot = f'Extra staff by cadre against no expansion, {TARGET_PERIOD[1].year}'
     extra_staff_by_cadre_to_plot = extra_staff_2029.drop(columns='all_cadres').reindex(
@@ -1333,8 +1496,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     name_of_plot = f'Services increased by appointment type \nagainst no expansion, {target_period()}'
     num_appts_increased_in_millions = num_appts_increased / 1e6
     yerr_services = np.array([
-        (num_services_increased['mean'].values - num_services_increased['lower']).values,
-        (num_services_increased['upper'].values - num_services_increased['mean']).values,
+        (num_services_increased['mean'] - num_services_increased['lower']).values,
+        (num_services_increased['upper'] - num_services_increased['mean']).values,
     ]) / 1e6
     fig, ax = plt.subplots(figsize=(9, 6))
     num_appts_increased_in_millions.plot(kind='bar', stacked=True, color=appt_color, rot=0, ax=ax)
@@ -1354,21 +1517,21 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    name_of_plot = f'Services increased by treatment type \nagainst no expansion, {target_period()}'
-    num_treatments_increased_in_millions = num_treatments_increased / 1e6
-    yerr_services = np.array([
-        (num_treatments_total_increased['mean'].values - num_treatments_total_increased['lower']).values,
-        (num_treatments_total_increased['upper'].values - num_treatments_total_increased['mean']).values,
-    ]) / 1e6
-    fig, ax = plt.subplots(figsize=(10, 6))
-    num_treatments_increased_in_millions.plot(kind='bar', stacked=True, color=treatment_color, rot=0, ax=ax)
-    ax.errorbar(range(len(param_names)-1), num_treatments_total_increased['mean'].values / 1e6, yerr=yerr_services,
-                fmt=".", color="black", zorder=100)
+    name_of_plot = f'Never ran services reduced by appointment type \nagainst no expansion, {target_period()}'
+    num_never_ran_appts_reduced_to_plot = num_never_ran_appts_reduced / 1e6
+    # yerr_services = np.array([
+    #     (num_services_increased['mean'] - num_services_increased['lower']).values,
+    #     (num_services_increased['upper'] - num_services_increased['mean']).values,
+    # ]) / 1e6
+    fig, ax = plt.subplots(figsize=(9, 6))
+    num_never_ran_appts_reduced_to_plot.plot(kind='bar', stacked=True, color=appt_color, rot=0, ax=ax)
+    # ax.errorbar(range(len(param_names) - 1), num_services_increased['mean'].values / 1e6, yerr=yerr_services,
+    #             fmt=".", color="black", zorder=100)
     ax.set_ylabel('Millions', fontsize='small')
     ax.set(xlabel=None)
-    xtick_labels = [substitute_labels[v] for v in num_treatments_increased_in_millions.index]
+    xtick_labels = [substitute_labels[v] for v in num_never_ran_appts_reduced_to_plot.index]
     ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
-    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.4), title='Treatment type', title_fontsize='small',
+    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Appointment type', title_fontsize='small',
                fontsize='small', reverse=True)
     plt.title(name_of_plot)
     fig.tight_layout()
@@ -1378,11 +1541,59 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
+    name_of_plot = f'Never ran services reduced by treatment type \nagainst no expansion, {target_period()}'
+    num_never_ran_treatments_reduced_to_plot = num_never_ran_treatments_reduced / 1e6
+    # yerr_services = np.array([
+    #     (num_services_increased['mean'] - num_services_increased['lower']).values,
+    #     (num_services_increased['upper'] - num_services_increased['mean']).values,
+    # ]) / 1e6
+    fig, ax = plt.subplots(figsize=(9, 6))
+    num_never_ran_treatments_reduced_to_plot.plot(kind='bar', stacked=True, color=treatment_color, rot=0, ax=ax)
+    # ax.errorbar(range(len(param_names) - 1), num_services_increased['mean'].values / 1e6, yerr=yerr_services,
+    #             fmt=".", color="black", zorder=100)
+    ax.set_ylabel('Millions', fontsize='small')
+    ax.set(xlabel=None)
+    xtick_labels = [substitute_labels[v] for v in num_never_ran_treatments_reduced_to_plot.index]
+    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
+    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Treatment type', title_fontsize='small',
+               fontsize='small', reverse=True)
+    plt.title(name_of_plot)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(
+        name_of_plot.replace(' ', '_').replace(',', '').replace('\n', ''))
+    )
+    fig.show()
+    plt.close(fig)
+
+    # name_of_plot = f'Services increased by treatment type \nagainst no expansion, {target_period()}'
+    # num_treatments_increased_in_millions = num_treatments_increased / 1e6
+    # yerr_services = np.array([
+    #     (num_treatments_total_increased['mean'] - num_treatments_total_increased['lower']).values,
+    #     (num_treatments_total_increased['upper'] - num_treatments_total_increased['mean']).values,
+    # ]) / 1e6
+    # fig, ax = plt.subplots(figsize=(10, 6))
+    # num_treatments_increased_in_millions.plot(kind='bar', stacked=True, color=treatment_color, rot=0, ax=ax)
+    # ax.errorbar(range(len(param_names)-1), num_treatments_total_increased['mean'].values / 1e6, yerr=yerr_services,
+    #             fmt=".", color="black", zorder=100)
+    # ax.set_ylabel('Millions', fontsize='small')
+    # ax.set(xlabel=None)
+    # xtick_labels = [substitute_labels[v] for v in num_treatments_increased_in_millions.index]
+    # ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
+    # plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.4), title='Treatment type', title_fontsize='small',
+    #            fontsize='small', reverse=True)
+    # plt.title(name_of_plot)
+    # fig.tight_layout()
+    # fig.savefig(make_graph_file_name(
+    #     name_of_plot.replace(' ', '_').replace(',', '').replace('\n', ''))
+    # )
+    # fig.show()
+    # plt.close(fig)
+
     name_of_plot = f'DALYs averted by cause against no expansion, {target_period()}'
     num_dalys_by_cause_averted_in_millions = num_dalys_by_cause_averted / 1e6
     yerr_dalys = np.array([
-        (num_dalys_averted['mean'].values - num_dalys_averted['lower']).values,
-        (num_dalys_averted['upper'].values - num_dalys_averted['mean']).values,
+        (num_dalys_averted['mean'] - num_dalys_averted['lower']).values,
+        (num_dalys_averted['upper'] - num_dalys_averted['mean']).values,
     ]) / 1e6
     fig, ax = plt.subplots(figsize=(9, 6))
     num_dalys_by_cause_averted_in_millions.plot(kind='bar', stacked=True, color=cause_color, rot=0, ax=ax)
