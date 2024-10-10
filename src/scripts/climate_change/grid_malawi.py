@@ -69,6 +69,11 @@ facilities_with_districts_shap_files = facilities_by_area.merge(admin_area_with_
 facilities_with_districts_shap_files_no_duplicates = facilities_with_districts_shap_files.drop_duplicates(subset=['District', 'Facility_Level', 'Region', 'Facility_ID', 'Facility_Name'])
 facilities_with_districts_shap_files_no_duplicates.reset_index(drop=True, inplace=True)
 
+
 # write csv file of facilities with districts
 facilities_with_districts_shap_files_no_duplicates.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/facilities_with_districts.csv")
 
+facilities_gdf = gpd.GeoDataFrame(facilities_with_districts_shap_files_no_duplicates,
+                                   geometry='geometry',
+                                   crs="EPSG:4326")
+facilities_gdf.to_file("/Users/rem76/Desktop/Climate_change_health/Data/facilities_with_districts.shp")
