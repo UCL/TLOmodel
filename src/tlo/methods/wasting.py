@@ -395,15 +395,18 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             muac_distribution_in_well_group = norm(loc=p['MUAC_distribution_WHZ>=-2'][0],
                                                    scale=p['MUAC_distribution_WHZ>=-2'][1])
             # get probabilities of MUAC
-            probability_over_or_equal_115 = muac_distribution_in_well_group.sf(11.5)
-            probability_over_or_equal_125 = muac_distribution_in_well_group.sf(12.5)
+            prob_normal_whz_with_muac_over_115mm = muac_distribution_in_well_group.sf(11.5)
+            prob_normal_whz_with_muac_over_125mm = muac_distribution_in_well_group.sf(12.5)
 
-            prob_less_than_115 = 1 - probability_over_or_equal_115
-            prob_between_115_125 = probability_over_or_equal_115 - probability_over_or_equal_125
+            prob_normal_whz_with_muac_less_than_115mm = 1 - prob_normal_whz_with_muac_over_115mm
+            prob_normal_whz_with_muac_between_115and125mm = \
+                prob_normal_whz_with_muac_over_115mm - prob_normal_whz_with_muac_over_125mm
 
             df.loc[idx, 'un_am_MUAC_category'] = df.loc[idx].apply(
                 lambda x: self.rng.choice(['<115mm', '[115-125)mm', '>=125mm'],
-                                          p=[prob_less_than_115, prob_between_115_125, probability_over_or_equal_125]),
+                                          p=[prob_normal_whz_with_muac_less_than_115mm,
+                                             prob_normal_whz_with_muac_between_115and125mm,
+                                             prob_normal_whz_with_muac_over_125mm]),
                 axis=1
             )
 
@@ -433,6 +436,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             return
         # proportion_normalWHZ_with_oedema: P(oedema|WHZ>=-2) =
         # P(oedema & WHZ>=-2) / P(WHZ>=-2) = P(oedema) * [1 - P(WHZ<-2|oedema)] / P(WHZ>=-2)
+        print(f"{self.prob_normal_whz=}")
         proportion_normal_whz_with_oedema = \
             p['prevalence_nutritional_oedema'] * (1 - p['proportion_oedema_with_WHZ<-2']) / self.prob_normal_whz
         oedema_in_non_wasted = self.rng.random_sample(size=len(
