@@ -1,5 +1,5 @@
 """
-We calculate the salar cost of current and funded plus HCW.
+We calculate the salary cost of current and funded plus HCW.
 """
 import itertools
 # import pickle
@@ -29,11 +29,15 @@ Annual_PFT['Annual_Mins_Per_Staff'] = 365.25 * Annual_PFT['Total_Mins_Per_Day']/
 # the hr salary by minute and facility id
 Minute_Salary = Annual_PFT.merge(hr_salary, on=['Officer_Category'], how='outer')
 Minute_Salary['Minute_Salary_USD'] = Minute_Salary['Annual_Salary_USD']/Minute_Salary['Annual_Mins_Per_Staff']
+# store the minute salary by cadre and level
+Minute_Salary_by_Cadre_Level = Minute_Salary[
+    ['Facility_Level', 'Officer_Category', 'Minute_Salary_USD']
+].copy().fillna(0.0)
 Minute_Salary = Minute_Salary[['Facility_Level', 'Officer_Category', 'Minute_Salary_USD']].merge(
     mfl[['Facility_Level', 'Facility_ID']], on=['Facility_Level'], how='outer'
 )
 Minute_Salary.drop(columns=['Facility_Level'], inplace=True)
-Minute_Salary = Minute_Salary.fillna(0)
+Minute_Salary = Minute_Salary.fillna(0.0)
 Minute_Salary.rename(columns={'Officer_Category': 'Officer_Type_Code'}, inplace=True)
 
 Minute_Salary.to_csv(resourcefilepath / 'costing' / 'Minute_Salary_HR.csv', index=False)
