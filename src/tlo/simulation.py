@@ -8,7 +8,9 @@ import itertools
 import time
 from collections import OrderedDict
 from pathlib import Path
+from typing import Dict, Optional, Union
 from typing import TYPE_CHECKING, Optional
+import pandas as pd
 
 import numpy as np
 
@@ -102,9 +104,14 @@ class Simulation:
         self.date = self.start_date = start_date
         self.modules = OrderedDict()
         self.event_queue = EventQueue()
+        self.generate_event_chains = None
+        self.generate_event_chains_overwrite_epi = None
+        self.generate_event_chains_modules_of_interest = []
+        self.generate_event_chains_ignore_events = []
         self.end_date = None
         self.output_file = None
         self.population: Optional[Population] = None
+        self.event_chains: Optinoal[Population] = None
 
         self.show_progress_bar = show_progress_bar
         self.resourcefilepath = resourcefilepath
@@ -274,12 +281,13 @@ class Simulation:
                 data=f"{module.name}.initialise_population() {time.time() - start1} s",
             )
 
+        self.event_chains = pd.DataFrame(columns= list(self.population.props.columns)+['person_ID'] + ['event'] + ['event_date'] + ['when'])
+
         end = time.time()
         logger.info(key="info", data=f"make_initial_population() {end - start} s")
 
-    def initialise(self, *, end_date: Date) -> None:
+    def initialise(self, *, end_date: Date, generate_event_chains) -> None:
         """Initialise all modules in simulation.
-
         :param end_date: Date to end simulation on - accessible to modules to allow
             initialising data structures which may depend (in size for example) on the
             date range being simulated.
@@ -289,6 +297,19 @@ class Simulation:
             raise SimulationPreviouslyInitialisedError(msg)
         self.date = self.start_date
         self.end_date = end_date  # store the end_date so that others can reference it
+
+        self.generate_event_chains = generate_event_chains # for now ensure we're always aiming to print data
+        self.generate_event_chains_overwrite_epi = False
+        if self.generate_event_chains:
+            # For now keep these fixed, eventually they will be input from user
+            self.generate_event_chains_modules_of_interest = [self.modules['Tb'], self.modules['Hiv'], self.modules['CardioMetabolicDisorders']]
+            self.generate_event_chains_ignore_events =  ['AgeUpdateEvent','HealthSystemScheduler', 'DirectBirth'] #['TbActiveCasePollGenerateData','HivPollingEventForDataGeneration','SimplifiedBirthsPoll', 'AgeUpdateEvent', 'HealthSystemScheduler']
+
+        #df_event_chains = pd.DataFrame(columns= list(self.population.props.columns)+['person_ID'] + ['event'] + ['event_date'] + ['when'])
+
+        # Reorder columns to place the new columns at the front
+        pd.set_option('display.max_columns', None)
+
         for module in self.modules.values():
             module.initialise_simulation(self)
         self._initialised = True
@@ -350,6 +371,8 @@ class Simulation:
         :param to_date: Date to simulate up to but not including - must be before or
             equal to simulation end date specified in call to :py:meth:`initialise`.
         """
+        f = open('output.txt', mode='a')
+
         if not self._initialised:
             msg = "Simulation must be initialised before calling run_simulation_to"
             raise SimulationNotInitialisedError(msg)
@@ -366,10 +389,12 @@ class Simulation:
                 self._update_progress_bar(progress_bar, date)
             self.fire_single_event(event, date)
         self.date = to_date
+        self.event_chains.to_csv('output.csv', index=False)
+
         if self.show_progress_bar:
             progress_bar.stop()
 
-    def simulate(self, *, end_date: Date) -> None:
+    def simulate(self, *, end_date: Date, generate_event_chains=False) -> None:
         """Simulate until the given end date
 
         :param end_date: When to stop simulating. Only events strictly before this
@@ -377,7 +402,7 @@ class Simulation:
             clarity.
         """
         start = time.time()
-        self.initialise(end_date=end_date)
+        self.initialise(end_date=end_date, generate_event_chains=generate_event_chains)
         self.run_simulation_to(to_date=end_date)
         self.finalise(time.time() - start)
 
@@ -407,6 +432,7 @@ class Simulation:
         """
         self.date = date
         event.run()
+        
 
     def do_birth(self, mother_id: int) -> int:
         """Create a new child person.
@@ -420,6 +446,13 @@ class Simulation:
         child_id = self.population.do_birth()
         for module in self.modules.values():
             module.on_birth(mother_id, child_id)
+        if self.generate_event_chains:
+            row = self.population.props.iloc[[child_id]]
+            row['person_ID'] = child_id
+            row['event'] = 'Birth'
+            row['event_date'] = self.date
+            row['when'] = 'After'
+            self.event_chains = pd.concat([self.event_chains, row], ignore_index=True)
         return child_id
 
     def find_events_for_person(self, person_id: int) -> list[tuple[Date, Event]]:

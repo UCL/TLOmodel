@@ -9,6 +9,8 @@ from tlo import DateOffset
 if TYPE_CHECKING:
     from tlo import Simulation
 
+import pandas as pd
+
 
 class Priority(Enum):
     """Enumeration for the Priority, which is used in sorting the events in the simulation queue."""
@@ -63,8 +65,54 @@ class Event:
 
     def run(self):
         """Make the event happen."""
+        
+        print_chains = False
+        df_before = []
+        
+        if self.sim.generate_event_chains:
+            # Only print event if it belongs to modules of interest and if it is not in the list of events to ignore
+            if (self.module in self.sim.generate_event_chains_modules_of_interest) and all(sub not in str(self) for sub in self.sim.generate_event_chains_ignore_events):
+                print_chains = True
+                if self.target != self.sim.population:
+                    row = self.sim.population.props.iloc[[self.target]]
+                    row['person_ID'] = self.target
+                    row['event'] = self
+                    row['event_date'] = self.sim.date
+                    row['when'] = 'Before'
+                    self.sim.event_chains = pd.concat([self.sim.event_chains, row], ignore_index=True)
+                else:
+                    df_before = self.sim.population.props.copy()
+        
+        
         self.apply(self.target)
         self.post_apply_hook()
+                
+        if print_chains:
+            if self.target != self.sim.population:
+                row = self.sim.population.props.iloc[[self.target]]
+                row['person_ID'] = self.target
+                row['event'] = self
+                row['event_date'] = self.sim.date
+                row['when'] = 'After'
+                self.sim.event_chains = pd.concat([self.sim.event_chains, row], ignore_index=True)
+            else:
+                df_after = self.sim.population.props.copy()
+                change = df_before.compare(df_after)
+                if ~change.empty:
+                    indices = change.index
+                    new_rows_before = df_before.loc[indices]
+                    new_rows_before['person_ID'] = new_rows_before.index
+                    new_rows_before['event'] = self
+                    new_rows_before['event_date'] = self.sim.date
+                    new_rows_before['when'] = 'Before'
+                    new_rows_after = df_after.loc[indices]
+                    new_rows_after['person_ID'] = new_rows_after.index
+                    new_rows_after['event'] = self
+                    new_rows_after['event_date'] = self.sim.date
+                    new_rows_after['when'] = 'After'
+
+                    self.sim.event_chains = pd.concat([self.sim.event_chains,new_rows_before], ignore_index=True)
+                    self.sim.event_chains = pd.concat([self.sim.event_chains,new_rows_after], ignore_index=True)
 
 
 class RegularEvent(Event):
