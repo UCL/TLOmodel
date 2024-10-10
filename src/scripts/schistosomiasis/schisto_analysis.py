@@ -33,18 +33,18 @@ def run_simulation(popsize=10000, haem=True, mansoni=True, mda_execute=True):
     }
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date, log_config=log_config)
+    sim = Simulation(start_date=start_date, log_config=log_config, resourcefilepath=resourcefilepath)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
-    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-    sim.register(schisto.Schisto(resourcefilepath=resourcefilepath, mda_execute=mda_execute))
+    sim.register(demography.Demography())
+    sim.register(healthsystem.HealthSystem())
+    sim.register(healthburden.HealthBurden())
+    sim.register(contraception.Contraception())
+    sim.register(schisto.Schisto(mda_execute=mda_execute))
     if haem:
-        sim.register(schisto.Schisto_Haematobium(resourcefilepath=resourcefilepath, symptoms_and_HSI=False))
+        sim.register(schisto.Schisto_Haematobium(symptoms_and_HSI=False))
     if mansoni:
-        sim.register(schisto.Schisto_Mansoni(resourcefilepath=resourcefilepath, symptoms_and_HSI=False))
+        sim.register(schisto.Schisto_Mansoni(symptoms_and_HSI=False))
 
     # Run the simulation
     sim.seed_rngs(int(np.random.uniform(0, 1) * 0 + 1000))

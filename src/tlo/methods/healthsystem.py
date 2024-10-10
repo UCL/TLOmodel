@@ -341,7 +341,6 @@ class HealthSystem(Module):
     def __init__(
         self,
         name: Optional[str] = None,
-        resourcefilepath: Optional[Path] = None,
         service_availability: Optional[List[str]] = None,
         mode_appt_constraints: Optional[int] = None,
         cons_availability: Optional[str] = None,
@@ -359,7 +358,6 @@ class HealthSystem(Module):
     ):
         """
         :param name: Name to use for module, defaults to module class name if ``None``.
-        :param resourcefilepath: Path to directory containing resource files.
         :param service_availability: A list of treatment IDs to allow.
         :param mode_appt_constraints: Integer code in ``{0, 1, 2}`` determining mode of
             constraints with regards to officer numbers and time - 0: no constraints,
@@ -400,7 +398,6 @@ class HealthSystem(Module):
         """
 
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
 
         assert isinstance(disable, bool)
         assert isinstance(disable_and_reject_all, bool)
@@ -522,9 +519,9 @@ class HealthSystem(Module):
                 "'year', 'simulation' or None."
             )
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath = None):
 
-        path_to_resourcefiles_for_healthsystem = Path(self.resourcefilepath) / 'healthsystem'
+        path_to_resourcefiles_for_healthsystem = Path(resourcefilepath) / 'healthsystem'
 
         # Read parameters for overall performance of the HealthSystem
         self.load_parameters_from_dataframe(pd.read_csv(

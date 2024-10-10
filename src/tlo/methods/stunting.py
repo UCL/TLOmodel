@@ -141,16 +141,15 @@ class Stunting(Module, GenericFirstAppointmentsMixin):
                                     categories=['HAZ<-3', '-3<=HAZ<-2', 'HAZ>=-2']),
     }
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
         self.models = None  # (Will store the models used in the module)
         self.cons_item_codes = None  # (Will store consumable item codes)
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath=None):
         self.load_parameters_from_dataframe(
             pd.read_excel(
-                Path(self.resourcefilepath) / 'ResourceFile_Stunting.xlsx', sheet_name='Parameter_values')
+                Path(resourcefilepath) / 'ResourceFile_Stunting.xlsx', sheet_name='Parameter_values')
         )
 
     def initialise_population(self, population):

@@ -108,7 +108,7 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_healthcareseek
         METADATA = {Metadata.USES_SYMPTOMMANAGER}
         """Dummy Disease - it's only job is to create a symptom and impose it everyone"""
 
-        def read_parameters(self, data_folder):
+        def read_parameters(self, resourcefilepath=None):
             self.sim.modules['SymptomManager'].register_symptom(
                 Symptom(
                     name='Symptom_that_does_cause_healthcare_seeking',
@@ -133,14 +133,14 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_healthcareseek
             pass
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir))
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir), resourcefilepath=resourcefilepath)
 
     # Register the core modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, hsi_event_count_log_period="simulation"),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+    sim.register(demography.Demography(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(hsi_event_count_log_period="simulation"),
+                 symptommanager.SymptomManager(spurious_symptoms=False),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
                  DummyDisease()
                  )
 
@@ -179,7 +179,7 @@ def test_healthcareseeking_does_not_occurs_from_symptom_that_do_not_give_healthc
         METADATA = {Metadata.USES_SYMPTOMMANAGER}
         """Dummy Disease - it's only job is to create a symptom and impose it everyone"""
 
-        def read_parameters(self, data_folder):
+        def read_parameters(self, resourcefilepath=None):
             self.sim.modules['SymptomManager'].register_symptom(
                 Symptom(
                     name='Symptom_that_does_not_cause_healthcare_seeking',
@@ -205,14 +205,14 @@ def test_healthcareseeking_does_not_occurs_from_symptom_that_do_not_give_healthc
             pass
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir))
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir), resourcefilepath=resourcefilepath)
 
     # Register the core modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, hsi_event_count_log_period="simulation"),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+    sim.register(demography.Demography(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(hsi_event_count_log_period="simulation"),
+                 symptommanager.SymptomManager(spurious_symptoms=False),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
                  DummyDisease()
                  )
 
@@ -249,7 +249,7 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_emergency_heal
         METADATA = {Metadata.USES_SYMPTOMMANAGER}
         """Dummy Disease - it's only job is to create a symptom and impose it everyone"""
 
-        def read_parameters(self, data_folder):
+        def read_parameters(self, resourcefilepath=None):
             self.sim.modules['SymptomManager'].register_symptom(
                 Symptom.emergency('Symptom_that_does_cause_emergency_healthcare_seeking')
             )
@@ -271,14 +271,14 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_emergency_heal
             pass
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir))
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir), resourcefilepath=resourcefilepath)
 
     # Register the core modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, hsi_event_count_log_period="simulation"),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+    sim.register(demography.Demography(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(hsi_event_count_log_period="simulation"),
+                 symptommanager.SymptomManager(spurious_symptoms=False),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
                  DummyDisease()
                  )
 
@@ -311,15 +311,15 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_emergency_heal
 def test_no_healthcareseeking_when_no_spurious_symptoms_and_no_disease_modules(seed, tmpdir):
     """there should be no generic HSI if there are no spurious symptoms or disease module"""
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir))
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir), resourcefilepath=resourcefilepath)
 
     # Register the core modules including Chronic Syndrome and Mockitis -
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, hsi_event_count_log_period="simulation"),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+    sim.register(demography.Demography(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(hsi_event_count_log_period="simulation"),
+                 symptommanager.SymptomManager(spurious_symptoms=False),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 simplified_births.SimplifiedBirths(),
                  )
 
     # Run the simulation for one day
@@ -339,15 +339,15 @@ def test_no_healthcareseeking_when_no_spurious_symptoms_and_no_disease_modules(s
 def test_healthcareseeking_occurs_with_nonemergency_spurious_symptoms_only(seed, tmpdir):
     """Non-emergency spurious symptoms should generate non-emergency HSI"""
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir))
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir), resourcefilepath=resourcefilepath)
 
     # Register the core modules including Chronic Syndrome and Mockitis -
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, hsi_event_count_log_period="simulation"),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+    sim.register(demography.Demography(),
+                 simplified_births.SimplifiedBirths(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(hsi_event_count_log_period="simulation"),
+                 symptommanager.SymptomManager(spurious_symptoms=True),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
                  )
 
     all_spurious_symptoms = sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence']
@@ -391,15 +391,15 @@ def test_healthcareseeking_occurs_with_emergency_spurious_symptom_only(seed, tmp
     its primary HSI is FirstAttendance_Emergency, we further check that the counts of the two HSI
     match with each other."""
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir))
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir), resourcefilepath=resourcefilepath)
 
     # Register the core modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, hsi_event_count_log_period="simulation"),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+    sim.register(demography.Demography(),
+                 simplified_births.SimplifiedBirths(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(hsi_event_count_log_period="simulation"),
+                 symptommanager.SymptomManager(spurious_symptoms=True),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
                  )
 
     all_spurious_symptoms = sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence']
@@ -447,15 +447,15 @@ def test_healthcareseeking_occurs_with_emergency_spurious_symptom_only(seed, tmp
 def test_healthcareseeking_no_error_if_hsi_emergencycare_spurioussymptom_is_run_on_a_dead_person(seed):
     """Check that running HSI_EmergencyCare_SpuriousSymptom does not cause an error and returns a blank footprint"""
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
 
     # Register the core modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, hsi_event_count_log_period="simulation"),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+    sim.register(demography.Demography(),
+                 simplified_births.SimplifiedBirths(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(hsi_event_count_log_period="simulation"),
+                 symptommanager.SymptomManager(spurious_symptoms=True),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
                  )
 
     # Run the simulation for zero days for a small population
@@ -483,15 +483,15 @@ def test_healthcareseeking_occurs_with_emergency_and_nonemergency_spurious_sympt
     and emergency spurious symptoms on the population.
     """
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir))
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir), resourcefilepath=resourcefilepath)
 
     # Register the core modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, hsi_event_count_log_period="simulation"),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+    sim.register(demography.Demography(),
+                 simplified_births.SimplifiedBirths(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(hsi_event_count_log_period="simulation"),
+                 symptommanager.SymptomManager(spurious_symptoms=True),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
                  )
 
     all_spurious_symptoms = sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence']
@@ -522,15 +522,15 @@ def test_healthcareseeking_occurs_with_emergency_and_nonemergency_spurious_sympt
 def test_healthcareseeking_occurs_when_triggerd_from_disease_modules(seed, tmpdir):
     """Mockitis and Chronic Syndrome should lead to there being emergency and non-emergency generic HSI"""
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir))
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir), resourcefilepath=resourcefilepath)
 
     # Register the core modules including Chronic Syndrome and Mockitis -
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, hsi_event_count_log_period="simulation"),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+    sim.register(demography.Demography(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(hsi_event_count_log_period="simulation"),
+                 symptommanager.SymptomManager(spurious_symptoms=False),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 simplified_births.SimplifiedBirths(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome()
                  )
@@ -552,15 +552,15 @@ def test_healthcareseeking_occurs_with_nonemergency_spurious_symptoms_and_diseas
     """This is to test that when the population have non-emergency spurious symptoms as well as diseases of
     Mockitis and Chronic Syndrome, emergency and non-emergency generic HSI will be triggered."""
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir))
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir), resourcefilepath=resourcefilepath)
 
     # Register the core modules including Chronic Syndrome and Mockitis -
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, hsi_event_count_log_period="simulation"),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+    sim.register(demography.Demography(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(hsi_event_count_log_period="simulation"),
+                 symptommanager.SymptomManager(spurious_symptoms=True),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 simplified_births.SimplifiedBirths(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome()
                  )
@@ -592,15 +592,15 @@ def test_healthcareseeking_occurs_with_emergency_spurious_symptom_and_disease_mo
     which will trigger generic emergency HSI and specific emergency care HSI, this is to check that the count of
     spurious emergency care HSI will not exceed that of generic emergency HSI."""
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir))
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir), resourcefilepath=resourcefilepath)
 
     # Register the core modules including Chronic Syndrome and Mockitis -
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, hsi_event_count_log_period="simulation"),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+    sim.register(demography.Demography(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(hsi_event_count_log_period="simulation"),
+                 symptommanager.SymptomManager(spurious_symptoms=True),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 simplified_births.SimplifiedBirths(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome()
                  )
@@ -649,15 +649,15 @@ def test_healthcareseeking_occurs_with_emergency_and_nonemergency_spurious_sympt
     Mockitis and Chronic Syndrome, emergency and non-emergency generic HSI and spurious emergency care will be all
     triggered."""
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir))
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir), resourcefilepath=resourcefilepath)
 
     # Register the core modules including Chronic Syndrome and Mockitis -
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, hsi_event_count_log_period="simulation"),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+    sim.register(demography.Demography(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(hsi_event_count_log_period="simulation"),
+                 symptommanager.SymptomManager(spurious_symptoms=True),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 simplified_births.SimplifiedBirths(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome()
                  )
@@ -687,15 +687,15 @@ def test_hsi_schedules_with_emergency_spurious_symptom_and_mockitis_module(seed,
     symptom from the disease, generic emergency HSI and specific emergency care HSIs are all triggered.
     """
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir))
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir), resourcefilepath=resourcefilepath)
 
     # Register the core modules including Chronic Syndrome and Mockitis -
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, hsi_event_count_log_period="simulation"),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+    sim.register(demography.Demography(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(hsi_event_count_log_period="simulation"),
+                 symptommanager.SymptomManager(spurious_symptoms=True),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 simplified_births.SimplifiedBirths(),
                  mockitis.Mockitis(),
                  )
 
@@ -765,14 +765,14 @@ def test_one_generic_emergency_hsi_scheduled_per_day_when_two_emergency_symptoms
             pass
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
 
     # Register the core modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, hsi_event_count_log_period="simulation"),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+    sim.register(demography.Demography(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(hsi_event_count_log_period="simulation"),
+                 symptommanager.SymptomManager(spurious_symptoms=False),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
                  DummyDisease()
                  )
 
@@ -819,15 +819,14 @@ def test_one_per_hsi_scheduled_per_day_when_emergency_and_non_emergency_symptoms
             pass
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
 
     # Register the core modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, hsi_event_count_log_period="simulation"),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath,
-                                                               force_any_symptom_to_lead_to_healthcareseeking=True),
+    sim.register(demography.Demography(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(hsi_event_count_log_period="simulation"),
+                 symptommanager.SymptomManager(spurious_symptoms=False),
+                 healthseekingbehaviour.HealthSeekingBehaviour(force_any_symptom_to_lead_to_healthcareseeking=True),
                  DummyDisease()
                  )
 
@@ -889,14 +888,13 @@ def test_force_healthcare_seeking(seed):
                 pass
 
         start_date = Date(2010, 1, 1)
-        sim = Simulation(start_date=start_date, seed=seed)
+        sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
 
-        sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                     healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
-                     symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
+        sim.register(demography.Demography(),
+                     enhanced_lifestyle.Lifestyle(),
+                     healthsystem.HealthSystem(),
+                     symptommanager.SymptomManager(spurious_symptoms=False),
                      healthseekingbehaviour.HealthSeekingBehaviour(
-                         resourcefilepath=resourcefilepath,
                          force_any_symptom_to_lead_to_healthcareseeking=force_any_symptom_to_lead_to_healthcare_seeking
                      ),
                      DummyDisease()
@@ -944,13 +942,13 @@ def test_force_healthcare_seeking_control_of_behaviour_through_parameters_and_ar
     ).set_index('parameter_name').apply(pd.eval).at['force_any_symptom_to_lead_to_healthcareseeking', 'value'])
 
     # No specification with argument --> behaviour is as per the parameter value in the ResourceFile
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+        demography.Demography(),
+        symptommanager.SymptomManager(),
+        healthsystem.HealthSystem(),
+        enhanced_lifestyle.Lifestyle(),
+        healthseekingbehaviour.HealthSeekingBehaviour(),
     )
     sim.make_initial_population(n=100)
     sim.simulate(end_date=start_date + pd.DateOffset(days=0))
@@ -960,13 +958,13 @@ def test_force_healthcare_seeking_control_of_behaviour_through_parameters_and_ar
 
     # Editing parameters --> behaviour is as per the edited parameters
     value_as_edited = not value_in_resourcefile
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        demography.Demography(),
+        symptommanager.SymptomManager(),
+        healthsystem.HealthSystem(),
+        healthseekingbehaviour.HealthSeekingBehaviour(),
+        enhanced_lifestyle.Lifestyle(),
     )
     # edit the value:
     sim.modules['HealthSeekingBehaviour'].parameters['force_any_symptom_to_lead_to_healthcareseeking'] = value_as_edited
@@ -977,14 +975,13 @@ def test_force_healthcare_seeking_control_of_behaviour_through_parameters_and_ar
 
     # Editing parameters *and* with an argument provided to module --> argument over-writes parameter edits
     value_in_argument = not value_in_resourcefile
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        demography.Demography(),
+        symptommanager.SymptomManager(),
+        healthsystem.HealthSystem(),
+        enhanced_lifestyle.Lifestyle(),
         healthseekingbehaviour.HealthSeekingBehaviour(
-            resourcefilepath=resourcefilepath,
             force_any_symptom_to_lead_to_healthcareseeking=value_in_argument),
     )
     # edit the value (to nonsense)
@@ -1034,23 +1031,15 @@ def test_same_day_healthcare_seeking_for_emergency_symptoms(seed, tmpdir):
             pass
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
 
     # Register the core modules
     sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(
-            resourcefilepath=resourcefilepath,
-            hsi_event_count_log_period="simulation",
-        ),
-        symptommanager.SymptomManager(
-            resourcefilepath=resourcefilepath,
-            spurious_symptoms=False,
-        ),
-        healthseekingbehaviour.HealthSeekingBehaviour(
-            resourcefilepath=resourcefilepath,
-        ),
+        demography.Demography(),
+        enhanced_lifestyle.Lifestyle(),
+        healthsystem.HealthSystem(hsi_event_count_log_period="simulation"),
+        symptommanager.SymptomManager(spurious_symptoms=False),
+        healthseekingbehaviour.HealthSeekingBehaviour(),
         DummyDisease(),
     )
 
@@ -1112,24 +1101,15 @@ def test_same_day_healthcare_seeking_when_using_force_healthcareseeking(seed, tm
             pass
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
 
     # Register the core modules
     sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(
-            resourcefilepath=resourcefilepath,
-            hsi_event_count_log_period="simulation",
-        ),
-        symptommanager.SymptomManager(
-            resourcefilepath=resourcefilepath,
-            spurious_symptoms=False,
-        ),
-        healthseekingbehaviour.HealthSeekingBehaviour(
-            resourcefilepath=resourcefilepath,
-            force_any_symptom_to_lead_to_healthcareseeking=True,
-        ),
+        demography.Demography(),
+        enhanced_lifestyle.Lifestyle(),
+        healthsystem.HealthSystem(hsi_event_count_log_period="simulation"),
+        symptommanager.SymptomManager(spurious_symptoms=False),
+        healthseekingbehaviour.HealthSeekingBehaviour(force_any_symptom_to_lead_to_healthcareseeking=True),
         DummyDisease()
     )
 
@@ -1180,16 +1160,13 @@ def test_everyone_seeks_care_for_symptom_with_high_odds_ratio_of_seeking_care(se
             pass
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
 
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
-                 healthseekingbehaviour.HealthSeekingBehaviour(
-                     resourcefilepath=resourcefilepath,
-                     force_any_symptom_to_lead_to_healthcareseeking=False,
-                 ),
+    sim.register(demography.Demography(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(),
+                 symptommanager.SymptomManager(spurious_symptoms=False),
+                 healthseekingbehaviour.HealthSeekingBehaviour(force_any_symptom_to_lead_to_healthcareseeking=False),
                  DummyDisease()
                  )
 
@@ -1269,16 +1246,13 @@ def test_care_seeking_from_symptoms_with_intermediate_level_of_care_seeking_and_
             pass
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
 
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
-                 healthseekingbehaviour.HealthSeekingBehaviour(
-                     resourcefilepath=resourcefilepath,
-                     force_any_symptom_to_lead_to_healthcareseeking=False,
-                 ),
+    sim.register(demography.Demography(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(),
+                 symptommanager.SymptomManager(spurious_symptoms=False),
+                 healthseekingbehaviour.HealthSeekingBehaviour(force_any_symptom_to_lead_to_healthcareseeking=False),
                  DummyDisease()
                  )
 
@@ -1360,15 +1334,14 @@ def test_care_seeking_from_symptoms_with_different_levels_of_prob_emergency(seed
                 pass
 
         start_date = Date(2010, 1, 1)
-        sim = Simulation(start_date=start_date, seed=seed)
+        sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
 
-        sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                     healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
-                     symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
+        sim.register(demography.Demography(),
+                     enhanced_lifestyle.Lifestyle(),
+                     healthsystem.HealthSystem(),
+                     symptommanager.SymptomManager(spurious_symptoms=False),
                      healthseekingbehaviour.HealthSeekingBehaviour(
-                         resourcefilepath=resourcefilepath,
-                         force_any_symptom_to_lead_to_healthcareseeking=False,
+                         force_any_symptom_to_lead_to_healthcareseeking=False
                      ),
                      DummyDisease()
                      )
@@ -1456,16 +1429,13 @@ def test_persons_have_maximum_of_one_hsi_scheduled(seed):
             pass
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
 
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
-                 healthseekingbehaviour.HealthSeekingBehaviour(
-                     resourcefilepath=resourcefilepath,
-                     force_any_symptom_to_lead_to_healthcareseeking=False,
-                 ),
+    sim.register(demography.Demography(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(),
+                 symptommanager.SymptomManager(spurious_symptoms=False),
+                 healthseekingbehaviour.HealthSeekingBehaviour(force_any_symptom_to_lead_to_healthcareseeking=False),
                  DummyDisease()
                  )
 
@@ -1536,15 +1506,14 @@ def test_non_emergency_first_appt_can_be_levels_0_1a_1b_2(seed):
                 pass
 
         start_date = Date(2010, 1, 1)
-        sim = Simulation(start_date=start_date, seed=seed)
+        sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
 
-        sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                     healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
-                     symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
+        sim.register(demography.Demography(),
+                     enhanced_lifestyle.Lifestyle(),
+                     healthsystem.HealthSystem(),
+                     symptommanager.SymptomManager(spurious_symptoms=False),
                      healthseekingbehaviour.HealthSeekingBehaviour(
-                         resourcefilepath=resourcefilepath,
-                         force_any_symptom_to_lead_to_healthcareseeking=False,
+                         force_any_symptom_to_lead_to_healthcareseeking=False
                      ),
                      DummyDisease()
                      )
@@ -1635,16 +1604,13 @@ def test_custom_function_is_equivalent_to_linear_model(seed):
             pass
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
 
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
-                 healthseekingbehaviour.HealthSeekingBehaviour(
-                     resourcefilepath=resourcefilepath,
-                     force_any_symptom_to_lead_to_healthcareseeking=False,
-                 ),
+    sim.register(demography.Demography(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(),
+                 symptommanager.SymptomManager(spurious_symptoms=False),
+                 healthseekingbehaviour.HealthSeekingBehaviour(force_any_symptom_to_lead_to_healthcareseeking=False),
                  DummyDisease()
                  )
 

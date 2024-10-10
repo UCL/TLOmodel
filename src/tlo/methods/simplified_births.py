@@ -84,9 +84,8 @@ class SimplifiedBirths(Module):
                                             categories=['none', 'non_exclusive', 'exclusive']),
     }
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
         self.asfr = dict()
 
         # Define defaults for properties:
@@ -102,16 +101,16 @@ class SimplifiedBirths(Module):
             'nb_breastfeeding_status': 'none',
         }
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath = None):
         """Load parameters for probability of pregnancy/birth and breastfeeding status for newborns"""
 
         self.parameters['age_specific_fertility_rates'] = \
-            pd.read_csv(Path(self.resourcefilepath) / 'demography' / 'ResourceFile_ASFR_WPP.csv')
+            pd.read_csv(Path(resourcefilepath) / 'demography' / 'ResourceFile_ASFR_WPP.csv')
 
         self.parameters['months_between_pregnancy_and_delivery'] = 9
 
         # Breastfeeding status for newborns (importing from the Newborn resourcefile)
-        rf = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_NewbornOutcomes.xlsx')
+        rf = pd.read_excel(Path(resourcefilepath) / 'ResourceFile_NewbornOutcomes.xlsx')
         param_as_string = rf.loc[rf.parameter_name == 'prob_breastfeeding_type']['value'].iloc[0]
         parameter = json.loads(param_as_string)[0]
         self.parameters['prob_breastfeeding_type'] = parameter

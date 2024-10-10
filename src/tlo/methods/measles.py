@@ -99,12 +99,12 @@ class Measles(Module, GenericFirstAppointmentsMixin):
 
         self.consumables = None  # (will store item_codes for consumables used in HSI)
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath = None):
         """Read parameter values from file
         """
 
         workbook = pd.read_excel(
-            os.path.join(self.resourcefilepath, "ResourceFile_Measles.xlsx"),
+            os.path.join(resourcefilepath, "ResourceFile_Measles.xlsx"),
             sheet_name=None,
         )
         self.load_parameters_from_dataframe(workbook["parameters"])
