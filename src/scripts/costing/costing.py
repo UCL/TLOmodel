@@ -244,11 +244,14 @@ preservice_training_cost = merge_cost_and_model_data(cost_df = hr_cost_parameter
                                                      varnames = ['annual_attrition_rate',
                                                                  'licensure_exam_passing_rate', 'graduation_rate',
                                                                  'absorption_rate_of_students_into_public_workforce', 'proportion_of_workforce_recruited_from_abroad',
-                                                                 'annual_preservice_training_cost_percapita_usd'])
-preservice_training_cost['Cost'] = preservice_training_cost['annual_attrition_rate'] * preservice_training_cost['Staff_Count'] * \
-                                                (1/(preservice_training_cost['absorption_rate_of_students_into_public_workforce'] + preservice_training_cost['proportion_of_workforce_recruited_from_abroad'])) * \
-                                                (1/preservice_training_cost['graduation_rate']) * (1/preservice_training_cost['licensure_exam_passing_rate']) * \
-                                                preservice_training_cost['annual_preservice_training_cost_percapita_usd']
+                                                                 'preservice_training_cost_per_staff_recruited_usd'])
+preservice_training_cost['Annual_cost_per_staff_recruited'] = preservice_training_cost['preservice_training_cost_per_staff_recruited_usd'] *\
+                                                (1/(preservice_training_cost['absorption_rate_of_students_into_public_workforce'] + preservice_training_cost['proportion_of_workforce_recruited_from_abroad'])) *\
+                                                (1/preservice_training_cost['graduation_rate']) * (1/preservice_training_cost['licensure_exam_passing_rate']) *\
+                                                preservice_training_cost['annual_attrition_rate']
+# Cost per student trained * 1/Rate of absorption from the local and foreign graduates * 1/Graduation rate * attrition rate
+# the inverse of attrition rate is the average expected tenure; and the preservice training cost needs to be divided by the average tenure
+preservice_training_cost['Cost'] = preservice_training_cost['Annual_cost_per_staff_recruited'] * preservice_training_cost['Staff_Count'] # not multiplied with attrition rate again because this is already factored into 'Annual_cost_per_staff_recruited'
 preservice_training_cost = preservice_training_cost[['draw', 'run', 'year', 'OfficerType_FacilityLevel', 'Cost']].set_index(['draw', 'run', 'year', 'OfficerType_FacilityLevel']).unstack(level=['draw', 'run'])
 preservice_training_cost = preservice_training_cost.apply(lambda x: pd.to_numeric(x, errors='coerce'))
 preservice_training_cost  = summarize(preservice_training_cost, only_mean = True, collapse_columns=True)
@@ -263,8 +266,6 @@ inservice_training_cost = inservice_training_cost[['draw', 'run', 'year', 'Offic
 inservice_training_cost = inservice_training_cost.apply(lambda x: pd.to_numeric(x, errors='coerce'))
 inservice_training_cost  = summarize(inservice_training_cost, only_mean = True, collapse_columns=True)
 inservice_training_cost_for_all_staff = inservice_training_cost.groupby(['year']).sum()
-
-# TODO check why annual_inservice_training_cost for DCSA is NaN in the merged_df
 
 # Create a dataframe to store financial costs
 # Function to melt and label the cost category
@@ -288,7 +289,7 @@ for df, label in additional_costs:
     scenario_cost = pd.concat([scenario_cost, melted])
 scenario_cost['Cost_Category'] = 'Human Resources for Health'
 # TODO Consider calculating economic cost of HR by multiplying salary times staff count with cadres_utilisation_rate
-scenario_cost.to_csv(figurespath / 'scenario_cost.csv')
+#scenario_cost.to_csv(figurespath / 'scenario_cost.csv')
 # %%
 # 2. Consumables cost
 def get_quantity_of_consumables_dispensed(results_folder):
