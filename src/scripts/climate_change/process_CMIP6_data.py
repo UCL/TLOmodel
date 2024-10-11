@@ -5,6 +5,8 @@ import zipfile
 import glob
 from netCDF4 import Dataset
 import pandas as pd
+from pathlib import Path
+
 def unzip_all_in_directory(directory):
     """
     Unzips all .zip files in the specified directory, extracting each into a separate folder.
@@ -76,9 +78,8 @@ for file in glob.glob(os.path.join(base_dir, "*.nc")):
     data_by_model_and_grid[models[model]] = grid_dictionary
     model += 1
 
-
-data_by_model_and_grid_df = pd.DataFrame.from_dict(data_by_model_and_grid)
-data_by_model_and_grid.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/data_by_model_and_grid.csv")
+data_by_model_and_grid = pd.DataFrame.from_dict(data_by_model_and_grid)
+data_by_model_and_grid.to_csv(Path(scenario_directory)/"data_by_model_and_grid.csv")
 
 
 
