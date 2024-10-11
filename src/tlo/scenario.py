@@ -393,14 +393,6 @@ class SampleRunner:
         sample = self.get_sample(draw, sample_number)
         log_config = self.scenario.get_log_config(output_directory)
 
-        logger.info(key="message", data=f"Running draw {sample['draw_number']}, sample {sample['sample_number']}")
-
-        sim = Simulation(
-            start_date=self.scenario.start_date,
-            seed=sample["simulation_seed"],
-            log_config=log_config,
-            resourcefilepath=self.scenario.scenario_path)
-
         logger.info(
             key="message",
             data=f"Running draw {sample['draw_number']}, sample {sample['sample_number']}",
@@ -427,7 +419,6 @@ class SampleRunner:
                 start_date=self.scenario.start_date,
                 seed=sample["simulation_seed"],
                 log_config=log_config,
-                resourcefilepath=self.scenario.scenario_path
             )
             sim.register(*self.scenario.modules())
 
