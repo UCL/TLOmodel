@@ -12,24 +12,7 @@ or locally using:
 import warnings
 
 from tlo import Date, logging
-from tlo.methods import (
-    care_of_women_during_pregnancy,
-    contraception,
-    demography,
-    enhanced_lifestyle,
-    epi,
-    healthburden,
-    healthseekingbehaviour,
-    healthsystem,
-    hiv,
-    labour,
-    newborn_outcomes,
-    postnatal_supervisor,
-    pregnancy_supervisor,
-    symptommanager,
-    tb,
-    wasting,
-)
+from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
 
 # capture warnings during simulation run
@@ -50,8 +33,8 @@ class WastingAnalysis(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'wasting_analysis',
-            'directory': './outputs',
+            'filename': 'wasting_analysis__full_model',
+            'directory': './outputs/wasting_analysis',
             "custom_levels": {  # Customise the output of specific loggers
                 "tlo.methods.demography": logging.INFO,
                 "tlo.methods.population": logging.INFO,
@@ -61,27 +44,12 @@ class WastingAnalysis(BaseScenario):
         }
 
     def modules(self):
-        return [demography.Demography(resourcefilepath=self.resources),
-                healthsystem.HealthSystem(resourcefilepath=self.resources,
-                                          service_availability=['*'],
-                                          cons_availability='default'),
-                healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
-                healthburden.HealthBurden(resourcefilepath=self.resources),
-                symptommanager.SymptomManager(resourcefilepath=self.resources),
-                enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
-                labour.Labour(resourcefilepath=self.resources),
-                care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(
-                    resourcefilepath=self.resources),
-                contraception.Contraception(resourcefilepath=self.resources),
-                pregnancy_supervisor.PregnancySupervisor(resourcefilepath=self.resources),
-                postnatal_supervisor.PostnatalSupervisor(resourcefilepath=self.resources),
-                newborn_outcomes.NewbornOutcomes(resourcefilepath=self.resources),
-                hiv.Hiv(resourcefilepath=self.resources),
-                tb.Tb(resourcefilepath=self.resources),
-                epi.Epi(resourcefilepath=self.resources),
-                wasting.Wasting(resourcefilepath=self.resources)]
+        return fullmodel(
+            resourcefilepath=self.resources
+        )
 
     def draw_parameters(self, draw_number, rng):
+        # Using default parameters in all cases
         return {}
 
 

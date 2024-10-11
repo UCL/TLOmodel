@@ -13,9 +13,11 @@ import warnings
 
 from tlo import Date, logging
 from tlo.methods import (
+    alri,
     care_of_women_during_pregnancy,
     contraception,
     demography,
+    diarrhoea,
     enhanced_lifestyle,
     epi,
     healthburden,
@@ -26,6 +28,7 @@ from tlo.methods import (
     newborn_outcomes,
     postnatal_supervisor,
     pregnancy_supervisor,
+    stunting,
     symptommanager,
     tb,
     wasting,
@@ -50,8 +53,8 @@ class WastingAnalysis(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'wasting_analysis',
-            'directory': './outputs',
+            'filename': 'wasting_analysis__minimal_model',
+            'directory': './outputs/wasting_analysis',
             "custom_levels": {  # Customise the output of specific loggers
                 "tlo.methods.demography": logging.INFO,
                 "tlo.methods.population": logging.INFO,
@@ -63,15 +66,13 @@ class WastingAnalysis(BaseScenario):
     def modules(self):
         return [demography.Demography(resourcefilepath=self.resources),
                 healthsystem.HealthSystem(resourcefilepath=self.resources,
-                                          service_availability=['*'],
-                                          cons_availability='default'),
+                                          service_availability=['*'], cons_availability='default'),
                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
                 healthburden.HealthBurden(resourcefilepath=self.resources),
                 symptommanager.SymptomManager(resourcefilepath=self.resources),
                 enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
                 labour.Labour(resourcefilepath=self.resources),
-                care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(
-                    resourcefilepath=self.resources),
+                care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=self.resources),
                 contraception.Contraception(resourcefilepath=self.resources),
                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=self.resources),
                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=self.resources),
@@ -79,9 +80,13 @@ class WastingAnalysis(BaseScenario):
                 hiv.Hiv(resourcefilepath=self.resources),
                 tb.Tb(resourcefilepath=self.resources),
                 epi.Epi(resourcefilepath=self.resources),
+                alri.Alri(resourcefilepath=self.resources),
+                diarrhoea.Diarrhoea(resourcefilepath=self.resources),
+                stunting.Stunting(resourcefilepath=self.resources),
                 wasting.Wasting(resourcefilepath=self.resources)]
 
     def draw_parameters(self, draw_number, rng):
+        # Using default parameters in all cases
         return {}
 
 
