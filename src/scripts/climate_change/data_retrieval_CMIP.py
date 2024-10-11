@@ -2,7 +2,7 @@ import os
 
 import cdsapi
 
-models = ["cams_csm1_0", "ec_earth3_veg", "giss_e2_1_g", "ipsl_cm6a_lr", "miroc6","miroc_es2l", "mri_esm2_0", "canesm5", "cnrm_esm2_1", "ec_earth3", "ec_earth3_veg_lr", "gfdl_esm4", "ukesm1_0_ll"]
+models = ["cams_csm1_0", "ipsl_cm6a_lr", "miroc6","miroc_es2l", "mri_esm2_0", "canesm5", "cnrm_esm2_1", "ec_earth3", "ec_earth3_veg_lr", "fgoals2-g3", "gfdl_esm4", "ukesm1_0_ll"]
 scenarios = ["ssp1_1_9","ssp1_2_6", "ssp4_3_4", "ssp5_3_4OS", "ssp2_4_5", "ssp4_6_0", "ssp3_7_0", "ssp5_8_5"]
 base_dir = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/"
 os.chdir(base_dir)
