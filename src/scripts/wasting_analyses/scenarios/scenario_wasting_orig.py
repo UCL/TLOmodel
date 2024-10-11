@@ -3,11 +3,11 @@ This file defines a scenario for wasting analysis.
 
 It can be submitted on Azure Batch by running:
 
-    tlo batch-submit src/scripts/wasting_analyses/scenario_wasting.py
+    tlo batch-submit src/scripts/wasting_analyses/scenarios/scenario_wasting_orig.py
 
 or locally using:
 
-    tlo scenario-run src/scripts/wasting_analyses/scenario_wasting.py
+    tlo scenario-run src/scripts/wasting_analyses/scenarios/scenario_wasting_orig.py
 """
 import warnings
 
