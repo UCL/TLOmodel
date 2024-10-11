@@ -43,6 +43,7 @@ grid_clipped = gpd.overlay(grid, malawi, how='intersection') # for graphing
 grid_clipped_ADM1 = gpd.overlay(grid, malawi_admin1, how='intersection') # for graphing
 grid_clipped_ADM2 = gpd.overlay(grid, malawi_admin2, how='intersection') # for graphing
 cmap = plt.cm.get_cmap('tab20', len(grid_clipped_ADM1['ADM1_EN'].unique()))
+grid.to_file("/Users/rem76/Desktop/Climate_change_health/Data/malawi_grid.shp")
 
 fig, ax = plt.subplots(figsize=(10, 10))
 malawi_admin2.plot(ax=ax, edgecolor='black', color='white')
