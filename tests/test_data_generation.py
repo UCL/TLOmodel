@@ -33,7 +33,7 @@ from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstAppt
 
 # create simulation parameters
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 1)
+end_date = Date(2011, 1, 1)
 popsize = 200
 
 @pytest.mark.slow
@@ -63,24 +63,24 @@ def create_basic_sim(population_size, seed):
     sim = Simulation(start_date=start_date, seed=seed)
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-               # contraception.Contraception(resourcefilepath=resourcefilepath),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
                  rti.RTI(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-               #  epi.Epi(resourcefilepath=resourcefilepath),
-               #  hiv.Hiv(resourcefilepath=resourcefilepath),
-               #  tb.Tb(resourcefilepath=resourcefilepath),
+                 # simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 epi.Epi(resourcefilepath=resourcefilepath),
+                 hiv.Hiv(resourcefilepath=resourcefilepath),
+                 tb.Tb(resourcefilepath=resourcefilepath),
                  cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
                  depression.Depression(resourcefilepath=resourcefilepath),
-                # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                # care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                # labour.Labour(resourcefilepath=resourcefilepath),
-                 #postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  )
 
     sim.make_initial_population(n=population_size)

@@ -281,7 +281,7 @@ class Simulation:
                 data=f"{module.name}.initialise_population() {time.time() - start1} s",
             )
 
-        self.event_chains = pd.DataFrame(columns= list(self.population.props.columns)+['person_ID'] + ['event'] + ['event_date'] + ['when'] + ['appt_footprint'])
+        self.event_chains = pd.DataFrame(columns= list(self.population.props.columns)+['person_ID'] + ['event'] + ['event_date'] + ['when'] + ['appt_footprint'] + ['level'])
 
         end = time.time()
         logger.info(key="info", data=f"make_initial_population() {end - start} s")
