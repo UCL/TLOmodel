@@ -2,10 +2,11 @@ import glob
 import os
 import shutil
 import zipfile
-import glob
-from netCDF4 import Dataset
-import pandas as pd
 from pathlib import Path
+
+import pandas as pd
+from netCDF4 import Dataset
+
 
 def unzip_all_in_directory(directory):
     """

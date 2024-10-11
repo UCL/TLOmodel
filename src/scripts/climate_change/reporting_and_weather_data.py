@@ -1,4 +1,7 @@
+import os
+
 import pandas as pd
+from netCDF4 import Dataset
 
 # Data accessed from https://dhis2.health.gov.mw/dhis-web-data-visualizer/#/YiQK65skxjz
 # Reporting rate is expected reporting vs actual reporting
@@ -20,3 +23,13 @@ for metric in metrics:
     data_of_interest.columns = [col.replace(" - Reporting rate ", "") for col in data_of_interest.columns]
     monthly_reporting_data_by_metric[metric] = data_of_interest
 
+# Weather data
+directory = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical"
+weather_by_month = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical"
+files = os.listdir(directory)
+
+for file in files:
+    if file.endswith('.nc'):
+        file_path = os.path.join(directory, file)
+        # Open the NetCDF file
+        dataset = Dataset(file_path, mode='r')

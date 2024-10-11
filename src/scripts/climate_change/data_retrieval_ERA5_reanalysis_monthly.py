@@ -1,4 +1,5 @@
 import os
+
 import cdsapi
 
 base_dir = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical"

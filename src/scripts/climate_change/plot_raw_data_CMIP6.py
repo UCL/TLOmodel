@@ -1,6 +1,6 @@
+import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
-import geopandas as gpd
 import pandas as pd
 from netCDF4 import Dataset
 
@@ -13,7 +13,7 @@ lat_data = dataset.variables['lat'][:]
 long_data = dataset.variables['lon'][:]
 
 ## Initial plot
-pr_data_time_series_grid_1 = pr_data[:,5,1]
+pr_data_time_series_grid_1 = pr_data[:,2,1]
 pr_data_time_series_grid_1 *= 86400 # to get to days
 
 # Plot the 2D data
