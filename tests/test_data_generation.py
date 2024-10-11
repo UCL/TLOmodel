@@ -1,7 +1,6 @@
 import os
 from pathlib import Path
 
-import pandas as pd
 import pytest
 
 from tlo import Date, Simulation
@@ -11,7 +10,6 @@ from tlo.methods import (
     depression,
     enhanced_lifestyle,
     epi,
-    epilepsy,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
@@ -20,16 +18,13 @@ from tlo.methods import (
     labour,
     newborn_outcomes,
     postnatal_supervisor,
-    pregnancy_helper_functions,
     pregnancy_supervisor,
     depression,
     tb,
     contraception,
-    simplified_births,
     rti,
     symptommanager,
 )
-from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstAppt
 
 # create simulation parameters
 start_date = Date(2010, 1, 1)

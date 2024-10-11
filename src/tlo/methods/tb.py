@@ -1393,7 +1393,7 @@ class TbActiveCasePollGenerateData(RegularEvent, PopulationScopeEventMixin):
             & (df.tb_inf != "active")
             ].index
             
-        n_susceptible = len(susc_idx)
+        len(susc_idx)
         
         middle_index = len(susc_idx) // 2
 

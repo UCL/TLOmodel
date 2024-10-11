@@ -8,7 +8,7 @@ import itertools
 import time
 from collections import OrderedDict
 from pathlib import Path
-from typing import Dict, Optional, Union
+from typing import Optional
 from typing import TYPE_CHECKING, Optional
 import pandas as pd
 
@@ -374,7 +374,7 @@ class Simulation:
         :param to_date: Date to simulate up to but not including - must be before or
             equal to simulation end date specified in call to :py:meth:`initialise`.
         """
-        f = open('output.txt', mode='a')
+        open('output.txt', mode='a')
 
         if not self._initialised:
             msg = "Simulation must be initialised before calling run_simulation_to"
