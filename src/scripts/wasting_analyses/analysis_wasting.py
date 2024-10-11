@@ -112,10 +112,10 @@ class WastingAnalyses:
         w_prev_df["total_under5_prop"].plot(kind='bar', stacked=True,
                                             ax=ax,
                                             title="Wasting prevalence in children 0-59 months per year",
-                                            ylabel='proportions',
+                                            ylabel='proportion of wasted children within the age-group',
                                             xlabel='year',
                                             ylim=[0, 0.05])
-        add_footnote(fig, "Proportion = total number of wasted children < 5 years / total number of children < 5 years")
+        # add_footnote(fig, "proportion of wasted children within each age-group")
         plt.tight_layout()
         fig.savefig(
             outputs / ('wasting_prevalence_per_year' + datestamp + ".pdf"),
