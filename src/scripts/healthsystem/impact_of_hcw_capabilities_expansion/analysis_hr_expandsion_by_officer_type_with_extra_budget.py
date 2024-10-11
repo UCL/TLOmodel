@@ -780,20 +780,23 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ).all()
 
     # get HCW time and cost needed to run the never run appts
-    def hcw_time_or_cost_gap(_df=appt_time):
-        cols_1 = num_never_ran_appts_by_level_summarized.columns
-        cols_2 = _df.columns
+    def hcw_time_or_cost_gap(time_cost_df=appt_time, count_df=num_never_ran_appts_by_level_summarized):
+        cols_1 = count_df.columns
+        cols_2 = time_cost_df.columns
         # check that never ran appts (at a level) not in appt_time (as defined) have count 0 and drop them
-        assert (num_never_ran_appts_by_level_summarized[list(set(cols_1) - set(cols_2))] == 0).all().all()
-        num_never_ran_appts_by_level_summarized.drop(columns=list(set(cols_1) - set(cols_2)), inplace=True)
-        assert set(num_never_ran_appts_by_level_summarized.columns).issubset(set(cols_2))
+        assert (count_df[list(set(cols_1) - set(cols_2))] == 0).all().all()
+        if len(list(set(cols_1) - set(cols_2))) > 0:
+            _count_df = count_df.drop(columns=list(set(cols_1) - set(cols_2)))
+        else:
+            _count_df = count_df.copy()
+        assert set(_count_df.columns).issubset(set(cols_2))
         # calculate hcw time gap
-        gap = pd.DataFrame(index=num_never_ran_appts_by_level_summarized.index,
-                           columns=_df.index)
+        gap = pd.DataFrame(index=_count_df.index,
+                           columns=time_cost_df.index)
         for i in gap.index:
             for j in gap.columns:
-                gap.loc[i, j] = num_never_ran_appts_by_level_summarized.loc[i, :].mul(
-                    _df.loc[j, num_never_ran_appts_by_level_summarized.columns]
+                gap.loc[i, j] = _count_df.loc[i, :].mul(
+                    time_cost_df.loc[j, _count_df.columns]
                 ).sum()
         # reorder columns to be consistent with cadres
         gap = gap[['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy',
@@ -813,15 +816,58 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ['Dental', 'Laboratory', 'Mental', 'Radiography']
     ].sum(axis=1)
 
-    # find appts that need Clinical + Pharmacy
-    # then calculate hcw time needed for these appts (or treatments, need treatment and their appt footprint) in never run set
-    # also consider plot service demand by appt of all scenarios to see if they are similar
+    # find appts that need Clinical + Pharmacy (+ Nursing_and_Midwifery)
+    # then calculate hcw time needed for these appts (or treatments, need treatment and their appt footprint)
+    # in never run set
     # so we can explain that expand C+P is reducing the never run appts and bring health benefits across scenarios
-    # then the next question is what proportion for C and P?
-    appts_need_C_P = []
-    for col in appt_time.columns:
-        if (appt_time.loc[['Clinical', 'Pharmacy'], col] > 0).all():
-            appts_need_C_P.append(col)
+    # then the next question is what proportion for C and P and any indication for better extra budget allocation
+    # so that never ran appts will be reduced and DALYs could be averted further?
+    def get_never_ran_appts_info_that_need_specific_cadres(
+        cadres_to_find=['Clinical', 'Pharmacy'], appts_count_all=num_never_ran_appts_by_level_summarized
+    ):
+        # find the appts that need all cadres in cadres_to_find
+        def find_never_ran_appts_that_need_specific_cadres():
+            appts_to_find = []
+            _common_cols = appt_time.columns.intersection(appts_count_all.columns)
+            # already checked above that columns in the latter that are not in the former have 0 count
+            for col in _common_cols:
+                if (appt_time.loc[cadres_to_find, col] > 0).all():
+                    appts_to_find.append(col)
+
+            return appts_to_find
+
+        # counts and count proportions
+        _appts = find_never_ran_appts_that_need_specific_cadres()
+        _counts = (appts_count_all[_appts].groupby(level=1, axis=1).sum()
+                   .rename(columns=APPT_TYPE_TO_COARSE_APPT_TYPE_MAP).groupby(level=0, axis=1).sum()
+                   .reindex(num_dalys_summarized.index))
+        _counts_all = (appts_count_all.groupby(level=1, axis=1).sum()
+                       .rename(columns=APPT_TYPE_TO_COARSE_APPT_TYPE_MAP).groupby(level=0, axis=1).sum()
+                       .reindex(num_dalys_summarized.index))
+        assert (_counts.index == _counts_all.index).all()
+        _proportions = _counts / _counts_all[_counts.columns]
+
+        # hcw time gap and proportions
+        _time_gap = hcw_time_or_cost_gap(appt_time, appts_count_all[_appts])
+        assert (_time_gap.index == hcw_time_gap.index).all()
+        _time_gap_proportions = _time_gap / hcw_time_gap[_time_gap.columns]
+
+        # hcw cost gap and proportions
+        _cost_gap = hcw_time_or_cost_gap(appt_cost, appts_count_all[_appts])
+        assert (_cost_gap.index == hcw_cost_gap.index).all()
+        _cost_gap_proportions = _cost_gap / hcw_cost_gap[_cost_gap.columns]
+
+        return _appts, _counts, _proportions, _time_gap, _time_gap_proportions, _cost_gap, _cost_gap_proportions
+
+    never_ran_appts_info_that_need_CP = get_never_ran_appts_info_that_need_specific_cadres()
+    never_ran_appts_info_that_need_CNP = get_never_ran_appts_info_that_need_specific_cadres(
+        cadres_to_find=['Clinical', 'Nursing_and_Midwifery', 'Pharmacy'])
+    # Checked that never ran appts that need CP = never ran appts that need CNP + ('3', 'TBNew'),
+    # whereas never ran TBNew at level 3 = 0, thus the proportions info are the same in the two cases
+
+    # Checked that Number_By_Appt_Type_Code and Number_By_Appt_Type_Code_And_Level have not exactly same results
+
+    # hcw time flow to treatments?
 
     # get Return (in terms of DALYs averted) On Investment (extra cost) for all expansion scenarios, excluding s_1
     # get Cost-Effectiveness, i.e., cost of every daly averted, for all expansion scenarios
@@ -1354,6 +1400,28 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # plot the average proportions of all scenarios
     for c in cadres_to_plot:
         plt.axhline(y=hcw_cost_gap_percent_to_plot[c].mean(),
+                    linestyle='--', color=officer_category_color[c], alpha=0.8,
+                    label=c)
+    plt.title(name_of_plot)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
+    name_of_plot = f'Cost proportions of appointments that need CNP in never ran appointments, {target_period()}'
+    cadres_to_plot = ['Clinical', 'Nursing_and_Midwifery', 'Pharmacy']
+    data_to_plot = never_ran_appts_info_that_need_CP[6][cadres_to_plot] * 100
+    fig, ax = plt.subplots(figsize=(12, 8))
+    data_to_plot.plot(kind='bar', color=officer_category_color, rot=0, ax=ax)
+    ax.set_ylim(0, 100)
+    ax.set_ylabel('Percentage %')
+    ax.set(xlabel=None)
+    xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
+    ax.set_xticklabels(xtick_labels, rotation=90)
+    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category')
+    # plot the average proportions of all scenarios
+    for c in cadres_to_plot:
+        plt.axhline(y=data_to_plot[c].mean(),
                     linestyle='--', color=officer_category_color[c], alpha=0.8,
                     label=c)
     plt.title(name_of_plot)
