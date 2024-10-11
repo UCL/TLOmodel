@@ -3,16 +3,41 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from shapely.geometry import Polygon
+from netCDF4 import Dataset
+
+
+# Load netCDF data for gridding info
+file_path = "/Users/rem76/Downloads/821bebfbcee0609d233c09e8b2bbc1f3/pr_Amon_UKESM1-0-LL_ssp119_r1i1p1f2_gn_20150116-20991216.nc"
+dataset = Dataset(file_path, mode='r')
+print(dataset.variables.keys())
+pr_data = dataset.variables['pr'][:]
+time_data = dataset.variables['time'][:]
+lat_data = dataset.variables['lat'][:]
+long_data = dataset.variables['lon'][:]
+meshgrid_from_netCDF = np.meshgrid(long_data, lat_data)
 
 # Load Malawi shapefile
 malawi = gpd.read_file("/Users/rem76/PycharmProjects/TLOmodel/resources/mapping/ResourceFile_mwi_admbnda_adm0_nso_20181016.shp")
 malawi_admin1 = gpd.read_file("/Users/rem76/PycharmProjects/TLOmodel/resources/mapping/ResourceFile_mwi_admbnda_adm1_nso_20181016.shp")
 malawi_admin2 = gpd.read_file("/Users/rem76/PycharmProjects/TLOmodel/resources/mapping/ResourceFile_mwi_admbnda_adm2_nso_20181016.shp")
-grid_size = 1
-minx, miny, maxx, maxy = malawi.total_bounds
-x_coords = np.arange(minx, maxx, grid_size)
-y_coords = np.arange(miny, maxy, grid_size)
-polygons = [Polygon([(x, y), (x + grid_size, y), (x + grid_size, y + grid_size), (x, y + grid_size)]) for x in x_coords for y in y_coords]
+#grid_size = 1
+#minx, miny, maxx, maxy = malawi.total_bounds
+#x_coords = np.arange(minx, maxx, grid_size) my gridding doesn't work - based on a different projection, maybe?
+#y_coords = np.arange(miny, maxy, grid_size)
+#polygons = [Polygon([(x, y), (x + grid_size, y), (x + grid_size, y + grid_size), (x, y + grid_size)]) for x in x_coords for y in y_coords]
+
+difference_lat = lat_data[1] - lat_data[0] # as is a grid, the difference is the same for all sequential coordinates
+difference_long = long_data[1] - long_data[0]
+
+polygons = []
+for x in long_data:
+    for y in lat_data:
+        bottom_left = (x, y)
+        bottom_right = (x + difference_long, y)
+        top_right = (x + difference_long, y + difference_lat)
+        top_left = (x, y + difference_lat)
+        polygon = Polygon([bottom_left, bottom_right, top_right, top_left])
+        polygons.append(polygon)
  # 32 polygons in total
 
 grid = gpd.GeoDataFrame({'geometry': polygons}, crs=malawi.crs)
@@ -23,11 +48,11 @@ cmap = plt.cm.get_cmap('tab20', len(grid_clipped_ADM1['ADM1_EN'].unique()))
 
 fig, ax = plt.subplots(figsize=(10, 10))
 malawi_admin2.plot(ax=ax, edgecolor='black', color='white')
-grid_clipped.plot(ax=ax, edgecolor='#1C6E8C', color='#9AC4F8', alpha=0.5)
+grid.plot(ax=ax, edgecolor='#1C6E8C',  color='white')
 grid_clipped_ADM1.plot(column='ADM1_EN', ax=ax, cmap=cmap, edgecolor='#1C6E8C', alpha=0.7)
 
 # Finalize plot
-plt.title("Malawi with Overlaying Grids - 1 degree")
+plt.title("Malawi with Overlaying Grids")
 plt.xlabel("Longitude")
 plt.ylabel("Latitude")
 plt.show()
