@@ -38,7 +38,6 @@ for x in long_data:
         top_left = (x, y + difference_lat)
         polygon = Polygon([bottom_left, bottom_right, top_right, top_left])
         polygons.append(polygon)
- # 32 polygons in total
 
 grid = gpd.GeoDataFrame({'geometry': polygons}, crs=malawi.crs)
 grid_clipped = gpd.overlay(grid, malawi, how='intersection') # for graphing
@@ -49,6 +48,7 @@ cmap = plt.cm.get_cmap('tab20', len(grid_clipped_ADM1['ADM1_EN'].unique()))
 fig, ax = plt.subplots(figsize=(10, 10))
 malawi_admin2.plot(ax=ax, edgecolor='black', color='white')
 grid.plot(ax=ax, edgecolor='#1C6E8C',  color='white')
+grid_clipped_ADM2.plot(ax=ax,edgecolor='#1C6E8C', alpha=0.4)
 grid_clipped_ADM1.plot(column='ADM1_EN', ax=ax, cmap=cmap, edgecolor='#1C6E8C', alpha=0.7)
 
 # Finalize plot
