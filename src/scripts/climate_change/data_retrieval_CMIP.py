@@ -14,7 +14,7 @@ for scenario in scenarios:
     for model in models:
         dataset = "projections-cmip6"
         request = {
-            "temporal_resolution": "monthly",
+            "temporal_resolution": "daily",
             "experiment": scenario,
             "variable": "precipitation",
             "model": model,
