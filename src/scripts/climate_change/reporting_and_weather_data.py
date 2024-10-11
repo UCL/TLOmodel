@@ -25,22 +25,30 @@ for metric in metrics:
     monthly_reporting_data_by_metric[metric] = data_of_interest
 
 ### Actually don't want by metric - instead look across all dates for a given row and average (i.e. want to average by month by facility, not by metric by facility)
+### But need to drop mental health, as that is only relevant for the  Zomba Mental Hospital and otherwise brings down averages
+# extract mental health data
+mental_health_columns = reporting_data.columns[reporting_data.columns.str.startswith("Mental")].tolist()
+reporting_data_no_mental = reporting_data.drop(mental_health_columns, axis = 1)
+mental_health_data = reporting_data[[reporting_data.columns[1]] + mental_health_columns]
+all_columns_no_mental_health = reporting_data_no_mental.columns
 
+### now aggregate over months
 monthly_reporting_data_by_facility =  {}
-months = set(col.split(" - Reporting rate ")[1] for col in all_columns if " - Reporting rate " in col)
+months = set(col.split(" - Reporting rate ")[1] for col in all_columns_no_mental_health if " - Reporting rate " in col)
+
 # put in order
 months = [date.strip() for date in months] # extra spaces??
 dates = pd.to_datetime(months, format='%B %Y', errors='coerce')
 months = dates.sort_values().strftime('%B %Y').tolist()
-
+months = months[12*11:] # only want from 2011 on
 for month in months:
-    columns_of_interest_all_metrics = [reporting_data.columns[1]] + reporting_data.columns[reporting_data.columns.str.endswith(month)].tolist()
-    data_of_interest_by_month = reporting_data[columns_of_interest_all_metrics]
+    columns_of_interest_all_metrics = [reporting_data_no_mental.columns[1]] + reporting_data_no_mental.columns[reporting_data_no_mental.columns.str.endswith(month)].tolist()
+    data_of_interest_by_month = reporting_data_no_mental[columns_of_interest_all_metrics]
     numeric_data = data_of_interest_by_month.select_dtypes(include='number')
     monthly_mean_by_facility = numeric_data.mean(axis=1)
     monthly_reporting_data_by_facility[month] = monthly_mean_by_facility
-
 monthly_reporting_by_facility = pd.DataFrame(monthly_reporting_data_by_facility)
+monthly_reporting_by_facility["facility"] = reporting_data_no_mental["organisationunitname"].values
 
 # Weather data
 directory = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical"
@@ -60,33 +68,21 @@ for file in files:
 pr_data = weather_monthly_all_grids.variables['tp'][:]  # total precipitation in kg m-2 s-1 = mm s-1 x 86400 to get to day
 lat_data = weather_monthly_all_grids.variables['latitude'][:]
 long_data = weather_monthly_all_grids.variables['longitude'][:]
-regridded_lat_long = []
+grid = 0
+
+regridded_weather_data = []
 for polygon in malawi_grid["geometry"]:
     minx, miny, maxx, maxy = polygon.bounds
     index_for_x_min = ((long_data - minx)**2).argmin()
     index_for_y_min = ((lat_data - miny)**2).argmin()
     index_for_x_max = ((long_data - maxx)**2).argmin()
     index_for_y_max = ((lat_data - maxy)**2).argmin()
-    print(lat_data[index_for_y_min])
-    polygon_new = Polygon([
-        (long_data[index_for_x_min], lat_data[index_for_y_min]),
-        (long_data[index_for_x_max], lat_data[index_for_y_min]),
-        (long_data[index_for_x_max], lat_data[index_for_y_max]),
-        (long_data[index_for_x_min], lat_data[index_for_y_max]),
-        (long_data[index_for_x_min], lat_data[index_for_y_min])
-    ])
-    regridded_lat_long.append(polygon_new)
 
-regridded_lat_long = gpd.GeoDataFrame({'geometry': regridded_lat_long}, crs=malawi_grid.crs)
+    precip_data_for_grid = pr_data[:, index_for_y_min,index_for_x_min]  # across all time points
+    precip_data_for_grid = precip_data_for_grid * 86400  # to get from per second to per day
+    weather_by_grid[grid] = precip_data_for_grid
+    grid += 1
 
-grid = 0
-for i in range(len(long_data) - 1):
-            for j in range(len(lat_data) - 1):
-                precip_data_for_grid = pr_data[:, j, i]  # across all time points
-                precip_data_for_grid = precip_data_for_grid * 86400  # to get from per second to per day
-                weather_by_grid[grid] = precip_data_for_grid
-                grid += 1
-
-
-
-#
+# Load facilities file
+general_facilities = gpd.read_file("/Users/rem76/Desktop/Climate_change_health/Data/facilities_with_districts.shp")
+print(monthly_reporting_by_facility)
