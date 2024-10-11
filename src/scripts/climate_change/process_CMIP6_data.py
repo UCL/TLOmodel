@@ -77,6 +77,11 @@ for file in glob.glob(os.path.join(base_dir, "*.nc")):
     model += 1
 
 
+data_by_model_and_grid_df = pd.DataFrame.from_dict(data_by_model_and_grid)
+data_by_model_and_grid.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/data_by_model_and_grid.csv")
+
+
+
 
 
 
