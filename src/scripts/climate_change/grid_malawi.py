@@ -55,14 +55,12 @@ grid_clipped_ADM1.plot(column='ADM1_EN', ax=ax, cmap=cmap, edgecolor='#1C6E8C', 
 plt.title("Malawi with Overlaying Grids")
 plt.xlabel("Longitude")
 plt.ylabel("Latitude")
-plt.show()
+#plt.show()
 
 ### Intersection between the grid and the admin areas ###
-intersections = gpd.overlay(grid, malawi_admin2, how='intersection') # 80 intersections between districts and major grid squares
-print(len(intersections)) # 80 intersections between administrative districts and the overall grid
+intersections = gpd.overlay(grid, malawi_admin2, how='intersection') # 56 intersections between districts and major grid squares
 
-#admin_area_with_major_grid = gpd.sjoin(malawi_admin2, grid, how='inner')
-admin_area_with_major_grid = gpd.overlay(malawi_admin2, grid, how='intersection')
+admin_area_with_major_grid = gpd.overlay( grid, malawi_admin2, how='intersection') # finding which grid each facility falls into
 
 ########### Create new table with facilities and add coordinates to each facility #########
 
