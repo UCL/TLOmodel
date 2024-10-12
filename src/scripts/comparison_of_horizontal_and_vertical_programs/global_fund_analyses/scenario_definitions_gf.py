@@ -9,7 +9,7 @@ class ScenarioDefinitions:
     @property
     def YEAR_OF_CHANGE_FOR_HSS(self) -> int:
         """Year in which Health Systems Strengthening changes are made."""
-        return 2018  # <-- baseline year of Human Resources for Health is 2018, and this is consistent with calibration
+        return 2020  # <-- baseline year of Human Resources for Health is 2018, and this is consistent with calibration
         #                  during 2015-2019 period.
 
     @property
@@ -98,7 +98,15 @@ class ScenarioDefinitions:
         return {
             'HealthSystem': {
                 'yearly_HR_scaling_mode': 'historical_scaling_accelerated',
-                # This uses historical trends in HRH scale-up to 2023, then 8% constant scaling to 2030
+                # This uses historical trends in HRH scale-up to 2023, then 6% constant scaling to 2030
+            }
+        }
+
+    def moderate_hrh_using_historical_scaling(self) -> Dict:
+        return {
+            'HealthSystem': {
+                'yearly_HR_scaling_mode': 'historical_scaling_moderate',
+                # This uses historical trends in HRH scale-up to 2023, then 1% constant scaling to 2030
             }
         }
 
@@ -182,7 +190,7 @@ class ScenarioDefinitions:
             self.increase_capacity_at_primary_care(),
             self.accelerated_hrh_using_historical_scaling(),
             self.perfect_healthcare_seeking(),
-            self.cons_at_90th_percentile(),
+            self.cons_at_75th_percentile(),
         )
 
     # HTM scenarios
