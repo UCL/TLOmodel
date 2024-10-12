@@ -86,7 +86,13 @@ class HSSElements(BaseScenario):
                     scenario_definitions.hrh_using_historical_scaling(),
                 ),
 
-            "HRH Accelerated Scale-up (8%)":
+            "HRH Moderate Scale-up (1%)":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.moderate_hrh_using_historical_scaling(),
+                ),
+
+            "HRH Accelerated Scale-up (6%)":
                 mix_scenarios(
                     scenario_definitions.baseline(),
                     scenario_definitions.accelerated_hrh_using_historical_scaling(),
@@ -111,13 +117,6 @@ class HSSElements(BaseScenario):
                     scenario_definitions.cons_at_75th_percentile(),
                 ),
 
-            "Consumables Increased to 90th Percentile":
-            mix_scenarios(
-                scenario_definitions.baseline(),
-                scenario_definitions.cons_at_90th_percentile(),
-
-            ),
-
             "Consumables Available at HIV levels":
                 mix_scenarios(
                     scenario_definitions.baseline(),
@@ -130,11 +129,11 @@ class HSSElements(BaseScenario):
                     scenario_definitions.cons_at_EPI_availability(),
                 ),
 
-            "Perfect Consumables Availability":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.all_consumables_available(),
-                ),
+            # "Perfect Consumables Availability":
+            #     mix_scenarios(
+            #         scenario_definitions.baseline(),
+            #         scenario_definitions.all_consumables_available(),
+            #     ),
 
             # - - - FULL PACKAGE OF HEALTH SYSTEM STRENGTHENING - - -
             "FULL PACKAGE":

@@ -168,7 +168,7 @@ class HTMWithAndWithoutHSS(BaseScenario):
                     scenario_definitions.hiv_scaleup(),
                     scenario_definitions.tb_scaleup(),
                     scenario_definitions.malaria_scaleup(),
-                    scenario_definitions.cons_at_90th_percentile(),
+                    scenario_definitions.cons_at_75th_percentile(),
                 ),
 
             # - - - HIV & TB & MALARIA SCALE-UP WITH HRH- - -
