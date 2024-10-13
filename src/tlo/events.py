@@ -98,7 +98,6 @@ class Event:
                 for col in changed_cols:
                     link_info[col] = df_after.at[idx, col]
                 
-                
                 # Append the event and changes to the individual key
                 chain_links = {idx : link_info}
         
@@ -127,7 +126,7 @@ class Event:
                 row_before = self.sim.population.props.loc[abs(self.target)].copy().fillna(-99999)
                 
                 if debug_chains:
-                    # Print entire row
+                    # TO BE REMOVED This is currently just used for debugging. Will be removed from final version of PR.
                     row = self.sim.population.props.loc[[abs(self.target)]]
                     row['person_ID'] = self.target
                     row['event'] = str(self)
@@ -166,6 +165,7 @@ class Event:
                         
                 chain_links = {self.target : link_info}
 
+                # TO BE REMOVED This is currently just used for debugging. Will be removed from final version of PR.
                 if debug_chains:
                     # Print entire row
                     row = self.sim.population.props.loc[[abs(self.target)]] # Use abs to avoid potentil issue with direct births
@@ -185,6 +185,7 @@ class Event:
                 #  Create and store the event and dictionary of changes for affected individuals
                 chain_links = self.compare_population_dataframe(df_before, df_after)
 
+                # TO BE REMOVED This is currently just used for debugging. Will be removed from final version of PR.
                 if debug_chains:
                     # Or print entire rows
                     change = df_before.compare(df_after)

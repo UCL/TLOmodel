@@ -217,6 +217,7 @@ class HSI_Event:
                 # Save row for comparison after event has occurred
                 row_before = self.sim.population.props.loc[abs(self.target)].copy().fillna(-99999)
 
+                # TO BE REMOVED This is currently just used for debugging. Will be removed from final version of PR.
                 row = self.sim.population.props.loc[[abs(self.target)]]
                 row['person_ID'] = self.target
                 row['event'] = str(self)
@@ -228,8 +229,8 @@ class HSI_Event:
                 
             else:
                 # Many of our HealthSystem implementations rely on the assumption that
-                print("Error, I shouldn't be here")
-                exit(-1)
+                raise RuntimeError("Cannot have population-wide HSI events")
+
                 
         return print_chains, row_before
         
@@ -258,7 +259,7 @@ class HSI_Event:
             
             chain_links = {self.target : link_info}
 
-            # Print entire row
+            # TO BE REMOVED This is currently just used for debugging. Will be removed from final version of PR.
             row = self.sim.population.props.loc[[abs(self.target)]]
             row['person_ID'] = self.target
             row['event'] = str(self)

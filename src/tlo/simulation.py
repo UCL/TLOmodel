@@ -37,6 +37,9 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+logger_chains = logging.getLogger("tlo.methods.event")
+logger_chains.setLevel(logging.INFO)
+
 
 class SimulationPreviouslyInitialisedError(Exception):
     """Exception raised when trying to initialise an already initialised simulation."""
@@ -111,6 +114,8 @@ class Simulation:
         self.end_date = None
         self.output_file = None
         self.population: Optional[Population] = None
+        
+        # TO BE REMOVED This is currently just used for debugging. Will be removed from final version of PR.
         self.event_chains: Optinoal[Population] = None
 
         self.show_progress_bar = show_progress_bar
@@ -281,7 +286,16 @@ class Simulation:
                 data=f"{module.name}.initialise_population() {time.time() - start1} s",
             )
 
+        # TO BE REMOVED This is currently just used for debugging. Will be removed from final version of PR.
         self.event_chains = pd.DataFrame(columns= list(self.population.props.columns)+['person_ID'] + ['event'] + ['event_date'] + ['when'] + ['appt_footprint'] + ['level'])
+        
+        # When logging events for each individual to reconstruct chains, only the changes in individual properties will be logged.
+        # At the start of the simulation + when a new individual is born, we therefore want to store all of their properties at the start.
+        if self.generate_event_chains:
+            pop_dict = self.population.props.to_dict(orient='index')
+            logger_chains.info(key='event_chains',
+                               data = pop_dict,
+                               description='Links forming chains of events for simulated individuals')
 
         end = time.time()
         logger.info(key="info", data=f"make_initial_population() {end - start} s")
@@ -392,6 +406,8 @@ class Simulation:
                 self._update_progress_bar(progress_bar, date)
             self.fire_single_event(event, date)
         self.date = to_date
+        
+        # TO BE REMOVED: this is currently only used for debugging, will be removed from final PR.
         self.event_chains.to_csv('output.csv', index=False)
 
         if self.show_progress_bar:
@@ -449,13 +465,25 @@ class Simulation:
         child_id = self.population.do_birth()
         for module in self.modules.values():
             module.on_birth(mother_id, child_id)
+            
         if self.generate_event_chains:
+            # When individual is born, store their initial properties to provide a starting point to the chain of property
+            # changes that this individual will undergo as a result of events taking place.
+            prop_dict = self.population.props.loc[child_id].to_dict()
+            
+            child_dict = {child_id : prop_dict}
+            logger_chains.info(key='event_chains',
+                               data = child_dict,
+                               description='Links forming chains of events for simulated individuals')
+        
+            # TO BE REMOVED This is currently just used for debugging. Will be removed from final version of PR.
             row = self.population.props.iloc[[child_id]]
             row['person_ID'] = child_id
             row['event'] = 'Birth'
             row['event_date'] = self.date
             row['when'] = 'After'
             self.event_chains = pd.concat([self.event_chains, row], ignore_index=True)
+            
         return child_id
 
     def find_events_for_person(self, person_id: int) -> list[tuple[Date, Event]]:

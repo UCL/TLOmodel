@@ -28,8 +28,8 @@ from tlo.methods import (
 
 # create simulation parameters
 start_date = Date(2010, 1, 1)
-end_date = Date(2011, 1, 1)
-popsize = 200
+end_date = Date(2012, 1, 1)
+popsize = 100
 
 @pytest.mark.slow
 def test_data_harvesting(seed):
@@ -51,7 +51,6 @@ def test_data_harvesting(seed):
 
     # run simulation
     sim.simulate(end_date=end_date, generate_event_chains = True)
-    exit(-1)
 
 def create_basic_sim(population_size, seed):
     # create the basic outline of an rti simulation object
