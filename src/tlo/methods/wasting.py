@@ -436,7 +436,6 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             return
         # proportion_normalWHZ_with_oedema: P(oedema|WHZ>=-2) =
         # P(oedema & WHZ>=-2) / P(WHZ>=-2) = P(oedema) * [1 - P(WHZ<-2|oedema)] / P(WHZ>=-2)
-        print(f"{self.prob_normal_whz=}")
         proportion_normal_whz_with_oedema = \
             p['prevalence_nutritional_oedema'] * (1 - p['proportion_oedema_with_WHZ<-2']) / self.prob_normal_whz
         oedema_in_non_wasted = self.rng.random_sample(size=len(
