@@ -5,12 +5,16 @@ from netCDF4 import Dataset
 import numpy as np
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import r2_score
+import matplotlib.pyplot as plt
 
 # Data accessed from https://dhis2.health.gov.mw/dhis-web-data-visualizer/#/YiQK65skxjz
 # Reporting rate is expected reporting vs actual reporting
-reporting_data = pd.read_csv('/Users/rem76/Desktop/Climate_change_health/Data/Reporting_Rate/Reporting_Rate_Central_Hospital_2000_2024.csv')
+reporting_data = pd.read_csv('/Users/rem76/Desktop/Climate_change_health/Data/Reporting_Rate/Reporting_Rate_Central_Hospital_2000_2024.csv') #January 2000 - January 2024
+# ANALYSIS DONE IN OCTOBER 2024 - so drop October, November, December 2024
+columns_to_drop = reporting_data.columns[reporting_data.columns.str.endswith(('October 2024', 'November 2024', 'December 2024'))]
 
-### Actually don't want by metric - instead look across all dates for a given row and average (i.e. want to average by month by facility, not by metric by facility)
+reporting_data = reporting_data.drop(columns=columns_to_drop)
+
 ### But need to drop mental health, as that is only relevant for the  Zomba Mental Hospital and otherwise brings down averages
 # extract mental health data
 mental_health_columns = reporting_data.columns[reporting_data.columns.str.startswith("Mental")].tolist()
@@ -88,28 +92,11 @@ for reporting_facility in monthly_reporting_by_facility["facility"]:
     weather_data_by_facility[reporting_facility] = weather_by_grid[grid]
 
 
-### Linear regression between reporting and weather data
-# prep for linear regression
+### Get data ready for linear regression between reporting and weather data
 weather_df = pd.DataFrame.from_dict(weather_data_by_facility, orient='index').T
 weather_df.columns = monthly_reporting_by_facility["facility"]
 monthly_reporting_by_facility = monthly_reporting_by_facility.set_index('facility').T
 
-X = weather_df.values.flatten()
-y = monthly_reporting_by_facility.values.flatten()
-if X.ndim == 1:
-    X = X.reshape(-1, 1)
-if y.ndim == 1:
-    y = y.reshape(-1, 1)
-
-print(len(X), len(y))
-
-# Perform linear regression
-model = LinearRegression()
-model.fit(X[0:len(y)], y)
-y_pred = model.predict(X[0:len(y)])
-
-# Evaluate the model
-r2 = r2_score(y, y_pred)
-print(f'R-squared: {r2:.2f}')
-print(f'Coefficient: {model.coef_[0]:.2f}')
-print(f'Intercept: {model.intercept_:.2f}')
+### Save CSVs
+monthly_reporting_by_facility.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_by_facility_lm.csv")
+weather_df.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_facility_lm.csv")
