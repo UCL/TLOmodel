@@ -55,10 +55,15 @@ plt.tight_layout()
 
 
 ## Linear regression
-print(monthly_reporting_by_facility)
+# year as a fixed effect
 year = range(2014, 2024, 1) # year as a fixed effect
 year_repeated = [y for y in year for _ in range(12)]
 year = year_repeated[:-4]
+# add month as a fixed effect
+month = range(12)
+month_repeated = [m for m in month for _ in range(2014, 2024, 1)]
+month = month_repeated[:-4]
+
 X = weather_data_historical.values
 y = monthly_reporting_by_facility.values
 if X.ndim == 1:
@@ -67,7 +72,8 @@ if y.ndim == 1:
     y = y.reshape(-1, 1)
 print(len(year))
 print(len(X))
-X = np.column_stack((X, year))
+print(len(month))
+X = np.column_stack((X, year, month))
 
 # Perform linear regression
 model = LinearRegression()
@@ -79,3 +85,4 @@ r2 = r2_score(y, y_pred)
 print(f'R-squared: {r2:.2f}')
 print(model.coef_)
 print(model.intercept_)
+
