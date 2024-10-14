@@ -2,10 +2,6 @@ import os
 import geopandas as gpd
 import pandas as pd
 from netCDF4 import Dataset
-import numpy as np
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import r2_score
-import matplotlib.pyplot as plt
 
 # Data accessed from https://dhis2.health.gov.mw/dhis-web-data-visualizer/#/YiQK65skxjz
 # Reporting rate is expected reporting vs actual reporting
