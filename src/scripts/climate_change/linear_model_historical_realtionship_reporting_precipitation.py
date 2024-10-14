@@ -1,12 +1,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import scipy as sp
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import r2_score
-from sklearn.compose import TransformedTargetRegressor
-from sklearn.linear_model import Ridge
-from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import OneHotEncoder
 
 # data is from 2011 - 2024
 monthly_reporting_by_facility = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_by_facility_lm.csv", index_col=0)
@@ -59,13 +56,13 @@ plt.tight_layout()
 
 
 ## Linear regression - flattened
-# year as a fixed effect
+# year
 year = range(2014, 2024, 1) # year as a fixed effect
 year_repeated = [y for y in year for _ in range(12)]
 year = year_repeated[:-4]
 year_flattened = year*len(weather_data_historical.columns) # to get flattened data
 
-# add month as a fixed effect
+# month
 month = range(12)
 month_repeated = [m for m in month for _ in range(2014, 2024, 1)]
 month = month_repeated[:-4]
@@ -73,15 +70,23 @@ month_flattened = month*len(weather_data_historical.columns)
 
 # facility as fixed effect
 facility_flattened = list(range(len(weather_data_historical.columns))) * len(month)
-# location as a fixed effect
 
 # linear regression - flatten for more data points
-X = weather_data_historical.values.flatten().reshape(-1, 1)
+weather_data = weather_data_historical.values.flatten()
 y = monthly_reporting_by_facility.values.flatten()
+X = pd.DataFrame({
+    'weather_data': weather_data,
+    'year': year_flattened,
+    'month': month_flattened,
+    'facility': facility_flattened
+})
 
-#X = np.column_stack((X)) #, year_flattened, month_flattened, facility_flattened))
-print("X shape:", X.shape)
-print("y shape:", y.shape)
+# One-hot encode the 'facility' column for a fixed effect
+encoder = OneHotEncoder()
+facility_encoded = pd.get_dummies(X['facility'])
+
+X = np.column_stack((X[['weather_data', 'year', 'month']], facility_encoded))
+
 # # Perform linear regression
 model = LinearRegression()
 model.fit(X, y)
