@@ -548,6 +548,41 @@ scenario_cost.to_csv(costing_outputs_folder / 'scenario_cost.csv')
 
 # Plot costs
 ####################################################
+# Stacked bar plot
+def do_stacked_bar_plot(_df, cost_category, year, actual_expenditure):
+    # Subset and Pivot the data to have 'Cost Sub-category' as columns
+    _df = _df[_df.stat == 'mean']
+    # Convert 'value' to millions
+    _df['value'] = _df['value'] / 1e6
+    if year == 'all':
+        subset_df = _df
+    else:
+        subset_df = _df[_df['year'] == year]
+    if cost_category == 'all':
+        subset_df = subset_df
+        pivot_df = subset_df.pivot_table(index='draw', columns='Cost_Category', values='value', aggfunc='sum')
+    else:
+        subset_df = subset_df[subset_df['Cost_Category'] == cost_category]
+        pivot_df = subset_df.pivot_table(index='draw', columns='Cost_Sub-category', values='value', aggfunc='sum')
+
+    # Plot a stacked bar chart
+    pivot_df.plot(kind='bar', stacked=True)
+    # Add a horizontal red line to represent 2018 Expenditure as per resource mapping
+    plt.axhline(y=actual_expenditure/1e6, color='red', linestyle='--', label='Actual expenditure recorded in 2018')
+
+    # Save plot
+    plt.xlabel('Scenario')
+    plt.ylabel('Cost (2023 USD), millions')
+    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper right')
+    plt.title(f'Costs by Scenario \n (Cost Category = {cost_category} ; Year = {year})')
+    plt.savefig(figurespath / f'stacked_bar_chart_{cost_category}_year_{year}.png', dpi=100,
+                bbox_inches='tight')
+
+do_stacked_bar_plot(_df = scenario_cost, cost_category = 'Medical consumables', year = 2018, actual_expenditure = 206_747_565)
+do_stacked_bar_plot(_df = scenario_cost, cost_category = 'Human Resources for Health', year = 2018, actual_expenditure = 128_593_787)
+do_stacked_bar_plot(_df = scenario_cost, cost_category = 'Equipment purchase and maintenance', year = 2018, actual_expenditure = 6_048_481)
+do_stacked_bar_plot(_df = scenario_cost, cost_category = 'all', year = 2018, actual_expenditure = 624_054_027)
+
 # TODO all these HR plots need to be looked at
 # 1. HR
 # Stacked bar chart of salaries by cadre
