@@ -148,3 +148,45 @@ results = model.fit()
 print(results.summary())
 
 
+### Top 80 percentile?
+X_df = pd.DataFrame({
+    'weather_data': weather_data,
+    'year': year_flattened,
+    'month': month_flattened,
+    'facility': facility_flattened
+})
+
+grouped_data_based_on_percentiles = X_df.groupby(['facility', 'month'])['weather_data'].quantile(0.8).reset_index()
+
+above_80_percentile = []
+for facility in range(len(monthly_reporting_by_facility.columns)):
+    for month in range(12):
+        percentile_for_month = grouped_data_based_on_percentiles[(grouped_data_based_on_percentiles["facility"] == facility) & (grouped_data_based_on_percentiles["month"] == month)][
+            "weather_data"]
+        X_data = X_df[(X_df["month"] == month) & (X_df["facility"] == facility)]
+        for value in X_data["weather_data"]:
+            above_80_percentile.append(1 if value > percentile_for_month.values[0] else 0)
+
+
+# Add the binary variable to the predictors
+X = pd.DataFrame({
+    'weather_data': weather_data,
+    'year': year_flattened,
+    'month': month_flattened,
+    'facility': facility_flattened,
+    'precip_above_average': above_below_average,
+    'above_80_percentile': above_80_percentile
+})
+# One-hot encode the 'facility' column for a fixed effect
+facility_encoded = pd.get_dummies(X['facility'])
+
+X = np.column_stack((X[['weather_data', 'year', 'month', 'precip_above_average', 'above_80_percentile']], facility_encoded))
+y = monthly_reporting_by_facility.values.flatten()
+
+print(len(y))
+model = sm.OLS(y,X)
+results = model.fit()
+
+print(results.summary())
+
+
