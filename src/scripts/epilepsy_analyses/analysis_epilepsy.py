@@ -24,7 +24,7 @@ outputpath = Path("./outputs")  # folder for convenience of storing outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource files
-resourcefilepath = Path("./resources")
+resourcefilepath = './resources'
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2020,  1, 1)
@@ -43,20 +43,20 @@ log_config = {
     }
 }
 
-sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
+sim = Simulation(start_date=start_date, seed=0, log_config=log_config, resourcefilepath=resourcefilepath)
 
 # make a dataframe that contains the switches for which interventions are allowed or not allowed
 # during this run. NB. These must use the exact 'registered strings' that the disease modules allow
 
 
 # Register the appropriate modules
-sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-             enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-             healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
-             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-             healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-             epilepsy.Epilepsy(resourcefilepath=resourcefilepath),
-             symptommanager.SymptomManager(resourcefilepath=resourcefilepath)
+sim.register(demography.Demography(),
+             enhanced_lifestyle.Lifestyle(),
+             healthsystem.HealthSystem(),
+             healthseekingbehaviour.HealthSeekingBehaviour(),
+             healthburden.HealthBurden(),
+             epilepsy.Epilepsy(),
+             symptommanager.SymptomManager()
              )
 
 # Run the simulation and flush the logger

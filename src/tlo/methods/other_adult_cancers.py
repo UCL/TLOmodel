@@ -34,9 +34,8 @@ logger.setLevel(logging.INFO)
 class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
     """Other Adult Cancers Disease Module"""
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
         self.linear_models_for_progession_of_oac_status = dict()
         self.lm_onset_early_other_adult_ca_symptom = None
         self.daly_wts = dict()
@@ -212,12 +211,12 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
         )
     }
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath=None):
         """Setup parameters used by the module, now including disability weights"""
 
         # Update parameters from the resourcefile
         self.load_parameters_from_dataframe(
-            pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_Other_Adult_Cancers.xlsx",
+            pd.read_excel(Path(resourcefilepath) / "ResourceFile_Other_Adult_Cancers.xlsx",
                           sheet_name="parameter_values")
         )
 
