@@ -63,6 +63,90 @@ def get_list_of_items(self, item_list):
 
     return codes
 
+def check_int_deliverable(self, int_name, hsi_event, q_param, cons, opt_cons=None, equipment=None, dx_test=None):
+    """
+    This function is called to determine if an intervention within the MNH modules can be delivered to an individual
+    during a given HSI. This applied to all MNH interventions. If analyses are being conducted in which the probability
+    of intervention delivery should be set explicitly, this is achieved during this function. Otherwise, probability of
+     intervention delivery is determined by any module-level quality parameters, consumable availability, and
+     (if applicable) the results of any dx_tests. Equipment is also declared.
+
+    TODO: add to newborn interventions
+    TODO: what about interventions outside mnh modules
+
+:   param self: module
+    param int_name: items for code look up
+    param hsi_event: module
+    param q_param: items for code look up
+    param cons: module
+    param opt_cons: items for code look up
+    param equipment: module
+    param dx_test: items for code look up
+    """
+
+    df = self.sim.population.props
+    individual_id = hsi_event.target
+    int_avail_df = self.sim.modules['PregnancySupervisor'].current_parameters['intervention_availability']
+
+    # Firstly, we determine if an analysis is currently being conducted during which the probability of intervention
+    # delivery is being overridden
+    # To do: replace this parameter
+    if self.sim.modules['PregnancySupervisor'].current_parameters['ps_analysis_in_progress']:
+
+        # If so, we determine if this intervention will be delivered given the set probability of delivery.
+        can_int_run_analysis = self.rng.random_sample() < int_avail_df.at[int_name, 'availability']
+
+        # The intervention has no effect
+        if not can_int_run_analysis:
+            return False
+
+        else:
+            # The intervention will have an effect. If this is an intervention which leads to an outcome dependent on
+            # correct identification of a condition through a dx_test we account for that here.
+            if dx_test is not None:
+                test = self.sim.modules['HealthSystem'].dx_manager.dx_tests[dx_test]
+
+                if test[0].target_categories is None and (df.at[individual_id, test[0].property]):
+                    return True
+
+                elif ((test[0].target_categories is not None) and
+                      (df.at[individual_id, test[0].property] in test[0].target_categories)):
+                    return True
+
+                else:
+                    return False
+
+            else:
+                return True
+
+    else:
+
+        # If analysis is not being conducted, intervention delivery is dependent on quality parameters, consumable
+        # availability and dx_test results
+        quality = False
+        consumables = False
+        test = False
+
+        if all([self.rng.random_sample() < value for value in q_param]) or (q_param is None):
+            quality = True
+
+            if equipment is not None:
+                hsi_event.add_equipment({equipment})
+
+        if ((hsi_event.get_consumables(item_codes=cons, optional_item_codes=opt_cons if not None else [])) or
+            (cons is None)):
+            consumables = True
+
+        if (self.sim.modules['HealthSystem'].dx_manager.run_dx_test( dx_tests_to_run=dx_test, hsi_event=hsi_event)
+            or (dx_test is None)):
+            test = True
+
+        if quality and consumables and test:
+            return True
+
+        else:
+            return False
+
 
 def return_cons_avail(self, hsi_event, cons, opt_cons):
     """

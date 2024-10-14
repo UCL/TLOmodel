@@ -389,6 +389,10 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         'sens_analysis_max': Parameter(
             Types.BOOL, 'Signals within the analysis event and code that sensitivity analysis is being undertaken in '
                         'which the maximum coverage of ANC is enforced'),
+
+        'intervention_availability': Parameter(
+            Types.DATA_FRAME, ''),
+
     }
 
     PROPERTIES = {
@@ -437,10 +441,14 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
     }
 
     def read_parameters(self, data_folder):
+        p = self.parameters
+
         # load parameters from the resource file
-        parameter_dataframe = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_PregnancySupervisor.xlsx',
-                                            sheet_name='parameter_values')
-        self.load_parameters_from_dataframe(parameter_dataframe)
+        workbook = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_PregnancySupervisor.xlsx',
+                                 sheet_name=None)
+        self.load_parameters_from_dataframe(workbook["parameter_values"])
+        workbook['intervention_availability'].set_index('intervention', inplace=True)
+        p['intervention_availability'] = workbook['intervention_availability']
 
         # Here we map 'disability' parameters to associated DALY weights to be passed to the health burden module.
         # Currently this module calculates and reports all DALY weights from all maternal modules

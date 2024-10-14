@@ -281,7 +281,7 @@ class CareOfWomenDuringPregnancy(Module):
         # ---------------------------------- IRON AND FOLIC ACID ------------------------------------------------------
         # Dose changes at run time
         self.item_codes_preg_consumables['iron_folic_acid'] = \
-            {ic('Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg'): 1}  # TODO: update con requested here
+            {ic('Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg'): 1}
 
         # --------------------------------- BALANCED ENERGY AND PROTEIN ----------------------------------------------
         # Dose changes at run time
@@ -728,45 +728,63 @@ class CareOfWomenDuringPregnancy(Module):
         params = self.current_parameters
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
-        hypertension_diagnosed = False
-        proteinuria_diagnosed = False
+        proteinuria_diagnosed = pregnancy_helper_functions.check_int_deliverable(
+            self, int_name='urine_dipstick',
+            hsi_event=hsi_event,
+            q_param=[params['prob_intervention_delivered_urine_ds']],
+            cons=self.item_codes_preg_consumables['urine_dipstick'],
+            dx_test='urine_dipstick_protein')
 
-        # Delivery of the intervention is conditioned on a random draw against a probability that the intervention
-        # would be delivered (used to calibrate to SPA data - acts as proxy for clinical quality)
-        if self.rng.random_sample() < params['prob_intervention_delivered_urine_ds']:
+        hypertension_diagnosed = pregnancy_helper_functions.check_int_deliverable(
+            self, int_name='bp_measurement',
+            hsi_event=hsi_event,
+            q_param=[params['prob_intervention_delivered_bp']],
+            cons=None,
+            equipment={'Sphygmomanometer'},
+            dx_test='blood_pressure_measurement')
 
-            # check consumables
-            avail = pregnancy_helper_functions.return_cons_avail(
-                self, hsi_event, cons=self.item_codes_preg_consumables['urine_dipstick'], opt_cons=None)
+        if hypertension_diagnosed and not df.at[person_id, 'ac_gest_htn_on_treatment'] and \
+            (df.at[person_id, 'ps_htn_disorders'] != 'none') and pd.isnull(mni[person_id]['hypertension_onset']):
+            # We store date of onset to calculate dalys- only women who are aware of diagnosis experience DALYs
+            # (see daly weight for hypertension)
+            pregnancy_helper_functions.store_dalys_in_mni(person_id, mni, 'hypertension_onset', self.sim.date)
 
-            # If the intervention will be delivered the dx_manager runs, returning True if the consumables are
-            # available and the test detects protein in the urine
-            if avail and self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-                         dx_tests_to_run='urine_dipstick_protein', hsi_event=hsi_event):
-
-                # We use a temporary variable to store if proteinuria is detected
-                proteinuria_diagnosed = True
-                logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'dipstick'})
-
-        # The process is repeated for blood pressure monitoring
-        if self.rng.random_sample() < params['prob_intervention_delivered_bp']:
-            hsi_event.add_equipment({'Sphygmomanometer'})
-
-            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='blood_pressure_measurement',
-                                                                       hsi_event=hsi_event):
-                hypertension_diagnosed = True
-                logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'bp_measurement'})
-
-                if not df.at[person_id, 'ac_gest_htn_on_treatment'] and\
-                    (df.at[person_id, 'ps_htn_disorders'] != 'none') and pd.isnull(mni[person_id]['hypertension'
-                                                                                                  '_onset']):
-
-                    # We store date of onset to calculate dalys- only women who are aware of diagnosis experience DALYs
-                    # (see daly weight for hypertension)
-                    pregnancy_helper_functions.store_dalys_in_mni(person_id, mni, 'hypertension_onset', self.sim.date)
-
-        # If either high blood pressure or proteinuria are detected (or both) we assume this woman needs to be admitted
-        # for further treatment following this ANC contact
+        # # Delivery of the intervention is conditioned on a random draw against a probability that the intervention
+        # # would be delivered (used to calibrate to SPA data - acts as proxy for clinical quality)
+        # if self.rng.random_sample() < params['prob_intervention_delivered_urine_ds']:
+        #
+        #     # check consumables
+        #     avail = pregnancy_helper_functions.return_cons_avail(
+        #         self, hsi_event, cons=self.item_codes_preg_consumables['urine_dipstick'], opt_cons=None)
+        #
+        #     # If the intervention will be delivered the dx_manager runs, returning True if the consumables are
+        #     # available and the test detects protein in the urine
+        #     if avail and self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
+        #                  dx_tests_to_run='urine_dipstick_protein', hsi_event=hsi_event):
+        #
+        #         # We use a temporary variable to store if proteinuria is detected
+        #         proteinuria_diagnosed = True
+        #         logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'dipstick'})
+        #
+        # # The process is repeated for blood pressure monitoring
+        # if self.rng.random_sample() < params['prob_intervention_delivered_bp']:
+        #     hsi_event.add_equipment({'Sphygmomanometer'})
+        #
+        #     if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='blood_pressure_measurement',
+        #                                                                hsi_event=hsi_event):
+        #         hypertension_diagnosed = True
+        #         logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'bp_measurement'})
+        #
+        #         if not df.at[person_id, 'ac_gest_htn_on_treatment'] and\
+        #             (df.at[person_id, 'ps_htn_disorders'] != 'none') and pd.isnull(mni[person_id]['hypertension'
+        #                                                                                           '_onset']):
+        #
+        #             # We store date of onset to calculate dalys- only women who are aware of diagnosis experience DALYs
+        #             # (see daly weight for hypertension)
+        #             pregnancy_helper_functions.store_dalys_in_mni(person_id, mni, 'hypertension_onset', self.sim.date)
+        #
+        # # If either high blood pressure or proteinuria are detected (or both) we assume this woman needs to be admitted
+        # # for further treatment following this ANC contact
 
         # Only women who are not on treatment OR are determined to have severe disease whilst on treatment are admitted
         if hypertension_diagnosed or proteinuria_diagnosed:
@@ -798,10 +816,18 @@ class CareOfWomenDuringPregnancy(Module):
             days = self.get_approx_days_of_pregnancy(person_id)
             updated_cons = {k: v*(days*2) for (k, v) in self.item_codes_preg_consumables['iron_folic_acid'].items()}
 
-            avail = pregnancy_helper_functions.return_cons_avail(
-                self, hsi_event, cons=updated_cons, opt_cons=None)
+            iron_folic_acid_delivered = pregnancy_helper_functions.check_int_deliverable(
+            self, int_name='iron_folic_acid',
+            hsi_event=hsi_event,
+            q_param=None,
+            cons=updated_cons)
 
-            if avail:
+            # avail = pregnancy_helper_functions.return_cons_avail(
+            #     self, hsi_event, cons=updated_cons, opt_cons=None)
+            #
+            # if avail:
+
+            if iron_folic_acid_delivered:
                 logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'iron_folic_acid'})
 
                 # Importantly, only women who will be adherent to iron will experience the benefits of the
@@ -835,11 +861,16 @@ class CareOfWomenDuringPregnancy(Module):
             updated_cons = {k: v*days for (k, v) in
                             self.item_codes_preg_consumables['balanced_energy_protein'].items()}
 
-            avail = pregnancy_helper_functions.return_cons_avail(
-                self, hsi_event, cons=updated_cons, opt_cons=None)
+            bep_delivered = pregnancy_helper_functions.check_int_deliverable(
+                self, int_name='protein_supplement', hsi_event=hsi_event, q_param=None, cons=updated_cons)
 
-            # And she is deemed to be at risk (i.e. BMI < 18) she is started on supplements
-            if avail and (df.at[person_id, 'li_bmi'] == 1):
+            # avail = pregnancy_helper_functions.return_cons_avail(
+            #     self, hsi_event, cons=updated_cons, opt_cons=None)
+            #
+            # # And she is deemed to be at risk (i.e. BMI < 18) she is started on supplements
+            # if avail and (df.at[person_id, 'li_bmi'] == 1):
+
+            if bep_delivered and (df.at[person_id, 'li_bmi'] == 1):
                 df.at[person_id, 'ac_receiving_bep_supplements'] = True
                 logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'b_e_p'})
 
@@ -901,10 +932,15 @@ class CareOfWomenDuringPregnancy(Module):
             updated_cons = {k: v * days for (k, v) in
                             self.item_codes_preg_consumables['calcium'].items()}
 
-            avail = pregnancy_helper_functions.return_cons_avail(
-                self, hsi_event, cons=updated_cons, opt_cons=None)
+            calcium_delivered = pregnancy_helper_functions.check_int_deliverable(
+                self, int_name='calcium_supplement', hsi_event=hsi_event, q_param=None, cons=updated_cons)
 
-            if avail:
+            # avail = pregnancy_helper_functions.return_cons_avail(
+            #     self, hsi_event, cons=updated_cons, opt_cons=None)
+            #
+            # if avail:
+
+            if calcium_delivered:
                 df.at[person_id, 'ac_receiving_calcium_supplements'] = True
                 logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'calcium'})
 
@@ -923,16 +959,23 @@ class CareOfWomenDuringPregnancy(Module):
 
         logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'hb_screen'})
 
-        # Run check against probability of testing being delivered
-        avail = pregnancy_helper_functions.return_cons_avail(
-            self, hsi_event,
+        hb_test_delivered = pregnancy_helper_functions.check_int_deliverable(
+            self, int_name='hb_test', hsi_event=hsi_event, q_param=None,
             cons=self.item_codes_preg_consumables['hb_test'],
-            opt_cons=self.item_codes_preg_consumables['blood_test_equipment'])
+            opt_cons=self.item_codes_preg_consumables['blood_test_equipment'],
+            dx_test='point_of_care_hb_test')
 
-        # We run the test through the dx_manager and if a woman has anaemia and its detected she will be admitted
-        # for further care
-        if avail and self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='point_of_care_hb_test',
-                                                                             hsi_event=hsi_event):
+        # # Run check against probability of testing being delivered
+        # avail = pregnancy_helper_functions.return_cons_avail(
+        #     self, hsi_event,
+        #     cons=self.item_codes_preg_consumables['hb_test'],
+        #     opt_cons=self.item_codes_preg_consumables['blood_test_equipment'])
+
+        # # We run the test through the dx_manager and if a woman has anaemia and its detected she will be admitted
+        # # for further care
+        # if avail and self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='point_of_care_hb_test',
+        #                                                                      hsi_event=hsi_event):
+        if hb_test_delivered:
             df.at[person_id, 'ac_to_be_admitted'] = True
 
     def albendazole_administration(self, hsi_event):
@@ -996,30 +1039,47 @@ class CareOfWomenDuringPregnancy(Module):
         if not self.check_intervention_should_run_and_update_mni(person_id, 'syph_1', 'syph_2'):
             return
 
-        # See if she will receive testing
-        if self.rng.random_sample() < params['prob_intervention_delivered_syph_test']:
-            logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'syphilis_test'})
+        syph_test_delivered = pregnancy_helper_functions.check_int_deliverable(
+            self, int_name='syphilis_test', hsi_event=hsi_event,
+            q_param=[params['prob_intervention_delivered_syph_test']],
+            cons=self.item_codes_preg_consumables['syphilis_test'],
+            opt_cons=self.item_codes_preg_consumables['blood_test_equipment'],
+            dx_test='blood_test_syphilis')
 
-            avail = pregnancy_helper_functions.return_cons_avail(
-                self, hsi_event,
-                cons=self.item_codes_preg_consumables['syphilis_test'],
-                opt_cons=self.item_codes_preg_consumables['blood_test_equipment'])
 
-            test = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-                         dx_tests_to_run='blood_test_syphilis', hsi_event=hsi_event)
+        # # See if she will receive testing
+        # if self.rng.random_sample() < params['prob_intervention_delivered_syph_test']:
+        #     logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'syphilis_test'})
+        #
+        #     avail = pregnancy_helper_functions.return_cons_avail(
+        #         self, hsi_event,
+        #         cons=self.item_codes_preg_consumables['syphilis_test'],
+        #         opt_cons=self.item_codes_preg_consumables['blood_test_equipment'])
+        #
+        #     test = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
+        #                  dx_tests_to_run='blood_test_syphilis', hsi_event=hsi_event)
 
-            # If the testing occurs and detects syphilis she will get treatment (if consumables are available)
-            if avail and test:
+        # # If the testing occurs and detects syphilis she will get treatment (if consumables are available)
+        # if avail and test:
 
-                avail = pregnancy_helper_functions.return_cons_avail(
-                    self, hsi_event,
-                    cons=self.item_codes_preg_consumables['syphilis_treatment'],
-                    opt_cons=self.item_codes_preg_consumables['blood_test_equipment'])
+        if syph_test_delivered:
 
-                if avail:
-                    # We assume that treatment is 100% effective at curing infection
-                    df.at[person_id, 'ps_syphilis'] = False
-                    logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'syphilis_treat'})
+            syph_treatment_delivered = pregnancy_helper_functions.check_int_deliverable(
+            self, int_name='syphilis_treatment', hsi_event=hsi_event,
+            q_param=None,
+            cons=self.item_codes_preg_consumables['syphilis_treatment'],
+            opt_cons=self.item_codes_preg_consumables['blood_test_equipment'])
+
+            # avail = pregnancy_helper_functions.return_cons_avail(
+            #     self, hsi_event,
+            #     cons=self.item_codes_preg_consumables['syphilis_treatment'],
+            #     opt_cons=self.item_codes_preg_consumables['blood_test_equipment'])
+            #
+            # # if avail:
+            if syph_treatment_delivered:
+                # We assume that treatment is 100% effective at curing infection
+                df.at[person_id, 'ps_syphilis'] = False
+                logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'syphilis_treat'})
 
     def hiv_testing(self, hsi_event):
         """
@@ -1075,34 +1135,45 @@ class CareOfWomenDuringPregnancy(Module):
         if df.at[person_id, 'li_bmi'] >= 4 or df.at[person_id, 'ps_prev_gest_diab'] or df.at[person_id,
                                                                                              'ps_prev_stillbirth']:
 
-            # If they are available, the test is conducted
-            if self.rng.random_sample() < params['prob_intervention_delivered_gdm_test']:
+            gdm_screening_delivered = pregnancy_helper_functions.check_int_deliverable(
+                self, int_name='gdm_test', hsi_event=hsi_event,
+                q_param=[params['prob_intervention_delivered_gdm_test']],
+                cons=self.item_codes_preg_consumables['gdm_test'],
+                opt_cons=self.item_codes_preg_consumables['blood_test_equipment'],
+                dx_test='blood_test_glucose',
+                equipment={'Glucometer'})
 
-                avail = pregnancy_helper_functions.return_cons_avail(
-                    self, hsi_event,
-                    cons=self.item_codes_preg_consumables['gdm_test'],
-                    opt_cons=self.item_codes_preg_consumables['blood_test_equipment'])
 
-                # If the test accurately detects a woman has gestational diabetes the consumables are recorded and
-                # she is referred for treatment
-                if avail:
-                    hsi_event.add_equipment({'Glucometer'})
-
-                    if (
-                        self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-                            dx_tests_to_run='blood_test_glucose', hsi_event=hsi_event)
-                    ):
-                        logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'gdm_screen'})
-                        mni[person_id]['anc_ints'].append('gdm_screen')
+            # # If they are available, the test is conducted
+            # if self.rng.random_sample() < params['prob_intervention_delivered_gdm_test']:
+            #
+            #     avail = pregnancy_helper_functions.return_cons_avail(
+            #         self, hsi_event,
+            #         cons=self.item_codes_preg_consumables['gdm_test'],
+            #         opt_cons=self.item_codes_preg_consumables['blood_test_equipment'])
+            #
+            #     # If the test accurately detects a woman has gestational diabetes the consumables are recorded and
+            #     # she is referred for treatment
+            #     if avail:
+            #         hsi_event.add_equipment({'Glucometer'})
+            #
+            #         if (
+            #             self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
+            #                 dx_tests_to_run='blood_test_glucose', hsi_event=hsi_event)
+            #         ):
+            #             logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'gdm_screen'})
+            #             mni[person_id]['anc_ints'].append('gdm_screen')
 
                         # We assume women with a positive GDM screen will be admitted (if they are not already receiving
                         # outpatient care)
-                        if df.at[person_id, 'ac_gest_diab_on_treatment'] == 'none':
 
-                            # Store onset after diagnosis as daly weight is tied to diagnosis
-                            pregnancy_helper_functions.store_dalys_in_mni(person_id, mni, 'gest_diab_onset',
-                                                                          self.sim.date)
-                            df.at[person_id, 'ac_to_be_admitted'] = True
+            if gdm_screening_delivered:
+                if df.at[person_id, 'ac_gest_diab_on_treatment'] == 'none':
+
+                    # Store onset after diagnosis as daly weight is tied to diagnosis
+                    pregnancy_helper_functions.store_dalys_in_mni(person_id, mni, 'gest_diab_onset',
+                                                                  self.sim.date)
+                    df.at[person_id, 'ac_to_be_admitted'] = True
 
     def interventions_delivered_each_visit_from_anc2(self, hsi_event):
         """This function contains a collection of interventions that are delivered to women every time they attend ANC
@@ -1247,24 +1318,34 @@ class CareOfWomenDuringPregnancy(Module):
         """
         df = self.sim.population.props
         params = self.current_parameters
+        l_params = self.sim.modules['Labour'].current_parameters
         store_dalys_in_mni = pregnancy_helper_functions.store_dalys_in_mni
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
-        # Check for consumables
-        avail = pregnancy_helper_functions.return_cons_avail(
-            self, hsi_event,
+        # # Check for consumables
+        # avail = pregnancy_helper_functions.return_cons_avail(
+        #     self, hsi_event,
+        #     cons=self.item_codes_preg_consumables['blood_transfusion'],
+        #     opt_cons=self.item_codes_preg_consumables['iv_drug_equipment'])
+        #
+        # sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self.sim.modules['Labour'],
+        #                                                                            sf='blood_tran',
+        #                                                                            hsi_event=hsi_event)
+        #
+        # # If the blood is available we assume the intervention can be delivered
+        # if avail and sf_check:
+
+        blood_transfusion_delivered = pregnancy_helper_functions.check_int_deliverable(
+            self, int_name='blood_transfusion', hsi_event=hsi_event,
+            q_param=[l_params['prob_hcw_avail_blood_tran'], l_params['mean_hcw_competence_hp']],
             cons=self.item_codes_preg_consumables['blood_transfusion'],
-            opt_cons=self.item_codes_preg_consumables['iv_drug_equipment'])
+            opt_cons=self.item_codes_preg_consumables['blood_test_equipment'],
+            equipment={'Drip stand', 'Infusion pump'})
 
-        sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self.sim.modules['Labour'],
-                                                                                   sf='blood_tran',
-                                                                                   hsi_event=hsi_event)
-
-        # If the blood is available we assume the intervention can be delivered
-        if avail and sf_check:
+        if blood_transfusion_delivered:
             pregnancy_helper_functions.log_met_need(self, 'blood_tran', hsi_event)
 
-            hsi_event.add_equipment({'Drip stand', 'Infusion pump'})
+            # hsi_event.add_equipment({'Drip stand', 'Infusion pump'})
 
             # If the woman is receiving blood due to anaemia we apply a probability that a transfusion of 2 units
             # RBCs will correct this woman's severe anaemia
@@ -1287,11 +1368,16 @@ class CareOfWomenDuringPregnancy(Module):
         updated_cons = {k: v * days for (k, v) in
                         self.item_codes_preg_consumables['oral_antihypertensives'].items()}
 
-        avail = pregnancy_helper_functions.return_cons_avail(
-            self, hsi_event, cons=updated_cons, opt_cons=None)
+        oral_anti_htns_delivered = pregnancy_helper_functions.check_int_deliverable(
+            self, int_name='oral_antihypertensives', hsi_event=hsi_event,
+            q_param=None, cons=updated_cons)
+        #
+        # avail = pregnancy_helper_functions.return_cons_avail(
+        #     self, hsi_event, cons=updated_cons, opt_cons=None)
+        # # If the consumables are available then the woman is started on treatment
+        # if avail:
 
-        # If the consumables are available then the woman is started on treatment
-        if avail:
+        if oral_anti_htns_delivered:
             df.at[individual_id, 'ac_gest_htn_on_treatment'] = True
 
     def initiate_treatment_for_severe_hypertension(self, individual_id, hsi_event):
@@ -1305,16 +1391,23 @@ class CareOfWomenDuringPregnancy(Module):
         """
         df = self.sim.population.props
 
-        # Define the consumables and check their availability
-        avail = pregnancy_helper_functions.return_cons_avail(
-            self, hsi_event,
-            cons=self.item_codes_preg_consumables['iv_antihypertensives'],
-            opt_cons=self.item_codes_preg_consumables['iv_drug_equipment'])
+        # # Define the consumables and check their availability
+        # avail = pregnancy_helper_functions.return_cons_avail(
+        #     self, hsi_event,
+        #     cons=self.item_codes_preg_consumables['iv_antihypertensives'],
+        #     opt_cons=self.item_codes_preg_consumables['iv_drug_equipment'])
+        #
+        # # If they are available then the woman is started on treatment
+        # if avail:
 
-        # If they are available then the woman is started on treatment
-        if avail:
+        iv_anti_htns_delivered = pregnancy_helper_functions.check_int_deliverable(
+            self, int_name='oral_antihypertensives', hsi_event=hsi_event,
+            q_param=None, cons=self.item_codes_preg_consumables['iv_antihypertensives'],
+            opt_cons=self.item_codes_preg_consumables['iv_drug_equipment'], equipment={'Drip stand', 'Infusion pump'})
+
+        if iv_anti_htns_delivered:
             pregnancy_helper_functions.log_met_need(self, 'iv_htns', hsi_event)
-            hsi_event.add_equipment({'Drip stand', 'Infusion pump'})
+            # hsi_event.add_equipment({'Drip stand', 'Infusion pump'})
 
             # We assume women treated with antihypertensives would no longer be severely hypertensive- meaning they
             # are not at risk of death from severe gestational hypertension in the PregnancySupervisor event
@@ -1338,22 +1431,32 @@ class CareOfWomenDuringPregnancy(Module):
         :param hsi_event: HSI event in which the function has been called
         """
         df = self.sim.population.props
+        l_params = self.sim.modules['Labour'].current_parameters
 
-        avail = pregnancy_helper_functions.return_cons_avail(
-            self, hsi_event,
+        # avail = pregnancy_helper_functions.return_cons_avail(
+        #     self, hsi_event,
+        #     cons=self.item_codes_preg_consumables['magnesium_sulfate'],
+        #     opt_cons=self.item_codes_preg_consumables['eclampsia_management_optional'])
+        #
+        # # check HCW will deliver intervention
+        # sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self.sim.modules['Labour'],
+        #                                                                            sf='anticonvulsant',
+        #                                                                            hsi_event=hsi_event)
+        #
+        # # If available deliver the treatment
+        # if avail and sf_check:
+
+        mag_sulph_delivered = pregnancy_helper_functions.check_int_deliverable(
+            self, int_name='mgso4', hsi_event=hsi_event,
+            q_param=[l_params['prob_hcw_avail_anticonvulsant'], l_params['mean_hcw_competence_hp']],
             cons=self.item_codes_preg_consumables['magnesium_sulfate'],
-            opt_cons=self.item_codes_preg_consumables['eclampsia_management_optional'])
+            opt_cons=self.item_codes_preg_consumables['eclampsia_management_optional'],
+            equipment={'Drip stand', 'Infusion pump'})
 
-        # check HCW will deliver intervention
-        sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self.sim.modules['Labour'],
-                                                                                   sf='anticonvulsant',
-                                                                                   hsi_event=hsi_event)
-
-        # If available deliver the treatment
-        if avail and sf_check:
+        if mag_sulph_delivered:
             df.at[individual_id, 'ac_mag_sulph_treatment'] = True
             pregnancy_helper_functions.log_met_need(self, 'mag_sulph', hsi_event)
-            hsi_event.add_equipment({'Drip stand', 'Infusion pump'})
+            # hsi_event.add_equipment({'Drip stand', 'Infusion pump'})
 
     def antibiotics_for_prom(self, individual_id, hsi_event):
         """
@@ -1363,20 +1466,29 @@ class CareOfWomenDuringPregnancy(Module):
         :param hsi_event: HSI event in which the function has been called
         """
         df = self.sim.population.props
+        l_params = self.sim.modules['Labour'].current_parameters
 
-        # check consumables and whether HCW are available to deliver the intervention
-        avail = pregnancy_helper_functions.return_cons_avail(
-            self, hsi_event,
+        # # check consumables and whether HCW are available to deliver the intervention
+        # avail = pregnancy_helper_functions.return_cons_avail(
+        #     self, hsi_event,
+        #     cons=self.item_codes_preg_consumables['abx_for_prom'],
+        #     opt_cons=self.item_codes_preg_consumables['iv_drug_equipment'])
+        #
+        # sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self.sim.modules['Labour'],
+        #                                                                            sf='iv_abx',
+        #                                                                            hsi_event=hsi_event)
+        #
+        # if avail and sf_check:
+        abx_prom_delivered = pregnancy_helper_functions.check_int_deliverable(
+            self, int_name='abx_for_prom', hsi_event=hsi_event,
+            q_param=[l_params['prob_hcw_avail_iv_abx'], l_params['mean_hcw_competence_hp']],
             cons=self.item_codes_preg_consumables['abx_for_prom'],
-            opt_cons=self.item_codes_preg_consumables['iv_drug_equipment'])
+            opt_cons=self.item_codes_preg_consumables['iv_drug_equipment'],
+            equipment={'Drip stand', 'Infusion pump'})
 
-        sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self.sim.modules['Labour'],
-                                                                                   sf='iv_abx',
-                                                                                   hsi_event=hsi_event)
-
-        if avail and sf_check:
+        if abx_prom_delivered:
             df.at[individual_id, 'ac_received_abx_for_prom'] = True
-            hsi_event.add_equipment({'Drip stand', 'Infusion pump'})
+            # hsi_event.add_equipment({'Drip stand', 'Infusion pump'})
 
     def ectopic_pregnancy_treatment_doesnt_run(self, hsi_event):
         """
@@ -2522,11 +2634,17 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalD
                     updated_cons = {k: v * days for (k, v) in
                                     self.module.item_codes_preg_consumables['oral_diabetic_treatment'].items()}
 
-                    avail = pregnancy_helper_functions.return_cons_avail(
-                        self.module, self,  cons=updated_cons, opt_cons=None)
+                    # avail = pregnancy_helper_functions.return_cons_avail(
+                    #     self.module, self,  cons=updated_cons, opt_cons=None)
+                    #
+                    # # If the meds are available women are started on that treatment
+                    # if avail:
 
-                    # If the meds are available women are started on that treatment
-                    if avail:
+                    gdm_orals_delivered = pregnancy_helper_functions.check_int_deliverable(
+                        self.module, int_name='gdm_treatment_orals', hsi_event=self,
+                        q_param=None, cons=updated_cons)
+
+                    if gdm_orals_delivered:
                         df.at[person_id, 'ac_gest_diab_on_treatment'] = 'orals'
 
                         # Assume new treatment is effective in controlling blood glucose on initiation
@@ -2546,10 +2664,16 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalD
                     updated_cons = {k: v * required_vials for (k, v) in
                                     self.module.item_codes_preg_consumables['insulin_treatment'].items()}
 
-                    avail = pregnancy_helper_functions.return_cons_avail(
-                        self.module, self, cons=updated_cons, opt_cons=None)
+                    # avail = pregnancy_helper_functions.return_cons_avail(
+                    #     self.module, self, cons=updated_cons, opt_cons=None)
+                    #
+                    # if avail:
 
-                    if avail:
+                    gdm_insulin_delivered = pregnancy_helper_functions.check_int_deliverable(
+                        self.module, int_name='gdm_treatment_insulin', hsi_event=self,
+                        q_param=None, cons=updated_cons)
+
+                    if gdm_insulin_delivered:
                         df.at[person_id, 'ac_gest_diab_on_treatment'] = 'insulin'
                         df.at[person_id, 'ps_gest_diab'] = 'controlled'
 
@@ -2584,64 +2708,90 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
         df = self.sim.population.props
         mother = df.loc[person_id]
         abortion_complications = self.sim.modules['PregnancySupervisor'].abortion_complications
+        l_params = self.sim.modules['Labour'].current_parameters
 
         if not mother.is_alive or not abortion_complications.has_any([person_id], 'sepsis', 'haemorrhage', 'injury',
                                                                      'other', first=True):
             return
 
-        # Request baseline PAC consumables
-        baseline_cons = pregnancy_helper_functions.return_cons_avail(
-            self.module, self,
-            cons=self.module.item_codes_preg_consumables['post_abortion_care_core'],
-            opt_cons=self.module.item_codes_preg_consumables['post_abortion_care_optional'])
+        pac_cons = self.module.item_codes_preg_consumables['post_abortion_care_core']
+        pac_opt_cons = self.module.item_codes_preg_consumables['post_abortion_care_optional']
 
-        # Check HCW availability to deliver surgical removal of retained products
-        sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self.sim.modules['Labour'],
-                                                                                   sf='retained_prod',
-                                                                                   hsi_event=self)
-
-        # Add used equipment if intervention can happen
-        if baseline_cons and sf_check:
-            self.add_equipment({'D&C set', 'Suction Curettage machine', 'Drip stand', 'Infusion pump'})
-
-        # Then we determine if a woman gets treatment for her complication depending on availability of the baseline
-        # consumables (misoprostol) or a HCW who can conduct MVA/DC (we dont model equipment) and additional
-        # consumables for management of her specific complication
         if abortion_complications.has_any([person_id], 'sepsis', first=True):
+            pac_cons.update(self.module.item_codes_preg_consumables['post_abortion_care_sepsis_core'])
+            pac_opt_cons.update(self.module.item_codes_preg_consumables['post_abortion_care_sepsis_optional'])
 
-            cons_for_sepsis_pac = pregnancy_helper_functions.return_cons_avail(
-                self.module, self,
-                cons=self.module.item_codes_preg_consumables['post_abortion_care_sepsis_core'],
-                opt_cons=self.module.item_codes_preg_consumables['post_abortion_care_sepsis_optional'])
+        if abortion_complications.has_any([person_id], 'haemorrhage', first=True):
+            pac_cons.update(self.module.item_codes_preg_consumables['blood_transfusion'])
+            pac_opt_cons.update(self.module.item_codes_preg_consumables['iv_drug_equipment'])
 
-            if cons_for_sepsis_pac and (baseline_cons or sf_check):
-                df.at[person_id, 'ac_received_post_abortion_care'] = True
+        if abortion_complications.has_any([person_id], 'injury', first=True):
+            pac_cons.update(self.module.item_codes_preg_consumables['post_abortion_care_shock'])
+            pac_opt_cons.update(self.module.item_codes_preg_consumables['post_abortion_care_shock_optional'])
 
-        elif abortion_complications.has_any([person_id], 'haemorrhage', first=True):
-            cons_for_haemorrhage = pregnancy_helper_functions.return_cons_avail(
-                self.module, self,
-                cons=self.module.item_codes_preg_consumables['blood_transfusion'],
-                opt_cons=self.module.item_codes_preg_consumables['iv_drug_equipment'])
+        pac_delivered = pregnancy_helper_functions.check_int_deliverable(
+            self.module, int_name='post_abortion_care_core', hsi_event=self,
+            q_param=[l_params['prob_hcw_avail_retained_prod'], l_params['mean_hcw_competence_hp']],
+            cons=pac_cons,
+            opt_cons=pac_opt_cons,
+            equipment={'D&C set', 'Suction Curettage machine', 'Drip stand', 'Infusion pump'})
 
-            cons_for_shock = pregnancy_helper_functions.return_cons_avail(
-                self.module, self,
-                cons=self.module.item_codes_preg_consumables['post_abortion_care_shock'],
-                opt_cons=self.module.item_codes_preg_consumables['post_abortion_care_shock_optional'])
-
-            if cons_for_haemorrhage and cons_for_shock and (baseline_cons or sf_check):
-                df.at[person_id, 'ac_received_post_abortion_care'] = True
-
-        elif abortion_complications.has_any([person_id], 'injury', first=True):
-            cons_for_shock = pregnancy_helper_functions.return_cons_avail(
-                self.module, self,
-                cons=self.module.item_codes_preg_consumables['post_abortion_care_shock'],
-                opt_cons=self.module.item_codes_preg_consumables['post_abortion_care_shock_optional'])
-
-            if cons_for_shock and (baseline_cons or sf_check):
-                df.at[person_id, 'ac_received_post_abortion_care'] = True
-
-        elif abortion_complications.has_any([person_id], 'other', first=True) and (baseline_cons or sf_check):
+        if pac_delivered:
             df.at[person_id, 'ac_received_post_abortion_care'] = True
+
+        # # Request baseline PAC consumables
+        # baseline_cons = pregnancy_helper_functions.return_cons_avail(
+        #     self.module, self,
+        #     cons=self.module.item_codes_preg_consumables['post_abortion_care_core'],
+        #     opt_cons=self.module.item_codes_preg_consumables['post_abortion_care_optional'])
+        #
+        # # Check HCW availability to deliver surgical removal of retained products
+        # sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self.sim.modules['Labour'],
+        #                                                                            sf='retained_prod',
+        #                                                                            hsi_event=self)
+        #
+        # # Add used equipment if intervention can happen
+        # if baseline_cons and sf_check:
+        #     self.add_equipment({'D&C set', 'Suction Curettage machine', 'Drip stand', 'Infusion pump'})
+        #
+        # # Then we determine if a woman gets treatment for her complication depending on availability of the baseline
+        # # consumables (misoprostol) or a HCW who can conduct MVA/DC (we dont model equipment) and additional
+        # # consumables for management of her specific complication
+        # if abortion_complications.has_any([person_id], 'sepsis', first=True):
+        #
+        #     cons_for_sepsis_pac = pregnancy_helper_functions.return_cons_avail(
+        #         self.module, self,
+        #         cons=self.module.item_codes_preg_consumables['post_abortion_care_sepsis_core'],
+        #         opt_cons=self.module.item_codes_preg_consumables['post_abortion_care_sepsis_optional'])
+        #
+        #     if cons_for_sepsis_pac and (baseline_cons or sf_check):
+        #         df.at[person_id, 'ac_received_post_abortion_care'] = True
+        #
+        # elif abortion_complications.has_any([person_id], 'haemorrhage', first=True):
+        #     cons_for_haemorrhage = pregnancy_helper_functions.return_cons_avail(
+        #         self.module, self,
+        #         cons=self.module.item_codes_preg_consumables['blood_transfusion'],
+        #         opt_cons=self.module.item_codes_preg_consumables['iv_drug_equipment'])
+        #
+        #     cons_for_shock = pregnancy_helper_functions.return_cons_avail(
+        #         self.module, self,
+        #         cons=self.module.item_codes_preg_consumables['post_abortion_care_shock'],
+        #         opt_cons=self.module.item_codes_preg_consumables['post_abortion_care_shock_optional'])
+        #
+        #     if cons_for_haemorrhage and cons_for_shock and (baseline_cons or sf_check):
+        #         df.at[person_id, 'ac_received_post_abortion_care'] = True
+        #
+        # elif abortion_complications.has_any([person_id], 'injury', first=True):
+        #     cons_for_shock = pregnancy_helper_functions.return_cons_avail(
+        #         self.module, self,
+        #         cons=self.module.item_codes_preg_consumables['post_abortion_care_shock'],
+        #         opt_cons=self.module.item_codes_preg_consumables['post_abortion_care_shock_optional'])
+        #
+        #     if cons_for_shock and (baseline_cons or sf_check):
+        #         df.at[person_id, 'ac_received_post_abortion_care'] = True
+        #
+        # elif abortion_complications.has_any([person_id], 'other', first=True) and (baseline_cons or sf_check):
+        #     df.at[person_id, 'ac_received_post_abortion_care'] = True
 
         if df.at[person_id, 'ac_received_post_abortion_care']:
             pregnancy_helper_functions.log_met_need(self.module, 'pac', self)
@@ -2674,21 +2824,31 @@ class HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(HSI_Event, Ind
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         mother = df.loc[person_id]
+        l_params = self.sim.modules['Labour'].current_parameters
 
         if not mother.is_alive or (mother.ps_ectopic_pregnancy == 'none'):
             return
 
-        # We define the required consumables and check their availability
-        avail = pregnancy_helper_functions.return_cons_avail(
-            self.module, self,
+        ep_surg_delivered = pregnancy_helper_functions.check_int_deliverable(
+            self.module, int_name='ectopic_pregnancy_treatment', hsi_event=self,
+            q_param=[l_params['prob_hcw_avail_surg'], l_params['mean_hcw_competence_hp']],
             cons=self.module.item_codes_preg_consumables['ectopic_pregnancy_core'],
-            opt_cons=self.module.item_codes_preg_consumables['ectopic_pregnancy_optional'])
+            opt_cons=self.module.item_codes_preg_consumables['ectopic_pregnancy_optional'],
+            equipment={'Laparotomy Set'})
 
-        # If they are available then treatment can go ahead
-        if avail:
+        # # We define the required consumables and check their availability
+        # avail = pregnancy_helper_functions.return_cons_avail(
+        #     self.module, self,
+        #     cons=self.module.item_codes_preg_consumables['ectopic_pregnancy_core'],
+        #     opt_cons=self.module.item_codes_preg_consumables['ectopic_pregnancy_optional'])
+        #
+        # # If they are available then treatment can go ahead
+        # if avail:
+
+        if ep_surg_delivered:
             self.sim.modules['PregnancySupervisor'].mother_and_newborn_info[person_id]['delete_mni'] = True
             pregnancy_helper_functions.log_met_need(self.module, 'ep_case_mang', self)
-            self.add_equipment({'Laparotomy Set'})
+            # self.add_equipment({'Laparotomy Set'})
 
             # For women who have sought care after they have experienced rupture we use this treatment variable to
             # reduce risk of death (women who present prior to rupture do not pass through the death event as we assume
