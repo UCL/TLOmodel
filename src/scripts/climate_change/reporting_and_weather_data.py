@@ -37,7 +37,7 @@ monthly_reporting_by_facility = pd.DataFrame(monthly_reporting_data_by_facility)
 monthly_reporting_by_facility["facility"] = reporting_data_no_mental["organisationunitname"].values
 
 # Weather data
-directory = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical"
+directory = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical" # from 2011 on
 malawi_grid = gpd.read_file("/Users/rem76/Desktop/Climate_change_health/Data/malawi_grid.shp")
 # find indices of interest from the malawi file
 
