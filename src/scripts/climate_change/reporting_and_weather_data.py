@@ -2,7 +2,9 @@ import os
 import geopandas as gpd
 import pandas as pd
 from netCDF4 import Dataset
-from shapely.geometry import Polygon
+import numpy as np
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import r2_score
 
 # Data accessed from https://dhis2.health.gov.mw/dhis-web-data-visualizer/#/YiQK65skxjz
 # Reporting rate is expected reporting vs actual reporting
@@ -70,7 +72,7 @@ lat_data = weather_monthly_all_grids.variables['latitude'][:]
 long_data = weather_monthly_all_grids.variables['longitude'][:]
 grid = 0
 
-regridded_weather_data = []
+regridded_weather_data = {}
 for polygon in malawi_grid["geometry"]:
     minx, miny, maxx, maxy = polygon.bounds
     index_for_x_min = ((long_data - minx)**2).argmin()
@@ -82,7 +84,48 @@ for polygon in malawi_grid["geometry"]:
     precip_data_for_grid = precip_data_for_grid * 86400  # to get from per second to per day
     weather_by_grid[grid] = precip_data_for_grid
     grid += 1
-
 # Load facilities file
 general_facilities = gpd.read_file("/Users/rem76/Desktop/Climate_change_health/Data/facilities_with_districts.shp")
-print(monthly_reporting_by_facility)
+# find relavent shap file
+weather_data_by_facility = {}
+for reporting_facility in monthly_reporting_by_facility["facility"]:
+    if (reporting_facility == "Central Hospital") or reporting_facility == "Kamuzu Central Hospital":
+        # which malawi grid this is
+        grid = general_facilities[general_facilities["District"] == "Lilongwe City"]["Grid_Index"].iloc[0] # all labelled X City will be in the same grid
+    elif reporting_facility == "Mzuzu Central Hospital":
+        grid = general_facilities[general_facilities["District"] == "Mzuzu City"]["Grid_Index"].iloc[0]
+    elif reporting_facility == "Queen Elizabeth Central Hospital":
+        grid = general_facilities[general_facilities["District"] == "Blantyre City"]["Grid_Index"].iloc[0]
+    elif (reporting_facility == "Zomba Central Hospital") or (reporting_facility == "Zomba Mental Hospital"):
+        grid = general_facilities[general_facilities["District"] == "Zomba City"]["Grid_Index"].iloc[0]
+    elif reporting_facility == "Central East Zone":
+        grid = general_facilities[general_facilities["District"] == "Nkhotakota"]["Grid_Index"].iloc[0] # furtherst east zone
+
+    weather_data_by_facility[reporting_facility] = weather_by_grid[grid]
+
+
+### Linear regression between reporting and weather data
+# prep for linear regression
+weather_df = pd.DataFrame.from_dict(weather_data_by_facility, orient='index').T
+weather_df.columns = monthly_reporting_by_facility["facility"]
+monthly_reporting_by_facility = monthly_reporting_by_facility.set_index('facility').T
+
+X = weather_df.values.flatten()
+y = monthly_reporting_by_facility.values.flatten()
+if X.ndim == 1:
+    X = X.reshape(-1, 1)
+if y.ndim == 1:
+    y = y.reshape(-1, 1)
+
+print(len(X), len(y))
+
+# Perform linear regression
+model = LinearRegression()
+model.fit(X[0:len(y)], y)
+y_pred = model.predict(X[0:len(y)])
+
+# Evaluate the model
+r2 = r2_score(y, y_pred)
+print(f'R-squared: {r2:.2f}')
+print(f'Coefficient: {model.coef_[0]:.2f}')
+print(f'Intercept: {model.intercept_:.2f}')
