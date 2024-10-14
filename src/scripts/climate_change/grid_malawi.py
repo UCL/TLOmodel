@@ -57,10 +57,8 @@ plt.ylabel("Latitude")
 #plt.show()
 
 ### Intersection between the grid and the admin areas ###
-intersections = gpd.overlay(grid, malawi_admin2, how='intersection') # 56 intersections between districts and major grid squares
-
-admin_area_with_major_grid = gpd.overlay( grid, malawi_admin2, how='intersection') # finding which grid each facility falls into
-admin_area_with_major_grid = admin_area_with_major_grid.reset_index().rename(columns={'index': 'Grid_Index'}) # want this to be a column for reference
+grid['Grid_Index'] = grid.index
+admin_area_with_major_grid = gpd.overlay(grid, malawi_admin2, how='intersection') #56 intersections between districts and major grid squares, finding which grid each facility falls into
 
 ########### Create new table with facilities and add coordinates to each facility #########
 
