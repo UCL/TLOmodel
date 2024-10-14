@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import r2_score
-from sklearn.preprocessing import OneHotEncoder
+import statsmodels.api as sm
 
 # data is from 2011 - 2024
 monthly_reporting_by_facility = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_by_facility_lm.csv", index_col=0)
@@ -82,37 +82,29 @@ X = pd.DataFrame({
 })
 
 # One-hot encode the 'facility' column for a fixed effect
-encoder = OneHotEncoder()
 facility_encoded = pd.get_dummies(X['facility'])
 
 X = np.column_stack((X[['weather_data', 'year', 'month']], facility_encoded))
 
 # # Perform linear regression
-model = LinearRegression()
-model.fit(X, y)
-y_pred = model.predict(X)
+mod = sm.OLS(y,X)
+results = mod.fit()
 
-r2 = r2_score(y, y_pred)
-print(r2 )
-print(model.coef_)
+print(results.summary())
 
-
-# ## Linear regression - by facility
+# # ## Linear regression - by facility
 results_list = []
-
+#
 for facility in monthly_reporting_by_facility.columns:
     y = monthly_reporting_by_facility[facility].values
-    X = weather_data_historical.values
-    X = np.column_stack((X, year, month))
+    weather = weather_data_historical[facility].values
+    X = np.column_stack((weather, year, month))
 
-    model = LinearRegression()
-    model.fit(X, y)
-    y_pred = model.predict(X)
+    mod = sm.OLS(y, X)
+    results = mod.fit()
 
-    r2 = r2_score(y, y_pred)
-    coefficients = model.coef_
+    print(results.summary())
 
-    results_list.append({'Facility': facility, 'R2': r2, 'Coefficients': coefficients})
 
-results = pd.DataFrame(results_list)
-print(results)
+
+
