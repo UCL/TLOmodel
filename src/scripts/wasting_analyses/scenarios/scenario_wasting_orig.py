@@ -53,7 +53,7 @@ class WastingAnalysis(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'wasting_analysis',
+            'filename': 'wasting_analysis__orig',
             'directory': './outputs',
             "custom_levels": {  # Customise the output of specific loggers
                 "tlo.methods.demography": logging.INFO,
