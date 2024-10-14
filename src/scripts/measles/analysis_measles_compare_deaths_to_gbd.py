@@ -13,6 +13,7 @@ from tlo.methods import (
     epi,
     healthseekingbehaviour,
     healthsystem,
+    hiv,
     measles,
     simplified_births,
     symptommanager,
@@ -51,6 +52,8 @@ def run_sim():
 
                  epi.Epi(resourcefilepath=resourcefilepath),
                  measles.Measles(resourcefilepath=resourcefilepath),
+
+                 hiv.DummyHivModule(),
                  )
 
     sim.make_initial_population(n=popsize)

@@ -177,37 +177,37 @@ make_plot(
 plt.show()
 
 # # ---------------------------------------------------------------------- #
-
-# latent TB prevalence
-latentTB_prev = output["tlo.methods.tb"]["tb_prevalence"]
-latentTB_prev = latentTB_prev.set_index("date")
-
-title_str = "Latent TB prevalence"
-make_plot(
-    title_str=title_str,
-    model=latentTB_prev["tbPrevLatent"],
-)
-plt.ylim((0, 1.0))
-# add latent TB estimate from Houben & Dodd 2016 (value for year=2014)
-plt.errorbar(
-    latentTB_prev.index[4],
-    data_tb_latent_estimate,
-    yerr=[[data_tb_latent_yerr[0]], [data_tb_latent_yerr[1]]],
-    fmt="o",
-)
-# cohen, mathiasen 2019, 33.6% (22.4 - 42.9%)
-plt.errorbar(
-    latentTB_prev.index[9],
-    0.336,
-    yerr=[[0.092], [0.092]],
-    fmt="o",
-)
-plt.ylabel("Prevalence")
-plt.legend(["Model", "Estimate: Houben", "Estimate: Cohen"])
-# plt.savefig(
-#     outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
+#
+# # latent TB prevalence
+# latentTB_prev = output["tlo.methods.tb"]["tb_prevalence"]
+# latentTB_prev = latentTB_prev.set_index("date")
+#
+# title_str = "Latent TB prevalence"
+# make_plot(
+#     title_str=title_str,
+#     model=latentTB_prev["tbPrevLatent"],
 # )
-plt.show()
+# plt.ylim((0, 1.0))
+# # add latent TB estimate from Houben & Dodd 2016 (value for year=2014)
+# plt.errorbar(
+#     latentTB_prev.index[4],
+#     data_tb_latent_estimate,
+#     yerr=[[data_tb_latent_yerr[0]], [data_tb_latent_yerr[1]]],
+#     fmt="o",
+# )
+# # cohen, mathiasen 2019, 33.6% (22.4 - 42.9%)
+# plt.errorbar(
+#     latentTB_prev.index[9],
+#     0.336,
+#     yerr=[[0.092], [0.092]],
+#     fmt="o",
+# )
+# plt.ylabel("Prevalence")
+# plt.legend(["Model", "Estimate: Houben", "Estimate: Cohen"])
+# # plt.savefig(
+# #     outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
+# # )
+# plt.show()
 
 
 # ---------------------------------------------------------------------- #
@@ -476,7 +476,7 @@ make_plot(
     data_low=data_tb_who["mortality_tb_excl_hiv_per_100k_low"],
     data_high=data_tb_who["mortality_tb_excl_hiv_per_100k_high"],
 )
-plt.ylim((0, 150))
+plt.ylim((0, 80))
 plt.show()
 
 

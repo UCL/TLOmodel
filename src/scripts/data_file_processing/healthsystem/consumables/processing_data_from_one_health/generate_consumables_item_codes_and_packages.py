@@ -3,7 +3,7 @@
 This file sets up the data regarding the consumables that may be used in the course of an HSI.
 
 Two files are used:
-* A data extraction from the original EHP work (provided to us by Matthoas Arnold)
+* A data extraction from the original EHP work (provided to us by Matthias Arnold)
 * A data extraction from the OneHealth tool (provided to us by the Palladium Health Group)
 
 In addition - some bespoke item codes are added here with our own specific definitions attached.
@@ -14,19 +14,21 @@ We use these to create `ResourceFile_Consumables_Items_and_Packages.csv`, which 
 """
 
 from pathlib import Path
+from typing import Dict
 
 import numpy as np
 import pandas as pd
 
 # Set local Dropbox source
 path_to_dropbox = Path(  # <-- point to the TLO dropbox locally
-    '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE')
+   # '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE'
+    '/Users/sm2511/Dropbox/Thanzi La Onse')
 
 resourcefilepath = Path("./resources")
 path_for_new_resourcefiles = resourcefilepath / "healthsystem/consumables"
 
 
-# EHP Consumables list  # todo - organise this in the dropbox
+# EHP Consumables list
 path_to_files_in_the_tlo_dropbox = path_to_dropbox / "05 - Resources/Module-healthsystem/consumables raw files/"
 
 workingfile_ehp_consumables = path_to_dropbox / \
@@ -242,71 +244,138 @@ Added by TM,Misc,-99,Pre-exposure prophlaxis for HIV,2674,1.0,0.0,0.85,0.9,0.95,
 
 """
 
-cons = cons.append({
-    'Intervention_Cat': "Added by JC",
-    'Intervention_Pkg': "Misc",
-    'Intervention_Pkg_Code': -99,
-    'Items': "Forceps, obstetric",
-    'Item_Code': 2669,
-    'Expected_Units_Per_Case': 1.0,
-    'Unit_Cost': 1.0},
-    ignore_index=True
+def add_record(df: pd.DataFrame, record: Dict):
+    """Add a row to the bottom of the dataframe, where the row is specified by a dict keyed by the target columns."""
+    assert set(df.columns) == set(record.keys())
+    return pd.concat([df, pd.DataFrame.from_records([record])], ignore_index=True)
+
+
+
+cons = add_record(
+    cons,
+    {
+        'Intervention_Cat': "Added by JC",
+        'Intervention_Pkg': "Misc",
+        'Intervention_Pkg_Code': -99,
+        'Items': "Forceps, obstetric",
+        'Item_Code': 2669,
+        'Expected_Units_Per_Case': 1.0,
+        'Unit_Cost': 1.0
+        }
 )
 
-cons = cons.append({
-    'Intervention_Cat': "Added by JC",
-    'Intervention_Pkg': "Misc",
-    'Intervention_Pkg_Code': -99,
-    'Items': "Vacuum, obstetric",
-    'Item_Code': 2670,
-    'Expected_Units_Per_Case': 1.0,
-    'Unit_Cost': 1.0},
-    ignore_index=True
+cons = add_record(
+    cons,
+    {
+        'Intervention_Cat': "Added by JC",
+        'Intervention_Pkg': "Misc",
+        'Intervention_Pkg_Code': -99,
+        'Items': "Vacuum, obstetric",
+        'Item_Code': 2670,
+        'Expected_Units_Per_Case': 1.0,
+        'Unit_Cost': 1.0
+    },
 )
 
-cons = cons.append({
-    'Intervention_Cat': "Added by TM",
-    'Intervention_Pkg': "Misc",
-    'Intervention_Pkg_Code': -99,
-    'Items': "First-line ART regimen: adult",
-    'Item_Code': 2671,
-    'Expected_Units_Per_Case': 1.0,
-    'Unit_Cost': 1.0},
-    ignore_index=True
+cons = add_record(
+    cons,
+    {
+        'Intervention_Cat': "Added by TM",
+        'Intervention_Pkg': "Misc",
+        'Intervention_Pkg_Code': -99,
+        'Items': "First-line ART regimen: adult",
+        'Item_Code': 2671,
+        'Expected_Units_Per_Case': 1.0,
+        'Unit_Cost': 1.0
+    },
 )
 
-cons = cons.append({
-    'Intervention_Cat': "Added by TM",
-    'Intervention_Pkg': "Misc",
-    'Intervention_Pkg_Code': -99,
-    'Items': "First line ART regimen: older child",
-    'Item_Code': 2672,
-    'Expected_Units_Per_Case': 1.0,
-    'Unit_Cost': 1.0},
-    ignore_index=True
+cons = add_record(
+    cons,
+    {
+        'Intervention_Cat': "Added by TM",
+        'Intervention_Pkg': "Misc",
+        'Intervention_Pkg_Code': -99,
+        'Items': "First line ART regimen: older child",
+        'Item_Code': 2672,
+        'Expected_Units_Per_Case': 1.0,
+        'Unit_Cost': 1.0
+    },
 )
 
-cons = cons.append({
-    'Intervention_Cat': "Added by TM",
-    'Intervention_Pkg': "Misc",
-    'Intervention_Pkg_Code': -99,
-    'Items': "First line ART regimen: young child",
-    'Item_Code': 2673,
-    'Expected_Units_Per_Case': 1.0,
-    'Unit_Cost': 1.0},
-    ignore_index=True
+cons = add_record(
+    cons,
+    {
+        'Intervention_Cat': "Added by TM",
+        'Intervention_Pkg': "Misc",
+        'Intervention_Pkg_Code': -99,
+        'Items': "First line ART regimen: young child",
+        'Item_Code': 2673,
+        'Expected_Units_Per_Case': 1.0,
+        'Unit_Cost': 1.0
+    },
 )
 
-cons = cons.append({
-    'Intervention_Cat': "Added by TM",
+cons = add_record(
+    cons,
+    {
+        'Intervention_Cat': "Added by TM",
+        'Intervention_Pkg': "Misc",
+        'Intervention_Pkg_Code': -99,
+        'Items': "Pre-exposure prophlaxis for HIV",
+        'Item_Code': 2674,
+        'Expected_Units_Per_Case': 1.0,
+        'Unit_Cost': 1.0
+    },
+)
+
+cons = add_record(
+    cons,
+    {
+        'Intervention_Cat': "Added by SM (Recommended by TM)",
+        'Intervention_Pkg': "Isoniazid preventative therapy for HIV+ no TB",
+        'Intervention_Pkg_Code': 82,
+        'Items': "Isoniazid/Rifapentine",
+        'Item_Code': 2678,
+        'Expected_Units_Per_Case': 1.0,
+        'Unit_Cost': 1.0
+    },
+)
+
+cons = add_record(
+    cons,
+    {
+    'Intervention_Cat': "Added by SM (Recommended by EJ)",
     'Intervention_Pkg': "Misc",
     'Intervention_Pkg_Code': -99,
-    'Items': "Pre-exposure prophlaxis for HIV",
-    'Item_Code': 2674,
+    'Items': "Cystoscope",
+    'Item_Code': 285,
     'Expected_Units_Per_Case': 1.0,
-    'Unit_Cost': 1.0},
-    ignore_index=True
+    'Unit_Cost': np.nan},
 )
+
+cons = add_record(
+    cons,{
+    'Intervention_Cat': "Added by SM (Recommended by EJ)",
+    'Intervention_Pkg': "Misc",
+    'Intervention_Pkg_Code': -99,
+    'Items': "Endoscope",
+    'Item_Code': 280,
+    'Expected_Units_Per_Case': 1.0,
+    'Unit_Cost': np.nan},
+)
+
+cons = add_record(
+    cons,{
+    'Intervention_Cat': "Added by SM (Recommended by EJ)",
+    'Intervention_Pkg': "Misc",
+    'Intervention_Pkg_Code': -99,
+    'Items': "Prostate specific antigen test",
+    'Item_Code': 281,
+    'Expected_Units_Per_Case': 1.0,
+    'Unit_Cost': np.nan},
+)
+
 
 # --------------
 # --------------

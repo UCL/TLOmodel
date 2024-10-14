@@ -1,0 +1,88 @@
+name: Tests
+
+on:
+  push:
+    branches: "master"
+    tags: ["*"]
+  pull_request:
+    paths:
+      - .github/workflows/tests.yml
+      - requirements/**
+      - resources/**
+      - src/tlo/**
+      - src/scripts/profiling/scale_run.py
+      - src/scripts/profiling/shared.py
+      - tests/**
+      - pyproject.toml
+      - tox.ini
+  schedule:
+    - cron: 0 0 * * *
+
+# Force cancellation of in-progress workflows if changes are made to
+# the HEAD of the branch the workflow is currently running on.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # master branch will be allowed to have pending jobs
+  # https://stackoverflow.com/a/70972844
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
+
+env:
+  LD_PRELOAD: /lib/x86_64-linux-gnu/libSegFault.so
+  SEGFAULT_SIGNALS: all
+
+jobs:
+
+  gen-test-matrix:
+    name: Find test files
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # No tests should be under LFS so no need to fetch LFS files
+          lfs: false
+      - id: set-matrix
+        name: Set matrix
+        run: |
+          set -e
+          # Find all test files and generate their list in JSON format
+          VAR_FILES="{\"include\":["
+          for file in tests/test_*.py; do
+              VAR_FILES="${VAR_FILES}{\"file\":\"${file}\"},"
+          done
+          VAR_FILES="${VAR_FILES}]}"
+          echo $VAR_FILES
+          echo "matrix=${VAR_FILES}" >> $GITHUB_OUTPUT
+
+  test:
+    needs: gen-test-matrix
+    name: Test ${{ matrix.file }}
+    runs-on: [self-hosted, test]
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.gen-test-matrix.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - name: System info
+        run: |
+          set -x
+          python3 --version
+          uname -a
+          lsb_release -a
+          virtualenv --version
+          pip --version
+          tox --version
+      - name: Test with tox
+        run: |
+          tox -v -e py311 -- pytest --show-capture=no -vv "${{ matrix.file }}" --junit-xml="${{ matrix.file }}.results.xml"
+      - name: Generate test report
+        if: always()
+        uses: pmeier/pytest-results-action@fc6576eced1f411ea48ab10e917d9cfce2960e29
+        with:
+          path: ${{ matrix.file }}.results.xml
+          summary: true
+          display-options: fEX
+          title: Results for ${{ matrix.file }}

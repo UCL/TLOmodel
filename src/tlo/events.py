@@ -1,7 +1,13 @@
 """Support for creating different kinds of events."""
+from __future__ import annotations
+
 from enum import Enum
+from typing import TYPE_CHECKING
 
 from tlo import DateOffset
+
+if TYPE_CHECKING:
+    from tlo import Simulation
 
 
 class Priority(Enum):
@@ -39,12 +45,21 @@ class Event:
         self.module = module
         self.sim = module.sim
         self.priority = priority
+        self.target = None
         # This is needed so mixin constructors are called
         super().__init__(*args, **kwargs)
 
     def post_apply_hook(self):
         """Do any required processing after apply() completes."""
-        pass
+
+    def apply(self, target):
+        """Apply this event to the given target.
+
+        Must be implemented by subclasses.
+
+        :param target: the target of the event
+        """
+        raise NotImplementedError
 
     def run(self):
         """Make the event happen."""
@@ -68,6 +83,14 @@ class RegularEvent(Event):
         self.frequency = frequency
         self.end_date = end_date
 
+    def apply(self, target):
+        """Apply this event to the given target.
+
+        This is a no-op; subclasses should override this method.
+
+        :param target: the target of the event
+        """
+
     def post_apply_hook(self):
         """Schedule the next occurrence of this event."""
         next_apply_date = self.sim.date + self.frequency
@@ -86,6 +109,8 @@ class PopulationScopeEventMixin:
     Subclasses should implement `apply(self, population)` to contain their
     behaviour.
     """
+
+    sim: Simulation
 
     def __init__(self, *args, **kwargs):
         """Create a new population-scoped event.

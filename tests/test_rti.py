@@ -1,5 +1,4 @@
 import os
-import time
 from pathlib import Path
 
 import pandas as pd
@@ -19,7 +18,7 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
 )
-from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstApptAtFacilityLevel1
+from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstAppt
 
 # create simulation parameters
 start_date = Date(2010, 1, 1)
@@ -92,7 +91,9 @@ def test_all_injuries_run(seed):
     assert "none" not in sim.population.props['rt_injury_1'].unique()
     assert not sim.population.props['rt_injury_1'].str.contains('P').any()
     # Assign people the emergency care triggering symptom so they enter the health system
-    sim.population.props['sy_severe_trauma'] = 2
+    sim.modules["SymptomManager"].change_symptom(
+        sim.population.props.index, "severe_trauma", "+", sim.modules["RTI"]
+    )
     # Assign an injury date
     sim.population.props['rt_date_inj'] = sim.start_date
     # Show that they have been injured
@@ -114,7 +115,7 @@ def test_all_injuries_run(seed):
     # Schedule the generic emergency appointment
     for person_id in sim.population.props.index:
         sim.modules['HealthSystem'].schedule_hsi_event(
-            hsi_event=HSI_GenericEmergencyFirstApptAtFacilityLevel1(module=sim.modules['RTI'], person_id=person_id),
+            hsi_event=HSI_GenericEmergencyFirstAppt(module=sim.modules['RTI'], person_id=person_id),
             priority=0,
             topen=sim.date
         )
@@ -161,7 +162,9 @@ def test_all_injuries_run_no_healthsystem(seed):
     assert "none" not in sim.population.props['rt_injury_1'].unique()
     assert not sim.population.props['rt_injury_1'].str.contains('P').any()
     # Assign people the emergency care triggering symptom so they enter the health system
-    sim.population.props['sy_severe_trauma'] = 2
+    sim.modules["SymptomManager"].change_symptom(
+        sim.population.props.index, "severe_trauma", "+", sim.modules["RTI"]
+    )
     # Assign an injury date
     sim.population.props['rt_date_inj'] = sim.start_date
     # Show that they have been injured
@@ -183,7 +186,7 @@ def test_all_injuries_run_no_healthsystem(seed):
     # Schedule the generic emergency appointment
     for person_id in sim.population.props.index:
         sim.modules['HealthSystem'].schedule_hsi_event(
-            hsi_event=HSI_GenericEmergencyFirstApptAtFacilityLevel1(module=sim.modules['RTI'], person_id=person_id),
+            hsi_event=HSI_GenericEmergencyFirstAppt(module=sim.modules['RTI'], person_id=person_id),
             priority=0,
             topen=sim.date
         )
@@ -434,10 +437,3 @@ def test_health_system_disabled(seed):
     sim.simulate(end_date=end_date)
     # check the datatypes
     check_dtypes(sim)
-
-
-if __name__ == '__main__':
-    t0 = time.time()
-    test_run()
-    t1 = time.time()
-    print('Time taken', t1 - t0)

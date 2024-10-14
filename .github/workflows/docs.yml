@@ -1,0 +1,49 @@
+name: Documentation
+
+on:
+  push:
+    branches: "master"
+    tags: ["*"]
+  pull_request:
+    paths:
+      - .github/workflows/docs.yml
+      - docs/**
+      - requirements/**
+      - src/tlo/**
+      - README.rst
+      - pyproject.toml
+      - tox.ini
+  schedule:
+    - cron: 0 0 * * *
+
+# Force cancellation of in-progress workflows if changes are made to
+# the HEAD of the branch the workflow is currently running on.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # master branch will be allowed to have pending jobs
+  # https://stackoverflow.com/a/70972844
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
+  
+jobs:
+
+  build-docs:
+    name: Build documentation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+      - name: Cache tox
+        uses: actions/cache@v4
+        with:
+          path: .tox
+          key: tox-${{hashFiles('requirements/*.txt', 'tox.ini')}}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+      - name: Install tox
+        run: python3 -m pip install tox
+      - name: Build HTML documentation with tox
+        run: tox -v -e docs

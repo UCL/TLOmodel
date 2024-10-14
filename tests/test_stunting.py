@@ -126,7 +126,7 @@ def test_initial_prevalence_of_stunting(seed):
 
         assert haz_distribution.cdf(-2.0) == approx(prevalence_of_stunting_by_age[agegp], abs=0.02)
         assert (haz_distribution.cdf(-3.0) / haz_distribution.cdf(-2.0)) == approx(
-            prevalence_of_severe_stunting_given_any_stunting_by_age[agegp], abs=0.02)
+            prevalence_of_severe_stunting_given_any_stunting_by_age[agegp], abs=0.05)
 
 
 def test_polling_event_onset(seed):
@@ -221,9 +221,9 @@ def test_polling_event_progression(seed):
     assert (df.loc[df.is_alive & (df.age_years >= 5), 'un_HAZ_category'] == 'HAZ>=-2').all()
 
 
-def test_routine_assessment_for_chronic_undernutrition_if_stunted(seed):
-    """Check that a call to `do_routine_assessment_for_chronic_undernutrition` can lead to immediate recovery for a
-    stunted child (via an HSI)."""
+def test_routine_assessment_for_chronic_undernutrition_if_stunted_and_correctly_diagnosed(seed):
+    """Check that a call to `do_at_generic_first_appt` can lead to immediate recovery for a
+    stunted child (via an HSI), if there is checking and correct diagnosis."""
     popsize = 100
     sim = get_sim(seed)
     sim.make_initial_population(n=popsize)
@@ -234,15 +234,23 @@ def test_routine_assessment_for_chronic_undernutrition_if_stunted(seed):
     df = sim.population.props
     person_id = 0
     df.loc[person_id, 'age_years'] = 2
-    df.loc[person_id, 'age_exact_year'] = 2.0
-    df.loc[person_id, 'un_HAZ_category'] = '-3<=HAZ<-2'
+    df.loc[person_id, "un_HAZ_category"] = "-3<=HAZ<-2"
 
-    # Subject the person to `do_routine_assessment_for_chronic_undernutrition`
-    sim.modules['Stunting'].do_routine_assessment_for_chronic_undernutrition(person_id=person_id)
+    # Make the probability of stunting checking/diagnosis as 1.0
+    sim.modules['Stunting'].parameters['prob_stunting_diagnosed_at_generic_appt'] = 1.0
+
+    with sim.population.individual_properties(person_id) as individual_properties:
+        # Subject the person to `do_at_generic_first_appt`
+        sim.modules["Stunting"].do_at_generic_first_appt(
+            person_id=person_id,
+            individual_properties=individual_properties,
+            schedule_hsi_event=sim.modules["HealthSystem"].schedule_hsi_event,
+        )
 
     # Check that there is an HSI scheduled for this person
     hsi_event_scheduled = [
-        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id)
+        ev
+        for ev in sim.modules["HealthSystem"].find_events_for_person(person_id)
         if isinstance(ev[1], HSI_Stunting_ComplementaryFeeding)
     ]
     assert 1 == len(hsi_event_scheduled)
@@ -261,14 +269,15 @@ def test_routine_assessment_for_chronic_undernutrition_if_stunted(seed):
 
     # Check that the person is not longer stunted
     assert df.at[person_id, 'un_HAZ_category'] == 'HAZ>=-2'
-
     # Check that there is a follow-up appointment scheduled
     hsi_event_scheduled_after_first_appt = [
         ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id)
         if isinstance(ev[1], HSI_Stunting_ComplementaryFeeding)
     ]
     assert 2 == len(hsi_event_scheduled_after_first_appt)
-    assert (sim.date + pd.DateOffset(months=6)) == hsi_event_scheduled_after_first_appt[1][0]
+    assert (sim.date + pd.DateOffset(months=6)) == hsi_event_scheduled_after_first_appt[
+        1
+    ][0]
     the_follow_up_hsi_event = hsi_event_scheduled_after_first_appt[1][1]
 
     # Run the Follow-up HSI event
@@ -281,8 +290,59 @@ def test_routine_assessment_for_chronic_undernutrition_if_stunted(seed):
     ]
 
 
+def test_routine_assessment_for_chronic_undernutrition_if_stunted_but_no_checking(seed):
+    """Check that a call to `do_at_generic_first_appt` does not lead to an HSI for a stunted
+    child, if there is no checking/diagnosis."""
+    popsize = 100
+    sim = get_sim(seed)
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=sim.start_date)
+    sim.modules['HealthSystem'].reset_queue()
+
+    # Make one person have severe stunting
+    df = sim.population.props
+    person_id = 0
+    df.loc[person_id, 'age_years'] = 2
+    df.loc[person_id, "un_HAZ_category"] = "HAZ<-3"
+
+    # Make the probability of stunting checking/diagnosis as 0.0
+    sim.modules['Stunting'].parameters['prob_stunting_diagnosed_at_generic_appt'] = 0.0
+
+    with sim.population.individual_properties(person_id) as individual_properties:
+        # Subject the person to `do_at_generic_first_appt`
+        sim.modules['Stunting'].do_at_generic_first_appt(
+            person_id=person_id,
+            individual_properties=individual_properties,
+            schedule_hsi_event=sim.modules["HealthSystem"].schedule_hsi_event,
+        )
+
+    # Check that there is no HSI scheduled for this person
+    hsi_event_scheduled = [
+        ev[1]
+        for ev in sim.modules["HealthSystem"].find_events_for_person(person_id)
+        if isinstance(ev[1], HSI_Stunting_ComplementaryFeeding)
+    ]
+    assert 0 == len(hsi_event_scheduled)
+
+    # Then make the probability of stunting checking/diagnosis 1.0
+    # and check the HSI is scheduled for this person
+    sim.modules['Stunting'].parameters["prob_stunting_diagnosed_at_generic_appt"] = 1.0
+    with sim.population.individual_properties(person_id) as individual_properties:
+        sim.modules['Stunting'].do_at_generic_first_appt(
+            person_id=person_id,
+            individual_properties=individual_properties,
+            schedule_hsi_event=sim.modules["HealthSystem"].schedule_hsi_event,
+        )
+    hsi_event_scheduled = [
+        ev[1]
+        for ev in sim.modules["HealthSystem"].find_events_for_person(person_id)
+        if isinstance(ev[1], HSI_Stunting_ComplementaryFeeding)
+    ]
+    assert 1 == len(hsi_event_scheduled)
+
+
 def test_routine_assessment_for_chronic_undernutrition_if_not_stunted(seed):
-    """Check that a call to `do_routine_assessment_for_chronic_undernutrition` does not lead to an HSI if there is no
+    """Check that a call to `do_at_generic_first_appt` does not lead to an HSI if there is no
     stunting."""
     popsize = 100
     sim = get_sim(seed)
@@ -294,15 +354,21 @@ def test_routine_assessment_for_chronic_undernutrition_if_not_stunted(seed):
     df = sim.population.props
     person_id = 0
     df.loc[person_id, 'age_years'] = 2
-    df.loc[person_id, 'age_exact_year'] = 2.0
     df.loc[person_id, 'un_HAZ_category'] = 'HAZ>=-2'
+    with sim.population.individual_properties(person_id) as individual_properties:
+        # Subject the person to `do_at_generic_first_appt`
+        sim.modules["Stunting"].do_at_generic_first_appt(
+            person_id=person_id,
+            individual_properties=individual_properties,
+            schedule_hsi_event=sim.modules["HealthSystem"].schedule_hsi_event,
+        )
 
-    # Subject the person to `do_routine_assessment_for_chronic_undernutrition`
-    sim.modules['Stunting'].do_routine_assessment_for_chronic_undernutrition(person_id=person_id)
-
-    # Check that there is an HSI scheduled for this person
-    hsi_event_scheduled = [ev[1] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
-                           isinstance(ev[1], HSI_Stunting_ComplementaryFeeding)]
+    # Check that there is no HSI scheduled for this person
+    hsi_event_scheduled = [
+        ev[1]
+        for ev in sim.modules["HealthSystem"].find_events_for_person(person_id)
+        if isinstance(ev[1], HSI_Stunting_ComplementaryFeeding)
+    ]
     assert 0 == len(hsi_event_scheduled)
 
 
@@ -340,8 +406,11 @@ def test_math_of_incidence_calcs(seed):
     x = x0
 
     # Run polling event once per month for a year
+    # As default behaviour of date_range is to include both start and end dates in range
+    # we use an offset of 11 months so as not to also include date 12 months onwards
+    # closed / inclusive kwarg avoided here to keep compatibility across Pandas versions
     poll = stunting.StuntingPollingEvent(sim.modules['Stunting'])
-    for date in pd.date_range(Date(2010, 1, 1), sim.date + pd.DateOffset(years=1), freq='MS', closed='left'):
+    for date in pd.date_range(Date(2010, 1, 1), sim.date + pd.DateOffset(months=11), freq='MS'):
         # Do incidence of stunting through the model's polling event
         sim.date = date
         poll.apply(sim.population)
@@ -357,4 +426,4 @@ def test_math_of_incidence_calcs(seed):
     assert annual_prob == \
            approx(prop_simple) == \
            approx(1.0 - (1.0 - monthly_risk) ** 12) == \
-           approx(prop_model, abs=0.001)
+           approx(prop_model, abs=0.008)

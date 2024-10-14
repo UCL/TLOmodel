@@ -1,13 +1,17 @@
 """This file contains helpful utility functions."""
 import hashlib
 from collections import defaultdict
-from typing import Dict, List, Optional, Set, Union
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Set, Union
 
 import numpy as np
 import pandas as pd
-from pandas import DateOffset
+from pandas import DataFrame, DateOffset
 
-from tlo import Population
+from tlo import Population, Property, Types
+
+# Default mother_id value, assigned to individuals initialised as adults at the start of the simulation.
+DEFAULT_MOTHER_ID = -1e7
 
 
 def create_age_range_lookup(min_age: int, max_age: int, range_size: int = 5) -> (list, Dict[int, str]):
@@ -115,11 +119,14 @@ def sample_outcome(probs: pd.DataFrame, rng: np.random.RandomState):
     return outcome.loc[outcome != '_'].to_dict()
 
 
+BitsetDType = Property.PANDAS_TYPE_MAP[Types.BITSET]
+
+
 class BitsetHandler:
     """Provides methods to operate on int column(s) in the population dataframe as a bitset"""
 
     def __init__(self, population: Population, column: Optional[str], elements: List[str]):
-        """""
+        """
         :param population: The TLO Population object (not the props dataframe).
         :param column: The integer property column that will be used as a bitset. If
             set to ``None`` then the optional `columns` argument to methods which act
@@ -130,7 +137,10 @@ class BitsetHandler:
         assert isinstance(population, Population), (
             'First argument is the population object (not the `props` dataframe)'
         )
-        assert len(elements) <= 64, 'A maximum of 64 elements are supported'
+        dtype_bitwidth = BitsetDType(0).nbytes * 8
+        assert len(elements) <= dtype_bitwidth, (
+            f"A maximum of {dtype_bitwidth} elements are supported"
+        )
         self._elements = elements
         self._element_to_int_map = {el: 2 ** i for i, el in enumerate(elements)}
         self._population = population
@@ -138,8 +148,8 @@ class BitsetHandler:
             assert column in population.props.columns, (
                 'Column not found in population dataframe'
             )
-            assert population.props[column].dtype == np.int64, (
-                'Column must be of int64 type'
+            assert population.props[column].dtype == BitsetDType, (
+                f'Column must be of {BitsetDType} type'
             )
         self._column = column
 
@@ -147,11 +157,11 @@ class BitsetHandler:
     def df(self) -> pd.DataFrame:
         return self._population.props
 
-    def element_repr(self, *elements: str) -> np.int64:
+    def element_repr(self, *elements: str) -> BitsetDType:
         """Returns integer representation of the specified element(s)"""
-        return np.int64(sum(self._element_to_int_map[el] for el in elements))
+        return BitsetDType(sum(self._element_to_int_map[el] for el in elements))
 
-    def to_strings(self, integer: np.int64) -> Set[str]:
+    def to_strings(self, integer: BitsetDType) -> Set[str]:
         """Given an integer value, returns the corresponding set of strings.
 
         :param integer: The integer value for the bitset.
@@ -200,7 +210,7 @@ class BitsetHandler:
             update. If set to ``None`` (the default) a ``column`` argument must have
             been specified when constructing the ``BitsetHandler`` object.
         """
-        self.df.loc[where, self._get_columns(columns)] &= ~self.element_repr(*elements)
+        self.df.loc[where, self._get_columns(columns)] &= ~self.element_repr(*elements)  # pylint: disable=E1130
 
     def clear(self, where, columns: Optional[Union[str, List[str]]] = None):
         """Clears all the bits for the specified rows.
@@ -222,7 +232,7 @@ class BitsetHandler:
         """Test whether bit(s) for a specified element are set.
 
         :param where: Condition to filter rows that will checked.
-        :param element: Element string to test if bit is set for.
+       :param element: Element string to test if bit is set for.
         :param first: Boolean keyword argument specifying whether to return only the
             first item / row in the computed column / dataframe.
         :param columns: Optional argument specifying column(s) containing bitsets to
@@ -398,6 +408,11 @@ def random_date(start, end, rng):
     return start + DateOffset(days=rng.randint(0, (end - start).days))
 
 
+def str_to_pandas_date(date_string):
+    """Convert a string with the format YYYY-MM-DD to a pandas Timestamp (aka TLO Date) object."""
+    return pd.to_datetime(date_string, format="%Y-%m-%d")
+
+
 def hash_dataframe(dataframe: pd.DataFrame):
     def coerce_lists_to_tuples(df: pd.DataFrame) -> pd.DataFrame:
         """Coerce columns in a pd.DataFrame that are lists to tuples. This step is needed before hashing a pd.DataFrame
@@ -409,18 +424,89 @@ def hash_dataframe(dataframe: pd.DataFrame):
 
 def get_person_id_to_inherit_from(child_id, mother_id, population_dataframe, rng):
     """Get index of person to inherit properties from.
-
-    Should be specified mother_id unless this is equal to -1 (for example for
-    individuals generated at population initialisation with no mother set) in which
-    case an individual from currently alive persons, _excluding the person the index to
-    inherit from is being computed for_, is randomly chosen.
     """
-    if mother_id == -1:
+
+    if mother_id == DEFAULT_MOTHER_ID:
         # Get indices of alive persons and try to drop child_id from these indices if
         # present, ignoring any errors if child_id not currently in population dataframe
         alive_persons_not_including_child = population_dataframe.index[
             population_dataframe.is_alive
         ].drop(child_id, errors="ignore")
         return rng.choice(alive_persons_not_including_child)
-    else:
+    elif 0 > mother_id > DEFAULT_MOTHER_ID:
+        return abs(mother_id)
+    elif mother_id >= 0:
         return mother_id
+
+
+def convert_excel_files_to_csv(folder: Path, files: Optional[list[str]] = None, *, delete_excel_files: bool = False) -> None:
+    """ convert Excel files to csv files.
+
+    :param folder: Folder containing Excel files.
+    :param files: List of Excel file names to convert to csv files. When `None`, all Excel files in the folder and
+                  subsequent folders within this folder will be converted to csv files with Excel file name becoming
+                  folder name and sheet names becoming csv file names.
+    :param delete_excel_files: When true, the Excel file we are generating csv files from will get deleted.
+    """
+    # get path to Excel files
+    if files is None:
+        excel_file_paths = sorted(folder.rglob("*.xlsx"))
+    else:
+        excel_file_paths = [folder / file for file in files]
+    # exit function if no Excel file is given or found within the path
+    if excel_file_paths is None:
+        return
+
+    for excel_file_path in excel_file_paths:
+        sheet_dataframes: dict[Any, DataFrame] = pd.read_excel(excel_file_path, sheet_name=None)
+        excel_file_directory: Path = excel_file_path.with_suffix("")
+        # Create a container directory for per sheet CSVs
+        if excel_file_directory.exists():
+            print(f"Directory {excel_file_directory} already exists")
+        else:
+            excel_file_directory.mkdir()
+        # Write a CSV for each worksheet
+        for sheet_name, dataframe in sheet_dataframes.items():
+            dataframe.to_csv(f'{excel_file_directory / sheet_name}.csv', index=False)
+
+        if delete_excel_files:
+            # Remove no longer needed Excel file
+            Path(folder/excel_file_path).unlink()
+
+
+def read_csv_files(folder: Path, files: Optional[list[str]] = None) -> DataFrame | dict[str, DataFrame]:
+    """
+    A function to read CSV files in a similar way pandas reads Excel files (:py:func:`pandas.read_excel`).
+
+    NB: Converting Excel files to csv files caused all columns that had no relevant data to simulation (i.e.
+    parameter descriptions or data references) to be named `Unnamed1, Unnamed2, ....., UnnamedN` in the csv files.
+    We are therefore using :py:func:`pandas.filter` to track all unnamed columns and silently drop them using
+    :py:func:`pandas.drop`.
+
+    :param folder: Path to folder containing CSV files to read.
+    :param files: preferred csv file name(s). This is the same as sheet names in Excel file. Note that if None(no files
+                  selected) then all files in the containing folder will be loaded
+
+    """
+    all_data: dict[str, DataFrame] = {}  # dataframes dictionary
+
+    def clean_dataframe(dataframes_dict: dict[str, DataFrame]) -> None:
+        """ silently drop all columns that have no relevant data to simulation (all columns with a name starting with
+        Unnamed
+        :param dataframes_dict: Dictionary of dataframes to clean
+        """
+        for _key, dataframe in dataframes_dict.items():
+            all_data[_key] = dataframe.drop(dataframe.filter(like='Unnamed'), axis=1)  # filter and drop Unnamed columns
+
+    if files is None:
+        for f_name in folder.rglob("*.csv"):
+            all_data[f_name.stem] = pd.read_csv(f_name)
+
+    else:
+        for f_name in files:
+            all_data[f_name] = pd.read_csv((folder / f_name).with_suffix(".csv"))
+    # clean and return the dataframe dictionary
+    clean_dataframe(all_data)
+    # If only one file loaded return dataframe directly rather than dict
+    return next(iter(all_data.values())) if len(all_data) == 1 else all_data
+

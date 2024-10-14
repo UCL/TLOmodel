@@ -64,10 +64,10 @@ def test_configuration_of_properties(seed):
     assert (pd.isnull(df.loc[never_had_an_episode, 'de_date_init_most_rec_depr'])).all()
     assert (pd.isnull(df.loc[never_had_an_episode, 'de_date_depr_resolved'])).all()
     assert (pd.isnull(df.loc[never_had_an_episode, 'de_intrinsic_3mo_risk_of_depr_resolution'])).all()
-    assert (False == (df.loc[never_had_an_episode, 'de_ever_diagnosed_depression'])).all()
-    assert (False == (df.loc[never_had_an_episode, 'de_on_antidepr'])).all()
-    assert (False == (df.loc[never_had_an_episode, 'de_ever_talk_ther'])).all()
-    assert (False == (df.loc[never_had_an_episode, 'de_ever_non_fatal_self_harm_event'])).all()
+    assert not df.loc[never_had_an_episode, 'de_ever_diagnosed_depression'].any()
+    assert not df.loc[never_had_an_episode, 'de_on_antidepr'].any()
+    assert not df.loc[never_had_an_episode, 'de_ever_talk_ther'].any()
+    assert not df.loc[never_had_an_episode, 'de_ever_non_fatal_self_harm_event'].any()
 
     had_an_episode_now_resolved = (
         ~pd.isnull(df['de_date_init_most_rec_depr']) & (~pd.isnull(df['de_date_depr_resolved'])))

@@ -1,0 +1,5 @@
+collections:
+  - devsec.hardening
+
+roles:
+  - name: monolithprojects.github_actions_runner

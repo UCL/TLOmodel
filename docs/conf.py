@@ -9,6 +9,7 @@
 
 import os
 import sys
+from importlib.metadata import version as get_version
 
 sys.path.insert(0, os.path.abspath('../..')), os.path.abspath('../src')
 
@@ -39,7 +40,8 @@ project = 'TLOmodel'
 year = '2021'
 author = 'The TLOmodel Team'
 copyright = '{0}, {1}'.format(year, author)
-version = release = '0.1.0'
+release = get_version('tlo')
+version = ".".join(release.split('.')[:2])
 
 pygments_style = 'trac'
 templates_path = ['.']
@@ -66,13 +68,9 @@ html_static_path = ['_static']
 html_extra_path = ['./.nojekyll', './.gitattributes']
 html_favicon = 'favicon.png'
 
-rawfiles = ['.github']
+html_css_files = ['theme_overrides.css']
 
-html_context = {
-    'css_files': [
-        '_static/theme_overrides.css',  # override wide tables in RTD theme
-        ],
-     }
+rawfiles = ['.github']
 
 napoleon_use_ivar = True
 napoleon_use_rtype = False
@@ -107,6 +105,9 @@ autodoc_default_options = {
     # List below what you don't want to see documented:
     'exclude-members': '__dict__, name, rng, sim'  # , read_parameters',
 }
+
+# Include both class level and __init__ docstring content in class documentation
+autoclass_content = 'both'
 
 # The checker can't see private repos
 linkcheck_ignore = ['^https://github.com/UCL/TLOmodel.*',

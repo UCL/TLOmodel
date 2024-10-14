@@ -38,7 +38,7 @@ from tlo.methods.alri import (
     _make_treatment_ineffective,
     _make_treatment_perfect,
 )
-from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstApptAtFacilityLevel1
+from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstAppt
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
@@ -54,7 +54,7 @@ def _get_person_id(df, age_bounds: tuple = (0.0, np.inf)) -> int:
         ].index[0]
 
 
-def get_sim(tmpdir, seed, cons_available):
+def get_sim(tmpdir, seed, cons_available, equip_available='all'):
     """Return simulation objection with Alri and other necessary modules registered."""
     sim = Simulation(
         start_date=start_date,
@@ -77,7 +77,8 @@ def get_sim(tmpdir, seed, cons_available):
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                  cons_availability=cons_available),
+                                  cons_availability=cons_available,
+                                  equip_availability=equip_available),
         alri.Alri(resourcefilepath=resourcefilepath, log_indivdual=0, do_checks=True),
         AlriPropertiesOfOtherModules(),
     )
@@ -85,10 +86,10 @@ def get_sim(tmpdir, seed, cons_available):
 
 
 @pytest.fixture
-def sim_hs_all_consumables(tmpdir, seed):
+def sim_hs_all_consumables_and_equipment(tmpdir, seed):
     """Return simulation objection with Alri and other necessary modules registered.
     All consumables available"""
-    return get_sim(tmpdir=tmpdir, seed=seed, cons_available='all')
+    return get_sim(tmpdir=tmpdir, seed=seed, cons_available='all', equip_available='all')
 
 
 @pytest.fixture
@@ -127,17 +128,17 @@ def sim_hs_default_consumables(tmpdir, seed):
     return sim
 
 
-def check_dtypes(sim_hs_all_consumables):
-    sim = sim_hs_all_consumables
+def check_dtypes(sim_hs_all_consumables_and_equipment):
+    sim = sim_hs_all_consumables_and_equipment
     # Check types of columns
     df = sim.population.props
     orig = sim.population.new_row
     assert (df.dtypes == orig.dtypes).all()
 
 
-def test_integrity_of_linear_models(sim_hs_all_consumables):
+def test_integrity_of_linear_models(sim_hs_all_consumables_and_equipment):
     """Run the models to make sure that is specified correctly and can run."""
-    sim = sim_hs_all_consumables
+    sim = sim_hs_all_consumables_and_equipment
     sim.make_initial_population(n=5000)
     alri_module = sim.modules['Alri']
     df = sim.population.props
@@ -322,21 +323,21 @@ def test_integrity_of_linear_models(sim_hs_all_consumables):
         assert isinstance(res, float) and (res is not None) and (0.0 <= res <= 1.0), f"Problem with: {kwargs=}"
 
 
-def test_basic_run(sim_hs_all_consumables):
+def test_basic_run(sim_hs_all_consumables_and_equipment):
     """Short run of the module using default parameters with check on dtypes"""
-    sim = sim_hs_all_consumables
+    sim = sim_hs_all_consumables_and_equipment
 
     dur = pd.DateOffset(months=1)
     popsize = 100
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=start_date + dur)
-    check_dtypes(sim_hs_all_consumables)
+    check_dtypes(sim_hs_all_consumables_and_equipment)
 
 
 @pytest.mark.slow
-def test_basic_run_lasting_two_years(sim_hs_all_consumables):
+def test_basic_run_lasting_two_years(sim_hs_all_consumables_and_equipment):
     """Check logging results in a run of the model for two years, including HSI, with daily property config checking"""
-    sim = sim_hs_all_consumables
+    sim = sim_hs_all_consumables_and_equipment
 
     dur = pd.DateOffset(years=2)
     popsize = 5000
@@ -362,9 +363,9 @@ def test_basic_run_lasting_two_years(sim_hs_all_consumables):
     assert set(log_one_person.columns) == set(sim.modules['Alri'].PROPERTIES.keys())
 
 
-def test_alri_polling(sim_hs_all_consumables):
+def test_alri_polling(sim_hs_all_consumables_and_equipment):
     """Check polling events leads to incident cases"""
-    sim = sim_hs_all_consumables
+    sim = sim_hs_all_consumables_and_equipment
 
     # get simulation object:
     popsize = 100
@@ -386,10 +387,10 @@ def test_alri_polling(sim_hs_all_consumables):
     assert len([q for q in sim.event_queue.queue if isinstance(q[3], AlriIncidentCase)]) > 0
 
 
-def test_nat_hist_recovery(sim_hs_all_consumables):
+def test_nat_hist_recovery(sim_hs_all_consumables_and_equipment):
     """Check: Infection onset --> recovery"""
 
-    sim = sim_hs_all_consumables
+    sim = sim_hs_all_consumables_and_equipment
 
     popsize = 100
     sim.make_initial_population(n=popsize)
@@ -434,7 +435,11 @@ def test_nat_hist_recovery(sim_hs_all_consumables):
     assert pd.isnull(person['ri_scheduled_death_date'])
 
     # Check that they have some symptoms caused by ALRI
-    assert 0 < len(sim.modules['SymptomManager'].has_what(person_id, sim.modules['Alri']))
+    assert 0 < len(
+        sim.modules["SymptomManager"].has_what(
+            person_id=person_id, disease_module=sim.modules["Alri"]
+        )
+    )
 
     # Check that there is a AlriNaturalRecoveryEvent scheduled for this person:
     recov_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
@@ -457,7 +462,11 @@ def test_nat_hist_recovery(sim_hs_all_consumables):
     assert pd.isnull(person['ri_scheduled_death_date'])
 
     # check they they have no symptoms:
-    assert 0 == len(sim.modules['SymptomManager'].has_what(person_id, sim.modules['Alri']))
+    assert 0 == len(
+        sim.modules["SymptomManager"].has_what(
+            person_id=person_id, disease_module=sim.modules["Alri"]
+        )
+    )
 
     # check it's logged (one infection + one recovery)
     assert 1 == sim.modules['Alri'].logging_event.trackers['incident_cases'].report_current_total()
@@ -466,9 +475,9 @@ def test_nat_hist_recovery(sim_hs_all_consumables):
     assert 0 == sim.modules['Alri'].logging_event.trackers['cured_cases'].report_current_total()
 
 
-def test_nat_hist_death(sim_hs_all_consumables):
+def test_nat_hist_death(sim_hs_all_consumables_and_equipment):
     """Check: Infection onset --> death"""
-    sim = sim_hs_all_consumables
+    sim = sim_hs_all_consumables_and_equipment
 
     popsize = 100
     sim.make_initial_population(n=popsize)
@@ -523,10 +532,10 @@ def test_nat_hist_death(sim_hs_all_consumables):
     assert 0 == sim.modules['Alri'].logging_event.trackers['cured_cases'].report_current_total()
 
 
-def test_nat_hist_cure_if_recovery_scheduled(sim_hs_all_consumables):
+def test_nat_hist_cure_if_recovery_scheduled(sim_hs_all_consumables_and_equipment):
     """Show that if a cure event is run before when a person was going to recover naturally, it cause the episode to
     end earlier."""
-    sim = sim_hs_all_consumables
+    sim = sim_hs_all_consumables_and_equipment
 
     popsize = 100
 
@@ -598,10 +607,10 @@ def test_nat_hist_cure_if_recovery_scheduled(sim_hs_all_consumables):
     assert 1 == sim.modules['Alri'].logging_event.trackers['cured_cases'].report_current_total()
 
 
-def test_nat_hist_cure_if_death_scheduled(sim_hs_all_consumables):
+def test_nat_hist_cure_if_death_scheduled(sim_hs_all_consumables_and_equipment):
     """Show that if a cure event is run before when a person was going to die, it cause the episode to end without
     the person dying."""
-    sim = sim_hs_all_consumables
+    sim = sim_hs_all_consumables_and_equipment
 
     popsize = 100
     sim.make_initial_population(n=popsize)
@@ -667,10 +676,10 @@ def test_nat_hist_cure_if_death_scheduled(sim_hs_all_consumables):
     assert 1 == sim.modules['Alri'].logging_event.trackers['cured_cases'].report_current_total()
 
 
-def test_immediate_onset_complications(sim_hs_all_consumables):
+def test_immediate_onset_complications(sim_hs_all_consumables_and_equipment):
     """Check that if probability of immediately onsetting complications is 100%, then a person has all those
     complications immediately onset"""
-    sim = sim_hs_all_consumables
+    sim = sim_hs_all_consumables_and_equipment
 
     popsize = 100
     sim.make_initial_population(n=popsize)
@@ -712,11 +721,11 @@ def test_immediate_onset_complications(sim_hs_all_consumables):
         assert df.at[person_id, 'ri_SpO2_level'] != '>=93%'
 
 
-def test_no_immediate_onset_complications(sim_hs_all_consumables):
+def test_no_immediate_onset_complications(sim_hs_all_consumables_and_equipment):
     """Check that if probability of immediately onsetting complications is 0%, then a person has none of those
     complications immediately onset
     """
-    sim = sim_hs_all_consumables
+    sim = sim_hs_all_consumables_and_equipment
 
     popsize = 100
 
@@ -748,7 +757,7 @@ def test_no_immediate_onset_complications(sim_hs_all_consumables):
     assert not df.loc[person_id, complications_cols].any()
 
 
-def test_classification_based_on_symptoms_and_imci(sim_hs_all_consumables):
+def test_classification_based_on_symptoms_and_imci(sim_hs_all_consumables_and_equipment):
     """Check that `_get_disease_classification` gives the expected classification."""
 
     def make_hw_assesement_perfect(sim):
@@ -760,7 +769,7 @@ def test_classification_based_on_symptoms_and_imci(sim_hs_all_consumables):
         p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level2'] = 1.0
         p['sensitivity_of_classification_of_severe_pneumonia_facility_level2'] = 1.0
 
-    sim = sim_hs_all_consumables
+    sim = sim_hs_all_consumables_and_equipment
     make_hw_assesement_perfect(sim)
     sim.make_initial_population(n=1000)
     hsi_alri_treatment = HSI_Alri_Treatment(sim.modules['Alri'], 0)
@@ -846,9 +855,9 @@ def test_classification_based_on_symptoms_and_imci(sim_hs_all_consumables):
         ), f"{_correct_imci_classification_on_symptoms=}"
 
 
-def test_do_effects_of_alri_treatment(sim_hs_all_consumables):
+def test_do_effects_of_alri_treatment(sim_hs_all_consumables_and_equipment):
     """Check that running `do_alri_treatment` can prevent a death from occurring."""
-    sim = sim_hs_all_consumables
+    sim = sim_hs_all_consumables_and_equipment
     popsize = 100
     sim.make_initial_population(n=popsize)
 
@@ -921,10 +930,10 @@ def test_do_effects_of_alri_treatment(sim_hs_all_consumables):
     assert 1 == sim.modules['Alri'].logging_event.trackers['cured_cases'].report_current_total()
 
 
-def test_severe_pneumonia_referral_from_hsi_first_appts(sim_hs_all_consumables):
+def test_severe_pneumonia_referral_from_hsi_first_appts(sim_hs_all_consumables_and_equipment):
     """Check that a person is scheduled a treatment HSI following a presentation at
     HSI_GenericFirstApptAtFacilityLevel0 with severe pneumonia."""
-    sim = sim_hs_all_consumables
+    sim = sim_hs_all_consumables_and_equipment
 
     popsize = 100
     sim.make_initial_population(n=popsize)
@@ -950,10 +959,10 @@ def test_severe_pneumonia_referral_from_hsi_first_appts(sim_hs_all_consumables):
 
     # Check that person 0 has an Emergency Generic HSI scheduled
     generic_appt = [event_tuple[1] for event_tuple in sim.modules['HealthSystem'].find_events_for_person(person_id)
-                    if isinstance(event_tuple[1], HSI_GenericEmergencyFirstApptAtFacilityLevel1)][0]
-
+                    if isinstance(event_tuple[1], HSI_GenericEmergencyFirstAppt)][0]
     # Run generic appt and check that there is an Outpatient `HSI_Alri_Treatment` scheduled
     generic_appt.run(squeeze_factor=0.0)
+
     hsi1 = [event_tuple[1] for event_tuple in sim.modules['HealthSystem'].find_events_for_person(person_id)
             if isinstance(event_tuple[1], HSI_Alri_Treatment)
             ][0]
@@ -962,14 +971,15 @@ def test_severe_pneumonia_referral_from_hsi_first_appts(sim_hs_all_consumables):
     # Check not on treatment before referral:
     assert not df.at[person_id, 'ri_on_treatment']
 
+    print("Before hs1run", sim.modules['HealthSystem'].find_events_for_person(person_id))
     # run the first outpatient HSI ... which will lead to an in-patient HSI being scheduled
     hsi1.run(squeeze_factor=0.0)
-    hsi2 = [event_tuple[1] for event_tuple in sim.modules['HealthSystem'].find_events_for_person(person_id)
-            if isinstance(event_tuple[1], HSI_Alri_Treatment)
-            ][1]
-    assert hsi2.TREATMENT_ID == 'Alri_Pneumonia_Treatment_Inpatient'
 
-    # Run the second HSI (an in-patient)
+    hsi2 = [event_tuple[1] for event_tuple in sim.modules['HealthSystem'].find_events_for_person(person_id)
+            if (isinstance(event_tuple[1], HSI_Alri_Treatment) and
+                (event_tuple[1].TREATMENT_ID == 'Alri_Pneumonia_Treatment_Inpatient'))
+            ][0]
+
     hsi2.run(squeeze_factor=0.0)
 
     # Check that the person is now on treatment
@@ -1001,10 +1011,19 @@ def generate_hsi_sequence(sim, incident_case_event, age_of_person_under_2_months
     def force_any_symptom_to_lead_to_healthcareseeking(sim):
         sim.modules['HealthSeekingBehaviour'].parameters['force_any_symptom_to_lead_to_healthcareseeking'] = True
 
+    def make_all_non_emergency_care_seeking_go_first_to_level_0(sim):
+        sim.modules['HealthSeekingBehaviour'].parameters['prob_non_emergency_care_seeking_by_level'] =\
+            [1.0, 0.0, 0.0, 0.0]
+
+    def make_followup_treatment_always_happen(sim):
+        sim.modules['Alri'].parameters['prob_for_followup_if_treatment_failure'] = 1.0
+
     make_population_children_only(sim)
     make_hw_assesement_perfect(sim)
     make_non_emergency_hsi_happen_immediately(sim)
     force_any_symptom_to_lead_to_healthcareseeking(sim)
+    make_all_non_emergency_care_seeking_go_first_to_level_0(sim)
+    make_followup_treatment_always_happen(sim)
 
     # Control effectiveness of treatment:
     if treatment_effect == "perfectly_effective":
@@ -1091,9 +1110,9 @@ def test_treatment_pathway_if_all_consumables_severe_case(seed, tmpdir):
     # If the child is older than 2 months (classification will be `danger_signs_pneumonia`).
     # - If Treatments Works --> No follow-up
     assert [
-               ('FirstAttendance_Emergency', '1b'),
-               ('Alri_Pneumonia_Treatment_Outpatient', '1b'),
-               ('Alri_Pneumonia_Treatment_Inpatient', '1b'),
+               ('FirstAttendance_Emergency', '2'),  # <-- these would all be '1b' if levels '1b' and '2' are separate
+               ('Alri_Pneumonia_Treatment_Outpatient', '2'),
+               ('Alri_Pneumonia_Treatment_Inpatient', '2'),
            ] == generate_hsi_sequence(sim=get_sim(seed=seed, tmpdir=tmpdir, cons_available='all'),
                                       incident_case_event=AlriIncidentCase_Lethal_DangerSigns_Pneumonia,
                                       treatment_effect='perfectly_effective',
@@ -1102,22 +1121,22 @@ def test_treatment_pathway_if_all_consumables_severe_case(seed, tmpdir):
 
     # - If Treatment Does Not Work --> One follow-up as an inpatient.
     assert [
-               ('FirstAttendance_Emergency', '1b'),
-               ('Alri_Pneumonia_Treatment_Outpatient', '1b'),
-               ('Alri_Pneumonia_Treatment_Inpatient', '1b'),
-               ('Alri_Pneumonia_Treatment_Inpatient_Followup', '1b')
+               ('FirstAttendance_Emergency', '2'),   # <-- these would all be '1b' if levels '1b' and '2' are separate
+               ('Alri_Pneumonia_Treatment_Outpatient', '2'),
+               ('Alri_Pneumonia_Treatment_Inpatient', '2'),
+               ('Alri_Pneumonia_Treatment_Inpatient_Followup', '2')
            ] == generate_hsi_sequence(sim=get_sim(seed=seed, tmpdir=tmpdir, cons_available='all'),
                                       incident_case_event=AlriIncidentCase_Lethal_DangerSigns_Pneumonia,
                                       treatment_effect='perfectly_ineffective',
-                                      ),\
+                                      ), \
         "Problem when child is younger than 2months old and treatment does not work"
 
     # If the child is younger than 2 months
     # - If Treatments Works --> No follow-up
     assert [
-               ('FirstAttendance_Emergency', '1b'),
-               ('Alri_Pneumonia_Treatment_Outpatient', '1b'),
-               ('Alri_Pneumonia_Treatment_Inpatient', '1b'),
+               ('FirstAttendance_Emergency', '2'),   # <-- these would all be '1b' if levels '1b' and '2' are separate
+               ('Alri_Pneumonia_Treatment_Outpatient', '2'),
+               ('Alri_Pneumonia_Treatment_Inpatient', '2'),
            ] == generate_hsi_sequence(sim=get_sim(seed=seed, tmpdir=tmpdir, cons_available='all'),
                                       incident_case_event=AlriIncidentCase_Lethal_DangerSigns_Pneumonia,
                                       age_of_person_under_2_months=True,
@@ -1126,10 +1145,10 @@ def test_treatment_pathway_if_all_consumables_severe_case(seed, tmpdir):
 
     # - If Treatment Does Not Work --> One follow-up as an inpatient.
     assert [
-               ('FirstAttendance_Emergency', '1b'),
-               ('Alri_Pneumonia_Treatment_Outpatient', '1b'),
-               ('Alri_Pneumonia_Treatment_Inpatient', '1b'),
-               ('Alri_Pneumonia_Treatment_Inpatient_Followup', '1b'),
+               ('FirstAttendance_Emergency', '2'),   # <-- these would all be '1b' if levels '1b' and '2' are separate
+               ('Alri_Pneumonia_Treatment_Outpatient', '2'),
+               ('Alri_Pneumonia_Treatment_Inpatient', '2'),
+               ('Alri_Pneumonia_Treatment_Inpatient_Followup', '2'),
            ] == generate_hsi_sequence(sim=get_sim(seed=seed, tmpdir=tmpdir, cons_available='all'),
                                       incident_case_event=AlriIncidentCase_Lethal_DangerSigns_Pneumonia,
                                       age_of_person_under_2_months=True,
@@ -1146,7 +1165,8 @@ def test_treatment_pathway_if_no_consumables_mild_case(seed, tmpdir):
                ('FirstAttendance_NonEmergency', '0'),
                ('Alri_Pneumonia_Treatment_Outpatient', '0'),
                ('Alri_Pneumonia_Treatment_Outpatient', '1a'),  # <-- referral due to lack of consumables
-               ('Alri_Pneumonia_Treatment_Outpatient', '1b'),  # <-- referral due to lack of consumables
+               # ('Alri_Pneumonia_Treatment_Outpatient', '1b'),  # <-- referral due to lack of consumables
+               #                                                    (would occur if levels '1b' and '2' are separate)
                ('Alri_Pneumonia_Treatment_Outpatient', '2'),  # <-- referral due to lack of consumables
                ('Alri_Pneumonia_Treatment_Inpatient_Followup', '2'),  # <-- follow-up because treatment not successful
            ] == generate_hsi_sequence(sim=get_sim(seed=seed, tmpdir=tmpdir, cons_available='none'),
@@ -1160,9 +1180,9 @@ def test_treatment_pathway_if_no_consumables_severe_case(seed, tmpdir):
     # Severe case and not available consumables --> successive referrals up to level 2, following emergency
     # appointment, plus follow-up appointment because treatment was not successful.
     assert [
-               ('FirstAttendance_Emergency', '1b'),
-               ('Alri_Pneumonia_Treatment_Outpatient', '1b'),
-               ('Alri_Pneumonia_Treatment_Inpatient', '1b'),
+               ('FirstAttendance_Emergency', '2'),
+               ('Alri_Pneumonia_Treatment_Outpatient', '2'),
+               # ('Alri_Pneumonia_Treatment_Inpatient', '1b'),  # <-- would occur if levels '1b' and '2' are separate
                ('Alri_Pneumonia_Treatment_Inpatient', '2'),  # <-- referral due to lack of consumables
                ('Alri_Pneumonia_Treatment_Inpatient_Followup', '2'),  # <-- follow-up because treatment not successful
            ] == generate_hsi_sequence(sim=get_sim(seed=seed, tmpdir=tmpdir, cons_available='none'),
@@ -1223,6 +1243,7 @@ def test_impact_of_all_hsi(seed, tmpdir):
             healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                       disable_and_reject_all=disable_and_reject_all,
                                       cons_availability='all',
+                                      equip_availability='all',
                                       ),
             alri.Alri(resourcefilepath=resourcefilepath),
             AlriPropertiesOfOtherModules(),
@@ -1327,6 +1348,7 @@ def test_specific_effect_of_pulse_oximeter_and_oxgen_for_danger_signs_pneumonia(
             healthburden.HealthBurden(resourcefilepath=resourcefilepath),
             healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                       cons_availability='all',
+                                      equip_availability='all',
                                       ),
             alri.Alri(resourcefilepath=resourcefilepath),
             AlriPropertiesOfOtherModules(),

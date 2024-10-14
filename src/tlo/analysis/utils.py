@@ -1,10 +1,12 @@
 """
 General utility functions for TLO analysis
 """
+import fileinput
 import gzip
 import json
 import os
 import pickle
+import warnings
 from collections import Counter, defaultdict
 from collections.abc import Mapping
 from pathlib import Path
@@ -18,7 +20,7 @@ import numpy as np
 import pandas as pd
 import squarify
 
-from tlo import Date, logging, util
+from tlo import Date, Simulation, logging, util
 from tlo.logging.reader import LogData
 from tlo.util import create_age_range_lookup
 
@@ -85,6 +87,40 @@ def parse_log_file(log_filepath, level: int = logging.INFO):
     return LogsDict({name: handle.name for name, handle in module_name_to_filehandle.items()}, level)
 
 
+def merge_log_files(log_path_1: Path, log_path_2: Path, output_path: Path) -> None:
+    """Merge two log files, skipping any repeated header lines.
+    
+    :param log_path_1: Path to first log file to merge. Records from this log file will
+        appear first in merged log file.
+    :param log_path_2: Path to second log file to merge. Records from this log file will
+        appear after those in log file at `log_path_1` and any header lines in this file
+        which are also present in log file at `log_path_1` will be skipped.
+    :param output_path: Path to write merged log file to. Must not be one of `log_path_1`
+        or `log_path_2` as data is read from files while writing to this path.
+    """
+    if output_path == log_path_1 or output_path == log_path_2:
+        msg = "output_path must not be equal to log_path_1 or log_path_2"
+        raise ValueError(msg)
+    with fileinput.input(files=(log_path_1, log_path_2), mode="r") as log_lines:
+        with output_path.open("w") as output_file:
+            written_header_lines = {}
+            for log_line in log_lines:
+                log_data = json.loads(log_line)
+                if "type" in log_data and log_data["type"] == "header":
+                    if log_data["uuid"] in written_header_lines:
+                        previous_header_line = written_header_lines[log_data["uuid"]]
+                        if  previous_header_line == log_line:
+                            continue
+                        else:
+                            msg = (
+                                "Inconsistent header lines with matching UUIDs found when merging logs:\n"
+                                f"{previous_header_line}\n{log_line}\n"
+                            )
+                            raise RuntimeError(msg)
+                    written_header_lines[log_data["uuid"]] = log_line
+                output_file.write(log_line)
+
+
 def write_log_to_excel(filename, log_dataframes):
     """Takes the output of parse_log_file() and creates an Excel file from dataframes"""
     metadata = list()
@@ -95,17 +131,15 @@ def write_log_to_excel(filename, log_dataframes):
                 sheet_count += 1
                 metadata.append([module, key, sheet_count, dataframes['_metadata'][module][key]['description']])
 
-    writer = pd.ExcelWriter(filename)
-    index = pd.DataFrame(data=metadata, columns=['module', 'key', 'sheet', 'description'])
-    index.to_excel(writer, sheet_name='Index')
-
-    sheet_count = 0
-    for module, dataframes in log_dataframes.items():
-        for key, df in dataframes.items():
-            if key != '_metadata':
-                sheet_count += 1
-                df.to_excel(writer, sheet_name=f'Sheet {sheet_count}')
-    writer.save()
+    with pd.ExcelWriter(filename) as writer:  # https://github.com/PyCQA/pylint/issues/3060 pylint: disable=E0110
+        index = pd.DataFrame(data=metadata, columns=['module', 'key', 'sheet', 'description'])
+        index.to_excel(writer, sheet_name='Index')
+        sheet_count = 0
+        for module, dataframes in log_dataframes.items():
+            for key, df in dataframes.items():
+                if key != '_metadata':
+                    sheet_count += 1
+                    df.to_excel(writer, sheet_name=f'Sheet {sheet_count}')
 
 
 def make_calendar_period_lookup():
@@ -255,28 +289,28 @@ def extract_results(results_folder: Path,
     """
 
     def get_multiplier(_draw, _run):
-        """Helper function to get the multiplier from the simulation, if do_scaling=True.
+        """Helper function to get the multiplier from the simulation.
         Note that if the scaling factor cannot be found a `KeyError` is thrown."""
-        if not do_scaling:
-            return 1.0
-        else:
-            return load_pickled_dataframes(results_folder, _draw, _run, 'tlo.methods.population'
-                                           )['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
+        return load_pickled_dataframes(
+            results_folder, _draw, _run, 'tlo.methods.population'
+        )['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
 
     if custom_generate_series is None:
-        # If there is no `custom_generate_series` provided, it implies that function required selects a the specified
+        # If there is no `custom_generate_series` provided, it implies that function required selects the specified
         # column from the dataframe.
         assert column is not None, "Must specify which column to extract"
-
-        if index is not None:
-            _gen_series = lambda _df: _df.set_index(index)[column]  # noqa: 731
-        else:
-            _gen_series = lambda _df: _df.reset_index(drop=True)[column]  # noqa: 731
-
     else:
         assert index is None, "Cannot specify an index if using custom_generate_series"
         assert column is None, "Cannot specify a column if using custom_generate_series"
-        _gen_series = custom_generate_series
+
+    def generate_series(dataframe: pd.DataFrame) -> pd.Series:
+        if custom_generate_series is None:
+            if index is not None:
+                return dataframe.set_index(index)[column]
+            else:
+                return dataframe.reset_index(drop=True)[column]
+        else:
+            return custom_generate_series(dataframe)
 
     # get number of draws and numbers of runs
     info = get_scenario_info(results_folder)
@@ -290,9 +324,14 @@ def extract_results(results_folder: Path,
 
             try:
                 df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
-                output_from_eval: pd.Series = _gen_series(df)
-                assert pd.Series == type(output_from_eval), 'Custom command does not generate a pd.Series'
-                res[draw_run] = output_from_eval * get_multiplier(draw, run)
+                output_from_eval: pd.Series = generate_series(df)
+                assert isinstance(output_from_eval, pd.Series), (
+                    'Custom command does not generate a pd.Series'
+                )
+                if do_scaling:
+                    res[draw_run] = output_from_eval * get_multiplier(draw, run)
+                else:
+                    res[draw_run] = output_from_eval
 
             except KeyError:
                 # Some logs could not be found - probably because this run failed.
@@ -310,24 +349,23 @@ def summarize(results: pd.DataFrame, only_mean: bool = False, collapse_columns: 
     Finds mean value and 95% interval across the runs for each draw.
     """
 
-    summary = pd.DataFrame(
-        columns=pd.MultiIndex.from_product(
-            [
-                results.columns.unique(level='draw'),
-                ["mean", "lower", "upper"]
-            ],
-            names=['draw', 'stat']),
-        index=results.index
+    summary = pd.concat(
+        {
+            'mean': results.groupby(axis=1, by='draw', sort=False).mean(),
+            'lower': results.groupby(axis=1, by='draw', sort=False).quantile(0.025),
+            'upper': results.groupby(axis=1, by='draw', sort=False).quantile(0.975),
+        },
+        axis=1
     )
-
-    summary.loc[:, (slice(None), "mean")] = results.groupby(axis=1, by='draw').mean().values
-    summary.loc[:, (slice(None), "lower")] = results.groupby(axis=1, by='draw').quantile(0.025).values
-    summary.loc[:, (slice(None), "upper")] = results.groupby(axis=1, by='draw').quantile(0.975).values
+    summary.columns = summary.columns.swaplevel(1, 0)
+    summary.columns.names = ['draw', 'stat']
+    summary = summary.sort_index(axis=1)
 
     if only_mean and (not collapse_columns):
         # Remove other metrics and simplify if 'only_mean' across runs for each draw is required:
         om: pd.DataFrame = summary.loc[:, (slice(None), "mean")]
         om.columns = [c[0] for c in om.columns.to_flat_index()]
+        om.columns.name = 'draw'
         return om
 
     elif collapse_columns and (len(summary.columns.levels[0]) == 1):
@@ -610,6 +648,7 @@ def get_filtered_treatment_ids(depth: Optional[int] = None) -> List[str]:
             [
                 "".join(f"{x}_" for i, x in enumerate(t.split('_')) if i < depth).rstrip('_') + '_*'
                 for t in set(_treatments)
+                if t # In the event an abstract base class is detected, that does not set TREATMENT_ID by default
             ]
         )))
 
@@ -682,7 +721,8 @@ APPT_TYPE_TO_COARSE_APPT_TYPE_MAP = MappingProxyType({
     'Mammography': 'Lab / Diagnostics',
     'MRI': 'Lab / Diagnostics',
     'Tomography': 'Lab / Diagnostics',
-    'DiagRadio': 'Lab / Diagnostics'
+    'DiagRadio': 'Lab / Diagnostics',
+    'PharmDispensing': 'Pharm Dispensing'
 })
 
 
@@ -698,7 +738,8 @@ COARSE_APPT_TYPE_TO_COLOR_MAP = MappingProxyType({
     'Mental Health': 'lightsalmon',
     'Surgery / Radiotherapy': 'orange',
     'STI': 'slateblue',
-    'Lab / Diagnostics': 'dodgerblue'
+    'Lab / Diagnostics': 'dodgerblue',
+    'Pharm Dispensing': 'springgreen'
 })
 
 
@@ -727,6 +768,9 @@ def get_color_coarse_appt(coarse_appt_type: str) -> str:
 
 
 SHORT_TREATMENT_ID_TO_COLOR_MAP = MappingProxyType({
+
+    '*': 'black',
+
     'FirstAttendance*': 'darkgrey',
     'Inpatient*': 'silver',
 
@@ -756,6 +800,7 @@ SHORT_TREATMENT_ID_TO_COLOR_MAP = MappingProxyType({
 
     'Depression*': 'indianred',
     'Epilepsy*': 'red',
+    'Copd*': 'lightcoral',
 
     'Rti*': 'lightsalmon',
 })
@@ -791,7 +836,7 @@ def get_color_short_treatment_id(short_treatment_id: str) -> str:
     )
 
 
-CAUSE_OF_DEATH_LABEL_TO_COLOR_MAP = MappingProxyType({
+CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP = MappingProxyType({
     'Maternal Disorders': 'green',
     'Neonatal Disorders': 'springgreen',
     'Congenital birth defects': 'mediumaquamarine',
@@ -803,6 +848,7 @@ CAUSE_OF_DEATH_LABEL_TO_COLOR_MAP = MappingProxyType({
     'Malaria': 'lightsteelblue',
     'Measles': 'cornflowerblue',
     'TB (non-AIDS)': 'mediumslateblue',
+    'Schistosomiasis': 'skyblue',
 
     'Heart Disease': 'sienna',
     'Kidney Disease': 'chocolate',
@@ -817,18 +863,21 @@ CAUSE_OF_DEATH_LABEL_TO_COLOR_MAP = MappingProxyType({
 
     'Depression / Self-harm': 'goldenrod',
     'Epilepsy': 'gold',
+    'COPD': 'khaki',
 
     'Transport Injuries': 'lightsalmon',
+
+    'Lower Back Pain': 'slategray',
 
     'Other': 'dimgrey',
 })
 
 
-def order_of_cause_of_death_label(
+def order_of_cause_of_death_or_daly_label(
     cause_of_death_label: Union[str, pd.Index]
 ) -> Union[int, pd.Index]:
     """Define a standard order for Cause-of-Death labels."""
-    ordered_cause_of_death_labels = list(CAUSE_OF_DEATH_LABEL_TO_COLOR_MAP.keys())
+    ordered_cause_of_death_labels = list(CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.keys())
     if isinstance(cause_of_death_label, str):
         return ordered_cause_of_death_labels.index(cause_of_death_label)
     else:
@@ -837,15 +886,15 @@ def order_of_cause_of_death_label(
         )
 
 
-def get_color_cause_of_death_label(cause_of_death_label: str) -> str:
+def get_color_cause_of_death_or_daly_label(cause_of_death_label: str) -> str:
     """Return the colour (as matplotlib string) assigned to this Cause-of-Death Label.
 
     Returns `np.nan` if label is not recognised.
     """
-    return CAUSE_OF_DEATH_LABEL_TO_COLOR_MAP.get(cause_of_death_label, np.nan)
+    return CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.get(cause_of_death_label, np.nan)
 
 
-def squarify_neat(sizes: np.array, label: np.array, colormap: Callable, numlabels=5, **kwargs):
+def squarify_neat(sizes: np.array, label: np.array, colormap: Callable = None, numlabels: int = 5, **kwargs):
     """Pass through to squarify, with some customisation: ...
      * Apply the colormap specified
      * Only give label a selection of the segments
@@ -857,7 +906,7 @@ def squarify_neat(sizes: np.array, label: np.array, colormap: Callable, numlabel
     squarify.plot(
         sizes=sizes,
         label=[_label if _label in to_label else '' for _label in label],
-        color=[colormap(_x) for _x in label],
+        color=[colormap(_x) for _x in label] if colormap is not None else None,
         **kwargs,
     )
 
@@ -1010,11 +1059,12 @@ def plot_stacked_bar_chart(
     ax.legend()
 
 
-def plot_clustered_stacked(dfall, ax, color_for_column_map=None, legends=True, H="/", **kwargs):
+def plot_clustered_stacked(dfall, ax, color_for_column_map=None, scaled=False, legends=True, H="/", **kwargs):
     """Given a dict of dataframes, with identical columns and index, create a clustered stacked bar plot.
     * H is the hatch used for identification of the different dataframe.
     * color_for_column_map should return a color for every column in the dataframes
     * legends=False, suppresses generation of the legends
+    With `scaled=True`, the height of the stacked-bar is scaled to 1.0.
     From: https://stackoverflow.com/questions/22787209/how-to-have-clusters-of-stacked-bars"""
 
     n_df = len(dfall)
@@ -1022,6 +1072,9 @@ def plot_clustered_stacked(dfall, ax, color_for_column_map=None, legends=True, H
     n_ind = len(list(dfall.values())[0].index)
 
     for i, df in enumerate(dfall.values()):  # for each data frame
+        if scaled:
+            df = df.apply(lambda row: (row / row.sum()).fillna(0.0), axis=1)
+
         ax = df.plot.bar(
             stacked=True,
             ax=ax,
@@ -1050,3 +1103,208 @@ def plot_clustered_stacked(dfall, ax, color_for_column_map=None, legends=True, H
         l1 = ax.legend(_handles[:n_col], _labels[:n_col], loc=[1.01, 0.5])
         _ = plt.legend(n, dfall.keys(), loc=[1.01, 0.1])
         ax.add_artist(l1)
+
+
+def get_mappers_in_fullmodel(resourcefilepath: Path, outputpath: Path):
+    """Returns the cause-of-death, cause-of-disability and cause-of-DALYS mappers that are created in a run of the
+    fullmodel."""
+
+    start_date = Date(2010, 1, 1)
+    sim = Simulation(start_date=start_date, seed=0, log_config={'filename': 'test_log', 'directory': outputpath})
+
+    from tlo.methods.fullmodel import fullmodel
+    sim.register(*fullmodel(resourcefilepath=resourcefilepath))
+
+    sim.make_initial_population(n=10_000)
+    sim.simulate(end_date=start_date)
+    demog_log = parse_log_file(sim.log_filepath)['tlo.methods.demography']
+    hb_log = parse_log_file(sim.log_filepath)['tlo.methods.healthburden']
+
+    keys = [
+        (demog_log, 'mapper_from_tlo_cause_to_common_label'),
+        (demog_log, 'mapper_from_gbd_cause_to_common_label'),
+        (hb_log, 'disability_mapper_from_tlo_cause_to_common_label'),
+        (hb_log, 'disability_mapper_from_gbd_cause_to_common_label'),
+        (hb_log, 'daly_mapper_from_gbd_cause_to_common_label'),
+        (hb_log, 'daly_mapper_from_tlo_cause_to_common_label'),
+    ]
+
+    def extract_mapper(key_tuple):
+        return pd.Series(key_tuple[0].get(key_tuple[1]).drop(columns={'date'}).loc[0]).to_dict()
+
+    return {k[1]: extract_mapper(k) for k in keys}
+
+
+def get_parameters_for_status_quo() -> Dict:
+    """
+    Returns a dictionary of parameters and their updated values to indicate
+    the "Status Quo" scenario. This is the configuration that is the target
+    of calibrations.
+
+    The return dict is in the form:
+    e.g. {
+            'Depression': {
+                'pr_assessed_for_depression_for_perinatal_female': 1.0,
+                'pr_assessed_for_depression_in_generic_appt_level1': 1.0,
+                },
+            'Hiv': {
+                'prob_start_art_or_vs': 1.0,
+                }
+         }
+    """
+
+    return {
+        "SymptomManager": {
+            "spurious_symptoms": True,
+        },
+        "HealthSystem": {
+            'Service_Availability': ['*'],
+            "use_funded_or_actual_staffing": "actual",
+            "mode_appt_constraints": 1,
+            "cons_availability": "default",
+            "beds_availability": "default",
+            "equip_availability": "all",  # <--- NB. Existing calibration is assuming all equipment is available
+        },
+    }
+
+def get_parameters_for_standard_mode2_runs() -> Dict:
+    """
+    Returns a dictionary of parameters and their updated values to indicate
+    the "standard mode 2" scenario.
+
+    The return dict is in the form:
+    e.g. {
+            'Depression': {
+                'pr_assessed_for_depression_for_perinatal_female': 1.0,
+                'pr_assessed_for_depression_in_generic_appt_level1': 1.0,
+                },
+            'Hiv': {
+                'prob_start_art_or_vs': 1.0,
+                }
+         }
+    """
+
+    return {
+        "SymptomManager": {
+            "spurious_symptoms": True,
+        },
+        "HealthSystem": {
+            'Service_Availability': ['*'],
+            "use_funded_or_actual_staffing": "actual",
+            "mode_appt_constraints": 1,
+            "mode_appt_constraints_postSwitch": 2, # <-- Include a transition to mode 2, to pick up any issues with this
+            "year_mode_switch": 2012, # <-- Could make this quite soon, but I'd say >1 year
+            "tclose_overwrite": 1, # <-- In most of our runs in mode 2, we chose to overwrite tclose
+            "tclose_days_offset_overwrite": 7, # <-- and usually set it to 7.
+            "cons_availability": "default",
+            "beds_availability": "default",
+            "equip_availability": "all",  # <--- NB. Existing calibration is assuming all equipment is available
+        },
+    }
+
+
+def get_parameters_for_improved_healthsystem_and_healthcare_seeking(
+    resourcefilepath: Path,
+    max_healthsystem_function: Optional[bool] = False,
+    max_healthcare_seeking: Optional[bool] = False,
+) -> Dict:
+    """
+    Returns a dictionary of parameters and their updated values to indicate
+    an ideal healthcare system in terms of maximum health system function, and/or
+    maximum healthcare seeking.
+
+    The return dict is in the form:
+    e.g. {
+            'Depression': {
+                'pr_assessed_for_depression_for_perinatal_female': 1.0,
+                'pr_assessed_for_depression_in_generic_appt_level1': 1.0
+                },
+            'Hiv': {
+                'prob_start_art_or_vs': <<the dataframe named in the corresponding cell in the ResourceFile>>
+                }
+         }
+    """
+
+    def read_value(_value):
+        """Returns the value, or a dataframe if the value point to a different sheet in the workbook, or a series if the
+        value points to sheet in the workbook with only two columns (which become the index and the values)."""
+        drop_extra_columns = lambda df: df.dropna(how='all', axis=1)  # noqa E731
+        squeeze_single_col_df_to_series = lambda df: \
+            df.set_index(df[df.columns[0]])[df.columns[1]] if len(df.columns) == 2 else df  # noqa E731
+
+        def construct_multiindex_if_implied(df):
+            """Detect if a multi-index is implied (by the first column header having a "/" in it) and construct this."""
+            if isinstance(df, pd.DataFrame) and (len(df.columns) > 1) and ('/' in df.columns[0]):
+                idx = df[df.columns[0]].str.split('/', expand=True)
+                idx.columns = tuple(df.columns[0].split('/'))
+
+                # Make the dtype as `int` if possible
+                for col in idx.columns:
+                    try:
+                        idx[col] = idx[col].astype(int)
+                    except ValueError:
+                        pass
+
+                df.index = pd.MultiIndex.from_frame(idx)
+                return df.drop(columns=df.columns[0])
+            else:
+                return df
+
+        if isinstance(_value, str) and _value.startswith("#"):
+            sheet_name = _value.lstrip("#").split('!')[0]
+            return \
+                squeeze_single_col_df_to_series(
+                    drop_extra_columns(
+                        construct_multiindex_if_implied(
+                            pd.read_excel(workbook, sheet_name=sheet_name))))
+
+        elif isinstance(_value, str) and _value.startswith("["):
+            # this looks like its intended to be a list
+            return eval(_value)
+        else:
+            return _value
+
+    workbook = pd.ExcelFile(
+        resourcefilepath / 'ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking.xlsx')
+
+    # Load the ResourceFile for the list of parameters that may change
+    mainsheet = pd.read_excel(workbook, 'main').set_index(['Module', 'Parameter'])
+
+    # Select which columns for parameter changes to extract
+    cols = []
+    if max_healthsystem_function:
+        cols.append('max_healthsystem_function')
+
+    if max_healthcare_seeking:
+        cols.append('max_healthcare_seeking')
+
+    # Collect parameters that will be changed (collecting the first encountered non-NAN value)
+    params_to_change = mainsheet[cols].dropna(axis=0, how='all')\
+                                      .apply(lambda row: [v for v in row if not pd.isnull(v)][0], axis=1)
+
+    # Convert to dictionary
+    params = defaultdict(lambda: defaultdict(dict))
+    for idx, value in params_to_change.items():
+        params[idx[0]][idx[1]] = read_value(value)
+
+    return params
+
+
+def mix_scenarios(*dicts) -> Dict:
+    """Helper function to combine a Dicts that show which parameters should be over-written.
+     * If a parameter appears in more than one Dict, the value in the last-added dict is taken, and a UserWarning
+      is raised;
+     * Items under the same top-level key (i.e., for the Module) are merged rather than being over-written."""
+
+    d = defaultdict(lambda: defaultdict(dict))
+
+    for _d in dicts:
+        for mod, params_in_mod in _d.items():
+            for param, value in params_in_mod.items():
+                if param in d[mod]:
+                    if d[mod][param] != value:
+                        warnings.warn(f'Parameter is being updated more than once: module={mod}, parameter={param}',
+                                      UserWarning,)
+                d[mod].update({param: value})
+
+    return d

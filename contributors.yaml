@@ -1,0 +1,302 @@
+- given-names: Timothy
+  family-names: Hallett
+  orcid: "https://orcid.org/0000-0002-9681-0424"
+  affiliation: "Imperial College London"
+  website: "https://www.imperial.ac.uk/people/timothy.hallett"
+  github-username: tbhallett
+  role: Project Lead
+  contributions:
+    - Epidemiology and modelling
+    - Software development
+- given-names: Andrew
+  family-names: Phillips
+  orcid: "https://orcid.org/0000-0003-2384-4807"
+  affiliation: "University College London"
+  website: "https://profiles.ucl.ac.uk/5430"
+  github-username: andrew-phillips-1
+  role: Lead Epidemiology
+  contributions:
+    - Epidemiology and modelling
+    - Software development
+- given-names: Asif
+  family-names: Tamuri
+  orcid: "https://orcid.org/0000-0001-6633-3789"
+  affiliation: "University College London"
+  website: "https://www.homepages.ucl.ac.uk/~ucbtaut/"
+  github-username: tamuri
+  role: "Lead developer"
+  contributions:
+    - Software development
+- given-names: Joseph
+  family-names: Mfutso-Bengo
+  orcid: "https://orcid.org/0000-0001-9396-3700"
+  affiliation: "Kamuzu University of Health Sciences"
+  website: "https://www.researchgate.net/profile/Joseph-Mfutso-Bengo"
+  role: "Lead policy translation"
+  contributions:
+    - Policy translation
+- given-names: Tim
+  family-names: Colbourn
+  orcid: "https://orcid.org/0000-0002-6917-6552"
+  affiliation: "University College London"
+  website: "https://profiles.ucl.ac.uk/3084"
+  github-username: timcolbourn
+  contributions:
+    - Epidemiology and modelling
+    - Software development
+- given-names: Joseph
+  family-names: Collins
+  orcid: "https://orcid.org/0000-0003-4801-7218"
+  affiliation: "University College London"
+  website: "https://profiles.ucl.ac.uk/70734"
+  github-username: joehcollins
+  contributions:
+    - Epidemiology and modelling
+    - Software development
+- given-names: Iwona
+  family-names: Hawryluk
+  orcid: "https://orcid.org/0000-0001-6919-4366"
+  affiliation: "Imperial College London"
+  website: "https://www.imperial.ac.uk/people/i.hawryluk19"
+  github-username: ihwaryluk
+  contributions:
+    - Epidemiology and modelling
+    - Software development
+- given-names: Britta
+  family-names: Jewell
+  orcid: "https://orcid.org/0000-0003-4275-8509"
+  website: https://www.imperial.ac.uk/people/b.jewell
+  github-username: brittajewell
+  contributions:
+    - Epidemiology and modelling
+    - Software development
+- given-names: Ines
+  family-names: Li Lin
+  orcid: "https://orcid.org/0000-0002-1945-3208"
+  affiliation: "University College London"
+  github-username: inesll
+  contributions:
+    - Epidemiology and modelling
+    - Software development
+- given-names: Tara
+  family-names: Mangal
+  orcid: "https://orcid.org/0000-0001-9222-8632"
+  affiliation: "Imperial College London"
+  website: "https://www.imperial.ac.uk/people/t.mangal"
+  github-username: tdm32
+  contributions:
+    - Epidemiology and modelling
+    - Software development
+- given-names: Robbie
+  family-names: Manning-Smith
+  orcid: "https://orcid.org/0000-0002-9457-2821"
+  affiliation: "University College London"
+  github-username: RobertManningSmith
+  contributions:
+    - Epidemiology and modelling
+    - Software development
+- given-names: Sakshi
+  family-names: Mohan
+  orcid: "https://orcid.org/0000-0002-1268-1769"
+  affiliation: University of York
+  website: "https://www.york.ac.uk/che/staff/research/sakshi-mohan/"
+  github-username: sakshimohan
+  contributions:
+    - Health economics
+    - Software development
+- given-names: Wingston
+  family-names: Ng'ambi
+  orcid: "https://orcid.org/0000-0003-3967-905X"
+  affiliation: "Kamuzu University of Health Sciences"
+  website: "https://www.linkedin.com/in/wingston-ng-ambi-7950707b"
+  github-username: winnga
+  contributions:
+    - Epidemiology and modelling
+    - Software development
+- given-names: Bingling
+  family-names: She
+  orcid: "https://orcid.org/0000-0001-5976-8987"
+  affiliation: "Imperial College London"
+  website: "https://www.imperial.ac.uk/people/b.she"
+  github-username: BinglingICL
+  contributions:
+    - Epidemiology and modelling
+    - Software development
+- given-names: Matthew
+  family-names: Gillman
+  github-username: mattagape
+  contributions:
+    - Software development
+- given-names: Mosè
+  family-names: Giordano
+  orcid: "https://orcid.org/0000-0002-7218-2873"
+  affiliation: "University College London"
+  website: "https://giordano.github.io/"
+  github-username: giordano
+  contributions:
+    - Software development
+- given-names: Matthew
+  family-names: Graham
+  orcid: "https://orcid.org/0000-0001-9104-7960"
+  affiliation: "University College London"
+  website: "https://matt-graham.github.io"
+  github-username: matt-graham
+  contributions:
+    - Software development
+- given-names: Emmanuel
+  family-names: Mnjowe
+  affiliation: "Kamuzu University of Health Sciences"
+  website: "https://www.linkedin.com/in/emmanuel-mnjowe-067481162"
+  github-username: mnjowe
+  contributions:
+    - Epidemiology and modelling
+    - Software development
+- given-names: Stefan
+  family-names: Piatek
+  orcid: "https://orcid.org/0000-0002-3028-5292"
+  affiliation: "University College London"
+  website: "https://profiles.ucl.ac.uk/67238"
+  github-username: stefpiatek
+  contributions:
+    - Software development
+- given-names: Jonathan
+  family-names: Cooper
+  orcid: "https://orcid.org/0000-0001-6009-3542"
+  affiliation: "University College London"
+  website: "https://profiles.ucl.ac.uk/59377"
+  github-username: jonc125
+  contributions:
+    - Software development
+- given-names: Dimitra
+  family-names: Salmanidou
+  orcid: "https://orcid.org/0000-0002-2147-0787"
+  affiliation: "University College London"
+  website: "https://www.researchgate.net/profile/Dimitra-Salmanidou"
+  github-username: dimitrasal
+  contributions:
+    - Software development
+- given-names: William
+  family-names: Graham
+  orcid: "https://orcid.org/0000-0003-0058-263X"
+  affiliation: "University College London"
+  website: "https://willgraham01.github.io/"
+  github-username: willGraham01
+  contributions:
+    - Software development
+- given-names: Margherita
+  family-names: Molaro
+  orcid: "https://orcid.org/0000-0002-1841-4274"
+  affiliation: "Imperial College London"
+  github-username: marghe-molaro
+  contributions:
+    - Epidemiology and modelling
+    - Software development
+- given-names: Eva
+  family-names: Janoušková
+  orcid: "https://orcid.org/0000-0002-4104-0119"
+  affiliation: "University College London"
+  website: "https://profiles.ucl.ac.uk/90260"
+  github-username: EvaJanouskova
+  contributions:
+    - Epidemiology and modelling
+    - Software development
+- given-names: Alison
+  family-names: Rodger
+  orcid: "https://orcid.org/0000-0001-8817-4651"
+  affiliation: University College London
+  website: "https://profiles.ucl.ac.uk/954"
+  contributions:
+    - Clinical process modelling
+- given-names: Paul
+  family-names: Revill
+  orcid: "https://orcid.org/0000-0001-8632-0600"
+  affiliation: University of York
+  website: "https://www.york.ac.uk/che/staff/research/paul-revill/"
+  github-username: paulrevill
+  role: "Lead Health-Economics"
+- given-names: Wiktoria
+  family-names: Tafesse
+  orcid: "https://orcid.org/0000-0002-0076-8285"
+  affiliation: University of York
+  website: "https://www.york.ac.uk/che/staff/research/wiktoria-tafesse/"
+  github-username: wiktafesse
+  contributions:
+    - Health economics
+- given-names: Kate
+  family-names: Bilsborrow
+  affiliation: "Imperial College London"
+  website: "https://www.imperial.ac.uk/people/k.bilsborrow"
+  github-username: imperialkate
+  contributions:
+    - Project management
+- given-names: Newton
+  family-names: Chagoma
+  orcid: "https://orcid.org/0000-0003-0752-1696"
+  affiliation: "University of York"
+  website: "https://www.york.ac.uk/che/staff/students/newton-chagoma/"
+  github-username: nchagoma503
+  contributions:
+    - Health economics
+- given-names: Martin
+  family-names: Chalkley
+  orcid: "https://orcid.org/0000-0002-1091-8259"
+  affiliation: "University of York"
+  website: "https://www.york.ac.uk/che/staff/research/martin-chalkley/"
+  github-username: mjchalkley
+  contributions:
+    - Health economics
+- given-names: Nimalan
+  family-names: Arinaminpathy
+  orcid: "https://orcid.org/0000-0001-9502-6876"
+  affiliation: "Imperial College London"
+  website: "https://www.imperial.ac.uk/people/nim.pathy"
+- given-names: Amelia
+  family-names: Crampin
+  orcid: "https://orcid.org/0000-0002-1513-4330"
+  affiliation: "London School of Hygiene and Tropical Medicine"
+  website: "https://www.lshtm.ac.uk/aboutus/people/crampin.mia"
+- given-names: Jonathan
+  family-names: Roberts
+  website: "https://uk.linkedin.com/in/jonathanroberts93"
+- given-names: Mikaela
+  family-names: Smit
+  orcid: "https://orcid.org/0000-0001-8530-748X"
+  affiliation: "Imperial College London"
+  website: "https://www.imperial.ac.uk/people/mikaela.smit"
+- given-names: Juan
+  family-names: Vesga
+  orcid: "https://orcid.org/0000-0003-1103-9587"
+  affiliation: "London School of Hygiene and Tropical Medicine"
+  website: "https://www.researchgate.net/profile/Juan-Vesga-3"
+- given-names: Leila
+  family-names: Uwais
+  website: "https://uk.linkedin.com/in/leila-uwais-597705142"
+  github-username: Leila-Uwais
+- given-names: Dominic
+  family-names: Nkhoma
+  affiliation: "Kamuzu University of Health Sciences"
+  orcid: "https://orcid.org/0000-0001-6125-6630"
+  contributions:
+      - Policy translation
+  website: "https://mw.linkedin.com/in/dominicnkhoma1978"
+- given-names: Gerald
+  family-names: Manthalu
+  affiliation: "Department of Planning and Policy Development, Ministry of Health and Population, Lilongwe, Malawi"
+  orcid: "https://orcid.org/0000-0002-3501-8601"
+  contributions:
+      - Policy translation
+- given-names: Rachel
+  family-names: Murray-Watson
+  affiliation: "Imperial College London"
+  orcid: https://orcid.org/0000-0001-9079-5975
+  github-username: RachelMurray-Watson
+  contributions:
+    - Epidemiology and modelling
+    - Software development
+- given-names: Victor
+  family-names: Mwapasa
+  orcid: "https://orcid.org/0000-0002-2748-8902"
+  affiliation: "Kamuzu University of Health Sciences"
+  website: "https://www.kuhes.ac.mw/prof-victor-mwapasa/"
+  contributions:
+    - Clinical process modelling

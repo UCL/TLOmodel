@@ -1,5 +1,6 @@
 import os
 import pathlib
+from io import StringIO
 
 import pandas as pd
 import pytest
@@ -16,13 +17,14 @@ def test_categorical():
     # by default if ordered is not set categories will be unordered. test this is true
     assert not s.cat.ordered
     # assignment of valid category
-    try:
-        s[0] = 'M'
-    except ValueError:
-        pytest.fail('Unexpected ValueError')
-
+    s[0] = 'M'
     # assignment of invalid category
-    with pytest.raises(ValueError):
+    # depending on Pandas version this may raise either a ValueError or TypeError so we
+    # allow both but also check exception message to minimize chance of false positives
+    with pytest.raises(
+        (ValueError, TypeError),
+        match="Cannot setitem on a Categorical with a new category"
+    ):
         s[0] = 'A'
 
     # test we can create ordered categories.
@@ -49,7 +51,7 @@ class TestLoadParametersFromDataframe:
 
     No explicit tests for correct parsing of boolean because of how python evaluates truthiness
     """
-    def setup(self):
+    def setup_method(self):
         class ParameterModule(Module):
             def __init__(self):
                 super().__init__(name=None)
@@ -103,7 +105,10 @@ class TestLoadParametersFromDataframe:
 
         should raise an Exception"""
         resource = self.resource.copy()
-        resource = resource.append({"parameter_name": "new_value", "value": 1}, ignore_index=True)
+        resource = pd.concat(
+            (resource, pd.DataFrame({"parameter_name": ["new_value"], "value": [1]})),
+            ignore_index=True
+        )
         with pytest.raises(KeyError):
             self.module.load_parameters_from_dataframe(resource)
 
@@ -155,3 +160,63 @@ class TestLoadParametersFromDataframe:
         assert 'data_frame' not in self.module.parameters.keys()
         assert 'series' in self.module.PARAMETERS.keys()
         assert 'series' not in self.module.parameters.keys()
+
+    def test_bools(self):
+        self.module.load_parameters_from_dataframe(self.resource)
+        assert self.module.parameters['bool_true'] is True
+        assert self.module.parameters['bool_false'] is False
+
+
+class TestLoadParametersFromDataframe_Bools_From_Csv:
+    """Tests for the load_parameters_from_dataframe method, including handling of bools when loading from csv"""
+    def setup_method(self):
+        class ParameterModule(Module):
+            def __init__(self):
+                super().__init__(name=None)
+                self.PARAMETERS = {
+                    'bool_true_int': Parameter(Types.BOOL, 'string'),
+                    #                   <-- Correct value True, provided in csv as int
+                    'bool_true_string': Parameter(Types.BOOL, 'string'),
+                    #                   <-- Correct value True, provided in csv as str
+                    'bool_false_int': Parameter(Types.BOOL, 'string'),
+                    #                   <-- Correct value False, provided in csv as int
+                    'bool_false_none': Parameter(Types.BOOL, 'string'),
+                    #                   <-- Correct value False, provided in csv as <None>
+                    'bool_false_false': Parameter(Types.BOOL, 'string'),
+                    #                   <-- Correct value False, provided in csv as string of "False"
+                    'bool_false_falsecaps': Parameter(Types.BOOL, 'string'),
+                    #                   <-- Correct value False, provided in csv as string of "FALSE"
+                    'int': Parameter(Types.INT, 'string'),
+                    #                   <-- Other parameter (not of interest)
+                    'float': Parameter(Types.REAL, 'string'),
+                    #                   <-- Other parameter (not of interest)
+                    'string': Parameter(Types.STRING, 'string'),
+                    #                   <-- Other parameter (not of interest)
+                }
+
+        self.module = ParameterModule()
+
+        self.resource = pd.read_csv(
+            StringIO(
+                "parameter_name,value\n"
+                "int,12\n"
+                "float,1.0\n"
+                "string,'hello'\n"
+                "bool_true_int,1\n"
+                "bool_true_string,'X'\n"
+                "bool_false_int,0\n"
+                "bool_false_none,\n"
+                "bool_false_false,False\n"
+                "bool_false_falsecaps,FALSE\n"
+            ))
+
+    def test_read_bool(self):
+        """Check that value of bools defined correctly."""
+
+        self.module.load_parameters_from_dataframe(self.resource)
+
+        for p in [p for p in self.module.parameters.keys() if p.startswith('bool_true')]:
+            assert self.module.parameters[p] is True, f"Incorrect read of True bool from {p}."
+
+        for p in [p for p in self.module.parameters.keys() if p.startswith('bool_false')]:
+            assert self.module.parameters[p] is False, f"Incorrect read of False bool from {p}"

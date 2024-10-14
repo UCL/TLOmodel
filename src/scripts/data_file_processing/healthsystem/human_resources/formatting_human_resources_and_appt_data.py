@@ -722,16 +722,31 @@ fund_staffing_table = wb_extract.copy()
 # *********************************************************************************************************************
 
 # *** Only for funded_plus ********************************************************************************************
-# In the funded staff table, it does not make sense that Likoma has no DCSA staff,
-# whereas all other district has at least 250 DCSA staff
-# As CHAI indicates Likoma's data is mostly bounded into Nhkata Bay,
-# we draw some DCSA from Nhkata Bay to Likoma using population as the weight
+# We find that the total DCSA count in establishment/funded scenario is less than that in actual scenario,
+# which is abnormal. Therefore, we use actual DCSA count data for funded_plus scenario, to avoid possible
+# negative impact caused of reduced DCSA when switch from actual to funded_plus scenario in tlo simulation.
+# First, extract the section about "Current TOTAl Staff'
+# hcw_curr_extract = wb_import.loc[3:39, 1:21]
+# hcw_curr_extract = hcw_curr_extract.drop([4, 5])
+# hcw_curr_extract.columns = hcw_curr_extract.iloc[0]
+# hcw_curr_extract = hcw_curr_extract.drop([3])
+# hcw_curr_extract = hcw_curr_extract.reset_index(drop=True)
+# hcw_curr_extract.fillna(0, inplace=True)
+# hcw_curr_extract.loc[:, 'District_Or_Hospital'] = labels
+# hcw_curr_extract.loc[:, 'Is_DistrictLevel'] = is_distlevel
+# curr_staffing_table = hcw_curr_extract.copy()
+# Then, replace the DCSA E01 data for funded_plus
+# assert (curr_staffing_table.District_Or_Hospital == fund_staffing_table.District_Or_Hospital).all()
+# fund_staffing_table['E01'] = curr_staffing_table['E01'].copy()
+# Further, it does not make sense that Likoma has no DCSA staff. As CHAI indicates Likoma's data is mostly bounded into
+# Nhkata Bay, we draw some DCSA from Nhkata Bay to Likoma using population as the weight
 # idx_likoma = fund_staffing_table[fund_staffing_table['District_Or_Hospital'] == 'Likoma'].index
+# assert fund_staffing_table.loc[idx_likoma, 'E01'].values == 0
 # idx_nkhatabay = fund_staffing_table[fund_staffing_table['District_Or_Hospital'] == 'Nkhata Bay'].index
 # fund_staffing_table.loc[idx_likoma, 'E01'] = fund_staffing_table.loc[idx_nkhatabay, 'E01'].values[0] * (
-#     pop_by_district.loc['Likoma', 'Count'] / pop_by_district.loc['Nkhata Bay', 'Count'])
+#      pop_by_district.loc['Likoma', 'Count'] / pop_by_district.loc['Nkhata Bay', 'Count'])
 # fund_staffing_table.loc[idx_nkhatabay, 'E01'] = (
-#     fund_staffing_table.loc[idx_nkhatabay, 'E01'].values[0] - fund_staffing_table.loc[idx_likoma, 'E01'].values[0])
+#      fund_staffing_table.loc[idx_nkhatabay, 'E01'].values[0] - fund_staffing_table.loc[idx_likoma, 'E01'].values[0])
 # *********************************************************************************************************************
 
 # Sort out which are district allocations and which are central hospitals and above
@@ -1198,6 +1213,47 @@ new_appt_for_CHW = pd.Series(index=data_import.index,
 data_import = pd.concat([data_import, new_appt_for_CHW], axis=1)
 assert data_import.loc['HP', :].sum() == 10.0
 
+# We further create a new appointment type for pharmacy dispensing service that requires 5-minute working time
+# from P03-Pharm Assist at facilities at levels 1a, 1b and 2, and 5 minutes from P02-Pharm Technician at
+# central hospitals at level 3
+new_appt_for_pharmdispensing_p03 = pd.Series(index=data_import.index,
+                                             name='P03_PharmDispensing',
+                                             data=[
+                                                   0,  # Central Hosp - Time
+                                                   0,  # Central Hosp - Percent
+                                                   5.0,  # District Hosp - Time
+                                                   1.0,  # District Hosp - Percent
+                                                   5.0,  # Comm Hosp - Time
+                                                   1.0,  # Comm Hosp - Percent
+                                                   5.0,  # Urban Health Centre - Time
+                                                   1.0,  # Urban Health Centre - Percent
+                                                   5.0,  # Rural Health Centre - Time
+                                                   1.0,  # Rural Health Centre - Percent
+                                                   0.0,  # Health Post - Time
+                                                   0.0,  # Health Post - Percent
+                                                   5.0,  # Dispensary - Time
+                                                   1.0,  # Dispensary - Percent
+                                                   ])
+new_appt_for_pharmdispensing_p02 = pd.Series(index=data_import.index,
+                                             name='P02_PharmDispensing',
+                                             data=[
+                                                   5.0,  # Central Hosp - Time
+                                                   1.0,  # Central Hosp - Percent
+                                                   0.0,  # District Hosp - Time
+                                                   0.0,  # District Hosp - Percent
+                                                   0.0,  # Comm Hosp - Time
+                                                   0.0,  # Comm Hosp - Percent
+                                                   0.0,  # Urban Health Centre - Time
+                                                   0.0,  # Urban Health Centre - Percent
+                                                   0.0,  # Rural Health Centre - Time
+                                                   0.0,  # Rural Health Centre - Percent
+                                                   0.0,  # Health Post - Time
+                                                   0.0,  # Health Post - Percent
+                                                   0.0,  # Dispensary - Time
+                                                   0.0,  # Dispensary - Percent
+                                                   ])
+data_import = pd.concat([data_import, new_appt_for_pharmdispensing_p03, new_appt_for_pharmdispensing_p02], axis=1)
+
 # We now do not add service time for DHO as we think DHO does not deliver services directly
 # Also, DHO itself in both DHIS2 and CHAI updated data does not have service record
 
@@ -1242,6 +1298,10 @@ appt_types_table.loc[appt_types_table['Appt_Type_Code'] == new_appt_for_CHW.name
     new_appt_for_CHW.name.split('_')[1]
 appt_types_table.loc[appt_types_table['Appt_Type_Code'] == new_appt_for_CHW.name.split('_')[1], 'Appt_Type'] = \
     new_appt_for_CHW.name.split('_')[1]
+appt_types_table.loc[appt_types_table['Appt_Type_Code'] == new_appt_for_pharmdispensing_p03.name.split('_')[1],
+                     'Appt_Cat'] = new_appt_for_pharmdispensing_p03.name.split('_')[1]
+appt_types_table.loc[appt_types_table['Appt_Type_Code'] == new_appt_for_pharmdispensing_p03.name.split('_')[1],
+                     'Appt_Type'] = new_appt_for_pharmdispensing_p03.name.split('_')[1]
 
 # drop the merge check column
 appt_types_table.drop(columns='_merge', inplace=True)
@@ -1665,10 +1725,11 @@ funded_daily_capability = funded_daily_minutes.merge(funded_staff_floats, how='l
 # Reset facility level column to exclude 'Facility_Level_'
 funded_daily_capability['Facility_Level'] = \
     funded_daily_capability['Facility_Level'].str.split(pat='_', expand=True).iloc[:, 2]
-# Drop row with zero or nan minutes (due to either zero staff counts or nan daily minutes)
-funded_daily_capability.fillna(0, inplace=True)
-funded_daily_capability.drop(
-    index=funded_daily_capability[funded_daily_capability['Total_Mins_Per_Day'] == 0].index, inplace=True)
+# Check that zero-minute rows are also zero staff count rows, making sure that any zero capability is
+# due to no staff (but not due to zero patient facing time while having some staff)
+assert not funded_daily_capability['Total_Mins_Per_Day'].isnull().values.any()
+assert funded_daily_capability[funded_daily_capability['Total_Mins_Per_Day'] == 0].index.equals(
+    funded_daily_capability[funded_daily_capability['Staff_Count'] == 0].index)
 # Reset index
 funded_daily_capability.reset_index(drop=True, inplace=True)
 
@@ -1700,8 +1761,13 @@ funded_daily_capability = funded_daily_capability.merge(officer_types_table, on=
 funded_daily_capability_coarse = pd.DataFrame(
     funded_daily_capability.groupby(
         ['Facility_ID', 'Facility_Name', 'Facility_Level', 'District', 'Region', 'Officer_Category'],
-        dropna=False).sum()
+        dropna=False)[['Total_Mins_Per_Day', 'Staff_Count']].sum()
 ).reset_index()
+
+# Since not dropped zero-minute rows in lines 1717-1718,
+# check that there are entries for all coarse cadres and all facility id
+assert set(mfl.Facility_ID) == set(funded_daily_capability_coarse.Facility_ID.drop_duplicates())
+assert len(funded_daily_capability_coarse) == len(mfl) * len(officer_types_table.Officer_Category.drop_duplicates())
 
 # --- Daily capability for current staff; staff counts in floats
 # For float staff counts, calculate total minutes per day
@@ -1738,10 +1804,11 @@ curr_daily_capability = curr_daily_minutes.merge(curr_staff_floats, how='left')
 # Reset facility level column to exclude 'Facility_Level_'
 curr_daily_capability['Facility_Level'] = \
     curr_daily_capability['Facility_Level'].str.split(pat='_', expand=True).iloc[:, 2]
-# Drop row with zero minutes (also zero staff counts)
-curr_daily_capability.fillna(0, inplace=True)
-curr_daily_capability.drop(
-    index=curr_daily_capability[curr_daily_capability['Total_Mins_Per_Day'] == 0].index, inplace=True)
+# Check that zero-minute rows are also zero staff count rows, making sure that any zero capability is
+# due to no staff (but not due to zero patient facing time while having some staff)
+assert not curr_daily_capability['Total_Mins_Per_Day'].isnull().values.any()
+assert curr_daily_capability[curr_daily_capability['Total_Mins_Per_Day'] == 0].index.equals(
+    curr_daily_capability[curr_daily_capability['Staff_Count'] == 0].index)
 # Reset index
 curr_daily_capability.reset_index(drop=True, inplace=True)
 
@@ -1773,8 +1840,13 @@ curr_daily_capability = curr_daily_capability.merge(officer_types_table, on='Off
 curr_daily_capability_coarse = pd.DataFrame(
     curr_daily_capability.groupby(
         ['Facility_ID', 'Facility_Name', 'Facility_Level', 'District', 'Region', 'Officer_Category'],
-        dropna=False).sum()
+        dropna=False)[['Total_Mins_Per_Day', 'Staff_Count']].sum()
 ).reset_index()
+
+# Since not dropped zero-minute rows in lines 1797-1798,
+# check that there are entries for all coarse cadres and all facility id
+assert set(mfl.Facility_ID) == set(curr_daily_capability_coarse.Facility_ID.drop_duplicates())
+assert len(curr_daily_capability_coarse) == len(mfl) * len(officer_types_table.Officer_Category.drop_duplicates())
 
 # Save
 curr_daily_capability_coarse.to_csv(
@@ -1787,26 +1859,28 @@ funded_daily_capability_coarse.to_csv(
 # *** Only for funded_plus ********************************************************************************************
 # funded_daily_capability_coarse.to_csv(
 #     outputlocation / 'human_resources' / 'funded_plus' / 'ResourceFile_Daily_Capabilities.csv', index=False)
-
-
 # *********************************************************************************************************************
 
 # ---------------------------------------------------------------------------------------------------------------------
 # final check that for an appointment required at a particular level (in Appt_Time_Table), \
 # then indeed, the staff capabilities are available to satisfy that, for a person in any district \
-# (including the regional and national facilities)
+# (including the regional and national facilities);
+# also, find the HCW not there ((i.e., with 0 capability)) when required by an appt type for each facility id
+# (i.e., each pair of facility level and district)
+
 
 # Define the check function
 def all_appts_can_run(capability):
     # Creat a table storing whether the appts have consistent requirements/demand and capabilities/supply
     appt_have_or_miss_capability = appt_time_table_coarse.copy()
     # Delete the column of minutes
+    assert (appt_have_or_miss_capability['Time_Taken_Mins'] > 0).all()  # ensure that each row/appt is required
     appt_have_or_miss_capability.drop(columns=['Time_Taken_Mins'], inplace=True)
     # Store the info of district (including central hospital, ZMH) that fails
     appt_have_or_miss_capability.loc[:, 'fail_district'] = ''
 
     for _I in appt_have_or_miss_capability.index:  # Loop through all appts
-        # Get the info of app, level and officer_category
+        # Get the info of required app, level and officer_category
         # the_appt = appt_have_or_miss_capability.loc[I, 'Appt_Type_Code']
         L = appt_have_or_miss_capability.loc[_I, 'Facility_Level']
         the_officer_category = appt_have_or_miss_capability.loc[_I, 'Officer_Category']
@@ -1819,7 +1893,8 @@ def all_appts_can_run(capability):
                 idx = capability[
                     (capability['District'] == D) &
                     (capability['Facility_Level'] == str(L)) &
-                    (capability['Officer_Category'] == the_officer_category)].index
+                    (capability['Officer_Category'] == the_officer_category) &
+                    (capability['Total_Mins_Per_Day'] > 0)].index
                 if idx.size == 0:
                     # Store the district that fails to provide required officer_category
                     appt_have_or_miss_capability.loc[_I, 'fail_district'] = \
@@ -1833,7 +1908,8 @@ def all_appts_can_run(capability):
                 idx1 = capability[
                     (capability['Region'] == region) &
                     (capability['Facility_Level'] == str(L)) &
-                    (capability['Officer_Category'] == the_officer_category)].index
+                    (capability['Officer_Category'] == the_officer_category) &
+                    (capability['Total_Mins_Per_Day'] > 0)].index
                 if idx1.size == 0:
                     # Store the regional hospital that fails
                     appt_have_or_miss_capability.loc[_I, 'fail_district'] = \
@@ -1845,7 +1921,8 @@ def all_appts_can_run(capability):
             n = 0  # Record is ZMH failed
             idx2 = capability[
                 (capability['Facility_Level'] == str(L)) &
-                (capability['Officer_Category'] == the_officer_category)].index
+                (capability['Officer_Category'] == the_officer_category) &
+                (capability['Total_Mins_Per_Day'] > 0)].index
             if idx2.size == 0:
                 appt_have_or_miss_capability.loc[_I, 'fail_district'] = \
                     appt_have_or_miss_capability.loc[_I, 'fail_district'] + 'Zomba Mental Hospital,'
@@ -1856,6 +1933,53 @@ def all_appts_can_run(capability):
             assert 0 == 1  # There should be no 'else'; otherwise, the generated tables above is incorrect
 
     return appt_have_or_miss_capability
+
+
+def find_districts_with_no_required_hcw(capability, scenario):
+    # get appts have or miss capability data
+    appt_miss_cap = all_appts_can_run(capability)
+
+    # keep rows where required appts have no requested hcw (i.e. with 0-capability)
+    appt_miss_cap = appt_miss_cap.loc[~(appt_miss_cap['fail_district'] == 'All districts pass')]
+
+    # split fail districts, merge and melt
+    fail_district_split = appt_miss_cap['fail_district'].str.split(',', expand=True)
+    fail_district_split.replace({'': None}, inplace=True)
+    fail_district_split.dropna(axis='columns', how='all', inplace=True)
+
+    appt_miss_cap.drop(columns='fail_district', inplace=True)
+    appt_miss_cap = appt_miss_cap.merge(fail_district_split, how='outer', left_index=True, right_index=True)
+
+    appt_miss_cap = pd.melt(appt_miss_cap, id_vars=['Appt_Type_Code', 'Facility_Level', 'Officer_Category'],
+                            value_name=scenario)
+    appt_miss_cap.drop(columns='variable', inplace=True)
+    appt_miss_cap.dropna(axis='index', how='any', inplace=True)
+
+    return appt_miss_cap
+
+
+df_actual = find_districts_with_no_required_hcw(curr_daily_capability_coarse, 'actual')
+df_funded = find_districts_with_no_required_hcw(funded_daily_capability_coarse, 'funded')
+appts_with_no_required_hcw = pd.merge(df_actual, df_funded,
+                                      on=['Appt_Type_Code', 'Facility_Level', 'Officer_Category'],
+                                      how='outer')
+appts_with_no_required_hcw = pd.melt(appts_with_no_required_hcw,
+                                     id_vars=['Appt_Type_Code', 'Facility_Level', 'Officer_Category'],
+                                     var_name='HR_Scenario',
+                                     value_name='Fail_District_Or_CenHos')
+appts_with_no_required_hcw.drop_duplicates(inplace=True, ignore_index=True)
+appts_with_no_required_hcw.dropna(axis='index', how='any', inplace=True)
+
+# *** Only for funded_plus ********************************************************************************************
+# df_funded_plus = find_districts_with_no_required_hcw(funded_daily_capability_coarse, 'funded_plus')
+# assert len(df_funded_plus) == 0
+# *********************************************************************************************************************
+
+# save results for actual and funded HR scenarios;
+# excl. funded_plus scenario, where there is no failing district or CenHos
+appts_with_no_required_hcw.to_csv(
+    outputlocation / 'human_resources' / 'definitions' / 'ResourceFile_Appts_That_Require_HCW_Who_Are_Not_Present.csv',
+    index=False)
 
 # Save results for funded
 # Need to # following lines below when generate funded_plus capability

@@ -4,7 +4,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from tlo import Date, Simulation
+from tlo import DAYS_IN_YEAR, Date, Simulation
 from tlo.methods import (
     breast_cancer,
     demography,
@@ -171,7 +171,7 @@ def check_configuration_of_population(sim):
     # check that date diagnosed is consistent with the age of the person (ie. not before they were 15.0
     age_at_dx = (df.loc[~pd.isnull(df.brc_date_diagnosis)].brc_date_diagnosis - df.loc[
         ~pd.isnull(df.brc_date_diagnosis)].date_of_birth)
-    assert all([int(x.days / 365.25) >= 15 for x in age_at_dx])
+    assert all([int(x.days / DAYS_IN_YEAR) >= 15 for x in age_at_dx])
 
     # check that those treated are a subset of those diagnosed (and that the order of dates makes sense):
     assert set(df.index[~pd.isnull(df.brc_date_treatment)]).issubset(df.index[~pd.isnull(df.brc_date_diagnosis)])
@@ -264,14 +264,14 @@ def test_check_progression_through_stages_is_happening(seed):
 
     # check that there are now some people in each of the later stages:
     df = sim.population.props
-    assert not pd.isnull(df.brc_status[~pd.isna(df.date_of_birth)]).any()
+    assert not pd.isnull(df.brc_status[~pd.isna(df.date_of_birth)]).any()  # pylint: disable=E1130
     # debugging on this line below and there are women alive with breast cancer so not sure why assert is not working
     # Create variable for the condition
     # condition = df.is_alive & (df.age_years >= 15) & (df.sex == 'F')
     # assert (df.loc[condition].brc_status.value_counts().drop(index='none') > 0).all()
 
     # check that some people have died of breast cancer
-    yll = sim.modules['HealthBurden'].YearsLifeLost
+    yll = sim.modules['HealthBurden'].years_life_lost
     assert yll['BreastCancer'].sum() > 0
 
     # check that people are being diagnosed, going onto treatment and palliative care:
@@ -316,7 +316,7 @@ def test_that_there_is_no_treatment_without_the_hsi_running(seed):
     assert (df.loc[df.is_alive].brc_status.value_counts().drop(index='none') > 0).all()
 
     # check that some people have died of breast cancer
-    yll = sim.modules['HealthBurden'].YearsLifeLost
+    yll = sim.modules['HealthBurden'].years_life_lost
     assert yll['BreastCancer'].sum() > 0
 
     # w/o healthsystem - check that people are NOT being diagnosed, going onto treatment and palliative care:
@@ -381,5 +381,5 @@ def test_check_progression_through_stages_is_blocked_by_treatment(seed):
     # check that no people have died of breast cancer
     # this is working in the program - I'm not sure why test is failing
 
-    yll = sim.modules['HealthBurden'].YearsLifeLost
+    yll = sim.modules['HealthBurden'].years_life_lost
     assert 'YLL_BreastCancer_BreastCancer' not in yll.columns

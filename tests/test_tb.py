@@ -6,7 +6,8 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from tlo import Date, Simulation
+from tlo import Date, Simulation, logging
+from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     care_of_women_during_pregnancy,
     demography,
@@ -145,12 +146,16 @@ def test_natural_history(seed):
     disable=true, runs all hsi events but doesn't use queue so you won't find them
     """
 
-    popsize = 10
+    popsize = 1000
 
     sim = get_sim(seed, use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
 
+    # todo change active testing rate
     # set very high incidence rates for poll
-    sim.modules['Tb'].parameters['scaling_factor_WHO'] = 5000
+    sim.modules['Tb'].parameters['scaling_factor_WHO'] = 50
+    sim.modules["Tb"].parameters["rate_testing_active_tb"]["treatment_coverage"] = 100
+    sim.modules['Tb'].parameters['prop_smear_positive'] = 1.0
+    sim.modules['Tb'].parameters['prop_smear_positive_hiv'] = 1.0
 
     # Make the population
     sim.make_initial_population(n=popsize)
@@ -182,26 +187,18 @@ def test_natural_history(seed):
     assert df.at[tb_case, 'tb_date_active'] == sim.date
     assert df.at[tb_case, 'tb_smear']
 
-    # check symptoms
+    # check for TB-related symptoms
     symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
-    assert set(sim.modules['SymptomManager'].has_what(tb_case)) == symptom_list
+    assert symptom_list.issubset(sim.modules['SymptomManager'].has_what(tb_case))
 
-    # run HSI_Tb_ScreeningAndRefer and check outcomes
-    # this schedules the event
-    sim.modules['HealthSystem'].schedule_hsi_event(
-        tb.HSI_Tb_ScreeningAndRefer(person_id=tb_case, module=sim.modules['Tb']),
-        topen=sim.date,
-        tclose=None,
-        priority=0
-    )
-
-    # Check person_id has a ScreeningAndRefer event scheduled
+    # Check person_id has a ScreeningAndRefer event scheduled by TbActiveEvent
     date_event, event = [
         ev for ev in sim.modules['HealthSystem'].find_events_for_person(tb_case) if
         isinstance(ev[1], tb.HSI_Tb_ScreeningAndRefer)
     ][0]
-    assert date_event == sim.date
+    assert date_event > sim.date
 
+    # test and treat this person
     list_of_hsi = [
         'tb.HSI_Tb_ScreeningAndRefer',
         'tb.HSI_Tb_StartTreatment'
@@ -218,8 +215,10 @@ def test_natural_history(seed):
                          )
         hsi_event.run(squeeze_factor=0)
 
-    assert df.at[tb_case, 'tb_ever_tested']
+    assert pd.notnull(df.at[tb_case, 'tb_date_tested'])
     assert df.at[tb_case, 'tb_diagnosed']
+    assert df.at[tb_case, "tb_on_treatment"]
+    assert df.at[tb_case, "tb_date_treated"] == sim.date
 
 
 def test_treatment_schedule(seed):
@@ -269,7 +268,7 @@ def test_treatment_schedule(seed):
                                                  module=sim.modules['Tb'])
     screening_appt.apply(person_id=person_id, squeeze_factor=0.0)
 
-    assert df.at[person_id, 'tb_ever_tested']
+    assert pd.notnull(df.at[person_id, 'tb_date_tested'])
     assert df.at[person_id, 'tb_diagnosed']
     assert not df.at[person_id, 'tb_diagnosed_mdr']
 
@@ -296,10 +295,144 @@ def test_treatment_schedule(seed):
     assert df.at[person_id, 'tb_strain'] == 'ds'  # should not have changed
 
 
+def test_record_of_appt_of_tb_start_treatment_hsi(tmpdir, seed):
+    """
+    This is to test the appointment footprint recorded with the trigger of HSI_Tb_StartTreatment:
+    if consumables are available, the HSI is scheduled only once and the footprint should be TBNew;
+    if consumables are not available, the HSI is scheduled repeatedly where the first footprint is TBNew
+    and the rest should be PharmDispensing.
+    """
+
+    def get_sim_for_appt_test_only(tmpdir, seed, use_simplified_birth=True, disable_HS=False,
+                                   ignore_con_constraints=True, consumables_availability='all'):
+        """
+        get sim with the checks for configuration of properties running in the TB module
+        """
+
+        start_date = Date(2010, 1, 1)
+
+        # configurate the log
+        log_config = {
+            'filename': 'temp',
+            'directory': tmpdir,
+            'custom_levels': {
+                "*": logging.WARNING,
+                "tlo.methods.tb": logging.INFO,
+                "tlo.methods.demography": logging.INFO,
+                "tlo.methods.healthsystem": logging.DEBUG,
+            }
+        }
+
+        sim = Simulation(start_date=start_date, log_config=log_config, seed=seed)
+
+        # Register the appropriate modules
+        if use_simplified_birth:
+            sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                         healthsystem.HealthSystem(
+                             resourcefilepath=resourcefilepath,
+                             disable=disable_HS,
+                             cons_availability=consumables_availability,
+                             # mode for consumable constraints (if ignored, all consumables available)
+                         ),
+                         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                         epi.Epi(resourcefilepath=resourcefilepath),
+                         hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False),
+                         tb.Tb(resourcefilepath=resourcefilepath),
+                         )
+        else:
+            sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                         pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                         care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                         labour.Labour(resourcefilepath=resourcefilepath),
+                         newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                         postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+                         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                         healthsystem.HealthSystem(
+                             resourcefilepath=resourcefilepath,
+                             disable=True,
+                             cons_availability=consumables_availability,
+                             # mode for consumable constraints (if ignored, all consumables available)
+                         ),
+                         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                         epi.Epi(resourcefilepath=resourcefilepath),
+                         hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False),
+                         tb.Tb(resourcefilepath=resourcefilepath),
+                         )
+
+        return sim
+
+    def get_appt_footprints(_consumables_availability):
+        """
+        Return a list of the APPT_FOOTPRINTS that are logged for one person
+        following the trigger of HSI_Tb_StartTreatment.
+        """
+        popsize = 1
+
+        # disable HS, all HSI events will run, but won't be in the HSI queue
+        # they will enter the sim.event_queue
+        sim = get_sim_for_appt_test_only(tmpdir, seed, use_simplified_birth=True, disable_HS=False,
+                                         ignore_con_constraints=False,
+                                         consumables_availability=_consumables_availability)
+
+        # Make the population
+        sim.make_initial_population(n=popsize)
+
+        df = sim.population.props
+        person_id = 0
+
+        # assign person_id active tb and diagnosed, not on treatment, etc.
+        df.at[person_id, 'tb_inf'] = 'active'
+        df.at[person_id, 'tb_strain'] = 'ds'
+        df.at[person_id, 'tb_date_active'] = sim.date
+        df.at[person_id, 'tb_smear'] = True
+        df.at[person_id, 'age_exact_years'] = 20
+        df.at[person_id, 'age_years'] = 20
+        df.at[person_id, 'tb_diagnosed'] = True
+        df.at[person_id, 'tb_on_treatment'] = False
+        df.at[person_id, 'tb_diagnosed_mdr'] = False
+        df.at[person_id, 'is_alive'] = True
+
+        # schedule treatment start
+        from tlo.methods.tb import HSI_Tb_StartTreatment
+        hsi_event = HSI_Tb_StartTreatment(
+            module=sim.modules['Tb'],
+            person_id=person_id
+        )
+        sim.modules['HealthSystem'].schedule_hsi_event(hsi_event=hsi_event, topen=sim.start_date, priority=0.0)
+
+        # let the simulation run 2 months so that the HSI could be rescheduled.
+        # the maximum reschedule number is 5, requiring a period of 4 weeks (NB. the first run
+        # date is the sim.start_date)
+        sim.simulate(end_date=sim.start_date + pd.DateOffset(months=2))
+
+        # find the appt footprint list
+        hsi_run = parse_log_file(sim.log_filepath, level=logging.DEBUG)["tlo.methods.healthsystem"]["HSI_Event"]
+        return hsi_run.loc[
+            hsi_run.did_run
+            & (hsi_run['Person_ID'] == person_id)
+            & (hsi_run['TREATMENT_ID'] == 'Tb_Treatment'), 'Number_By_Appt_Type_Code'
+        ].to_list()
+
+    # 1) If consumables available, the HSI will only be run once and the appt footprint should be TBNew:
+    assert [{'TBNew': 1}] == get_appt_footprints(_consumables_availability='all')
+    # 2) If consumables not available, there should be multiple footprints where the first is TBNew
+    # and the rest is PharmDispensing
+    appt_list = get_appt_footprints(_consumables_availability='none')
+    assert len(appt_list) > 1
+    assert appt_list[0] == {'TBNew': 1}
+    assert len(appt_list) - 1 == len([_x for _i, _x in enumerate(appt_list) if _x == {'PharmDispensing': 1}])
+
+
 def test_treatment_failure(seed):
     """
-    test treatment failure occurs and
-    retreatment properties / follow-up occurs correctly
+    test treatment failure occurs and properties set correctly
+    treatment failure will schedule referral for xpert test at level 2
     """
 
     popsize = 10
@@ -345,7 +478,7 @@ def test_treatment_failure(seed):
                                                  module=sim.modules['Tb'])
     screening_appt.apply(person_id=person_id, squeeze_factor=0.0)
 
-    assert df.at[person_id, 'tb_ever_tested']
+    assert pd.notnull(df.at[person_id, 'tb_date_tested'])
     assert df.at[person_id, 'tb_diagnosed']
     assert not df.at[person_id, 'tb_diagnosed_mdr']
 
@@ -371,26 +504,30 @@ def test_treatment_failure(seed):
     # check referral for screening/testing again
     # screen and test person_id
     screening_appt = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id,
-                                                 module=sim.modules['Tb'])
+                                                 module=sim.modules['Tb'],
+                                                 facility_level="1a")
     test = screening_appt.apply(person_id=person_id, squeeze_factor=0.0)
 
-    # should schedule xpert - if available
-    # check that the event returned a footprint for an xpert test
+    # should schedule a referral for xpert testing at facility level 2
+    # check that the event returned a footprint Over5OPD
     assert test == screening_appt.make_appt_footprint({'Over5OPD': 1})
 
-    # start treatment
-    tx_start = tb.HSI_Tb_StartTreatment(person_id=person_id,
-                                        module=sim.modules['Tb'])
-    tx_start.apply(person_id=person_id, squeeze_factor=0.0)
-
-    # clinical monitoring
-    # check tb.HSI_Tb_FollowUp scheduled
-    followup_event = [
+    # check tb.HSI_Tb_ScreeningAndRefer scheduled
+    followup_test = [
         ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
-        isinstance(ev[1], tb.HSI_Tb_FollowUp)
+        isinstance(ev[1], tb.HSI_Tb_ScreeningAndRefer)
     ][-1]
 
-    assert followup_event[0] > sim.date
+    assert followup_test[0] > sim.date
+
+    # schedule follow-up test at level 2 to get xpert
+    screening_appt = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id,
+                                                 module=sim.modules['Tb'],
+                                                 facility_level="2")
+    test = screening_appt.apply(person_id=person_id, squeeze_factor=0.0)
+
+    # assert now should be diagnosed as active TB again
+    assert df.at[person_id, 'tb_diagnosed']
 
 
 def test_children_referrals(seed):
@@ -439,7 +576,7 @@ def test_children_referrals(seed):
         duration_in_days=None,
     )
 
-    assert set(sim.modules['SymptomManager'].has_what(person_id)) == symptom_list
+    assert set(sim.modules['SymptomManager'].has_what(person_id=person_id)) == symptom_list
 
     # run HSI_Tb_ScreeningAndRefer and check outcomes
     sim.modules['HealthSystem'].schedule_hsi_event(
@@ -510,7 +647,7 @@ def test_relapse_risk(seed):
     sim.modules['Tb'].relapse_event(sim.population)
 
     # check relapse to active tb is scheduled to occur
-    assert not df.at[person_id, 'tb_scheduled_date_active'] == pd.NaT
+    assert pd.notnull(df.at[person_id, 'tb_scheduled_date_active'])
 
 
 def test_ipt_to_child_of_tb_mother(seed):
@@ -521,6 +658,9 @@ def test_ipt_to_child_of_tb_mother(seed):
 
     # allow HS to run and queue events
     sim = get_sim(seed, use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
+
+    # allow IPT to be given on_birth prior to 2014
+    sim.modules['Tb'].parameters['ipt_start_date'] = 2010
 
     # make IPT protection against active disease perfect
     sim.modules['Tb'].parameters['rr_ipt_child'] = 0.0
@@ -628,7 +768,7 @@ def test_mdr(seed):
                                                  module=sim.modules['Tb'])
     screening_appt.apply(person_id=person_id, squeeze_factor=0.0)
 
-    assert df.at[person_id, 'tb_ever_tested']
+    assert df.at[person_id, 'tb_date_tested'] != pd.NaT
     assert df.at[person_id, 'tb_diagnosed']
     assert not df.at[person_id, 'tb_diagnosed_mdr']
 
@@ -647,7 +787,8 @@ def test_mdr(seed):
 
     # next screening should pick up case as retreatment / mdr
     screening_appt = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id,
-                                                 module=sim.modules['Tb'])
+                                                 module=sim.modules['Tb'],
+                                                 facility_level='2')
     screening_appt.apply(person_id=person_id, squeeze_factor=0.0)
 
     assert df.at[person_id, 'tb_diagnosed_mdr']
@@ -655,7 +796,8 @@ def test_mdr(seed):
     # schedule mdr treatment start
     # this calls clinical_monitoring which should schedule all follow-up appts
     tx_start = tb.HSI_Tb_StartTreatment(person_id=person_id,
-                                        module=sim.modules['Tb'])
+                                        module=sim.modules['Tb'],
+                                        facility_level='2')
     tx_start.apply(person_id=person_id, squeeze_factor=0.0)
 
     # check treatment appropriate for mdr-tb
@@ -754,7 +896,7 @@ def test_active_tb_linear_model(seed):
     tb_module = sim.modules['Tb']
 
     # set parameters
-    tb_module.parameters['scaling_factor_WHO'] = 1.0
+    tb_module.parameters['scaling_factor_WHO'] = 5
 
     # Make the population
     sim.make_initial_population(n=popsize)
@@ -765,19 +907,19 @@ def test_active_tb_linear_model(seed):
     df = sim.population.props
 
     # set properties - no risk factors
-    df.at[df.is_alive, 'tb_inf'] = 'uninfected'
-    df.at[df.is_alive, 'age_years'] = 25
-    df.at[df.is_alive, 'va_bcg_all_doses'] = True
+    df.loc[df.is_alive, 'tb_inf'] = 'uninfected'
+    df.loc[df.is_alive, 'age_years'] = 25
+    df.loc[df.is_alive, 'va_bcg_all_doses'] = True
 
-    df.at[df.is_alive, 'li_bmi'] = 1  # 4=obese
-    df.at[df.is_alive, 'li_ex_alc'] = False
-    df.at[df.is_alive, 'li_tob'] = False
+    df.loc[df.is_alive, 'li_bmi'] = 1  # 4=obese
+    df.loc[df.is_alive, 'li_ex_alc'] = False
+    df.loc[df.is_alive, 'li_tob'] = False
 
-    df.at[df.is_alive, 'tb_on_ipt'] = False
+    df.loc[df.is_alive, 'tb_on_ipt'] = False
 
-    df.at[df.is_alive, 'hv_inf'] = False
-    df.at[df.is_alive, 'sy_aids_symptoms'] = 0
-    df.at[df.is_alive, 'hv_art'] = "not"
+    df.loc[df.is_alive, 'hv_inf'] = False
+    df.loc[df.is_alive, 'sy_aids_symptoms'] = 0
+    df.loc[df.is_alive, 'hv_art'] = "not"
 
     # no risk factors
     person_id0 = 0
@@ -813,7 +955,7 @@ def test_active_tb_linear_model(seed):
 @pytest.mark.slow
 def test_basic_run_with_default_parameters(seed):
     """Run the TB module with check and check dtypes consistency"""
-    end_date = Date(2015, 12, 31)
+    end_date = Date(2010, 6, 30)
 
     sim = get_sim(seed=seed)
     sim.make_initial_population(n=1000)
@@ -849,3 +991,163 @@ def test_use_dummy_version(seed):
     sim.simulate(end_date=Date(2014, 12, 31))
 
     check_dtypes(sim)
+
+
+def test_hsi_scheduling(seed):
+    """
+    check HSI_Tb_ScreeningAndRefer schedules the correct events for children / adults / adults with HIV
+
+    children should have an xray and hiv test scheduled
+    adults should have treatment and hiv test scheduled
+    adults already diagnosed with hiv should not have further hiv test scheduled
+
+    assert multiple tests not being scheduled accidentally in each HSI_Tb_ScreeningAndRefer call
+
+    """
+    popsize = 10
+
+    sim = get_sim(seed, use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
+
+    # Make the population
+    sim.make_initial_population(n=popsize)
+
+    # simulate for 0 days, just get everything set up (dxtests etc)
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+
+    df = sim.population.props
+    person_id = 0
+
+    # child under 5yrs
+    df.at[person_id, 'age_years'] = 2
+    df.at[person_id, 'tb_inf'] = 'active'
+    df.at[person_id, 'tb_date_active'] = sim.date
+    df.at[person_id, 'tb_strain'] = 'ds'
+    df.at[person_id, 'tb_smear'] = True
+    df.at[person_id, 'hv_inf'] = False
+
+    # give the symptoms
+    symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
+
+    sim.modules["SymptomManager"].change_symptom(
+        person_id=person_id,
+        symptom_string=symptom_list,
+        add_or_remove="+",
+        disease_module=sim.modules['Tb'],
+        duration_in_days=None,
+    )
+
+    assert set(sim.modules['SymptomManager'].has_what(person_id=person_id)) == symptom_list
+
+    hsi_event = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id, module=sim.modules['Tb'])
+    hsi_event.run(squeeze_factor=0)
+
+    # Check person_id has a HSI_Tb_Xray event scheduled
+    date_event, event = [
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+        isinstance(ev[1], tb.HSI_Tb_Xray_level1b)
+    ][0]
+    assert date_event == sim.date
+
+    # check HIV test scheduled
+    date_event, event = [
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+        isinstance(ev[1], hiv.HSI_Hiv_TestAndRefer)
+    ][0]
+    assert date_event == sim.date
+
+    # check these are the only two events scheduled
+    tmp = sim.modules['HealthSystem'].find_events_for_person(person_id)
+    assert len(tmp) == 2
+
+    # repeat checks for person over 5 years
+    person_id = 1
+
+    df.at[person_id, 'age_years'] = 25
+    df.at[person_id, 'tb_inf'] = 'active'
+    df.at[person_id, 'tb_date_active'] = sim.date
+    df.at[person_id, 'tb_strain'] = 'ds'
+    df.at[person_id, 'tb_smear'] = True
+    df.at[person_id, 'hv_inf'] = False
+
+    # give the symptoms
+    symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
+
+    sim.modules["SymptomManager"].change_symptom(
+        person_id=person_id,
+        symptom_string=symptom_list,
+        add_or_remove="+",
+        disease_module=sim.modules['Tb'],
+        duration_in_days=None,
+    )
+
+    assert set(sim.modules['SymptomManager'].has_what(person_id=person_id)) == symptom_list
+
+    hsi_event = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id, module=sim.modules['Tb'])
+    hsi_event.run(squeeze_factor=0)
+
+    # Check person_id has a treatment event scheduled
+    date_event, event = [
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+        isinstance(ev[1], tb.HSI_Tb_StartTreatment)
+    ][0]
+    assert date_event == sim.date
+
+    # check HIV test scheduled
+    date_event, event = [
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+        isinstance(ev[1], hiv.HSI_Hiv_TestAndRefer)
+    ][0]
+    assert date_event == sim.date
+
+    # check these are the only two events scheduled
+    tmp = sim.modules['HealthSystem'].find_events_for_person(person_id)
+    assert len(tmp) == 2
+
+    # repeat checks for person over 5 years, HIV+, smear-ve
+    person_id = 2
+
+    df.at[person_id, 'age_years'] = 25
+    df.at[person_id, 'tb_inf'] = 'active'
+    df.at[person_id, 'tb_date_active'] = sim.date
+    df.at[person_id, 'tb_strain'] = 'ds'
+    df.at[person_id, 'tb_smear'] = False
+    df.at[person_id, 'hv_inf'] = True
+    df.at[person_id, 'hv_diagnosed'] = True
+
+    # give the symptoms
+    symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
+
+    sim.modules["SymptomManager"].change_symptom(
+        person_id=person_id,
+        symptom_string=symptom_list,
+        add_or_remove="+",
+        disease_module=sim.modules['Tb'],
+        duration_in_days=None,
+    )
+
+    assert set(sim.modules['SymptomManager'].has_what(person_id=person_id)) == symptom_list
+
+    hsi_event = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id, module=sim.modules['Tb'])
+    hsi_event.run(squeeze_factor=0)
+
+    # person is HIV+ and will be referred for xpert - only available at level 2
+    # Check person_id has a further testing event scheduled
+    date_event, event = [
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+        isinstance(ev[1], tb.HSI_Tb_ScreeningAndRefer)
+    ][0]
+    assert date_event >= sim.date
+
+    # run testing event for xpert
+    hsi_event = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id,
+                                            module=sim.modules['Tb'],
+                                            facility_level='2')
+    hsi_event.run(squeeze_factor=0)
+
+    # person should now have treatment event scheduled
+    # Check person_id has a treatment event scheduled
+    date_event, event = [
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+        isinstance(ev[1], tb.HSI_Tb_StartTreatment)
+    ][0]
+    assert date_event == sim.date

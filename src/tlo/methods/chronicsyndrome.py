@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, List
+
 import numpy as np
 import pandas as pd
 
@@ -6,14 +10,18 @@ from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMix
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
-from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.hsi_event import HSI_Event
+from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
+
+if TYPE_CHECKING:
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class ChronicSyndrome(Module):
+class ChronicSyndrome(Module, GenericFirstAppointmentsMixin):
     """
     This is a dummy chronic disease
     It demonstrates the following behaviours in respect of the healthsystem module:
@@ -116,10 +124,7 @@ class ChronicSyndrome(Module):
                 name='inappropriate_jokes',
                 odds_ratio_health_seeking_in_adults=3.0
             ),
-            Symptom(
-                name='craving_sandwiches',
-                emergency_in_adults=True,
-            )
+            Symptom.emergency('craving_sandwiches', which='adults')
         )
 
     def initialise_population(self, population):
@@ -278,6 +283,20 @@ class ChronicSyndrome(Module):
 
         return health_values
 
+    def do_at_generic_first_appt_emergency(
+        self,
+        person_id: int,
+        symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
+        **kwargs,
+    ) -> None:
+        """Example for CHRONIC SYNDROME"""
+        if "craving_sandwiches" in symptoms:
+            event = HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(
+                module=self,
+                person_id=person_id,
+            )
+            schedule_hsi_event(event, topen=self.sim.date, priority=1)
 
 class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
 
@@ -425,27 +444,22 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(HSI_Event, Individu
                   f'The squeeze-factor is {squeeze_factor}.'),
         )
 
-        if squeeze_factor < 0.5:
-            # If squeeze factor is not too large:
-            logger.debug(key='debug', data='Treatment will be provided.')
-            df = self.sim.population.props
-            treatmentworks = self.module.rng.rand() < self.module.parameters['p_cure']
+        logger.debug(key='debug', data='Treatment will be provided.')
+        df = self.sim.population.props
+        treatmentworks = self.module.rng.rand() < self.module.parameters['p_cure']
 
-            if treatmentworks:
-                df.at[person_id, 'cs_has_cs'] = False
-                df.at[person_id, 'cs_status'] = 'P'
+        if treatmentworks:
+            df.at[person_id, 'cs_has_cs'] = False
+            df.at[person_id, 'cs_status'] = 'P'
 
-                # (in this we nullify the death event that has been scheduled.)
-                df.at[person_id, 'cs_scheduled_date_death'] = pd.NaT
-                df.at[person_id, 'cs_date_cure'] = self.sim.date
+            # (in this we nullify the death event that has been scheduled.)
+            df.at[person_id, 'cs_scheduled_date_death'] = pd.NaT
+            df.at[person_id, 'cs_date_cure'] = self.sim.date
 
-                # remove all symptoms instantly
-                self.sim.modules['SymptomManager'].clear_symptoms(
-                    person_id=person_id,
-                    disease_module=self.module)
-        else:
-            # Squeeze factor is too large
-            logger.debug(key='debug', data='Treatment will not be provided due to squeeze factor.')
+            # remove all symptoms instantly
+            self.sim.modules['SymptomManager'].clear_symptoms(
+                person_id=person_id,
+                disease_module=self.module)
 
     def did_not_run(self):
         logger.debug(key='debug', data='HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment: did not run')
