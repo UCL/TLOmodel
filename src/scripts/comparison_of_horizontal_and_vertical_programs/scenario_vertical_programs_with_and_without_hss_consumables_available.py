@@ -64,15 +64,27 @@ class HTMWithAndWithoutHSS(BaseScenario):
         # Load helper class containing the definitions of the elements of all the scenarios
         scenario_definitions = ScenarioDefinitions()
 
+        # We are forcing consumables to be available for everything from 2015
+        consumables_all_available = {
+            'HealthSystem': {
+                'year_cons_availability_switch': 2015,
+                'cons_availability_postSwitch': 'all',
+            }
+        }
+
         return {
             "Baseline":
-                scenario_definitions.baseline(),
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    consumables_all_available,
+                ),
 
             # - - - FULL PACKAGE OF HEALTH SYSTEM STRENGTHENING - - -
             "FULL HSS PACKAGE":
                 mix_scenarios(
                     scenario_definitions.baseline(),
                     scenario_definitions.hss_package(),
+                    consumables_all_available,
                 ),
 
             # **************************************************
@@ -84,6 +96,7 @@ class HTMWithAndWithoutHSS(BaseScenario):
                 mix_scenarios(
                     scenario_definitions.baseline(),
                     scenario_definitions.hiv_scaleup(),
+                    consumables_all_available,
                 ),
             # - - - HIV SCALE-UP *WITH* HSS PACKAGE- - -
             "HIV Programs Scale-up WITH HSS PACKAGE":
@@ -91,6 +104,7 @@ class HTMWithAndWithoutHSS(BaseScenario):
                     scenario_definitions.baseline(),
                     scenario_definitions.hiv_scaleup(),
                     scenario_definitions.hss_package(),
+                    consumables_all_available,
                 ),
 
             # - - - TB SCALE-UP WITHOUT HSS PACKAGE- - -
@@ -98,6 +112,7 @@ class HTMWithAndWithoutHSS(BaseScenario):
                 mix_scenarios(
                     scenario_definitions.baseline(),
                     scenario_definitions.tb_scaleup(),
+                    consumables_all_available,
                 ),
             # - - - TB SCALE-UP *WITH* HSS PACKAGE- - -
             "TB Programs Scale-up WITH HSS PACKAGE":
@@ -105,6 +120,7 @@ class HTMWithAndWithoutHSS(BaseScenario):
                     scenario_definitions.baseline(),
                     scenario_definitions.tb_scaleup(),
                     scenario_definitions.hss_package(),
+                    consumables_all_available,
                 ),
 
             # - - - MALARIA SCALE-UP WITHOUT HSS PACKAGE- - -
@@ -112,6 +128,7 @@ class HTMWithAndWithoutHSS(BaseScenario):
                 mix_scenarios(
                     scenario_definitions.baseline(),
                     scenario_definitions.malaria_scaleup(),
+                    consumables_all_available,
                 ),
             # - - - MALARIA SCALE-UP *WITH* HSS PACKAGE- - -
             "Malaria Programs Scale-up WITH HSS PACKAGE":
@@ -119,6 +136,7 @@ class HTMWithAndWithoutHSS(BaseScenario):
                     scenario_definitions.baseline(),
                     scenario_definitions.malaria_scaleup(),
                     scenario_definitions.hss_package(),
+                    consumables_all_available,
                 ),
 
             # - - - HIV & TB & MALARIA SCALE-UP WITHOUT HSS PACKAGE- - -
@@ -128,6 +146,7 @@ class HTMWithAndWithoutHSS(BaseScenario):
                     scenario_definitions.hiv_scaleup(),
                     scenario_definitions.tb_scaleup(),
                     scenario_definitions.malaria_scaleup(),
+                    consumables_all_available,
                 ),
             # - - - HIV & TB & MALARIA SCALE-UP *WITH* HSS PACKAGE- - -
             "HIV/Tb/Malaria Programs Scale-up WITH HSS PACKAGE":
@@ -137,6 +156,7 @@ class HTMWithAndWithoutHSS(BaseScenario):
                     scenario_definitions.tb_scaleup(),
                     scenario_definitions.malaria_scaleup(),
                     scenario_definitions.hss_package(),
+                    consumables_all_available,
                 ),
         }
 
