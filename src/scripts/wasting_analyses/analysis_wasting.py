@@ -10,8 +10,8 @@ import time
 from pathlib import Path
 
 import pandas as pd
-from PyPDF2 import PdfReader, PdfWriter
 from matplotlib import pyplot as plt
+from PyPDF2 import PdfReader, PdfWriter
 
 from tlo.analysis.utils import compare_number_of_deaths, get_scenario_outputs, parse_log_file
 
