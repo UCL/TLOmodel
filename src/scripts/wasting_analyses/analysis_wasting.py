@@ -12,7 +12,6 @@ from pathlib import Path
 import pandas as pd
 from PyPDF2 import PdfReader, PdfWriter
 from matplotlib import pyplot as plt
-from PIL import Image
 
 from tlo.analysis.utils import compare_number_of_deaths, get_scenario_outputs, parse_log_file
 
@@ -32,25 +31,23 @@ class WastingAnalyses:
 
     def __init__(self, in_scenario_filename, in_outputs_path):
 
-        self.__scenario_filename = in_scenario_filename
-        self.__outputs_path = in_outputs_path
-
-        # Find results_folder associated with a given batch_file (and get most recent [-1])
-        results_folder = get_scenario_outputs(self.__scenario_filename, self.__outputs_path)[-1]
-        results_parent_folder_name = str(results_folder.parent)
-        results_folder_name = results_folder.name
+        # Find sim_results_folder associated with a given batch_file (and get most recent [-1])
+        sim_results_folder = get_scenario_outputs(in_scenario_filename, in_outputs_path)[-1]
+        sim_results_parent_folder_name = str(sim_results_folder.parent)
+        sim_results_folder_name = sim_results_folder.name
+        self.outcomes_path_name = str(in_outputs_path) + "/" + sim_results_folder_name
         # Get the datestamp
-        if results_folder_name.startswith(scenario_filename + '-'):
-            self.datestamp = results_folder_name[(len(scenario_filename)+1):]
+        if sim_results_folder_name.startswith(scenario_filename + '-'):
+            self.datestamp = sim_results_folder_name[(len(scenario_filename)+1):]
         else:
             print("The scenario output name does not correspond with the set scenario_filename.")
 
         # Path to the .log.gz file
-        results_folder_path_run0_draw0 = results_parent_folder_name + '/' + results_folder_name + '/0/0/'
-        results_file_name_prefix = scenario_filename
-        results_file_name_extension = '.log.gz'
-        gz_results_file_path = Path(glob.glob(os.path.join(results_folder_path_run0_draw0,
-                                                           f"{results_file_name_prefix}*{results_file_name_extension}"))[0])
+        sim_results_folder_path_run0_draw0 = sim_results_parent_folder_name + '/' + sim_results_folder_name + '/0/0/'
+        sim_results_file_name_prefix = scenario_filename
+        sim_results_file_name_extension = '.log.gz'
+        gz_results_file_path = Path(glob.glob(os.path.join(sim_results_folder_path_run0_draw0,
+                                                           f"{sim_results_file_name_prefix}*{sim_results_file_name_extension}"))[0])
 
         # Path to the decompressed .log file
         log_results_file_path = gz_results_file_path.with_suffix('')
@@ -77,8 +74,8 @@ class WastingAnalyses:
         self.fig_files = []
 
     def save_fig__store_pdf_file(self, fig, fig_output_name: str) -> None:
-        fig.savefig(fig_output_name + '.png', format='png')
-        fig.savefig(fig_output_name + '.pdf', format='pdf')
+        fig.savefig(self.outcomes_path_name + "/" + fig_output_name + '.png', format='png')
+        fig.savefig(self.outcomes_path_name + "/" + fig_output_name + '.pdf', format='pdf')
         self.fig_files.append(fig_output_name + '.pdf')
 
     def plot_wasting_incidence(self):
@@ -119,9 +116,9 @@ class WastingAnalyses:
                 _col_counter = -1
             _col_counter += 1  # increment column counter
             fig.tight_layout()
-        fig_output_name = (str(outputs_path) + '/wasting_incidence__' + self.datestamp)
+        fig_output_name = ('wasting_incidence__' + self.datestamp)
         self.save_fig__store_pdf_file(fig, fig_output_name)
-        plt.show()
+        # plt.show()
 
     def plot_wasting_prevalence_per_year(self):
         """ plot wasting prevalence of all age groups per year. Proportions are obtained by getting a total number of
@@ -139,9 +136,9 @@ class WastingAnalyses:
                                             ylim=[0, 0.15])
         # add_footnote(fig, "proportion of wasted children within each age-group")
         plt.tight_layout()
-        fig_output_name = (str(outputs_path) + '/wasting_prevalence_per_year__' + self.datestamp)
+        fig_output_name = ('wasting_prevalence_per_year__' + self.datestamp)
         self.save_fig__store_pdf_file(fig, fig_output_name)
-        plt.show()
+        # plt.show()
 
     def plot_wasting_prevalence_by_age_group(self):
         """ plot wasting prevalence per each age group. Proportions are obtained by getting a total number of
@@ -151,7 +148,6 @@ class WastingAnalyses:
         w_prev_df = w_prev_df.set_index(w_prev_df.date.dt.year)
         w_prev_df = w_prev_df.loc[w_prev_df.index == 2023]
         w_prev_df = w_prev_df.drop(columns='date')
-        print(f"{w_prev_df=}")
         order_x_axis = ['0_5mo', '6_11mo', '12_23mo', '24_35mo', '36_47mo', '48_59mo']
         # Assert that all columns are included
         assert set(w_prev_df.columns) == set(order_x_axis), "Not all columns are included in the order_x_axis."
@@ -173,7 +169,7 @@ class WastingAnalyses:
                         "/ total number of children in the age group",
                         ha="center", fontsize=10, bbox={"facecolor": "gray", "alpha": 0.3, "pad": 5})
         plt.tight_layout()
-        fig_output_name = (str(outputs_path) + '/wasting_prevalence_per_each_age_group__' + self.datestamp)
+        fig_output_name = ('wasting_prevalence_per_each_age_group__' + self.datestamp)
         self.save_fig__store_pdf_file(fig, fig_output_name)
         plt.show()
 
@@ -203,13 +199,13 @@ class WastingAnalyses:
         fig.figure.text(0.5, 0.02,
                         "Model output against Global Burden of Diseases (GDB) study data",
                         ha="center", fontsize=10, bbox={"facecolor": "gray", "alpha": 0.3, "pad": 5})
-        fig_output_name = (str(outputs_path) + '/modal_gbd_deaths_by_gender__' + self.datestamp)
+        fig_output_name = ('modal_gbd_deaths_by_gender__' + self.datestamp)
         self.save_fig__store_pdf_file(fig, fig_output_name)
-        plt.show()
+        # plt.show()
 
     def plot_all_figs_in_one_pdf(self):
 
-        output_file_path = str(self.__outputs_path) + '/wasting_all_figures__' + self.datestamp + '.pdf'
+        output_file_path = Path(self.outcomes_path_name + '/wasting_all_figures__' + self.datestamp + '.pdf')
         # Remove the existing output file if it exists to ensure a clean start
         if os.path.exists(output_file_path):
             os.remove(output_file_path)
@@ -223,7 +219,7 @@ class WastingAnalyses:
 
         # Iterate through the figure files and add each to the writer
         for fig_file in self.fig_files:
-            pdf_reader = PdfReader(fig_file)
+            pdf_reader = PdfReader(self.outcomes_path_name + "/" + fig_file)
             for page_num in range(len(pdf_reader.pages)):
                 page = pdf_reader.pages[page_num]
                 pdf_writer.add_page(page)
