@@ -7,6 +7,7 @@ from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.hsi_event import HSI_Event
+from tlo.util import read_csv_files
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -71,9 +72,7 @@ class Epi(Module):
 
     def read_parameters(self, data_folder):
         p = self.parameters
-        workbook = pd.read_excel(
-            Path(self.resourcefilepath) / 'ResourceFile_EPI_WHO_estimates.xlsx', sheet_name=None
-        )
+        workbook = read_csv_files(Path(self.resourcefilepath) / 'ResourceFile_EPI_WHO_estimates', files=None)
 
         self.load_parameters_from_dataframe(workbook["parameters"])
 
