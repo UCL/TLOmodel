@@ -5,24 +5,16 @@ An analysis file for the wasting module (so far only for 1 run, 1 draw)
 import glob
 import gzip
 import os
-import PyPDF2
 import shutil
 import time
-
-from fpdf import FPDF
 from pathlib import Path
-from PIL import Image
 
 import pandas as pd
+from fpdf import FPDF
 from matplotlib import pyplot as plt
+from PIL import Image
 
-from tlo import Date, Simulation, logging
-from tlo.analysis.utils import (
-    compare_number_of_deaths,
-    get_scenario_outputs,
-    load_pickled_dataframes,
-    parse_log_file
-)
+from tlo.analysis.utils import compare_number_of_deaths, get_scenario_outputs, parse_log_file
 
 # start time of the analysis
 time_start = time.time()
