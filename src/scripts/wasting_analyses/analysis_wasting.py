@@ -10,7 +10,7 @@ import time
 from pathlib import Path
 
 import pandas as pd
-from fpdf import FPDF
+from PyPDF2 import PdfReader, PdfWriter
 from matplotlib import pyplot as plt
 from PIL import Image
 
@@ -75,7 +75,11 @@ class WastingAnalyses:
                                      'WHZ>=-2': 'not undernourished'}
 
         self.fig_files = []
-        self.type_of_individual_figs = 'png'
+
+    def save_fig__store_pdf_file(self, fig, fig_output_name: str) -> None:
+        fig.savefig(fig_output_name + '.png', format='png')
+        fig.savefig(fig_output_name + '.pdf', format='pdf')
+        self.fig_files.append(fig_output_name + '.pdf')
 
     def plot_wasting_incidence(self):
         """ plot the incidence of wasting over time """
@@ -115,10 +119,8 @@ class WastingAnalyses:
                 _col_counter = -1
             _col_counter += 1  # increment column counter
             fig.tight_layout()
-        fig_output_name = (str(outputs_path) + '/wasting_incidence__' + self.datestamp + '.' +
-                           self.type_of_individual_figs)
-        fig.savefig(fig_output_name, format=self.type_of_individual_figs)
-        self.fig_files.append(fig_output_name)
+        fig_output_name = (str(outputs_path) + '/wasting_incidence__' + self.datestamp)
+        self.save_fig__store_pdf_file(fig, fig_output_name)
         plt.show()
 
     def plot_wasting_prevalence_per_year(self):
@@ -137,10 +139,8 @@ class WastingAnalyses:
                                             ylim=[0, 0.15])
         # add_footnote(fig, "proportion of wasted children within each age-group")
         plt.tight_layout()
-        fig_output_name = (str(outputs_path) + '/wasting_prevalence_per_year__' + self.datestamp + '.' +
-                           self.type_of_individual_figs)
-        fig.savefig(fig_output_name, format=self.type_of_individual_figs)
-        self.fig_files.append(fig_output_name)
+        fig_output_name = (str(outputs_path) + '/wasting_prevalence_per_year__' + self.datestamp)
+        self.save_fig__store_pdf_file(fig, fig_output_name)
         plt.show()
 
     def plot_wasting_prevalence_by_age_group(self):
@@ -173,10 +173,8 @@ class WastingAnalyses:
                         "/ total number of children in the age group",
                         ha="center", fontsize=10, bbox={"facecolor": "gray", "alpha": 0.3, "pad": 5})
         plt.tight_layout()
-        fig_output_name = (str(outputs_path) + '/wasting_prevalence_per_each_age_group__' + self.datestamp + '.'
-                           + self.type_of_individual_figs)
-        fig.savefig(fig_output_name, format=self.type_of_individual_figs)
-        self.fig_files.append(fig_output_name)
+        fig_output_name = (str(outputs_path) + '/wasting_prevalence_per_each_age_group__' + self.datestamp)
+        self.save_fig__store_pdf_file(fig, fig_output_name)
         plt.show()
 
     def plot_modal_gbd_deaths_by_gender(self):
@@ -205,10 +203,8 @@ class WastingAnalyses:
         fig.figure.text(0.5, 0.02,
                         "Model output against Global Burden of Diseases (GDB) study data",
                         ha="center", fontsize=10, bbox={"facecolor": "gray", "alpha": 0.3, "pad": 5})
-        fig_output_name = (str(outputs_path) + '/modal_gbd_deaths_by_gender__' + self.datestamp + '.' +
-                           self.type_of_individual_figs)
-        fig.savefig(fig_output_name, format=self.type_of_individual_figs)
-        self.fig_files.append(fig_output_name)
+        fig_output_name = (str(outputs_path) + '/modal_gbd_deaths_by_gender__' + self.datestamp)
+        self.save_fig__store_pdf_file(fig, fig_output_name)
         plt.show()
 
     def plot_all_figs_in_one_pdf(self):
@@ -221,48 +217,20 @@ class WastingAnalyses:
         # Assert that the file doesn't exist anymore after removal
         assert not os.path.exists(output_file_path), "The file was not successfully removed."
 
-        # Create instance of FPDF class
-        pdf = FPDF()
+        # Merge the PDF files
+        # Create a PDF writer object
+        pdf_writer = PdfWriter()
 
-        # Standard A4 page size in millimeters
-        a4_width_mm = 210
-        a4_height_mm = 297
+        # Iterate through the figure files and add each to the writer
+        for fig_file in self.fig_files:
+            pdf_reader = PdfReader(fig_file)
+            for page_num in range(len(pdf_reader.pages)):
+                page = pdf_reader.pages[page_num]
+                pdf_writer.add_page(page)
 
-        # Iterate through the figure files and add each as a new page
-        for figure_file in self.fig_files:
-            # Open the figure file
-            figure = Image.open(figure_file)
-
-            # Convert the figure to RGB mode if it's not already
-            if figure.mode != 'RGB':
-                figure = figure.convert('RGB')
-
-            # Get the size of the figure
-            width, height = figure.size
-
-            # Convert pixels to millimeters (1 pixel = 0.264583 mm)
-            width_mm = width * 0.264583
-            height_mm = height * 0.264583
-
-            # Calculate the scaling factor to fit the figure within A4 dimensions
-            scale_factor = min(a4_width_mm / width_mm, a4_height_mm / height_mm)
-
-            # Calculate the new dimensions of the figure
-            new_width_mm = width_mm * scale_factor
-            new_height_mm = height_mm * scale_factor
-
-            # Add a new page to the PDF
-            pdf.add_page()
-
-            # Center the figure on the page
-            x_offset = (a4_width_mm - new_width_mm) / 2
-            y_offset = (a4_height_mm - new_height_mm) / 2
-
-            # Add the figure to the page
-            pdf.image(figure_file, x=x_offset, y=y_offset, w=new_width_mm, h=new_height_mm)
-
-        # Save the PDF to a file
-        pdf.output(output_file_path)
+        # Write the merged PDF to a file
+        with open(output_file_path, 'wb') as out_file:
+            pdf_writer.write(out_file)
 
 
 if __name__ == "__main__":
