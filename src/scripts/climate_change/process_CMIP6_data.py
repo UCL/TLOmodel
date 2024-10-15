@@ -78,7 +78,7 @@ for file in glob.glob(os.path.join(base_dir, "*.nc")):
             grid += 1
     data_by_model_and_grid[models[model]] = grid_dictionary
     model += 1
-
+print(data_by_model_and_grid)
 data_by_model_and_grid = pd.DataFrame.from_dict(data_by_model_and_grid)
 data_by_model_and_grid.to_csv(Path(scenario_directory)/"data_by_model_and_grid.csv")
 
