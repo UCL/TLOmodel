@@ -1288,20 +1288,26 @@ class CareOfWomenDuringPregnancy(Module):
         df = self.sim.population.props
         person_id = hsi_event.target
 
-        # Run dx_test for anaemia...
-        # If a woman is not truly anaemic but the FBC returns a result of anaemia, due to tests specificity, we
-        # assume the reported anaemia is mild
-        hsi_event.get_consumables(item_codes=self.item_codes_preg_consumables['blood_test_equipment'])
-        hsi_event.add_equipment({'Analyser, Haematology'})
+        # # Run dx_test for anaemia...
+        # # If a woman is not truly anaemic but the FBC returns a result of anaemia, due to tests specificity, we
+        # # assume the reported anaemia is mild
+        # hsi_event.get_consumables(item_codes=self.item_codes_preg_consumables['blood_test_equipment'])
+        # hsi_event.add_equipment({'Analyser, Haematology'})
+        #
+        # test_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
+        #         dx_tests_to_run='full_blood_count_hb', hsi_event=hsi_event)
 
-        test_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-                dx_tests_to_run='full_blood_count_hb', hsi_event=hsi_event)
+        full_blood_count_delivered = pregnancy_helper_functions.check_int_deliverable(
+            self, int_name='full_blood_count', hsi_event=hsi_event,
+            q_param=None,cons=None,
+            opt_cons=self.item_codes_preg_consumables['blood_test_equipment'],
+            equipment={'Analyser, Haematology'}, dx_test='full_blood_count_hb')
 
-        if test_result and (df.at[person_id, 'ps_anaemia_in_pregnancy'] == 'none'):
+        if full_blood_count_delivered and (df.at[person_id, 'ps_anaemia_in_pregnancy'] == 'none'):
             return 'non_severe'
 
         # If the test correctly identifies a woman's anaemia we assume it correctly identifies its severity
-        if test_result and (df.at[person_id, 'ps_anaemia_in_pregnancy'] != 'none'):
+        if full_blood_count_delivered and (df.at[person_id, 'ps_anaemia_in_pregnancy'] != 'none'):
             return df.at[person_id, 'ps_anaemia_in_pregnancy']
 
         # We return a none value if no anaemia was detected

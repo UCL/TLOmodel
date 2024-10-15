@@ -63,7 +63,8 @@ def get_list_of_items(self, item_list):
 
     return codes
 
-def check_int_deliverable(self, int_name, hsi_event, q_param, cons, opt_cons=None, equipment=None, dx_test=None):
+def check_int_deliverable(self, int_name, hsi_event,
+                          q_param=None, cons=None, opt_cons=None, equipment=None, dx_test=None):
     """
     This function is called to determine if an intervention within the MNH modules can be delivered to an individual
     during a given HSI. This applied to all MNH interventions. If analyses are being conducted in which the probability
@@ -71,7 +72,6 @@ def check_int_deliverable(self, int_name, hsi_event, q_param, cons, opt_cons=Non
      intervention delivery is determined by any module-level quality parameters, consumable availability, and
      (if applicable) the results of any dx_tests. Equipment is also declared.
 
-    TODO: add to newborn interventions
     TODO: what about interventions outside mnh modules
 
 :   param self: module
@@ -127,18 +127,23 @@ def check_int_deliverable(self, int_name, hsi_event, q_param, cons, opt_cons=Non
         consumables = False
         test = False
 
-        if all([self.rng.random_sample() < value for value in q_param]) or (q_param is None):
+        if ((q_param is None) or
+            all([self.rng.random_sample() < value for value in q_param])):
             quality = True
 
             if equipment is not None:
-                hsi_event.add_equipment({equipment})
+                hsi_event.add_equipment(equipment)
 
-        if ((hsi_event.get_consumables(item_codes=cons, optional_item_codes=opt_cons if not None else [])) or
-            (cons is None)):
+        if ((cons is None) or
+            (hsi_event.get_consumables(item_codes=cons if not None else [],
+                                       optional_item_codes=opt_cons if not None else []))):
             consumables = True
 
-        if (self.sim.modules['HealthSystem'].dx_manager.run_dx_test( dx_tests_to_run=dx_test, hsi_event=hsi_event)
-            or (dx_test is None)):
+        if cons is None and opt_cons is not None:
+            hsi_event.get_consumables(item_codes= [], optional_item_codes=opt_cons)
+
+        if ((dx_test is None) or
+            (self.sim.modules['HealthSystem'].dx_manager.run_dx_test( dx_tests_to_run=dx_test, hsi_event=hsi_event))):
             test = True
 
         if quality and consumables and test:
