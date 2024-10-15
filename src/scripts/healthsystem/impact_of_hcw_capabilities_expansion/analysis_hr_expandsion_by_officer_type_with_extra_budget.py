@@ -337,9 +337,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # def get_hcw_time_usage(_df):
     #     """Return the number of treatments by short treatment id (total within the TARGET_PERIOD)"""
-    #     _df = _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD), 'TREATMENT_ID'].apply(pd.Series).sum()
-    #     _df.index = _df.index.map(lambda x: x.split('_')[0] + "*")
-    #     _df = _df.groupby(level=0).sum()
+    #     CNP_cols = ['date']
+    #     for col in _df.columns[1:]:
+    #         if ('Clinical' in col) | ('Nursing_and_Midwifery' in col) | ('Pharmacy' in col):
+    #             CNP_cols.append(col)
+    #
+    #     _df = _df[CNP_cols].copy()
+    #
+    #
     #     return _df
 
     # Get parameter/scenario names
@@ -538,11 +543,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     num_never_ran_appts = num_never_ran_appts.reindex(num_appts.index).fillna(0.0)
     assert (num_appts.index == num_never_ran_appts.index).all()
     num_appts_demand = num_appts + num_never_ran_appts
-
+    #
     # hcw_time_usage = extract_results(
     #     results_folder,
     #     module='tlo.methods.healthsystem.summary',
-    #     key='Capacity',#'Capacity_By_OfficerType_And_FacilityLevel',
+    #     key='Capacity_By_OfficerType_And_FacilityLevel',#'Capacity',#'Capacity_By_OfficerType_And_FacilityLevel',
     #     custom_generate_series=get_hcw_time_usage,
     #     do_scaling=False
     # ).pipe(set_param_names_as_column_index_level_0)
