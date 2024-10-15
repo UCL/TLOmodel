@@ -1,23 +1,41 @@
-name: Calibration
+name: "Calibration (reusable)"
 
 on:
+  workflow_call:
+    inputs:
+      commit:
+        description: '40-character commit hash'
+        required: true
+        default: ''
+        type: string
+      hs_mode:
+        description: 'Healthsystem mode'
+        required: true
+        default: ''
+        type: string
   workflow_dispatch:
     inputs:
       commit:
         description: '40-character commit hash'
         required: true
-        default: ""
+        default: ''
         type: string
-  schedule:
-    - cron: 31 2 * * *
+      hs_mode:
+        description: 'Healthsystem mode'
+        required: true
+        default: ''
+        type: choice
+        options:
+        - '1'
+        - '2'
 
 env:
-  REPO_PATH:       /mnt/tlo/TLOmodel
+  REPO_PATH:       /mnt/tlo/TLOmodel-mode${{ inputs.hs_mode }}
   OUTPUT_ROOT:     /mnt/tlodev2stg/tlo-dev-fs-2/task-runner/output
   RUNS_NUMBER:     10
   PYTHON_VER:      3.11
-  RUN_NAME:        021_long_run_all_diseases_run
-  PROCESS_NAME:    022_long_run_all_diseases_process
+  RUN_NAME:        021_long_run_all_diseases_mode${{ inputs.hs_mode }}_run
+  PROCESS_NAME:    022_long_run_all_diseases_mode${{ inputs.hs_mode }}_process
 
 jobs:
 
@@ -27,7 +45,7 @@ jobs:
   # `actions/checkout` workflow.
   setup:
     name: Setup
-    runs-on: [tlo-dev-vm-1]
+    runs-on: [tlo-dev-vm-3]
     strategy:
       fail-fast: false
     outputs:
@@ -43,17 +61,13 @@ jobs:
       - name: Generate environment variables
         id: vars
         run: |
-          if [[ ${{ github.event_name }} == 'workflow_dispatch' ]] && [[ -n "${{ inputs.commit }}" ]]; then
-              SHA=${{ inputs.commit }}
-          else
-              SHA=${{ github.sha }}
-          fi
-          ENV="/mnt/tlo/env-${SHA}"
+          SHA="mg/calibration-mod2"
+          ENV="/mnt/tlo/env-healthsystem-mode${{ inputs.hs_mode }}-${SHA}"
           if [[ -d "${ENV}" ]]; then
               echo "Virtual environment directory ${ENV} already exists, leaving..."
               exit 1
           fi
-          WORKTREE_PATH="/mnt/tlo/${SHA}"
+          WORKTREE_PATH="/mnt/tlo/healthsystem-mode${{ inputs.hs_mode }}-${SHA}"
           if [[ -d "${WORKTREE_PATH}" ]]; then
               echo "Worktree directory ${WORKTREE_PATH} already exists, leaving..."
               exit 1
@@ -71,7 +85,7 @@ jobs:
         run: |
           # If the repository doesn't exist on disk, clone it.
           if [[ ! -d "${REPO_PATH}" ]]; then
-              git clone --depth=1 --branch="${{ github.ref_name }}" "https://github.com/${{ github.repository }}.git" "${REPO_PATH}"
+              git clone "https://github.com/giordano/TLOmodel.git" "${REPO_PATH}"
           fi
           # In any case, fetch the requested commit.
           git -C "${REPO_PATH}" fetch --depth=1 origin "${SHA}"
@@ -102,8 +116,9 @@ jobs:
         id: tasks
         run: |
           SKIP_TASKS="false"
-          if [[ -d "${output_dir}" ]]; then
-              echo "Output directory ${output_dir} already exists, setting RUNS_NUMBER to 1 and skipping further task runs"
+          output_dir_run_name="${output_dir}/${RUN_NAME}"
+          if [[ -d "${output_dir_run_name}" ]]; then
+              echo "Output directory ${output_dir_run_name} already exists, setting RUNS_NUMBER to 1 and skipping further task runs"
               RUNS_NUMBER=1
               # Set variable to make task job run, but exit immediately, so that
               # the build doesn't fail.
@@ -134,7 +149,7 @@ jobs:
   tasks:
     needs: setup
     name: Run task ${{ matrix.index }}
-    runs-on: [tlo-dev-vm-1, tasks] # Use only runners dedicated to running the tasks.
+    runs-on: [tlo-dev-vm-3, tasks, 'healthsystem-mode-${{ inputs.hs_mode }}'] # Use only runners dedicated to running the tasks.
     timeout-minutes: 5760 # = 4 * 24 * 60 minutes = 4 days
     strategy:
       fail-fast: false
@@ -152,14 +167,14 @@ jobs:
           task_output_dir="${{ needs.setup.outputs.output_dir }}/${RUN_NAME}/${draw}/${{ matrix.index }}"
           mkdir -p "${task_output_dir}"
 
-          tlo scenario-run --output-dir "${task_output_dir}" --draw "${draw}" ${{ matrix.index }} "${{ needs.setup.outputs.worktree_path }}/src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py"
+          tlo scenario-run --output-dir "${task_output_dir}" --draw "${draw}" ${{ matrix.index }} "${{ needs.setup.outputs.worktree_path }}/src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py" --healthsystem-mode ${{ inputs.hs_mode }} --end-date '2011-01-01'
         working-directory: "${{ needs.setup.outputs.worktree_path }}"
 
   # Do the postprocessing
   postprocess:
     name: Post processing
     needs: [setup, tasks]
-    runs-on: [tlo-dev-vm-1, postprocess] # Use only the runners dedicated to postprocessing
+    runs-on: [tlo-dev-vm-3, postprocess] # Use only the runners dedicated to postprocessing
     strategy:
       fail-fast: false
     steps:
@@ -190,7 +205,7 @@ jobs:
     # `setup` was successful, to avoid cleaning up existing worktrees and
     # environments used by other builds.
     if: ${{ always() && needs.setup.result == 'success' }}
-    runs-on: [tlo-dev-vm-1]
+    runs-on: [tlo-dev-vm-3]
     strategy:
       fail-fast: false
     steps:
