@@ -25,10 +25,10 @@ class WastingAnalysis(BaseScenario):
         super().__init__(
             seed=0,
             start_date=Date(year=2010, month=1, day=1),
-            end_date=Date(year=2030, month=1, day=1),
+            end_date=Date(year=2031, month=1, day=1),
             initial_population_size=20_000,
             number_of_draws=1,
-            runs_per_draw=1,
+            runs_per_draw=10,
         )
 
     def log_configuration(self):
