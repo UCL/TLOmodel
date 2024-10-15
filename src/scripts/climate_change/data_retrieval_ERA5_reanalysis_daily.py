@@ -10,13 +10,11 @@ for year in years:
         if not os.path.exists(year_dir):
             os.makedirs(year_dir)
         os.chdir(year_dir)
-        dataset = "derived-era5-single-levels-daily-statistics"
+        dataset = "reanalysis-era5-single-levels"
         request = {
-            "product_type": ["monthly_averaged_reanalysis"],
+            "product_type": ["reanalysis"],
             "variable": ["total_precipitation"],
-            "year": [
-                "2024"
-            ],
+            "year": year,
             "month": [
                 "01", "02", "03",
                 "04", "05", "06",
@@ -36,9 +34,18 @@ for year in years:
                 "28", "29", "30",
                 "31"
             ],
-            "daily_statistic": "daily_maximum",
-            "time_zone": "utc+00:00",
-            "frequency": "1_hourly",
+            "time": [
+                "00:00", "01:00", "02:00",
+                "03:00", "04:00", "05:00",
+                "06:00", "07:00", "08:00",
+                "09:00", "10:00", "11:00",
+                "12:00", "13:00", "14:00",
+                "15:00", "16:00", "17:00",
+                "18:00", "19:00", "20:00",
+                "21:00", "22:00", "23:00"
+            ],
+            "data_format": "netcdf",
+            "download_format": "zip",
             "area": [-9.36366167, 32.67161823, -17.12627881, 35.91841716]
         }
 
