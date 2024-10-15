@@ -18,6 +18,7 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
+from tlo.util import read_csv_files
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import DiagnosisFunction, HSIEventScheduler
@@ -225,8 +226,8 @@ class Depression(Module, GenericFirstAppointmentsMixin):
     def read_parameters(self, data_folder):
         "read parameters, register disease module with healthsystem and register symptoms"
         self.load_parameters_from_dataframe(
-            pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Depression.xlsx',
-                          sheet_name='parameter_values')
+            read_csv_files(Path(self.resourcefilepath) / 'ResourceFile_Depression',
+                           files=['parameter_values'])
         )
         p = self.parameters
 
@@ -279,7 +280,7 @@ class Depression(Module, GenericFirstAppointmentsMixin):
         # risk of ever having diagnosed depression in initial population
         self.linearModels['Depression_Ever_Diagnosed_At_Population_Initialisation'] = LinearModel.multiplicative(
             Predictor('de_ever_depr').when(True, p['init_pr_ever_diagnosed_depression'])
-                                     .otherwise(0.0)
+            .otherwise(0.0)
         )
 
         # risk of currently using anti-depressants in initial population
@@ -341,7 +342,7 @@ class Depression(Module, GenericFirstAppointmentsMixin):
         # risk of stopping anti-depressants every 3 months
         self.linearModels['Risk_of_Stopping_Antidepressants_per3mo'] = LinearModel.multiplicative(
             Predictor('de_depr').when(True, p['prob_3m_default_antidepr'])
-                                .when(False, p['prob_3m_stop_antidepr'])
+            .when(False, p['prob_3m_stop_antidepr'])
         )
 
         # risk of self-harm every 3 months
