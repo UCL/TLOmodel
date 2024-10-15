@@ -400,7 +400,7 @@ def melt_and_label_consumables_cost(_df, label):
 
 consumable_costs = [
     (total_cost_of_consumables_dispensed, 'cost_of_consumables_dispensed'),
-    (total_cost_of_excess_consumables_stocked, 'cost_of_consumables_stocked'),
+    (total_cost_of_excess_consumables_stocked, 'cost_of_excess_consumables_stocked'),
 ]
 # Iterate through additional costs, melt and concatenate
 for df, label in consumable_costs:
@@ -656,7 +656,7 @@ do_stacked_bar_plot(_df = scenario_cost, cost_category = 'Human Resources for He
 do_stacked_bar_plot(_df = scenario_cost, cost_category = 'Equipment purchase and maintenance', year = 2018, actual_expenditure = 6_048_481)
 do_stacked_bar_plot(_df = scenario_cost, cost_category = 'all', year = 2018, actual_expenditure = 624_054_027)
 
-# 2. Return on Investment Plot
+# 3. Return on Investment Plot
 #----------------------------------------------------
 # Plot ROI at various levels of cost
 # Step 1: Create an array of costs ranging from 0 to the max value in the 'mean' column
