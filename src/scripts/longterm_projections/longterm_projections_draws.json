@@ -1,0 +1,43 @@
+{
+  "scenario_script_path": "/Users/rem76/PycharmProjects/TLOmodel/src/scripts/longterm_projections/longterm_projections.py",
+  "scenario_seed": 0,
+  "arguments": [],
+  "runs_per_draw": 1,
+  "draws": [
+    {
+      "draw_number": 0,
+      "parameters": {
+        "SymptomManager": {
+          "spurious_symptoms": true
+        },
+        "HealthSystem": {
+          "Service_Availability": [
+            "*"
+          ],
+          "use_funded_or_actual_staffing": "funded_plus",
+          "mode_appt_constraints": 1,
+          "cons_availability": "default",
+          "beds_availability": "all",
+          "equip_availability": "default",
+          "cons_availability_postSwitch": "all",
+          "year_cons_availability_switch": 2020,
+          "equip_availability_postSwitch": "all",
+          "year_equip_availability_switch": 2020
+        },
+        "ImprovedHealthSystemAndCareSeekingScenarioSwitcher": {
+          "max_healthsystem_function": [
+            false,
+            true
+          ],
+          "max_healthcare_seeking": [
+            false,
+            true
+          ],
+          "year_of_switch": 2020
+        }
+      }
+    }
+  ],
+  "commit": "7ea3f5ae200444bf4a4688dbc2e40961fef84fd8",
+  "github": "https://github.com/UCL/TLOmodel/tree/7ea3f5ae200444bf4a4688dbc2e40961fef84fd8"
+}
