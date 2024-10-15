@@ -6,6 +6,7 @@ from collections import Counter, defaultdict
 import calendar
 import datetime
 import os
+import textwrap
 
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FuncFormatter
@@ -546,9 +547,81 @@ scenario_cost = pd.concat([scenario_cost, equipment_costs_summary], ignore_index
 # Extract all costs to a .csv
 scenario_cost.to_csv(costing_outputs_folder / 'scenario_cost.csv')
 
+# Calculate total cost
+total_scenario_cost = scenario_cost.groupby(['draw', 'stat'])['value'].sum().unstack()
+total_scenario_cost = total_scenario_cost.unstack().reset_index()
+total_scenario_cost_wide = total_scenario_cost.pivot_table(index=None, columns=['draw', 'stat'], values=0)
+
+# Calculate incremental cost
+def find_difference_relative_to_comparison(_ser: pd.Series,
+                                           comparison: str,
+                                           scaled: bool = False,
+                                           drop_comparison: bool = True,
+                                           ):
+    """Find the difference in the values in a pd.Series with a multi-index, between the draws (level 0)
+    within the runs (level 1), relative to where draw = `comparison`.
+    The comparison is `X - COMPARISON`."""
+    return _ser \
+        .unstack(level=0) \
+        .apply(lambda x: (x - x[comparison]) / (x[comparison] if scaled else 1.0), axis=1) \
+        .drop(columns=([comparison] if drop_comparison else [])) \
+        .stack()
+
+# TODO the following calculation should first capture the different by run and then be summarised
+incremental_scenario_cost = (pd.DataFrame(
+            find_difference_relative_to_comparison(
+                total_scenario_cost_wide.loc[0],
+                comparison= 0) # sets the comparator to 0 which is the Actual scenario
+        ).T.iloc[0].unstack()).T
+
+# %%
+# Monetary value of health impact
+def get_num_dalys(_df):
+    """Return total number of DALYS (Stacked) by label (total within the TARGET_PERIOD).
+    Throw error if not a record for every year in the TARGET PERIOD (to guard against inadvertently using
+    results from runs that crashed mid-way through the simulation.
+    """
+    years_needed = [i.year for i in TARGET_PERIOD]
+    assert set(_df.year.unique()).issuperset(years_needed), "Some years are not recorded."
+    return pd.Series(
+        data=_df
+        .loc[_df.year.between(*years_needed)]
+        .drop(columns=['date', 'sex', 'age_range', 'year'])
+        .sum().sum()
+    )
+
+num_dalys = extract_results(
+        results_folder,
+        module='tlo.methods.healthburden',
+        key='dalys_stacked',
+        custom_generate_series=get_num_dalys,
+        do_scaling=True
+    )
+
+num_dalys_summarized = summarize(num_dalys).loc[0].unstack()
+#num_dalys_summarized['scenario'] = scenarios.to_list() # add when scenarios have names
+#num_dalys_summarized = num_dalys_summarized.set_index('scenario')
+
+# Get absolute DALYs averted
+num_dalys_averted = summarize(
+        -1.0 *
+        pd.DataFrame(
+            find_difference_relative_to_comparison(
+                num_dalys.loc[0],
+                comparison= 0) # sets the comparator to 0 which is the Actual scenario
+        ).T
+    ).iloc[0].unstack()
+#num_dalys_averted['scenario'] = scenarios.to_list()[1:12]
+#num_dalys_averted = num_dalys_averted.set_index('scenario')
+
+chosen_cet = 77.4 # based on Ochalek et al (2018) - the paper provided the value $61 in 2016 USD terms, this value is in 2023 USD terms
+monetary_value_of_incremental_health = num_dalys_averted * chosen_cet
+max_ability_to_pay_for_implementation = monetary_value_of_incremental_health - incremental_scenario_cost # monetary value - change in costs
+
 # Plot costs
 ####################################################
-# Stacked bar plot
+# 1. Stacked bar plot (Total cost + Cost categories)
+#----------------------------------------------------
 def do_stacked_bar_plot(_df, cost_category, year, actual_expenditure):
     # Subset and Pivot the data to have 'Cost Sub-category' as columns
     _df = _df[_df.stat == 'mean']
@@ -582,6 +655,102 @@ do_stacked_bar_plot(_df = scenario_cost, cost_category = 'Medical consumables', 
 do_stacked_bar_plot(_df = scenario_cost, cost_category = 'Human Resources for Health', year = 2018, actual_expenditure = 128_593_787)
 do_stacked_bar_plot(_df = scenario_cost, cost_category = 'Equipment purchase and maintenance', year = 2018, actual_expenditure = 6_048_481)
 do_stacked_bar_plot(_df = scenario_cost, cost_category = 'all', year = 2018, actual_expenditure = 624_054_027)
+
+# 2. Return on Investment Plot
+#----------------------------------------------------
+# Plot ROI at various levels of cost
+# Step 1: Create an array of costs ranging from 0 to the max value in the 'mean' column
+costs = np.linspace(0, max_ability_to_pay_for_implementation['mean'].max(), 500)
+# Step 2: Initialize the plot
+plt.figure(figsize=(10, 6))
+# Step 3: Loop through each row and plot mean, lower, and upper values divided by costs
+for index, row in max_ability_to_pay_for_implementation.iterrows():
+    mean_values = row['mean'] / np.where(costs == 0, np.nan, costs)
+    lower_values = row['lower'] / np.where(costs == 0, np.nan, costs)
+    upper_values = row['upper'] / np.where(costs == 0, np.nan, costs)
+
+    # Plot mean line
+    plt.plot(costs, mean_values, label=f'Draw {index}')
+
+    # Plot the confidence interval as a shaded region
+    plt.fill_between(costs, lower_values, upper_values, alpha=0.2)
+
+# Step 4: Set plot labels and title
+plt.xlabel('Implementation cost')
+plt.ylabel('Return on Investment')
+plt.title('Return on Investment of scenarios at different levels of implementation cost')
+# Show legend
+plt.legend()
+# Save
+plt.savefig(figurespath / f'ROI.png', dpi=100,
+                bbox_inches='tight')
+
+# 3. Plot Maximum ability-to-pay
+#----------------------------------------------------
+def do_bar_plot_with_ci(_df, annotations=None, xticklabels_horizontal_and_wrapped=False):
+    """Make a vertical bar plot for each row of _df, using the columns to identify the height of the bar and the
+    extent of the error bar."""
+
+    yerr = np.array([
+        (_df['mean'] - _df['lower']).values,
+        (_df['upper'] - _df['mean']).values,
+    ])
+
+    xticks = {(i+1): k for i, k in enumerate(_df.index)}
+
+    fig, ax = plt.subplots()
+    ax.bar(
+        xticks.keys(),
+        _df['mean'].values,
+        yerr=yerr,
+        alpha=1,
+        ecolor='black',
+        capsize=10,
+        label=xticks.values()
+    )
+    '''
+    if annotations:
+        for xpos, ypos, text in zip(xticks.keys(), _df['upper'].values, annotations):
+            ax.text(xpos, ypos * 1.05, text, horizontalalignment='center', fontsize=11)
+
+    ax.set_xticks(list(xticks.keys()))
+    if not xticklabels_horizontal_and_wrapped:
+        wrapped_labs = ["\n".join(textwrap.wrap(_lab, 20)) for _lab in xticks.values()]
+        ax.set_xticklabels(wrapped_labs, rotation=45, ha='right', fontsize=10)
+    else:
+        wrapped_labs = ["\n".join(textwrap.wrap(_lab, 20)) for _lab in xticks.values()]
+        ax.set_xticklabels(wrapped_labs, fontsize=10)
+    '''
+
+    # Set font size for y-tick labels
+    ax.tick_params(axis='y', labelsize=12)
+    ax.tick_params(axis='x', labelsize=11)
+
+    ax.grid(axis="y")
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    fig.tight_layout()
+
+    return fig, ax
+
+# Plot DALYS accrued (with xtickabels horizontal and wrapped)
+name_of_plot = f'Maximum ability to pay, {first_year_of_simulation} - {final_year_of_simulation}'
+fig, ax = do_bar_plot_with_ci(
+    (max_ability_to_pay_for_implementation / 1e6).clip(lower=0.0),
+    annotations=[
+        f"{round(row['mean']/1e6, 1)} \n ({round(row['lower']/1e6, 1)}-{round(row['upper']/1e6, 1)})"
+        for _, row in max_ability_to_pay_for_implementation.clip(lower=0.0).iterrows()
+    ],
+    xticklabels_horizontal_and_wrapped=False,
+)
+ax.set_title(name_of_plot)
+#ax.set_ylim(0, 120)
+#ax.set_yticks(np.arange(0, 120, 10))
+ax.set_ylabel('Maximum ability to pay \n(Millions)')
+fig.tight_layout()
+fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', ''))
+fig.show()
+plt.close(fig)
 
 # TODO all these HR plots need to be looked at
 # 1. HR
