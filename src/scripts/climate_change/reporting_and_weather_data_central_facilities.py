@@ -3,6 +3,7 @@ import os
 import geopandas as gpd
 import pandas as pd
 from netCDF4 import Dataset
+import difflib
 
 # Data accessed from https://dhis2.health.gov.mw/dhis-web-data-visualizer/#/YiQK65skxjz
 # Reporting rate is expected reporting vs actual reporting
@@ -69,26 +70,42 @@ for polygon in malawi_grid["geometry"]:
     precip_data_for_grid = precip_data_for_grid * 86400  # to get from per second to per day
     weather_by_grid[grid] = precip_data_for_grid
     grid += 1
-# Load facilities file
+
+
+############### NOW HAVE LAT/LONG OF FACILITIES #####################
 general_facilities = gpd.read_file("/Users/rem76/Desktop/Climate_change_health/Data/facilities_with_districts.shp")
-# find relavent shap file
+
+facilities_with_lat_long = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/facilities_with_lat_long_region.csv")
+
 weather_data_by_facility = {}
 for reporting_facility in monthly_reporting_by_facility["facility"]:
-    if (reporting_facility == "Central Hospital") or reporting_facility == "Kamuzu Central Hospital":
-        # which malawi grid this is
-        grid = general_facilities[general_facilities["District"] == "Lilongwe City"]["Grid_Index"].iloc[0] # all labelled X City will be in the same grid
-    elif reporting_facility == "Mzuzu Central Hospital":
-        grid = general_facilities[general_facilities["District"] == "Mzuzu City"]["Grid_Index"].iloc[0]
-    elif reporting_facility == "Queen Elizabeth Central Hospital":
-        grid = general_facilities[general_facilities["District"] == "Blantyre City"]["Grid_Index"].iloc[0]
-    elif (reporting_facility == "Zomba Central Hospital") or (reporting_facility == "Zomba Mental Hospital"):
-        grid = general_facilities[general_facilities["District"] == "Zomba City"]["Grid_Index"].iloc[0]
+    print(reporting_facility)
+    matching_facility_name = difflib.get_close_matches(reporting_facility, facilities_with_lat_long['Fname'], n=3, cutoff=0.90)
+    print(matching_facility_name)
+    if matching_facility_name:
+        match_name = matching_facility_name[0]  # Access the string directly
+        lat_for_facility = facilities_with_lat_long.loc[
+            facilities_with_lat_long['Fname'] == match_name, "A109__Latitude"].squeeze()
+        long_for_facility = facilities_with_lat_long.loc[
+            facilities_with_lat_long['Fname'] == match_name, "A109__Longitude"].squeeze()
+        index_for_x = ((long_data - lat_for_facility)**2).argmin()
+        index_for_y= ((lat_data - long_for_facility)**2).argmin()
+
+        precip_data_for_facility = pr_data[:, index_for_y,index_for_x]  # across all time points
+        precip_data_for_facility = precip_data_for_facility * 86400  # to get from per second to per day
+## below are not in facilities file?
     elif reporting_facility == "Central East Zone":
         grid = general_facilities[general_facilities["District"] == "Nkhotakota"]["Grid_Index"].iloc[0] # furtherst east zone
+        precip_data_for_facility = weather_by_grid[grid]
+    elif (reporting_facility == "Central Hospital"):
+         # which malawi grid this is
+         grid = general_facilities[general_facilities["District"] == "Lilongwe City"]["Grid_Index"].iloc[0] # all labelled X City will be in the same grid
+         precip_data_for_facility = weather_by_grid[grid]
 
-    weather_data_by_facility[reporting_facility] = weather_by_grid[grid]
+    weather_data_by_facility[reporting_facility] = precip_data_for_facility
 
-print(len(weather_data_by_facility))
+print(weather_data_by_facility)
+
 ### Get data ready for linear regression between reporting and weather data
 weather_df = pd.DataFrame.from_dict(weather_data_by_facility, orient='index').T
 weather_df.columns = monthly_reporting_by_facility["facility"]
