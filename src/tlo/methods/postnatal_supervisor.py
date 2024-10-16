@@ -646,13 +646,14 @@ class PostnatalSupervisor(Module):
 
         # Those women who die the on_death function in demography is applied
         for person in die_from_htn.loc[die_from_htn].index:
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['severe_gestational_hypertension_m_death'] += 1
             self.sim.modules['Demography'].do_death(individual_id=person, cause='severe_gestational_hypertension',
                                                     originating_module=self.sim.modules['PostnatalSupervisor'])
 
             del self.sim.modules['PregnancySupervisor'].mother_and_newborn_info[person]
 
         # ----------------------------------------- CARE SEEKING ------------------------------------------------------
-        # We now use the the pn_emergency_event_mother property that has just been set for women who are experiencing
+        # We now use the pn_emergency_event_mother property that has just been set for women who are experiencing
         # severe complications to select a subset of women who may choose to seek care
         can_seek_care = df.loc[df['is_alive'] & df['la_is_postpartum'] & (df['pn_postnatal_period_in_weeks'] == week) &
                                df['pn_emergency_event_mother'] & ~df['hs_is_inpatient']]
@@ -838,7 +839,7 @@ class PostnatalSupervisor(Module):
 
                 # If this neonate will die then we make the appropriate changes
                 if self.rng.random_sample() < risk_of_death:
-
+                    self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[f'{cause}_n_death'] += 1
                     self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=cause,
                                                             originating_module=self.sim.modules['PostnatalSupervisor'])
 

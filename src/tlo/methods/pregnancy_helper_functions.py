@@ -39,13 +39,22 @@ def generate_mnh_outcome_counter():
                     'macrosomia', 'small_for_gestational_age', 'early_onset_sepsis', 'late_onset_sepsis',
 
                     # death outcomes
-                    'direct_mat_death', 'six_week_survivors',
+                    'direct_mat_death', 'six_week_survivors','induced_abortion_m_death', 'spontaneous_abortion_m_death',
+                    'ectopic_pregnancy_m_death', 'severe_gestational_hypertension_m_death',
+                    'severe_pre_eclampsia_m_death', 'eclampsia_m_death', 'antepartum_haemorrhage_m_death',
+                    'antenatal_sepsis_m_death',
+                    'intrapartum_sepsis_m_death', 'postpartum_sepsis_m_death', 'uterine_rupture_m_death',
+                    'postpartum_haemorrhage_m_death','secondary_postpartum_haemorrhage_m_death',
+                    'early_onset_sepsis_n_death', 'late_onset_sepsis_n_death', 'encephalopathy_n_death',
+                    'neonatal_respiratory_depression_n_death', 'preterm_other_n_death',
+                    'respiratory_distress_syndrome_n_death', 'congenital_heart_anomaly_n_death',
+                    'limb_or_musculoskeletal_anomaly_n_death', 'urogenital_anomaly_n_death', 'digestive_anomaly_n_death',
+                    'other_anomaly_n_death',
 
                     # service coverage outcomes
                     'anc0', 'anc1', 'anc2', 'anc3', 'anc4', 'anc5', 'anc6', 'anc7', 'anc8', 'anc8+',
                     'home_birth_delivery', 'hospital_delivery', 'health_centre_delivery',
-                    'm_pnc0', 'm_pnc1', 'm_pnc2', 'm_pnc3+', 'n_pnc0', 'n_pnc1', 'n_pnc2', 'n_pnc3+',
-                    ]
+                    'm_pnc0', 'm_pnc1', 'm_pnc2', 'm_pnc3+', 'n_pnc0', 'n_pnc1', 'n_pnc2', 'n_pnc3+']
 
     mnh_outcome_counter = {k: 0 for k in outcome_list}
 
@@ -453,7 +462,7 @@ def log_mni_for_maternal_death(self, person_id):
     logger.info(key='death_mni', data=mni_to_log)
 
 
-def calculate_risk_of_death_from_causes(self, risks):
+def calculate_risk_of_death_from_causes(self, risks, target):
     """
     This function calculates risk of death in the context of one or more 'death causing' complications in a mother of a
     newborn. In addition, it determines if the complication(s) will cause death or not. If death occurs the function
@@ -481,7 +490,8 @@ def calculate_risk_of_death_from_causes(self, risks):
         # Now use the list of probabilities to conduct a weighted random draw to determine primary cause of death
         cause_of_death = self.rng.choice(list(risks.keys()), p=probs)
 
-        # Return the primary cause of death so that it can be passed to the demography function
+        # Return and log the primary cause of death so that it can be passed to the demography function
+        self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[f'{cause_of_death}_{target}_death'] += 1
         return cause_of_death
     else:
         # Return false if death will not occur
@@ -592,7 +602,7 @@ def check_for_risk_of_death_from_cause_maternal(self, individual_id, timing):
                 risks.update(risk)
 
         # Call return the result from calculate_risk_of_death_from_causes function
-        return calculate_risk_of_death_from_causes(self, risks)
+        return calculate_risk_of_death_from_causes(self, risks, target='m')
 
     # if she is not at risk of death as she has no complications we return false to the module
     return False
@@ -662,7 +672,7 @@ def check_for_risk_of_death_from_cause_neonatal(self, individual_id):
             risks.update(risk)
 
         # Return the result from calculate_risk_of_death_from_causes function (returns primary cause of death or False)
-        return calculate_risk_of_death_from_causes(self, risks)
+        return calculate_risk_of_death_from_causes(self, risks, target='n')
 
     # if they is not at risk of death as they has no complications we return False to the module
     return False

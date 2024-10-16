@@ -6,10 +6,12 @@ from tlo.analysis.utils import extract_results, get_scenario_outputs, summarize
 
 outputspath = './outputs/sejjj49@ucl.ac.uk/'
 scenario_filename = 'cohort_test-2024-10-09T130546Z'
+scenario_filename2 = 'cohort_test-2024-10-15T122825Z'
 
-results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
+results_folder_old = get_scenario_outputs(scenario_filename, outputspath)[-1]
+results_folder_new = get_scenario_outputs(scenario_filename2, outputspath)[-1]
 
-def get_data_frames(key):
+def get_data_frames(key, results_folder):
     def sort_df(_df):
         _x = _df.drop(columns=['date'], inplace=False)
         return _x.iloc[0]
@@ -24,9 +26,13 @@ def get_data_frames(key):
 
     return results_df
 
-results = {k:get_data_frames(k) for k in ['mat_comp_incidence', 'nb_comp_incidence', 'deaths_and_stillbirths',
-                                          'service_coverage']}
+results_old = {k:get_data_frames(k, results_folder_old) for k in
+               ['mat_comp_incidence', 'nb_comp_incidence', 'deaths_and_stillbirths','service_coverage',
+                'yearly_mnh_counter_dict']}
 
+results_new = {k:get_data_frames(k, results_folder_new) for k in
+               ['mat_comp_incidence', 'nb_comp_incidence', 'deaths_and_stillbirths', 'service_coverage',
+                'yearly_mnh_counter_dict']}
 
 import matplotlib.pyplot as plt
 import numpy as np

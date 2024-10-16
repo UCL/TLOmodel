@@ -1244,6 +1244,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         if not at_risk_of_death_htn.loc[at_risk_of_death_htn].empty:
             # Those women who die have InstantaneousDeath scheduled
             for person in at_risk_of_death_htn.loc[at_risk_of_death_htn].index:
+                self.mnh_outcome_counter['severe_gestational_hypertension_m_death'] += 1
                 self.sim.modules['Demography'].do_death(individual_id=person, cause='severe_gestational_hypertension',
                                                         originating_module=self.sim.modules['PregnancySupervisor'])
 
@@ -1997,6 +1998,7 @@ class EarlyPregnancyLossDeathEvent(Event, IndividualScopeEventMixin):
                 pregnancy_helper_functions.log_mni_for_maternal_death(self.module, individual_id)
                 mni[individual_id]['delete_mni'] = True
 
+            self.module.mnh_outcome_counter[f'{self.cause}_m_death'] += 1
             self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=f'{self.cause}',
                                                     originating_module=self.sim.modules['PregnancySupervisor'])
 
@@ -2278,15 +2280,20 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         neonatal_deaths = len(df[(df['date_of_death'].dt.year == self.sim.date.year - 1) & (df['age_days'] <= 28)])
         stillbirths = c['antenatal_stillbirth'] + c['intrapartum_stillbirth']
 
-        logger.info(key='deaths_and_stillbirths',
-                    data={'antenatal_sbr': rate(c['antenatal_stillbirth'], total_births, 1000),
-                          'intrapartum_sbr': rate(c['intrapartum_stillbirth'], total_births, 1000),
-                          'total_stillbirths': stillbirths,
-                          'sbr': rate(stillbirths, total_births, 1000),
-                          'neonatal_deaths': neonatal_deaths,
-                          'nmr' : rate(neonatal_deaths, live_births, 1000),
-                          'direct_maternal_deaths': c['direct_mat_death'],
-                          'direct_mmr': rate(c['direct_mat_death'], live_births, 100_000)})
+        general_death_data = {'antenatal_sbr': rate(c['antenatal_stillbirth'], total_births, 1000),
+                              'intrapartum_sbr': rate(c['intrapartum_stillbirth'], total_births, 1000),
+                              'total_stillbirths': stillbirths,
+                              'sbr': rate(stillbirths, total_births, 1000),
+                              'neonatal_deaths': neonatal_deaths,
+                              'nmr' : rate(neonatal_deaths, live_births, 1000),
+                              'direct_maternal_deaths': c['direct_mat_death'],
+                              'direct_mmr': rate(c['direct_mat_death'], live_births, 100_000)}
+
+        cause_specific_mmrs = {k: rate(c[k], total_births, 100_000) for k in c if 'm_death' in k}
+        cause_specific_nmrs = {k: rate(c[k], total_births, 1000) for k in c if 'n_death' in k}
+        general_death_data.update({**cause_specific_mmrs, **cause_specific_nmrs})
+
+        logger.info(key='deaths_and_stillbirths', data=general_death_data)
 
         # Finally log coverage of key health services
         anc1 = sum(c[f'anc{i}'] for i in range(1, 9)) + c['anc8+']
