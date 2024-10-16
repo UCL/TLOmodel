@@ -38,7 +38,7 @@ monthly_reporting_by_DHO["region"] = reporting_data_no_mental["organisationunitc
 
 # Weather data
 directory = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical" # from 2011 on
-malawi_grid = gpd.read_file("/Users/rem76/Desktop/Climate_change_health/Data/malawi_grid.shp")
+malawi_grid = gpd.read_file("/Users/rem76/Desktop/Climate_change_health/Data/malawi_grid_0_025.shp")
 # find indices of interest from the malawi file
 
 files = os.listdir(directory)
@@ -70,7 +70,7 @@ for polygon in malawi_grid["geometry"]:
     grid += 1
 # Load mapped facilities and find relevant shap file - Malawi grid goes from SE -> NE -> SW -> NW
 weather_data_by_region = {}
-for reporting_facility in monthly_reporting_by_DHO:
+for reporting_facility in range(len(monthly_reporting_by_DHO)):
     facility_data = monthly_reporting_by_DHO.loc[reporting_facility]
     region = facility_data["region"]
     if region in ["Central East Zone", "Central West Zone"]:
