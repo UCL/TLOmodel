@@ -6,12 +6,13 @@ from netCDF4 import Dataset
 from shapely.geometry import Polygon
 
 # Load netCDF data for gridding info
-file_path = "/Users/rem76/Downloads/821bebfbcee0609d233c09e8b2bbc1f3/pr_Amon_UKESM1-0-LL_ssp119_r1i1p1f2_gn_20150116-20991216.nc"
-dataset = Dataset(file_path, mode='r')
-pr_data = dataset.variables['pr'][:]
-time_data = dataset.variables['time'][:]
-lat_data = dataset.variables['lat'][:]
-long_data = dataset.variables['lon'][:]
+#file_path = "/Users/rem76/Downloads/821bebfbcee0609d233c09e8b2bbc1f3/pr_Amon_UKESM1-0-LL_ssp119_r1i1p1f2_gn_20150116-20991216.nc"
+file_path_historical_data = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/139ef85ab4df0a12fc01854395fc9a6d.nc"
+dataset = Dataset(file_path_historical_data, mode='r')
+print(dataset.variables.keys())
+pr_data = dataset.variables['tp'][:] # ['pr'][:] pr for projections, tp for historical
+lat_data = dataset.variables['latitude'][:] #['lat'][:]
+long_data = dataset.variables['longitude'][:] #['lon'][:]
 meshgrid_from_netCDF = np.meshgrid(long_data, lat_data)
 
 # Load Malawi shapefile
@@ -42,7 +43,7 @@ grid_clipped = gpd.overlay(grid, malawi, how='intersection') # for graphing
 grid_clipped_ADM1 = gpd.overlay(grid, malawi_admin1, how='intersection') # for graphing
 grid_clipped_ADM2 = gpd.overlay(grid, malawi_admin2, how='intersection') # for graphing
 cmap = plt.cm.get_cmap('tab20', len(grid_clipped_ADM1['ADM1_EN'].unique()))
-grid.to_file("/Users/rem76/Desktop/Climate_change_health/Data/malawi_grid.shp")
+grid.to_file("/Users/rem76/Desktop/Climate_change_health/Data/malawi_grid_0_025.shp")
 
 fig, ax = plt.subplots(figsize=(10, 10))
 malawi_admin2.plot(ax=ax, edgecolor='black', color='white')
@@ -92,9 +93,9 @@ facilities_with_districts_shap_files_no_duplicates.reset_index(drop=True, inplac
 
 
 # write csv file of facilities with districts
-facilities_with_districts_shap_files_no_duplicates.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/facilities_with_districts.csv")
+facilities_with_districts_shap_files_no_duplicates.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/facilities_with_districts_historical.csv")
 
 facilities_gdf = gpd.GeoDataFrame(facilities_with_districts_shap_files_no_duplicates,
                                    geometry='geometry',
                                    crs="EPSG:4326")
-facilities_gdf.to_file("/Users/rem76/Desktop/Climate_change_health/Data/facilities_with_districts.shp")
+facilities_gdf.to_file("/Users/rem76/Desktop/Climate_change_health/Data/facilities_with_districts_historical.shp")
