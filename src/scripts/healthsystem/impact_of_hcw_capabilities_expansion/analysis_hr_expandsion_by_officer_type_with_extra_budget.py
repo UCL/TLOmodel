@@ -806,6 +806,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # reorder columns to be consistent with cadres
         gap = gap[['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy',
                    'Dental', 'Laboratory', 'Mental', 'Radiography']]
+        # reorder index to be consistent with
+        gap = gap.reindex(num_dalys_summarized.index)
 
         return gap
 
@@ -836,12 +838,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             _common_cols = appt_time.columns.intersection(appts_count_all.columns)
             # already checked above that columns in the latter that are not in the former have 0 count
             for col in _common_cols:
-                if (appt_time.loc[cadres_to_find, col] > 0).all():
+                if ((appt_time.loc[cadres_to_find, col] > 0).all()
+                    and (appt_time.loc[~appt_time.index.isin(cadres_to_find), col] == 0).all()):
                     appts_to_find.append(col)
 
             return appts_to_find
 
-        # counts and count proportions
+        # counts and count proportions of all never ran
         _appts = find_never_ran_appts_that_need_specific_cadres()
         _counts = (appts_count_all[_appts].groupby(level=1, axis=1).sum()
                    .rename(columns=APPT_TYPE_TO_COARSE_APPT_TYPE_MAP).groupby(level=0, axis=1).sum()
@@ -861,12 +864,66 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _cost_gap = hcw_time_or_cost_gap(appt_cost, appts_count_all[_appts])
         assert (_cost_gap.index == hcw_cost_gap.index).all()
         _cost_gap_proportions = _cost_gap / hcw_cost_gap[_cost_gap.columns]
+        # cost gap distribution among cadres
+        _cost_gap_percent = pd.DataFrame(index=_cost_gap.index, columns=_cost_gap.columns)
+        for i in _cost_gap_percent.index:
+            _cost_gap_percent.loc[i, :] = _cost_gap.loc[i, :] / _cost_gap.loc[i, :].sum()
 
-        return _appts, _counts, _proportions, _time_gap, _time_gap_proportions, _cost_gap, _cost_gap_proportions
+        # if sum up all appt types/cadres
+        _proportions_total = _counts.sum(axis=1) / _counts_all.sum(axis=1)
+        _cost_gap_proportions_total = _cost_gap.sum(axis=1) / hcw_cost_gap.sum(axis=1)
 
-    never_ran_appts_info_that_need_CP = get_never_ran_appts_info_that_need_specific_cadres()
+        return _proportions_total, _cost_gap_proportions_total, _cost_gap_percent
+
     never_ran_appts_info_that_need_CNP = get_never_ran_appts_info_that_need_specific_cadres(
         cadres_to_find=['Clinical', 'Nursing_and_Midwifery', 'Pharmacy'])
+    never_ran_appts_info_that_need_CP = get_never_ran_appts_info_that_need_specific_cadres(
+        cadres_to_find=['Clinical', 'Pharmacy'])
+    never_ran_appts_info_that_need_CN = get_never_ran_appts_info_that_need_specific_cadres(
+        cadres_to_find=['Clinical', 'Nursing_and_Midwifery'])
+    never_ran_appts_info_that_need_NP = get_never_ran_appts_info_that_need_specific_cadres(
+        cadres_to_find=['Nursing_and_Midwifery', 'Pharmacy'])
+    never_ran_appts_info_that_need_C = get_never_ran_appts_info_that_need_specific_cadres(
+        cadres_to_find=['Clinical'])
+    never_ran_appts_info_that_need_N = get_never_ran_appts_info_that_need_specific_cadres(
+        cadres_to_find=['Nursing_and_Midwifery'])
+    never_ran_appts_info_that_need_P = get_never_ran_appts_info_that_need_specific_cadres(
+        cadres_to_find=['Pharmacy'])
+
+    # cost proportions within never ran appts, in total of all cadres
+    p_cost = pd.DataFrame(index=num_services_summarized.index)
+    p_cost['C + N&M + P'] = never_ran_appts_info_that_need_CNP[1]
+    p_cost['C + P'] = never_ran_appts_info_that_need_CP[1]
+    p_cost['C + N&M'] = never_ran_appts_info_that_need_CN[1]
+    p_cost['N&M + P'] = never_ran_appts_info_that_need_NP[1]
+    p_cost['Clinical (C)'] = never_ran_appts_info_that_need_C[1]
+    p_cost['Pharmacy (P)'] = never_ran_appts_info_that_need_P[1]
+    p_cost['Nursing_and_Midwifery (N&M)'] = never_ran_appts_info_that_need_N[1]
+    p_cost['Other cases'] = 1 - p_cost[p_cost.columns[0:7]].sum(axis=1)
+
+    # appts count proportions within never ran appts, in total of all cadres
+    p_count = pd.DataFrame(index=num_services_summarized.index)
+    p_count['C + N&M + P'] = never_ran_appts_info_that_need_CNP[0]
+    p_count['C + P'] = never_ran_appts_info_that_need_CP[0]
+    p_count['C + N&M'] = never_ran_appts_info_that_need_CN[0]
+    p_count['N&M + P'] = never_ran_appts_info_that_need_NP[0]
+    p_count['Clinical (C)'] = never_ran_appts_info_that_need_C[0]
+    p_count['Pharmacy (P)'] = never_ran_appts_info_that_need_P[0]
+    p_count['Nursing_and_Midwifery (N&M)'] = never_ran_appts_info_that_need_N[0]
+    p_count['Other cases'] = 1 - p_count[p_count.columns[0:7]].sum(axis=1)
+
+    # define color for the cadres combinations above
+    cadre_comb_color = {
+        'C + N&M + P': 'royalblue',
+        'C + P': 'turquoise',
+        'C + N&M': 'gold',
+        'N&M + P': 'yellowgreen',
+        'Clinical (C)': 'mediumpurple',
+        'Pharmacy (P)': 'limegreen',
+        'Nursing_and_Midwifery (N&M)': 'pink',
+        'Other cases': 'gray',
+    }
+
     # Checked that never ran appts that need CP = never ran appts that need CNP + ('3', 'TBNew'),
     # whereas never ran TBNew at level 3 = 0, thus the proportions info are the same in the two cases
 
@@ -1048,7 +1105,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.scatter(100 * heat_data.iloc[:, 1], 100 * heat_data.iloc[:, 0],
                alpha=0.8, marker='o', c=colors)
     ax.set_xlabel('Services increased %')
-    ax.set_ylabel('DLAYs averted %')
+    ax.set_ylabel('DALYs averted %')
     legend_labels = list(scenario_groups_color.keys())
     legend_handles = [plt.Line2D([0, 0], [0, 0],
                                  linestyle='none', marker='o', color=scenario_groups_color[label]
@@ -1071,7 +1128,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # ax.scatter(100 * heat_data.iloc[:, 2], 100 * heat_data.iloc[:, 0],
     #            alpha=0.8, marker='o', c=colors)
     # ax.set_xlabel('Treatments increased %')
-    # ax.set_ylabel('DLAYs averted %')
+    # ax.set_ylabel('DALYs averted %')
     # legend_labels = list(scenario_groups_color.keys())
     # legend_handles = [plt.Line2D([0, 0], [0, 0],
     #                              linestyle='none', marker='o', color=scenario_groups_color[label]
@@ -1093,7 +1150,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # ax.scatter(100 * heat_data.iloc[:, 1], 100 * heat_data.iloc[:, 0],
     #            alpha=0.8, marker='o', c=colors)
     # ax.set_xlabel('Service delivery ratio increased %')
-    # ax.set_ylabel('DLAYs averted %')
+    # ax.set_ylabel('DALYs averted %')
     # legend_labels = list(scenario_groups_color.keys())
     # legend_handles = [plt.Line2D([0, 0], [0, 0],
     #                              linestyle='none', marker='o', color=scenario_groups_color[label]
@@ -1355,23 +1412,23 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # fig.show()
     # plt.close(fig)
 
-    name_of_plot = f'HCW time needed to deliver never ran appointments, {target_period()}'
-    hcw_time_gap_to_plot = (hcw_time_gap / 1e6).reindex(num_dalys_summarized.index)
-    column_dcsa = hcw_time_gap_to_plot.pop('DCSA')
-    hcw_time_gap_to_plot.insert(3, "DCSA", column_dcsa)
-    fig, ax = plt.subplots(figsize=(9, 6))
-    hcw_time_gap_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
-    ax.set_ylabel('Minutes in Millions', fontsize='small')
-    ax.set(xlabel=None)
-    xtick_labels = [substitute_labels[v] for v in hcw_time_gap_to_plot.index]
-    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
-    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
-               fontsize='small', reverse=True)
-    plt.title(name_of_plot)
-    fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-    fig.show()
-    plt.close(fig)
+    # name_of_plot = f'HCW time needed to deliver never ran appointments, {target_period()}'
+    # hcw_time_gap_to_plot = (hcw_time_gap / 1e6).reindex(num_dalys_summarized.index)
+    # column_dcsa = hcw_time_gap_to_plot.pop('DCSA')
+    # hcw_time_gap_to_plot.insert(3, "DCSA", column_dcsa)
+    # fig, ax = plt.subplots(figsize=(9, 6))
+    # hcw_time_gap_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
+    # ax.set_ylabel('Minutes in Millions', fontsize='small')
+    # ax.set(xlabel=None)
+    # xtick_labels = [substitute_labels[v] for v in hcw_time_gap_to_plot.index]
+    # ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
+    # plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
+    #            fontsize='small', reverse=True)
+    # plt.title(name_of_plot)
+    # fig.tight_layout()
+    # fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    # fig.show()
+    # plt.close(fig)
 
     name_of_plot = f'HCW cost needed to deliver never ran appointments, {target_period()}'
     hcw_cost_gap_to_plot = (hcw_cost_gap / 1e6).reindex(num_dalys_summarized.index)
@@ -1391,12 +1448,54 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    name_of_plot = f'HCW cost gap distribution among cadres, {target_period()}'
+    name_of_plot = f'Count proportions of never ran appointments that require specific cadres only, {target_period()}'
+    data_to_plot = p_count * 100
+    fig, ax = plt.subplots(figsize=(12, 8))
+    data_to_plot.plot(kind='bar', stacked=True, color=cadre_comb_color, rot=0, ax=ax)
+    ax.set_ylim(0, 100)
+    ax.set_ylabel('Percentage %')
+    ax.set_xlabel('Extra budget allocation scenario')
+    xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
+    ax.set_xticklabels(xtick_labels, rotation=90)
+    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Cadre combination', reverse=True)
+    # plot the average proportions of all scenarios
+    for c in data_to_plot.columns:
+        plt.axhline(y=data_to_plot[c].mean(),
+                    linestyle='--', color=cadre_comb_color[c], alpha=1.0, linewidth=2,
+                    label=c)
+    plt.title(name_of_plot)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
+    name_of_plot = f'Cost proportions of never ran appointments that require specific cadres only, {target_period()}'
+    data_to_plot = p_cost * 100
+    fig, ax = plt.subplots(figsize=(12, 8))
+    data_to_plot.plot(kind='bar', stacked=True, color=cadre_comb_color, rot=0, ax=ax)
+    ax.set_ylim(0, 100)
+    ax.set_ylabel('Percentage %')
+    ax.set_xlabel('Extra budget allocation scenario')
+    xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
+    ax.set_xticklabels(xtick_labels, rotation=90)
+    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Cadre combination', reverse=True)
+    # plot the average proportions of all scenarios
+    for c in data_to_plot.columns:
+        plt.axhline(y=data_to_plot[c].mean(),
+                    linestyle='--', color=cadre_comb_color[c], alpha=1.0, linewidth=2,
+                    label=c)
+    plt.title(name_of_plot)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
+    name_of_plot = f'HCW cost gap distribution of never ran appointments, {target_period()}'
     cadres_to_plot = ['Clinical', 'Nursing_and_Midwifery', 'Pharmacy', 'DCSA', 'Other']
     hcw_cost_gap_percent_to_plot = hcw_cost_gap_percent[cadres_to_plot] * 100
     fig, ax = plt.subplots(figsize=(12, 8))
-    hcw_cost_gap_percent_to_plot.plot(kind='bar', color=officer_category_color, rot=0, ax=ax)
-    ax.set_ylim(0, 100)
+    hcw_cost_gap_percent_to_plot.plot(kind='bar', color=officer_category_color, rot=0, alpha=0.6, ax=ax)
+    #ax.set_ylim(0, 100)
     ax.set_ylabel('Percentage %')
     ax.set(xlabel=None)
     xtick_labels = [substitute_labels[v] for v in hcw_cost_gap_percent_to_plot.index]
@@ -1405,7 +1504,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # plot the average proportions of all scenarios
     for c in cadres_to_plot:
         plt.axhline(y=hcw_cost_gap_percent_to_plot[c].mean(),
-                    linestyle='--', color=officer_category_color[c], alpha=0.8,
+                    linestyle='--', color=officer_category_color[c], alpha=1.0, linewidth=2,
                     label=c)
     plt.title(name_of_plot)
     fig.tight_layout()
@@ -1413,12 +1512,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    name_of_plot = f'Cost proportions of appointments that need CNP in never ran appointments, {target_period()}'
+    name_of_plot = f'HCW cost gap distribution of never ran appointments that require CNP only, {target_period()}'
     cadres_to_plot = ['Clinical', 'Nursing_and_Midwifery', 'Pharmacy']
-    data_to_plot = never_ran_appts_info_that_need_CP[6][cadres_to_plot] * 100
+    data_to_plot = never_ran_appts_info_that_need_CNP[2][cadres_to_plot] * 100
     fig, ax = plt.subplots(figsize=(12, 8))
-    data_to_plot.plot(kind='bar', color=officer_category_color, rot=0, ax=ax)
-    ax.set_ylim(0, 100)
+    data_to_plot.plot(kind='bar', color=officer_category_color, rot=0, alpha=0.6, ax=ax)
+    #ax.set_ylim(0, 100)
     ax.set_ylabel('Percentage %')
     ax.set(xlabel=None)
     xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
@@ -1427,7 +1526,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # plot the average proportions of all scenarios
     for c in cadres_to_plot:
         plt.axhline(y=data_to_plot[c].mean(),
-                    linestyle='--', color=officer_category_color[c], alpha=0.8,
+                    linestyle='--', color=officer_category_color[c], alpha=1.0, linewidth=2,
                     label=c)
     plt.title(name_of_plot)
     fig.tight_layout()
