@@ -336,17 +336,18 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         return time, cost
 
-    # def get_hcw_time_usage(_df):
-    #     """Return the number of treatments by short treatment id (total within the TARGET_PERIOD)"""
-    #     CNP_cols = ['date']
-    #     for col in _df.columns[1:]:
-    #         if ('Clinical' in col) | ('Nursing_and_Midwifery' in col) | ('Pharmacy' in col):
-    #             CNP_cols.append(col)
-    #
-    #     _df = _df[CNP_cols].copy()
-    #
-    #
-    #     return _df
+    def get_hcw_time_usage(_df):
+        """Return the number of treatments by short treatment id (total within the TARGET_PERIOD)"""
+        CNP_cols = ['date']
+        for col in _df.columns[1:]:
+            if ('Clinical' in col) | ('Nursing_and_Midwifery' in col) | ('Pharmacy' in col):
+                CNP_cols.append(col)
+
+        _df = _df[CNP_cols].copy()
+        _df = _df.loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), :]
+        _df = _df.set_index('date').mean(axis=0) # average over years
+
+        return _df
 
     # Get parameter/scenario names
     param_names = get_parameter_names_from_scenario_file()
@@ -544,14 +545,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     num_never_ran_appts = num_never_ran_appts.reindex(num_appts.index).fillna(0.0)
     assert (num_appts.index == num_never_ran_appts.index).all()
     num_appts_demand = num_appts + num_never_ran_appts
-    #
-    # hcw_time_usage = extract_results(
-    #     results_folder,
-    #     module='tlo.methods.healthsystem.summary',
-    #     key='Capacity_By_OfficerType_And_FacilityLevel',#'Capacity',#'Capacity_By_OfficerType_And_FacilityLevel',
-    #     custom_generate_series=get_hcw_time_usage,
-    #     do_scaling=False
-    # ).pipe(set_param_names_as_column_index_level_0)
+
+    hcw_time_usage = extract_results(
+        results_folder,
+        module='tlo.methods.healthsystem.summary',
+        key='Capacity_By_OfficerType_And_FacilityLevel',#'Capacity',#'Capacity_By_OfficerType_And_FacilityLevel',
+        custom_generate_series=get_hcw_time_usage,
+        do_scaling=False
+    ).pipe(set_param_names_as_column_index_level_0)
 
     # get absolute numbers for scenarios
     # sort the scenarios according to their DALYs values, in ascending order
@@ -604,6 +605,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         num_dalys_summarized.index
     )
     ratio_service_summarized = summarize(ratio_services).loc[0].unstack().reindex(param_names).reindex(
+        num_dalys_summarized.index
+    )
+    hcw_time_usage_summarized = summarize(hcw_time_usage, only_mean=True).T.reindex(param_names).reindex(
         num_dalys_summarized.index
     )
 
