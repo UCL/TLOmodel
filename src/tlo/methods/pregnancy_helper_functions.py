@@ -95,15 +95,15 @@ def check_int_deliverable(self, int_name, hsi_event,
 
     df = self.sim.population.props
     individual_id = hsi_event.target
-    int_avail_df = self.sim.modules['PregnancySupervisor'].current_parameters['intervention_availability']
+    p_params = self.sim.modules['PregnancySupervisor'].current_parameters
 
     # Firstly, we determine if an analysis is currently being conducted during which the probability of intervention
     # delivery is being overridden
     # To do: replace this parameter
-    if self.sim.modules['PregnancySupervisor'].current_parameters['ps_analysis_in_progress']:
+    if p_params['ps_analysis_in_progress'] and (int_name in p_params['interventions_under_analysis']):
 
         # If so, we determine if this intervention will be delivered given the set probability of delivery.
-        can_int_run_analysis = self.rng.random_sample() < int_avail_df.at[int_name, 'availability']
+        can_int_run_analysis = self.rng.random_sample() < p_params['intervention_analysis_availability']
 
         # The intervention has no effect
         if not can_int_run_analysis:
@@ -424,7 +424,10 @@ def update_current_parameter_dictionary(self, list_position):
 
     for key, value in self.parameters.items():
         if isinstance(value, list):
-            self.current_parameters[key] = self.parameters[key][list_position]
+            if not value:
+                self.current_parameters[key] = self.parameters[key]
+            else:
+                self.current_parameters[key] = self.parameters[key][list_position]
         else:
             if list_position == 0:
                 self.current_parameters[key] = self.parameters[key]

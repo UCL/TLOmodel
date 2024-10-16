@@ -6,7 +6,8 @@ from tlo.analysis.utils import extract_results, get_scenario_outputs, summarize
 
 outputspath = './outputs/sejjj49@ucl.ac.uk/'
 scenario_filename = 'cohort_test-2024-10-09T130546Z'
-scenario_filename2 = 'cohort_test-2024-10-15T122825Z'
+# scenario_filename2 = 'cohort_test-2024-10-15T122825Z'
+scenario_filename2 = 'cohort_test-2024-10-16T071357Z'
 
 results_folder_old = get_scenario_outputs(scenario_filename, outputspath)[-1]
 results_folder_new = get_scenario_outputs(scenario_filename2, outputspath)[-1]
