@@ -424,7 +424,7 @@ def update_current_parameter_dictionary(self, list_position):
 
     for key, value in self.parameters.items():
         if isinstance(value, list):
-            if not value:
+            if not value or (len(value)) == 1:
                 self.current_parameters[key] = self.parameters[key]
             else:
                 self.current_parameters[key] = self.parameters[key][list_position]
