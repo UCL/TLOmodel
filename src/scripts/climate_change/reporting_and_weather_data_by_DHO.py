@@ -11,7 +11,6 @@ reporting_data = pd.read_csv('/Users/rem76/Desktop/Climate_change_health/Data/Re
 columns_to_drop = reporting_data.columns[reporting_data.columns.str.endswith(('October 2024', 'November 2024', 'December 2024'))]
 
 reporting_data = reporting_data.drop(columns=columns_to_drop)
-
 ### But need to drop mental health, as that is only relevant for the  Zomba Mental Hospital and otherwise brings down averages
 # extract mental health data
 mental_health_columns = reporting_data.columns[reporting_data.columns.str.startswith("Mental")].tolist()
@@ -27,7 +26,6 @@ months = set(col.split(" - Reporting rate ")[1] for col in all_columns_no_mental
 months = [date.strip() for date in months] # extra spaces??
 dates = pd.to_datetime(months, format='%B %Y', errors='coerce')
 months = dates.sort_values().strftime('%B %Y').tolist()
-months = months[12*11:] # only want from 2011 on
 for month in months:
     columns_of_interest_all_metrics = [reporting_data_no_mental.columns[1]] + reporting_data_no_mental.columns[reporting_data_no_mental.columns.str.endswith(month)].tolist()
     data_of_interest_by_month = reporting_data_no_mental[columns_of_interest_all_metrics]
