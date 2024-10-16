@@ -11,25 +11,22 @@ import statsmodels.api as sm
 
 monthly_reporting_by_facility = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_by_DHO_lm.csv", index_col=0)
 weather_data_historical = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_DHO_lm.csv", index_col=0)
-print(len(monthly_reporting_by_facility))
-print(len(weather_data_historical))
-# weather data is from 2011 - but report
-# Plot each facility's reporting data against weather data
-plt.figure(figsize=(12, 6))
 
-for facility in weather_data_historical.columns:
-    plt.plot(weather_data_historical.index, monthly_reporting_by_facility, label=facility)
-months = weather_data_historical.index
-year_labels = range(2011, 2025, 1)
-year_ticks = range(0, len(months), 12)
-plt.xticks(year_ticks, year_labels, rotation=90)
-plt.xlabel('Year')
-plt.ylabel('Reporting %')
-plt.title('Reporting by Facility')
-plt.legend(title='Facilities', bbox_to_anchor=(1.05, 1), loc='upper left')
-plt.grid()
-plt.tight_layout()
-#plt.show()
+# Plot each facility's reporting data against weather data
+# plt.figure(figsize=(12, 6))
+# for facility in weather_data_historical.columns:
+#     plt.plot(weather_data_historical.index, monthly_reporting_by_facility, label=facility)
+# months = weather_data_historical.index
+# year_labels = range(2011, 2025, 1)
+# year_ticks = range(0, len(months), 12)
+# plt.xticks(year_ticks, year_labels, rotation=90)
+# plt.xlabel('Year')
+# plt.ylabel('Reporting %')
+# plt.title('Reporting by Facility')
+# plt.legend(title='Facilities', bbox_to_anchor=(1.05, 1), loc='upper left')
+# plt.grid()
+# plt.tight_layout()
+# #plt.show()
 
 ## Drop Mental Hospital - bad reporting generally
 weather_data_historical = weather_data_historical.drop("Zomba Mental Hospital", axis=1)
@@ -41,35 +38,39 @@ monthly_reporting_by_facility = monthly_reporting_by_facility.drop("MOH MALAWI G
 weather_data_historical = weather_data_historical.drop(weather_data_historical.index[-1])
 monthly_reporting_by_facility = monthly_reporting_by_facility.drop(monthly_reporting_by_facility.index[-1])
 
-# Plot each facility's reporting data against weather data
-plt.figure(figsize=(12, 6))
+## Drop 2011-2019 9*12
+weather_data_historical = weather_data_historical.drop(weather_data_historical.index[0:108]).reset_index(drop=True)
+monthly_reporting_by_facility = monthly_reporting_by_facility.drop(monthly_reporting_by_facility.index[0:108]).reset_index(drop=True)
 
-for facility in weather_data_historical.columns:
-    plt.plot(weather_data_historical.index, monthly_reporting_by_facility, label=facility)
-months = weather_data_historical.index
-year_labels = range(2011, 2025, 1)
-year_ticks = range(0, len(months), 12)
-plt.xticks(year_ticks, year_labels, rotation=90)
-plt.xlabel('Weather Data')
-plt.ylabel('Reporting')
-plt.title('Reporting vs. Weather Data by Facility')
-plt.legend(title='Facilities', bbox_to_anchor=(1.05, 1), loc='upper left')
-plt.grid()
-plt.tight_layout()
-#plt.show()
+# Plot each facility's reporting data against weather data
+# plt.figure(figsize=(12, 6))
+#
+# for facility in weather_data_historical.columns:
+#     plt.plot(weather_data_historical.index, monthly_reporting_by_facility, label=facility)
+# months = weather_data_historical.index
+# year_labels = range(2015, 2025, 1)
+# year_ticks = range(0, len(months), 12)
+# plt.xticks(year_ticks, year_labels, rotation=90)
+# plt.xlabel('Weather Data')
+# plt.ylabel('Reporting')
+# plt.title('Reporting vs. Weather Data by Facility')
+# plt.legend(title='Facilities', bbox_to_anchor=(1.05, 1), loc='upper left')
+# plt.grid()
+# plt.tight_layout()
+# #plt.show()
 
 
 
 ## Linear regression - flattened
 # year
-year = range(2011, 2025, 1) # year as a fixed effect
-year_repeated = [y for y in year for _ in range(12)]
+year_range = range(2020, 2025, 1) # year as a fixed effect
+year_repeated = [y for y in year_range for _ in range(12)]
 year = year_repeated[:-4]
 year_flattened = year*len(weather_data_historical.columns) # to get flattened data
 
 # month
 month = range(12)
-month_repeated = [m for m in month for _ in range(2011, 2025, 1)]
+month_repeated = [m for m in month for _ in year_range]
 month = month_repeated[:-4]
 month_flattened = month*len(weather_data_historical.columns)
 
