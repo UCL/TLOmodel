@@ -8,7 +8,9 @@ import itertools
 import time
 from collections import OrderedDict
 from pathlib import Path
+from typing import Optional
 from typing import TYPE_CHECKING, Optional
+import pandas as pd
 
 import numpy as np
 
@@ -34,6 +36,9 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+logger_chains = logging.getLogger("tlo.methods.event")
+logger_chains.setLevel(logging.INFO)
 
 
 class SimulationPreviouslyInitialisedError(Exception):
@@ -102,9 +107,16 @@ class Simulation:
         self.date = self.start_date = start_date
         self.modules = OrderedDict()
         self.event_queue = EventQueue()
+        self.generate_event_chains = True
+        self.generate_event_chains_overwrite_epi = None
+        self.generate_event_chains_modules_of_interest = []
+        self.generate_event_chains_ignore_events = []
         self.end_date = None
         self.output_file = None
         self.population: Optional[Population] = None
+        
+        # TO BE REMOVED This is currently just used for debugging. Will be removed from final version of PR.
+        self.event_chains: Optinoal[Population] = None
 
         self.show_progress_bar = show_progress_bar
         self.resourcefilepath = resourcefilepath
@@ -274,12 +286,30 @@ class Simulation:
                 data=f"{module.name}.initialise_population() {time.time() - start1} s",
             )
 
+        # TO BE REMOVED This is currently just used for debugging. Will be removed from final version of PR.
+        self.event_chains = pd.DataFrame(columns= list(self.population.props.columns)+['person_ID'] + ['event'] + ['event_date'] + ['when'] + ['appt_footprint'] + ['level'])
+        
+        # When logging events for each individual to reconstruct chains, only the changes in individual properties will be logged.
+        # At the start of the simulation + when a new individual is born, we therefore want to store all of their properties at the start.
+        if self.generate_event_chains:
+
+            pop_dict = self.population.props.to_dict(orient='index')
+            
+            print(pop_dict)
+            print(pop_dict.keys())
+            for key in pop_dict.keys():
+                pop_dict[key]['person_ID'] = key
+            print("Length of properties", len(pop_dict[0].keys()))
+            #exit(-1)
+            logger.info(key='event_chains',
+                               data = pop_dict,
+                               description='Links forming chains of events for simulated individuals')
+
         end = time.time()
         logger.info(key="info", data=f"make_initial_population() {end - start} s")
 
     def initialise(self, *, end_date: Date) -> None:
         """Initialise all modules in simulation.
-
         :param end_date: Date to end simulation on - accessible to modules to allow
             initialising data structures which may depend (in size for example) on the
             date range being simulated.
@@ -289,6 +319,22 @@ class Simulation:
             raise SimulationPreviouslyInitialisedError(msg)
         self.date = self.start_date
         self.end_date = end_date  # store the end_date so that others can reference it
+
+        #self.generate_event_chains = generate_event_chains
+        if self.generate_event_chains:
+            # Eventually this can be made an option
+            self.generate_event_chains_overwrite_epi = True
+            # For now keep these fixed, eventually they will be input from user
+            self.generate_event_chains_modules_of_interest = [self.modules['RTI']]
+            self.generate_event_chains_ignore_events =  ['AgeUpdateEvent','HealthSystemScheduler', 'SimplifiedBirthsPoll','DirectBirth'] #['TbActiveCasePollGenerateData','HivPollingEventForDataGeneration','SimplifiedBirthsPoll', 'AgeUpdateEvent', 'HealthSystemScheduler']
+        else:
+            # If not using to print chains, cannot ignore epi
+            self.generate_event_chains_overwrite_epi = False
+
+
+        # Reorder columns to place the new columns at the front
+        pd.set_option('display.max_columns', None)
+
         for module in self.modules.values():
             module.initialise_simulation(self)
         self._initialised = True
@@ -350,6 +396,8 @@ class Simulation:
         :param to_date: Date to simulate up to but not including - must be before or
             equal to simulation end date specified in call to :py:meth:`initialise`.
         """
+        open('output.txt', mode='a')
+
         if not self._initialised:
             msg = "Simulation must be initialised before calling run_simulation_to"
             raise SimulationNotInitialisedError(msg)
@@ -366,6 +414,10 @@ class Simulation:
                 self._update_progress_bar(progress_bar, date)
             self.fire_single_event(event, date)
         self.date = to_date
+        
+        # TO BE REMOVED: this is currently only used for debugging, will be removed from final PR.
+        self.event_chains.to_csv('output.csv', index=False)
+
         if self.show_progress_bar:
             progress_bar.stop()
 
@@ -407,6 +459,7 @@ class Simulation:
         """
         self.date = date
         event.run()
+        
 
     def do_birth(self, mother_id: int) -> int:
         """Create a new child person.
@@ -420,6 +473,26 @@ class Simulation:
         child_id = self.population.do_birth()
         for module in self.modules.values():
             module.on_birth(mother_id, child_id)
+            
+        if self.generate_event_chains:
+            # When individual is born, store their initial properties to provide a starting point to the chain of property
+            # changes that this individual will undergo as a result of events taking place.
+            prop_dict = self.population.props.loc[child_id].to_dict()
+            prop_dict['event'] = 'Birth'
+            prop_dict['event_date'] = self.date
+            child_dict = {child_id : prop_dict}
+            logger.info(key='event_chains',
+                               data = child_dict,
+                               description='Links forming chains of events for simulated individuals')
+        
+            # TO BE REMOVED This is currently just used for debugging. Will be removed from final version of PR.
+            row = self.population.props.iloc[[child_id]]
+            row['person_ID'] = child_id
+            row['event'] = 'Birth'
+            row['event_date'] = self.date
+            row['when'] = 'After'
+            self.event_chains = pd.concat([self.event_chains, row], ignore_index=True)
+            
         return child_id
 
     def find_events_for_person(self, person_id: int) -> list[tuple[Date, Event]]:
