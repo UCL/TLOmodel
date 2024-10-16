@@ -107,7 +107,7 @@ class Simulation:
         self.date = self.start_date = start_date
         self.modules = OrderedDict()
         self.event_queue = EventQueue()
-        self.generate_event_chains = None
+        self.generate_event_chains = True
         self.generate_event_chains_overwrite_epi = None
         self.generate_event_chains_modules_of_interest = []
         self.generate_event_chains_ignore_events = []
@@ -292,15 +292,23 @@ class Simulation:
         # When logging events for each individual to reconstruct chains, only the changes in individual properties will be logged.
         # At the start of the simulation + when a new individual is born, we therefore want to store all of their properties at the start.
         if self.generate_event_chains:
+
             pop_dict = self.population.props.to_dict(orient='index')
-            logger_chains.info(key='event_chains',
+            
+            print(pop_dict)
+            print(pop_dict.keys())
+            for key in pop_dict.keys():
+                pop_dict[key]['person_ID'] = key
+            print("Length of properties", len(pop_dict[0].keys()))
+            #exit(-1)
+            logger.info(key='event_chains',
                                data = pop_dict,
                                description='Links forming chains of events for simulated individuals')
 
         end = time.time()
         logger.info(key="info", data=f"make_initial_population() {end - start} s")
 
-    def initialise(self, *, end_date: Date, generate_event_chains) -> None:
+    def initialise(self, *, end_date: Date) -> None:
         """Initialise all modules in simulation.
         :param end_date: Date to end simulation on - accessible to modules to allow
             initialising data structures which may depend (in size for example) on the
@@ -312,7 +320,7 @@ class Simulation:
         self.date = self.start_date
         self.end_date = end_date  # store the end_date so that others can reference it
 
-        self.generate_event_chains = generate_event_chains
+        #self.generate_event_chains = generate_event_chains
         if self.generate_event_chains:
             # Eventually this can be made an option
             self.generate_event_chains_overwrite_epi = True
@@ -413,7 +421,7 @@ class Simulation:
         if self.show_progress_bar:
             progress_bar.stop()
 
-    def simulate(self, *, end_date: Date, generate_event_chains=False) -> None:
+    def simulate(self, *, end_date: Date) -> None:
         """Simulate until the given end date
 
         :param end_date: When to stop simulating. Only events strictly before this
@@ -421,7 +429,7 @@ class Simulation:
             clarity.
         """
         start = time.time()
-        self.initialise(end_date=end_date, generate_event_chains=generate_event_chains)
+        self.initialise(end_date=end_date)
         self.run_simulation_to(to_date=end_date)
         self.finalise(time.time() - start)
 
@@ -470,9 +478,10 @@ class Simulation:
             # When individual is born, store their initial properties to provide a starting point to the chain of property
             # changes that this individual will undergo as a result of events taking place.
             prop_dict = self.population.props.loc[child_id].to_dict()
-            
+            prop_dict['event'] = 'Birth'
+            prop_dict['event_date'] = self.date
             child_dict = {child_id : prop_dict}
-            logger_chains.info(key='event_chains',
+            logger.info(key='event_chains',
                                data = child_dict,
                                description='Links forming chains of events for simulated individuals')
         

@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from tlo.methods.healthsystem import HealthSystem
 
 # Pointing to the logger in events
-logger_chains = logging.getLogger("tlo.methods.event")
+logger_chains = logging.getLogger("tlo.simulation")
 logger_chains.setLevel(logging.INFO)
 
 logger = logging.getLogger(__name__)
@@ -246,6 +246,7 @@ class HSI_Event:
 
             # Add event details
             link_info = {
+                'person_ID': self.target,
                 'event' : str(self),
                 'event_date' : self.sim.date,
                 'appt_footprint' : str(footprint),

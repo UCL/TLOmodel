@@ -11,8 +11,12 @@ if TYPE_CHECKING:
 
 import pandas as pd
 
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+logger_chain = logging.getLogger('tlo.simulation')
+logger_chain.setLevel(logging.INFO)
 
 logger_summary = logging.getLogger(f"{__name__}.summary")
 logger_summary.setLevel(logging.INFO)
@@ -89,7 +93,7 @@ class Event:
                 # Create a dictionary for this person
                 # First add event info
                 link_info = {
-                    #'person_ID': idx,
+                    'person_ID': idx,
                     'event': str(self),
                     'event_date': self.sim.date,
                 }
@@ -152,13 +156,14 @@ class Event:
             if self.target != self.sim.population:
                 row_after = self.sim.population.props.loc[abs(self.target)].fillna(-99999)
                 
-                # Create and store event for this individual
+                # Create and store event for this individual, regardless of whether any property change occurred
                 link_info = {
                     #'person_ID' : self.target,
+                    'person_ID' : self.target,
                     'event' : str(self),
                     'event_date' : self.sim.date,
                 }
-                # Store property changes as a result of the event for this individual
+                # Store (if any) property changes as a result of the event for this individual
                 for key in row_before.index:
                     if row_before[key] != row_after[key]: # Note: used fillna previously
                         link_info[key] = row_after[key]
@@ -225,7 +230,7 @@ class Event:
             
             # Log chain_links here
             if len(chain_links)>0:
-                logger.info(key='event_chains',
+                logger_chain.info(key='event_chains',
                             data= chain_links,
                             description='Links forming chains of events for simulated individuals')
                 
