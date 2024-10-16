@@ -6,7 +6,7 @@ from netCDF4 import Dataset
 from random import randint
 # Data accessed from https://dhis2.health.gov.mw/dhis-web-data-visualizer/#/YiQK65skxjz
 # Reporting rate is expected reporting vs actual reporting - for DHO ("by district")
-reporting_data = pd.read_csv('/Users/rem76/Desktop/Climate_change_health/Data/Reporting_Rate/Reporting_Rate_by_District_DHO_2015_2024.csv') #January 2000 - January 2024
+reporting_data = pd.read_csv('/Users/rem76/Desktop/Climate_change_health/Data/Reporting_Rate/Reporting_Rate_by_District_DHO_2011_2024.csv') #January 2000 - January 2024
 # ANALYSIS DONE IN OCTOBER 2024 - so drop October, November, December 2024
 columns_to_drop = reporting_data.columns[reporting_data.columns.str.endswith(('October 2024', 'November 2024', 'December 2024'))]
 
@@ -73,20 +73,18 @@ weather_data_by_region = {}
 for reporting_facility in range(len(monthly_reporting_by_DHO)):
     facility_data = monthly_reporting_by_DHO.loc[reporting_facility]
     region = facility_data["region"]
-
     if region in ["Central East Zone", "Central West Zone"]:
-        grid = 2 # correspond directly to the grids in malawi_grid
+        grid_to_match = 2 # correspond directly to the grids in malawi_grid
 
     elif region == "North Zone":
-        grid = randint(3,6)
+        grid_to_match = randint(3,6)
 
     elif region == "South East Zone":
-        grid = randint(7,9)
+        grid_to_match = randint(7,9)
 
     elif region == "South West Zone":
-        grid = 0
-
-    weather_data_by_region[facility_data["facility"]] = weather_by_grid[grid]
+        grid_to_match = 0
+    weather_data_by_region[facility_data["facility"]] = weather_by_grid[grid_to_match]
 
 ### Get data ready for linear regression between reporting and weather data
 weather_df = pd.DataFrame.from_dict(weather_data_by_region, orient='index').T
