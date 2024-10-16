@@ -4,11 +4,9 @@ import cdsapi
 
 #models_ssp119 = ["cams_csm1_0", "ipsl_cm6a_lr", "miroc6","miroc_es2l", "mri_esm2_0", "canesm5", "cnrm_esm2_1", "ec_earth3", "ec_earth3_veg_lr", "fgoals_g3", "gfdl_esm4", "ukesm1_0_ll"]
 scenarios = ["ssp1_1_9","ssp1_2_6", "ssp4_3_4", "ssp5_3_4OS", "ssp2_4_5", "ssp4_6_0", "ssp3_7_0", "ssp5_8_5"]
-scenarios = ["ssp2_4_5"]
 models_ssp245 = ["access_cm2", "awi_cm_1_1_mr", "bcc_csm2_mr","cams_csm1_0", "cmcc_esm2", "hadgem3_gc31_ll", "iitm_esm", "inm_cm5_0", "ipsl_cm6a_lr", "kiost_esm", "miroc6", "miroc_es2l",
                  "mri_esm2_0", "noresm2_mm", "canesm5", "cesm2", "cmcc_cm2_sr5", "cnrm_cm6_1", "cnrm_esm2_1", "ec_earth3_cc", "ec_earth3_veg_lr", "fgoals_g3",
                  "gfdl_esm4", "inm_cm4_8", "kace_1_0_g", "mpi_esm1_2_lr", "nesm3", "noresm2_lm", "ukesm1_0_ll"]
-
 
 base_dir = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/"
 
