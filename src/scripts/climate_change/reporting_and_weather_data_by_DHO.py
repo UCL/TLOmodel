@@ -77,20 +77,18 @@ for reporting_facility in range(len(monthly_reporting_by_DHO)):
     region = facility_data["region"]
 
     if region in ["Central East Zone", "Central West Zone"]:
-        grid = malawi_grid.iloc[2]
+        grid = 2 # correspond directly to the grids in malawi_grid
 
     elif region == "North Zone":
-        grid_to_choose = randint(3,6)
-        grid = malawi_grid.iloc[grid_to_choose]
+        grid = randint(3,6)
 
     elif region == "South East Zone":
-        grid_to_choose = randint(7,9)
-        grid = malawi_grid.iloc[grid_to_choose]
+        grid = randint(7,9)
 
     elif region == "South West Zone":
-        grid = malawi_grid.iloc[0]
+        grid = 0
 
-    weather_data_by_region[facility_data["facility"]] = grid
+    weather_data_by_region[facility_data["facility"]] = weather_by_grid[grid]
 
 ### Get data ready for linear regression between reporting and weather data
 weather_df = pd.DataFrame.from_dict(weather_data_by_region, orient='index').T
