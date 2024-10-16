@@ -251,7 +251,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         legend_labels = list(scenario_groups_color.keys())
         legend_handles = [plt.Rectangle((0, 0), 1, 1,
                                         color=scenario_groups_color[label]) for label in legend_labels]
-        ax.legend(legend_handles, legend_labels, loc='center left', fontsize='small', bbox_to_anchor=(1, 0.5))
+        ax.legend(legend_handles, legend_labels, loc='center left', fontsize='small', bbox_to_anchor=(1, 0.5),
+                  title='Scenario groups')
 
         ax.grid(axis="y")
         ax.spines['top'].set_visible(False)
@@ -1000,7 +1001,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     extra_budget_allocation['Other'] = extra_budget_allocation[
         ['Dental', 'Laboratory', 'Mental', 'Radiography']
     ].sum(axis=1)
-    name_of_plot = f'Dalys averted (%) against no expansion, {target_period()}'
+    name_of_plot = f'DALYs averted (%) against no expansion, {target_period()}'
     heat_data = pd.merge(num_dalys_averted_percent['mean'],
                          extra_budget_allocation[['Clinical', 'Pharmacy', 'Nursing_and_Midwifery']],
                          left_index=True, right_index=True, how='inner')
@@ -1045,7 +1046,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    name_of_plot = f'3D Dalys averted, Services increased and Treatment increased, {target_period()}'
+    name_of_plot = f'3D DALYs averted, Services increased and Treatment increased, {target_period()}'
     heat_data = pd.concat([num_dalys_averted_percent['mean'], num_services_increased_percent['mean'],
                            num_treatments_total_increased_percent['mean']], axis=1)
     # scenarios_with_CNP_only = ['s_4', 's_6', 's_7', 's_10', 's_11', 's_16', 's_22']
@@ -1071,7 +1072,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    name_of_plot = f'2D Dalys averted, Services increased and Treatment increased, {target_period()}'
+    name_of_plot = f'2D DALYs averted, Services increased and Treatment increased, {target_period()}'
     heat_data = pd.concat([num_dalys_averted_percent['mean'], num_services_increased_percent['mean'],
                            num_treatments_total_increased_percent['mean']], axis=1)
     # scenarios_with_CNP_only = ['s_4', 's_6', 's_7', 's_10', 's_11', 's_16', 's_22']
@@ -1095,7 +1096,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    name_of_plot = f'Dalys averted and Services increased, {target_period()}'
+    name_of_plot = f'DALYs averted and Services increased, {target_period()}'
     heat_data = pd.concat([num_dalys_averted_percent['mean'], num_services_increased_percent['mean'],
                            num_treatments_total_increased_percent['mean']], axis=1)
     # scenarios_with_CNP_only = ['s_4', 's_6', 's_7', 's_10', 's_11', 's_16', 's_22']
@@ -1118,7 +1119,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    # name_of_plot = f'Dalys averted and Treatments increased, {target_period()}'
+    # name_of_plot = f'DALYs averted and Treatments increased, {target_period()}'
     # heat_data = pd.concat([num_dalys_averted_percent['mean'], num_services_increased_percent['mean'],
     #                        num_treatments_total_increased_percent['mean']], axis=1)
     # # scenarios_with_CNP_only = ['s_4', 's_6', 's_7', 's_10', 's_11', 's_16', 's_22']
@@ -1141,7 +1142,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # fig.show()
     # plt.close(fig)
 
-    # name_of_plot = f'Dalys averted and Services ratio increased, {target_period()}'
+    # name_of_plot = f'DALYs averted and Services ratio increased, {target_period()}'
     # heat_data = pd.concat([num_dalys_averted_percent['mean'], service_ratio_increased_percent['mean']], axis=1)
     # # scenarios_with_CNP_only = ['s_4', 's_6', 's_7', 's_10', 's_11', 's_16', 's_22']
     # # heat_data = heat_data.loc[heat_data.index.isin(scenarios_with_CNP_only)]
@@ -1338,7 +1339,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.errorbar(range(len(param_names)), num_never_ran_services_summarized['mean'].values / 1e6, yerr=yerr_services,
                 fmt=".", color="black", zorder=100)
     ax.set_ylabel('Millions', fontsize='small')
-    ax.set(xlabel=None)
+    ax.set_xlabel('Extra budget allocation scenario', fontsize='small')
     xtick_labels = [substitute_labels[v] for v in num_never_ran_appts_summarized_in_millions.index]
     ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
     plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Appointment type', title_fontsize='small',
@@ -1437,7 +1438,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig, ax = plt.subplots(figsize=(9, 6))
     hcw_cost_gap_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
     ax.set_ylabel('USD in Millions', fontsize='small')
-    ax.set(xlabel=None)
+    ax.set_xlabel('Extra budget allocation scenario', fontsize='small')
     xtick_labels = [substitute_labels[v] for v in hcw_cost_gap_to_plot.index]
     ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
     plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
@@ -1497,7 +1498,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     hcw_cost_gap_percent_to_plot.plot(kind='bar', color=officer_category_color, rot=0, alpha=0.6, ax=ax)
     #ax.set_ylim(0, 100)
     ax.set_ylabel('Percentage %')
-    ax.set(xlabel=None)
+    ax.set_xlabel('Extra budget allocation scenario', fontsize='small')
     xtick_labels = [substitute_labels[v] for v in hcw_cost_gap_percent_to_plot.index]
     ax.set_xticklabels(xtick_labels, rotation=90)
     plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category')
@@ -1519,7 +1520,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     data_to_plot.plot(kind='bar', color=officer_category_color, rot=0, alpha=0.6, ax=ax)
     #ax.set_ylim(0, 100)
     ax.set_ylabel('Percentage %')
-    ax.set(xlabel=None)
+    ax.set_xlabel('Extra budget allocation scenario', fontsize='small')
     xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
     ax.set_xticklabels(xtick_labels, rotation=90)
     plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category')
@@ -1540,7 +1541,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig, ax = plt.subplots(figsize=(12, 8))
     extra_budget_allocation_to_plot.plot(kind='bar', color=officer_category_color, rot=0, ax=ax)
     ax.set_ylabel('Percentage %')
-    ax.set(xlabel=None)
+    ax.set_xlabel('Extra budget allocation scenario', fontsize='small')
     xtick_labels = [substitute_labels[v] for v in extra_budget_allocation_to_plot.index]
     ax.set_xticklabels(xtick_labels, rotation=90)
     plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category')
@@ -1603,7 +1604,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     name_of_plot = f'DALYs averted against no expansion, {target_period()}'
     fig, ax = do_bar_plot_with_ci(num_dalys_averted / 1e6, num_dalys_averted_percent, annotation=True)
     ax.set_title(name_of_plot)
-    ax.set_ylabel('(Millions)')
+    ax.set_ylabel('Millions')
+    ax.set_xlabel('Extra budget allocation scenario')
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     fig.show()
@@ -1612,7 +1614,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     name_of_plot = f'Deaths averted against no expansion, {target_period()}'
     fig, ax = do_bar_plot_with_ci(num_deaths_averted / 1e6, num_deaths_averted_percent, annotation=True)
     ax.set_title(name_of_plot)
-    ax.set_ylabel('(Millions)')
+    ax.set_ylabel('Millions')
+    ax.set_xlabel('Extra budget allocation scenario')
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     fig.show()
@@ -1635,7 +1638,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig, ax = plt.subplots(figsize=(9, 6))
     extra_staff_by_cadre_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
     ax.set_ylabel('Thousands', fontsize='small')
-    ax.set(xlabel=None)
+    ax.set_xlabel('Extra budget allocation scenario', fontsize='small')
     xtick_labels = [substitute_labels[v] for v in extra_staff_by_cadre_to_plot.index]
     ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
     plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
@@ -1654,7 +1657,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig, ax = plt.subplots(figsize=(9, 6))
     extra_cost_by_cadre_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
     ax.set_ylabel('Millions', fontsize='small')
-    ax.set(xlabel=None)
+    ax.set_xlabel('Extra budget allocation scenario', fontsize='small')
     xtick_labels = [substitute_labels[v] for v in extra_cost_by_cadre_to_plot.index]
     ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
     plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
@@ -1676,7 +1679,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.errorbar(range(len(param_names)-1), num_services_increased['mean'].values / 1e6, yerr=yerr_services,
                 fmt=".", color="black", zorder=100)
     ax.set_ylabel('Millions', fontsize='small')
-    ax.set(xlabel=None)
+    ax.set_xlabel('Extra budget allocation scenario', fontsize='small')
     xtick_labels = [substitute_labels[v] for v in num_appts_increased_in_millions.index]
     ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
     plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Appointment type', title_fontsize='small',
@@ -1700,7 +1703,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # ax.errorbar(range(len(param_names) - 1), num_services_increased['mean'].values / 1e6, yerr=yerr_services,
     #             fmt=".", color="black", zorder=100)
     ax.set_ylabel('Millions', fontsize='small')
-    ax.set(xlabel=None)
+    ax.set_xlabel('Extra budget allocation scenario', fontsize='small')
     xtick_labels = [substitute_labels[v] for v in num_never_ran_appts_reduced_to_plot.index]
     ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
     plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Appointment type', title_fontsize='small',
@@ -1724,7 +1727,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # ax.errorbar(range(len(param_names) - 1), num_services_increased['mean'].values / 1e6, yerr=yerr_services,
     #             fmt=".", color="black", zorder=100)
     ax.set_ylabel('Millions', fontsize='small')
-    ax.set(xlabel=None)
+    ax.set_xlabel('Extra budget allocation scenario', fontsize='small')
     xtick_labels = [substitute_labels[v] for v in num_never_ran_treatments_reduced_to_plot.index]
     ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
     plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Treatment type', title_fontsize='small',
@@ -1772,7 +1775,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.errorbar(range(len(param_names)-1), num_dalys_averted['mean'].values / 1e6, yerr=yerr_dalys,
                 fmt=".", color="black", zorder=100)
     ax.set_ylabel('Millions', fontsize='small')
-    ax.set(xlabel=None)
+    ax.set_xlabel('Extra budget allocation scenario', fontsize='small')
     xtick_labels = [substitute_labels[v] for v in num_dalys_by_cause_averted.index]
     ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
     fig.subplots_adjust(right=0.7)
