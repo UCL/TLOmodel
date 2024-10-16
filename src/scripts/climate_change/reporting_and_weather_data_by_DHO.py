@@ -70,7 +70,7 @@ for polygon in malawi_grid["geometry"]:
     grid += 1
 # Load mapped facilities and find relevant shap file - Malawi grid goes from SE -> NE -> SW -> NW
 weather_data_by_region = {}
-for reporting_facility in range(len(monthly_reporting_by_DHO)):
+for reporting_facility in monthly_reporting_by_DHO:
     facility_data = monthly_reporting_by_DHO.loc[reporting_facility]
     region = facility_data["region"]
     if region in ["Central East Zone", "Central West Zone"]:
@@ -86,6 +86,7 @@ for reporting_facility in range(len(monthly_reporting_by_DHO)):
         grid_to_match = 0
     weather_data_by_region[facility_data["facility"]] = weather_by_grid[grid_to_match]
 
+print(len(weather_data_by_region))
 ### Get data ready for linear regression between reporting and weather data
 weather_df = pd.DataFrame.from_dict(weather_data_by_region, orient='index').T
 weather_df.columns = monthly_reporting_by_DHO["facility"]

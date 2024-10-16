@@ -88,7 +88,7 @@ for reporting_facility in monthly_reporting_by_facility["facility"]:
 
     weather_data_by_facility[reporting_facility] = weather_by_grid[grid]
 
-
+print(len(weather_data_by_facility))
 ### Get data ready for linear regression between reporting and weather data
 weather_df = pd.DataFrame.from_dict(weather_data_by_facility, orient='index').T
 weather_df.columns = monthly_reporting_by_facility["facility"]
