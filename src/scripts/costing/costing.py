@@ -477,7 +477,7 @@ for d in draws:
         equipment_used = pd.concat({
                 k: pd.DataFrame.from_dict(v, 'index') for k, v in equipment_used.items()},
                 axis=0)
-        full_list_of_equipment_used = set().union(*equip['EquipmentEverUsed'])
+        full_list_of_equipment_used = set().union(*equipment_used_subset['EquipmentEverUsed'])
 
         equipment_df = pd.DataFrame()
         equipment_df.index = equipment_used.index
@@ -624,7 +624,8 @@ max_ability_to_pay_for_implementation = monetary_value_of_incremental_health - i
 #----------------------------------------------------
 def do_stacked_bar_plot(_df, cost_category, year, actual_expenditure):
     # Subset and Pivot the data to have 'Cost Sub-category' as columns
-    _df = _df[_df.stat == 'mean']
+    # Make a copy of the dataframe to avoid modifying the original
+    _df = _df[_df.stat == 'mean'].copy()
     # Convert 'value' to millions
     _df['value'] = _df['value'] / 1e6
     if year == 'all':
@@ -650,40 +651,104 @@ def do_stacked_bar_plot(_df, cost_category, year, actual_expenditure):
     plt.title(f'Costs by Scenario \n (Cost Category = {cost_category} ; Year = {year})')
     plt.savefig(figurespath / f'stacked_bar_chart_{cost_category}_year_{year}.png', dpi=100,
                 bbox_inches='tight')
+    plt.close()
 
 do_stacked_bar_plot(_df = scenario_cost, cost_category = 'Medical consumables', year = 2018, actual_expenditure = 206_747_565)
 do_stacked_bar_plot(_df = scenario_cost, cost_category = 'Human Resources for Health', year = 2018, actual_expenditure = 128_593_787)
 do_stacked_bar_plot(_df = scenario_cost, cost_category = 'Equipment purchase and maintenance', year = 2018, actual_expenditure = 6_048_481)
 do_stacked_bar_plot(_df = scenario_cost, cost_category = 'all', year = 2018, actual_expenditure = 624_054_027)
 
+# 2. Line plots of total costs
+#----------------------------------------------------
+def do_line_plot(_df, cost_category, actual_expenditure, _draw):
+    # Convert 'value' to millions
+    _df = _df.copy()
+
+    # Filter the dataframe based on the selected draw
+    subset_df = _df[_df.draw == _draw]
+
+    if cost_category != 'all':
+        subset_df = subset_df[subset_df['Cost_Category'] == cost_category]
+
+    # Reset the index for plotting purposes
+    subset_df = subset_df.reset_index()
+
+    # Extract mean, lower, and upper values for the plot
+    mean_values = subset_df[subset_df.stat == 'mean'].groupby(['Cost_Category', 'year'])['value'].sum() / 1e6
+    lower_values = subset_df[subset_df.stat == 'lower'].groupby(['Cost_Category', 'year'])['value'].sum() / 1e6
+    upper_values = subset_df[subset_df.stat == 'upper'].groupby(['Cost_Category', 'year'])['value'].sum() / 1e6
+    years = subset_df[subset_df.stat == 'mean']['year']
+
+    # Plot the line for 'mean'
+    plt.plot(mean_values.index.get_level_values(1), mean_values, marker='o', linestyle='-', color='b', label='Mean')
+
+    # Add confidence interval using fill_between
+    plt.fill_between(mean_values.index.get_level_values(1), lower_values, upper_values, color='b', alpha=0.2, label='95% CI')
+
+    # Add a horizontal red line to represent the actual expenditure
+    plt.axhline(y=actual_expenditure / 1e6, color='red', linestyle='--', label='Actual expenditure recorded in 2018')
+
+    # Set plot labels and title
+    plt.xlabel('Year')
+    plt.ylabel('Cost (2023 USD), millions')
+    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper right')
+    plt.title(f'Costs by Scenario \n (Cost Category = {cost_category} ; Draw = {_draw})')
+
+    # Save the plot
+    plt.savefig(figurespath / f'trend_{cost_category}_{first_year_of_simulation}-{final_year_of_simulation}.png',
+                dpi=100,
+                bbox_inches='tight')
+    plt.close()
+
+do_line_plot(_df = scenario_cost, cost_category = 'Medical consumables', _draw = 0, actual_expenditure = 206_747_565)
+do_line_plot(_df = scenario_cost, cost_category = 'Human Resources for Health',  _draw = 0, actual_expenditure = 128_593_787)
+do_line_plot(_df = scenario_cost, cost_category = 'Equipment purchase and maintenance',  _draw = 0, actual_expenditure = 6_048_481)
+do_line_plot(_df = scenario_cost, cost_category = 'all',  _draw = 0, actual_expenditure = 624_054_027)
+# TODO Check which plots 2-4 do now show actual values
+
 # 3. Return on Investment Plot
 #----------------------------------------------------
 # Plot ROI at various levels of cost
-# Step 1: Create an array of costs ranging from 0 to the max value in the 'mean' column
-costs = np.linspace(0, max_ability_to_pay_for_implementation['mean'].max(), 500)
-# Step 2: Initialize the plot
-plt.figure(figsize=(10, 6))
-# Step 3: Loop through each row and plot mean, lower, and upper values divided by costs
-for index, row in max_ability_to_pay_for_implementation.iterrows():
-    mean_values = row['mean'] / np.where(costs == 0, np.nan, costs)
-    lower_values = row['lower'] / np.where(costs == 0, np.nan, costs)
-    upper_values = row['upper'] / np.where(costs == 0, np.nan, costs)
+roi_outputs_folder = Path(figurespath / 'roi')
+if not os.path.exists(roi_outputs_folder):
+    os.makedirs(roi_outputs_folder)
 
+# Loop through each row and plot mean, lower, and upper values divided by costs
+for index, row in monetary_value_of_incremental_health.iterrows():
+    # Step 1: Create an array of implementation costs ranging from 0 to the max value of the max ability to pay
+    implementation_costs = np.linspace(0, max_ability_to_pay_for_implementation.loc[index]['mean'], 50)
+
+    plt.figure(figsize=(10, 6))
+
+    # Retrieve the corresponding row from incremental_scenario_cost for the same 'index'
+    scenario_cost_row = incremental_scenario_cost.loc[index]
+    # Divide rows by the sum of implementation costs and incremental input cost
+    mean_values = row['mean'] / (implementation_costs + scenario_cost_row['mean'])
+    lower_values = row['lower'] / (implementation_costs + scenario_cost_row['lower'])
+    upper_values = row['upper'] / (implementation_costs + scenario_cost_row['upper'])
     # Plot mean line
-    plt.plot(costs, mean_values, label=f'Draw {index}')
-
+    plt.plot(implementation_costs/1e6, mean_values, label=f'Draw {index}')
     # Plot the confidence interval as a shaded region
-    plt.fill_between(costs, lower_values, upper_values, alpha=0.2)
+    plt.fill_between(implementation_costs/1e6, lower_values, upper_values, alpha=0.2)
 
-# Step 4: Set plot labels and title
-plt.xlabel('Implementation cost')
-plt.ylabel('Return on Investment')
-plt.title('Return on Investment of scenarios at different levels of implementation cost')
-# Show legend
-plt.legend()
-# Save
-plt.savefig(figurespath / f'ROI.png', dpi=100,
+    # Step 4: Set plot labels and title
+    plt.xlabel('Implementation cost, millions')
+    plt.ylabel('Return on Investment')
+    plt.title('Return on Investment of scenarios at different levels of implementation cost')
+
+    plt.text(x=0.95, y=0.8, s=f"Monetary value of incremental health = USD {round(monetary_value_of_incremental_health.loc[index]['mean']/1e6,2)}m (USD {round(monetary_value_of_incremental_health.loc[index]['lower']/1e6,2)}m-{round(monetary_value_of_incremental_health.loc[index]['upper']/1e6,2)}m);\n "
+                             f"Incremental input cost of scenario = USD {round(scenario_cost_row['mean']/1e6,2)}m (USD {round(scenario_cost_row['lower']/1e6,2)}m-{round(scenario_cost_row['upper']/1e6,2)}m)",
+             horizontalalignment='right', verticalalignment='top', transform=plt.gca().transAxes, fontsize=9, weight='bold', color='black')
+
+
+    # Show legend
+    plt.legend()
+    # Save
+    plt.savefig(figurespath / f'roi/ROI_draw{index}.png', dpi=100,
                 bbox_inches='tight')
+    plt.close()
+
+
 
 # 3. Plot Maximum ability-to-pay
 #----------------------------------------------------
