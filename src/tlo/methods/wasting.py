@@ -660,7 +660,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                 # remained MAM
                 return
 
-        elif (intervention == 'OTC') or (intervention == 'ITC'):
+        elif intervention in ['OTC', 'ITC']:
             if intervention == 'OTC':
                 outcome_date = (df.at[person_id, 'un_am_tx_start_date'] +
                                 DateOffset(weeks=p['tx_length_weeks_OutpatientSAM']))
