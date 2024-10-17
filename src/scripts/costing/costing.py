@@ -661,9 +661,6 @@ do_stacked_bar_plot(_df = scenario_cost, cost_category = 'all', year = 2018, act
 # 2. Line plots of total costs
 #----------------------------------------------------
 def do_line_plot(_df, cost_category, actual_expenditure, _draw):
-    # Convert 'value' to millions
-    _df = _df.copy()
-
     # Filter the dataframe based on the selected draw
     subset_df = _df[_df.draw == _draw]
 
@@ -704,7 +701,6 @@ do_line_plot(_df = scenario_cost, cost_category = 'Medical consumables', _draw =
 do_line_plot(_df = scenario_cost, cost_category = 'Human Resources for Health',  _draw = 0, actual_expenditure = 128_593_787)
 do_line_plot(_df = scenario_cost, cost_category = 'Equipment purchase and maintenance',  _draw = 0, actual_expenditure = 6_048_481)
 do_line_plot(_df = scenario_cost, cost_category = 'all',  _draw = 0, actual_expenditure = 624_054_027)
-# TODO Check which plots 2-4 do now show actual values
 
 # 3. Return on Investment Plot
 #----------------------------------------------------
