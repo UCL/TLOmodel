@@ -49,7 +49,77 @@ def get_dummy_hsi(sim, mother_id, id, fl):
 
     return hsi_event
 
-def test_interventions_are_blocked_or_maximised_during_analysis(seed):
+def test_interventions_are_delivered_as_expected_not_during_analysis(seed):
+    sim = Simulation(start_date=start_date, seed=seed)
+    sim.register(*fullmodel(resourcefilepath=resourcefilepath))
+    sim.make_initial_population(n=100)
+
+    cw_params = sim.modules['CareOfWomenDuringPregnancy'].parameters
+    cw_params['sensitivity_bp_monitoring'] = 1.0
+    cw_params['specificity_bp_monitoring'] = 1.0
+    cw_params['sensitivity_urine_protein_1_plus'] = 1.0
+    cw_params['specificity_urine_protein_1_plus'] = 1.0
+    cw_params['sensitivity_poc_hb_test'] = 1.0
+    cw_params['specificity_poc_hb_test'] = 1.0
+    cw_params['sensitivity_fbc_hb_test'] = 1.0
+    cw_params['specificity_fbc_hb_test'] = 1.0
+    cw_params['sensitivity_blood_test_glucose'] = 1.0
+    cw_params['specificity_blood_test_glucose'] = 1.0
+    cw_params['sensitivity_blood_test_syphilis'] = 1.0
+    cw_params['specificity_blood_test_syphilis'] = 1.0
+
+    sim.simulate(end_date=Date(2010, 1, 2))
+
+    df = sim.population.props
+    women_repro = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)]
+    mother_id = women_repro.index[0]
+
+    int_function = pregnancy_helper_functions.check_int_deliverable
+
+    hsi_event = get_dummy_hsi(sim, mother_id, id=0, fl=0)
+
+    def override_dummy_cons(value):
+        updated_cons = {k: value for (k, v) in sim.modules['Labour'].item_codes_lab_consumables['delivery_core'].items()}
+        sim.modules['HealthSystem'].override_availability_of_consumables(updated_cons)
+        sim.modules['HealthSystem'].consumables._refresh_availability_of_consumables(date=sim.date)
+        return sim.modules['Labour'].item_codes_lab_consumables['delivery_core']
+
+    pparams = sim.modules['PregnancySupervisor'].current_parameters
+
+    for intervention in pparams['all_interventions']:
+        assert not int_function(sim.modules['PregnancySupervisor'], intervention, hsi_event, q_param=[0.0],
+                              cons=override_dummy_cons(0.0))
+        assert not int_function(sim.modules['PregnancySupervisor'], intervention, hsi_event, q_param=[1.0],
+                              cons=override_dummy_cons(0.0))
+        assert not int_function(sim.modules['PregnancySupervisor'], intervention, hsi_event, q_param=[0.0],
+                                cons=override_dummy_cons(1.0))
+        assert int_function(sim.modules['PregnancySupervisor'], intervention, hsi_event, q_param=[1.0],
+                                cons=override_dummy_cons(1.0))
+
+    dx_tests = [('ps_htn_disorders', 'severe_pre_eclamp', 'bp_measurement', 'blood_pressure_measurement'),
+                ('ps_htn_disorders', 'severe_pre_eclamp', 'urine_dipstick', 'urine_dipstick_protein'),
+                ('ps_anaemia_in_pregnancy', 'moderate', 'hb_test', 'point_of_care_hb_test'),
+                ('ps_anaemia_in_pregnancy', 'moderate', 'full_blood_count', 'full_blood_count_hb'),
+                ('ps_gest_diab', 'uncontrolled', 'gdm_test', 'blood_test_glucose'),
+                ('ps_syphilis', True, 'syphilis_test', 'blood_test_syphilis'),
+                ('pn_anaemia_following_pregnancy', 'moderate', 'full_blood_count', 'full_blood_count_hb_pn')]
+
+    for test in dx_tests:
+        df.at[mother_id, test[0]] = test[1]
+        assert int_function(sim.modules['CareOfWomenDuringPregnancy'],
+                            test[2], hsi_event, q_param=[1.0],
+                            cons=override_dummy_cons(1.0), dx_test=test[3])
+
+        assert not int_function(sim.modules['CareOfWomenDuringPregnancy'],
+                            test[2], hsi_event, q_param=[0.0],
+                            cons=override_dummy_cons(1.0), dx_test=test[3])
+
+        assert not int_function(sim.modules['CareOfWomenDuringPregnancy'],
+                                test[2], hsi_event, q_param=[1.0],
+                                cons=override_dummy_cons(0.0), dx_test=test[3])
+
+
+def test_interventions_are_delivered_as_expected_during_analysis(seed):
     sim = Simulation(start_date=start_date, seed=seed)
     sim.register(*fullmodel(resourcefilepath=resourcefilepath))
     sim.make_initial_population(n=100)
@@ -58,26 +128,41 @@ def test_interventions_are_blocked_or_maximised_during_analysis(seed):
     pparams['analysis_year'] = 2010
     pparams['interventions_analysis'] = True
 
-    # 'interventions_analysis': True,
-    # 'interventions_under_analysis': [interventions_for_analysis[draw_number - 1]],
-    # 'intervention_analysis_availability': 0.0
-
     sim.simulate(end_date=Date(2010, 1, 2))
 
-    assert sim.modules['PregnancySupervisor'].current_parameters['ps_analysis_in_progress']
+    pparams = sim.modules['PregnancySupervisor'].current_parameters
+    assert pparams['ps_analysis_in_progress']
 
     df = sim.population.props
     women_repro = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)]
     mother_id = women_repro.index[0]
 
-    df.at[mother_id, 'is_pregnant'] = True
-    df.at[mother_id, 'date_of_last_pregnancy'] = start_date
+    int_function = pregnancy_helper_functions.check_int_deliverable
+    hsi_event = get_dummy_hsi(sim, mother_id, id=0, fl=0)
 
+    def override_dummy_cons(value):
+        updated_cons = {k: value for (k, v) in sim.modules['Labour'].item_codes_lab_consumables['delivery_core'].items()}
+        sim.modules['HealthSystem'].override_availability_of_consumables(updated_cons)
+        sim.modules['HealthSystem'].consumables._refresh_availability_of_consumables(date=sim.date)
+        return sim.modules['Labour'].item_codes_lab_consumables['delivery_core']
 
+    for intervention in pparams['all_interventions']:
+        pparams['interventions_under_analysis'] = [intervention]
+        pparams['intervention_analysis_availability'] = 1.0
 
+        assert int_function(sim.modules['PregnancySupervisor'], intervention, hsi_event, q_param=[0.0],
+                            cons=override_dummy_cons(0.0))
 
+        assert int_function(sim.modules['PregnancySupervisor'], intervention, hsi_event, q_param=[1.0],
+                            cons=override_dummy_cons(0.0))
 
+        assert int_function(sim.modules['PregnancySupervisor'], intervention, hsi_event, q_param=[0.0],
+                     cons=override_dummy_cons(1.0))
 
+        pparams['intervention_analysis_availability'] = 0.0
+
+        assert not int_function(sim.modules['PregnancySupervisor'], intervention, hsi_event, q_param=[1.0],
+                            cons=override_dummy_cons(1.0))
 
 
 def test_analysis_analysis_events_run_as_expected_and_update_parameters(seed):

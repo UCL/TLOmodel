@@ -2496,14 +2496,15 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
         # Women for whom immediate delivery is indicated are schedule to move straight to the labour model where
         # they will have the appropriate properties set and facility delivery at a hospital scheduled (mode of
         # delivery will match the recommended mode here)
-        if df.at[person_id, 'ac_admitted_for_immediate_delivery'] in ('induction_now', 'caesarean_now'):
+        if df.at[person_id, 'ac_admitted_for_immediate_delivery'] in ('avd_now', 'induction_now', 'caesarean_now'):
             self.sim.schedule_event(LabourOnsetEvent(self.sim.modules['Labour'], person_id), self.sim.date)
 
         # Women who require delivery BUT are not in immediate risk of morbidity/mortality will remain as
         # inpatients until they can move to the labour model. Currently it is possible for women to go into
         # labour whilst as an inpatient - it is assumed they are delivered via the mode recommended here
         # (i.e induction/caesarean)
-        elif df.at[person_id, 'ac_admitted_for_immediate_delivery'] in ('caesarean_future', 'induction_future'):
+        elif df.at[person_id, 'ac_admitted_for_immediate_delivery'] in ('avd_future', 'caesarean_future',
+                                                                        'induction_future'):
 
             # Here we calculate how many days this woman needs to remain on the antenatal ward before she can go
             # for delivery (assuming delivery is indicated to occur at 37 weeks)

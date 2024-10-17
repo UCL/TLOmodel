@@ -152,7 +152,7 @@ def check_int_deliverable(self, int_name, hsi_event,
             hsi_event.get_consumables(item_codes= [], optional_item_codes=opt_cons)
 
         if ((dx_test is None) or
-            (self.sim.modules['HealthSystem'].dx_manager.run_dx_test( dx_tests_to_run=dx_test, hsi_event=hsi_event))):
+            (self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=dx_test, hsi_event=hsi_event))):
             test = True
 
         if quality and consumables and test:
@@ -424,7 +424,7 @@ def update_current_parameter_dictionary(self, list_position):
 
     for key, value in self.parameters.items():
         if isinstance(value, list):
-            if not value or (len(value)) == 1:
+            if not value or (len(value)) == 1 or key == 'allowed_interventions':
                 self.current_parameters[key] = self.parameters[key]
             else:
                 self.current_parameters[key] = self.parameters[key][list_position]
