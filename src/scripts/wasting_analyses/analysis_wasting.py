@@ -188,7 +188,7 @@ class WastingAnalyses:
                         yerr=[plotting.GBD_lower, plotting.GBD_upper],
                         fmt='o', color='#000', label="GBD")
             ax.set_title(f'{self.__gender_desc[sex]} '
-                         f'wasting deaths, 2010-2014')
+                         f'deaths due to wasting')
             ax.set_xlabel("Time period")
             ax.set_ylabel("Number of deaths")
             ax.legend(loc=2)
