@@ -744,9 +744,7 @@ for index, row in monetary_value_of_incremental_health.iterrows():
                 bbox_inches='tight')
     plt.close()
 
-
-
-# 3. Plot Maximum ability-to-pay
+# 4. Plot Maximum ability-to-pay
 #----------------------------------------------------
 def do_bar_plot_with_ci(_df, annotations=None, xticklabels_horizontal_and_wrapped=False):
     """Make a vertical bar plot for each row of _df, using the columns to identify the height of the bar and the
@@ -812,6 +810,92 @@ fig.tight_layout()
 fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', ''))
 fig.show()
 plt.close(fig)
+
+# 5. Calibration plots
+# Steps: 1. Create a mapping of data labels in model_costing and relevant calibration data, 2. Create a dataframe with model_costs and calibration costs;
+# Prepare data for calibration
+calibration_data = workbook_cost["resource_mapping_r7_summary"]
+# Make sure values are numeric
+budget_columns = ['BUDGETS (USD) (Jul 2019 - Jun 2020)', 'BUDGETS (USD) (Jul 2020 - Jun 2021)',
+       'BUDGETS (USD) (Jul 2021 - Jun 2022)']
+expenditure_columns = ['EXPENDITURE (USD) (Jul 2018 - Jun 2019)']
+calibration_data[budget_columns + expenditure_columns] = calibration_data[budget_columns + expenditure_columns].apply(lambda x: pd.to_numeric(x, errors='coerce'))
+# For calibration to budget figures, we take the maximum value across the three years in the RM to provide an
+# upper limit to calibrate to (expenditure providing the lower limit)
+calibration_data['max_annual_budget_2020-22'] = calibration_data[budget_columns].max(axis=1, skipna = True)
+calibration_data = calibration_data.rename(columns = {'EXPENDITURE (USD) (Jul 2018 - Jun 2019)': 'actual_expenditure_2019',
+                                                      'Calibration_category': 'calibration_category'})
+calibration_data = calibration_data[['calibration_category','actual_expenditure_2019', 'max_annual_budget_2020-22']]
+calibration_data1 = calibration_data.copy()
+calibration_data1['stat'] = 'lower'
+calibration_data2 = calibration_data.copy()
+calibration_data2['stat'] = 'mean'
+calibration_data3 = calibration_data.copy()
+calibration_data3['stat'] = 'upper'
+calibration_data = pd.concat([calibration_data1, calibration_data2, calibration_data3], axis = 0)
+calibration_data = calibration_data.set_index(['calibration_category', 'stat'])
+
+# Manually create a dataframe of model costs and relevant calibration values
+def get_calibration_relevant_subset(_df):
+    cond_calibration_subset = (_df.year == 2018) & (_df.draw == 0)
+    return _df[cond_calibration_subset]
+def get_calibration_relevant_subset_of_consumables_cost(_df, item):
+    #_df =_df.rename(columns = {('year', ''):'year'})
+    for col in ['Item_Code', 'Final_price_per_chosen_unit (USD, 2023)', 'excess_stock_proportion_of_dispensed','item_code']:
+        try:
+            _df = _df.drop(columns = col)
+        except:
+            pass
+    _df.columns = pd.MultiIndex.from_tuples(_df.columns)
+    _df = _df.melt(id_vars = ['year', 'Item_Code'], var_name=['draw', 'stat'], value_name='value')
+    _df = _df[_df['Item_Code'].isin(item)]
+    _df = _df.groupby(['year', 'draw', 'stat'])['value'].sum()
+    return get_calibration_relevant_subset(_df.reset_index())
+def merged_calibration_relevant_consumables_costs(item, category):
+    merged_df = pd.merge(get_calibration_relevant_subset_of_consumables_cost(cost_of_consumables_dispensed, item),
+                         get_calibration_relevant_subset_of_consumables_cost(cost_of_excess_consumables_stocked, item),
+                         on=['year', 'draw', 'stat'], how='outer', suffixes=('_dispensed', '_excess_stock'))
+    # Fill any missing values in the value columns with 0 (for cases where only one dataframe has a value)
+    # and sum to get total consumable cost
+    merged_df['value'] = merged_df['value_dispensed'].fillna(0) + merged_df['value_excess_stock'].fillna(0)
+    merged_df['calibration_category'] = category
+    return merged_df.set_index(['calibration_category', 'stat'])['value']
+
+def first_positive(series):
+    return next((x for x in series if pd.notna(x) and x > 0), np.nan)
+
+# Consumables
+calibration_data = pd.concat([calibration_data, merged_calibration_relevant_consumables_costs([2671, 2672, 2673], 'Antiretrovirals')], axis = 1)
+calibration_data = pd.concat([calibration_data, merged_calibration_relevant_consumables_costs([176, 177, 179, 178, 181, 2678], 'TB Treatment')], axis = 1)
+calibration_data = pd.concat([calibration_data, merged_calibration_relevant_consumables_costs([162,164,170], 'Antimalarials')], axis = 1)
+calibration_data = pd.concat([calibration_data, merged_calibration_relevant_consumables_costs([163], 'Malaria RDTs')], axis = 1)
+calibration_data = pd.concat([calibration_data, merged_calibration_relevant_consumables_costs([190,191,196], 'HIV Screening/Diagnostic Tests')], axis = 1)
+calibration_data = pd.concat([calibration_data, merged_calibration_relevant_consumables_costs([2,25], 'Condoms and Lubricants')], axis = 1)
+calibration_data = pd.concat([calibration_data, merged_calibration_relevant_consumables_costs([184,187, 175], 'TB Tests (including RDTs)')], axis = 1)
+# Apply across rows to find the first positive value
+calibration_data['model_cost'] = calibration_data[['value']].apply(first_positive, axis=1)
+
+
+# HR
+calibration_data[calibration_data['calibration_category'] == 'Other Drugs, medical supplies, and commodities'] = merged_calibration_relevant_consumables_costs()
+calibration_data[calibration_data['calibration_category'] == 'Health Worker Salaries'] = get_calibration_relevant_subset()
+calibration_data[calibration_data['calibration_category'] == 'Health Worker Training - In-Service'] = get_calibration_relevant_subset()
+calibration_data[calibration_data['calibration_category'] == 'Health Worker Training - Pre-Service'] = get_calibration_relevant_subset()
+calibration_data[calibration_data['calibration_category'] == 'Other Human Resources for Health expenses'] = get_calibration_relevant_subset()
+calibration_data[calibration_data['calibration_category'] == 'Facility utility bills - ICT', 'Infrastructure - New Builds'] = get_calibration_relevant_subset()
+calibration_data[calibration_data['calibration_category'] == 'Infrastructure - Rehabilitation'] = get_calibration_relevant_subset()
+calibration_data[calibration_data['calibration_category'] == 'Medical Equipment - Maintenance'] = get_calibration_relevant_subset()
+calibration_data[calibration_data['calibration_category'] == 'Medical Equipment - Purchase'] = get_calibration_relevant_subset()
+calibration_data[calibration_data['calibration_category'] == 'Vehicles - Purchase and Maintenance'] = get_calibration_relevant_subset()
+calibration_data[calibration_data['calibration_category'] == 'Vehicles - Purchase and Maintenance'] = get_calibration_relevant_subset()
+
+# This will reshape your data such that:
+# 3. Create calibration plot
+# Consumables
+
+
+# HR
+# Equipment
 
 # TODO all these HR plots need to be looked at
 # 1. HR
