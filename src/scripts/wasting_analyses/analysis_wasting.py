@@ -197,7 +197,7 @@ class WastingAnalyses:
         plt.subplots_adjust(bottom=0.15)  # Adjust the bottom margin
         # Add footnote
         fig.figure.text(0.5, 0.02,
-                        "Model output against Global Burden of Diseases (GDB) study data",
+                        "Model output against Global Burden of Diseases (GBD) study data",
                         ha="center", fontsize=10, bbox={"facecolor": "gray", "alpha": 0.3, "pad": 5})
         fig_output_name = ('modal_gbd_deaths_by_gender__' + self.datestamp)
         self.save_fig__store_pdf_file(fig, fig_output_name)
