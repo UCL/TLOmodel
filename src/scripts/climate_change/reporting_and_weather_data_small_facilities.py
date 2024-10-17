@@ -15,29 +15,22 @@ reporting_data = reporting_data.drop(columns=columns_to_drop)
 # drop NAs
 reporting_data = reporting_data.dropna(subset = reporting_data.columns[3:], how='all') # drops 90 clinics
 
-### But need to drop mental health, as that is only relevant for the  Zomba Mental Hospital and otherwise brings down averages
-# extract mental health data
-mental_health_columns = reporting_data.columns[reporting_data.columns.str.startswith("Mental")].tolist()
-reporting_data_no_mental = reporting_data.drop(mental_health_columns, axis = 1)
-mental_health_data = reporting_data[[reporting_data.columns[1]] + mental_health_columns]
-all_columns_no_mental_health = reporting_data_no_mental.columns
-
 ### now aggregate over months
 monthly_reporting_data_by_facility =  {}
-months = set(col.split(" - Reporting rate ")[1] for col in all_columns_no_mental_health if " - Reporting rate " in col)
+months = set(col.split(" - Reporting rate ")[1] for col in reporting_data.columns if " - Reporting rate " in col)
 
 # put in order
 months = [date.strip() for date in months] # extra spaces??
 dates = pd.to_datetime(months, format='%B %Y', errors='coerce')
 months = dates.sort_values().strftime('%B %Y').tolist()
 for month in months:
-    columns_of_interest_all_metrics = [reporting_data_no_mental.columns[1]] + reporting_data_no_mental.columns[reporting_data_no_mental.columns.str.endswith(month)].tolist()
-    data_of_interest_by_month = reporting_data_no_mental[columns_of_interest_all_metrics]
+    columns_of_interest_all_metrics = [reporting_data.columns[1]] + reporting_data.columns[reporting_data.columns.str.endswith(month)].tolist()
+    data_of_interest_by_month = reporting_data[columns_of_interest_all_metrics]
     numeric_data = data_of_interest_by_month.select_dtypes(include='number')
     monthly_mean_by_facility = numeric_data.mean(axis=1)
     monthly_reporting_data_by_facility[month] = monthly_mean_by_facility
 monthly_reporting_by_facility = pd.DataFrame(monthly_reporting_data_by_facility)
-monthly_reporting_by_facility["facility"] = reporting_data_no_mental["organisationunitname"].values
+monthly_reporting_by_facility["facility"] = reporting_data["organisationunitname"].values
 
 # Weather data
 directory = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical" # from 2011 on
@@ -84,7 +77,7 @@ for reporting_facility in monthly_reporting_by_facility["facility"]:
     matching_facility_name = difflib.get_close_matches(reporting_facility, facilities_with_lat_long['Fname'], n=3, cutoff=0.90)
     if matching_facility_name:
         match_name = matching_facility_name[0]  # Access the string directly
-        facilities_with_location.append(match_name)
+        facilities_with_location.append(reporting_facility)
         lat_for_facility = facilities_with_lat_long.loc[
             facilities_with_lat_long['Fname'] == match_name, "A109__Latitude"].iloc[0]
         long_for_facility = facilities_with_lat_long.loc[
@@ -93,19 +86,17 @@ for reporting_facility in monthly_reporting_by_facility["facility"]:
         index_for_y= ((lat_data - long_for_facility)**2).argmin()
 
         precip_data_for_facility = pr_data[:, index_for_y,index_for_x]  # across all time points
-        precip_data_for_facility = precip_data_for_facility * 86400  # to get from per second to per day
+        weather_data_by_facility[reporting_facility]  = precip_data_for_facility * 86400  # to get from per second to per day
 ## below are not in facilities file?
     elif reporting_facility == "Central East Zone":
         grid = general_facilities[general_facilities["District"] == "Nkhotakota"]["Grid_Index"].iloc[0] # furtherst east zone
-        precip_data_for_facility = weather_by_grid[grid]
+        weather_data_by_facility[reporting_facility]  = weather_by_grid[grid]
     elif (reporting_facility == "Central Hospital"):
          grid = general_facilities[general_facilities["District"] == "Lilongwe City"]["Grid_Index"].iloc[0] # all labelled X City will be in the same grid
-         precip_data_for_facility = weather_by_grid[grid]
+         weather_data_by_facility[reporting_facility]  = weather_by_grid[grid]
     else:
         continue
-    weather_data_by_facility[reporting_facility] = precip_data_for_facility
 
-len(weather_data_by_facility)
 
 ### Get data ready for linear regression between reporting and weather data
 weather_df = pd.DataFrame.from_dict(weather_data_by_facility, orient='index').T
@@ -114,6 +105,12 @@ monthly_reporting_by_facility = monthly_reporting_by_facility.set_index('facilit
 monthly_reporting_by_facility.index.name = "date"
 
 # ### Save CSVs
+monthly_reporting_by_facility = monthly_reporting_by_facility.loc[:, monthly_reporting_by_facility.columns.isin(facilities_with_location)]
+monthly_reporting_by_facility = monthly_reporting_by_facility[facilities_with_location]
+
+print(len(facilities_with_location))
+print(len(monthly_reporting_by_facility.columns))
+print(len(weather_df.columns))
 monthly_reporting_by_facility.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_by_smaller_facility_lm.csv")
 weather_df.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facility_lm.csv")
 
