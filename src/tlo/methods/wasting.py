@@ -182,7 +182,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         # Properties related to clinical acute malnutrition
         'un_clinical_acute_malnutrition': Property(Types.CATEGORICAL, 'clinical acute malnutrition state based'
                                                                       ' on WHZ and/or MUAC and/or oedema',
-                                                   categories=['MAM', 'SAM'] + ['well']),
+                                                   categories=['MAM', 'SAM', 'well']),
         'un_am_bilateral_oedema': Property(Types.BOOL, 'bilateral pitting oedema present in wasting episode'),
         'un_am_MUAC_category': Property(Types.CATEGORICAL, 'MUAC measurement categories, based on WHO '
                                                            'cut-offs',
