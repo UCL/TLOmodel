@@ -610,6 +610,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     hcw_time_usage_summarized = summarize(hcw_time_usage, only_mean=True).T.reindex(param_names).reindex(
         num_dalys_summarized.index
     )
+    hcw_time_usage_summarized.columns = [col.replace('OfficerType=', '').replace('FacilityLevel=', '')
+                                         for col in hcw_time_usage_summarized.columns]
+    hcw_time_usage_summarized.columns = hcw_time_usage_summarized.columns.str.split(pat='|', expand=True)
 
     # get relative numbers for scenarios, compared to no_expansion scenario: s_1
     num_services_increased = summarize(
@@ -1533,6 +1536,38 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         plt.axhline(y=data_to_plot[c].mean(),
                     linestyle='--', color=officer_category_color[c], alpha=1.0, linewidth=2,
                     label=c)
+    plt.title(name_of_plot)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
+    name_of_plot = f'Average fractions of HCW time used (CNP, level 1a), {target_period()}'
+    data_to_plot = hcw_time_usage_summarized.xs('1a', axis=1, level=1, drop_level=True) * 100
+    fig, ax = plt.subplots(figsize=(12, 8))
+    data_to_plot.plot(kind='bar', color=officer_category_color, rot=0, alpha=0.6, ax=ax)
+    #ax.set_ylim(0, 100)
+    ax.set_ylabel('Percentage %')
+    ax.set_xlabel('Extra budget allocation scenario', fontsize='small')
+    xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
+    ax.set_xticklabels(xtick_labels, rotation=90)
+    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category')
+    plt.title(name_of_plot)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
+    name_of_plot = f'Average fractions of HCW time used (CNP, level 2), {target_period()}'
+    data_to_plot = hcw_time_usage_summarized.xs('2', axis=1, level=1, drop_level=True) * 100
+    fig, ax = plt.subplots(figsize=(12, 8))
+    data_to_plot.plot(kind='bar', color=officer_category_color, rot=0, alpha=0.6, ax=ax)
+    # ax.set_ylim(0, 100)
+    ax.set_ylabel('Percentage %')
+    ax.set_xlabel('Extra budget allocation scenario', fontsize='small')
+    xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
+    ax.set_xticklabels(xtick_labels, rotation=90)
+    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category')
     plt.title(name_of_plot)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
