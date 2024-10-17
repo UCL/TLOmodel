@@ -14,7 +14,6 @@ columns_to_drop = reporting_data.columns[reporting_data.columns.str.endswith(('O
 reporting_data = reporting_data.drop(columns=columns_to_drop)
 # drop NAs
 reporting_data = reporting_data.dropna(subset = reporting_data.columns[3:], how='all') # drops 90 clinics
-
 ### now aggregate over months
 monthly_reporting_data_by_facility =  {}
 months = set(col.split(" - Reporting rate ")[1] for col in reporting_data.columns if " - Reporting rate " in col)
@@ -22,7 +21,7 @@ months = set(col.split(" - Reporting rate ")[1] for col in reporting_data.column
 # put in order
 months = [date.strip() for date in months] # extra spaces??
 dates = pd.to_datetime(months, format='%B %Y', errors='coerce')
-months = dates.sort_values().strftime('%B %Y').tolist()
+months = dates.sort_values().strftime('%B %Y').tolist() # puts them in ascending order
 for month in months:
     columns_of_interest_all_metrics = [reporting_data.columns[1]] + reporting_data.columns[reporting_data.columns.str.endswith(month)].tolist()
     data_of_interest_by_month = reporting_data[columns_of_interest_all_metrics]
@@ -50,6 +49,8 @@ for file in files:
 pr_data = weather_monthly_all_grids.variables['tp'][:]  # total precipitation in kg m-2 s-1 = mm s-1 x 86400 to get to day
 lat_data = weather_monthly_all_grids.variables['latitude'][:]
 long_data = weather_monthly_all_grids.variables['longitude'][:]
+date = weather_monthly_all_grids['date'][:]
+print(date)
 grid = 0
 
 regridded_weather_data = {}
