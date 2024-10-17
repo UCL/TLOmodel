@@ -49,6 +49,36 @@ def get_dummy_hsi(sim, mother_id, id, fl):
 
     return hsi_event
 
+def test_interventions_are_blocked_or_maximised_during_analysis(seed):
+    sim = Simulation(start_date=start_date, seed=seed)
+    sim.register(*fullmodel(resourcefilepath=resourcefilepath))
+    sim.make_initial_population(n=100)
+
+    pparams = sim.modules['PregnancySupervisor'].parameters
+    pparams['analysis_year'] = 2010
+    pparams['interventions_analysis'] = True
+
+    # 'interventions_analysis': True,
+    # 'interventions_under_analysis': [interventions_for_analysis[draw_number - 1]],
+    # 'intervention_analysis_availability': 0.0
+
+    sim.simulate(end_date=Date(2010, 1, 2))
+
+    assert sim.modules['PregnancySupervisor'].current_parameters['ps_analysis_in_progress']
+
+    df = sim.population.props
+    women_repro = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)]
+    mother_id = women_repro.index[0]
+
+    df.at[mother_id, 'is_pregnant'] = True
+    df.at[mother_id, 'date_of_last_pregnancy'] = start_date
+
+
+
+
+
+
+
 
 def test_analysis_analysis_events_run_as_expected_and_update_parameters(seed):
     """Test that the analysis events run when scheduled and that they update the correct parameters as expected

@@ -396,6 +396,8 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
             Types.BOOL, ''),
         'interventions_under_analysis': Parameter(
             Types.LIST, ''),
+        'all_interventions': Parameter(
+            Types.LIST, ''),
         'intervention_analysis_availability': Parameter(
             Types.REAL, ''),
     }

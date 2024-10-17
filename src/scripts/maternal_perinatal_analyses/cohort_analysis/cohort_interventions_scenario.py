@@ -15,9 +15,9 @@ class BaselineScenario(BaseScenario):
         self.seed = 537184
         self.start_date = Date(2024, 1, 1)
         self.end_date = Date(2025, 1, 2)
-        self.pop_size = 5000
-        self.number_of_draws = 3
-        self.runs_per_draw = 10
+        self.pop_size = 10_000
+        self.number_of_draws = 4
+        self.runs_per_draw = 20
 
     def log_configuration(self):
         return {
@@ -44,13 +44,17 @@ class BaselineScenario(BaseScenario):
                  mnh_cohort_module.MaternalNewbornHealthCohort(resourcefilepath=self.resources)]
 
     def draw_parameters(self, draw_number, rng):
-        interventions_for_analysis = ['blood_transfusion', 'pph_treatment_uterotonics', 'sepsis_treatment']
+        if draw_number == 0:
+            return {'PregnancySupervisor': {
+                    'analysis_year': 2024}}
+        else:
+            interventions_for_analysis = ['blood_transfusion', 'pph_treatment_uterotonics', 'sepsis_treatment']
 
-        return {'PregnancySupervisor': {
-                'analysis_year': 2024,
-                'interventions_analysis': True,
-                'interventions_under_analysis':[interventions_for_analysis[draw_number-1]],
-                'intervention_analysis_availability': 0.0}}
+            return {'PregnancySupervisor': {
+                    'analysis_year': 2024,
+                    'interventions_analysis': True,
+                    'interventions_under_analysis':[interventions_for_analysis[draw_number-1]],
+                    'intervention_analysis_availability': 0.0}}
 
 
 if __name__ == '__main__':
