@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
-from sklearn.preprocessing import StandardScaler
+from statsmodels.othermod.betareg import BetaModel
 
 # # data is from 2011 - 2024 - for facility
 monthly_reporting_by_facility = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_by_smaller_facility_lm.csv", index_col=0)
@@ -30,11 +30,11 @@ facility_flattened = list(range(len(weather_data_historical.columns))) * len(mon
 weather_data = weather_data_historical.values.flatten()
 y = monthly_reporting_by_facility.values.flatten()
 
-def build_model(X, y, scale_y=True, binomial=True, X_mask_mm = 0):
-    y += 1e-10 # account for zeros in binomial data
+def build_model(X, y, scale_y=True, beta=True, X_mask_mm = 0):
+    y += 1e-10
     y_scaled = (y / 100) if scale_y else y
     mask = ~np.isnan(X).any(axis=1) & ~np.isnan(y_scaled) & (X[:, 0] >= X_mask_mm)
-    model = sm.GLM(y_scaled[mask], X[mask], family=sm.families.Binomial()) if binomial else sm.OLS(y_scaled[mask], X[mask])
+    model = BetaModel(y_scaled[mask], X[mask]) if beta else sm.OLS(y_scaled[mask], X[mask])
     return model.fit()
 
 # One-hot encode facilities
@@ -74,7 +74,7 @@ expanded_facility_info = expanded_facility_info.T.reindex(columns=expanded_facil
 
 def repeat_info(info, num_facilities, year_range):
     repeated_info = [i for i in info for _ in range(12) for _ in year_range]
-    return repeated_info[4 * num_facilities:]  # Exclude first 4 months (Sept - Dec 2024)
+    return repeated_info[:-4 * num_facilities]  # Exclude first final months (Sept - Dec 2024)
 
 zone_info_each_month = repeat_info(expanded_facility_info["Zonename"], num_facilities, year_range)
 zone_encoded = pd.get_dummies(zone_info_each_month)
@@ -82,11 +82,13 @@ resid_info_each_month = repeat_info(expanded_facility_info['Resid'], num_facilit
 resid_encoded = pd.get_dummies(resid_info_each_month)
 owner_info_each_month = repeat_info(expanded_facility_info['A105'], num_facilities, year_range)
 owner_encoded = pd.get_dummies(owner_info_each_month)
-
+ftype_info_each_month = repeat_info(expanded_facility_info['Ftype'], num_facilities, year_range)
+ftype_encoded = pd.get_dummies(ftype_info_each_month)
+print(len(owner_encoded))
 # Lagged weather
 lag_1_month = weather_data_historical.shift(1).values.flatten()
 lag_3_month = weather_data_historical.shift(3).values.flatten()
-
+print(year_flattened)
 X = np.column_stack([
     weather_data,
     year_flattened,
@@ -97,15 +99,27 @@ X = np.column_stack([
     resid_encoded,
     zone_encoded,
     owner_encoded,
+    ftype_encoded,
     lag_1_month,
     lag_3_month
 ])
 
 #scaler = StandardScaler() # as weather is at such different levels
 #X_scaled = scaler.fit_transform(X)
-results = build_model(X, y, scale_y=False, binomial=False, X_mask_mm = 800)
+results = build_model(X, y, scale_y=False, beta=False, X_mask_mm = 1000)
 print(results.summary())
 
 results = build_model(X, y, X_mask_mm = 800)
 
 print(results.summary())
+
+
+# Collinearity check
+
+X = sm.add_constant(X)
+
+# Calculate VIF
+vif_data = pd.DataFrame()
+vif_data['Variable'] = X.columns
+vif_data['VIF'] = [sm.stats.outliers_influence.variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
+print(vif_data['VIF'])
