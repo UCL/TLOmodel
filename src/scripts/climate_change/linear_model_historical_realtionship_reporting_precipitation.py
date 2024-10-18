@@ -66,7 +66,7 @@ def create_binary_feature(threshold, weather_data_df, recent_months):
 above_below_average = create_binary_feature(
     grouped_data.groupby(['facility', 'month'])['weather_data'].transform('mean'), weather_data_historical, 0
 )
-above_below_X = create_binary_feature(800, weather_data_historical, 12)
+above_below_X = create_binary_feature(1000, weather_data_historical, 12)
 
 # Prepare additional facility info
 expanded_facility_info = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm.csv", index_col=0)
@@ -92,7 +92,7 @@ X = np.column_stack([
     year_flattened,
     month_flattened,
     above_below_average,
-    above_below_X,
+    #above_below_X,
     #facility_encoded,
     resid_encoded,
     zone_encoded,
@@ -103,9 +103,9 @@ X = np.column_stack([
 
 #scaler = StandardScaler() # as weather is at such different levels
 #X_scaled = scaler.fit_transform(X)
-results = build_model(X, y, scale_y=False, binomial=False, X_mask_mm = 0)
+results = build_model(X, y, scale_y=False, binomial=False, X_mask_mm = 800)
 print(results.summary())
 
-results = build_model(X, y, X_mask_mm = 0)
+results = build_model(X, y, X_mask_mm = 800)
 
 print(results.summary())

@@ -109,9 +109,6 @@ monthly_reporting_by_facility.index.name = "date"
 monthly_reporting_by_facility = monthly_reporting_by_facility.loc[:, monthly_reporting_by_facility.columns.isin(facilities_with_location)]
 monthly_reporting_by_facility = monthly_reporting_by_facility[facilities_with_location]
 
-print(len(facilities_with_location))
-print(len(monthly_reporting_by_facility.columns))
-print(len(weather_df.columns))
 monthly_reporting_by_facility.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_by_smaller_facility_lm.csv")
 weather_df.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facility_lm.csv")
 
@@ -120,7 +117,7 @@ included_facilities_with_lat_long = facilities_with_lat_long[
     facilities_with_lat_long["Fname"].isin(facilities_with_location)
 ]
 
-additional_rows = ["Zonename", "Resid", "A105", "A109__Altitude"]
+additional_rows = ["Zonename", "Resid", "A105", "A109__Altitude", "Ftype"]
 expanded_facility_info = included_facilities_with_lat_long[["Fname"] + additional_rows]
 
 expanded_facility_info.columns = ["Fname"] + additional_rows
