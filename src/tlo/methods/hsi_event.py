@@ -237,7 +237,7 @@ class HSI_Event:
                 logger.debug(
                     key="message",
                     data=(
-                        f"Cannot have population-wide HSI events"
+                        "Cannot have population-wide HSI events"
                     ),
                 )
 
