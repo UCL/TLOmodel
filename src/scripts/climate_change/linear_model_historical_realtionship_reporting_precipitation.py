@@ -30,10 +30,10 @@ print(len(weather_data_historical.columns))
 # #plt.show()
 
 ## Drop September 2024
-weather_data_historical = weather_data_historical.drop(weather_data_historical.index[1])
-monthly_reporting_by_facility = monthly_reporting_by_facility.drop(monthly_reporting_by_facility.index[1])
+weather_data_historical = weather_data_historical.drop(weather_data_historical.index[-1])
+monthly_reporting_by_facility = monthly_reporting_by_facility.drop(monthly_reporting_by_facility.index[-1])
 
-## Drop 2011-2017 7*12
+# ## Drop 2011-2017 7*12
 # weather_data_historical = weather_data_historical.drop(weather_data_historical.index[0:84]).reset_index(drop=True)
 # monthly_reporting_by_facility = monthly_reporting_by_facility.drop(monthly_reporting_by_facility.index[0:84]).reset_index(drop=True)
 
@@ -58,6 +58,8 @@ monthly_reporting_by_facility = monthly_reporting_by_facility.drop(monthly_repor
 
 ## Linear regression - flattened
 # year
+month_range = range(12)
+num_facilities = len(weather_data_historical.columns)
 year_range = range(2011, 2025, 1) # year as a fixed effect
 year_repeated = [y for y in year_range for _ in range(12)]
 year = year_repeated[:-4]
@@ -66,181 +68,118 @@ year_flattened = year*len(weather_data_historical.columns) # to get flattened da
 # month
 month = range(12)
 month_repeated = [m for m in month for _ in year_range]
-month = month_repeated[4:]
+month = month_repeated[:-4]
 month_flattened = month*len(weather_data_historical.columns)
 
 # facility as fixed effect
 facility_flattened = list(range(len(weather_data_historical.columns))) * len(month)
 
-# linear regression - flatten for more data points
+# Flatten data
 weather_data = weather_data_historical.values.flatten()
 y = monthly_reporting_by_facility.values.flatten()
-X = pd.DataFrame({
-    'weather_data': weather_data,
-    'year': year_flattened,
-    'month': month_flattened,
-    'facility': facility_flattened
-})
 
-# One-hot encode the 'facility' column for a fixed effect
-facility_encoded = pd.get_dummies(X['facility'])
+# Function to build model
+def build_model(predictors, dependent_var, scale_y=True, binomial=True):
+    X = np.column_stack(predictors)
+    y_scaled = (dependent_var / 100) if scale_y else dependent_var
+    mask = ~np.isnan(X).any(axis=1) & ~np.isnan(y_scaled)
+    model = sm.GLM(y_scaled[mask], X[mask], family=sm.families.Binomial()) if binomial else sm.OLS(y_scaled[mask], X[mask])
+    return model.fit()
 
-X = np.column_stack((X[['weather_data', 'year', 'month']], facility_encoded))
-mask = ~np.isnan(X).any(axis=1) & ~np.isnan(y)
-model = sm.OLS(y[mask],X[mask])
-results = model.fit()
+# One-hot encode facilities
+facility_encoded = pd.get_dummies(facility_flattened)
 
-print(results.summary())
+print(len(facility_flattened))
+print(len(month_flattened))
+print(len(weather_data))
 
-
-## Binary above/below average for that month
-X_df = pd.DataFrame({
-    'weather_data': weather_data,
-    'year': year_flattened,
-    'month': month_flattened,
-    'facility': facility_flattened
-})
-
-grouped_data = X_df.groupby(['facility', 'month'])['weather_data'].mean().reset_index()
-above_below_average = []
-for facility in range(len(monthly_reporting_by_facility.columns)):
-    for month in range(12):
-        average_for_month = grouped_data[(grouped_data["facility"] == facility) & (grouped_data["month"] == month)][
-            "weather_data"]
-        X_data = X_df[(X_df["month"] == month) & (X_df["facility"] == facility)]
-        for value in X_data["weather_data"]:
-            above_below_average.append(1 if value > average_for_month.values[0] else 0)
-
-# Add the binary variable to the predictors
-X = pd.DataFrame({
-    'weather_data': weather_data,
-    'year': year_flattened,
-    'month': month_flattened,
+# Above/below average for each month
+grouped_data = pd.DataFrame({
     'facility': facility_flattened,
-    'precip_above_average': above_below_average
-})
-# One-hot encode the 'facility' column for a fixed effect
-facility_encoded = pd.get_dummies(X['facility'])
-
-X = np.column_stack((X[['weather_data', 'year', 'month', 'precip_above_average']], facility_encoded))
-y = monthly_reporting_by_facility.values.flatten()
-
-mask = ~np.isnan(X).any(axis=1) & ~np.isnan(y)
-model = sm.OLS(y[mask],X[mask])
-results = model.fit()
-print(results.summary())
+    'month': month_flattened,
+    'weather_data': weather_data
+}).groupby(['facility', 'month'])['weather_data'].mean().reset_index()
 
 
+def create_binary_feature(threshold, weather_data_df, recent_months):
+    binary_feature_list = []
+    for facility in weather_data_df.columns:
+        facility_data = weather_data_df[facility]
 
+        for i in range(len(facility_data)):
+            if hasattr(threshold, "__len__"):  # Check if threshold is iterable
+                facility_threshold = threshold[i]
+            else:
+                facility_threshold = threshold  # Use scalar threshold if it's not iterable
 
-## Binary above/below 300mm for that month (very heavy rain)
-X_df = pd.DataFrame({
+            if i >= recent_months:
+                last_x_values = facility_data[i - recent_months:i]
+                binary_feature_list.append(1 if (last_x_values > facility_threshold).any() else 0)
+            else:
+                binary_feature_list.append(np.nan)
+
+    return binary_feature_list
+above_below_average = create_binary_feature(
+    grouped_data.groupby(['facility', 'month'])['weather_data'].transform('mean'), weather_data_historical, 0
+)
+
+above_below_700 = create_binary_feature(700, weather_data_historical, 12)
+
+# Build models
+X_base = pd.DataFrame({
     'weather_data': weather_data,
     'year': year_flattened,
     'month': month_flattened,
-    'facility': facility_flattened
-})
-
-grouped_data = X_df.groupby(['facility', 'month'])['weather_data'].mean().reset_index()
-above_below_700 = []
-for facility in range(len(monthly_reporting_by_facility.columns)):
-    for month in range(12):
-        X_data = X_df[(X_df["month"] == month) & (X_df["facility"] == facility)]
-        for value in X_data["weather_data"]:
-
-            above_below_700.append(1 if value > 700 else 0)
-
-
-# Add the binary variable to the predictors
-X = pd.DataFrame({
-    'weather_data': weather_data,
-    'year': year_flattened,
-    'month': month_flattened,
-    'facility': facility_flattened,
+    'precip_above_average': above_below_average,
     'precip_above_700': above_below_700
 })
-# One-hot encode the 'facility' column for a fixed effect
-facility_encoded = pd.get_dummies(X['facility'])
 
-X = np.column_stack((X[['weather_data', 'year', 'month', 'precip_above_700']], facility_encoded))
-y = monthly_reporting_by_facility.values.flatten()
-
-mask = ~np.isnan(X).any(axis=1) & ~np.isnan(y)
-model = sm.OLS(y[mask],X[mask])
-results = model.fit()
+X = np.column_stack([X_base[['weather_data', 'year', 'month', 'precip_above_average', 'precip_above_700']], facility_encoded])
+results = build_model([X], y)
 print(results.summary())
 
-######### Now has it exceeded in previous 12 months
-
-
-exceeds_700_last_12_weather = []
-
-for facility in weather_data_historical.columns:
-    facility_data = weather_data_historical[facility]
-
-    for i in range(len(facility_data)):
-        if i >= 12:
-            last_12_values = facility_data[i - 12:i]
-            exceeds_700_last_12_weather.append(1 if (last_12_values > 700).any() else 0)
-        else:
-            exceeds_700_last_12_weather.append(np.nan)
-
-X = pd.DataFrame({
-    'weather_data': weather_data,
-    'year': year_flattened,
-    'month': month_flattened,
-    'facility': facility_flattened,
-    'precip_above_700': above_below_700,
-    'exceeds_700_last_12_weather': exceeds_700_last_12_weather
-})
-facility_encoded = pd.get_dummies(X['facility'])
-
-X = np.column_stack(
-    (X[['weather_data', 'year', 'month', 'precip_above_700', 'exceeds_700_last_12_weather']], facility_encoded))
-y = monthly_reporting_by_facility.values.flatten()
-
-mask = ~np.isnan(X).any(axis=1) & ~np.isnan(y)
-model = sm.OLS(y[mask], X[mask])
-results = model.fit()
-
+# Exceeds threshold in last 12 months
+exceeds_700_last_12 = [
+    1 if (weather_data_historical[facility][i-12:i] > 700).any() else 0
+    if i >= 12 else np.nan
+    for facility in weather_data_historical.columns for i in range(len(weather_data_historical[facility]))
+]
+print(exceeds_700_last_12)
+print(above_below_700)
+X_base['exceeds_700_last_12_weather'] = exceeds_700_last_12
+X = np.column_stack([X_base, facility_encoded])
+results = build_model([X], y)
 print(results.summary())
 
-########### Add other covariates
+# Add additional covariates (zone, resid, etc.)
+expanded_facility_info = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm.csv", index_col=0).T
 
 expanded_facility_info = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm.csv", index_col=0)
 expanded_facility_info = expanded_facility_info.T.reindex(columns=expanded_facility_info.index)
-print(len(expanded_facility_info))
-zone_info = expanded_facility_info["Zonename"]
-zone_info_each_month = [z for z in zone_info for _ in range(12) for _ in year_range]
-zone_info_each_month = zone_info_each_month[4*len(monthly_reporting_by_facility.columns):] # first four months, no data (Sept - Dec 2024)
+def repeat_info(info, num_facilities, year_range):
+    repeated_info = [i for i in info for _ in range(12) for _ in year_range]
+    return repeated_info[4 * num_facilities:]  # Exclude first 4 months (Sept - Dec 2024)
 
+# Zone information encoding
+zone_info_each_month = repeat_info(expanded_facility_info["Zonename"], num_facilities, year_range)
 zone_encoded = pd.get_dummies(zone_info_each_month)
-resid_info = expanded_facility_info['Resid']
-resid_info_each_month = [r for r in resid_info for _ in range(12) for _ in year_range]
-resid_info_each_month = resid_info_each_month[4*len(monthly_reporting_by_facility.columns):] # first four months, no data (Sept - Dec 2024)
+
+# Resid information encoding
+resid_info_each_month = repeat_info(expanded_facility_info['Resid'], num_facilities, year_range)
 resid_encoded = pd.get_dummies(resid_info_each_month)
-owner_info = expanded_facility_info['A105']
-owner_info_each_month = [o for o in owner_info for _ in range(12) for _ in year_range]
-owner_info_each_month = owner_info_each_month[4*len(monthly_reporting_by_facility.columns):] # first four months, no data (Sept - Dec 2024)
 
+# Owner information encoding
+owner_info_each_month = repeat_info(expanded_facility_info['A105'], num_facilities, year_range)
 owner_encoded = pd.get_dummies(owner_info_each_month)
-X = pd.DataFrame({
-    'weather_data': weather_data,
-    'year': year_flattened,
-    'month': month_flattened,
-    'facility': facility_flattened,
-    'precip_above_700': above_below_700,
-    'exceeds_700_last_12_weather': exceeds_700_last_12_weather
-})
-print(X)
-facility_encoded = pd.get_dummies(X['facility'])
 
-X = np.column_stack(
-    (X[['weather_data', 'year', 'month', 'precip_above_700', 'exceeds_700_last_12_weather']], facility_encoded, resid_encoded,zone_encoded, owner_encoded))
-y = monthly_reporting_by_facility.values.flatten()
+X = np.column_stack([X_base, facility_encoded, resid_encoded, resid_encoded, owner_encoded])
+results = build_model([X], y)
+print(results.summary())
 
-mask = ~np.isnan(X).any(axis=1) & ~np.isnan(y)
-model = sm.OLS(y[mask], X[mask])
-results = model.fit()
+# Add lagged model
+lag_1_month = weather_data_historical.shift(1).values.flatten()
+lag_3_month = weather_data_historical.shift(3).values.flatten()
 
+X_lagged = np.column_stack([X_base[['weather_data', 'year', 'month', 'precip_above_700', 'exceeds_700_last_12_weather']], lag_1_month, lag_3_month, facility_encoded])
+results = build_model([X_lagged], y)
 print(results.summary())
