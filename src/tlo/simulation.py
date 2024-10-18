@@ -323,7 +323,7 @@ class Simulation:
         #self.generate_event_chains = generate_event_chains
         if self.generate_event_chains:
             # Eventually this can be made an option
-            self.generate_event_chains_overwrite_epi = True
+            self.generate_event_chains_overwrite_epi = False
             # For now keep these fixed, eventually they will be input from user
             self.generate_event_chains_modules_of_interest = [self.modules]
             self.generate_event_chains_ignore_events =  ['AgeUpdateEvent','HealthSystemScheduler', 'SimplifiedBirthsPoll','DirectBirth'] #['TbActiveCasePollGenerateData','HivPollingEventForDataGeneration','SimplifiedBirthsPoll', 'AgeUpdateEvent', 'HealthSystemScheduler']

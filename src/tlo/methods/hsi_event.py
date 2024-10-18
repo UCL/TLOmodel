@@ -223,13 +223,23 @@ class HSI_Event:
                 row['event'] = str(self)
                 row['event_date'] = self.sim.date
                 row['when'] = 'Before'
-                row['appt_footprint'] = str(self.EXPECTED_APPT_FOOTPRINT)
-                row['level'] = self.facility_info.level
+                try:
+                    row['appt_footprint'] = str(self.EXPECTED_APPT_FOOTPRINT)
+                    row['level'] = self.facility_info.level
+                except:
+                    row['appt_footprint'] = 'N/A'
+                    row['level'] = 'N/A'
                 self.sim.event_chains = pd.concat([self.sim.event_chains, row], ignore_index=True)
                 
             else:
-                # Many of our HealthSystem implementations rely on the assumption that
-                raise RuntimeError("Cannot have population-wide HSI events")
+                # Once this has been removed from Chronic Syndrome mock module, make this a Runtime Error
+                # raise RuntimeError("Cannot have population-wide HSI events")
+                logger.debug(
+                    key="message",
+                    data=(
+                        f"Cannot have population-wide HSI events"
+                    ),
+                )
 
                 
         return print_chains, row_before
@@ -245,12 +255,20 @@ class HSI_Event:
             # will be stored regardless of whether individual experienced property changes.
 
             # Add event details
+            
+            try:
+                record_footprint = str(footprint)
+                record_level = self.facility_info.level
+            except:
+                record_footprint = 'N/A'
+                record_level = 'N/A'
+                
             link_info = {
                 'person_ID': self.target,
                 'event' : str(self),
                 'event_date' : self.sim.date,
-                'appt_footprint' : str(footprint),
-                'level' : self.facility_info.level,
+                'appt_footprint' : record_footprint,
+                'level' : record_level,
             }
             
             # Add changes to properties
@@ -266,8 +284,8 @@ class HSI_Event:
             row['event'] = str(self)
             row['event_date'] = self.sim.date
             row['when'] = 'After'
-            row['appt_footprint'] = footprint
-            row['level'] = self.facility_info.level
+            row['appt_footprint'] = record_footprint
+            row['level'] = record_level
             self.sim.event_chains = pd.concat([self.sim.event_chains, row], ignore_index=True)
             
         return chain_links
@@ -277,7 +295,7 @@ class HSI_Event:
         """Make the event happen."""
 
         
-        if self.sim.generate_event_chains:
+        if self.sim.generate_event_chains and self.target != self.sim.population:
             print_chains, row_before = self.store_chains_to_do_before_event()
               
             footprint = self.EXPECTED_APPT_FOOTPRINT
@@ -287,7 +305,7 @@ class HSI_Event:
         self._run_after_hsi_event()
         
         
-        if self.sim.generate_event_chains:
+        if self.sim.generate_event_chains and self.target != self.sim.population:
 
             # If the footprint has been updated when the event ran, change it here
             if updated_appt_footprint is not None:
