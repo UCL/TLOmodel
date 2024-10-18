@@ -2362,7 +2362,7 @@ class RTI(Module, GenericFirstAppointmentsMixin):
             # request a general anaesthetic
             get_item_codes("Halothane (fluothane)_250ml_CMST"): 100,
             # clean the site of the surgery
-            get_item_codes("Chlorhexidine 1.5% solution_5_CMST"): 100,
+            get_item_codes("Chlorhexidine 1.5% solution_5_CMST"): 600,
             # tools to begin surgery
             get_item_codes("Scalpel blade size 22 (individually wrapped)_100_CMST"): 1,
             # administer an IV
@@ -2386,7 +2386,7 @@ class RTI(Module, GenericFirstAppointmentsMixin):
             # request a local anaesthetic
             get_item_codes("Halothane (fluothane)_250ml_CMST"): 100,
             # clean the site of the surgery
-            get_item_codes("Chlorhexidine 1.5% solution_5_CMST"): 100,
+            get_item_codes("Chlorhexidine 1.5% solution_5_CMST"): 300,
             # tools to begin surgery
             get_item_codes("Scalpel blade size 22 (individually wrapped)_100_CMST"): 1,
             # administer an IV
