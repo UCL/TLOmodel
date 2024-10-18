@@ -215,7 +215,7 @@ class ChronicSyndrome(Module, GenericFirstAppointmentsMixin):
 
         # Schedule the occurance of a population wide change in risk that goes through the health system:
         popwide_event = ChronicSyndrome_PopulationWideBehaviourChange(self)
-        self.sim..schedule_event(
+        self.sim.schedule_event(
             popwide_event, self.sim.date
         )
         logger.debug(key='debug', data='The population wide event has been scheduled successfully!')
