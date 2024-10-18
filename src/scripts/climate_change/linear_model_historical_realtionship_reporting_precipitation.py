@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 from statsmodels.othermod.betareg import BetaModel
+from statsmodels.stats.outliers_influence import variance_inflation_factor
 
 # # data is from 2011 - 2024 - for facility
 monthly_reporting_by_facility = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_by_smaller_facility_lm.csv", index_col=0)
@@ -108,18 +109,3 @@ X = np.column_stack([
 #X_scaled = scaler.fit_transform(X)
 results = build_model(X, y, scale_y=False, beta=False, X_mask_mm = 1000)
 print(results.summary())
-
-results = build_model(X, y, X_mask_mm = 800)
-
-print(results.summary())
-
-
-# Collinearity check
-
-X = sm.add_constant(X)
-
-# Calculate VIF
-vif_data = pd.DataFrame()
-vif_data['Variable'] = X.columns
-vif_data['VIF'] = [sm.stats.outliers_influence.variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
-print(vif_data['VIF'])
