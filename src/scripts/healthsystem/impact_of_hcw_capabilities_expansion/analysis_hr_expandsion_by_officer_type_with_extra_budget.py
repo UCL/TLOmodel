@@ -6,6 +6,7 @@ The scenarios are defined in scenario_of_expanding_current_hcw_by_officer_type_w
 """
 
 import argparse
+from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Tuple
 
@@ -28,6 +29,8 @@ from tlo.analysis.utils import (
     CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP,
     COARSE_APPT_TYPE_TO_COLOR_MAP,
     SHORT_TREATMENT_ID_TO_COLOR_MAP,
+    bin_hsi_event_details,
+    compute_mean_across_runs,
     extract_results,
     summarize,
 )
@@ -348,6 +351,72 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _df = _df.set_index('date').mean(axis=0) # average over years
 
         return _df
+
+    def get_hcw_time_by_treatment():
+        appointment_time_table = pd.read_csv(
+            resourcefilepath
+            / 'healthsystem'
+            / 'human_resources'
+            / 'definitions'
+            / 'ResourceFile_Appt_Time_Table.csv',
+            index_col=["Appt_Type_Code", "Facility_Level", "Officer_Category"]
+        )
+
+        appt_type_facility_level_officer_category_to_appt_time = (
+            appointment_time_table.Time_Taken_Mins.to_dict()
+        )
+
+        officer_categories = appointment_time_table.index.levels[
+            appointment_time_table.index.names.index("Officer_Category")
+        ].to_list()
+
+        times_by_officer_category_treatment_id_per_draw_run = bin_hsi_event_details(
+            results_folder,
+            lambda event_details, count: sum(
+                [
+                    Counter({
+                        (
+                            officer_category,
+                            event_details["treatment_id"].split("_")[0]
+                        ):
+                            count
+                            * appt_number
+                            * appt_type_facility_level_officer_category_to_appt_time.get(
+                                (
+                                    appt_type,
+                                    event_details["facility_level"],
+                                    officer_category
+                                ),
+                                0
+                            )
+                        for officer_category in officer_categories
+                    })
+                    for appt_type, appt_number in event_details["appt_footprint"]
+                ],
+                Counter()
+            ),
+            *TARGET_PERIOD,
+            True
+        )
+
+        time_by_cadre_treatment_per_draw = compute_mean_across_runs(times_by_officer_category_treatment_id_per_draw_run)
+        time_by_cadre_treatment_no_expansion = pd.DataFrame.from_dict(time_by_cadre_treatment_per_draw[0],
+                                                                      orient='index')
+        time_by_cadre_treatment_CNP = pd.DataFrame.from_dict(time_by_cadre_treatment_per_draw[21],
+                                                             orient='index')
+        time_by_cadre_treatment_CNP = time_by_cadre_treatment_CNP.reindex(time_by_cadre_treatment_no_expansion.index)
+        assert (time_by_cadre_treatment_CNP.index == time_by_cadre_treatment_no_expansion.index).all()
+        increased_time_by_cadre_treatment_CNP = time_by_cadre_treatment_CNP - time_by_cadre_treatment_no_expansion
+        increased_time_by_cadre_treatment_CNP.reset_index(drop=False, inplace=True)
+        for i in increased_time_by_cadre_treatment_CNP.index:
+            increased_time_by_cadre_treatment_CNP.loc[i, 'Cadre'] = \
+                increased_time_by_cadre_treatment_CNP.loc[i, 'index'][0]
+            increased_time_by_cadre_treatment_CNP.loc[i, 'Treatment'] = \
+                increased_time_by_cadre_treatment_CNP.loc[i, 'index'][1]
+        increased_time_by_cadre_treatment_CNP = increased_time_by_cadre_treatment_CNP.drop('index', axis=1).rename(
+            columns={0: 'value'}).pivot(index='Treatment', columns='Cadre', values='value').fillna(0.0)
+
+        return increased_time_by_cadre_treatment_CNP
 
     # Get parameter/scenario names
     param_names = get_parameter_names_from_scenario_file()
@@ -932,12 +1001,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         'Other cases': 'gray',
     }
 
-    # Checked that never ran appts that need CP = never ran appts that need CNP + ('3', 'TBNew'),
-    # whereas never ran TBNew at level 3 = 0, thus the proportions info are the same in the two cases
-
     # Checked that Number_By_Appt_Type_Code and Number_By_Appt_Type_Code_And_Level have not exactly same results
 
-    # hcw time flow to treatments?
+    # hcw time by cadre and treatment: C + N + P vs no expandsion
+    time_increased_by_cadre_treatment = get_hcw_time_by_treatment()
 
     # get Return (in terms of DALYs averted) On Investment (extra cost) for all expansion scenarios, excluding s_1
     # get Cost-Effectiveness, i.e., cost of every daly averted, for all expansion scenarios
@@ -1701,6 +1768,22 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
     plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
                fontsize='small', reverse=True)
+    plt.title(name_of_plot)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
+    name_of_plot = f'Time increased by cadre and treatment: C + N + P vs no expansion, {target_period()}'
+    data_to_plot = time_increased_by_cadre_treatment / 1e6
+    data_to_plot = data_to_plot[['Clinical', 'Pharmacy', 'Nursing_and_Midwifery',
+                                 'DCSA', 'Laboratory', 'Mental', 'Radiography']]
+    fig, ax = plt.subplots(figsize=(12, 8))
+    data_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
+    ax.set_ylabel('Millions Minutes')
+    ax.set_xlabel('Treatment')
+    ax.set_xticklabels(data_to_plot.index, rotation=90)
+    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', reverse=True)
     plt.title(name_of_plot)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
