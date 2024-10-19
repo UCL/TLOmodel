@@ -7,6 +7,10 @@ outputs/hss_elements-2024-08-21T125348Z
 full run:
 /Users/tmangal/PycharmProjects/TLOmodel/outputs/t.mangal@imperial.ac.uk/hss_elements-2024-09-04T142900Z
 
+updated run 19th Oct 2024
+/Users/tmangal/PycharmProjects/TLOmodel/outputs/t.mangal@imperial.ac.uk/hss_elements-2024-10-12T111649Z
+NOTE: 1 failed run draw 3 run 1, draw 5 run 0, draw 7 run 3
+
 """
 
 import argparse
@@ -29,7 +33,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     - We estimate the draw on healthcare system resources as the FEWER appointments when that treatment does not occur.
     """
 
-    TARGET_PERIOD = (Date(2025, 1, 1), Date(2030, 12, 31))
+    TARGET_PERIOD = (Date(2025, 1, 1), Date(2035, 12, 31))
 
     # Definitions of general helper functions
     make_graph_file_name = lambda stub: output_folder / f"{stub.replace('*', '_star_')}.png"  # noqa: E731
@@ -113,8 +117,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         substitute_labels = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
         yerr = np.array([
-            (_df['mean'] - _df['lower']).values,
-            (_df['upper'] - _df['mean']).values,
+            (_df['median'] - _df['lower']).values,
+            (_df['upper'] - _df['median']).values,
         ])
 
         xticks = {(i + 0.5): k for i, k in enumerate(_df.index)}
@@ -135,7 +139,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig, ax = plt.subplots(figsize=(10, 5))
         ax.bar(
             xticks.keys(),
-            _df['mean'].values,
+            _df['median'].values,
             yerr=yerr,
             # alpha=0.8,
             ecolor='black',
@@ -291,15 +295,28 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     num_dalys_summarized.to_csv(results_folder / 'num_dalys_summarized.csv')
     num_deaths_summarized.to_csv(results_folder / 'num_deaths_summarized.csv')
 
+    # color_map = {
+    #     'Baseline': '#9e0142',
+    #     'HRH Scale-up Following Historical Growth': '#dd4a4c',
+    # 'HRH Moderate Scale-up (1%)': '#f98e52',
+    # 'HRH Accelerated Scale-up (6%)': '#fed481',
+    # 'CHW Scale-up Following Historical Growth': '#ffffbe',
+    # 'Increase Capacity at Primary Care Levels': '#d6ee9b',
+    # 'Consumables Increased to 75th Percentile':  '#86cfa5',
+    # 'Consumables Available at HIV levels': '#3d95b8',
+    #     'Consumables Available at EPI levels': '',
+    #     'FULL PACKAGE': '#5e4fa2',
+    # }
     color_map = {
         'Baseline': '#9e0142',
-        'Double Capacity at Primary Care': '#dd4a4c',
-    'HRH Keeps Pace with Population Growth': '#f98e52',
-    'HRH Increases at GDP Growth': '#fed481',
-    'HRH Increases above GDP Growth': '#ffffbe',
-    'Perfect Availability of Vital Items': '#d6ee9b',
-    'Perfect Availability of Medicines':  '#86cfa5',
-    'Perfect Availability of All Consumables': '#3d95b8',
+        'HRH Scale-up Following Historical Growth': '#d84a48',
+        'HRH Moderate Scale-up (1%)': '#f67c4d',
+        'HRH Accelerated Scale-up (6%)': '#fcad61',
+        'CHW Scale-up Following Historical Growth': '#f7e082',
+        'Increase Capacity at Primary Care Levels': '#c7e79d',
+        'Consumables Increased to 75th Percentile': '#86cfa5',
+        'Consumables Available at HIV levels': '#4ea6bb',
+        'Consumables Available at EPI levels': '#3d82b2',  # Adjusted for consistency
         'FULL PACKAGE': '#5e4fa2',
     }
 
@@ -309,7 +326,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.set_title(name_of_plot)
     ax.set_ylabel('(Millions)')
     fig.tight_layout()
-    ax.axhline(num_deaths_summarized.loc['Baseline', 'mean']/1e6, color='black', linestyle='--', alpha=0.5)
+    ax.axhline(num_deaths_summarized.loc['Baseline', 'median']/1e6, color='black', linestyle='--', alpha=0.5)
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     fig.show()
     plt.close(fig)
@@ -320,7 +337,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig, ax = do_bar_plot_with_ci(num_dalys_summarized / 1e6, set_colors=color_map)
     ax.set_title(name_of_plot)
     ax.set_ylabel('(Millions)')
-    ax.axhline(num_dalys_summarized.loc['Baseline', 'mean']/1e6, color='black', alpha=0.5)
+    ax.axhline(num_dalys_summarized.loc['Baseline', 'median']/1e6, color='black', alpha=0.5)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     fig.show()
@@ -376,7 +393,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig, ax = do_bar_plot_with_ci(
         num_deaths_averted.clip(lower=0.0),
         annotations=[
-            f"{round(row['mean'], 0)}% ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
+            f"{round(row['median'], 0)}% ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
             for _, row in pc_deaths_averted.clip(lower=0.0).iterrows()
         ],
         offset=10_000, set_colors=color_map,

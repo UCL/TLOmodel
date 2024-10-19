@@ -70,6 +70,7 @@ class HSSElements(BaseScenario):
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
 
         scenario_definitions = ScenarioDefinitions()
+        # todo reorder in increasing impact
 
         return {
             "Baseline": scenario_definitions.baseline(),
@@ -80,16 +81,22 @@ class HSSElements(BaseScenario):
 
             # - - - Human Resource for Health - - -
 
-            "HRH Scale-up Following Historical Growth":
+            "Increase Capacity at Primary Care Levels":
                 mix_scenarios(
                     scenario_definitions.baseline(),
-                    scenario_definitions.hrh_using_historical_scaling(),
+                    scenario_definitions.increase_capacity_at_primary_care(),
                 ),
 
             "HRH Moderate Scale-up (1%)":
                 mix_scenarios(
                     scenario_definitions.baseline(),
                     scenario_definitions.moderate_hrh_using_historical_scaling(),
+                ),
+
+            "HRH Scale-up Following Historical Growth":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.hrh_using_historical_scaling(),
                 ),
 
             "HRH Accelerated Scale-up (6%)":
@@ -102,12 +109,6 @@ class HSSElements(BaseScenario):
                 mix_scenarios(
                     scenario_definitions.baseline(),
                     scenario_definitions.scale_dcsa_with_historical_average(),
-                ),
-
-            "Increase Capacity at Primary Care Levels":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.increase_capacity_at_primary_care(),
                 ),
 
             # - - - Supply Chains - - -

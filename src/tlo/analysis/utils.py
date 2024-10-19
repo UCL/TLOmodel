@@ -89,7 +89,7 @@ def parse_log_file(log_filepath, level: int = logging.INFO):
 
 def merge_log_files(log_path_1: Path, log_path_2: Path, output_path: Path) -> None:
     """Merge two log files, skipping any repeated header lines.
-    
+
     :param log_path_1: Path to first log file to merge. Records from this log file will
         appear first in merged log file.
     :param log_path_2: Path to second log file to merge. Records from this log file will
@@ -215,7 +215,7 @@ def get_scenario_info(scenario_output_dir: Path) -> dict:
 
 
 def load_pickled_dataframes(results_folder: Path, draw=0, run=0, name=None) -> dict:
-    """Utility function to create a dict contaning all the logs from the specified run within a batch set"""
+    """Utility function to create a dict containing all the logs from the specified run within a batch set"""
     folder = results_folder / str(draw) / str(run)
     p: os.DirEntry
     pickles = [p for p in os.scandir(folder) if p.name.endswith('.pickle')]
