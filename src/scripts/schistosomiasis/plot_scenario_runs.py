@@ -111,6 +111,7 @@ total_num_dalys = extract_results(
 num_dalys_summarized = summarize(total_num_dalys).loc[0].unstack().reindex(param_names)
 num_dalys_summarized.to_csv(results_folder / f'total_num_dalys_{target_period()}.csv')
 
+
 def get_total_num_dalys_by_label(_df):
     """Return the total number of DALYS in the TARGET_PERIOD by wealth and cause label."""
     y = _df \

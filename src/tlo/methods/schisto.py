@@ -1731,8 +1731,6 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Reset the daily counts for the next month
         self.module.log_person_days.loc[:, 'person_days'] = 0
 
-
-
         # extract prevalence of either infection by age-group and district
         age_grp = df.loc[df['is_alive'], 'age_years'].map(self.module.age_group_mapper)
 
@@ -1772,7 +1770,6 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 'number_alive': flatten_multi_index_series_into_dict_for_logging(alive),
             },
         )
-
 
         # WASH properties
         unimproved_sanitation = len(
