@@ -98,9 +98,6 @@ class Consumables:
         data (read-in from the ResourceFile) and enforces the assumption for the availability of the consumables by
         overriding the availability of specific consumables."""
 
-        # Load the original read-in data (create copy so that edits do change the original)
-        self._prob_item_codes_available = self._processed_consumables_data.copy()
-
         # Define the scenarios which are not the default scenario or based on the default scenario.
         # These must correspond to columns given in the consumables ResourceFile.
         alt_scenarios = ('scenario1', 'scenario2', 'scenario3', 'scenario4',
@@ -113,7 +110,7 @@ class Consumables:
         # Over-ride the data according to option for `availability`
         if availability not in alt_scenarios:
             # The non-alternative scenarios are based on the "default" probabilities columns.
-            self._prob_item_codes_available = self._processed_consumables_data['available_prop']  # Default availability
+            self._prob_item_codes_available = self._processed_consumables_data['available_prop'].copy()  # Default availability
 
             if availability == 'default':
                 pass  # No changes needed for the default scenario
