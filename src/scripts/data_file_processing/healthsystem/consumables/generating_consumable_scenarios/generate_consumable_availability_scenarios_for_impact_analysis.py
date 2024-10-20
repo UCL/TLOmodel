@@ -500,6 +500,14 @@ df_new_1a = df[df['Facility_ID'].isin(facilities_by_level['1a'])].merge(availabi
 df_new_1b = df[df['Facility_ID'].isin(facilities_by_level['1b'])].merge(availability_dataframes[1],on = ['item_code', 'month'],
                                       how = 'left',
                                       validate = "m:1")
+
+# For scenarios 6-8, replace the new availability probabilities by the max(original availability, availability at target percentile)
+for scen in [6,7,8]:
+    df_new_1a['available_prop_scenario' + str(scen)] = df_new_1a.apply(
+        lambda row: max(row['available_prop_scenario' + str(scen) ], row['available_prop']), axis=1)
+    df_new_1b['available_prop_scenario' + str(scen)] = df_new_1b.apply(
+        lambda row: max(row['available_prop_scenario' + str(scen) ], row['available_prop']), axis=1)
+
 # 75, 90 and 99th percentile availability data for level 2
 df_new_2 = df[df['Facility_ID'].isin(facilities_by_level['2'])].merge(availability_dataframes[2],on = ['item_code', 'month'],
                                       how = 'left',
@@ -531,7 +539,8 @@ for col in new_scenario_columns:
     df_new_otherlevels[col] = df_new_otherlevels['available_prop']
     df_new_1a_scenario9[col] = df_new_1a_scenario9['available_prop_scenario8']
     df_new_1b_scenario9[col] = df_new_1b_scenario9['available_prop_scenario8']
-    df_new_2_scenario9[col] = df_new_2_scenario9['available_prop_scenario8']
+    df_new_2_scenario9[col] = df_new_2_scenario9.apply(lambda row: max(row['available_prop_scenario8'], row['available_prop']), axis=1)
+
 # Append the above dataframes
 df_new_scenarios9 = pd.concat([df_new_1a_scenario9, df_new_1b_scenario9, df_new_2_scenario9, df_new_otherlevels], ignore_index = True)
 
@@ -585,6 +594,11 @@ final_list_of_scenario_vars = ['available_prop_' + item for item in list_of_scen
 full_df_with_scenario = full_df_with_scenario.merge(df_scenarios_10to12[old_vars + ['available_prop_scenario10', 'available_prop_scenario11', 'available_prop_scenario12']], on = old_vars, how = 'left', validate = "1:1")
 
 #full_df_with_scenario = full_df_with_scenario.merge(program_item_mapping, on = 'item_code', validate = 'm:1', how = 'left')
+
+# --- Check that the scenarios 6-11 always have higher prob of availability than baseline  --- #
+for scen in range(6,12):
+    assert sum(full_df_with_scenario['available_prop_scenario' + str(scen)] < full_df_with_scenario['available_prop']) == 0
+    assert sum(full_df_with_scenario['available_prop_scenario' + str(scen)] >= full_df_with_scenario['available_prop']) == len(full_df_with_scenario)
 
 # --- Check that the exported file has the properties required of it by the model code. --- #
 check_format_of_consumables_file(df=full_df_with_scenario, fac_ids=fac_ids)
