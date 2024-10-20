@@ -352,7 +352,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         return _df
 
-    def get_hcw_time_by_treatment():
+    def get_hcw_time_by_treatment(draw=21):
         appointment_time_table = pd.read_csv(
             resourcefilepath
             / 'healthsystem'
@@ -402,21 +402,21 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         time_by_cadre_treatment_per_draw = compute_mean_across_runs(times_by_officer_category_treatment_id_per_draw_run)
         time_by_cadre_treatment_no_expansion = pd.DataFrame.from_dict(time_by_cadre_treatment_per_draw[0],
                                                                       orient='index')
-        time_by_cadre_treatment_CNP = pd.DataFrame.from_dict(time_by_cadre_treatment_per_draw[21],
-                                                             orient='index')
-        time_by_cadre_treatment_CNP = time_by_cadre_treatment_CNP.reindex(time_by_cadre_treatment_no_expansion.index)
-        assert (time_by_cadre_treatment_CNP.index == time_by_cadre_treatment_no_expansion.index).all()
-        increased_time_by_cadre_treatment_CNP = time_by_cadre_treatment_CNP - time_by_cadre_treatment_no_expansion
-        increased_time_by_cadre_treatment_CNP.reset_index(drop=False, inplace=True)
-        for i in increased_time_by_cadre_treatment_CNP.index:
-            increased_time_by_cadre_treatment_CNP.loc[i, 'Cadre'] = \
-                increased_time_by_cadre_treatment_CNP.loc[i, 'index'][0]
-            increased_time_by_cadre_treatment_CNP.loc[i, 'Treatment'] = \
-                increased_time_by_cadre_treatment_CNP.loc[i, 'index'][1]
-        increased_time_by_cadre_treatment_CNP = increased_time_by_cadre_treatment_CNP.drop('index', axis=1).rename(
+        time_by_cadre_treatment = pd.DataFrame.from_dict(time_by_cadre_treatment_per_draw[draw],
+                                                         orient='index')
+        time_by_cadre_treatment = time_by_cadre_treatment.reindex(time_by_cadre_treatment_no_expansion.index)
+        assert (time_by_cadre_treatment.index == time_by_cadre_treatment_no_expansion.index).all()
+        increased_time_by_cadre_treatment = time_by_cadre_treatment - time_by_cadre_treatment_no_expansion
+        increased_time_by_cadre_treatment.reset_index(drop=False, inplace=True)
+        for i in increased_time_by_cadre_treatment.index:
+            increased_time_by_cadre_treatment.loc[i, 'Cadre'] = \
+                increased_time_by_cadre_treatment.loc[i, 'index'][0]
+            increased_time_by_cadre_treatment.loc[i, 'Treatment'] = \
+                increased_time_by_cadre_treatment.loc[i, 'index'][1]
+        increased_time_by_cadre_treatment = increased_time_by_cadre_treatment.drop('index', axis=1).rename(
             columns={0: 'value'}).pivot(index='Treatment', columns='Cadre', values='value').fillna(0.0)
 
-        return increased_time_by_cadre_treatment_CNP
+        return increased_time_by_cadre_treatment
 
     # Get parameter/scenario names
     param_names = get_parameter_names_from_scenario_file()
@@ -1003,8 +1003,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # Checked that Number_By_Appt_Type_Code and Number_By_Appt_Type_Code_And_Level have not exactly same results
 
-    # hcw time by cadre and treatment: C + N + P vs no expandsion
-    time_increased_by_cadre_treatment = get_hcw_time_by_treatment()
+    # hcw time by cadre and treatment: draw = 21: C + N + P vs no expansion, draw = 10, C + P vs no expansion
+    time_increased_by_cadre_treatment = get_hcw_time_by_treatment(10)
 
     # get Return (in terms of DALYs averted) On Investment (extra cost) for all expansion scenarios, excluding s_1
     # get Cost-Effectiveness, i.e., cost of every daly averted, for all expansion scenarios
@@ -1786,7 +1786,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    name_of_plot = f'Time increased by cadre and treatment: C + N + P vs no expansion, {target_period()}'
+    # name_of_plot = f'Time used increased by cadre and treatment: C + N + P vs no expansion, {target_period()}'
+    name_of_plot = f'Time used increased by cadre and treatment: C + P vs no expansion, {target_period()}'
     data_to_plot = time_increased_by_cadre_treatment / 1e6
     data_to_plot = data_to_plot[['Clinical', 'Pharmacy', 'Nursing_and_Midwifery',
                                  'DCSA', 'Laboratory', 'Mental', 'Radiography']]
