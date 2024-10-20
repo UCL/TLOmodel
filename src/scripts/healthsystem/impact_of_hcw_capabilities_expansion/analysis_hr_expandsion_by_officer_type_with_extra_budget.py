@@ -1075,7 +1075,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     extra_budget_allocation['Other'] = extra_budget_allocation[
         ['Dental', 'Laboratory', 'Mental', 'Radiography']
     ].sum(axis=1)
-    name_of_plot = f'DALYs averted (%) against no expansion, {target_period()}'
+    name_of_plot = f'3D DALYs averted (%) against no expansion, {target_period()}'
     heat_data = pd.merge(num_dalys_averted_percent['mean'],
                          extra_budget_allocation[['Clinical', 'Pharmacy', 'Nursing_and_Midwifery']],
                          left_index=True, right_index=True, how='inner')
@@ -1112,7 +1112,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                                  linestyle='none', marker='o', color=scenario_groups_color[label]
                                  ) for label in legend_labels[0:len(legend_labels) - 1]
                       ] + [plt.Line2D([0, 1], [0, 0], linestyle='-', color='orange')]
-    plt.legend(legend_handles, legend_labels, loc='upper center', fontsize='small', bbox_to_anchor=(0.5, -0.2), ncol=2)
+    plt.legend(legend_handles, legend_labels,
+               loc='upper center', fontsize='small', bbox_to_anchor=(0.5, -0.2), ncol=2,
+               title='Scenario groups')
     # plt.colorbar(img, orientation='horizontal', fraction=0.046, pad=0.25)
     plt.title(name_of_plot)
     plt.tight_layout()
@@ -1139,7 +1141,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                                  linestyle='none', marker='o', color=scenario_groups_color[label]
                                  ) for label in legend_labels
                       ]
-    plt.legend(legend_handles, legend_labels, loc='upper center', fontsize='small', bbox_to_anchor=(0.5, -0.2), ncol=2)
+    plt.legend(legend_handles, legend_labels,
+               loc='upper center', fontsize='small', bbox_to_anchor=(0.5, -0.2), ncol=2,
+               title='Scenario groups')
     plt.title(name_of_plot)
     plt.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
@@ -1163,7 +1167,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                                  linestyle='none', marker='o', color=scenario_groups_color[label]
                                  ) for label in legend_labels
                       ]
-    plt.legend(legend_handles, legend_labels, loc='upper center', fontsize='small', bbox_to_anchor=(0.5, -0.2), ncol=2)
+    plt.legend(legend_handles, legend_labels,
+               loc='upper center', fontsize='small', bbox_to_anchor=(0.5, -0.2), ncol=2,
+               title='Scenario groups')
     plt.title(name_of_plot)
     plt.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
@@ -1186,7 +1192,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                                  linestyle='none', marker='o', color=scenario_groups_color[label]
                                  ) for label in legend_labels
                       ]
-    plt.legend(legend_handles, legend_labels, loc='upper center', fontsize='small', bbox_to_anchor=(0.5, -0.2), ncol=2)
+    plt.legend(legend_handles, legend_labels,
+               loc='upper center', fontsize='small', bbox_to_anchor=(0.5, -0.2), ncol=2,
+               title='Scenario groups')
     plt.title(name_of_plot)
     plt.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
@@ -1331,7 +1339,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     legend_labels = [substitute_labels[v] for v in best_scenarios]
     legend_handles = [plt.Rectangle((0, 0), 1, 1,
                                     color=best_scenarios_color[v]) for v in best_scenarios]
-    ax.legend(legend_handles, legend_labels, loc='center left', fontsize='small', bbox_to_anchor=(1, 0.5))
+    ax.legend(legend_handles, legend_labels,
+              loc='center left', fontsize='small', bbox_to_anchor=(1, 0.5),
+              title='Best scenario group')
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     fig.show()
@@ -1339,7 +1349,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # plot yearly staff count (Clinical/Pharmacy/Nursing and Midwifery) for best 9 scenarios
     best_cadres = ['Clinical', 'Pharmacy', 'Nursing_and_Midwifery']
-    name_of_plot = f'Yearly staff count for C+P+N, {target_period()}'
+    name_of_plot = f'Yearly staff count for C+P+N total, {target_period()}'
     fig, ax = plt.subplots(figsize=(9, 6))
     best_scenarios = list(num_dalys_summarized.index[0:9]) + ['s_1']
     for s in best_scenarios:
@@ -1352,7 +1362,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     legend_labels = [substitute_labels[v] for v in best_scenarios]
     legend_handles = [plt.Rectangle((0, 0), 1, 1,
                                     color=best_scenarios_color[v]) for v in best_scenarios]
-    ax.legend(legend_handles, legend_labels, loc='center left', fontsize='small', bbox_to_anchor=(1, 0.5))
+    ax.legend(legend_handles, legend_labels,
+              loc='center left', fontsize='small', bbox_to_anchor=(1, 0.5),
+              title='Best scenario group')
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     fig.show()
@@ -1786,7 +1798,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', reverse=True)
     plt.title(name_of_plot)
     fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '').replace(
+        ':', '_')))
     fig.show()
     plt.close(fig)
 
