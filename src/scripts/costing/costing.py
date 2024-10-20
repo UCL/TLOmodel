@@ -904,7 +904,32 @@ calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calib
 #calibration_data[calibration_data['calibration_category'] == 'Infrastructure - Rehabilitation'] = get_calibration_relevant_subset()
 
 # 3. Create calibration plot
+# Filter the DataFrame to get the 'mean', 'lower', and 'upper' values
+df = calibration_data
+df_mean = df.loc[df.index.get_level_values('stat') == 'mean']
+df_lower = df.loc[df.index.get_level_values('stat') == 'lower']
+df_upper = df.loc[df.index.get_level_values('stat') == 'upper']
 
+# Create the scatter plot
+plt.figure(figsize=(10, 6))
+
+# Plot each point with error bars (for confidence interval)
+plt.errorbar(df_mean['actual_expenditure_2019'],
+             df_mean['model_cost'],
+             yerr=[df_mean['model_cost'] - df_lower['model_cost'], df_upper['model_cost'] - df_mean['model_cost']],
+             fmt='o',
+             ecolor='gray',
+             capsize=5,
+             label='Calibration Category')
+
+# Add labels and title
+plt.xlabel('Actual Expenditure 2019')
+plt.ylabel('Model Cost (with confidence interval)')
+plt.title('Scatter Plot: Actual Expenditure 2019 vs. Model Cost (with Confidence Intervals)')
+
+# Show the plot
+plt.tight_layout()
+plt.show()
 
 
 # TODO all these HR plots need to be looked at
