@@ -64,7 +64,7 @@ class Consumables:
 
         # Save all item_codes that are defined and pd.Series with probs of availability from ResourceFile
         self.item_codes,  self._processed_consumables_data = \
-            self._process_consumables_data(availability_data=availability_data, availability=availability)
+            self._process_consumables_data(availability_data=availability_data)
 
         # Set the availability based on the argument provided (this can be updated later after the class is initialised)
         self.availability = availability
@@ -101,63 +101,64 @@ class Consumables:
         # Load the original read-in data (create copy so that edits do change the original)
         self._prob_item_codes_available = self._processed_consumables_data.copy()
 
+        # Define the scenarios which are not the default scenario or based on the default scenario.
+        # These must correspond to columns given in the consumables ResourceFile.
+        alt_scenarios = ('scenario1', 'scenario2', 'scenario3', 'scenario4',
+                         'scenario5', 'scenario6', 'scenario7', 'scenario8',
+                         'scenario9', 'scenario10', 'scenario11', 'scenario12')
+
         # Load designations of the consumables
         item_code_designations = self._item_code_designations
 
         # Over-ride the data according to option for `availability`
-        if availability in ('default',
-                            'scenario1', 'scenario2', 'scenario3', 'scenario4',
-                            'scenario5', 'scenario6', 'scenario7', 'scenario8',
-                            'scenario9', 'scenario10', 'scenario11', 'scenario12'):
-            pass
-        elif availability == 'all':
-            self.override_availability(dict(zip(self.item_codes, repeat(1.0))))
-        elif availability == 'none':
-            self.override_availability(dict(zip(self.item_codes, repeat(0.0))))
-        elif availability == 'all_diagnostics_available':
-            item_codes_dx = set(
-                item_code_designations.index[item_code_designations['is_diagnostic']]).intersection(self.item_codes)
-            self.override_availability(dict(zip(item_codes_dx, repeat(1.0))))
-        elif availability == 'all_medicines_available':
-            item_codes_medicines = set(
-                item_code_designations.index[item_code_designations['is_medicine']]).intersection(self.item_codes)
-            self.override_availability(dict(zip(item_codes_medicines, repeat(1.0))))
-        elif availability == 'all_medicines_and_other_available':
-            item_codes_medicines_and_other = set(
-                item_code_designations.index[item_code_designations['is_medicine'] | item_code_designations['is_other']]
-            ).intersection(self.item_codes)
-            self.override_availability(dict(zip(item_codes_medicines_and_other, repeat(1.0))))
-        elif availability == 'all_vital_available':
-            item_codes_vital = set(
-                item_code_designations.index[item_code_designations['is_vital']]
-            ).intersection(self.item_codes)
-            self.override_availability(dict(zip(item_codes_vital, repeat(1.0))))
-        elif availability == 'all_drug_or_vaccine_available':
-            item_codes_drug_or_vaccine = set(
-                item_code_designations.index[item_code_designations['is_drug_or_vaccine']]
-            ).intersection(self.item_codes)
-            self.override_availability(dict(zip(item_codes_drug_or_vaccine, repeat(1.0))))
-        else:
-            raise ValueError
+        if availability not in alt_scenarios:
+            # The non-alternative scenarios are based on the "default" probabilities columns.
+            self._prob_item_codes_available = self._processed_consumables_data['available_prop']  # Default availability
 
-    def _process_consumables_data(self, availability_data: pd.DataFrame, availability: str) -> Tuple[set, pd.Series]:
+            if availability == 'default':
+                pass  # No changes needed for the default scenario
+            elif availability == 'all':
+                self.override_availability(dict(zip(self.item_codes, repeat(1.0))))
+            if availability == 'none':
+                self.override_availability(dict(zip(self.item_codes, repeat(0.0))))
+            if availability == 'all_diagnostics_available':
+                item_codes_dx = set(
+                    item_code_designations.index[item_code_designations['is_diagnostic']]).intersection(self.item_codes)
+                self.override_availability(dict(zip(item_codes_dx, repeat(1.0))))
+            if availability == 'all_medicines_available':
+                item_codes_medicines = set(
+                    item_code_designations.index[item_code_designations['is_medicine']]).intersection(self.item_codes)
+                self.override_availability(dict(zip(item_codes_medicines, repeat(1.0))))
+            if availability == 'all_medicines_and_other_available':
+                item_codes_medicines_and_other = set(
+                    item_code_designations.index[item_code_designations['is_medicine'] | item_code_designations['is_other']]
+                ).intersection(self.item_codes)
+                self.override_availability(dict(zip(item_codes_medicines_and_other, repeat(1.0))))
+            if availability == 'all_vital_available':
+                item_codes_vital = set(
+                    item_code_designations.index[item_code_designations['is_vital']]
+                ).intersection(self.item_codes)
+                self.override_availability(dict(zip(item_codes_vital, repeat(1.0))))
+            if availability == 'all_drug_or_vaccine_available':
+                item_codes_drug_or_vaccine = set(
+                    item_code_designations.index[item_code_designations['is_drug_or_vaccine']]
+                ).intersection(self.item_codes)
+                self.override_availability(dict(zip(item_codes_drug_or_vaccine, repeat(1.0))))
+        else:
+            self._processed_consumables_data[f'available_prop_{availability}']  # select column for the given scenario
+
+    def _process_consumables_data(self, availability_data: pd.DataFrame) -> Tuple[set, pd.DataFrame]:
         """Helper function for processing the consumables data, passed in here as pd.DataFrame that has been read-in by
         the HealthSystem.
-        Returns: (i) the set of all recognised item_codes; (ii) pd.Series of the availability of
-        each consumable at each facility_id during each month.
+        Returns: (i) the set of all recognised item_codes; (ii) pd.DataFrame of the availability of
+        each consumable at each facility_id during each month, with columns corresponding to each of a number of
+        pre-set scenarios
         """
-        if availability in ('scenario1', 'scenario2', 'scenario3', 'scenario4',
-                              'scenario5', 'scenario6', 'scenario7', 'scenario8',
-                            'scenario9', 'scenario10', 'scenario11', 'scenario12'):
-            return (
-                set(availability_data.item_code),
-                availability_data.set_index(['month', 'Facility_ID', 'item_code'])['available_prop_' + availability]
-            )
-        else:
-            return (
-                set(availability_data['item_code']),
-                availability_data.set_index(['month', 'Facility_ID', 'item_code'])['available_prop']
-            )
+        cols_with_availability = list(filter(lambda x: x.startswith('available_prop'), availability_data.columns))
+        return (
+            set(availability_data['item_code']),
+            availability_data.set_index(['month', 'Facility_ID', 'item_code'])[cols_with_availability]
+        )
 
     def _refresh_availability_of_consumables(self, date: datetime.datetime):
         """Update the availability of all items based on the data for the probability of availability, given the current
@@ -286,7 +287,7 @@ class Consumables:
         """
         if len(self._not_recognised_item_codes) > 0:
             not_recognised_item_codes = {
-                treatment_id if treatment_id is not None else "": sorted(codes) 
+                treatment_id if treatment_id is not None else "": sorted(codes)
                 for treatment_id, codes in self._not_recognised_item_codes.items()
             }
             warnings.warn(
