@@ -477,7 +477,8 @@ for d in draws:
         equipment_used = pd.concat({
                 k: pd.DataFrame.from_dict(v, 'index') for k, v in equipment_used.items()},
                 axis=0)
-        full_list_of_equipment_used = set().union(*equipment_used_subset['EquipmentEverUsed'])
+        full_list_of_equipment_used = set(equipment_used.values.flatten())
+        full_list_of_equipment_used = set(filter(pd.notnull, full_list_of_equipment_used))
 
         equipment_df = pd.DataFrame()
         equipment_df.index = equipment_used.index
@@ -864,38 +865,47 @@ def merged_calibration_relevant_consumables_costs(item, category):
 def first_positive(series):
     return next((x for x in series if pd.notna(x) and x > 0), np.nan)
 
-# Consumables
-calibration_data = pd.concat([calibration_data, merged_calibration_relevant_consumables_costs([2671, 2672, 2673], 'Antiretrovirals')], axis = 1)
-calibration_data = pd.concat([calibration_data, merged_calibration_relevant_consumables_costs([176, 177, 179, 178, 181, 2678], 'TB Treatment')], axis = 1)
-calibration_data = pd.concat([calibration_data, merged_calibration_relevant_consumables_costs([162,164,170], 'Antimalarials')], axis = 1)
-calibration_data = pd.concat([calibration_data, merged_calibration_relevant_consumables_costs([163], 'Malaria RDTs')], axis = 1)
-calibration_data = pd.concat([calibration_data, merged_calibration_relevant_consumables_costs([190,191,196], 'HIV Screening/Diagnostic Tests')], axis = 1)
-calibration_data = pd.concat([calibration_data, merged_calibration_relevant_consumables_costs([2,25], 'Condoms and Lubricants')], axis = 1)
-calibration_data = pd.concat([calibration_data, merged_calibration_relevant_consumables_costs([184,187, 175], 'TB Tests (including RDTs)')], axis = 1)
-# Apply across rows to find the first positive value
-calibration_data['model_cost'] = calibration_data[['value']].apply(first_positive, axis=1)
+def get_calibration_relevant_subset_of_other_costs(_df, _subcategory, _calibration_category):
+    new_data = get_calibration_relevant_subset(_df[_df['Cost_Sub-category'].isin([_subcategory])]).groupby('stat')['value'].sum()
+    new_data = new_data.reset_index()
+    new_data['calibration_category'] = _calibration_category
+    new_data = new_data.rename(columns =  {'value':'model_cost'})
+    return new_data.set_index(['calibration_category', 'stat'])['model_cost']
 
+# Consumables
+calibration_data['model_cost'] = np.nan
+calibration_data['model_cost'] = calibration_data['model_cost'].fillna(merged_calibration_relevant_consumables_costs([2671, 2672, 2673], 'Antiretrovirals'))
+calibration_data['model_cost'] = calibration_data['model_cost'].fillna(merged_calibration_relevant_consumables_costs([176, 177, 179, 178, 181, 2678], 'TB Treatment'))
+
+calibration_data['model_cost'] = calibration_data['model_cost'].fillna(merged_calibration_relevant_consumables_costs([162,164,170], 'Antimalarials'))
+calibration_data['model_cost'] = calibration_data['model_cost'].fillna(merged_calibration_relevant_consumables_costs([163], 'Malaria RDTs'))
+calibration_data['model_cost'] = calibration_data['model_cost'].fillna(merged_calibration_relevant_consumables_costs([190,191,196], 'HIV Screening/Diagnostic Tests'))
+calibration_data['model_cost'] = calibration_data['model_cost'].fillna(merged_calibration_relevant_consumables_costs([2,25], 'Condoms and Lubricants'))
+calibration_data['model_cost'] = calibration_data['model_cost'].fillna(merged_calibration_relevant_consumables_costs([184,187, 175], 'TB Tests (including RDTs)'))
+#calibration_data[calibration_data['calibration_category'] == 'Other Drugs, medical supplies, and commodities']['model_cost'] = ??
 
 # HR
-calibration_data[calibration_data['calibration_category'] == 'Other Drugs, medical supplies, and commodities'] = merged_calibration_relevant_consumables_costs()
-calibration_data[calibration_data['calibration_category'] == 'Health Worker Salaries'] = get_calibration_relevant_subset()
-calibration_data[calibration_data['calibration_category'] == 'Health Worker Training - In-Service'] = get_calibration_relevant_subset()
-calibration_data[calibration_data['calibration_category'] == 'Health Worker Training - Pre-Service'] = get_calibration_relevant_subset()
-calibration_data[calibration_data['calibration_category'] == 'Other Human Resources for Health expenses'] = get_calibration_relevant_subset()
-calibration_data[calibration_data['calibration_category'] == 'Facility utility bills - ICT', 'Infrastructure - New Builds'] = get_calibration_relevant_subset()
-calibration_data[calibration_data['calibration_category'] == 'Infrastructure - Rehabilitation'] = get_calibration_relevant_subset()
-calibration_data[calibration_data['calibration_category'] == 'Medical Equipment - Maintenance'] = get_calibration_relevant_subset()
-calibration_data[calibration_data['calibration_category'] == 'Medical Equipment - Purchase'] = get_calibration_relevant_subset()
-calibration_data[calibration_data['calibration_category'] == 'Vehicles - Purchase and Maintenance'] = get_calibration_relevant_subset()
-calibration_data[calibration_data['calibration_category'] == 'Vehicles - Purchase and Maintenance'] = get_calibration_relevant_subset()
+calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_other_costs(scenario_cost, 'salary_for_used_cadres', 'Health Worker Salaries'))
+calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_other_costs(scenario_cost, 'preservice_training_cost_for_attrited_workers', 'Health Worker Training - In-Service'))
+calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_other_costs(scenario_cost, 'inservice_training_cost_for_all_staff', 'Health Worker Training - Pre-Service'))
+calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_other_costs(scenario_cost, 'recruitment_cost_for_attrited_workers', 'Other Human Resources for Health expenses'))
 
-# This will reshape your data such that:
-# 3. Create calibration plot
-# Consumables
-
-
-# HR
 # Equipment
+calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_other_costs(scenario_cost, 'replacement_cost_annual_total', 'Medical Equipment - Purchase'))
+calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_other_costs(scenario_cost, ['upfront_repair_cost_annual_total', 'spare_parts_annual_total',
+       'service_fee_annual_total'], 'Medical Equipment - Maintenance'))
+#calibration_data[calibration_data['calibration_category'] == 'Vehicles - Purchase and Maintenance'] = get_calibration_relevant_subset()
+#calibration_data[calibration_data['calibration_category'] == 'Vehicles - Purchase and Maintenance'] = get_calibration_relevant_subset()
+
+# Facility operation costs
+#calibration_data[calibration_data['calibration_category'] == 'Facility utility bills - ICT', 'Infrastructure - New Builds'] = get_calibration_relevant_subset()
+
+# Infrastructure
+#calibration_data[calibration_data['calibration_category'] == 'Infrastructure - Rehabilitation'] = get_calibration_relevant_subset()
+
+# 3. Create calibration plot
+
+
 
 # TODO all these HR plots need to be looked at
 # 1. HR
