@@ -25,7 +25,6 @@ If PrEP is not available due to limitations in the HealthSystem, the person defa
 """
 from __future__ import annotations
 
-import os
 from typing import TYPE_CHECKING, List
 
 import numpy as np
@@ -40,7 +39,7 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
-from tlo.util import create_age_range_lookup
+from tlo.util import create_age_range_lookup, read_csv_files
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -423,10 +422,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # Shortcut to parameters dict
         p = self.parameters
 
-        workbook = pd.read_excel(
-            os.path.join(self.resourcefilepath, "ResourceFile_HIV.xlsx"),
-            sheet_name=None,
-        )
+        workbook = read_csv_files(self.resourcefilepath/'ResourceFile_HIV', files=None)
         self.load_parameters_from_dataframe(workbook["parameters"])
 
         # Load data on HIV prevalence
