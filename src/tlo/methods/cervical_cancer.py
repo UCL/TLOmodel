@@ -200,7 +200,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         "prob_cryotherapy_successful": Parameter(
             Types.REAL, "prob_cryotherapy_successful"
         ),
-        "transition_therapy_year": Parameter(
+        "transition_testing_year": Parameter(
             Types.REAL, "transition_therapy_year"
         ),
         "transition_screening_year": Parameter(
