@@ -52,7 +52,6 @@ long_data = weather_monthly_all_grids.variables['longitude'][:]
 date = weather_monthly_all_grids['date'][:]
 print(date)
 grid = 0
-
 regridded_weather_data = {}
 for polygon in malawi_grid["geometry"]:
     minx, miny, maxx, maxy = polygon.bounds
@@ -83,8 +82,12 @@ for reporting_facility in monthly_reporting_by_facility["facility"]:
             facilities_with_lat_long['Fname'] == match_name, "A109__Latitude"].iloc[0]
         long_for_facility = facilities_with_lat_long.loc[
             facilities_with_lat_long['Fname'] == match_name, "A109__Longitude"].iloc[0]
-        index_for_x = ((long_data - lat_for_facility)**2).argmin()
-        index_for_y= ((lat_data - long_for_facility)**2).argmin()
+        index_for_x = ((long_data - long_for_facility)**2).argmin()
+        index_for_y= ((lat_data - lat_for_facility)**2).argmin()
+        print(lat_for_facility)
+        print(long_for_facility)
+        print(index_for_x)
+        print(index_for_y)
 
         precip_data_for_facility = pr_data[:, index_for_y,index_for_x]  # across all time points
         weather_data_by_facility[reporting_facility]  = precip_data_for_facility * 86400  # to get from per second to per day
