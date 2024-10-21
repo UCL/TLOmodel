@@ -142,7 +142,8 @@ class Consumables:
                 ).intersection(self.item_codes)
                 self.override_availability(dict(zip(item_codes_drug_or_vaccine, repeat(1.0))))
         else:
-            self._processed_consumables_data[f'available_prop_{availability}']  # select column for the given scenario
+            # select column for the given scenario
+            self._prob_item_codes_available = self._processed_consumables_data[f'available_prop_{availability}']
 
     def _process_consumables_data(self, availability_data: pd.DataFrame) -> Tuple[set, pd.DataFrame]:
         """Helper function for processing the consumables data, passed in here as pd.DataFrame that has been read-in by
