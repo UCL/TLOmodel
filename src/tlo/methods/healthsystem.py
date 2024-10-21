@@ -961,7 +961,7 @@ class HealthSystem(Module):
                 self.parameters[f'Daily_Capabilities_{use_funded_or_actual_staffing}']
         )
         capabilities = capabilities.rename(columns={'Officer_Category': 'Officer_Type_Code'})  # neaten
-        
+
         # Create new column where capabilities per staff are computed
         capabilities['Mins_Per_Day_Per_Staff'] = capabilities['Total_Mins_Per_Day']/capabilities['Staff_Count']
 
@@ -984,10 +984,10 @@ class HealthSystem(Module):
         # Merge in information about facility from Master Facilities List
         mfl = self.parameters['Master_Facilities_List']
         capabilities_ex = capabilities_ex.merge(mfl, on='Facility_ID', how='left')
-        
+
         # Create a copy of this to store staff counts
         capabilities_per_staff_ex = capabilities_ex.copy()
-        
+
         # Merge in information about officers
         # officer_types = self.parameters['Officer_Types_Table'][['Officer_Type_Code', 'Officer_Type']]
         # capabilities_ex = capabilities_ex.merge(officer_types, on='Officer_Type_Code', how='left')
@@ -1000,7 +1000,7 @@ class HealthSystem(Module):
             how='left',
         )
         capabilities_ex = capabilities_ex.fillna(0)
-        
+
         capabilities_per_staff_ex = capabilities_per_staff_ex.merge(
             capabilities[['Facility_ID', 'Officer_Type_Code', 'Mins_Per_Day_Per_Staff']],
             on=['Facility_ID', 'Officer_Type_Code'],
@@ -1015,7 +1015,7 @@ class HealthSystem(Module):
             + '_Officer_'
             + capabilities_ex['Officer_Type_Code']
         )
-        
+
         # Give the standard index:
         capabilities_per_staff_ex = capabilities_per_staff_ex.set_index(
             'FacilityID_'
@@ -1055,7 +1055,7 @@ class HealthSystem(Module):
             )
             if rescaling_factor > 1 and rescaling_factor != float("inf"):
                 self._daily_capabilities[officer] *= rescaling_factor
-                
+
                 # We assume that increased daily capabilities is a result of each staff performing more
                 # daily patient facing time per day than contracted (or equivalently performing appts more
                 # efficiently).
@@ -1076,11 +1076,7 @@ class HealthSystem(Module):
             how='left'
         )
 
-        availability_columns = ['available_prop', 'available_prop_scenario1', 'available_prop_scenario2',
-                                'available_prop_scenario3', 'available_prop_scenario4', 'available_prop_scenario5',
-                                'available_prop_scenario6', 'available_prop_scenario7', 'available_prop_scenario8',
-                                'available_prop_scenario9', 'available_prop_scenario10', 'available_prop_scenario11',
-                                'available_prop_scenario12']
+        availability_columns = list(filter(lambda x: x.startswith('available_prop'), df_original.columns))
 
         # compute the updated availability at the merged level '1b' and '2'
         availability_at_1b_and_2 = \

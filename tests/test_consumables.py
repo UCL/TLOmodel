@@ -1,4 +1,5 @@
 import datetime
+import itertools
 import os
 from collections import namedtuple
 from pathlib import Path
@@ -626,3 +627,27 @@ def test_consumables_availability_modes_that_depend_on_designations(seed):
             assert not (
                 consumables._prob_item_codes_available.loc[(slice(None), slice(None), non_target_items)] == 1.0
             ).all()
+
+
+@pytest.mark.slow
+def test_change_consumables_availability(seed):
+    """Check that we can move between scenarios without error."""
+
+    scenarios = ['default', 'all', 'scenario1',]
+
+    for the_original_scenario, the_updated_scenario in itertools.product(scenarios, scenarios):
+        sim = Simulation(
+            start_date=Date(2010, 1, 1),
+            seed=seed,
+        )
+
+        # Register the core modules
+        sim.register(
+            demography.Demography(resourcefilepath=resourcefilepath),
+            healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        )
+        sim.make_initial_population(n=100)
+        sim.modules['HealthSystem'].parameters['cons_availability'] = the_original_scenario
+        sim.modules['HealthSystem'].parameters['year_cons_availability_switch'] = 2011
+        sim.modules['HealthSystem'].parameters['cons_availability_postSwitch'] = the_updated_scenario
+        sim.simulate(end_date=Date(2012, 1, 1))
