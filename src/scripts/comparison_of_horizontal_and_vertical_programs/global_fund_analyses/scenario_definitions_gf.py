@@ -9,7 +9,7 @@ class ScenarioDefinitions:
     @property
     def YEAR_OF_CHANGE_FOR_HSS(self) -> int:
         """Year in which Health Systems Strengthening changes are made."""
-        return 2020  # <-- baseline year of Human Resources for Health is 2018, and this is consistent with calibration
+        return 2012  # todo change  # <-- baseline year of Human Resources for Health is 2018, and this is consistent with calibration
         #                  during 2015-2019 period.
 
     @property
@@ -25,6 +25,7 @@ class ScenarioDefinitions:
             # Set up the HealthSystem to transition from Mode 1 -> Mode 2, with rescaling when there are HSS changes
             {
                 "HealthSystem": {
+                    "cons_availability": 'none',  # todo remove
                     "mode_appt_constraints": 1,  # <-- Mode 1 prior to change to preserve calibration
                     "mode_appt_constraints_postSwitch": 2,  # <-- Mode 2 post-change to show effects of HRH
                     "scale_to_effective_capabilities": True,

@@ -35,8 +35,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2036, 1, 1)
-popsize = 25_000
+end_date = Date(2014, 1, 1)
+popsize = 5_000
 
 
 # set up the log config
@@ -62,7 +62,7 @@ sim.register(
         resourcefilepath=resourcefilepath,
         service_availability=["*"],
         mode_appt_constraints=1,
-        cons_availability='all',
+        cons_availability='default',
         ignore_priority=True,
         capabilities_coefficient=1.0,
         disable=False,

@@ -33,11 +33,11 @@ class HSSElements(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2036, 1, 1)
-        self.pop_size = 100_000
+        self.end_date = Date(2015, 1, 1)  # todo change
+        self.pop_size = 1_000  # todo change
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 5
+        self.runs_per_draw = 1   # todo change
 
     def log_configuration(self):
         return {
@@ -73,7 +73,7 @@ class HSSElements(BaseScenario):
         # todo reorder in increasing impact
 
         return {
-            "Baseline": scenario_definitions.baseline(),
+            # "Baseline": scenario_definitions.baseline(),
 
             # ***************************
             # HEALTH SYSTEM STRENGTHENING
@@ -81,35 +81,37 @@ class HSSElements(BaseScenario):
 
             # - - - Human Resource for Health - - -
 
-            "Increase Capacity at Primary Care Levels":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.increase_capacity_at_primary_care(),
-                ),
+            # "HRH Moderate Scale-up (1%)":
+            #     mix_scenarios(
+            #         scenario_definitions.baseline(),
+            #         scenario_definitions.moderate_hrh_using_historical_scaling(),
+            #     ),
 
-            "HRH Moderate Scale-up (1%)":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.moderate_hrh_using_historical_scaling(),
-                ),
+            # "HRH Scale-up Following Historical Growth":
+            #     mix_scenarios(
+            #         scenario_definitions.baseline(),
+            #         scenario_definitions.hrh_using_historical_scaling(),
+            #     ),
 
-            "HRH Scale-up Following Historical Growth":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.hrh_using_historical_scaling(),
-                ),
+            # "HRH Accelerated Scale-up (6%)":
+            #     mix_scenarios(
+            #         scenario_definitions.baseline(),
+            #         scenario_definitions.accelerated_hrh_using_historical_scaling(),
+            #     ),
 
-            "HRH Accelerated Scale-up (6%)":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.accelerated_hrh_using_historical_scaling(),
-                ),
-
-            "CHW Scale-up Following Historical Growth":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.scale_dcsa_with_historical_average(),
-                ),
+            # "Increase Capacity at Primary Care Levels":
+            #     mix_scenarios(
+            #         scenario_definitions.baseline(),
+            #         scenario_definitions.increase_capacity_at_primary_care(),
+            #     ),
+            #
+            #
+            # todo leave out
+            # "CHW Scale-up Following Historical Growth":
+            #     mix_scenarios(
+            #         scenario_definitions.baseline(),
+            #         scenario_definitions.scale_dcsa_with_historical_average(),
+            #     ),
 
             # - - - Supply Chains - - -
             "Consumables Increased to 75th Percentile":
@@ -118,17 +120,17 @@ class HSSElements(BaseScenario):
                     scenario_definitions.cons_at_75th_percentile(),
                 ),
 
-            "Consumables Available at HIV levels":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.cons_at_HIV_availability(),
-                ),
-
-            "Consumables Available at EPI levels":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.cons_at_EPI_availability(),
-                ),
+            # "Consumables Available at HIV levels":
+            #     mix_scenarios(
+            #         scenario_definitions.baseline(),
+            #         scenario_definitions.cons_at_HIV_availability(),
+            #     ),
+            #
+            # "Consumables Available at EPI levels":
+            #     mix_scenarios(
+            #         scenario_definitions.baseline(),
+            #         scenario_definitions.cons_at_EPI_availability(),
+            #     ),
 
             # "Perfect Consumables Availability":
             #     mix_scenarios(
@@ -137,11 +139,11 @@ class HSSElements(BaseScenario):
             #     ),
 
             # - - - FULL PACKAGE OF HEALTH SYSTEM STRENGTHENING - - -
-            "FULL PACKAGE":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.hss_package(),
-                ),
+            # "FULL PACKAGE":
+            #     mix_scenarios(
+            #         scenario_definitions.baseline(),
+            #         scenario_definitions.hss_package(),
+            #     ),
         }
 
 

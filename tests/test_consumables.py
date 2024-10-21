@@ -9,10 +9,10 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from tlo import Date, Module, Simulation
+from tlo import Date, Module, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.events import IndividualScopeEventMixin
-from tlo.methods import Metadata, demography, healthsystem
+from tlo.methods import (Metadata, demography, healthsystem, symptommanager, simplified_births, malaria)
 from tlo.methods.consumables import (
     Consumables,
     check_format_of_consumables_file,
@@ -651,3 +651,65 @@ def test_change_consumables_availability(seed):
         sim.modules['HealthSystem'].parameters['year_cons_availability_switch'] = 2011
         sim.modules['HealthSystem'].parameters['cons_availability_postSwitch'] = the_updated_scenario
         sim.simulate(end_date=Date(2012, 1, 1))
+
+
+def test_check_consumables_modified_correctly(seed):
+    """Check that we can move between scenarios and consumables
+    availability is modified correctly.
+    here we set initial consumables availability to 'none'
+    then in year_of_switch, we modify consumables availability to 'scenario6'
+    this should modify the availability of all consumables to equal the
+    maximum(default availability, 75th percentile)
+    """
+
+    year_of_switch = 2012
+
+    log_config = {
+        "filename": "tmp",
+        "directory": Path(os.path.dirname(__file__)) / "../outputs",
+        "custom_levels": {
+            "*": logging.WARNING,
+            "tlo.methods.healthsystem.summary": logging.INFO,
+        }
+    }
+
+    sim = Simulation(
+        start_date=Date(2010, 1, 1),
+        seed=seed,
+        log_config=log_config
+    )
+
+    # Register the core modules
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        # add some disease modules to request consumables
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        malaria.Malaria(resourcefilepath=resourcefilepath),
+    )
+    sim.modules['HealthSystem'].parameters['cons_availability'] = 'none'
+    sim.modules['HealthSystem'].parameters['year_cons_availability_switch'] = year_of_switch
+    sim.modules['HealthSystem'].parameters['cons_availability_postSwitch'] = 'scenario6'  # scenario6=75th percentile
+
+    sim.make_initial_population(n=10)
+    sim.simulate(end_date=Date(2014, 1, 1))
+
+    # should see no cons available pre-2012
+    # then should see some cons available in 2012 onwards
+    cons_log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem.summary']['Consumables']
+
+    assert len(cons_log)
+    # Assertion for rows before switch, no cons should be available
+    before_switch = cons_log[cons_log['date'] < f'{year_of_switch}-01-01']
+    after_switch = cons_log[cons_log['date'] >= f'{year_of_switch}-01-01']
+
+    assert all(before_switch['Item_Available'].apply(len) == 0), "There are items available before the switch"
+    assert all(
+        before_switch['Item_NotAvailable'].apply(len) > 0), \
+        "There are no items in 'Item_NotAvailable' before the switch"
+
+    # Assertion for rows after switch, there should now be some cons available
+    assert all(after_switch['Item_Available'].apply(len) > 0), \
+        "There are no items in 'Item_Available' from the switch onwards"
+
