@@ -105,19 +105,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         return CONDITION_TO_COLOR_MAP_PREVALENCE.get(_standardize_short_treatment_id(prevalence_condition_label),
                                                      np.nan)
 
-    # def order_of_prevalence_label(
-    #     prevalence_label: Union[str, pd.Index]
-    # ) -> Union[int, pd.Index]:
-    #     """Define a standard order for Cause-of-Death labels."""
-    #     ordered_prevalence_labels = list(CONDITION_TO_COLOR_MAP_PREVALENCE.keys())
-    #     print(ordered_prevalence_labels)
-    #     if isinstance(prevalence_label, str):
-    #         return ordered_prevalence_labels.index(prevalence_label)
-    #     else:
-    #         return pd.Index(
-    #             ordered_prevalence_labels.index(c) for c in prevalence_label
-    #         )
-
     def get_prevalence_by_cause_label(_df):
         """Return total number of Prevalence by label (total by age-group within the TARGET_PERIOD)
         """
@@ -191,13 +178,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                                                            axis=0)  # not prevalence
     df_all_years_prevalence = df_all_years_prevalence.rename(index=rename_dict)  # For labels
 
-    # Check for missing conditions
-    #for _label in df_all_years_prevalence.index:
-    #     print(f"Label: {_label}, Result: {get_color_cause_of_prevalence_label(_label)}")
-    # df_all_years_prevalence = df_all_years_prevalence \
-    #     .reindex(index=CONDITION_TO_COLOR_MAP_PREVALENCE.keys(), fill_value=0.0) \
-    #     .sort_index(axis=0, key=order_of_cause_of_death_or_daly_label)
-
     # Plotting
     fig, axes = plt.subplots(1, 2, figsize=(25, 10))
     # Panel A: Prevalence - general - stacked
@@ -209,8 +189,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     axes[0].set_xlabel('Year')
     axes[0].set_ylabel('Prevalence in population')
     axes[0].grid(True)
-    axes[0].spines['top'].set_visible(False)
-    axes[0].spines['right'].set_visible(False)
+
     axes[0].legend().set_visible(False)
 
     # NORMALIZED Prevalence - normalized to 2010
@@ -223,11 +202,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                                              df_all_years_prevalence_normalized.index][i])
     axes[1].set_title('Panel B: Normalized Prevalence by Condition')
     axes[1].set_xlabel('Year')
-    axes[1].set_ylabel('Fold change in deaths compared to 2010')
-    axes[1].spines['top'].set_visible(False)
-    axes[1].spines['right'].set_visible(False)
+    axes[1].set_ylabel('Fold change in deaths compared to 2020')
+
     axes[1].legend(title='Condition', bbox_to_anchor=(1, 1), loc='upper left')
     axes[1].grid(True)
+    axes[1].set_ylim(0, 4.5)
     fig.tight_layout()
     fig.savefig(make_graph_file_name('Trend_Prevalence_by_Condition_All_Years_Raw_and_Normalized_Panel_A_and_B'))
     plt.close(fig)
