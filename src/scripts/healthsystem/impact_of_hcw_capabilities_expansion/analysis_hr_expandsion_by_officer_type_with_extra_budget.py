@@ -748,6 +748,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         only_mean=True
     ).T.reindex(num_dalys_summarized.index).drop(['s_1'])
 
+    num_dalys_by_cause_averted_CNP = num_dalys_by_cause_averted.loc['s_22', :].sort_values(ascending=False)
+    num_dalys_by_cause_averted_CP = num_dalys_by_cause_averted.loc['s_11', :].sort_values(ascending=False)
+
     num_dalys_by_cause_averted_percent = summarize(
         -1.0 * find_difference_relative_to_comparison_dataframe(
             num_dalys_by_cause,
@@ -1004,7 +1007,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # Checked that Number_By_Appt_Type_Code and Number_By_Appt_Type_Code_And_Level have not exactly same results
 
     # hcw time by cadre and treatment: draw = 21: C + N + P vs no expansion, draw = 10, C + P vs no expansion
-    time_increased_by_cadre_treatment = get_hcw_time_by_treatment(10)
+    time_increased_by_cadre_treatment_CNP = get_hcw_time_by_treatment(21)
+    time_increased_by_cadre_treatment_CP = get_hcw_time_by_treatment(10)
 
     # get Return (in terms of DALYs averted) On Investment (extra cost) for all expansion scenarios, excluding s_1
     # get Cost-Effectiveness, i.e., cost of every daly averted, for all expansion scenarios
@@ -1786,9 +1790,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    # name_of_plot = f'Time used increased by cadre and treatment: C + N + P vs no expansion, {target_period()}'
-    name_of_plot = f'Time used increased by cadre and treatment: C + P vs no expansion, {target_period()}'
-    data_to_plot = time_increased_by_cadre_treatment / 1e6
+    name_of_plot = f'Time used increased by cadre and treatment: C + N&M + P vs no expansion, {target_period()}'
+    data_to_plot = time_increased_by_cadre_treatment_CNP / 1e6
+    # name_of_plot = f'Time used increased by cadre and treatment: C + P vs no expansion, {target_period()}'
+    # data_to_plot = time_increased_by_cadre_treatment_CP / 1e6
     data_to_plot = data_to_plot[['Clinical', 'Pharmacy', 'Nursing_and_Midwifery',
                                  'DCSA', 'Laboratory', 'Mental', 'Radiography']]
     fig, ax = plt.subplots(figsize=(12, 8))
@@ -1800,7 +1805,40 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     plt.title(name_of_plot)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '').replace(
-        ':', '_')))
+        ':', '')))
+    fig.show()
+    plt.close(fig)
+
+    name_of_plot = f'Time used increased by treatment and cadre: C + N&M + P vs no expansion, {target_period()}'
+    # name_of_plot = f'Time used increased by treatment and cadre: C + P vs no expansion, {target_period()}'
+    data_to_plot = data_to_plot.T
+    data_to_plot = data_to_plot.add_suffix('*')
+    fig, ax = plt.subplots(figsize=(12, 8))
+    data_to_plot.plot(kind='bar', stacked=True, color=treatment_color, rot=0, ax=ax)
+    ax.set_ylabel('Millions Minutes')
+    ax.set_xlabel('Treatment')
+    ax.set_xticklabels(data_to_plot.index, rotation=90)
+    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Treatment', reverse=True)
+    plt.title(name_of_plot)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '').replace(
+        ':', '')))
+    fig.show()
+    plt.close(fig)
+
+    name_of_plot = f'DALYs by cause averted: C + N + P vs no expansion, {target_period()}'
+    data_to_plot = num_dalys_by_cause_averted_CNP / 1e6
+    # name_of_plot = f'DALYs by cause averted: C + P vs no expansion, {target_period()}'
+    # data_to_plot = num_dalys_by_cause_averted_CP / 1e6
+    fig, ax = plt.subplots()
+    data_to_plot.plot.bar(ax=ax, x=data_to_plot.index, y=data_to_plot.values)
+    ax.set_ylabel('Millions')
+    ax.set_xlabel('Treatment')
+    ax.set_xticklabels(data_to_plot.index, rotation=90)
+    plt.title(name_of_plot)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '').replace(
+        ':', '')))
     fig.show()
     plt.close(fig)
 
