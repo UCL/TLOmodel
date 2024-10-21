@@ -228,9 +228,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     axes[1].spines['right'].set_visible(False)
     axes[1].legend(title='Condition', bbox_to_anchor=(1, 1), loc='upper left')
     axes[1].grid(True)
-
+    fig.tight_layout()
     fig.savefig(make_graph_file_name('Trend_Prevalence_by_Condition_All_Years_Raw_and_Normalized_Panel_A_and_B'))
     plt.close(fig)
+    df_all_years_prevalence_normalized.to_csv(output_folder/"Prevalence_by_condition_normalized_2020.csv")
 
 
 if __name__ == "__main__":
