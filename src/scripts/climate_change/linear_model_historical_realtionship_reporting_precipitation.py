@@ -104,6 +104,7 @@ X = np.column_stack([
 ])
 
 results = build_model(X, y, scale_y=False, beta=False, X_mask_mm = 800)
+results = build_model(X, y, scale_y=True, beta=True, X_mask_mm = 00)
 
 print(results.summary())
 
