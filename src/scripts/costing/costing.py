@@ -867,7 +867,7 @@ def first_positive(series):
     return next((x for x in series if pd.notna(x) and x > 0), np.nan)
 
 def get_calibration_relevant_subset_of_other_costs(_df, _subcategory, _calibration_category):
-    new_data = get_calibration_relevant_subset(_df[_df['Cost_Sub-category'].isin([_subcategory])]).groupby('stat')['value'].sum()
+    new_data = get_calibration_relevant_subset(_df[_df['Cost_Sub-category'].isin(_subcategory)]).groupby('stat')['value'].sum()
     new_data = new_data.reset_index()
     new_data['calibration_category'] = _calibration_category
     new_data = new_data.rename(columns =  {'value':'model_cost'})
@@ -877,25 +877,34 @@ def get_calibration_relevant_subset_of_other_costs(_df, _subcategory, _calibrati
 calibration_data['model_cost'] = np.nan
 # Note that the main ARV  regimen in 2018 was tenofovir/lamivudine/efavirenz as opposed to Tenofovir/Lamivudine/Dolutegravir as used in the RF_Costing. The price of this
 # was $80 per year (80/(0.103*365)) times what's estimated by the model so let's update this
-calibration_data['model_cost'] = calibration_data['model_cost'].fillna(merged_calibration_relevant_consumables_costs([2671, 2672, 2673], 'Antiretrovirals') * 80/(0.103*365))
-calibration_data['model_cost'] = calibration_data['model_cost'].fillna(merged_calibration_relevant_consumables_costs([176, 177, 179, 178, 181, 2678], 'TB Treatment'))
+art = [2671, 2672, 2673]
+tb_treatment = [176, 177, 179, 178, 181, 2678]
+antimalarials = [162,164,170]
+malaria_rdts = [163]
+hiv_screening = [190,191,196]
+condoms = [2,25]
+tb_tests = [184,187, 175]
+other_drugs = set(cost_of_consumables_dispensed['Item_Code'].unique()) - set(art) - set(tb_treatment) - set(antimalarials) - set(malaria_rdts) - set(hiv_screening)\
+              - set(condoms) - set(tb_tests)
 
-calibration_data['model_cost'] = calibration_data['model_cost'].fillna(merged_calibration_relevant_consumables_costs([162,164,170], 'Antimalarials'))
-calibration_data['model_cost'] = calibration_data['model_cost'].fillna(merged_calibration_relevant_consumables_costs([163], 'Malaria RDTs'))
-calibration_data['model_cost'] = calibration_data['model_cost'].fillna(merged_calibration_relevant_consumables_costs([190,191,196], 'HIV Screening/Diagnostic Tests'))
-calibration_data['model_cost'] = calibration_data['model_cost'].fillna(merged_calibration_relevant_consumables_costs([2,25], 'Condoms and Lubricants'))
-calibration_data['model_cost'] = calibration_data['model_cost'].fillna(merged_calibration_relevant_consumables_costs([184,187, 175], 'TB Tests (including RDTs)'))
-#calibration_data[calibration_data['calibration_category'] == 'Other Drugs, medical supplies, and commodities']['model_cost'] = ??
+calibration_data['model_cost'] = calibration_data['model_cost'].fillna(merged_calibration_relevant_consumables_costs(art, 'Antiretrovirals') * 80/(0.103*365))
+calibration_data['model_cost'] = calibration_data['model_cost'].fillna(merged_calibration_relevant_consumables_costs(tb_treatment, 'TB Treatment'))
+calibration_data['model_cost'] = calibration_data['model_cost'].fillna(merged_calibration_relevant_consumables_costs(antimalarials, 'Antimalarials'))
+calibration_data['model_cost'] = calibration_data['model_cost'].fillna(merged_calibration_relevant_consumables_costs(malaria_rdts, 'Malaria RDTs'))
+calibration_data['model_cost'] = calibration_data['model_cost'].fillna(merged_calibration_relevant_consumables_costs(hiv_screening, 'HIV Screening/Diagnostic Tests'))
+calibration_data['model_cost'] = calibration_data['model_cost'].fillna(merged_calibration_relevant_consumables_costs(condoms, 'Condoms and Lubricants'))
+calibration_data['model_cost'] = calibration_data['model_cost'].fillna(merged_calibration_relevant_consumables_costs(tb_tests, 'TB Tests (including RDTs)'))
+calibration_data['model_cost'] = calibration_data['model_cost'].fillna(merged_calibration_relevant_consumables_costs(other_drugs, 'Other Drugs, medical supplies, and commodities'))
 
 # HR
 ratio_of_all_to_used_staff = total_salary_for_all_staff[(0,2018)]/total_salary_for_staff_used_in_scenario[( 0, 'lower')][2018]
-calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_other_costs(scenario_cost, 'salary_for_used_cadres', 'Health Worker Salaries') * ratio_of_all_to_used_staff)
-calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_other_costs(scenario_cost, 'preservice_training_cost_for_attrited_workers', 'Health Worker Training - In-Service') * ratio_of_all_to_used_staff)
-calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_other_costs(scenario_cost, 'inservice_training_cost_for_all_staff', 'Health Worker Training - Pre-Service') * ratio_of_all_to_used_staff)
-calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_other_costs(scenario_cost, 'recruitment_cost_for_attrited_workers', 'Other Human Resources for Health expenses') * ratio_of_all_to_used_staff)
+calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_other_costs(scenario_cost, ['salary_for_used_cadres'], 'Health Worker Salaries') * ratio_of_all_to_used_staff)
+calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_other_costs(scenario_cost, ['preservice_training_cost_for_attrited_workers'], 'Health Worker Training - Pre-Service') * ratio_of_all_to_used_staff)
+calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_other_costs(scenario_cost, ['inservice_training_cost_for_all_staff'], 'Health Worker Training - In-Service') * ratio_of_all_to_used_staff)
+calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_other_costs(scenario_cost, ['recruitment_cost_for_attrited_workers'], 'Other Human Resources for Health expenses') * ratio_of_all_to_used_staff)
 
 # Equipment
-calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_other_costs(scenario_cost, 'replacement_cost_annual_total', 'Medical Equipment - Purchase'))
+calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_other_costs(scenario_cost, ['replacement_cost_annual_total'], 'Medical Equipment - Purchase'))
 calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_other_costs(scenario_cost, ['upfront_repair_cost_annual_total', 'spare_parts_annual_total',
        'service_fee_annual_total'], 'Medical Equipment - Maintenance'))
 #calibration_data[calibration_data['calibration_category'] == 'Vehicles - Purchase and Maintenance'] = get_calibration_relevant_subset()
@@ -909,59 +918,88 @@ calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calib
 
 # 3. Create calibration plot
 list_of_consumables_costs_for_calibration_only_hiv = ['Antiretrovirals', 'HIV Screening/Diagnostic Tests']
-list_of_consumables_costs_for_calibration_without_hiv =['Antimalarials', 'Condoms and Lubricants','Malaria RDTs', 'TB Tests (including RDTs)', 'TB Treatment']
-list_of_hr_costs_for_calibration = [ 'Health Worker Training - In-Service',  'Health Worker Salaries', 'Health Worker Training - Pre-Service']
+list_of_consumables_costs_for_calibration_without_hiv =['Antimalarials', 'Condoms and Lubricants','Malaria RDTs', 'TB Tests (including RDTs)', 'TB Treatment', 'Other Drugs, medical supplies, and commodities']
+list_of_hr_costs_for_calibration = [ 'Health Worker Training - In-Service',  'Health Worker Salaries', 'Health Worker Training - Pre-Service', 'Other Human Resources for Health expenses']
 list_of_equipment_costs_for_calibration = ['Medical Equipment - Purchase', 'Medical Equipment - Maintenance']
 # Add folder to store calibration plots
 
 calibration_outputs_folder = Path(figurespath / 'calibration')
 if not os.path.exists(calibration_outputs_folder):
     os.makedirs(calibration_outputs_folder)
-def do_cost_calibration_plot(_df, _costs_included, _calibration_var):
+
+def do_cost_calibration_plot(_df, _costs_included):
+    # Filter the dataframe
     _df = _df[(_df.model_cost.notna()) & (_df.index.get_level_values(0).isin(_costs_included))]
-    df_mean = _df.loc[_df.index.get_level_values('stat') == 'mean'].reset_index(level='stat', drop=True)
-    df_lower = _df.loc[_df.index.get_level_values('stat') == 'lower'].reset_index(level='stat', drop=True)
-    df_upper = _df.loc[_df.index.get_level_values('stat') == 'upper'].reset_index(level='stat', drop=True)
 
-    # Create the scatter plot
-    plt.figure(figsize=(10, 6))
+    # For df_mean
+    df_mean = _df.loc[_df.index.get_level_values('stat') == 'mean'].reset_index(level='stat', drop=True)/1e6
+    total_mean = pd.DataFrame(df_mean.sum()).T  # Calculate the total and convert it to a DataFrame
+    total_mean.index = ['Total']  # Name the index of the total row as 'Total'
+    df_mean = pd.concat([df_mean, total_mean], axis=0)  # Concatenate the total row
 
-    # Plot each point with error bars (for confidence interval)
-    plt.errorbar(df_mean[_calibration_var],
-                 df_mean['model_cost'],
+    # For df_lower
+    df_lower = _df.loc[_df.index.get_level_values('stat') == 'lower'].reset_index(level='stat', drop=True)/1e6
+    total_lower = pd.DataFrame(df_lower.sum()).T  # Calculate the total and convert it to a DataFrame
+    total_lower.index = ['Total']  # Name the index of the total row as 'Total'
+    df_lower = pd.concat([df_lower, total_lower], axis=0)  # Concatenate the total row
+
+    # For df_upper
+    df_upper = _df.loc[_df.index.get_level_values('stat') == 'upper'].reset_index(level='stat', drop=True)/1e6
+    total_upper = pd.DataFrame(df_upper.sum()).T  # Calculate the total and convert it to a DataFrame
+    total_upper.index = ['Total']  # Name the index of the total row as 'Total'
+    df_upper = pd.concat([df_upper, total_upper], axis=0)  # Concatenate the total row
+
+    # Create the dot plot
+    plt.figure(figsize=(12, 8))
+
+    # Plot model_cost as dots with confidence interval error bars
+    plt.errorbar(df_mean.index, df_mean['model_cost'],
                  yerr=[df_mean['model_cost'] - df_lower['model_cost'], df_upper['model_cost'] - df_mean['model_cost']],
-                 fmt='o',
-                 ecolor='gray',
-                 capsize=5,
-                 label='Calibration Category')
+                 fmt='o', label='Model Cost', ecolor='gray', capsize=5, color='saddlebrown')
 
-    # Adding the 45-degree line (where y = x)
-    min_val = min(df_mean[_calibration_var].min(), df_mean['model_cost'].min())
-    max_val = max(df_mean[_calibration_var].max(), df_mean['model_cost'].max())
-    plt.plot([min_val, max_val], [min_val, max_val], 'r--', label='45-degree line')  # Red dashed line
+    # Plot annual_expenditure_2019 and max_annual_budget_2020-22 as dots
+    plt.plot(df_mean.index, df_mean['actual_expenditure_2019'], 'bo', label='Actual Expenditure 2019', markersize=8)
+    plt.plot(df_mean.index, df_mean['max_annual_budget_2020-22'], 'go', label='Max Annual Budget 2020-22', markersize=8)
 
-    # Add labels for each calibration_category
-    for i, label in enumerate(df_mean.index):
-        plt.annotate(label, (df_mean[_calibration_var].iloc[i], df_mean['model_cost'].iloc[i]))
+    # Draw a blue line between annual_expenditure_2019 and max_annual_budget_2020-22
+    plt.vlines(df_mean.index, df_mean['actual_expenditure_2019'], df_mean['max_annual_budget_2020-22'], color='blue',
+               label='Budget Range')
+
+    # Add labels to the model_cost dots (yellow color, slightly shifted right)
+    for i, (x, y) in enumerate(zip(df_mean.index, df_mean['model_cost'])):
+        plt.text(i + 0.05, y, f'{y:.2f}', ha='left', va='bottom', fontsize=9,
+                 color='saddlebrown')  # label model_cost values
 
     # Add labels and title
-    plt.xlabel('Actual Expenditure 2019')
-    plt.ylabel('Model Cost (with confidence interval)')
-    plt.title(f'Model Cost vs {_calibration_var}')
-
-    # Show the plot
-    plt.tight_layout()
     cost_subcategory = [name for name in globals() if globals()[name] is _costs_included][0]
     cost_subcategory = cost_subcategory.replace('list_of_', '').replace('_for_calibration', '')
-    plt.savefig(calibration_outputs_folder / f'calibration_{_calibration_var}_{cost_subcategory}.png', dpi=100,
+    plt.xlabel('Cost Sub-Category')
+    plt.ylabel('Costs (USD), millions')
+    plt.title(f'Model Cost vs Annual Expenditure 2019 and Max(Annual Budget 2020-22)\n {cost_subcategory}')
+
+    # Rotate x-axis labels for readability
+    plt.xticks(rotation=45, ha='right')
+
+    # Adding a legend
+    plt.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=10)
+
+    # Tight layout and save the figure
+    plt.tight_layout()
+    plt.savefig(calibration_outputs_folder / f'calibration_dot_plot_{cost_subcategory}.png', dpi=100,
                 bbox_inches='tight')
     plt.close()
 
-for var in ['actual_expenditure_2019', 'max_annual_budget_2020-22']:
-    do_cost_calibration_plot(calibration_data, list_of_consumables_costs_for_calibration_only_hiv, var)
-    do_cost_calibration_plot(calibration_data, list_of_consumables_costs_for_calibration_without_hiv, var)
-    do_cost_calibration_plot(calibration_data, list_of_hr_costs_for_calibration, var)
-    do_cost_calibration_plot(calibration_data, list_of_equipment_costs_for_calibration, var)
+
+# Call the function for each variable and cost list
+all_calibration_costs = list_of_consumables_costs_for_calibration_only_hiv + list_of_consumables_costs_for_calibration_without_hiv + list_of_hr_costs_for_calibration + list_of_equipment_costs_for_calibration
+all_consumable_costs = list_of_consumables_costs_for_calibration_without_hiv + list_of_consumables_costs_for_calibration_only_hiv
+
+do_cost_calibration_plot(calibration_data,list_of_consumables_costs_for_calibration_without_hiv)
+do_cost_calibration_plot(calibration_data,list_of_consumables_costs_for_calibration_only_hiv)
+do_cost_calibration_plot(calibration_data,all_consumable_costs)
+do_cost_calibration_plot(calibration_data, list_of_hr_costs_for_calibration)
+do_cost_calibration_plot(calibration_data, list_of_equipment_costs_for_calibration)
+do_cost_calibration_plot(calibration_data,all_calibration_costs)
 
 # TODO all these HR plots need to be looked at
 # 1. HR
@@ -1418,4 +1456,53 @@ plot_most_expensive_equipment(equipment_cost)
 # TODO Collapse facility IDs by level of care to get the total number of facilities at each level using an item
 # TODO Multiply number of facilities by level with the quantity needed of each equipment and collapse to get total number of equipment (nationally)
 # TODO Which equipment needs to be newly purchased (currently no assumption made for equipment with cost > $250,000)
+
+# Calibration scatter plots
+def do_cost_calibration_plot(_df, _costs_included, _calibration_var):
+    _df = _df[(_df.model_cost.notna()) & (_df.index.get_level_values(0).isin(_costs_included))]
+    df_mean = _df.loc[_df.index.get_level_values('stat') == 'mean'].reset_index(level='stat', drop=True)
+    df_lower = _df.loc[_df.index.get_level_values('stat') == 'lower'].reset_index(level='stat', drop=True)
+    df_upper = _df.loc[_df.index.get_level_values('stat') == 'upper'].reset_index(level='stat', drop=True)
+
+    # Create the scatter plot
+    plt.figure(figsize=(10, 6))
+
+    # Plot each point with error bars (for confidence interval)
+    plt.errorbar(df_mean[_calibration_var],
+                 df_mean['model_cost'],
+                 yerr=[df_mean['model_cost'] - df_lower['model_cost'], df_upper['model_cost'] - df_mean['model_cost']],
+                 fmt='o',
+                 ecolor='gray',
+                 capsize=5,
+                 label='Calibration Category')
+
+    # Adding the 45-degree line (where y = x)
+    min_val = min(df_mean[_calibration_var].min(), df_mean['model_cost'].min())
+    max_val = max(df_mean[_calibration_var].max(), df_mean['model_cost'].max())
+    plt.plot([min_val, max_val], [min_val, max_val], 'r--', label='45-degree line')  # Red dashed line
+
+    # Add labels for each calibration_category
+    for i, label in enumerate(df_mean.index):
+        plt.annotate(label, (df_mean[_calibration_var].iloc[i], df_mean['model_cost'].iloc[i]))
+
+    # Add labels and title
+    plt.xlabel('Actual Expenditure 2019')
+    plt.ylabel('Model Cost (with confidence interval)')
+    plt.title(f'Model Cost vs {_calibration_var}')
+
+    # Show the plot
+    plt.tight_layout()
+    cost_subcategory = [name for name in globals() if globals()[name] is _costs_included][0]
+    cost_subcategory = cost_subcategory.replace('list_of_', '').replace('_for_calibration', '')
+    plt.savefig(calibration_outputs_folder / f'calibration_{_calibration_var}_{cost_subcategory}.png', dpi=100,
+                bbox_inches='tight')
+    plt.close()
+
+for var in ['actual_expenditure_2019', 'max_annual_budget_2020-22']:
+    do_cost_calibration_plot(calibration_data, list_of_consumables_costs_for_calibration_only_hiv, var)
+    do_cost_calibration_plot(calibration_data, list_of_consumables_costs_for_calibration_without_hiv, var)
+    do_cost_calibration_plot(calibration_data, list_of_hr_costs_for_calibration, var)
+    do_cost_calibration_plot(calibration_data, list_of_equipment_costs_for_calibration, var)
+
+
 '''
