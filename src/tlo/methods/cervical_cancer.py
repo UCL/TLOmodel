@@ -886,7 +886,7 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # todo: consider fact that who recommend move towards xpert screening away from via
         # todo: start with via as screening tool and move to xpert in about 2024
 
-        if year >= p['transition_screening_year']:
+        if year <= p['transition_screening_year']:
             # Use VIA for screening before the transition year
             df.loc[eligible_population, 'ce_selected_for_via_this_month'] = (
                 np.random.random_sample(size=len(df[eligible_population])) < p['prob_via_screen']
