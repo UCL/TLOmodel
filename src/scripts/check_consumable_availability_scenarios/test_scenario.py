@@ -1,9 +1,9 @@
 """
 This file defines a batch run to test whether consumable availability swtich by year works
 Run on the batch system using:
-```tlo batch-submit src/scripts/healthsystem/impact_of_cons_availability/test_scenario.py```
+```tlo batch-submit src/scripts/check_consumable_availability_scenarios/test_scenario.py```
 or locally using:
-    ```tlo scenario-run src/scripts/healthsystem/impact_of_cons_availability/test_scenario.py```
+    ```tlo scenario-run src/scripts/check_consumable_availability_scenarios/test_scenario.py```
 """
 
 from pathlib import Path

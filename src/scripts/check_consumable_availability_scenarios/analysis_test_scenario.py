@@ -1,3 +1,8 @@
+'''
+This script analyses the outputs of the following scenarios -
+src/scripts/check_consumable_availability_scenarios/test_scenario.py
+'''
+
 import argparse
 from pathlib import Path
 import textwrap
