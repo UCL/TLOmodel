@@ -748,8 +748,21 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         only_mean=True
     ).T.reindex(num_dalys_summarized.index).drop(['s_1'])
 
+    num_dalys_by_cause_averted_percent = summarize(
+        -1.0 * find_difference_relative_to_comparison_dataframe(
+            num_dalys_by_cause,
+            comparison='s_1',
+            scaled=True
+        ),
+        only_mean=True
+    ).T.reindex(num_dalys_summarized.index).drop(['s_1'])
+
     num_dalys_by_cause_averted_CNP = num_dalys_by_cause_averted.loc['s_22', :].sort_values(ascending=False)
     num_dalys_by_cause_averted_CP = num_dalys_by_cause_averted.loc['s_11', :].sort_values(ascending=False)
+    num_dalys_by_cause_averted_percent_CNP = num_dalys_by_cause_averted_percent.loc['s_22', :].sort_values(
+        ascending=False)
+    num_dalys_by_cause_averted__percent_CP = num_dalys_by_cause_averted_percent.loc['s_11', :].sort_values(
+        ascending=False)
 
     num_dalys_by_cause_averted_percent = summarize(
         -1.0 * find_difference_relative_to_comparison_dataframe(
@@ -1790,10 +1803,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    name_of_plot = f'Time used increased by cadre and treatment: C + N&M + P vs no expansion, {target_period()}'
-    data_to_plot = time_increased_by_cadre_treatment_CNP / 1e6
-    # name_of_plot = f'Time used increased by cadre and treatment: C + P vs no expansion, {target_period()}'
-    # data_to_plot = time_increased_by_cadre_treatment_CP / 1e6
+    # name_of_plot = f'Time used increased by cadre and treatment: C + N&M + P vs no expansion, {target_period()}'
+    # data_to_plot = time_increased_by_cadre_treatment_CNP / 1e6
+    name_of_plot = f'Time used increased by cadre and treatment: C + P vs no expansion, {target_period()}'
+    data_to_plot = time_increased_by_cadre_treatment_CP / 1e6
+    data_to_plot['total'] = data_to_plot.sum(axis=1)
+    data_to_plot.sort_values(by='total', inplace=True, ascending=False)
+    data_to_plot.drop('total', axis=1, inplace=True)
     data_to_plot = data_to_plot[['Clinical', 'Pharmacy', 'Nursing_and_Midwifery',
                                  'DCSA', 'Laboratory', 'Mental', 'Radiography']]
     fig, ax = plt.subplots(figsize=(12, 8))
@@ -1833,6 +1849,20 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig, ax = plt.subplots()
     data_to_plot.plot.bar(ax=ax, x=data_to_plot.index, y=data_to_plot.values)
     ax.set_ylabel('Millions')
+    ax.set_xlabel('Treatment')
+    ax.set_xticklabels(data_to_plot.index, rotation=90)
+    plt.title(name_of_plot)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '').replace(
+        ':', '')))
+    fig.show()
+    plt.close(fig)
+
+    name_of_plot = f'DALYs by cause averted %: C + N + P vs no expansion, {target_period()}'
+    data_to_plot = num_dalys_by_cause_averted_percent_CNP * 100
+    fig, ax = plt.subplots()
+    data_to_plot.plot.bar(ax=ax, x=data_to_plot.index, y=data_to_plot.values)
+    ax.set_ylabel('Percentage %')
     ax.set_xlabel('Treatment')
     ax.set_xticklabels(data_to_plot.index, rotation=90)
     plt.title(name_of_plot)
@@ -1971,13 +2001,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # plot ROI and CE for all expansion scenarios
 
-    name_of_plot = f'DALYs averted per extra USD dollar invested, {target_period()}'
-    fig, ax = do_bar_plot_with_ci(ROI)
-    ax.set_title(name_of_plot)
-    fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-    fig.show()
-    plt.close(fig)
+    # name_of_plot = f'DALYs averted per extra USD dollar invested, {target_period()}'
+    # fig, ax = do_bar_plot_with_ci(ROI)
+    # ax.set_title(name_of_plot)
+    # fig.tight_layout()
+    # fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    # fig.show()
+    # plt.close(fig)
 
     # name_of_plot = f'Cost per DALY averted, {target_period()}'
     # fig, ax = do_bar_plot_with_ci(CE)
