@@ -692,7 +692,7 @@ def test_check_consumables_modified_correctly(seed):
     sim.modules['HealthSystem'].parameters['year_cons_availability_switch'] = year_of_switch
     sim.modules['HealthSystem'].parameters['cons_availability_postSwitch'] = 'scenario6'  # scenario6=75th percentile
 
-    sim.make_initial_population(n=10)
+    sim.make_initial_population(n=100)
     sim.simulate(end_date=Date(2014, 1, 1))
 
     # should see no cons available pre-2012
