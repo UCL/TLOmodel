@@ -724,7 +724,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             ax.legend(loc='upper right')
             ax.set_xlabel('Age Group')
             ax.set_ylabel('Deaths per period (thousands)')
-            ax.set_ylim(0, 120)
+            ax.set_ylim(0, 250)
 
             fig.tight_layout()
             fig.savefig(make_graph_file_name(f"Deaths_By_Age_{period}"))
@@ -797,7 +797,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             ax.legend(loc='upper right')
         ax.set_xlabel('Age Group')
         ax.set_ylabel('Deaths per period (thousands)')
-        ax.set_ylim(0, 120)
+        ax.set_ylim(0, 250)
 
     fig.tight_layout()
     fig.savefig(make_graph_file_name("Deaths_By_Age_All_Periods"))
@@ -885,7 +885,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             ax.legend(loc='upper right')
             ax.set_xlabel('Age Group')
             ax.set_ylabel('Deaths per period (thousands)')
-            ax.set_ylim(0, 120)
+            ax.set_ylim(0, 200)
 
             fig.tight_layout()
             fig.savefig(make_graph_file_name(f"Deaths_By_Age_{sex}_{period}"))
@@ -896,52 +896,52 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     dataframes = []
     wpp_le = pd.read_csv("/Users/rem76/PycharmProjects/TLOmodel/src/scripts/longterm_projections/Life_Expectancy_WPP_2010_2014.csv")
-    for year in range(2010, int(max_year) ):
+    for year in range(2010, int(max_year) + 1):
         df = get_life_expectancy_estimates(
             results_folder=args.results_folder,
             target_period=(datetime.date(year, 1, 1), datetime.date(year, 12, 31)),
             summary=False,
         )
-        df.replace([np.inf, -np.inf], np.nan, inplace=True)# for dummy runs some issues calculating, results in infinities
+        df.replace([np.inf, -np.inf], np.nan, inplace=True)
         df = summarize(results=df, only_mean=False, collapse_columns=False)#
         df['Year'] = year  # Add a new column for the year
         dataframes.append(df)
     # Concatenate all dataframes
-    rtn_all_years = pd.concat(dataframes, ignore_index=True)
-    rtn_all_years.set_index('Year', inplace=True)
-    rtn_all_years.to_csv(args.results_folder / 'life_expectancy_estimates.csv', index=True)
+    le_all_years = pd.concat(dataframes, ignore_index=True)
+    le_all_years.set_index('Year', inplace=True)
+    le_all_years.to_csv(args.results_folder / 'life_expectancy_estimates.csv', index=True)
 
     ax.plot(wpp_le['Time'], wpp_le['Value'], marker='o', color=colors['WPP'], label="WPP")
-    rtn_all_years.columns = rtn_all_years.columns.get_level_values('stat')
+    le_all_years.columns = le_all_years.columns.get_level_values('stat')
    # Plotting
     ax.plot(
-        rtn_all_years.index[1::2],
-        rtn_all_years.iloc[1::2]['mean'],
+        le_all_years.index[1::2],
+        le_all_years.iloc[1::2]['mean'],
         marker='o',
         color='#1C6E8C',
         label="F"
     )
 
     ax.fill_between(
-        rtn_all_years.index[1::2],
-        rtn_all_years.iloc[1::2]['lower'],
-        rtn_all_years.iloc[1::2]['upper'],
+        le_all_years.index[1::2],
+        le_all_years.iloc[1::2]['lower'],
+        le_all_years.iloc[1::2]['upper'],
         color='#1C6E8C',
         alpha=0.3
     )
 
     ax.plot(
-        rtn_all_years.index[0::2],
-        rtn_all_years.iloc[0::2]['mean'],
+        le_all_years.index[0::2],
+        le_all_years.iloc[0::2]['mean'],
         marker='o',
         color='#9AC4F8',
         label="M"
     )
 
     ax.fill_between(
-        rtn_all_years.index[0::2],
-        rtn_all_years.iloc[0::2]['lower'],
-        rtn_all_years.iloc[0::2]['upper'],
+        le_all_years.index[0::2],
+        le_all_years.iloc[0::2]['lower'],
+        le_all_years.iloc[0::2]['upper'],
         color='#9AC4F8',
         alpha=0.3
     )
@@ -996,7 +996,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     max_index = find_index_with_string(deaths_by_period.index)
     min_index = find_index_with_string(deaths_by_period.index, '2000')
     period_labels = deaths_by_period.index[min_index:max_index].astype(str)
-    tick_positions = np.arange(len(period_labels))
     ax[0].set_title('Panel A: Number of Deaths')
     ax[0].legend(loc='upper left')
     ax[0].set_xlabel('Calendar Period')
@@ -1004,36 +1003,35 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax[0].set_xlim(left = min_index, right = max_index - 1)
     fig.tight_layout()
 
-    # Plotting
+    # Panel B - Life expectancy
     ax[1].plot(
-        rtn_all_years.index[1::2],
-        rtn_all_years.iloc[1::2]['mean'],
+        le_all_years.index[1::2],
+        le_all_years.iloc[1::2]['mean'],
         marker='o',
-        color='#1C6E8C',
+        color='#9DC7C8',
         label="F"
     )
-    # Panel B: Life Expectancy
     ax[1].fill_between(
-        rtn_all_years.index[1::2],
-        rtn_all_years.iloc[1::2]['lower'],
-        rtn_all_years.iloc[1::2]['upper'],
-        color='#1C6E8C',
+        le_all_years.index[1::2],
+        le_all_years.iloc[1::2]['lower'],
+        le_all_years.iloc[1::2]['upper'],
+        color='#9DC7C8',
         alpha=0.3
     )
 
     ax[1].plot(
-        rtn_all_years.index[0::2],
-        rtn_all_years.iloc[0::2]['mean'],
+        le_all_years.index[0::2],
+        le_all_years.iloc[0::2]['mean'],
         marker='o',
-        color='#9AC4F8',
+        color='#4E598C',
         label="M"
     )
 
     ax[1].fill_between(
-        rtn_all_years.index[0::2],
-        rtn_all_years.iloc[0::2]['lower'],
-        rtn_all_years.iloc[0::2]['upper'],
-        color='#9AC4F8',
+        le_all_years.index[0::2],
+        le_all_years.iloc[0::2]['lower'],
+        le_all_years.iloc[0::2]['upper'],
+        color='#4E598C',
         alpha=0.3
     )
     ax[1].plot(wpp_le['Time'], wpp_le['Value'], marker='o', color=colors['WPP'], label="WPP")
