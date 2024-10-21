@@ -9,6 +9,58 @@ import pandas as pd
 from tlo import logging
 
 
+def generate_mnh_outcome_counter():
+    outcome_list = [ # early/abortive outcomes
+                    'ectopic_unruptured', 'ectopic_ruptured','multiple_pregnancy', 'twin_birth', 'placenta_praevia',
+                    'spontaneous_abortion', 'induced_abortion', 'complicated_spontaneous_abortion',
+                    'complicated_induced_abortion', 'induced_abortion_injury', 'induced_abortion_sepsis',
+                    'induced_abortion_haemorrhage','induced_abortion_other_comp','spontaneous_abortion_sepsis',
+                    'spontaneous_abortion_haemorrhage', 'spontaneous_abortion_other_comp',
+
+                    # antenatal onset outcomes
+                    'an_anaemia_mild', 'an_anaemia_moderate', 'an_anaemia_severe',
+                    'gest_diab', 'mild_pre_eclamp', 'mild_gest_htn','severe_pre_eclamp', 'eclampsia','severe_gest_htn',
+                    'syphilis',  'PROM', 'clinical_chorioamnionitis', 'placental_abruption',
+                    'mild_mod_antepartum_haemorrhage','severe_antepartum_haemorrhage', 'antenatal_stillbirth',
+
+                    # intrapartum/postpartum onset outcomes
+                    'obstruction_cpd', 'obstruction_malpos_malpres', 'obstruction_other','obstructed_labour',
+                    'uterine_rupture','sepsis_intrapartum','sepsis_endometritis', 'sepsis_urinary_tract',
+                    'sepsis_skin_soft_tissue', 'sepsis_postnatal', 'intrapartum_stillbirth', 'early_preterm_labour',
+                    'late_preterm_labour', 'post_term_labour', 'pph_uterine_atony', 'pph_retained_placenta',
+                    'pph_other', 'primary_postpartum_haemorrhage', 'secondary_postpartum_haemorrhage',
+                    'vesicovaginal_fistula', 'rectovaginal_fistula', 'pn_anaemia_mild', 'pn_anaemia_moderate',
+                    'pn_anaemia_severe',
+
+                    # newborn outcomes
+                    'congenital_heart_anomaly', 'limb_or_musculoskeletal_anomaly', 'urogenital_anomaly',
+                    'digestive_anomaly', 'other_anomaly', 'mild_enceph', 'moderate_enceph',
+                    'severe_enceph', 'respiratory_distress_syndrome', 'not_breathing_at_birth', 'low_birth_weight',
+                    'macrosomia', 'small_for_gestational_age', 'early_onset_sepsis', 'late_onset_sepsis',
+
+                    # death outcomes
+                    'direct_mat_death', 'six_week_survivors','induced_abortion_m_death', 'spontaneous_abortion_m_death',
+                    'ectopic_pregnancy_m_death', 'severe_gestational_hypertension_m_death',
+                    'severe_pre_eclampsia_m_death', 'eclampsia_m_death', 'antepartum_haemorrhage_m_death',
+                    'antenatal_sepsis_m_death',
+                    'intrapartum_sepsis_m_death', 'postpartum_sepsis_m_death', 'uterine_rupture_m_death',
+                    'postpartum_haemorrhage_m_death','secondary_postpartum_haemorrhage_m_death',
+                    'early_onset_sepsis_n_death', 'late_onset_sepsis_n_death', 'encephalopathy_n_death',
+                    'neonatal_respiratory_depression_n_death', 'preterm_other_n_death',
+                    'respiratory_distress_syndrome_n_death', 'congenital_heart_anomaly_n_death',
+                    'limb_or_musculoskeletal_anomaly_n_death', 'urogenital_anomaly_n_death', 'digestive_anomaly_n_death',
+                    'other_anomaly_n_death',
+
+                    # service coverage outcomes
+                    'anc0', 'anc1', 'anc2', 'anc3', 'anc4', 'anc5', 'anc6', 'anc7', 'anc8', 'anc8+',
+                    'home_birth_delivery', 'hospital_delivery', 'health_centre_delivery',
+                    'm_pnc0', 'm_pnc1', 'm_pnc2', 'm_pnc3+', 'n_pnc0', 'n_pnc1', 'n_pnc2', 'n_pnc3+']
+
+    mnh_outcome_counter = {k: 0 for k in outcome_list}
+
+    return {'counter': mnh_outcome_counter,
+            'outcomes': outcome_list}
+
 def get_list_of_items(self, item_list):
     """
     Uses get_item_code_from_item_name to return item codes for a list of named items
@@ -19,6 +71,95 @@ def get_list_of_items(self, item_list):
     codes = [item_code_function(item) for item in item_list]
 
     return codes
+
+def check_int_deliverable(self, int_name, hsi_event,
+                          q_param=None, cons=None, opt_cons=None, equipment=None, dx_test=None):
+    """
+    This function is called to determine if an intervention within the MNH modules can be delivered to an individual
+    during a given HSI. This applied to all MNH interventions. If analyses are being conducted in which the probability
+    of intervention delivery should be set explicitly, this is achieved during this function. Otherwise, probability of
+     intervention delivery is determined by any module-level quality parameters, consumable availability, and
+     (if applicable) the results of any dx_tests. Equipment is also declared.
+
+    TODO: what about interventions outside mnh modules
+
+:   param self: module
+    param int_name: items for code look up
+    param hsi_event: module
+    param q_param: items for code look up
+    param cons: module
+    param opt_cons: items for code look up
+    param equipment: module
+    param dx_test: items for code look up
+    """
+
+    df = self.sim.population.props
+    individual_id = hsi_event.target
+    p_params = self.sim.modules['PregnancySupervisor'].current_parameters
+
+    # Firstly, we determine if an analysis is currently being conducted during which the probability of intervention
+    # delivery is being overridden
+    # To do: replace this parameter
+    if p_params['ps_analysis_in_progress'] and (int_name in p_params['interventions_under_analysis']):
+
+        # If so, we determine if this intervention will be delivered given the set probability of delivery.
+        can_int_run_analysis = self.rng.random_sample() < p_params['intervention_analysis_availability']
+
+        # The intervention has no effect
+        if not can_int_run_analysis:
+            return False
+
+        else:
+            # The intervention will have an effect. If this is an intervention which leads to an outcome dependent on
+            # correct identification of a condition through a dx_test we account for that here.
+            if dx_test is not None:
+                test = self.sim.modules['HealthSystem'].dx_manager.dx_tests[dx_test]
+
+                if test[0].target_categories is None and (df.at[individual_id, test[0].property]):
+                    return True
+
+                elif ((test[0].target_categories is not None) and
+                      (df.at[individual_id, test[0].property] in test[0].target_categories)):
+                    return True
+
+                else:
+                    return False
+
+            else:
+                return True
+
+    else:
+
+        # If analysis is not being conducted, intervention delivery is dependent on quality parameters, consumable
+        # availability and dx_test results
+        quality = False
+        consumables = False
+        test = False
+
+        if ((q_param is None) or
+            all([self.rng.random_sample() < value for value in q_param])):
+            quality = True
+
+            if equipment is not None:
+                hsi_event.add_equipment(equipment)
+
+        if ((cons is None) or
+            (hsi_event.get_consumables(item_codes=cons if not None else [],
+                                       optional_item_codes=opt_cons if not None else []))):
+            consumables = True
+
+        if cons is None and opt_cons is not None:
+            hsi_event.get_consumables(item_codes= [], optional_item_codes=opt_cons)
+
+        if ((dx_test is None) or
+            (self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=dx_test, hsi_event=hsi_event))):
+            test = True
+
+        if quality and consumables and test:
+            return True
+
+        else:
+            return False
 
 
 def return_cons_avail(self, hsi_event, cons, opt_cons):
@@ -283,7 +424,10 @@ def update_current_parameter_dictionary(self, list_position):
 
     for key, value in self.parameters.items():
         if isinstance(value, list):
-            self.current_parameters[key] = self.parameters[key][list_position]
+            if not value or (len(value)) == 1 or key == 'allowed_interventions':
+                self.current_parameters[key] = self.parameters[key]
+            else:
+                self.current_parameters[key] = self.parameters[key][list_position]
         else:
             if list_position == 0:
                 self.current_parameters[key] = self.parameters[key]
@@ -321,7 +465,7 @@ def log_mni_for_maternal_death(self, person_id):
     logger.info(key='death_mni', data=mni_to_log)
 
 
-def calculate_risk_of_death_from_causes(self, risks):
+def calculate_risk_of_death_from_causes(self, risks, target):
     """
     This function calculates risk of death in the context of one or more 'death causing' complications in a mother of a
     newborn. In addition, it determines if the complication(s) will cause death or not. If death occurs the function
@@ -349,7 +493,8 @@ def calculate_risk_of_death_from_causes(self, risks):
         # Now use the list of probabilities to conduct a weighted random draw to determine primary cause of death
         cause_of_death = self.rng.choice(list(risks.keys()), p=probs)
 
-        # Return the primary cause of death so that it can be passed to the demography function
+        # Return and log the primary cause of death so that it can be passed to the demography function
+        self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[f'{cause_of_death}_{target}_death'] += 1
         return cause_of_death
     else:
         # Return false if death will not occur
@@ -460,7 +605,7 @@ def check_for_risk_of_death_from_cause_maternal(self, individual_id, timing):
                 risks.update(risk)
 
         # Call return the result from calculate_risk_of_death_from_causes function
-        return calculate_risk_of_death_from_causes(self, risks)
+        return calculate_risk_of_death_from_causes(self, risks, target='m')
 
     # if she is not at risk of death as she has no complications we return false to the module
     return False
@@ -530,7 +675,7 @@ def check_for_risk_of_death_from_cause_neonatal(self, individual_id):
             risks.update(risk)
 
         # Return the result from calculate_risk_of_death_from_causes function (returns primary cause of death or False)
-        return calculate_risk_of_death_from_causes(self, risks)
+        return calculate_risk_of_death_from_causes(self, risks, target='n')
 
     # if they is not at risk of death as they has no complications we return False to the module
     return False
