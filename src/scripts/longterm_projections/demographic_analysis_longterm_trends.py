@@ -129,7 +129,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             ax.set_ylabel("Population Size (millions)")
             ax.set_xlim(2010, int(max_year))
             ax.xaxis.set_major_formatter(FormatStrFormatter('%.0f'))
-            ax.set_ylim(0, 40)
+            ax.set_ylim(0, 50)
             ax.legend()
             fig.tight_layout()
             plt.savefig(make_graph_file_name(f"Pop_Over_Time_line_{year}"))
