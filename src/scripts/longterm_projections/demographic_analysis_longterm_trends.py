@@ -73,7 +73,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                           collapse_columns=True
                           )
     pop_model.index = pop_model.index.year
-
     # Load Data: WPP_Annual
     wpp_ann = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_Pop_Annual_WPP.csv")
     wpp_ann['Age_Grp'] = wpp_ann['Age_Grp'].astype(make_age_grp_types())

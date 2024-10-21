@@ -830,7 +830,7 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
     axes[1].set_ylabel('Normalized Counts (First Year = 2020)')
     axes[1].legend(title='Treatment ID', bbox_to_anchor=(1, 1), loc='upper left')
     axes[1].grid(True)
-
+    df_normalized.to_csv(output_folder/"HSI_events_treatment_ID_normalized_2020.csv")
     # Save the figure with both panels
     fig.savefig(make_graph_file_name('Trend_HSI_Events_by_TREATMENT_ID_All_Years_Panel_A_and_B'))
     plt.close(fig)
@@ -948,6 +948,7 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
     axes[1].set_ylabel('Increase in Demand from 2020')
     axes[1].legend(title='Cadre', bbox_to_anchor=(1, 1), loc='upper left')
     axes[1].grid(True)
+    df_normalized_cadre.to_csv(output_folder/"HSI_time_per_cadre_normalized_2020.csv")
 
     # Save the figure with both panels
     fig.savefig(make_graph_file_name('Time_HSI_Events_by_Cadre_All_Years_Panel_A_and_B'))

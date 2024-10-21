@@ -149,7 +149,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     axes[1].set_title('Panel B: DALYs by cause')
     axes[1].set_xlabel('Year')
     axes[1].set_ylabel('Number of DALYs')
-    axes[1].legend(title='Condition', bbox_to_anchor=(1.05, 1), loc='upper left')
+    axes[1].legend(title='Condition', bbox_to_anchor=(1., 1), loc='upper left')
     axes[1].grid(True)
     fig.savefig(make_graph_file_name('Trend_Deaths_and_DALYs_by_condition_All_Years_Panel_A_and_B'))
     plt.close(fig)
@@ -159,6 +159,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     df_death_normalized = df_all_years_deaths.div(df_all_years_deaths.iloc[:, 0], axis=0)
     df_DALY_normalized = df_all_years_DALYS.div(df_all_years_DALYS.iloc[:, 0], axis=0)
+    df_death_normalized.to_csv(output_folder / "cause_of_death_normalized_2020.csv")
+    df_DALY_normalized.to_csv(output_folder / "cause_of_dalys_normalized_2020.csv")
 
     for i, condition in enumerate(df_death_normalized.index):
         axes[0].plot(df_death_normalized.columns, df_death_normalized.loc[condition], marker='o',
@@ -177,8 +179,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     axes[1].set_title('Panel B: DALYs by cause')
     axes[1].set_xlabel('Year')
     axes[1].set_ylabel('Fold change in DALYs compared to 2020')
-    axes[1].legend(title='Condition', bbox_to_anchor=(1.05, 1), loc='upper left')
+    axes[1].legend(title='Condition', bbox_to_anchor=(1., 1), loc='upper left')
     axes[1].grid(True)
+    fig.tight_layout()
     fig.savefig(make_graph_file_name('Trend_Deaths_and_DALYs_by_condition_All_Years_Normalized_Panel_A_and_B'))
     plt.close(fig)
 
