@@ -653,7 +653,7 @@ def test_change_consumables_availability(seed):
         sim.simulate(end_date=Date(2012, 1, 1))
 
 
-def test_check_consumables_modified_correctly(seed):
+def test_check_consumables_modified_correctly(seed, tmpdir):
     """Check that we can move between scenarios and consumables
     availability is modified correctly.
     here we set initial consumables availability to 'none'
@@ -666,7 +666,7 @@ def test_check_consumables_modified_correctly(seed):
 
     log_config = {
         "filename": "tmp",
-        "directory": Path(os.path.dirname(__file__)) / "../outputs",
+        "directory": tmpdir,
         "custom_levels": {
             "*": logging.WARNING,
             "tlo.methods.healthsystem.summary": logging.INFO,
