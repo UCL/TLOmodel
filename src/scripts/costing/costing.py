@@ -94,6 +94,9 @@ mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "Resource
 districts = set(pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_Population_2010.csv')['District'])
 fac_levels = set(mfl.Facility_Level)
 
+# Overall cost assumptions
+discount_rate = 0.03
+
 #%% Calculate financial costs
 # 1. HR cost
 # Load annual salary by officer type and facility level
@@ -418,11 +421,11 @@ scenario_cost.loc[scenario_cost.Cost_Category.isna(), 'Cost_Category'] = 'Medica
 unit_cost_equipment = workbook_cost["equipment"]
 unit_cost_equipment =   unit_cost_equipment.rename(columns=unit_cost_equipment.iloc[7]).reset_index(drop=True).iloc[8:]
 # Calculate necessary costs based on HSSP-III assumptions
-unit_cost_equipment['replacement_cost_annual'] = unit_cost_equipment.apply(lambda row: row['unit_purchase_cost'] * 0.1 / 8 if row['unit_purchase_cost'] < 250000 else 0, axis=1) # 10% of the items over 8 years
+unit_cost_equipment['replacement_cost_annual'] = unit_cost_equipment.apply(lambda row: row['unit_purchase_cost']/(1+(1-(1+discount_rate)**(-row['Life span']+1))/discount_rate), axis=1) # 10% of the items over 8 years
 unit_cost_equipment['service_fee_annual'] = unit_cost_equipment.apply(lambda row: row['unit_purchase_cost'] * 0.8 / 8 if row['unit_purchase_cost'] > 1000 else 0, axis=1) # 80% of the value of the item over 8 years
 unit_cost_equipment['spare_parts_annual'] = unit_cost_equipment.apply(lambda row: row['unit_purchase_cost'] * 0.2 / 8 if row['unit_purchase_cost'] > 1000 else 0, axis=1) # 20% of the value of the item over 8 years
 unit_cost_equipment['upfront_repair_cost_annual'] = unit_cost_equipment.apply(lambda row: row['unit_purchase_cost'] * 0.2 * 0.2 / 8 if row['unit_purchase_cost'] < 250000 else 0, axis=1) # 20% of the value of 20% of the items over 8 years
-# TODO the above line assumes that the life span of each item of equipment is 80 years. This needs to be updated using realistic life span data
+# TODO consider discounting the other components
 
 unit_cost_equipment = unit_cost_equipment[['Item_code','Equipment_tlo',
                                            'service_fee_annual', 'spare_parts_annual',  'upfront_repair_cost_annual', 'replacement_cost_annual',
