@@ -30,7 +30,7 @@ PREFIX_ON_FILENAME = '3'
 
 # Declare period for which the results will be generated (defined inclusively)
 min_year = 2020
-max_year = 2060
+max_year = 2059
 spacing_of_years = 1
 
 
@@ -807,7 +807,6 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
     df_all_years = pd.DataFrame(all_years_data)
     # Normalizing by the first column (first year in the sequence)
     df_normalized = df_all_years.div(df_all_years.iloc[:, 0], axis=0)
-    print(df_normalized)
     # Plotting
     fig, axes = plt.subplots(1, 2, figsize=(25, 10))  # Two panels side by side
 

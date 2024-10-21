@@ -22,9 +22,8 @@ from tlo.analysis.utils import (
 
 PREFIX_ON_FILENAME = '1'
 min_year = "2020"
-max_year = "2060"
+max_year = "2059"
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
-
     # Declare path for output graphs from this script
     make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}.png"  # noqa: E731
 
@@ -100,7 +99,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     alpha=0.2,
                     zorder=5
                     )
-    ax.set_title("Population Size 2010-2040")
+    ax.set_title("Population Size 2010-2060")
     ax.set_xlabel("Year")
     ax.set_ylabel("Population Size (millions)")
     ax.set_xlim(2010, int(max_year))
@@ -378,8 +377,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         '1950-2099': births.index,
         '2010-2029': [(2010 <= int(x[0])) & (int(x[1]) < 2030) for x in births.index.str.split('-')],
         '2010-2040': [(2010 <= int(x[0])) & (int(x[1]) <= 2040) for x in births.index.str.split('-')],
-        #'2050-2099': [(2010 <= int(x[0])) & (int(x[1]) > 2050) for x in births.index.str.split('-')]
-
+        '2010-2060': [(2010 <= int(x[0])) & (int(x[1]) <= int(max_year)) for x in births.index.str.split('-')],
     }
 
     # Plot:
@@ -462,7 +460,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # Get the age-specific fertility rates of the WPP source
     wpp = pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_ASFR_WPP.csv')
 
-    def expand_by_year(periods, vals, years=range(2010, 2040)):
+    def expand_by_year(periods, vals, years=range(2010, int(max_year))):
         _ser = dict()
         for y in years:
             _ser[y] = vals.loc[(periods == calperiodlookup[y])].values[0]
@@ -470,7 +468,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     fig, ax = plt.subplots(2, 4, sharex=True, sharey=True)
     ax = ax.reshape(-1)
-    years = range(2010, 2040)
+    years = range(2010, int(max_year))
     for i, _agegrp in enumerate(adult_age_groups):
         model = asfr.loc[(slice(2011, years[-1]), _agegrp), :].unstack()
         data = wpp.loc[
@@ -666,7 +664,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     calperiods_selected = list()
     for cal in calperiods:
         if cal != '2100+':
-            if (2010 <= int(cal.split('-')[0])) and (int(cal.split('-')[1]) < 2040):
+            if (2010 <= int(cal.split('-')[0])) and (int(cal.split('-')[1]) < int(max_year)):
                 calperiods_selected.append(cal)
 
     for period in calperiods_selected:
@@ -825,7 +823,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     calperiods_selected = list()
     for cal in calperiods:
         if cal != '2100+':
-            if (2010 <= int(cal.split('-')[0])) and (int(cal.split('-')[1]) < 2040):
+            if (2010 <= int(cal.split('-')[0])) and (int(cal.split('-')[1]) < int(max_year)):
                 calperiods_selected.append(cal)
 
     for period in calperiods_selected:

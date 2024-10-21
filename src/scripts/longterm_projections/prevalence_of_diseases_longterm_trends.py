@@ -18,7 +18,7 @@ from tlo.analysis.utils import (
 )
 
 min_year = 2010
-max_year = 2040  # have to censure for dummy runs
+max_year = 2059
 spacing_of_years = 1
 PREFIX_ON_FILENAME = '1'
 CONDITION_TO_COLOR_MAP_PREVALENCE = MappingProxyType(
@@ -201,9 +201,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # Plotting
     fig, axes = plt.subplots(1, 2, figsize=(25, 10))
     # Panel A: Prevalence - general - stacked
-    print([_label for _label in df_all_years_prevalence.index])
-    print([get_color_cause_of_prevalence_label(_label) for _label in
-                                              df_all_years_prevalence.index])
+
     df_all_years_prevalence.T.plot.bar(stacked=True, ax=axes[0],
                                        color=[get_color_cause_of_prevalence_label(_label) for _label in
                                               df_all_years_prevalence.index])
