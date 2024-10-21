@@ -39,7 +39,7 @@ def build_model(X, y, scale_y=True, beta=True, X_mask_mm = 0):
     return model.fit()
 
 # One-hot encode facilities
-facility_encoded = pd.get_dummies(facility_flattened)
+facility_encoded = pd.get_dummies(facility_flattened, drop_first=True)
 
 # Above/below average for each month
 grouped_data = pd.DataFrame({
@@ -78,34 +78,48 @@ def repeat_info(info, num_facilities, year_range):
     return repeated_info[:-4 * num_facilities]  # Exclude first final months (Sept - Dec 2024)
 
 zone_info_each_month = repeat_info(expanded_facility_info["Zonename"], num_facilities, year_range)
-zone_encoded = pd.get_dummies(zone_info_each_month)
+zone_encoded = pd.get_dummies(zone_info_each_month, drop_first=True)
 resid_info_each_month = repeat_info(expanded_facility_info['Resid'], num_facilities, year_range)
-resid_encoded = pd.get_dummies(resid_info_each_month)
+resid_encoded = pd.get_dummies(resid_info_each_month, drop_first=True)
 owner_info_each_month = repeat_info(expanded_facility_info['A105'], num_facilities, year_range)
-owner_encoded = pd.get_dummies(owner_info_each_month)
+owner_encoded = pd.get_dummies(owner_info_each_month, drop_first=True)
 ftype_info_each_month = repeat_info(expanded_facility_info['Ftype'], num_facilities, year_range)
-ftype_encoded = pd.get_dummies(ftype_info_each_month)
-print(len(owner_encoded))
+ftype_encoded = pd.get_dummies(ftype_info_each_month, drop_first=True)
+
+altitude = [float(x) for x in repeat_info(expanded_facility_info['A109__Altitude'], num_facilities, year_range)]
 # Lagged weather
 lag_1_month = weather_data_historical.shift(1).values.flatten()
 lag_3_month = weather_data_historical.shift(3).values.flatten()
-print(year_flattened)
 X = np.column_stack([
     weather_data,
     year_flattened,
     month_flattened,
     above_below_average,
-    #above_below_X,
-    #facility_encoded,
+    above_below_X,
+    facility_encoded,
     resid_encoded,
     zone_encoded,
     owner_encoded,
     ftype_encoded,
     lag_1_month,
-    lag_3_month
+    lag_3_month,
+    altitude
 ])
 
-#scaler = StandardScaler() # as weather is at such different levels
-#X_scaled = scaler.fit_transform(X)
+results = build_model(X, y, scale_y=False, beta=False, X_mask_mm = 1000)
+#print(results.summary())
+
+# remove facility
+
+X = np.column_stack([
+    weather_data,
+    year_flattened,
+    month_flattened,
+    # lag_1_month,
+    # lag_3_month,
+    # altitude
+])
+
 results = build_model(X, y, scale_y=False, beta=False, X_mask_mm = 1000)
 print(results.summary())
+print(y.mean())
