@@ -116,27 +116,27 @@ class Consumables:
                 pass  # No changes needed for the default scenario
             elif availability == 'all':
                 self.override_availability(dict(zip(self.item_codes, repeat(1.0))))
-            if availability == 'none':
+            elif availability == 'none':
                 self.override_availability(dict(zip(self.item_codes, repeat(0.0))))
-            if availability == 'all_diagnostics_available':
+            elif availability == 'all_diagnostics_available':
                 item_codes_dx = set(
                     item_code_designations.index[item_code_designations['is_diagnostic']]).intersection(self.item_codes)
                 self.override_availability(dict(zip(item_codes_dx, repeat(1.0))))
-            if availability == 'all_medicines_available':
+            elif availability == 'all_medicines_available':
                 item_codes_medicines = set(
                     item_code_designations.index[item_code_designations['is_medicine']]).intersection(self.item_codes)
                 self.override_availability(dict(zip(item_codes_medicines, repeat(1.0))))
-            if availability == 'all_medicines_and_other_available':
+            elif availability == 'all_medicines_and_other_available':
                 item_codes_medicines_and_other = set(
                     item_code_designations.index[item_code_designations['is_medicine'] | item_code_designations['is_other']]
                 ).intersection(self.item_codes)
                 self.override_availability(dict(zip(item_codes_medicines_and_other, repeat(1.0))))
-            if availability == 'all_vital_available':
+            elif availability == 'all_vital_available':
                 item_codes_vital = set(
                     item_code_designations.index[item_code_designations['is_vital']]
                 ).intersection(self.item_codes)
                 self.override_availability(dict(zip(item_codes_vital, repeat(1.0))))
-            if availability == 'all_drug_or_vaccine_available':
+            elif availability == 'all_drug_or_vaccine_available':
                 item_codes_drug_or_vaccine = set(
                     item_code_designations.index[item_code_designations['is_drug_or_vaccine']]
                 ).intersection(self.item_codes)
