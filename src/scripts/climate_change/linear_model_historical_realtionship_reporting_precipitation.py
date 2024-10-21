@@ -32,8 +32,9 @@ weather_data = weather_data_historical.values.flatten()
 y = monthly_reporting_by_facility.values.flatten()
 
 def build_model(X, y, scale_y=True, beta=True, X_mask_mm = 0):
-    y += 1e-10
+    epsilon = 1e-5
     y_scaled = (y / 100) if scale_y else y
+    y_scaled = np.clip(y_scaled, epsilon, 1 - epsilon)
     mask = ~np.isnan(X).any(axis=1) & ~np.isnan(y_scaled) & (X[:, 0] >= X_mask_mm)
     model = BetaModel(y_scaled[mask], X[mask]) if beta else sm.OLS(y_scaled[mask], X[mask])
     return model.fit()
@@ -85,7 +86,6 @@ owner_info_each_month = repeat_info(expanded_facility_info['A105'], num_faciliti
 owner_encoded = pd.get_dummies(owner_info_each_month, drop_first=True)
 ftype_info_each_month = repeat_info(expanded_facility_info['Ftype'], num_facilities, year_range)
 ftype_encoded = pd.get_dummies(ftype_info_each_month, drop_first=True)
-
 altitude = [float(x) for x in repeat_info(expanded_facility_info['A109__Altitude'], num_facilities, year_range)]
 # Lagged weather
 lag_1_month = weather_data_historical.shift(1).values.flatten()
@@ -94,32 +94,22 @@ X = np.column_stack([
     weather_data,
     year_flattened,
     month_flattened,
-    above_below_average,
-    above_below_X,
-    facility_encoded,
     resid_encoded,
     zone_encoded,
     owner_encoded,
     ftype_encoded,
     lag_1_month,
-    lag_3_month,
+    # lag_3_month,
     altitude
 ])
 
-results = build_model(X, y, scale_y=False, beta=False, X_mask_mm = 1000)
-#print(results.summary())
+results = build_model(X, y, scale_y=False, beta=False, X_mask_mm = 800)
 
-# remove facility
-
-X = np.column_stack([
-    weather_data,
-    year_flattened,
-    month_flattened,
-    # lag_1_month,
-    # lag_3_month,
-    # altitude
-])
-
-results = build_model(X, y, scale_y=False, beta=False, X_mask_mm = 1000)
 print(results.summary())
-print(y.mean())
+
+##### Try difference in monthly reporting
+monthly_reporting_by_facility_diff = monthly_reporting_by_facility.diff()
+y_diff = monthly_reporting_by_facility_diff.values.flatten()
+results = build_model(X, y_diff, scale_y=True, beta=True)
+print(y_diff)
+print(results.summary())
