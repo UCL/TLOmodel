@@ -34,9 +34,8 @@ logger.setLevel(logging.INFO)
 class BreastCancer(Module, GenericFirstAppointmentsMixin):
     """Breast Cancer Disease Module"""
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
         self.linear_models_for_progession_of_brc_status = dict()
         self.lm_onset_breast_lump_discernible = None
         self.daly_wts = dict()
@@ -192,12 +191,12 @@ class BreastCancer(Module, GenericFirstAppointmentsMixin):
         )
     }
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath=None):
         """Setup parameters used by the module, now including disability weights"""
 
         # Update parameters from the resourcefile
         self.load_parameters_from_dataframe(
-            pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_Breast_Cancer.xlsx",
+            pd.read_excel(Path(resourcefilepath) / "ResourceFile_Breast_Cancer.xlsx",
                           sheet_name="parameter_values")
         )
 

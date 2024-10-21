@@ -23,9 +23,8 @@ logger.setLevel(logging.INFO)
 
 
 class Epilepsy(Module, GenericFirstAppointmentsMixin):
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
         self.item_codes = dict()
 
     INIT_DEPENDENCIES = {'Demography', 'HealthBurden', 'HealthSystem', 'SymptomManager'}
@@ -133,7 +132,7 @@ class Epilepsy(Module, GenericFirstAppointmentsMixin):
     # Declaration of how we will refer to any treatments that are related to this disease.
     TREATMENT_ID = 'antiepileptic'
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath=None):
         """Read parameter values from file, if required.
 
         Here we just assign parameter values explicitly.
@@ -142,7 +141,7 @@ class Epilepsy(Module, GenericFirstAppointmentsMixin):
           Typically modules would read a particular file within here.
         """
         # Update parameters from the resource dataframe
-        dfd = pd.read_excel(Path(self.resourcefilepath) / 'epilepsy' / 'ResourceFile_Epilepsy.xlsx',
+        dfd = pd.read_excel(Path(resourcefilepath) / 'epilepsy' / 'ResourceFile_Epilepsy.xlsx',
                             sheet_name='parameter_values')
         self.load_parameters_from_dataframe(dfd)
 

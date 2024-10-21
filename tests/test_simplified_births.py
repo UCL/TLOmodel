@@ -21,11 +21,11 @@ def check_dtypes(simulation):
 
 
 def get_sim(seed, popsize=1000):
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, resourcefilepath=resourcefilepath)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath)
+    sim.register(demography.Demography(),
+                 simplified_births.SimplifiedBirths()
                  )
 
     # Make the population
@@ -243,12 +243,10 @@ def test_other_modules_running_with_simplified_births_module():
             'custom_levels': {
                 '*': logging.WARNING,
             }
-        }
+        }, resourcefilepath=resourcefilepath
     )
     sim.register(
-        *fullmodel(
-            resourcefilepath=resourcefilepath,
-            use_simplified_births=True,
+        *fullmodel(use_simplified_births=True,
             module_kwargs={"HealthSystem": {"disable": True}},
         )
     )

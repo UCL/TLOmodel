@@ -28,11 +28,11 @@ outputpath = Path("./outputs/epi")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource files
-resourcefilepath = Path("./resources")
+resourcefilepath = './resources'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2025, 12, 31)
-popsize = 2000
+end_date = Date(2011, 12, 31)
+popsize = 1000
 
 log_config = {
     'filename': 'Epi_LogFile',
@@ -42,7 +42,7 @@ log_config = {
 }
 
 # Establish the simulation object
-sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
+sim = Simulation(start_date=start_date, seed=0, log_config=log_config, resourcefilepath=resourcefilepath)
 
 # ----- Control over the types of intervention that can occur -----
 # Make a list that contains the treatment_id that will be allowed. Empty list means nothing allowed.
@@ -51,11 +51,9 @@ service_availability = ["*"]
 
 # Register the appropriate modules
 sim.register(
-    demography.Demography(resourcefilepath=resourcefilepath),
-    simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-    healthsystem.HealthSystem(
-        resourcefilepath=resourcefilepath,
-        service_availability=["*"],  # all treatment allowed
+    demography.Demography(),
+    simplified_births.SimplifiedBirths(),
+    healthsystem.HealthSystem(service_availability=["*"],  # all treatment allowed
         mode_appt_constraints=1,  # mode of constraints to do with officer numbers and time
         cons_availability="default",  # mode for consumable constraints (if ignored, all consumables available)
         ignore_priority=False,  # do not use the priority information in HSI event to schedule
@@ -64,11 +62,11 @@ sim.register(
         disable=False,  # disables the healthsystem (no constraints and no logging) and every HSI runs
         disable_and_reject_all=False,  # disable healthsystem and no HSI runs
     ),
-    symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-    healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-    enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-    epi.Epi(resourcefilepath=resourcefilepath))
+    symptommanager.SymptomManager(),
+    healthseekingbehaviour.HealthSeekingBehaviour(),
+    healthburden.HealthBurden(),
+    enhanced_lifestyle.Lifestyle(),
+    epi.Epi())
 
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)

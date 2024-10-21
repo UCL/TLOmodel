@@ -24,7 +24,7 @@ from tlo.methods import (
     symptommanager,
 )
 
-resourcefilepath = Path("./resources")
+resourcefilepath = './resources'
 outputpath = Path("./outputs")
 
 # Declare path for output graphs from this script
@@ -56,15 +56,15 @@ def run_simulation(popsize=popsize, mda_execute=True):
     # Establish the simulation object
     sim = Simulation(start_date=start_date, seed=0, log_config={"filename": __file__[-19:-3],
                                                                 "custom_levels": custom_levels}
-                     )
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 schisto.Schisto(resourcefilepath=resourcefilepath, mda_execute=mda_execute),
+                     , resourcefilepath=resourcefilepath)
+    sim.register(demography.Demography(),
+                 enhanced_lifestyle.Lifestyle(),
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthburden.HealthBurden(),
+                 healthsystem.HealthSystem(),
+                 simplified_births.SimplifiedBirths(),
+                 schisto.Schisto(mda_execute=mda_execute),
                  )
 
     # initialise the population
@@ -105,7 +105,7 @@ def get_model_prevalence_by_district(spec: str):
 
 def get_expected_prevalence_by_district(species: str):
     """Get the prevalence of a particular species from the data (which is for year 2010/2011)."""
-    expected_district_prevalence = pd.read_excel(resourcefilepath / 'ResourceFile_Schisto.xlsx',
+    expected_district_prevalence = pd.read_excel(Path(resourcefilepath) / 'ResourceFile_Schisto.xlsx',
                                                  sheet_name='District_Params_' + species.lower())
     expected_district_prevalence.set_index("District", inplace=True)
     expected_district_prevalence = expected_district_prevalence.loc[:, 'Prevalence'].to_dict()
@@ -161,7 +161,7 @@ def get_model_dalys_schisto_2010():
 
 def get_gbd_dalys_schisto_2010():
     """Get the DALYS attributed to Schistosomiasis in 2010"""
-    gbd_all = format_gbd(pd.read_csv(resourcefilepath / 'gbd' / 'ResourceFile_Deaths_And_DALYS_GBD2019.csv'))
+    gbd_all = format_gbd(pd.read_csv(Path(resourcefilepath) / 'gbd' / 'ResourceFile_Deaths_And_DALYS_GBD2019.csv'))
     return gbd_all.loc[
         (gbd_all.cause_name == 'Schistosomiasis') & (gbd_all.Year == 2010)
         ].groupby(by='Age_Grp')[['GBD_Est', 'GBD_Lower', 'GBD_Upper']].sum()
