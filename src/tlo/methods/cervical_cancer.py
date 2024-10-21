@@ -41,6 +41,7 @@ from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+treatment_transition_year = 2024
 
 
 class CervicalCancer(Module, GenericFirstAppointmentsMixin):
@@ -195,6 +196,15 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         ),
         "prob_thermoabl_successful": Parameter(
             Types.REAL, "prob_thermoabl_successful"
+        ),
+        "prob_cryotherapy_successful": Parameter(
+            Types.REAL, "prob_cryotherapy_successful"
+        ),
+        "transition_therapy_year": Parameter(
+            Types.REAL, "transition_therapy_year"
+        ),
+        "transition_screening_year": Parameter(
+            Types.REAL, "transition_screening_year"
         )
     }
 
@@ -352,6 +362,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         df.loc[df.is_alive, "ce_xpert_hpv_ever_pos"] = False
         df.loc[df.is_alive, "ce_via_cin_ever_detected"] = False
         df.loc[df.is_alive, "ce_date_thermoabl"] = pd.NaT
+        df.loc[df.is_alive, "ce_date_cryotherapy"] = pd.NaT
         df.loc[df.is_alive, 'ce_current_cc_diagnosed'] = False
         df.loc[df.is_alive, "ce_selected_for_via_this_month"] = False
         df.loc[df.is_alive, "ce_selected_for_xpert_this_month"] = False
@@ -750,9 +761,11 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         df = population.props  # shortcut to dataframe
+        year = self.sim.date.year
         m = self.module
         rng = m.rng
         p = self.sim.modules['CervicalCancer'].parameters
+
 
         # ------------------- SET INITIAL CE_HPV_CC_STATUS -------------------------------------------------------------------
         # this was done here and not at outset because baseline value of hv_inf was not accessible
@@ -873,15 +886,16 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # todo: consider fact that who recommend move towards xpert screening away from via
         # todo: start with via as screening tool and move to xpert in about 2024
 
-
-        df.loc[eligible_population, 'ce_selected_for_via_this_month'] = (
-            np.random.random_sample(size=len(df[eligible_population])) < p['prob_via_screen']
-        )
-
-        df.loc[eligible_population, 'ce_selected_for_xpert_this_month'] = (
-            np.random.random_sample(size=len(df[eligible_population])) < p['prob_xpert_screen']
-        )
-
+        if year >= p['transition_screening_year']:
+            # Use VIA for screening before the transition year
+            df.loc[eligible_population, 'ce_selected_for_via_this_month'] = (
+                np.random.random_sample(size=len(df[eligible_population])) < p['prob_via_screen']
+            )
+        else:
+            # Use Xpert for screening from the transition year and onward
+            df.loc[eligible_population, 'ce_selected_for_xpert_this_month'] = (
+                np.random.random_sample(size=len(df[eligible_population])) < p['prob_xpert_screen']
+            )
 
         self.sim.modules['SymptomManager'].change_symptom(
             person_id=df.loc[df['ce_selected_for_via_this_month']].index,
@@ -956,6 +970,8 @@ class HSI_CervicalCancer_AceticAcidScreening(HSI_Event, IndividualScopeEventMixi
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
+        year = self.sim.date.year
+        p = self.sim.modules['CervicalCancer'].parameters
         person = df.loc[person_id]
         hs = self.sim.modules["HealthSystem"]
 
@@ -981,15 +997,26 @@ class HSI_CervicalCancer_AceticAcidScreening(HSI_Event, IndividualScopeEventMixi
                 if (df.at[person_id, 'ce_hpv_cc_status'] == 'cin2'
                             or df.at[person_id, 'ce_hpv_cc_status'] == 'cin3'
                             ):
-                    hs.schedule_hsi_event(
-                        hsi_event=HSI_CervicalCancer_Thermoablation_CIN(
-                            module=self.module,
-                            person_id=person_id
-                               ),
-                        priority=0,
-                        topen=self.sim.date,
-                        tclose=None
-                               )
+                    if year >= p['transition_therapy_year'] :
+                        hs.schedule_hsi_event(
+                            hsi_event=HSI_CervicalCancer_Thermoablation_CIN(
+                                module=self.module,
+                                person_id=person_id
+                                   ),
+                            priority=0,
+                            topen=self.sim.date,
+                            tclose=None
+                                   )
+                    else:
+                        hs.schedule_hsi_event(
+                            hsi_event=HSI_CervicalCancer_Cryotherapy_CIN(
+                                module=self.module,
+                                person_id=person_id
+                            ),
+                            priority=0,
+                            topen=self.sim.date,
+                            tclose=None
+                        )
 
                 elif (df.at[person_id, 'ce_hpv_cc_status'] == 'stage1'
                             or df.at[person_id, 'ce_hpv_cc_status'] == 'stage2a'
@@ -1036,6 +1063,8 @@ class HSI_CervicalCancer_XpertHPVScreening(HSI_Event, IndividualScopeEventMixin)
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
+        p = self.sim.modules['CervicalCancer'].parameters
+        year = self.sim.date.year
         person = df.loc[person_id]
         hs = self.sim.modules["HealthSystem"]
 
@@ -1053,35 +1082,46 @@ class HSI_CervicalCancer_XpertHPVScreening(HSI_Event, IndividualScopeEventMixin)
         if dx_result:
             df.at[person_id, 'ce_xpert_hpv_ever_pos'] = True
 
-        if dx_result and (df.at[person_id, 'ce_hpv_cc_status'] == 'hpv'
-                        or df.at[person_id, 'ce_hpv_cc_status'] == 'cin1'
-                        or df.at[person_id, 'ce_hpv_cc_status'] == 'cin2'
-                        or df.at[person_id, 'ce_hpv_cc_status'] == 'cin3'
-                        ):
-                hs.schedule_hsi_event(
-                    hsi_event=HSI_CervicalCancer_AceticAcidScreening(
-                        module=self.module,
-                        person_id=person_id
-                           ),
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None
-                           )
+        hpv_cin_options = ['hpv','cin1','cin2','cin3']
+        hpv_stage_options = ['stage1','stage2a','stage2b','stage3','stage4']
 
-        if dx_result and (df.at[person_id, 'ce_hpv_cc_status'] == 'stage1'
-                        or df.at[person_id, 'ce_hpv_cc_status'] == 'stage2a'
-                        or df.at[person_id, 'ce_hpv_cc_status'] == 'stage2b'
-                        or df.at[person_id, 'ce_hpv_cc_status'] == 'stage3'
-                        or df.at[person_id, 'ce_hpv_cc_status'] == 'stage4'):
-            hs.schedule_hsi_event(
-                hsi_event=HSI_CervicalCancer_AceticAcidScreening(
-                    module=self.module,
-                    person_id=person_id
-                ),
-                priority=0,
-                topen=self.sim.date,
-                tclose=None
-            )
+        # If HIV negative, do VIA
+        if not person['hv_inf']:
+            if dx_result and (df.at[person_id, 'ce_hpv_cc_status'] in (hpv_cin_options+hpv_stage_options)
+                            ):
+                    hs.schedule_hsi_event(
+                        hsi_event=HSI_CervicalCancer_AceticAcidScreening(
+                            module=self.module,
+                            person_id=person_id
+                               ),
+                        priority=0,
+                        topen=self.sim.date,
+                        tclose=None
+                               )
+        # IF HIV positive,
+        if person['hv_inf']:
+            if dx_result and (df.at[person_id, 'ce_hpv_cc_status'] in (hpv_cin_options+hpv_stage_options)
+                            ):
+                if year >= p['transition_therapy_year']:
+                    hs.schedule_hsi_event(
+                            hsi_event=HSI_CervicalCancer_Thermoablation_CIN(
+                                module=self.module,
+                                person_id=person_id
+                                   ),
+                            priority=0,
+                            topen=self.sim.date,
+                            tclose=None
+                                   )
+                else:
+                    hs.schedule_hsi_event(
+                            hsi_event=HSI_CervicalCancer_Cryotherapy_CIN(
+                                module=self.module,
+                                person_id=person_id
+                                   ),
+                            priority=0,
+                            topen=self.sim.date,
+                            tclose=None
+                                   )
 
         # sy_chosen_via_screening_for_cin_cervical_cancer reset to 0
         # if df.at[person_id, 'sy_chosen_xpert_screening_for_hpv_cervical_cancer'] == 2:
@@ -1212,6 +1252,31 @@ class HSI_CervicalCancer_Thermoablation_CIN(HSI_Event, IndividualScopeEventMixin
         random_value = random.random()
 
         if random_value <= p['prob_thermoabl_successful']:
+            df.at[person_id, "ce_hpv_cc_status"] = 'none'
+
+
+class HSI_CervicalCancer_Cryotherapy_CIN(HSI_Event, IndividualScopeEventMixin):
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        self.TREATMENT_ID = "CervicalCancer_Cryotherapy_CIN"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+        hs = self.sim.modules["HealthSystem"]
+        p = self.sim.modules['CervicalCancer'].parameters
+
+       # (msyamboza et al 2016)
+
+        # Record date and stage of starting treatment
+        df.at[person_id, "ce_date_cryotherapy"] = self.sim.date
+
+        random_value = random.random()
+
+        if random_value <= p['prob_cryotherapy_successful']:
             df.at[person_id, "ce_hpv_cc_status"] = 'none'
 
 
@@ -1545,6 +1610,8 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_treated_past_year = df.ce_date_treatment.between(date_1_year_ago, self.sim.date).sum()
         n_cured_past_year = df.ce_cured_date_cc.between(date_1_year_ago, self.sim.date).sum()
         n_thermoabl_past_year = df.ce_date_thermoabl.between(date_1_year_ago, self.sim.date).sum()
+        n_cryotherapy_past_year = df.ce_date_cryotherapy.between(date_1_year_ago, self.sim.date).sum()
+
 
         date_1p25_years_ago = self.sim.date - pd.DateOffset(days=456)
         date_0p75_years_ago = self.sim.date - pd.DateOffset(days=274)
@@ -1671,6 +1738,7 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         out.update({"n_women_hivneg": n_women_hivneg})
         out.update({"n_women_hivpos": n_women_hivpos})
         out.update({"n_thermoabl_past_year": n_thermoabl_past_year})
+        out.update({"n_cryotherapy_past_year": n_cryotherapy_past_year})
 
         pop = len(df[df.is_alive])
         count_summary = {
@@ -1724,6 +1792,7 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
               'n_diagnosed_past_year:', out['n_diagnosed_past_year'],
               'n_cured_past_year:', out['n_cured_past_year'],
               'n_thermoabl_past_year:', out['n_thermoabl_past_year'],
+              'n_cryotherapy_past_year:', out['n_cryotherapy_past_year'],
               'n_women_alive:', out['n_women_alive'],
               'rate_diagnosed_cc:', out['rate_diagnosed_cc'],
               'n_women_with_cc:', out['cc'],
@@ -1778,6 +1847,7 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         "ce_xpert_hpv_ever_pos",
         "ce_via_cin_ever_detected",
         "ce_date_thermoabl",
+        "ce_date_cryotherapy",
         "ce_current_cc_diagnosed",
         "ce_selected_for_via_this_month",
         "ce_selected_for_xpert_this_month",
@@ -1786,7 +1856,7 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         selected_columns = ['ce_hpv_cc_status', 'sy_vaginal_bleeding', 'ce_biopsy','ce_current_cc_diagnosed',
         'ce_selected_for_xpert_this_month', 'sy_chosen_xpert_screening_for_hpv_cervical_cancer',
-        'ce_xpert_hpv_ever_pos', 'ce_date_thermoabl',
+        'ce_xpert_hpv_ever_pos', 'ce_date_thermoabl','ce_date_cryotherapy',
         'ce_date_diagnosis', 'ce_date_treatment','ce_cured_date_cc',
         'ce_date_palliative_care', 'ce_selected_for_via_this_month', 'sy_chosen_via_screening_for_cin_cervical_cancer',
         'ce_via_cin_ever_detected']
@@ -1795,7 +1865,7 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         selected_columns = ["ce_selected_for_via_this_month", "ce_selected_for_xpert_this_month",
                             "ce_ever_screened", "ce_date_last_screened", "ce_date_cin_removal",
-                            "ce_xpert_hpv_ever_pos", "ce_via_cin_ever_detected",  "ce_date_thermoabl",
+                            "ce_xpert_hpv_ever_pos", "ce_via_cin_ever_detected",  "ce_date_thermoabl","ce_date_cryotherapy",
                             "ce_biopsy"]
 
         selected_columns = ["ce_hpv_cc_status"]
