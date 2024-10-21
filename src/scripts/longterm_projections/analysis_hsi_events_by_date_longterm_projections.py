@@ -17,19 +17,20 @@ from tlo.analysis.utils import (
     extract_results,
     get_coarse_appt_type,
     get_color_short_treatment_id,
-    get_scenario_info,
     load_pickled_dataframes,
     order_of_short_treatment_ids,
     plot_stacked_bar_chart,
     squarify_neat,
     summarize,
     unflatten_flattened_multi_index_in_logging,
+    get_scenario_info
 )
 
 PREFIX_ON_FILENAME = '3'
 
 # Declare period for which the results will be generated (defined inclusively)
 min_year = 2020
+max_year = 2060
 spacing_of_years = 1
 
 
@@ -989,8 +990,31 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Description of the usage of healthcare system resources."""
-    #    results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
-    #)
+    figure8_distribution_of_hsi_event_all_years(
+        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
+        target_period=(Date(min_year, 1, 1), Date(max_year + spacing_of_years, 12, 31))
+    )
+    figure9_distribution_of_hsi_event_all_years_line_graph(
+        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
+        min_year=min_year, max_year=max_year)
+
+    figure10_minutes_per_cadre_and_treatment(
+        results_folder=results_folder,
+        output_folder=output_folder,
+        resourcefilepath=resourcefilepath,
+        min_year=min_year,
+        max_year=max_year
+    )
+    target_year_sequence = range(min_year, max_year, spacing_of_years)
+
+    # for target_year in target_year_sequence:
+    #     TARGET_PERIOD = (Date(target_year, 1, 1), Date(target_year + spacing_of_years, 12, 31))
+    #     year_range = f"{TARGET_PERIOD[0].year}-{TARGET_PERIOD[1].year}"
+    #
+    #     table1_description_of_hsi_events(
+    #         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
+    #         year_range=year_range, target_period=TARGET_PERIOD
+    #     )
     #
     #     figure1_distribution_of_hsi_event_by_treatment_id(
     #         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,

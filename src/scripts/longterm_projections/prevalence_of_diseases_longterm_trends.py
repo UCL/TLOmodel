@@ -53,6 +53,9 @@ CONDITION_TO_COLOR_MAP_PREVALENCE = MappingProxyType(
         'COPD*': 'lightcoral',
 
         'Transport Injuries*': 'lightsalmon',
+
+        'Antenatal Stillbirth*': "#C8E9A0",
+        'Intrapartum Stillbirth*': "#B2E07B"
     }
 )
 
@@ -178,11 +181,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # Convert the accumulated data into a DataFrame for plotting
 
     df_all_years_prevalence = pd.DataFrame(all_years_data_prevalence)
-    df_all_years_prevalence = df_all_years_prevalence.drop(['live_births', 'population'], axis=0)  # extra data
+    df_all_years_prevalence = df_all_years_prevalence.drop([#'live_births',
+                                                            'population'], axis=0)  # extra data
     df_all_years_prevalence = df_all_years_prevalence.drop(['PostnatalSupervisor', 'PregnancySupervisor',
                                                             'CardioMetabolicDisorders', 'NewbornOutcomes', 'Labour'],
                                                            axis=0)  # empty or duplicated with actual label
-    df_all_years_prevalence = df_all_years_prevalence.drop(['NMR', 'MMR',
+    df_all_years_prevalence = df_all_years_prevalence.drop([#'NMR', 'MMR',
                                                             'Intrapartum stillbirth', 'Antenatal stillbirth'],
                                                            axis=0)  # not prevalence
     df_all_years_prevalence = df_all_years_prevalence.rename(index=rename_dict)  # For labels
@@ -197,6 +201,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # Plotting
     fig, axes = plt.subplots(1, 2, figsize=(25, 10))
     # Panel A: Prevalence - general - stacked
+    print([_label for _label in df_all_years_prevalence.index])
+    print([get_color_cause_of_prevalence_label(_label) for _label in
+                                              df_all_years_prevalence.index])
     df_all_years_prevalence.T.plot.bar(stacked=True, ax=axes[0],
                                        color=[get_color_cause_of_prevalence_label(_label) for _label in
                                               df_all_years_prevalence.index])
