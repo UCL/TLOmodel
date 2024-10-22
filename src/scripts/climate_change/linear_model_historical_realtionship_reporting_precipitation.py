@@ -13,15 +13,21 @@ weather_data_historical = pd.read_csv("/Users/rem76/Desktop/Climate_change_healt
 weather_data_historical = weather_data_historical.drop(weather_data_historical.index[-1])
 monthly_reporting_by_facility = monthly_reporting_by_facility.drop(monthly_reporting_by_facility.index[-1])
 
+## Drop before 2017
+weather_data_historical = weather_data_historical.iloc[48:]
+monthly_reporting_by_facility = monthly_reporting_by_facility.iloc[48:]
+
 ## Linear regression
 month_range = range(12)
 num_facilities = len(weather_data_historical.columns)
-year_range = range(2011, 2025, 1) # year as a fixed effect
+year_range = range(2015, 2025, 1) # year as a fixed effect
 year_repeated = [y for y in year_range for _ in range(12)]
 year = year_repeated[:-4]
 year_flattened = year*len(weather_data_historical.columns) # to get flattened data
 month = range(12)
-month_repeated = [m for m in month for _ in year_range]
+month_repeated = []
+for _ in year_range:
+    month_repeated.extend(range(1, 13))
 month = month_repeated[:-4]
 month_flattened = month*len(weather_data_historical.columns)
 
@@ -90,6 +96,10 @@ altitude = [float(x) for x in repeat_info(expanded_facility_info['A109__Altitude
 # Lagged weather
 lag_1_month = weather_data_historical.shift(1).values.flatten()
 lag_3_month = weather_data_historical.shift(3).values.flatten()
+
+altitude = np.array(altitude)
+altitude = np.where(altitude < 0, np.nan, altitude)
+altitude = list(altitude)
 X = np.column_stack([
     weather_data,
     year_flattened,
@@ -99,18 +109,36 @@ X = np.column_stack([
     owner_encoded,
     ftype_encoded,
     lag_1_month,
-    # lag_3_month,
+    lag_3_month,
+    facility_encoded,
     altitude
 ])
+results = build_model(X, y, scale_y=False, beta=False, X_mask_mm = 1000)
+#results = build_model(X, y, scale_y=True, beta=True, X_mask_mm = 1000)
 
-results = build_model(X, y, scale_y=False, beta=False, X_mask_mm = 800)
-results = build_model(X, y, scale_y=True, beta=True, X_mask_mm = 00)
+#print(results.summary())
+
+print(sum(X[:, 0] >= 1000)/len(X))
+
+
+### Now include only significant predictors
+
+X = np.column_stack([
+    weather_data,
+    year_flattened,
+    #month_flattened,
+    #resid_encoded,
+    #zone_encoded,
+    #owner_encoded,
+    #ftype_encoded,
+    #lag_1_month,
+    #lag_3_month,
+    altitude
+])
+results = build_model(X, y, scale_y=False, beta=False, X_mask_mm = 1000)
+
 
 print(results.summary())
 
-##### Try difference in monthly reporting
-monthly_reporting_by_facility_diff = monthly_reporting_by_facility.diff()
-y_diff = monthly_reporting_by_facility_diff.values.flatten()
-results = build_model(X, y_diff, scale_y=True, beta=True)
-print(y_diff)
-print(results.summary())
+print(sum(X[:, 0] >= 1000)/len(X))
+

@@ -10,9 +10,9 @@ for year in years:
         if not os.path.exists(year_dir):
             os.makedirs(year_dir)
         os.chdir(year_dir)
-        dataset = "reanalysis-era5-single-levels"
+        dataset = "derived-era5-single-levels-daily-statistics"
         request = {
-            "product_type": ["reanalysis"],
+            "product_type": "reanalysis",
             "variable": ["total_precipitation"],
             "year": year,
             "month": [
