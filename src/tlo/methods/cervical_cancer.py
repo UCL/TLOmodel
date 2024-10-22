@@ -808,7 +808,7 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Apply the reversion probability to change some 'cin1' to 'none'
         df.loc[has_cin1, 'ce_hpv_cc_status'] = np.where(
-            np.random.random(size=len(df[has_cin1])) < p['prob_revert_from_cin1'],
+            self.module.rng.random(size=len(df[has_cin1])) < p['prob_revert_from_cin1'],
             'none',
             df.loc[has_cin1, 'ce_hpv_cc_status']
         )
@@ -871,13 +871,15 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # todo: consider fact that who recommend move towards xpert screening away from via
         # todo: start with via as screening tool and move to xpert in about 2024
 
+        m = self.module
+        rng = m.rng
 
         df.loc[eligible_population, 'ce_selected_for_via_this_month'] = (
-            np.random.random_sample(size=len(df[eligible_population])) < p['prob_via_screen']
+            rng.random(size=len(df[eligible_population])) < p['prob_via_screen']
         )
 
         df.loc[eligible_population, 'ce_selected_for_xpert_this_month'] = (
-            np.random.random_sample(size=len(df[eligible_population])) < p['prob_xpert_screen']
+            rng.random(size=len(df[eligible_population])) < p['prob_xpert_screen']
         )
 
 
@@ -1108,8 +1110,9 @@ class HSI_CervicalCancerPresentationVaginalBleeding(HSI_Event, IndividualScopeEv
         person = df.loc[person_id]
         hs = self.sim.modules["HealthSystem"]
         p = self.sim.modules['CervicalCancer'].parameters
-
-        random_value = random.random()
+        m = self.module
+        rng = m.rng
+        random_value = rng.random()
 
         if random_value <= p['prob_referral_biopsy_given_vaginal_bleeding']:
             hs.schedule_hsi_event(
@@ -1207,7 +1210,7 @@ class HSI_CervicalCancer_Thermoablation_CIN(HSI_Event, IndividualScopeEventMixin
         # Record date and stage of starting treatment
         df.at[person_id, "ce_date_thermoabl"] = self.sim.date
 
-        random_value = random.random()
+        random_value = self.module.rng.random()
 
         if random_value <= p['prob_thermoabl_successful']:
             df.at[person_id, "ce_hpv_cc_status"] = 'none'
@@ -1265,7 +1268,7 @@ class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             disease_module=self.module
             )
 
-        random_value = random.random()
+        random_value = self.module.rng.random()
 
         if (random_value <= p['prob_cure_stage1'] and df.at[person_id, "ce_hpv_cc_status"] == "stage1"
             and df.at[person_id, "ce_date_treatment"] == self.sim.date):
