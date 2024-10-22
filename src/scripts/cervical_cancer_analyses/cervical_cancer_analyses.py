@@ -32,6 +32,16 @@ from tlo.methods import (
     tb,
     hiv
 )
+# import hashlib
+#
+#
+# # Function to hash the DataFrame
+# def hash_dataframe(df):
+#     # Generate hash for each row
+#     row_hashes = pd.util.hash_pandas_object(df).values
+#     # Create a single hash for the DataFrame
+#     return hashlib.sha256(row_hashes).hexdigest()
+
 
 # Where outputs will go
 output_csv_file = Path("./outputs/output1_data.csv")
@@ -74,6 +84,13 @@ def run_sim(service_availability):
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
+    df_hash_population_props = hash_dataframe(sim.population.props)
+
+    print(f"Hash: {df_hash_population_props}")
+
+    # Save hash to a file
+    with open('/Users/marianasuarez/Downloads/TLOmodelTest/df_hash_test.txt', 'w') as f:
+        f.write(df_hash_population_props)
 
 
 output_csv_file = Path("./outputs/output1_data.csv")
