@@ -1802,6 +1802,7 @@ class HealthSystem(Module):
                 squeeze_factor=squeeze_factor,
                 appt_footprint=event_details.appt_footprint,
                 level=event_details.facility_level,
+                # todo: to log the facility ID to get district level info
             )
 
     def call_and_record_never_ran_hsi_event(self, hsi_event, priority=None):
@@ -1899,6 +1900,8 @@ class HealthSystem(Module):
             summary_by_officer['Minutes_Used'] / summary_by_officer['Total_Minutes_Per_Day']
         ).replace([np.inf, -np.inf, np.nan], 0.0)
         summary_by_officer.index.names = ['Officer_Type', 'Facility_Level']
+
+        # todo: Compute and log fraction of time used for each officer and level and district
 
         logger.info(key='Capacity',
                     data={
