@@ -197,7 +197,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             Types.REAL, "prob_cryotherapy_successful"
         ),
         "transition_testing_year": Parameter(
-            Types.REAL, "transition_therapy_year"
+            Types.REAL, "transition_testing_year"
         ),
         "transition_screening_year": Parameter(
             Types.REAL, "transition_screening_year"
@@ -998,7 +998,7 @@ class HSI_CervicalCancer_AceticAcidScreening(HSI_Event, IndividualScopeEventMixi
                 if (df.at[person_id, 'ce_hpv_cc_status'] == 'cin2'
                             or df.at[person_id, 'ce_hpv_cc_status'] == 'cin3'
                             ):
-                    if year >= p['transition_therapy_year'] :
+                    if year >= p['transition_testing_year'] :
                         hs.schedule_hsi_event(
                             hsi_event=HSI_CervicalCancer_Thermoablation_CIN(
                                 module=self.module,
@@ -1103,7 +1103,7 @@ class HSI_CervicalCancer_XpertHPVScreening(HSI_Event, IndividualScopeEventMixin)
         if person['hv_inf']:
             if dx_result and (df.at[person_id, 'ce_hpv_cc_status'] in (hpv_cin_options+hpv_stage_options)
                             ):
-                if year >= p['transition_therapy_year']:
+                if year >= p['transition_testing_year']:
                     hs.schedule_hsi_event(
                             hsi_event=HSI_CervicalCancer_Thermoablation_CIN(
                                 module=self.module,
@@ -1276,7 +1276,7 @@ class HSI_CervicalCancer_Cryotherapy_CIN(HSI_Event, IndividualScopeEventMixin):
         # Record date and stage of starting treatment
         df.at[person_id, "ce_date_cryotherapy"] = self.sim.date
 
-        random_value = random.random()
+        random_value = self.module.rng.random()
 
         if random_value <= p['prob_cryotherapy_successful']:
             df.at[person_id, "ce_hpv_cc_status"] = 'none'
