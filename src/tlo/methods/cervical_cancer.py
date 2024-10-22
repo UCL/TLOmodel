@@ -279,6 +279,14 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             Types.DATE,
         "date of thermoablation for CIN"
         ),
+        "ce_date_via": Property(
+            Types.DATE,
+            "date of via for CIN"
+        ),
+        "ce_date_xpert": Property(
+            Types.DATE,
+            "date of xpert for CIN"
+        ),
         "ce_current_cc_diagnosed": Property(
             Types.BOOL,
             "currently has diagnosed cervical cancer (which until now has not been cured)"
@@ -350,6 +358,8 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         df.loc[df.is_alive, "ce_xpert_hpv_ever_pos"] = False
         df.loc[df.is_alive, "ce_via_cin_ever_detected"] = False
         df.loc[df.is_alive, "ce_date_thermoabl"] = pd.NaT
+        df.loc[df.is_alive, "ce_date_via"] = pd.NaT
+        df.loc[df.is_alive, "ce_date_xpert"] = pd.NaT
         df.loc[df.is_alive, 'ce_current_cc_diagnosed'] = False
         df.loc[df.is_alive, "ce_selected_for_via_this_month"] = False
         df.loc[df.is_alive, "ce_selected_for_xpert_this_month"] = False
@@ -622,6 +632,8 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         df.at[child_id, "ce_xpert_hpv_ever_pos"] = False
         df.at[child_id, "ce_via_cin_ever_detected"] = False
         df.at[child_id, "ce_date_thermoabl"] = pd.NaT
+        df.at[child_id, "days_since_last_via"] = pd.NaT
+        df.at[child_id, "days_since_last_xpert"] = pd.NaT
         df.at[child_id, "ce_current_cc_diagnosed"] = False
         df.at[child_id, "ce_selected_for_via_this_month"] = False
         df.at[child_id, "ce_selected_for_xpert_this_month"] = False
@@ -852,6 +864,8 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         days_since_last_screen = (self.sim.date - df.ce_date_last_screened).dt.days
         days_since_last_thermoabl = (self.sim.date - df.ce_date_thermoabl).dt.days
+        days_since_last_via = (self.sim.date - df.ce_date_via).dt.days
+        days_since_last_xpert = (self.sim.date - df.ce_date_xpert).dt.days
 
         # todo: screening probability depends on date last screen and result (who guidelines)
 
@@ -863,7 +877,7 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             (~df.ce_current_cc_diagnosed) &
             (
                 pd.isna(df.ce_date_last_screened) |
-                (days_since_last_screen > 1825) |
+                (days_since_last_via > 1825) | (days_since_last_xpert > 1825) |
                 ((days_since_last_screen > 730) & (days_since_last_thermoabl < 1095))
             )
         )
@@ -973,6 +987,8 @@ class HSI_CervicalCancer_AceticAcidScreening(HSI_Event, IndividualScopeEventMixi
                 hsi_event=self
             )
             df.at[person_id, "ce_date_last_screened"] = self.sim.date
+            df.at[person_id, "ce_date_via"] = self.sim.date
+
             df.at[person_id, "ce_ever_screened"] = True
 
             if dx_result:
@@ -1048,6 +1064,7 @@ class HSI_CervicalCancer_XpertHPVScreening(HSI_Event, IndividualScopeEventMixin)
             hsi_event=self
         )
         df.at[person_id, "ce_date_last_screened"] = self.sim.date
+        df.at[person_id, "ce_date_xpert"] = self.sim.date
         df.at[person_id, "ce_ever_screened"] = True
 
         if dx_result:
