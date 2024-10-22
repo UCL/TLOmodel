@@ -71,7 +71,7 @@ popsize = 1700
 
 def run_sim(service_availability):
     # Establish the simulation object and set the seed
-    sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 #     sim = Simulation(start_date=start_date, log_config={"filename": "logfile"})
 
     # Register the appropriate modules
@@ -95,6 +95,13 @@ def run_sim(service_availability):
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
+    df_hash_population_props = hash_dataframe(sim.population.props)
+
+    print(f"Hash: {df_hash_population_props}")
+
+    # Save hash to a file
+    with open('/Users/marianasuarez/Downloads/TLOmodelTest/df_hash_test.txt', 'w') as f:
+        f.write(df_hash_population_props)
 
     # parse the simulation logfile to get the output dataframes
     log_df = parse_log_file(sim.log_filepath)

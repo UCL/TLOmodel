@@ -16,7 +16,6 @@ import math
 from typing import TYPE_CHECKING, List
 
 import pandas as pd
-import random
 import json
 import numpy as np
 import csv
@@ -36,7 +35,6 @@ if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
     from tlo.population import IndividualProperties
 
-from tlo.util import random_date
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 
 logger = logging.getLogger(__name__)
@@ -821,7 +819,7 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Apply the reversion probability to change some 'cin1' to 'none'
         df.loc[has_cin1, 'ce_hpv_cc_status'] = np.where(
-            np.random.random(size=len(df[has_cin1])) < p['prob_revert_from_cin1'],
+            self.module.rng.random(size=len(df[has_cin1])) < p['prob_revert_from_cin1'],
             'none',
             df.loc[has_cin1, 'ce_hpv_cc_status']
         )
@@ -884,16 +882,21 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # todo: consider fact that who recommend move towards xpert screening away from via
         # todo: start with via as screening tool and move to xpert in about 2024
 
+        m = self.module
+        rng = m.rng
+
+
         if year <= p['transition_screening_year']:
             # Use VIA for screening before the transition year
             df.loc[eligible_population, 'ce_selected_for_via_this_month'] = (
-                np.random.random_sample(size=len(df[eligible_population])) < p['prob_via_screen']
+                rng.random(size=len(df[eligible_population])) < p['prob_via_screen']
             )
         else:
             # Use Xpert for screening from the transition year and onward
             df.loc[eligible_population, 'ce_selected_for_xpert_this_month'] = (
-                np.random.random_sample(size=len(df[eligible_population])) < p['prob_xpert_screen']
+                rng.random(size=len(df[eligible_population])) < p['prob_xpert_screen']
             )
+
 
         self.sim.modules['SymptomManager'].change_symptom(
             person_id=df.loc[df['ce_selected_for_via_this_month']].index,
@@ -1148,8 +1151,9 @@ class HSI_CervicalCancerPresentationVaginalBleeding(HSI_Event, IndividualScopeEv
         person = df.loc[person_id]
         hs = self.sim.modules["HealthSystem"]
         p = self.sim.modules['CervicalCancer'].parameters
-
-        random_value = random.random()
+        m = self.module
+        rng = m.rng
+        random_value = rng.random()
 
         if random_value <= p['prob_referral_biopsy_given_vaginal_bleeding']:
             hs.schedule_hsi_event(
@@ -1247,7 +1251,7 @@ class HSI_CervicalCancer_Thermoablation_CIN(HSI_Event, IndividualScopeEventMixin
         # Record date and stage of starting treatment
         df.at[person_id, "ce_date_thermoabl"] = self.sim.date
 
-        random_value = random.random()
+        random_value = self.module.rng.random()
 
         if random_value <= p['prob_thermoabl_successful']:
             df.at[person_id, "ce_hpv_cc_status"] = 'none'
@@ -1330,7 +1334,7 @@ class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             disease_module=self.module
             )
 
-        random_value = random.random()
+        random_value = self.module.rng.random()
 
         if (random_value <= p['prob_cure_stage1'] and df.at[person_id, "ce_hpv_cc_status"] == "stage1"
             and df.at[person_id, "ce_date_treatment"] == self.sim.date):
@@ -1475,7 +1479,7 @@ class HSI_CervicalCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         hs = self.sim.modules["HealthSystem"]
 
         # Check that the person is in stage4
-        # assert df.at[person_id, "ce_hpv_cc_status"] == 'stage4'
+        assert df.at[person_id, "ce_hpv_cc_status"] == 'stage4'
 
         # Record the start of palliative care if this is first appointment
         if pd.isnull(df.at[person_id, "ce_date_palliative_care"]):
