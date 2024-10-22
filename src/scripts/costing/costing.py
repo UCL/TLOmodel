@@ -49,7 +49,7 @@ if not os.path.exists(figurespath):
     os.makedirs(figurespath)
 
 # Declare period for which the results will be generated (defined inclusively)
-TARGET_PERIOD = (Date(2010, 1, 1), Date(2031, 12, 31)) # TODO allow for multi-year costing
+TARGET_PERIOD = (Date(2010, 1, 1), Date(2030, 12, 31)) # TODO allow for multi-year costing
 def drop_outside_period(_df):
     """Return a dataframe which only includes for which the date is within the limits defined by TARGET_PERIOD"""
     return _df.drop(index=_df.index[~_df['date'].between(*TARGET_PERIOD)])
@@ -57,10 +57,12 @@ def drop_outside_period(_df):
 # %% Gathering basic information
 # Load result files
 #-------------------
-#results_folder = get_scenario_outputs('example_costing_scenario.py', outputfilepath)[0] # impact_of_cons_regression_scenarios
-#results_folder = get_scenario_outputs('long_run_all_diseases.py', outputfilepath)[0] # impact_of_cons_regression_scenarios
-results_folder = get_scenario_outputs('htm_with_and_without_hss-2024-09-04T143044Z.py', outputfilepath)[0] # Tara's FCDO scenarios
+#results_folder = get_scenario_outputs('example_costing_scenario.py', outputfilepath)[0]
+#results_folder = get_scenario_outputs('long_run_all_diseases.py', outputfilepath)[0]
 #results_folder = get_scenario_outputs('scenario_impact_of_consumables_availability.py', outputfilepath)[0] # impact_of_cons_regression_scenarios
+
+results_folder = get_scenario_outputs('htm_with_and_without_hss-2024-09-04T143044Z.py', outputfilepath)[0] # Tara's FCDO/GF scenarios
+#results_folder = get_scenario_outputs('hss_elements-2024-09-04T142900Z.py', outputfilepath)[0] # Tara's FCDO/GF scenarios
 
 #equipment_results_folder = Path('./outputs/sakshi.mohan@york.ac.uk/021_long_run_all_diseases_run')
 #consumables_results_folder = Path('./outputs/sakshi.mohan@york.ac.uk/impact_of_consumables_scenarios-2024-06-11T204007Z/')
@@ -70,7 +72,7 @@ results_folder = get_scenario_outputs('htm_with_and_without_hss-2024-09-04T14304
 #log_equipment = load_pickled_dataframes(equipment_results_folder, 0, 0)
 
 # look at one log (so can decide what to extract)
-log = load_pickled_dataframes(results_folder)
+log = load_pickled_dataframes(results_folder, 0, 0)
 
 # get basic information about the results
 info = get_scenario_info(results_folder)
@@ -548,11 +550,78 @@ scenario_cost = pd.concat([scenario_cost, equipment_costs_summary], ignore_index
 # 4. Facility running costs
 # Average running costs by facility level and district times the number of facilities  in the simulation
 
+# Additional costs pertaining to simulation
+# IRS costs
+irs_coverage_rate = 0.8
+districts_with_irs_scaleup = ['Kasungu', 'Mchinji', 'Lilongwe', 'Lilongwe City', 'Dowa', 'Ntchisi', 'Salima', 'Mangochi',
+                              'Mwanza', 'Likoma', 'Nkhotakota']
+proportion_of_district_with_irs_coverage = len(districts_with_irs_scaleup)/mfl.District.nunique()
+# Get total population (11/total number o districts in mfl)
+#TARGET_PERIOD_MALARIA_SCALEUP = (Date(2024, 1, 1), Date(2030, 12, 31))
+def get_total_population(_df):
+    years_needed = [i.year for i in TARGET_PERIOD]
+    _df['year'] = pd.to_datetime(_df['date']).dt.year
+    assert set(_df.year.unique()).issuperset(years_needed), "Some years are not recorded."
+    return pd.Series(
+        data=_df
+        .loc[_df.year.between(*years_needed)]
+        .drop(columns=['male', 'female', 'date']).set_index('year').sum(axis = 1)
+    )
+
+total_population_by_year = summarize(extract_results(
+    results_folder,
+    module='tlo.methods.demography',
+    key='population',
+    custom_generate_series=get_total_population,
+    do_scaling=True
+))
+
+#years_with_no_malaria_scaleup = set(TARGET_PERIOD).symmetric_difference(set(TARGET_PERIOD_MALARIA_SCALEUP))
+#years_with_no_malaria_scaleup = sorted(list(years_with_no_malaria_scaleup))
+#years_with_no_malaria_scaleup =  [i.year for i in years_with_no_malaria_scaleup]
+
+irs_cost_per_person = unit_price_consumable[unit_price_consumable.Item_Code == 161]['Final_price_per_chosen_unit (USD, 2023)']
+irs_multiplication_factor = irs_cost_per_person * irs_coverage_rate * proportion_of_district_with_irs_coverage
+total_irs_cost = irs_multiplication_factor.iloc[0] * total_population_by_year # for districts and scenarios included
+# TODO scenarios_with_irs_scaleup
+# TODO population_in_district from malria logger
+
+# Bednet costs
+bednet_coverage_rate = 0.7
+# All districts covered
+# We can assume 3-year lifespan of a bednet, each bednet covering 1.8 people.
+unit_cost_of_bednet = unit_price_consumable[unit_price_consumable.Item_Code == 160]['Final_price_per_chosen_unit (USD, 2023)']
+annual_bednet_cost_per_person = unit_cost_of_bednet / 1.8 / 3
+bednet_multiplication_factor = bednet_coverage_rate * annual_bednet_cost_per_person
+total_bednet_cost = bednet_multiplication_factor.iloc[0] * total_population_by_year  # for scenarios included
+
+years_with_no_malaria_scaleup = list(range(first_year_of_simulation, 2024))
+def set_cost_during_years_before_malaria_scaleup_to_zero(_df):
+    for col in _df.columns:
+        for y in years_with_no_malaria_scaleup:
+            _df.loc[_df.index.get_level_values(0) == y, col] = 0
+    return _df
+
+total_bednet_cost = set_cost_during_years_before_malaria_scaleup_to_zero(total_bednet_cost)
+total_irs_cost = set_cost_during_years_before_malaria_scaleup_to_zero(total_irs_cost)
+# TODO Scale-up programmes are implemented from 01/01/2024
+
+# Malaria scale-up costs - TOTAL
+malaria_scaleup_costs = [
+    (total_irs_cost.reset_index(), 'cost_of_IRS_scaleup'),
+    (total_bednet_cost.reset_index(), 'cost_of_bednet_scaleup'),
+]
+# Iterate through additional costs, melt and concatenate
+for df, label in malaria_scaleup_costs:
+    new_df = melt_and_label_consumables_cost(df, label)
+    scenario_cost = pd.concat([scenario_cost, new_df], ignore_index=True)
+scenario_cost.loc[scenario_cost['Cost_Category'].isna(),'Cost_Category'] = 'IRS and Bednet Scale-up Costs'
+
 # Extract all costs to a .csv
-scenario_cost.to_csv(costing_outputs_folder / 'scenario_cost.csv')
+scenario_cost.to_csv(costing_outputs_folder / 'scenario_cost.csv', index = False)
 
 # Calculate total cost
-total_scenario_cost = scenario_cost.groupby(['draw', 'stat'])['value'].sum().unstack()
+total_scenario_cost = scenario_cost[(scenario_cost.year >= 2020) & (scenario_cost.year <= 2030)].groupby(['draw', 'stat'])['value'].sum().unstack()
 total_scenario_cost = total_scenario_cost.unstack().reset_index()
 total_scenario_cost_wide = total_scenario_cost.pivot_table(index=None, columns=['draw', 'stat'], values=0)
 
@@ -580,12 +649,13 @@ incremental_scenario_cost = (pd.DataFrame(
 
 # %%
 # Monetary value of health impact
+TARGET_PERIOD_INTERVENTION = (Date(2020, 1, 1), Date(2030, 12, 31))
 def get_num_dalys(_df):
     """Return total number of DALYS (Stacked) by label (total within the TARGET_PERIOD).
     Throw error if not a record for every year in the TARGET PERIOD (to guard against inadvertently using
     results from runs that crashed mid-way through the simulation.
     """
-    years_needed = [i.year for i in TARGET_PERIOD]
+    years_needed = [i.year for i in TARGET_PERIOD_INTERVENTION]
     assert set(_df.year.unique()).issuperset(years_needed), "Some years are not recorded."
     return pd.Series(
         data=_df
@@ -635,7 +705,7 @@ def do_stacked_bar_plot(_df, cost_category, year, actual_expenditure):
     if year == 'all':
         subset_df = _df
     else:
-        subset_df = _df[_df['year'] == year]
+        subset_df = _df[_df['year'].isin(year)]
     if cost_category == 'all':
         subset_df = subset_df
         pivot_df = subset_df.pivot_table(index='draw', columns='Cost_Category', values='value', aggfunc='sum')
@@ -646,7 +716,7 @@ def do_stacked_bar_plot(_df, cost_category, year, actual_expenditure):
     # Plot a stacked bar chart
     pivot_df.plot(kind='bar', stacked=True)
     # Add a horizontal red line to represent 2018 Expenditure as per resource mapping
-    plt.axhline(y=actual_expenditure/1e6, color='red', linestyle='--', label='Actual expenditure recorded in 2018')
+    #plt.axhline(y=actual_expenditure/1e6, color='red', linestyle='--', label='Actual expenditure recorded in 2018')
 
     # Save plot
     plt.xlabel('Scenario')
@@ -660,7 +730,9 @@ def do_stacked_bar_plot(_df, cost_category, year, actual_expenditure):
 do_stacked_bar_plot(_df = scenario_cost, cost_category = 'Medical consumables', year = 2018, actual_expenditure = 206_747_565)
 do_stacked_bar_plot(_df = scenario_cost, cost_category = 'Human Resources for Health', year = 2018, actual_expenditure = 128_593_787)
 do_stacked_bar_plot(_df = scenario_cost, cost_category = 'Equipment purchase and maintenance', year = 2018, actual_expenditure = 6_048_481)
-do_stacked_bar_plot(_df = scenario_cost, cost_category = 'all', year = 2018, actual_expenditure = 624_054_027)
+do_stacked_bar_plot(_df = scenario_cost, cost_category = 'all', year = [2020], actual_expenditure = 624_054_027)
+do_stacked_bar_plot(_df = scenario_cost, cost_category = 'all', year = [2024], actual_expenditure = 624_054_027)
+do_stacked_bar_plot(_df = scenario_cost, cost_category = 'all', year = list(range(2020,2031)), actual_expenditure = np.nan)
 
 # 2. Line plots of total costs
 #----------------------------------------------------
@@ -796,8 +868,8 @@ def do_bar_plot_with_ci(_df, annotations=None, xticklabels_horizontal_and_wrappe
 
     return fig, ax
 
-# Plot DALYS accrued (with xtickabels horizontal and wrapped)
-name_of_plot = f'Maximum ability to pay, {first_year_of_simulation} - {final_year_of_simulation}'
+# Plot Max ability to pay
+name_of_plot = f'Maximum ability to pay, 2020-2030' #f'Maximum ability to pay, {first_year_of_simulation} - {final_year_of_simulation}'
 fig, ax = do_bar_plot_with_ci(
     (max_ability_to_pay_for_implementation / 1e6).clip(lower=0.0),
     annotations=[
@@ -1003,6 +1075,7 @@ do_cost_calibration_plot(calibration_data,all_consumable_costs)
 do_cost_calibration_plot(calibration_data, list_of_hr_costs_for_calibration)
 do_cost_calibration_plot(calibration_data, list_of_equipment_costs_for_calibration)
 do_cost_calibration_plot(calibration_data,all_calibration_costs)
+calibration_data.to_csv(figurespath / 'calibration/calibration.csv')
 
 # TODO all these HR plots need to be looked at
 # 1. HR
