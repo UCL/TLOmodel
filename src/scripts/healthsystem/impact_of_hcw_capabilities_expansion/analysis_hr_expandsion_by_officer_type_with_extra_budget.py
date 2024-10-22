@@ -546,21 +546,21 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         do_scaling=True
     ).pipe(set_param_names_as_column_index_level_0)
 
-    num_treatments = extract_results(
-        results_folder,
-        module='tlo.methods.healthsystem.summary',
-        key='HSI_Event_non_blank_appt_footprint',
-        custom_generate_series=get_num_treatments,
-        do_scaling=True
-    ).pipe(set_param_names_as_column_index_level_0)
-
-    num_treatments_total = extract_results(
-        results_folder,
-        module='tlo.methods.healthsystem.summary',
-        key='HSI_Event_non_blank_appt_footprint',
-        custom_generate_series=get_num_treatments_total,
-        do_scaling=True
-    ).pipe(set_param_names_as_column_index_level_0)
+    # num_treatments = extract_results(
+    #     results_folder,
+    #     module='tlo.methods.healthsystem.summary',
+    #     key='HSI_Event_non_blank_appt_footprint',
+    #     custom_generate_series=get_num_treatments,
+    #     do_scaling=True
+    # ).pipe(set_param_names_as_column_index_level_0)
+    #
+    # num_treatments_total = extract_results(
+    #     results_folder,
+    #     module='tlo.methods.healthsystem.summary',
+    #     key='HSI_Event_non_blank_appt_footprint',
+    #     custom_generate_series=get_num_treatments_total,
+    #     do_scaling=True
+    # ).pipe(set_param_names_as_column_index_level_0)
 
     num_never_ran_appts = extract_results(
         results_folder,
@@ -594,19 +594,19 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     #     do_scaling=True
     # ).pipe(set_param_names_as_column_index_level_0)
 
-    num_never_ran_treatments = extract_results(
-        results_folder,
-        module='tlo.methods.healthsystem.summary',
-        key='Never_ran_HSI_Event',
-        custom_generate_series=get_num_treatments,
-        do_scaling=True
-    ).pipe(set_param_names_as_column_index_level_0)
+    # num_never_ran_treatments = extract_results(
+    #     results_folder,
+    #     module='tlo.methods.healthsystem.summary',
+    #     key='Never_ran_HSI_Event',
+    #     custom_generate_series=get_num_treatments,
+    #     do_scaling=True
+    # ).pipe(set_param_names_as_column_index_level_0)
 
     # get total service demand
     assert len(num_services) == len(num_never_ran_services) == 1
     assert (num_services.columns == num_never_ran_services.columns).all()
-    num_services_demand = num_services + num_never_ran_services
-    ratio_services = num_services / num_services_demand
+    # num_services_demand = num_services + num_never_ran_services
+    # ratio_services = num_services / num_services_demand
 
     assert (num_appts.columns == num_never_ran_appts.columns).all()
     num_never_ran_appts.loc['Lab / Diagnostics', :] = 0
