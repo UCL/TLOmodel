@@ -29,18 +29,16 @@ from tlo.analysis.utils import (
     unflatten_flattened_multi_index_in_logging
 )
 
-# define a timestamp for script outputs
+# Define a timestamp for script outputs
 timestamp = datetime.datetime.now().strftime("_%Y_%m_%d_%H_%M")
 
-# print the start time of the script
+# Print the start time of the script
 print('Script Start', datetime.datetime.now().strftime('%H:%M'))
 
-# define a pathway to the data folder (note: currently outside the TLO model directory)
-# remember to set working directory to TLOmodel/
-#outputfilepath = Path('./outputs/sakshi.mohan@york.ac.uk')
+# Define a pathway to relevant folders
 outputfilepath = Path('./outputs/t.mangal@imperial.ac.uk')
 resourcefilepath = Path("./resources")
-path_for_new_resourcefiles = resourcefilepath / "healthsystem/consumables"
+path_for_consumable_resourcefiles = resourcefilepath / "healthsystem/consumables"
 costing_outputs_folder = Path('./outputs/costing')
 if not os.path.exists(costing_outputs_folder):
     os.makedirs(costing_outputs_folder)
@@ -49,7 +47,7 @@ if not os.path.exists(figurespath):
     os.makedirs(figurespath)
 
 # Declare period for which the results will be generated (defined inclusively)
-TARGET_PERIOD = (Date(2010, 1, 1), Date(2030, 12, 31)) # TODO allow for multi-year costing
+TARGET_PERIOD = (Date(2010, 1, 1), Date(2030, 12, 31))
 def drop_outside_period(_df):
     """Return a dataframe which only includes for which the date is within the limits defined by TARGET_PERIOD"""
     return _df.drop(index=_df.index[~_df['date'].between(*TARGET_PERIOD)])
@@ -61,29 +59,22 @@ def drop_outside_period(_df):
 #results_folder = get_scenario_outputs('long_run_all_diseases.py', outputfilepath)[0]
 #results_folder = get_scenario_outputs('scenario_impact_of_consumables_availability.py', outputfilepath)[0] # impact_of_cons_regression_scenarios
 
-results_folder = get_scenario_outputs('htm_with_and_without_hss-2024-09-04T143044Z.py', outputfilepath)[0] # Tara's FCDO/GF scenarios
-#results_folder = get_scenario_outputs('hss_elements-2024-09-04T142900Z.py', outputfilepath)[0] # Tara's FCDO/GF scenarios
+#results_folder = get_scenario_outputs('htm_with_and_without_hss-2024-09-04T143044Z.py', outputfilepath)[0] # Tara's FCDO/GF scenarios version 1
+#results_folder = get_scenario_outputs('hss_elements-2024-09-04T142900Z.py', outputfilepath)[0] # Tara's FCDO/GF scenarios version 1
+results_folder = get_scenario_outputs('htm_with_and_without_hss-2024-10-12T111720Z.py', outputfilepath)[0] # Tara's FCDO/GF scenarios version 2
+#results_folder = get_scenario_outputs('hss_elements-2024-10-12T111649Z.py', outputfilepath)[0] # Tara's FCDO/GF scenarios version 2
 
-#equipment_results_folder = Path('./outputs/sakshi.mohan@york.ac.uk/021_long_run_all_diseases_run')
-#consumables_results_folder = Path('./outputs/sakshi.mohan@york.ac.uk/impact_of_consumables_scenarios-2024-06-11T204007Z/')
-# TODO When the costing module is ready the above results_folder should be the same for the calculation of all costs
-
-# check can read results from draw=0, run=0
-#log_equipment = load_pickled_dataframes(equipment_results_folder, 0, 0)
-
-# look at one log (so can decide what to extract)
-log = load_pickled_dataframes(results_folder, 0, 0)
-
-# get basic information about the results
-info = get_scenario_info(results_folder)
-
-# 1) Extract the parameters that have varied over the set of simulations
+# Check can read results from draw=0, run=0
+log = load_pickled_dataframes(results_folder, 0, 0) # look at one log (so can decide what to extract)
+info = get_scenario_info(results_folder) # get basic information about the results
+# Extract the parameters that have varied over the set of simulations
 params = extract_params(results_folder)
 final_year_of_simulation = max(log['tlo.simulation']['info']['date']).year
 first_year_of_simulation = min(log['tlo.simulation']['info']['date']).year
 draws = params.index.unique().tolist() # list of draws
 runs = range(0, info['runs_per_draw'])
 years = list(range(first_year_of_simulation, final_year_of_simulation + 1))
+population_scaling_factor = log['tlo.methods.demography']['scaling_factor']['scaling_factor'].iloc[0]
 
 # Load cost input files
 #------------------------
@@ -93,7 +84,8 @@ workbook_cost = pd.read_excel((resourcefilepath / "costing/ResourceFile_Costing.
 
 # Extract districts and facility levels from the Master Facility List
 mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "ResourceFile_Master_Facilities_List.csv")
-districts = set(pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_Population_2010.csv')['District'])
+district_dict = pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_Population_2010.csv')[['District_Num', 'District']].drop_duplicates()
+district_dict = dict(zip(district_dict['District_Num'], district_dict['District']))
 fac_levels = set(mfl.Facility_Level)
 
 # Overall cost assumptions
@@ -114,7 +106,6 @@ HR_scaling_by_level_and_officer_type_mode  = params[params.module_param == 'Heal
 year_HR_scaling_by_level_and_officer_type = params[params.module_param == 'HealthSystem:year_HR_scaling_by_level_and_officer_type'].reset_index()
 yearly_HR_scaling_mode  = params[params.module_param == 'HealthSystem:yearly_HR_scaling_mode'].reset_index()
 
-# TODO add the following parameters to estimate HR availability per year - HealthSystem:yearly_HR_scaling_mode, HealthSystem:HR_scaling_by_level_and_officer_type_mode, HealthSystem:year_HR_scaling_by_level_and_officer_type
 hr_df_columns = pd.read_csv(resourcefilepath / "healthsystem/human_resources/actual/ResourceFile_Daily_Capabilities.csv").columns.drop(['Facility_ID', 'Officer_Category'])
 facilities = pd.read_csv(resourcefilepath / "healthsystem/human_resources/actual/ResourceFile_Daily_Capabilities.csv")['Facility_ID'].unique().tolist()
 officer_categories = pd.read_csv(resourcefilepath / "healthsystem/human_resources/actual/ResourceFile_Daily_Capabilities.csv")['Officer_Category'].unique().tolist()
@@ -361,7 +352,7 @@ total_cost_of_consumables_dispensed = total_cost_of_consumables_dispensed.reset_
 # While there are estimates in the literature of what % these might be, we agreed that it is better to rely upon
 # an empirical estimate based on OpenLMIS data
 # Estimate the stock to dispensed ratio from OpenLMIS data
-lmis_consumable_usage = pd.read_csv(path_for_new_resourcefiles / "ResourceFile_Consumables_availability_and_usage.csv")
+lmis_consumable_usage = pd.read_csv(path_for_consumable_resourcefiles / "ResourceFile_Consumables_availability_and_usage.csv")
 # Collapse individual facilities
 lmis_consumable_usage_by_item_level_month = lmis_consumable_usage.groupby(['category', 'item_code', 'district', 'fac_type_tlo', 'month'])[['closing_bal', 'dispensed', 'received']].sum()
 df = lmis_consumable_usage_by_item_level_month # Drop rows where monthly OpenLMIS data wasn't available
@@ -472,9 +463,9 @@ for d in draws:
     for r in runs:
         print(f"Now processing draw {d} and run {r}")
         # Extract a list of equipment which was used at each facility level within each district
-        equipment_used = {district: {level: [] for level in fac_levels} for district in districts} # create a dictionary with a key for each district and facility level
+        equipment_used = {district: {level: [] for level in fac_levels} for district in list(district_dict.values())} # create a dictionary with a key for each district and facility level
         list_of_equipment_used_by_current_draw_and_run = list_of_equipment_used_by_draw_and_run[(d, r)].reset_index()
-        for dist in districts:
+        for dist in list(district_dict.values()):
             for level in fac_levels:
                 equipment_used_subset = list_of_equipment_used_by_current_draw_and_run[(list_of_equipment_used_by_current_draw_and_run['District'] == dist) & (list_of_equipment_used_by_current_draw_and_run['Facility_Level'] == level)]
                 equipment_used_subset.columns = ['District', 'Facility_Level', 'EquipmentEverUsed']
@@ -1331,7 +1322,7 @@ full_cons_cost_df = pd.merge(full_cons_cost_df, dispensed_perfect_df, left_index
 # While there are estimates in the literature of what % these might be, we agreed that it is better to rely upon
 # an empirical estimate based on OpenLMIS data
 # Estimate the stock to dispensed ratio from OpenLMIS data
-lmis_consumable_usage = pd.read_csv(path_for_new_resourcefiles / "ResourceFile_Consumables_availability_and_usage.csv")
+lmis_consumable_usage = pd.read_csv(path_for_consumable_resourcefiles / "ResourceFile_Consumables_availability_and_usage.csv")
 # Collapse individual facilities
 lmis_consumable_usage_by_item_level_month = lmis_consumable_usage.groupby(['category', 'item_code', 'district', 'fac_type_tlo', 'month'])[['closing_bal', 'dispensed', 'received']].sum()
 df = lmis_consumable_usage_by_item_level_month # Drop rows where monthly OpenLMIS data wasn't available
@@ -1377,7 +1368,7 @@ full_cons_cost_df = full_cons_cost_df.reset_index().rename(columns = {'index' : 
 full_cons_cost_df.to_csv(figurespath / 'consumables_cost_220824.csv')
 
 # Import data for plotting
-tlo_lmis_mapping = pd.read_csv(path_for_new_resourcefiles / 'ResourceFile_consumables_matched.csv', low_memory=False, encoding="ISO-8859-1")[['item_code', 'module_name', 'consumable_name_tlo']]
+tlo_lmis_mapping = pd.read_csv(path_for_consumable_resourcefiles / 'ResourceFile_consumables_matched.csv', low_memory=False, encoding="ISO-8859-1")[['item_code', 'module_name', 'consumable_name_tlo']]
 tlo_lmis_mapping = tlo_lmis_mapping[~tlo_lmis_mapping['item_code'].duplicated(keep='first')]
 full_cons_cost_df = pd.merge(full_cons_cost_df, tlo_lmis_mapping, on = 'item_code', how = 'left', validate = "1:1")
 full_cons_cost_df['total_cost_perfect_availability'] = full_cons_cost_df['cost_dispensed_stock_perfect_availability'] + full_cons_cost_df['cost_excess_stock_perfect_availability']
