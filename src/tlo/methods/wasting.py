@@ -225,8 +225,13 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_Wasting.csv')
         )
 
-        # Register wasting symptom (weight loss) in Symptoms Manager
-        self.sim.modules['SymptomManager'].register_symptom(Symptom(name=self.wasting_symptom))
+        # Register wasting symptom (weight loss) in Symptoms Manager with high odds of seeking care
+        self.sim.modules["SymptomManager"].register_symptom(
+            Symptom(
+                name=self.wasting_symptom,
+                odds_ratio_health_seeking_in_children=20.0,
+            )
+        )
 
     def initialise_population(self, population):
         """
