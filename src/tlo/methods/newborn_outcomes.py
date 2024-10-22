@@ -1363,7 +1363,7 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
 
         # Log the PNC check
         logger.info(key='postnatal_check', data={'person_id': person_id,
-                                                 'delivery_setting': nci[person_id]['delivery_setting'],
+                                                 'delivery_setting': str(nci[person_id]['delivery_setting']),
                                                  'visit_number': df.at[person_id, 'nb_pnc_check'],
                                                  'timing': nci[person_id]['will_receive_pnc']})
 
