@@ -41,8 +41,6 @@ from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-treatment_transition_year = 2024
-
 
 class CervicalCancer(Module, GenericFirstAppointmentsMixin):
     """Cervical Cancer Disease Module"""
