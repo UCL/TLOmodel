@@ -50,16 +50,17 @@ class ScenarioDefinitions:
         return {
             'HealthSystem': {
                 'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE_FOR_HSS,
-                'HR_scaling_by_level_and_officer_type_mode': 'x1.06_fac0&1',
-                # increase all cadres at level 0 and 1 by average of historical growth
+                'HR_scaling_by_level_and_officer_type_mode': 'x1.338_fac0&1',
+                # increase all cadres at level 0 and 1 by ((1+0.06)^5)-1 = 0.338, 5yrs of 6% growth
             }
         }
 
-    def scale_dcsa_with_historical_average(self) -> Dict:
+    def increase_capacity_of_dcsa(self) -> Dict:
         return {
             'HealthSystem': {
                 'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE_FOR_HSS,
-                'HR_scaling_by_level_and_officer_type_mode': 'dcsa_hist_average',
+                'HR_scaling_by_level_and_officer_type_mode': 'x1.338_dcsa',
+                # increase DCSA at level 0 by ((1+0.06)^5)-1 = 0.338, 5yrs of 6% growth
             }
         }
 
@@ -185,7 +186,24 @@ class ScenarioDefinitions:
             }
         }
 
-    def hss_package(self) -> Dict:
+    def full_hss_package(self) -> Dict:
+        """The parameters for the Full Health System Strengthening Package"""
+        return mix_scenarios(
+            self.increase_capacity_at_primary_care(),
+            self.accelerated_hrh_using_historical_scaling(),
+            self.perfect_healthcare_seeking(),
+            self.all_consumables_available(),
+        )
+
+    def hss_package_default_HSB(self) -> Dict:
+        """The parameters for the Full Health System Strengthening Package"""
+        return mix_scenarios(
+            self.increase_capacity_at_primary_care(),
+            self.accelerated_hrh_using_historical_scaling(),
+            self.all_consumables_available(),
+        )
+
+    def hss_package_realistic(self) -> Dict:
         """The parameters for the Full Health System Strengthening Package"""
         return mix_scenarios(
             self.increase_capacity_at_primary_care(),
