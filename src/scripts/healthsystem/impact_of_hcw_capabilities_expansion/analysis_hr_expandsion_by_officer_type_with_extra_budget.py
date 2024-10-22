@@ -12,23 +12,22 @@ from typing import Tuple
 
 import numpy as np
 import pandas as pd
+import statsmodels.api as sm
+import statsmodels.stats as ss
 from matplotlib import pyplot as plt
 
 from scripts.healthsystem.impact_of_hcw_capabilities_expansion.prepare_minute_salary_and_extra_budget_frac_data import (
-    extra_budget_fracs, Minute_Salary_by_Cadre_Level,
+    Minute_Salary_by_Cadre_Level,
+    extra_budget_fracs,
 )
-
 from scripts.healthsystem.impact_of_hcw_capabilities_expansion.scenario_of_expanding_current_hcw_by_officer_type_with_extra_budget import (
     HRHExpansionByCadreWithExtraBudget,
 )
-import statsmodels.api as sm
-import statsmodels.stats as ss
 from tlo import Date
-from tlo.analysis.utils import (
+from tlo.analysis.utils import (  # SHORT_TREATMENT_ID_TO_COLOR_MAP,
     APPT_TYPE_TO_COARSE_APPT_TYPE_MAP,
     CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP,
     COARSE_APPT_TYPE_TO_COLOR_MAP,
-    SHORT_TREATMENT_ID_TO_COLOR_MAP,
     bin_hsi_event_details,
     compute_mean_across_runs,
     extract_results,
