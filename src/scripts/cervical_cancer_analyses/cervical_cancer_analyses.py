@@ -50,7 +50,7 @@ popsize = 1700
 
 def run_sim(service_availability):
     # Establish the simulation object and set the seed
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
 #     sim = Simulation(start_date=start_date, log_config={"filename": "logfile"})
 
     # Register the appropriate modules
