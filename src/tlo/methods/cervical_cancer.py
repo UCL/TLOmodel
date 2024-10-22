@@ -35,7 +35,6 @@ if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
     from tlo.population import IndividualProperties
 
-from tlo.util import random_date
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 
 logger = logging.getLogger(__name__)
