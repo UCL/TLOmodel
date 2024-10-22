@@ -62,7 +62,7 @@ class HRHExpansionByCadreWithExtraBudget(BaseScenario):
 
         self.YEAR_OF_CHANGE = 2019  # This is the year to change run settings and to start hr expansion.
 
-        self.scenarios = extra_budget_fracs
+        self.scenarios = extra_budget_fracs['s_2']  # test the "best" scenario
 
         return {
             self.scenarios.columns[i]:
