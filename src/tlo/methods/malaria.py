@@ -1248,28 +1248,29 @@ class HSI_Malaria_Treatment(HSI_Event, IndividualScopeEventMixin):
         whether drugs were available"""
 
         # non-complicated malaria
+        # paracetamol liquid 5ml, 3x per day, 3 days
         if age_of_person < 5:
             # Formulation for young children
             drugs_available = self.get_consumables(
-                item_codes=self.module.item_codes_for_consumables_required['malaria_uncomplicated_young_children'],
-                optional_item_codes=[self.module.item_codes_for_consumables_required['paracetamol_syrup'],
-                                     self.module.item_codes_for_consumables_required['malaria_rdt']]
+                item_codes={self.module.item_codes_for_consumables_required['malaria_uncomplicated_young_children']: 6},
+                optional_item_codes={self.module.item_codes_for_consumables_required['paracetamol_syrup']: 45,
+                self.module.item_codes_for_consumables_required['malaria_rdt']: 1}
             )
 
         elif 5 <= age_of_person <= 15:
             # Formulation for older children
             drugs_available = self.get_consumables(
-                item_codes=self.module.item_codes_for_consumables_required['malaria_uncomplicated_older_children'],
-                optional_item_codes=[self.module.item_codes_for_consumables_required['paracetamol_syrup'],
-                                     self.module.item_codes_for_consumables_required['malaria_rdt']]
+                item_codes={self.module.item_codes_for_consumables_required['malaria_uncomplicated_older_children']: 12},
+                optional_item_codes={self.module.item_codes_for_consumables_required['paracetamol_syrup']: 45,
+                                     self.module.item_codes_for_consumables_required['malaria_rdt']: 1}
             )
 
         else:
             # Formulation for adults
             drugs_available = self.get_consumables(
-                item_codes=self.module.item_codes_for_consumables_required['malaria_uncomplicated_adult'],
-                optional_item_codes=[self.module.item_codes_for_consumables_required['paracetamol'],
-                                     self.module.item_codes_for_consumables_required['malaria_rdt']]
+                item_codes={self.module.item_codes_for_consumables_required['malaria_uncomplicated_adult']: 24},
+                optional_item_codes={self.module.item_codes_for_consumables_required['paracetamol']: 12_000,
+                                     self.module.item_codes_for_consumables_required['malaria_rdt']: 1}
             )
 
         return drugs_available

@@ -50,7 +50,7 @@ class ScenarioDefinitions:
         return {
             'HealthSystem': {
                 'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE_FOR_HSS,
-                'HR_scaling_by_level_and_officer_type_mode': 'x1.042_fac0&1',
+                'HR_scaling_by_level_and_officer_type_mode': 'x1.06_fac0&1',
                 # increase all cadres at level 0 and 1 by average of historical growth
             }
         }
