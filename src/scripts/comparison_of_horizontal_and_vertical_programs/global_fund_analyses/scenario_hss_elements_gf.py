@@ -130,11 +130,11 @@ class HSSElements(BaseScenario):
                     scenario_definitions.cons_at_EPI_availability(),
                 ),
 
-            # "Perfect Consumables Availability":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.all_consumables_available(),
-            #     ),
+            "Perfect Consumables Availability":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.all_consumables_available(),
+                ),
 
             # - - - PACKAGES OF HEALTH SYSTEM STRENGTHENING - - -
             "HSS PACKAGE: Perfect":

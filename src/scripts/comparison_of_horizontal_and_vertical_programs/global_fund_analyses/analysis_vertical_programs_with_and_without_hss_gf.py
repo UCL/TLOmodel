@@ -31,7 +31,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     - We estimate the draw on healthcare system resources as the FEWER appointments when that treatment does not occur.
     """
 
-    TARGET_PERIOD = (Date(2025, 1, 1), Date(2030, 12, 31))
+    TARGET_PERIOD = (Date(2025, 1, 1), Date(2035, 12, 31))
 
     # Definitions of general helper functions
     make_graph_file_name = lambda stub: output_folder / f"{stub.replace('*', '_star_')}.png"  # noqa: E731

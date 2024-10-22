@@ -307,17 +307,20 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     #     'Consumables Available at EPI levels': '',
     #     'FULL PACKAGE': '#5e4fa2',
     # }
+    # todo need to update
     color_map = {
         'Baseline': '#9e0142',
-        'HRH Scale-up Following Historical Growth': '#d84a48',
-        'HRH Moderate Scale-up (1%)': '#f67c4d',
+        'HRH Moderate Scale-up (1%)': '#d84a48',
+        'HRH Scale-up Following Historical Growth': '#f67c4d',
         'HRH Accelerated Scale-up (6%)': '#fcad61',
-        'CHW Scale-up Following Historical Growth': '#f7e082',
-        'Increase Capacity at Primary Care Levels': '#c7e79d',
+        'Increase Capacity at Primary Care Levels': '',
+        'Increase Capacity of CHW': '#f7e082',
         'Consumables Increased to 75th Percentile': '#86cfa5',
         'Consumables Available at HIV levels': '#4ea6bb',
         'Consumables Available at EPI levels': '#3d82b2',  # Adjusted for consistency
-        'FULL PACKAGE': '#5e4fa2',
+        'HSS PACKAGE: Perfect': '#5e4fa2',
+        'HSS PACKAGE: Realistic expansion, no change in HSB': '',
+        'HSS PACKAGE: Realistic expansion': '',
     }
 
     # DEATHS: all scenarios
