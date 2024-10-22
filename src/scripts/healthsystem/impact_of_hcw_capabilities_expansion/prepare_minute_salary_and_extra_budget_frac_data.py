@@ -53,9 +53,11 @@ assert staff_cost.cost_frac.sum() == 1
 staff_cost.set_index('Officer_Category', inplace=True)
 staff_cost = staff_cost.reindex(index=cadre_all)
 
-# No expansion scenario, or zero-extra-budget-fraction scenario, "s_1"
-# Define the current cost fractions among all cadres as extra-budget-fraction scenario "s_2" \
+# No expansion scenario, or zero-extra-budget-fraction scenario, "s_0"
+# Define the current cost fractions among all cadres as extra-budget-fraction scenario "s_1" \
 # to be matched with Margherita's 4.2% scenario.
+# Add in the scenario that is indicated by hcw cost gap distribution \
+# resulted from never ran services in no expansion scenario, "s_2"
 # Define all other scenarios so that the extra budget fraction of each cadre, \
 # i.e., four main cadres and the "Other" cadre that groups up all other cadres, is the same (fair allocation)
 
@@ -63,7 +65,7 @@ cadre_group = ['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy', 'Other']
 other_group = ['Dental', 'Laboratory', 'Mental', 'Nutrition', 'Radiography']
 
 # create scenarios
-combination_list = ['s_1', 's_2']  # two baseline scenarios
+combination_list = ['s_0', 's_1', 's_2']  # the three special scenarios
 for n in range(1, len(cadre_group)+1):
     for subset in itertools.combinations(cadre_group, n):
         combination_list.append(str(subset))  # other equal-fraction scenarios
@@ -71,24 +73,24 @@ for n in range(1, len(cadre_group)+1):
 # cadre groups to expand
 cadre_to_expand = pd.DataFrame(index=cadre_group, columns=combination_list).fillna(0.0)
 for c in cadre_group:
-    for i in cadre_to_expand.columns[2:]:
+    for i in cadre_to_expand.columns[3:]:  # for all equal-fraction scenarios
         if c in i:
             cadre_to_expand.loc[c, i] = 1  # value 1 indicate the cadre group will be expanded
 
 # prepare auxiliary dataframe for equal extra budget fractions scenarios
 auxiliary = cadre_to_expand.copy()
-for i in auxiliary.columns[2:]:
+for i in auxiliary.columns[3:]:  # for all equal-fraction scenarios
     auxiliary.loc[:, i] = auxiliary.loc[:, i] / auxiliary.loc[:, i].sum()
-
+auxiliary.loc[:, 's_2'] = [0.4586, 0.0272, 0.3502, 0.1476, 0.0164]
 
 # define extra budget fracs for each cadre
 extra_budget_fracs = pd.DataFrame(index=cadre_all, columns=combination_list)
 assert (extra_budget_fracs.columns == auxiliary.columns).all()
 assert (extra_budget_fracs.index[0:4] == auxiliary.index[0:4]).all()
 
-extra_budget_fracs.loc[:, 's_1'] = 0
+extra_budget_fracs.loc[:, 's_0'] = 0
 assert (staff_cost.index == extra_budget_fracs.index).all()
-extra_budget_fracs.loc[:, 's_2'] = staff_cost.loc[:, 'cost_frac'].values
+extra_budget_fracs.loc[:, 's_1'] = staff_cost.loc[:, 'cost_frac'].values
 
 for i in extra_budget_fracs.columns[2:]:
     for c in extra_budget_fracs.index:
@@ -105,12 +107,12 @@ assert (abs(extra_budget_fracs.iloc[:, 1:len(extra_budget_fracs.columns)].sum(ax
 # rename scenarios
 # make the scenario of equal fracs for all five cadre groups (i.e., the last column) to be s_3
 simple_scenario_name = {extra_budget_fracs.columns[-1]: 's_3'}
-for i in range(2, len(extra_budget_fracs.columns)-1):
-    simple_scenario_name[extra_budget_fracs.columns[i]] = 's_' + str(i+2)  # name scenario from s_4
+for i in range(3, len(extra_budget_fracs.columns)-1):
+    simple_scenario_name[extra_budget_fracs.columns[i]] = 's_' + str(i+1)  # name scenario from s_4
 extra_budget_fracs.rename(columns=simple_scenario_name, inplace=True)
 
 # reorder columns
-col_order = ['s_' + str(i) for i in range(1, len(extra_budget_fracs.columns)+1)]
+col_order = ['s_' + str(i) for i in range(0, len(extra_budget_fracs.columns))]
 assert len(col_order) == len(extra_budget_fracs.columns)
 extra_budget_fracs = extra_budget_fracs.reindex(columns=col_order)
 
@@ -163,7 +165,7 @@ for y in total_cost.index:
 
 # check the total cost after 11 years are increased as expected
 assert (
-    abs(total_cost.loc[2029, total_cost.columns[1:]] - (1 + 0.042) ** 11 * total_cost.loc[2029, 's_1']) < 1/1e7
+    abs(total_cost.loc[2029, total_cost.columns[1:]] - (1 + 0.042) ** 11 * total_cost.loc[2029, 's_0']) < 1/1e7
 ).all()
 
 # get the integrated scale up factors by the end of year 2029 and each scenario
@@ -174,6 +176,11 @@ for s in total_cost.columns[1:]:
             integrated_scale_up_factor.loc[:, s].values,
             scale_up_factor_dict[s][yr].loc[:, 'scale_up_factor'].values
         )
+
+# Checked that for s_2, the integrated scale up factors of C/N/P cadres are comparable with shortage estimates from \
+# She et al 2024: https://human-resources-health.biomedcentral.com/articles/10.1186/s12960-024-00949-2
+# todo: This might provide a short-cut way (no simulation, but mathematical calculation) to calculate \
+# an extra budget allocation scenario 's_2+' that is comparable with s_2.
 
 # # save and read pickle file
 # pickle_file_path = Path(resourcefilepath / 'healthsystem' / 'human_resources' / 'scaling_capabilities' /

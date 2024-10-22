@@ -915,6 +915,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ['Dental', 'Laboratory', 'Mental', 'Radiography']
     ].sum(axis=1)
 
+    # # store the proportions of no expansion scenario as the "best" scenario that is to be tested
+    # hcw_cost_gap_percent_no_expansion = hcw_cost_gap_percent.loc[
+    #     's_1', ['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy', 'Other']
+    # ].copy()  # [0.4586, 0.0272, 0.3502, 0.1476, 0.0164]
+
     # find appts that need Clinical + Pharmacy (+ Nursing_and_Midwifery)
     # then calculate hcw time needed for these appts (or treatments, need treatment and their appt footprint)
     # in never run set
