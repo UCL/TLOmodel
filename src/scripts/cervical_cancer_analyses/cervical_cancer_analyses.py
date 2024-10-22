@@ -84,13 +84,13 @@ def run_sim(service_availability):
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
-    df_hash_population_props = hash_dataframe(sim.population.props)
-
-    print(f"Hash: {df_hash_population_props}")
-
-    # Save hash to a file
-    with open('/Users/marianasuarez/Downloads/TLOmodelTest/df_hash_test.txt', 'w') as f:
-        f.write(df_hash_population_props)
+    # df_hash_population_props = hash_dataframe(sim.population.props)
+    #
+    # print(f"Hash: {df_hash_population_props}")
+    #
+    # # Save hash to a file
+    # with open('/Users/marianasuarez/Downloads/TLOmodelTest/df_hash_test.txt', 'w') as f:
+    #     f.write(df_hash_population_props)
 
 
 output_csv_file = Path("./outputs/output1_data.csv")
