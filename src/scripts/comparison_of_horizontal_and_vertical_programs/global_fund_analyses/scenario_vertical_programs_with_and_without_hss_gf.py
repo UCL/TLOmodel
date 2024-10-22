@@ -178,7 +178,7 @@ class HTMWithAndWithoutHSS(BaseScenario):
                     scenario_definitions.hiv_scaleup(),
                     scenario_definitions.tb_scaleup(),
                     scenario_definitions.malaria_scaleup(),
-                    scenario_definitions.accelerated_hrh_using_historical_scaling(),
+                    scenario_definitions.accelerated_hrh_expansion(),
                 ),
         }
 

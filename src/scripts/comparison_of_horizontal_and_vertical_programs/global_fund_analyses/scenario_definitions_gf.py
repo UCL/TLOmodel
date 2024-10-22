@@ -96,7 +96,7 @@ class ScenarioDefinitions:
             }
         }
 
-    def accelerated_hrh_using_historical_scaling(self) -> Dict:
+    def accelerated_hrh_expansion(self) -> Dict:
         return {
             'HealthSystem': {
                 'yearly_HR_scaling_mode': 'historical_scaling_accelerated',
@@ -104,7 +104,7 @@ class ScenarioDefinitions:
             }
         }
 
-    def moderate_hrh_using_historical_scaling(self) -> Dict:
+    def moderate_hrh_expansion(self) -> Dict:
         return {
             'HealthSystem': {
                 'yearly_HR_scaling_mode': 'historical_scaling_moderate',
@@ -190,24 +190,24 @@ class ScenarioDefinitions:
         """The parameters for the Full Health System Strengthening Package"""
         return mix_scenarios(
             self.increase_capacity_at_primary_care(),
-            self.accelerated_hrh_using_historical_scaling(),
+            self.accelerated_hrh_expansion(),
             self.perfect_healthcare_seeking(),
             self.all_consumables_available(),
         )
 
     def hss_package_default_HSB(self) -> Dict:
-        """The parameters for the Full Health System Strengthening Package"""
+        """The parameters for the Health System Strengthening Package WITHOUT perfect HSB"""
         return mix_scenarios(
             self.increase_capacity_at_primary_care(),
-            self.accelerated_hrh_using_historical_scaling(),
-            self.all_consumables_available(),
+            self.accelerated_hrh_expansion(),
+            self.cons_at_75th_percentile(),
         )
 
     def hss_package_realistic(self) -> Dict:
-        """The parameters for the Full Health System Strengthening Package"""
+        """The parameters for the Health System Strengthening Package with 75th percentile cons"""
         return mix_scenarios(
             self.increase_capacity_at_primary_care(),
-            self.accelerated_hrh_using_historical_scaling(),
+            self.accelerated_hrh_expansion(),
             self.perfect_healthcare_seeking(),
             self.cons_at_75th_percentile(),
         )

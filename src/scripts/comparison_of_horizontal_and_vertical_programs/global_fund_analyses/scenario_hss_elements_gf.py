@@ -70,7 +70,6 @@ class HSSElements(BaseScenario):
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
 
         scenario_definitions = ScenarioDefinitions()
-        # todo reorder in increasing impact
 
         return {
             "Baseline": scenario_definitions.baseline(),
@@ -84,7 +83,7 @@ class HSSElements(BaseScenario):
             "HRH Moderate Scale-up (1%)":
                 mix_scenarios(
                     scenario_definitions.baseline(),
-                    scenario_definitions.moderate_hrh_using_historical_scaling(),
+                    scenario_definitions.moderate_hrh_expansion(),
                 ),
 
             "HRH Scale-up Following Historical Growth":
@@ -96,7 +95,7 @@ class HSSElements(BaseScenario):
             "HRH Accelerated Scale-up (6%)":
                 mix_scenarios(
                     scenario_definitions.baseline(),
-                    scenario_definitions.accelerated_hrh_using_historical_scaling(),
+                    scenario_definitions.accelerated_hrh_expansion(),
                 ),
 
             "Increase Capacity at Primary Care Levels":
@@ -106,12 +105,11 @@ class HSSElements(BaseScenario):
                 ),
 
 
-            # todo leave out
-            # "CHW Scale-up Following Historical Growth":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.scale_dcsa_with_historical_average(),
-            #     ),
+            "Increase Capacity of CHW":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.increase_capacity_of_dcsa(),
+                ),
 
             # - - - Supply Chains - - -
             "Consumables Increased to 75th Percentile":
@@ -138,11 +136,23 @@ class HSSElements(BaseScenario):
             #         scenario_definitions.all_consumables_available(),
             #     ),
 
-            # - - - FULL PACKAGE OF HEALTH SYSTEM STRENGTHENING - - -
-            "FULL PACKAGE":
+            # - - - PACKAGES OF HEALTH SYSTEM STRENGTHENING - - -
+            "HSS PACKAGE: Perfect":
                 mix_scenarios(
                     scenario_definitions.baseline(),
-                    scenario_definitions.hss_package(),
+                    scenario_definitions.full_hss_package(),
+                ),
+
+            "HSS PACKAGE: Realistic expansion, no change in HSB":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.hss_package_default_HSB(),
+                ),
+
+            "HSS PACKAGE: Realistic expansion":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.hss_package_realistic(),
                 ),
         }
 
