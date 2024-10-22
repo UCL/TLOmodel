@@ -74,7 +74,6 @@ class HTMWithAndWithoutHSS(BaseScenario):
                 scenario_definitions.baseline(),
 
             # - - - FULL PACKAGE OF HEALTH SYSTEM STRENGTHENING - - -
-            # todo update this with correct HSS package
             "HSS PACKAGE: Perfect":
                 mix_scenarios(
                     scenario_definitions.baseline(),
@@ -183,7 +182,6 @@ class HTMWithAndWithoutHSS(BaseScenario):
                 ),
 
             # - - - HIV & TB & MALARIA SCALE-UP WITH SUPPLY CHAINS- - -
-            # todo update cons scenario?
             "HTM Programs Scale-up WITH SUPPLY CHAINS":
                 mix_scenarios(
                     scenario_definitions.baseline(),
