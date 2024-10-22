@@ -692,9 +692,12 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                         event=WastingSevereAcuteMalnutritionDeathEvent(module=self, person_id=person_id),
                         date=outcome_date
                     )
-                else:
+                else:  # recovery to MAM and follow-up treatment for MAM
                     self.sim.schedule_event(event=WastingUpdateToMAM(module=self, person_id=person_id),
                                             date=outcome_date)
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(
+                        hsi_event=HSI_Wasting_SupplementaryFeedingProgramme_MAM(module=self, person_id=person_id),
+                        priority=0, topen=outcome_date)
                     # cancel death date
                     df.at[person_id, 'un_sam_death_date'] = pd.NaT
 
