@@ -278,8 +278,6 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                 df.at[idx, 'un_WHZ_category'] = wasted_category
                 df.at[idx, 'un_last_wasting_date_of_onset'] = self.sim.date
                 df.at[idx, 'un_ever_wasted'] = True
-                # start without treatment
-                df.at[idx, 'un_am_treatment_type'] = 'none'
 
         index_under5 = df.index[df.is_alive & (df.age_exact_years < 5)]
         # calculate approximation of probability of having normal WHZ in children under 5 to be used later
@@ -458,20 +456,25 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         df = pop_dataframe
         p = self.parameters
 
-        # check if person is not wasted
+        # if person well
         if ((df.at[person_id, 'un_WHZ_category'] == 'WHZ>=-2') &
                 (df.at[person_id, 'un_am_MUAC_category'] == '>=125mm') & (~df.at[person_id, 'un_am_bilateral_oedema'])):
             df.at[person_id, 'un_clinical_acute_malnutrition'] = 'well'
-
-        # severe acute malnutrition -- MUAC < 115 mm and/or WHZ < -3 and/or bilateral oedema
-        elif ((df.at[person_id, 'un_am_MUAC_category'] == '<115mm') | (df.at[person_id, 'un_WHZ_category'] == 'WHZ<-3')
-              | (df.at[person_id, 'un_am_bilateral_oedema'])):
-            df.at[person_id, 'un_clinical_acute_malnutrition'] = 'SAM'
-            # apply symptoms to all SAM cases
-            self.wasting_clinical_symptoms(person_id=person_id)
-
+        # if person not well
         else:
-            df.at[person_id, 'un_clinical_acute_malnutrition'] = 'MAM'
+            # start without treatment
+            df.at[person_id, 'un_am_treatment_type'] = 'none'
+
+            # severe acute malnutrition (SAM): MUAC < 115 mm and/or WHZ < -3 and/or bilateral oedema
+            if ((df.at[person_id, 'un_am_MUAC_category'] == '<115mm')
+                    | (df.at[person_id, 'un_WHZ_category'] == 'WHZ<-3') | (df.at[person_id, 'un_am_bilateral_oedema'])):
+                df.at[person_id, 'un_clinical_acute_malnutrition'] = 'SAM'
+                # apply symptoms to all SAM cases
+                self.wasting_clinical_symptoms(person_id=person_id)
+
+            # otherwise moderate acute malnutrition (MAM)
+            else:
+                df.at[person_id, 'un_clinical_acute_malnutrition'] = 'MAM'
 
         # Determine if SAM episode has complications
         if df.at[person_id, 'un_clinical_acute_malnutrition'] == 'SAM':
@@ -597,7 +600,9 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         schedule_hsi_event: HSIEventScheduler,
         **kwargs,
     ) -> None:
-        if individual_properties["age_years"] > 5:
+        if (individual_properties["age_years"] >= 5) or \
+               (individual_properties["un_am_treatment_type"] in
+                ['standard_RUTF', 'soy_RUSF', 'CSB++', 'inpatient_care']):
             return
         p = self.parameters
 
@@ -737,8 +742,6 @@ class WastingIncidencePollingEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[mod_wasting_new_cases_idx, 'un_last_wasting_date_of_onset'] = self.sim.date
         # initiate moderate wasting
         df.loc[mod_wasting_new_cases_idx, 'un_WHZ_category'] = '-3<=WHZ<-2'
-        # start without treatment
-        df.loc[mod_wasting_new_cases_idx, 'un_am_treatment_type'] = 'none'
         # -------------------------------------------------------------------------------------------
         # Add these incident cases to the tracker
         for person_id in mod_wasting_new_cases_idx:
@@ -961,8 +964,8 @@ class WastingUpdateToMAM(Event, IndividualScopeEventMixin):
         df.at[person_id, 'un_am_tx_start_date'] = pd.NaT
         df.at[person_id, 'un_am_recovery_date'] = pd.NaT
         df.at[person_id, 'un_am_discharge_date'] = pd.NaT
-        # will start the process again
-        df.at[person_id, 'un_am_treatment_type'] = 'not_applicable'
+        # Start without treatment, treatment will be applied with HSI if care sought
+        df.at[person_id, 'un_am_treatment_type'] = 'none'
 
         # this will clear all wasting symptoms (applicable for SAM, not MAM)
         self.sim.modules["SymptomManager"].clear_symptoms(
