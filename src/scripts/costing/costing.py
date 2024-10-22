@@ -48,9 +48,18 @@ if not os.path.exists(figurespath):
 
 # Declare period for which the results will be generated (defined inclusively)
 TARGET_PERIOD = (Date(2010, 1, 1), Date(2030, 12, 31))
+
+# Useful common functions
 def drop_outside_period(_df):
     """Return a dataframe which only includes for which the date is within the limits defined by TARGET_PERIOD"""
     return _df.drop(index=_df.index[~_df['date'].between(*TARGET_PERIOD)])
+
+def melt_model_output_draws_and_runs(_df, id_vars):
+    multi_index = pd.MultiIndex.from_tuples(_df.columns)
+    _df.columns = multi_index
+    melted_df = pd.melt(_df, id_vars=id_vars).rename(columns = {'variable_0': 'draw', 'variable_1': 'run'})
+    return melted_df
+
 
 # %% Gathering basic information
 # Load result files
@@ -86,6 +95,7 @@ workbook_cost = pd.read_excel((resourcefilepath / "costing/ResourceFile_Costing.
 mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "ResourceFile_Master_Facilities_List.csv")
 district_dict = pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_Population_2010.csv')[['District_Num', 'District']].drop_duplicates()
 district_dict = dict(zip(district_dict['District_Num'], district_dict['District']))
+facility_id_levels_dict = dict(zip(mfl['Facility_ID'], mfl['Facility_Level']))
 fac_levels = set(mfl.Facility_Level)
 
 # Overall cost assumptions
@@ -100,67 +110,42 @@ hr_annual_salary = hr_cost_parameters[hr_cost_parameters['Parameter_name'] == 's
 hr_annual_salary['OfficerType_FacilityLevel'] = 'Officer_Type=' + hr_annual_salary['Officer_Category'].astype(str) + '|Facility_Level=' + hr_annual_salary['Facility_Level'].astype(str) # create column for merging with model log
 hr_annual_salary = hr_annual_salary.rename({'Value':'Annual_Salary'}, axis = 1)
 
-# Load scenario staffing level for each year and draw
-use_funded_or_actual_staffing = params[params.module_param == 'HealthSystem:use_funded_or_actual_staffing'].reset_index()
-HR_scaling_by_level_and_officer_type_mode  = params[params.module_param == 'HealthSystem:HR_scaling_by_level_and_officer_type_mode'].reset_index()
-year_HR_scaling_by_level_and_officer_type = params[params.module_param == 'HealthSystem:year_HR_scaling_by_level_and_officer_type'].reset_index()
-yearly_HR_scaling_mode  = params[params.module_param == 'HealthSystem:yearly_HR_scaling_mode'].reset_index()
+# Get staffing level for each year and draw
+def get_staff_count_by_facid_and_officer_type(_df: pd.Series) -> pd.Series:
+    """Summarise the parsed logged-key results for one draw (as dataframe) into a pd.Series."""
+    _df = _df.set_axis(_df['date'].dt.year).drop(columns=['date'])
+    _df.index.name = 'year'
 
-hr_df_columns = pd.read_csv(resourcefilepath / "healthsystem/human_resources/actual/ResourceFile_Daily_Capabilities.csv").columns.drop(['Facility_ID', 'Officer_Category'])
-facilities = pd.read_csv(resourcefilepath / "healthsystem/human_resources/actual/ResourceFile_Daily_Capabilities.csv")['Facility_ID'].unique().tolist()
-officer_categories = pd.read_csv(resourcefilepath / "healthsystem/human_resources/actual/ResourceFile_Daily_Capabilities.csv")['Officer_Category'].unique().tolist()
-staff_count = pd.DataFrame(columns = hr_df_columns, index=pd.MultiIndex.from_product([draws, years, facilities, officer_categories], names=['draw', 'year', 'Facility_ID ', 'Officer_Category'])) # Create the empty DataFrame staff_count with multi-level index ['draw', 'year']
+    def change_to_standard_flattened_index_format(col):
+        parts = col.split("_", 3)  # Split by "_" only up to 3 parts
+        if len(parts) > 2:
+            return parts[0] + "=" + parts[1] + "|" + parts[2] + "=" + parts[3]  # Rejoin with "I" at the second occurrence
+        return col  # If there's no second underscore, return the string as it is
+    _df.columns = [change_to_standard_flattened_index_format(col) for col in _df.columns]
 
-for d in draws:
-    year_of_switch = (
-        year_HR_scaling_by_level_and_officer_type.loc[
-            year_HR_scaling_by_level_and_officer_type.draw == d, 'value'
-        ].iloc[0] if not year_HR_scaling_by_level_and_officer_type.loc[
-            year_HR_scaling_by_level_and_officer_type.draw == d, 'value'
-        ].empty else final_year_of_simulation
-    )
-    chosen_hr_scenario = use_funded_or_actual_staffing.loc[use_funded_or_actual_staffing.draw == d,'value'].iloc[0] if not use_funded_or_actual_staffing.loc[use_funded_or_actual_staffing.draw == d,'value'].empty else ''
-    condition_draw = staff_count.index.get_level_values('draw') == d  # Condition for draw
-    condition_before_switch = staff_count.index.get_level_values('year') < year_of_switch  # Condition for year
+    return unflatten_flattened_multi_index_in_logging(_df).stack(level=[0, 1])  # expanded flattened axis
 
-    for year in years:
-        condition_draw = staff_count.index.get_level_values('draw') == d  # Condition for draw
-        condition_year = staff_count.index.get_level_values('year') == year  # Condition for the specific year
+# Staff count by Facility ID
+available_staff_count_by_facid_and_officertype = extract_results(
+    Path(results_folder),
+    module='tlo.methods.healthsystem.summary',
+    key='number_of_hcw_staff',
+    custom_generate_series=get_staff_count_by_facid_and_officer_type,
+    do_scaling=True,
+)
 
-        if year < year_of_switch:
-            if chosen_hr_scenario == '':
-                new_data = pd.read_csv(
-                    resourcefilepath / "healthsystem/human_resources/actual/ResourceFile_Daily_Capabilities.csv"
-                )
-            else:
-                new_data = pd.read_csv(
-                    resourcefilepath / 'healthsystem' / 'human_resources' / f'{chosen_hr_scenario}' / 'ResourceFile_Daily_Capabilities.csv'
-                )  # Use the chosen HR scenario
-        else:
-            if chosen_hr_scenario == '':
-                new_data = pd.read_csv(
-                    resourcefilepath / "healthsystem/human_resources/actual/ResourceFile_Daily_Capabilities.csv"
-                )  # If missing default to reading actual capabilities
-            else:
-                new_data = pd.read_csv(
-                    resourcefilepath / "healthsystem/human_resources/actual/ResourceFile_Daily_Capabilities.csv"
-                )  # If missing default to reading actual capabilities
-
-        # Set the 'draw' and 'year' in new_data
-        new_data['draw'] = d
-        new_data['year'] = year
-        new_data = new_data.set_index(['draw', 'year', 'Facility_ID', 'Officer_Category'])
-
-        # Replace empty values in staff_count with values from new_data
-        staff_count.loc[condition_draw & condition_year] = staff_count.loc[
-            condition_draw & condition_year].fillna(new_data)
-
-staff_count_by_level_and_officer_type = staff_count.groupby(['draw', 'year', 'Facility_Level', 'Officer_Category'])[
-    'Staff_Count'].sum().reset_index()
-staff_count_by_level_and_officer_type['Facility_Level'] = staff_count_by_level_and_officer_type['Facility_Level'].astype(str)
+# Update above series to get staff count by Facility_Level
+available_staff_count_by_facid_and_officertype = available_staff_count_by_facid_and_officertype.reset_index().rename(columns= {'FacilityID': 'Facility_ID', 'Officer': 'OfficerType'})
+available_staff_count_by_facid_and_officertype['Facility_ID'] = pd.to_numeric(available_staff_count_by_facid_and_officertype['Facility_ID'])
+available_staff_count_by_facid_and_officertype['Facility_Level'] = available_staff_count_by_facid_and_officertype['Facility_ID'].map(facility_id_levels_dict)
+idx = pd.IndexSlice
+available_staff_count_by_level_and_officer_type = available_staff_count_by_facid_and_officertype.drop(columns = [idx['Facility_ID']]).groupby([idx['year'], idx['Facility_Level'], idx['OfficerType']]).sum()
+available_staff_count_by_level_and_officer_type = melt_model_output_draws_and_runs(available_staff_count_by_level_and_officer_type.reset_index(), id_vars= ['year', 'Facility_Level', 'OfficerType'])
+available_staff_count_by_level_and_officer_type['Facility_Level'] = available_staff_count_by_level_and_officer_type['Facility_Level'].astype(str) # make sure facility level is stored as string
+available_staff_count_by_level_and_officer_type = available_staff_count_by_level_and_officer_type.drop(available_staff_count_by_level_and_officer_type[available_staff_count_by_level_and_officer_type['Facility_Level'] == '5'].index) # drop headquarters because we're only concerned with staff engaged in service delivery
 
 # Check if any cadres were not utilised at particular levels of care in the simulation
-def expand_capacity_by_officer_type_and_facility_level(_df: pd.Series) -> pd.Series:
+def get_capacity_used_by_officer_type_and_facility_level(_df: pd.Series) -> pd.Series:
     """Summarise the parsed logged-key results for one draw (as dataframe) into a pd.Series."""
     _df = _df.set_axis(_df['date'].dt.year).drop(columns=['date'])
     _df.index.name = 'year'
@@ -170,29 +155,27 @@ annual_capacity_used_by_cadre_and_level = extract_results(
     Path(results_folder),
     module='tlo.methods.healthsystem.summary',
     key='Capacity_By_OfficerType_And_FacilityLevel',
-    custom_generate_series=expand_capacity_by_officer_type_and_facility_level,
+    custom_generate_series=get_capacity_used_by_officer_type_and_facility_level,
     do_scaling=False,
 ) #, only_mean=True, collapse_columns=True
 
 # Prepare capacity used dataframe to be multiplied by staff count
 average_capacity_used_by_cadre_and_level = annual_capacity_used_by_cadre_and_level.groupby(['OfficerType', 'FacilityLevel']).mean().reset_index(drop=False)
+# TODO see if cadre-level combinations should be chosen by year
 average_capacity_used_by_cadre_and_level.reset_index(drop=True) # Flatten multi=index column
 average_capacity_used_by_cadre_and_level = average_capacity_used_by_cadre_and_level.melt(id_vars=['OfficerType', 'FacilityLevel'],
                         var_name=['draw', 'run'],
                         value_name='capacity_used')
-# Unstack to make it look like a nice table
-average_capacity_used_by_cadre_and_level['OfficerType_FacilityLevel'] = 'Officer_Type=' + average_capacity_used_by_cadre_and_level['OfficerType'].astype(str) + '|Facility_Level=' + average_capacity_used_by_cadre_and_level['FacilityLevel'].astype(str)
-list_of_cadre_and_level_combinations_used = average_capacity_used_by_cadre_and_level[average_capacity_used_by_cadre_and_level['capacity_used'] != 0][['OfficerType_FacilityLevel', 'draw', 'run']]
-print(f"Out of {len(average_capacity_used_by_cadre_and_level.OfficerType_FacilityLevel.unique())} cadre and level combinations available, {len(list_of_cadre_and_level_combinations_used.OfficerType_FacilityLevel.unique())} are used across the simulations")
+list_of_cadre_and_level_combinations_used = average_capacity_used_by_cadre_and_level[average_capacity_used_by_cadre_and_level['capacity_used'] != 0][['OfficerType', 'FacilityLevel', 'draw', 'run']]
+print(f"Out of {average_capacity_used_by_cadre_and_level.groupby(['OfficerType', 'FacilityLevel']).size().count()} cadre and level combinations available, {list_of_cadre_and_level_combinations_used.groupby(['OfficerType', 'FacilityLevel']).size().count()} are used across the simulations")
 
 # Subset scenario staffing level to only include cadre-level combinations used in the simulation
-staff_count_by_level_and_officer_type['OfficerType_FacilityLevel'] = 'Officer_Type=' + staff_count_by_level_and_officer_type['Officer_Category'].astype(str) + '|Facility_Level=' + staff_count_by_level_and_officer_type['Facility_Level'].astype(str)
-used_staff_count_by_level_and_officer_type = staff_count_by_level_and_officer_type.merge(list_of_cadre_and_level_combinations_used, on = ['draw', 'OfficerType_FacilityLevel'], how = 'right', validate = 'm:m')
+used_staff_count_by_level_and_officer_type = available_staff_count_by_level_and_officer_type.merge(list_of_cadre_and_level_combinations_used, left_on = ['draw','run','OfficerType', 'Facility_Level'],
+                                                                                         right_on = ['draw','run','OfficerType', 'FacilityLevel'], how = 'right', validate = 'm:m')
 
 # Calculate various components of HR cost
 # 1.1 Salary cost for current total staff
 #---------------------------------------------------------------------------------------------------------------
-staff_count_by_level_and_officer_type = staff_count_by_level_and_officer_type.drop(staff_count_by_level_and_officer_type[staff_count_by_level_and_officer_type.Facility_Level == '5'].index) # drop headquarters because we're only concerned with staff engaged in service delivery
 salary_for_all_staff = pd.merge(staff_count_by_level_and_officer_type[['draw', 'year', 'OfficerType_FacilityLevel', 'Staff_Count']],
                                      hr_annual_salary[['OfficerType_FacilityLevel', 'Annual_Salary']], on = ['OfficerType_FacilityLevel'], how = "left", validate = 'm:1')
 salary_for_all_staff['Cost'] = salary_for_all_staff['Annual_Salary'] * salary_for_all_staff['Staff_Count']
