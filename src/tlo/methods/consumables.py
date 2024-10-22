@@ -54,7 +54,7 @@ class Consumables:
         self._prob_item_codes_available = None  # Data on the probability of each item_code being available
         self._is_available = None  # Dict of sets giving the set of item_codes available, by facility_id
         self._is_unknown_item_available = None  # Whether an unknown item is available, by facility_id
-        self._not_recognised_item_codes = set()  # The item codes requested but which are not recognised.
+        self._not_recognised_item_codes = defaultdict(set)  # The item codes requested but which are not recognised.
 
         # Save designations
         self._item_code_designations = item_code_designations
@@ -214,8 +214,9 @@ class Consumables:
         """
 
         # Issue warning if any item_code is not recognised.
-        if not self.item_codes.issuperset(item_codes.keys()):
-            self._not_recognised_item_codes.add((treatment_id, tuple(set(item_codes.keys()) - self.item_codes)))
+        not_recognised_item_codes = item_codes.keys() - self.item_codes
+        if len(not_recognised_item_codes) > 0:
+            self._not_recognised_item_codes[treatment_id] |= not_recognised_item_codes
 
         # Look-up whether each of these items is available in this facility currently:
         available = self._lookup_availability_of_consumables(item_codes=item_codes, facility_info=facility_info)
@@ -265,15 +266,24 @@ class Consumables:
         return avail
 
     def on_simulation_end(self):
-        """Do tasks at the end of the simulation: Raise warnings and enter to log about item_codes not recognised."""
-        if self._not_recognised_item_codes:
-            warnings.warn(UserWarning(f"Item_Codes were not recognised./n"
-                                      f"{self._not_recognised_item_codes}"))
-            for _treatment_id, _item_codes in self._not_recognised_item_codes:
-                logger.info(
-                    key="item_codes_not_recognised",
-                    data={_treatment_id if _treatment_id is not None else "": list(_item_codes)}
+        """Do tasks at the end of the simulation.
+         
+        Raise warnings and enter to log about item_codes not recognised.
+        """
+        if len(self._not_recognised_item_codes) > 0:
+            not_recognised_item_codes = {
+                treatment_id if treatment_id is not None else "": sorted(codes) 
+                for treatment_id, codes in self._not_recognised_item_codes.items()
+            }
+            warnings.warn(
+                UserWarning(
+                    f"Item_Codes were not recognised.\n{not_recognised_item_codes}"
                 )
+            )
+            logger.info(
+                key="item_codes_not_recognised",
+                data=not_recognised_item_codes,
+            )
 
     def on_end_of_year(self):
         self._summary_counter.write_to_log_and_reset_counters()
