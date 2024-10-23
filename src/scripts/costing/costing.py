@@ -46,9 +46,6 @@ figurespath = costing_outputs_folder / "figures"
 if not os.path.exists(figurespath):
     os.makedirs(figurespath)
 
-# Declare period for which the results will be generated (defined inclusively)
-TARGET_PERIOD = (Date(2010, 1, 1), Date(2030, 12, 31))
-
 # Useful common functions
 def drop_outside_period(_df):
     """Return a dataframe which only includes for which the date is within the limits defined by TARGET_PERIOD"""
@@ -99,18 +96,43 @@ facility_id_levels_dict = dict(zip(mfl['Facility_ID'], mfl['Facility_Level']))
 fac_levels = set(mfl.Facility_Level)
 
 # Overall cost assumptions
+TARGET_PERIOD = (Date(2010, 1, 1), Date(2030, 12, 31)) # Declare period for which the results will be generated (defined inclusively)
 discount_rate = 0.03
 
-#%% Calculate financial costs
-# 1. HR cost
-# Load annual salary by officer type and facility level
+# Read all cost parameters
+#---------------------------------------
+# Read parameters for HR costs
 hr_cost_parameters = workbook_cost["human_resources"]
-hr_cost_parameters['Facility_Level'] =  hr_cost_parameters['Facility_Level'].astype(str)
-hr_annual_salary = hr_cost_parameters[hr_cost_parameters['Parameter_name'] == 'salary_usd']
-hr_annual_salary['OfficerType_FacilityLevel'] = 'Officer_Type=' + hr_annual_salary['Officer_Category'].astype(str) + '|Facility_Level=' + hr_annual_salary['Facility_Level'].astype(str) # create column for merging with model log
-hr_annual_salary = hr_annual_salary.rename({'Value':'Annual_Salary'}, axis = 1)
+hr_cost_parameters['Facility_Level'] =  hr_cost_parameters['Facility_Level'].astype(str) # Store Facility_Level as string
 
-# Get staffing level for each year and draw
+# Read parameters for consumables costs
+# Load consumables cost data
+unit_price_consumable = workbook_cost["consumables"]
+unit_price_consumable = unit_price_consumable.rename(columns=unit_price_consumable.iloc[0])
+unit_price_consumable = unit_price_consumable[['Item_Code', 'Final_price_per_chosen_unit (USD, 2023)']].reset_index(drop=True).iloc[1:]
+unit_price_consumable = unit_price_consumable[unit_price_consumable['Item_Code'].notna()]
+
+# CALCULATE FINANCIAL COSTS
+#%%
+# 1. HR cost
+#------------------------
+# Define a function to merge unit cost data with model outputs
+def merge_cost_and_model_data(cost_df, model_df, varnames):
+    merged_df = model_df.copy()
+    for varname in varnames:
+        new_cost_df = cost_df[cost_df['Parameter_name'] == varname][['OfficerType', 'Facility_Level', 'Value']]
+        new_cost_df = new_cost_df.rename(columns={"Value": varname})
+        if ((new_cost_df['OfficerType'] == 'All').all()) and ((new_cost_df['Facility_Level'] == 'All').all()):
+            merged_df[varname] = new_cost_df[varname].mean()
+        elif ((new_cost_df['OfficerType'] == 'All').all()) and ((new_cost_df['Facility_Level'] == 'All').all() == False):
+            merged_df = pd.merge(merged_df, new_cost_df[['Facility_Level',varname]], on=['Facility_Level'], how="left")
+        elif ((new_cost_df['OfficerType'] == 'All').all() == False) and ((new_cost_df['Facility_Level'] == 'All').all()):
+            merged_df = pd.merge(merged_df, new_cost_df[['OfficerType',varname]], on=['OfficerType'], how="left")
+        else:
+            merged_df = pd.merge(merged_df, new_cost_df, on=['OfficerType', 'Facility_Level'], how="left")
+    return merged_df
+
+# Get available staff count for each year and draw
 def get_staff_count_by_facid_and_officer_type(_df: pd.Series) -> pd.Series:
     """Summarise the parsed logged-key results for one draw (as dataframe) into a pd.Series."""
     _df = _df.set_axis(_df['date'].dt.year).drop(columns=['date'])
@@ -143,8 +165,11 @@ available_staff_count_by_level_and_officer_type = available_staff_count_by_facid
 available_staff_count_by_level_and_officer_type = melt_model_output_draws_and_runs(available_staff_count_by_level_and_officer_type.reset_index(), id_vars= ['year', 'Facility_Level', 'OfficerType'])
 available_staff_count_by_level_and_officer_type['Facility_Level'] = available_staff_count_by_level_and_officer_type['Facility_Level'].astype(str) # make sure facility level is stored as string
 available_staff_count_by_level_and_officer_type = available_staff_count_by_level_and_officer_type.drop(available_staff_count_by_level_and_officer_type[available_staff_count_by_level_and_officer_type['Facility_Level'] == '5'].index) # drop headquarters because we're only concerned with staff engaged in service delivery
+available_staff_count_by_level_and_officer_type.rename(columns ={'value': 'staff_count'}, inplace=True)
 
-# Check if any cadres were not utilised at particular levels of care in the simulation
+# Get list of cadres which were utilised in each run to get the count of staff used in the simulation
+# Note that we still cost the full staff count for any cadre-Facility_Level combination that was ever used in a run, and
+# not the amount of time which was used
 def get_capacity_used_by_officer_type_and_facility_level(_df: pd.Series) -> pd.Series:
     """Summarise the parsed logged-key results for one draw (as dataframe) into a pd.Series."""
     _df = _df.set_axis(_df['date'].dt.year).drop(columns=['date'])
@@ -157,7 +182,7 @@ annual_capacity_used_by_cadre_and_level = extract_results(
     key='Capacity_By_OfficerType_And_FacilityLevel',
     custom_generate_series=get_capacity_used_by_officer_type_and_facility_level,
     do_scaling=False,
-) #, only_mean=True, collapse_columns=True
+)
 
 # Prepare capacity used dataframe to be multiplied by staff count
 average_capacity_used_by_cadre_and_level = annual_capacity_used_by_cadre_and_level.groupby(['OfficerType', 'FacilityLevel']).mean().reset_index(drop=False)
@@ -168,55 +193,38 @@ average_capacity_used_by_cadre_and_level = average_capacity_used_by_cadre_and_le
                         value_name='capacity_used')
 list_of_cadre_and_level_combinations_used = average_capacity_used_by_cadre_and_level[average_capacity_used_by_cadre_and_level['capacity_used'] != 0][['OfficerType', 'FacilityLevel', 'draw', 'run']]
 print(f"Out of {average_capacity_used_by_cadre_and_level.groupby(['OfficerType', 'FacilityLevel']).size().count()} cadre and level combinations available, {list_of_cadre_and_level_combinations_used.groupby(['OfficerType', 'FacilityLevel']).size().count()} are used across the simulations")
+list_of_cadre_and_level_combinations_used = list_of_cadre_and_level_combinations_used.rename(columns = {'FacilityLevel':'Facility_Level'})
 
 # Subset scenario staffing level to only include cadre-level combinations used in the simulation
-used_staff_count_by_level_and_officer_type = available_staff_count_by_level_and_officer_type.merge(list_of_cadre_and_level_combinations_used, left_on = ['draw','run','OfficerType', 'Facility_Level'],
-                                                                                         right_on = ['draw','run','OfficerType', 'FacilityLevel'], how = 'right', validate = 'm:m')
+used_staff_count_by_level_and_officer_type = available_staff_count_by_level_and_officer_type.merge(list_of_cadre_and_level_combinations_used, on = ['draw','run','OfficerType', 'Facility_Level'], how = 'right', validate = 'm:m')
+used_staff_count_by_level_and_officer_type.rename(columns ={'value': 'staff_count'}, inplace=True)
 
 # Calculate various components of HR cost
 # 1.1 Salary cost for current total staff
 #---------------------------------------------------------------------------------------------------------------
-salary_for_all_staff = pd.merge(staff_count_by_level_and_officer_type[['draw', 'year', 'OfficerType_FacilityLevel', 'Staff_Count']],
-                                     hr_annual_salary[['OfficerType_FacilityLevel', 'Annual_Salary']], on = ['OfficerType_FacilityLevel'], how = "left", validate = 'm:1')
-salary_for_all_staff['Cost'] = salary_for_all_staff['Annual_Salary'] * salary_for_all_staff['Staff_Count']
-total_salary_for_all_staff = salary_for_all_staff.groupby(['draw', 'year'])['Cost'].sum()
+salary_for_all_staff = merge_cost_and_model_data(cost_df = hr_cost_parameters, model_df = available_staff_count_by_level_and_officer_type,
+                                                     varnames = ['salary_usd'])
+salary_for_all_staff['Cost'] = salary_for_all_staff['salary_usd'] * salary_for_all_staff['staff_count']
+total_salary_for_all_staff = salary_for_all_staff.groupby(['draw', 'run', 'year'])['Cost'].sum()
 
 # 1.2 Salary cost for health workforce cadres used in the simulation (Staff count X Annual salary)
 #---------------------------------------------------------------------------------------------------------------
-used_staff_count_by_level_and_officer_type = used_staff_count_by_level_and_officer_type.drop(used_staff_count_by_level_and_officer_type[used_staff_count_by_level_and_officer_type.Facility_Level == '5'].index)
-salary_for_staff_used_in_scenario = pd.merge(used_staff_count_by_level_and_officer_type[['draw', 'run', 'year', 'OfficerType_FacilityLevel', 'Staff_Count']],
-                                     hr_annual_salary[['OfficerType_FacilityLevel', 'Annual_Salary']], on = ['OfficerType_FacilityLevel'], how = "left")
-salary_for_staff_used_in_scenario['Cost'] = salary_for_staff_used_in_scenario['Annual_Salary'] * salary_for_staff_used_in_scenario['Staff_Count']
-salary_for_staff_used_in_scenario = salary_for_staff_used_in_scenario[['draw', 'run', 'year', 'OfficerType_FacilityLevel', 'Cost']].set_index(['draw', 'run', 'year', 'OfficerType_FacilityLevel']).unstack(level=['draw', 'run'])
-salary_for_staff_used_in_scenario = salary_for_staff_used_in_scenario.apply(lambda x: pd.to_numeric(x, errors='coerce'))
-salary_for_staff_used_in_scenario  = summarize(salary_for_staff_used_in_scenario, only_mean = True, collapse_columns=True)
-total_salary_for_staff_used_in_scenario = salary_for_staff_used_in_scenario.groupby(['year']).sum()
+salary_for_staff_used_in_scenario = merge_cost_and_model_data(cost_df = hr_cost_parameters, model_df = used_staff_count_by_level_and_officer_type,
+                                                     varnames = ['salary_usd'])
+salary_for_staff_used_in_scenario['Cost'] = salary_for_staff_used_in_scenario['salary_usd'] * salary_for_staff_used_in_scenario['staff_count']
+total_salary_for_staff_used_in_scenario = salary_for_staff_used_in_scenario.groupby(['draw', 'run', 'year'])['Cost'].sum()
+# summarize(salary_for_staff_used_in_scenario, only_mean = True, collapse_columns=True)
+#.set_index(['draw', 'run', 'year', 'OfficerType', 'Facility_Level']).unstack(level=['draw', 'run'])
+#salary_for_staff_used_in_scenario = salary_for_staff_used_in_scenario.apply(lambda x: pd.to_numeric(x, errors='coerce'))
 
 # 1.3 Recruitment cost to fill gap created by attrition
 #---------------------------------------------------------------------------------------------------------------
-def merge_cost_and_model_data(cost_df, model_df, varnames):
-    merged_df = model_df.copy()
-    for varname in varnames:
-        new_cost_df = cost_df[cost_df['Parameter_name'] == varname][['Officer_Category', 'Facility_Level', 'Value']]
-        new_cost_df = new_cost_df.rename(columns={"Value": varname})
-        if ((new_cost_df['Officer_Category'] == 'All').all()) and ((new_cost_df['Facility_Level'] == 'All').all()):
-            merged_df[varname] = new_cost_df[varname].mean()
-        elif ((new_cost_df['Officer_Category'] == 'All').all()) and ((new_cost_df['Facility_Level'] == 'All').all() == False):
-            merged_df = pd.merge(merged_df, new_cost_df[['Facility_Level',varname]], on=['Facility_Level'], how="left")
-        elif ((new_cost_df['Officer_Category'] == 'All').all() == False) and ((new_cost_df['Facility_Level'] == 'All').all()):
-            merged_df = pd.merge(merged_df, new_cost_df[['Officer_Category',varname]], on=['Officer_Category'], how="left")
-        else:
-            merged_df = pd.merge(merged_df, new_cost_df, on=['Officer_Category', 'Facility_Level'], how="left")
-    return merged_df
-
 recruitment_cost = merge_cost_and_model_data(cost_df = hr_cost_parameters, model_df = used_staff_count_by_level_and_officer_type,
                                                      varnames = ['annual_attrition_rate', 'recruitment_cost_per_person_recruited_usd'])
-recruitment_cost['Cost'] = recruitment_cost['annual_attrition_rate'] * recruitment_cost['Staff_Count'] * \
+recruitment_cost['Cost'] = recruitment_cost['annual_attrition_rate'] * recruitment_cost['staff_count'] * \
                       recruitment_cost['recruitment_cost_per_person_recruited_usd']
-recruitment_cost = recruitment_cost[['draw', 'run', 'year', 'OfficerType_FacilityLevel', 'Cost']].set_index(['draw', 'run', 'year', 'OfficerType_FacilityLevel']).unstack(level=['draw', 'run'])
-recruitment_cost = recruitment_cost.apply(lambda x: pd.to_numeric(x, errors='coerce'))
-recruitment_cost  = summarize(recruitment_cost, only_mean = True, collapse_columns=True)
-total_recruitment_cost_for_attrited_workers = recruitment_cost.groupby(['year']).sum()
+recruitment_cost = recruitment_cost[['draw', 'run', 'year', 'Facility_Level', 'OfficerType', 'Cost']]
+total_recruitment_cost_for_attrited_workers = recruitment_cost.groupby(['draw', 'run', 'year'])['Cost'].sum()
 
 # 1.4 Pre-service training cost to fill gap created by attrition
 #---------------------------------------------------------------------------------------------------------------
@@ -231,26 +239,23 @@ preservice_training_cost['Annual_cost_per_staff_recruited'] = preservice_trainin
                                                 preservice_training_cost['annual_attrition_rate']
 # Cost per student trained * 1/Rate of absorption from the local and foreign graduates * 1/Graduation rate * attrition rate
 # the inverse of attrition rate is the average expected tenure; and the preservice training cost needs to be divided by the average tenure
-preservice_training_cost['Cost'] = preservice_training_cost['Annual_cost_per_staff_recruited'] * preservice_training_cost['Staff_Count'] # not multiplied with attrition rate again because this is already factored into 'Annual_cost_per_staff_recruited'
-preservice_training_cost = preservice_training_cost[['draw', 'run', 'year', 'OfficerType_FacilityLevel', 'Cost']].set_index(['draw', 'run', 'year', 'OfficerType_FacilityLevel']).unstack(level=['draw', 'run'])
-preservice_training_cost = preservice_training_cost.apply(lambda x: pd.to_numeric(x, errors='coerce'))
-preservice_training_cost  = summarize(preservice_training_cost, only_mean = True, collapse_columns=True)
-preservice_training_cost_for_attrited_workers = preservice_training_cost.groupby(['year']).sum()
+preservice_training_cost['Cost'] = preservice_training_cost['Annual_cost_per_staff_recruited'] * preservice_training_cost['staff_count'] # not multiplied with attrition rate again because this is already factored into 'Annual_cost_per_staff_recruited'
+preservice_training_cost = preservice_training_cost[['draw', 'run', 'year', 'OfficerType', 'Facility_Level', 'Cost']]
+preservice_training_cost_for_attrited_workers = preservice_training_cost.groupby(['draw', 'run', 'year'])['Cost'].sum()
 
 # 1.5 In-service training cost to train all staff
 #---------------------------------------------------------------------------------------------------------------
 inservice_training_cost = merge_cost_and_model_data(cost_df = hr_cost_parameters, model_df = used_staff_count_by_level_and_officer_type,
                                                      varnames = ['annual_inservice_training_cost_usd'])
-inservice_training_cost['Cost'] = inservice_training_cost['Staff_Count'] * inservice_training_cost['annual_inservice_training_cost_usd']
-inservice_training_cost = inservice_training_cost[['draw', 'run', 'year', 'OfficerType_FacilityLevel', 'Cost']].set_index(['draw', 'run', 'year', 'OfficerType_FacilityLevel']).unstack(level=['draw', 'run'])
-inservice_training_cost = inservice_training_cost.apply(lambda x: pd.to_numeric(x, errors='coerce'))
-inservice_training_cost  = summarize(inservice_training_cost, only_mean = True, collapse_columns=True)
-inservice_training_cost_for_all_staff = inservice_training_cost.groupby(['year']).sum()
+inservice_training_cost['Cost'] = inservice_training_cost['staff_count'] * inservice_training_cost['annual_inservice_training_cost_usd']
+inservice_training_cost = inservice_training_cost[['draw', 'run', 'year', 'OfficerType', 'Facility_Level', 'Cost']]
+inservice_training_cost_for_all_staff = inservice_training_cost.groupby(['draw', 'run', 'year'])['Cost'].sum()
 
 # Create a dataframe to store financial costs
 # Function to melt and label the cost category
-def melt_and_label(df, label):
-    melted_df = pd.melt(df.reset_index(), id_vars='year')
+def melt_and_label(_df, label):
+    #melted_df = pd.melt(_df.reset_index(), id_vars='year')
+    melted_df = _df.reset_index()
     melted_df['Cost_Sub-category'] = label
     return melted_df
 
@@ -269,9 +274,10 @@ for df, label in additional_costs:
     scenario_cost = pd.concat([scenario_cost, melted])
 scenario_cost['Cost_Category'] = 'Human Resources for Health'
 # TODO Consider calculating economic cost of HR by multiplying salary times staff count with cadres_utilisation_rate
-#scenario_cost.to_csv(figurespath / 'scenario_cost.csv')
+
 # %%
 # 2. Consumables cost
+#------------------------
 def get_quantity_of_consumables_dispensed(results_folder):
     def get_counts_of_items_requested(_df):
         _df = drop_outside_period(_df)
@@ -293,14 +299,12 @@ def get_quantity_of_consumables_dispensed(results_folder):
         # Convert to a pd.Series, as expected by the custom_generate_series function
         return combined_df.stack()
 
-    cons_req = summarize(
-        extract_results(
+    cons_req = extract_results(
             results_folder,
             module='tlo.methods.healthsystem.summary',
             key='Consumables',
             custom_generate_series=get_counts_of_items_requested,
             do_scaling=True)
-    )
 
     cons_dispensed = cons_req.xs("Available", level=2) # only keep actual dispensed amount, i.e. when available
     return cons_dispensed
@@ -308,25 +312,22 @@ def get_quantity_of_consumables_dispensed(results_folder):
 
 consumables_dispensed = get_quantity_of_consumables_dispensed(results_folder)
 consumables_dispensed = consumables_dispensed.reset_index().rename(columns = {'level_0': 'Item_Code', 'level_1': 'year'})
-consumables_dispensed[(     'year',      '')] = pd.to_datetime(consumables_dispensed[('year', '')]).dt.year # Extract only year from date
-consumables_dispensed[('Item_Code',      '')] = pd.to_numeric(consumables_dispensed[('Item_Code',      '')])
+consumables_dispensed[idx['year']] = pd.to_datetime(consumables_dispensed[idx['year']]).dt.year # Extract only year from date
+consumables_dispensed[idx['Item_Code']] = pd.to_numeric(consumables_dispensed[idx['Item_Code']])
+# Make a list of columns in the DataFrame pertaining to quantity dispensed
 quantity_columns = consumables_dispensed.columns.to_list()
-quantity_columns = [tup for tup in quantity_columns if ((tup != ('Item_Code', '')) & (tup != ('year', '')))] # exclude item_code and year columns
-
-# Load consumables cost data
-unit_price_consumable = workbook_cost["consumables"]
-unit_price_consumable = unit_price_consumable.rename(columns=unit_price_consumable.iloc[0])
-unit_price_consumable = unit_price_consumable[['Item_Code', 'Final_price_per_chosen_unit (USD, 2023)']].reset_index(drop=True).iloc[1:]
-unit_price_consumable = unit_price_consumable[unit_price_consumable['Item_Code'].notna()]
+quantity_columns = [tup for tup in quantity_columns if tup not in [('Item_Code', ''), ('year', '')]]
 
 # 2.1 Cost of consumables dispensed
 #---------------------------------------------------------------------------------------------------------------
 # Multiply number of items needed by cost of consumable
-cost_of_consumables_dispensed = consumables_dispensed.merge(unit_price_consumable, left_on = 'Item_Code', right_on = 'Item_Code', validate = 'm:1', how = 'left')
+#consumables_dispensed.columns = consumables_dispensed.columns.get_level_values(0).str() + "_" + consumables_dispensed.columns.get_level_values(1) # Flatten multi-level columns for pandas merge
+unit_price_consumable.columns = pd.MultiIndex.from_arrays([unit_price_consumable.columns, [''] * len(unit_price_consumable.columns)])
+cost_of_consumables_dispensed = consumables_dispensed.merge(unit_price_consumable, on = idx['Item_Code'], validate = 'm:1', how = 'left')
 price_column = 'Final_price_per_chosen_unit (USD, 2023)'
 cost_of_consumables_dispensed[quantity_columns] = cost_of_consumables_dispensed[quantity_columns].multiply(
     cost_of_consumables_dispensed[price_column], axis=0)
-total_cost_of_consumables_dispensed = cost_of_consumables_dispensed.groupby(('year', ''))[quantity_columns].sum()
+total_cost_of_consumables_dispensed = cost_of_consumables_dispensed.groupby(idx['year'])[quantity_columns].sum()
 total_cost_of_consumables_dispensed = total_cost_of_consumables_dispensed.reset_index()
 
 # 2.2 Cost of consumables stocked (quantity needed for what is dispensed)
@@ -336,14 +337,17 @@ total_cost_of_consumables_dispensed = total_cost_of_consumables_dispensed.reset_
 # an empirical estimate based on OpenLMIS data
 # Estimate the stock to dispensed ratio from OpenLMIS data
 lmis_consumable_usage = pd.read_csv(path_for_consumable_resourcefiles / "ResourceFile_Consumables_availability_and_usage.csv")
+# TODO Generate a smaller version of this file
 # Collapse individual facilities
 lmis_consumable_usage_by_item_level_month = lmis_consumable_usage.groupby(['category', 'item_code', 'district', 'fac_type_tlo', 'month'])[['closing_bal', 'dispensed', 'received']].sum()
 df = lmis_consumable_usage_by_item_level_month # Drop rows where monthly OpenLMIS data wasn't available
 df = df.loc[df.index.get_level_values('month') != "Aggregate"]
+# Opening balance in January is the closing balance for the month minus what was received during the month plus what was dispensed
 opening_bal_january = df.loc[df.index.get_level_values('month') == 'January', 'closing_bal'] + \
                       df.loc[df.index.get_level_values('month') == 'January', 'dispensed'] - \
                       df.loc[df.index.get_level_values('month') == 'January', 'received']
 closing_bal_december = df.loc[df.index.get_level_values('month') == 'December', 'closing_bal']
+# the consumable inflow during the year is the opening balance in January + what was received throughout the year - what was transferred to the next year (i.e. closing bal of December)
 total_consumables_inflow_during_the_year = df.loc[df.index.get_level_values('month') != 'January', 'received'].groupby(level=[0,1,2,3]).sum() +\
                                          opening_bal_january.reset_index(level='month', drop=True) -\
                                          closing_bal_december.reset_index(level='month', drop=True)
@@ -353,7 +357,7 @@ inflow_to_outflow_ratio = total_consumables_inflow_during_the_year.div(total_con
 # Edit outlier ratios
 inflow_to_outflow_ratio.loc[inflow_to_outflow_ratio < 1] = 1 # Ratio can't be less than 1
 inflow_to_outflow_ratio.loc[inflow_to_outflow_ratio > inflow_to_outflow_ratio.quantile(0.95)] = inflow_to_outflow_ratio.quantile(0.95) # Trim values greater than the 95th percentile
-average_inflow_to_outflow_ratio_ratio = inflow_to_outflow_ratio.mean()
+average_inflow_to_outflow_ratio_ratio = inflow_to_outflow_ratio.mean() # Use average where item-specific ratio is not available
 
 # Multiply number of items needed by cost of consumable
 inflow_to_outflow_ratio_by_consumable = inflow_to_outflow_ratio.groupby(level='item_code').mean()
@@ -361,11 +365,12 @@ excess_stock_ratio = inflow_to_outflow_ratio_by_consumable - 1
 excess_stock_ratio = excess_stock_ratio.reset_index().rename(columns = {0: 'excess_stock_proportion_of_dispensed'})
 # TODO Consider whether a more disaggregated version of the ratio dictionary should be applied
 cost_of_excess_consumables_stocked = consumables_dispensed.merge(unit_price_consumable, left_on = 'Item_Code', right_on = 'Item_Code', validate = 'm:1', how = 'left')
+excess_stock_ratio.columns = pd.MultiIndex.from_arrays([excess_stock_ratio.columns, [''] * len(excess_stock_ratio.columns)]) # TODO convert this into a funciton
 cost_of_excess_consumables_stocked = cost_of_excess_consumables_stocked.merge(excess_stock_ratio, left_on = 'Item_Code', right_on = 'item_code', validate = 'm:1', how = 'left')
 cost_of_excess_consumables_stocked.loc[cost_of_excess_consumables_stocked.excess_stock_proportion_of_dispensed.isna(), 'excess_stock_proportion_of_dispensed'] = average_inflow_to_outflow_ratio_ratio - 1# TODO disaggregate the average by program
-cost_of_excess_consumables_stocked[quantity_columns] = cost_of_excess_consumables_stocked[quantity_columns].multiply(cost_of_excess_consumables_stocked[price_column], axis=0)
-cost_of_excess_consumables_stocked[quantity_columns] = cost_of_excess_consumables_stocked[quantity_columns].multiply(cost_of_excess_consumables_stocked['excess_stock_proportion_of_dispensed'], axis=0)
-total_cost_of_excess_consumables_stocked = cost_of_excess_consumables_stocked.groupby(('year', ''))[quantity_columns].sum()
+cost_of_excess_consumables_stocked[quantity_columns] = cost_of_excess_consumables_stocked[quantity_columns].multiply(cost_of_excess_consumables_stocked[idx[price_column]], axis=0)
+cost_of_excess_consumables_stocked[quantity_columns] = cost_of_excess_consumables_stocked[quantity_columns].multiply(cost_of_excess_consumables_stocked[idx['excess_stock_proportion_of_dispensed']], axis=0)
+total_cost_of_excess_consumables_stocked = cost_of_excess_consumables_stocked.groupby(idx['year'])[quantity_columns].sum()
 total_cost_of_excess_consumables_stocked = total_cost_of_excess_consumables_stocked.reset_index()
 
 # Add to financial costs dataframe
@@ -373,8 +378,9 @@ total_cost_of_excess_consumables_stocked = total_cost_of_excess_consumables_stoc
 def melt_and_label_consumables_cost(_df, label):
     multi_index = pd.MultiIndex.from_tuples(_df.columns)
     _df.columns = multi_index
-    melted_df = pd.melt(_df, id_vars='year').rename(columns = {'variable_0': 'draw', 'variable_1': 'stat'})
+    melted_df = pd.melt(_df, id_vars='year').rename(columns = {'variable_0': 'draw', 'variable_1': 'run'})
     melted_df['Cost_Sub-category'] = label
+    melted_df = melted_df.rename(columns = {'value': 'Cost'})
     return melted_df
 
 consumable_costs = [
