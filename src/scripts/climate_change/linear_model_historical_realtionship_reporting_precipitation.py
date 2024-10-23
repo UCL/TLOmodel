@@ -2,8 +2,7 @@ import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 from statsmodels.othermod.betareg import BetaModel
-from statsmodels.stats.outliers_influence import variance_inflation_factor
-
+import matplotlib.pyplot as plt
 # # data is from 2011 - 2024 - for facility
 monthly_reporting_by_facility = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_by_smaller_facility_lm.csv", index_col=0)
 weather_data_historical = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facility_lm.csv", index_col=0)
@@ -43,7 +42,8 @@ def build_model(X, y, scale_y=True, beta=True, X_mask_mm = 0):
     y_scaled = np.clip(y_scaled, epsilon, 1 - epsilon)
     mask = ~np.isnan(X).any(axis=1) & ~np.isnan(y_scaled) & (X[:, 0] >= X_mask_mm)
     model = BetaModel(y_scaled[mask], X[mask]) if beta else sm.OLS(y_scaled[mask], X[mask])
-    return model.fit()
+    model_fit = model.fit()
+    return model_fit, model_fit.predict(X[mask]), mask
 
 # One-hot encode facilities
 facility_encoded = pd.get_dummies(facility_flattened, drop_first=True)
@@ -74,7 +74,7 @@ def create_binary_feature(threshold, weather_data_df, recent_months):
 above_below_average = create_binary_feature(
     grouped_data.groupby(['facility', 'month'])['weather_data'].transform('mean'), weather_data_historical, 0
 )
-above_below_X = create_binary_feature(1000, weather_data_historical, 12)
+above_below_X = create_binary_feature(2000, weather_data_historical, 12)
 
 # Prepare additional facility info
 expanded_facility_info = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm.csv", index_col=0)
@@ -113,10 +113,10 @@ X = np.column_stack([
     facility_encoded,
     altitude
 ])
-results = build_model(X, y, scale_y=False, beta=False, X_mask_mm = 1000)
+results, y_pred, mask  = build_model(X, y, scale_y=False, beta=False, X_mask_mm = 1000)
 #results = build_model(X, y, scale_y=True, beta=True, X_mask_mm = 1000)
 
-#print(results.summary())
+print(results.summary())
 
 print(sum(X[:, 0] >= 1000)/len(X))
 
@@ -135,10 +135,27 @@ X = np.column_stack([
     #lag_3_month,
     altitude
 ])
-results = build_model(X, y, scale_y=False, beta=False, X_mask_mm = 1000)
-
+results, y_pred, mask = build_model(X, y, scale_y=False, beta=False, X_mask_mm = 1000)
 
 print(results.summary())
 
-print(sum(X[:, 0] >= 1000)/len(X))
+
+##### Plot y_predic
+
+X_filtered = X[mask]
+
+print(len(y_pred))
+print(len(X_filtered))
+
+plt.scatter(X_filtered[:, 0], y_pred)
+
+plt.title('Predicted Reporting Over Time - Facility ')
+plt.ylabel('Reporting (%)')
+plt.xlabel('Precip (mm)')
+plt.ylim(0.9,1)
+plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
+plt.show()
+
+
+
 
