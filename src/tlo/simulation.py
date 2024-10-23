@@ -126,6 +126,8 @@ class Simulation:
         )
         self.rng = np.random.RandomState(np.random.MT19937(self._seed_seq))
 
+        self._initialised = False
+
 
     def _configure_logging(
         self,
