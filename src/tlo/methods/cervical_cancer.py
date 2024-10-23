@@ -799,8 +799,6 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # write it into the main sim.population.props df yet (reading/writing there is time-consuming),
         # and instead do one write to it at the end of the event, when everything is settled.
 
-        df.ce_new_stage_this_month = False
-
         df['ce_hiv_unsuppressed'] = ((df['hv_art'] == 'on_not_vl_suppressed') | (df['hv_art'] == 'not')) & (df['hv_inf'])
 
         # determine if the person had a treatment during this stage of cancer (nb. treatment only has an effect on
@@ -814,7 +812,7 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 #           print(stage, lm, gets_new_stage, idx_gets_new_stage)
 
             df.loc[idx_gets_new_stage, 'ce_hpv_cc_status'] = stage
-            df.loc[idx_gets_new_stage, 'ce_new_stage_this_month'] = True
+            df.loc[df['is_alive'], 'ce_new_stage_this_month'] = df.index.isin(idx_gets_new_stage)
 
         # Identify rows where the status is 'cin1'
         has_cin1 = (
