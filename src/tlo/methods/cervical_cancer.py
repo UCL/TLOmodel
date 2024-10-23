@@ -1625,6 +1625,8 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_cured_past_year = df.ce_cured_date_cc.between(date_1_year_ago, self.sim.date).sum()
         n_thermoabl_past_year = df.ce_date_thermoabl.between(date_1_year_ago, self.sim.date).sum()
         n_cryotherapy_past_year = df.ce_date_cryotherapy.between(date_1_year_ago, self.sim.date).sum()
+        n_via_past_year = df.ce_date_via.between(date_1_year_ago, self.sim.date).sum()
+        n_xpert_past_year = df.ce_date_xpert.between(date_1_year_ago, self.sim.date).sum()
 
 
         date_1p25_years_ago = self.sim.date - pd.DateOffset(days=456)
@@ -1753,6 +1755,9 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         out.update({"n_women_hivpos": n_women_hivpos})
         out.update({"n_thermoabl_past_year": n_thermoabl_past_year})
         out.update({"n_cryotherapy_past_year": n_cryotherapy_past_year})
+        out.update({"n_via_past_year": n_cryotherapy_past_year})
+        out.update({"n_xpert_past_year": n_cryotherapy_past_year})
+
 
         pop = len(df[df.is_alive])
         count_summary = {
@@ -1781,7 +1786,7 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
               'total_hivneg_cin2:', out['total_hivneg_cin2'], 'total_hivneg_cin3:', out['total_hivneg_cin3'], 'total_hivneg_stage1:', out['total_hivneg_stage1'],
               'total_hivneg_stage2a:', out['total_hivneg_stage2a'], 'total_hivneg_stage2b:', out['total_hivneg_stage2b'],
               'total_hivneg_stage3:', out['total_hivneg_stage3'], 'total_hivneg_stage4:', out['total_hivneg_stage4'],
-              'year:', out['rounded_decimal_year'], 'deaths_past_year:', out['n_deaths_past_year'],
+              'year:', out['rounded_decimal_year'], 'deaths_past_year:', out['n_deaths_past_year'],out['n_via_past_year'],out['n_xpert_past_year'],
               'n_deaths_cc_hivneg_past_year:', out['n_deaths_cc_hivneg_past_year'],
               'n_deaths_cc_hivpos_past_year:', out['n_deaths_cc_hivpos_past_year'],
               'n_deaths_cc_hiv_past_year:', out['n_deaths_cc_hiv_past_year'],
