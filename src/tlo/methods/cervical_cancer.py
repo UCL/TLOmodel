@@ -812,7 +812,7 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 #           print(stage, lm, gets_new_stage, idx_gets_new_stage)
 
             df.loc[idx_gets_new_stage, 'ce_hpv_cc_status'] = stage
-            df.loc[df['is_alive'], 'ce_new_stage_this_month'] = df.index.isin(idx_gets_new_stage)
+            df['ce_new_stage_this_month'] = df.index.isin(idx_gets_new_stage)
 
         # Identify rows where the status is 'cin1'
         has_cin1 = (
