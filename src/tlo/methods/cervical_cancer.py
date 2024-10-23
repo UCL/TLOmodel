@@ -363,6 +363,8 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         df.loc[df.is_alive, 'ce_current_cc_diagnosed'] = False
         df.loc[df.is_alive, "ce_selected_for_via_this_month"] = False
         df.loc[df.is_alive, "ce_selected_for_xpert_this_month"] = False
+        df.at[df.is_alive, "days_since_last_via"] = pd.NaT
+        df.at[df.is_alive, "days_since_last_xpert"] = pd.NaT
         df.loc[df.is_alive, "ce_biopsy"] = False
         df.loc[df.is_alive, "ce_ever_screened"] = False
         df.loc[df.is_alive, "ce_ever_diagnosed"] = False
@@ -836,12 +838,13 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # chanied union statement the current value, in order to absolute prevent reversions... i.e.
         # add in ce_cc_ever on the end of this line.
 
-
-
-        df['ce_cc_ever'] = ((df.ce_hpv_cc_status == 'stage1') | (df.ce_hpv_cc_status == 'stage2a')
-                            | (df.ce_hpv_cc_status == 'stage2b') | (df.ce_hpv_cc_status == 'stage3') | (
-                                    df.ce_hpv_cc_status == 'stage4')
-                            | df.ce_ever_treated)
+        df.loc[
+            (df['is_alive']) & (~df['ce_cc_ever']),  # Apply only if is_alive is True and ce_cc_ever is not True
+            'ce_cc_ever'
+        ] = (
+            (df['ce_hpv_cc_status'].isin(['stage1', 'stage2a', 'stage2b', 'stage3', 'stage4']))
+            | df['ce_ever_treated']
+        )
 
         # -------------------------------- SCREENING FOR CERVICAL CANCER USING XPERT HPV TESTING AND VIA---------------
         # A subset of women aged 30-50 will receive a screening test
