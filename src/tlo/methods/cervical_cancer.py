@@ -288,6 +288,10 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             Types.DATE,
         "date of thermoablation for CIN"
         ),
+        "ce_date_cryotherapy": Property(
+            Types.DATE,
+            "date of cryotherapy for CIN"
+        ),
         "ce_current_cc_diagnosed": Property(
             Types.BOOL,
             "currently has diagnosed cervical cancer (which until now has not been cured)"
@@ -636,6 +640,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         df.at[child_id, "ce_xpert_hpv_ever_pos"] = False
         df.at[child_id, "ce_via_cin_ever_detected"] = False
         df.at[child_id, "ce_date_thermoabl"] = pd.NaT
+        df.loc[child_id, "ce_date_cryotherapy"] = pd.NaT
         df.at[child_id, "days_since_last_via"] = pd.NaT
         df.at[child_id, "days_since_last_xpert"] = pd.NaT
         df.at[child_id, "ce_current_cc_diagnosed"] = False
@@ -1755,8 +1760,8 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         out.update({"n_women_hivpos": n_women_hivpos})
         out.update({"n_thermoabl_past_year": n_thermoabl_past_year})
         out.update({"n_cryotherapy_past_year": n_cryotherapy_past_year})
-        out.update({"n_via_past_year": n_cryotherapy_past_year})
-        out.update({"n_xpert_past_year": n_cryotherapy_past_year})
+        out.update({"n_via_past_year": n_via_past_year})
+        out.update({"n_xpert_past_year": n_xpert_past_year})
 
 
         pop = len(df[df.is_alive])
