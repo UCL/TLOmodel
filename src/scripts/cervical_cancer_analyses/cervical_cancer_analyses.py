@@ -66,7 +66,7 @@ log_config = {
 
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 1)
+end_date = Date(2025, 1, 1)
 popsize = 1700
 
 def run_sim(service_availability):
