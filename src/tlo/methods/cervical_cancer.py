@@ -951,8 +951,7 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             days_spread = 90
             date_min = self.sim.date
             date_max = self.sim.date + pd.DateOffset(days=days_spread)
-            df.loc[selected_to_die, 'ce_date_death'] = pd.to_datetime(rng.uniform(date_min.value, date_max.value), unit='ns')
-
+            df.loc[person_id, 'ce_date_death'] = pd.to_datetime(rng.uniform(date_min.value, date_max.value), unit='ns')
 
     # todo: distribute death dates across next 30 days
 
