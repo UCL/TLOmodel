@@ -8,6 +8,9 @@ import pkgutil
 from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Mapping, Set, Type, Union
+import csv
+from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+
 
 import numpy as np
 
@@ -70,6 +73,24 @@ def get_color_short_treatment_id_extra_modules(short_treatment_id: str) -> str:
         _standardize_short_treatment_id(short_treatment_id), np.nan
     )
 
+def is_valid_tlo_module_or_event_subclass(obj: Any, excluded_modules: Set[str]) -> bool:
+    """Determine whether object is a ``Module`` subclass and not in an excluded set.
+
+    :param obj: Object to check if ``Module`` subclass.
+    :param excluded_modules: Set of names of ``Module`` subclasses to force check to
+        return ``False`` for.
+
+    :return: ``True`` is ``obj`` is a _strict_ subclass of ``Module`` and not in the
+        ``excluded_modules`` set.
+    """
+    return (
+        inspect.isclass(obj)
+        and (
+            (issubclass(obj, Module) and obj is not Module)) #or
+            #(issubclass(obj, RegularEvent) and issubclass(obj, PopulationScopeEventMixin))
+        #)
+        and obj.__name__ not in excluded_modules
+    )
 
 def get_properties(
     module: Union[Module, Type[Module]],
@@ -87,14 +108,17 @@ def get_properties(
 def check_properties_in_module(module: Any, properties: Set[str]) -> Set[str]:
     """Check if any of the properties are used in the given module's script."""
     used_properties = set()
-
     # Get the source code of the module
-    source_code = inspect.getsource(module)
-
+    file_path = inspect.getfile(module)
+    with open(file_path, 'r') as file:
+        source_code = file.read()
     # Check each property for usage in the source code
-    for prop in properties:
-        if prop in source_code:
-            used_properties.add(prop)
+    if properties is not None:
+        for prop in properties:
+            if (prop in source_code or
+                f"'{prop}'" in source_code or
+                f'"{prop}"' in source_code):
+                used_properties.add(prop)
 
     return used_properties
 
@@ -116,7 +140,7 @@ def get_module_property_map(excluded_modules: Set[str]) -> Mapping[str, Set[Type
     for _, main_module_name, _ in pkgutil.iter_modules([methods_package_path]):
         methods_module = importlib.import_module(f'tlo.methods.{main_module_name}')
         for _, obj in inspect.getmembers(methods_module):
-            if is_valid_tlo_module_subclass(obj, excluded_modules):
+            if is_valid_tlo_module_or_event_subclass(obj, excluded_modules):
                 properties_dictionary[obj.__name__] = obj
     return properties_dictionary
 
@@ -214,14 +238,7 @@ def construct_property_dependency_graph(
                 if property_module != dependent_module:
                     used_properties = check_properties_in_module(dependent_module, properties_of_module)
                     for property in used_properties:
-                        if property.startswith("ri"):
-                            node_attributes = {
-                                "fillcolor": "darkorange",
-                                "color": "black",  # Outline color
-                                "fontname": "Arial",
-                            }
-                        else:
-                            node_attributes = {
+                        node_attributes = {
                                 "fillcolor": "white",
                                 "color": "black",  # Outline color
                                 "fontname": "Arial",
@@ -276,9 +293,8 @@ def property_dependency_map_by_module(
                         property_graph.add_node(pydot.Node(property, **property_node_attributes))
                         property_graph.add_edge(pydot.Edge(property, key))
 
-        graph_name = output_path/f"{key}.png"
-        #print(property_graph)
-        property_graph.write(graph_name,  format="png")
+        graph_name = output_path / f"{key}.png"
+        property_graph.write(graph_name, format="png")
 
 
 if __name__ == "__main__":
@@ -322,4 +338,4 @@ if __name__ == "__main__":
         properies_node_defaults={"shape": "square"}
     )
 
-    module_graph.write(args.output_file/"property_graph_full.png", format="png")
+    module_graph.write(args.output_file / "property_graph_full.png", format="png")
