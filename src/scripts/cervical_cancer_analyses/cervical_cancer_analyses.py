@@ -111,13 +111,7 @@ def run_sim(service_availability):
     #     f.write(df_hash_population_props)
     # parse the simulation logfile to get the output dataframes
     log_df = parse_log_file(sim.log_filepath)
-    df_hash_population_props = hash_dataframe(sim.population.props)
 
-    print(f"Hash: {df_hash_population_props}")
-
-    # Save hash to a file
-    with open('/Users/marianasuarez/Downloads/TLOmodelTest/df_hash_test.txt', 'w') as f:
-        f.write(df_hash_population_props)
     return log_df
 
 
