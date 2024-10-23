@@ -39,16 +39,30 @@ plt.show()
 
 
 monthly_reporting_by_facility = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_by_smaller_facility_lm.csv", index_col=0)
-print(print(monthly_reporting_by_facility.columns)
-)
+
 for i in range(len(monthly_reporting_by_facility.columns)):
     plt.plot(monthly_reporting_by_facility.iloc[:, i], label = monthly_reporting_by_facility.columns[i])
 
 plt.title('Average Reprting Over Time - Facility ')
-plt.ylabel('Precip (mm)')
+plt.ylabel('Reporting (%)')
 plt.xlabel('Time')
 plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
 plt.show()
+
+
+for i in range(len(monthly_reporting_by_facility.columns)):
+    for j in range(len(monthly_reporting_by_facility.iloc[:, i])):
+        if weather_data_historical.iloc[j, i] > 1000:
+            plt.scatter(weather_data_historical.iloc[j, i], monthly_reporting_by_facility.iloc[j, i])
+
+plt.title('Average Reprting Over Time - Facility ')
+plt.ylabel('Reporting(%)')
+plt.xlabel('Precip (mm)')
+plt.xlim(1000,4000)
+plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
+plt.show()
+
+
 
 
 
