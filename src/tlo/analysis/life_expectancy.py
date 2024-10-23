@@ -116,7 +116,7 @@ def calculate_probability_of_dying(interval_width, fraction_of_last_age_survived
 
     condition = number_of_deaths_by_sex > (
 
-        person_years_by_sex / interval_width / interval_width)
+        person_years_by_sex / interval_width / interval_width / fraction_of_last_age_survived)
 
     probability_of_dying_in_interval = pd.Series(index=number_of_deaths_by_sex.index, dtype=float)
 
