@@ -31,6 +31,7 @@ class LongRun(BaseScenario):
                 'tlo.methods.healthburden': logging.INFO,
                 'tlo.methods.healthsystem.summary': logging.INFO,
                 'tlo.methods.population': logging.INFO,
+                "tlo.methods.enhanced_lifestyle": logging.INFO
             }
         }
 
