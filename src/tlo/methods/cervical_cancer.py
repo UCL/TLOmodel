@@ -1422,10 +1422,6 @@ class HSI_CervicalCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin
         # could use pd.Dateoffset(years =...) instead of the number of days for ease for
         # reading/comprehension
 
-        days_threshold_365 = 365
-        days_threshold_1095 = 1095
-        days_threshold_1825 = 1825
-
         if df.at[person_id, 'ce_hpv_cc_status'] == 'stage4':
             # If has progressed to stage4, then start Palliative Care immediately:
             hs.schedule_hsi_event(
@@ -1439,7 +1435,7 @@ class HSI_CervicalCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin
             )
 
         else:
-            if df.at[person_id, 'ce_date_treatment'] > (self.sim.date - pd.DateOffset(days=days_threshold_365)):
+            if df.at[person_id, 'ce_date_treatment'] > (self.sim.date - pd.DateOffset(years=1)):
                 hs.schedule_hsi_event(
                     hsi_event=HSI_CervicalCancer_PostTreatmentCheck(
                     module=self.module,
@@ -1449,8 +1445,8 @@ class HSI_CervicalCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin
                     tclose=None,
                     priority=0
                 )
-            if df.at[person_id, 'ce_date_treatment'] < (self.sim.date - pd.DateOffset(days=days_threshold_365)) \
-                and df.at[person_id, 'ce_date_treatment'] > (self.sim.date - pd.DateOffset(days=days_threshold_1095)):
+            if df.at[person_id, 'ce_date_treatment'] < (self.sim.date - pd.DateOffset(years=1)) \
+                and df.at[person_id, 'ce_date_treatment'] > (self.sim.date - pd.DateOffset(years=3)):
                 hs.schedule_hsi_event(
                     hsi_event=HSI_CervicalCancer_PostTreatmentCheck(
                     module=self.module,
@@ -1460,8 +1456,8 @@ class HSI_CervicalCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin
                     tclose=None,
                     priority=0
                 )
-            if df.at[person_id, 'ce_date_treatment'] < (self.sim.date - pd.DateOffset(days=days_threshold_1095)) \
-                and df.at[person_id, 'ce_date_treatment'] > (self.sim.date - pd.DateOffset(days=days_threshold_1825)):
+            if df.at[person_id, 'ce_date_treatment'] < (self.sim.date - pd.DateOffset(years=3)) \
+                and df.at[person_id, 'ce_date_treatment'] > (self.sim.date - pd.DateOffset(years=5)):
                 hs.schedule_hsi_event(
                     hsi_event=HSI_CervicalCancer_PostTreatmentCheck(
                     module=self.module,
