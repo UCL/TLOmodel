@@ -55,7 +55,8 @@ class HRHExpansionByCadreWithExtraBudget(BaseScenario):
                 [ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=self.resources)])  # todo: TBC
 
     def draw_parameters(self, draw_number, rng):
-        return list(self._scenarios.values())[draw_number]
+        if draw_number < len(self._scenarios):
+            return list(self._scenarios.values())[draw_number]
 
     def _get_scenarios(self) -> Dict[str, Dict]:
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
