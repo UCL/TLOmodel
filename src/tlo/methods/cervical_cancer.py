@@ -40,6 +40,7 @@ from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+
 class CervicalCancer(Module, GenericFirstAppointmentsMixin):
     """Cervical Cancer Disease Module"""
 
@@ -359,9 +360,13 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         df.loc[df.is_alive, "ce_via_cin_ever_detected"] = False
         df.loc[df.is_alive, "ce_date_thermoabl"] = pd.NaT
         df.loc[df.is_alive, "ce_date_cryotherapy"] = pd.NaT
+        df.loc[df.is_alive, "ce_date_via"] = pd.NaT
+        df.loc[df.is_alive, "ce_date_xpert"] = pd.NaT
         df.loc[df.is_alive, 'ce_current_cc_diagnosed'] = False
         df.loc[df.is_alive, "ce_selected_for_via_this_month"] = False
         df.loc[df.is_alive, "ce_selected_for_xpert_this_month"] = False
+        df.at[df.is_alive, "days_since_last_via"] = pd.NaT
+        df.at[df.is_alive, "days_since_last_xpert"] = pd.NaT
         df.loc[df.is_alive, "ce_biopsy"] = False
         df.loc[df.is_alive, "ce_ever_screened"] = False
         df.loc[df.is_alive, "ce_ever_diagnosed"] = False
@@ -631,6 +636,8 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         df.at[child_id, "ce_xpert_hpv_ever_pos"] = False
         df.at[child_id, "ce_via_cin_ever_detected"] = False
         df.at[child_id, "ce_date_thermoabl"] = pd.NaT
+        df.at[child_id, "days_since_last_via"] = pd.NaT
+        df.at[child_id, "days_since_last_xpert"] = pd.NaT
         df.at[child_id, "ce_current_cc_diagnosed"] = False
         df.at[child_id, "ce_selected_for_via_this_month"] = False
         df.at[child_id, "ce_selected_for_xpert_this_month"] = False
@@ -762,7 +769,6 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         rng = m.rng
         p = self.sim.modules['CervicalCancer'].parameters
 
-
         # ------------------- SET INITIAL CE_HPV_CC_STATUS -------------------------------------------------------------------
         # this was done here and not at outset because baseline value of hv_inf was not accessible
 
@@ -835,12 +841,13 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # chanied union statement the current value, in order to absolute prevent reversions... i.e.
         # add in ce_cc_ever on the end of this line.
 
-
-
-        df['ce_cc_ever'] = ((df.ce_hpv_cc_status == 'stage1') | (df.ce_hpv_cc_status == 'stage2a')
-                            | (df.ce_hpv_cc_status == 'stage2b') | (df.ce_hpv_cc_status == 'stage3') | (
-                                    df.ce_hpv_cc_status == 'stage4')
-                            | df.ce_ever_treated)
+        df.loc[
+            (df['is_alive']) & (~df['ce_cc_ever']),  # Apply only if is_alive is True and ce_cc_ever is not True
+            'ce_cc_ever'
+        ] = (
+            (df['ce_hpv_cc_status'].isin(['stage1', 'stage2a', 'stage2b', 'stage3', 'stage4']))
+            | df['ce_ever_treated']
+        )
 
         # -------------------------------- SCREENING FOR CERVICAL CANCER USING XPERT HPV TESTING AND VIA---------------
         # A subset of women aged 30-50 will receive a screening test
@@ -863,6 +870,8 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         days_since_last_screen = (self.sim.date - df.ce_date_last_screened).dt.days
         days_since_last_thermoabl = (self.sim.date - df.ce_date_thermoabl).dt.days
+        days_since_last_via = (self.sim.date - df.ce_date_via).dt.days
+        days_since_last_xpert = (self.sim.date - df.ce_date_xpert).dt.days
 
         # todo: screening probability depends on date last screen and result (who guidelines)
 
@@ -874,7 +883,7 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             (~df.ce_current_cc_diagnosed) &
             (
                 pd.isna(df.ce_date_last_screened) |
-                (days_since_last_screen > 1825) |
+                (days_since_last_via > 1825) | (days_since_last_xpert > 1825) |
                 ((days_since_last_screen > 730) & (days_since_last_thermoabl < 1095))
             )
         )
@@ -990,6 +999,7 @@ class HSI_CervicalCancer_AceticAcidScreening(HSI_Event, IndividualScopeEventMixi
                 hsi_event=self
             )
             df.at[person_id, "ce_date_last_screened"] = self.sim.date
+            df.at[person_id, "ce_date_via"] = self.sim.date
             df.at[person_id, "ce_ever_screened"] = True
 
             if dx_result:
@@ -1078,6 +1088,7 @@ class HSI_CervicalCancer_XpertHPVScreening(HSI_Event, IndividualScopeEventMixin)
             hsi_event=self
         )
         df.at[person_id, "ce_date_last_screened"] = self.sim.date
+        df.at[person_id, "ce_date_xpert"] = self.sim.date
         df.at[person_id, "ce_ever_screened"] = True
 
         if dx_result:
