@@ -79,7 +79,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
     INIT_DEPENDENCIES = {"Demography", "HealthSystem", "Lifestyle", "SymptomManager"}
 
-    OPTIONAL_INIT_DEPENDENCIES = {"HealthBurden", 'Schisto', 'CardioMetabolicDisorders'}
+    OPTIONAL_INIT_DEPENDENCIES = {"HealthBurden"}
 
     ADDITIONAL_DEPENDENCIES = {'Tb', 'NewbornOutcomes'}
 
@@ -1292,15 +1292,6 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         ] = self.daly_wts["aids"]
 
         return dalys
-
-    def report_prevalence(self):
-        # This reports on the prevalence of HIV for all individuals
-
-        df = self.sim.population.props
-        total_prev = len(
-            df[df.hv_inf & df.is_alive]
-        ) / len(df[df.is_alive])
-        return {'HIV': total_prev}
 
     def mtct_during_breastfeeding(self, mother_id, child_id):
         """
