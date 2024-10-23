@@ -11,6 +11,8 @@ from tlo.population import Population
 
 import pandas as pd
 
+FACTOR_POP_DICT = 5000
+
 
 if TYPE_CHECKING:
     from tlo import Module, Simulation
@@ -276,7 +278,7 @@ class HSI_Event:
                 if row_before[key] != row_after[key]: # Note: used fillna previously
                     link_info[key] = row_after[key]
             
-            chain_links = {self.target : link_info}
+            chain_links = {self.target : str(link_info)}
 
             # TO BE REMOVED This is currently just used for debugging. Will be removed from final version of PR.
             row = self.sim.population.props.loc[[abs(self.target)]]
@@ -314,10 +316,15 @@ class HSI_Event:
             chain_links = self.store_chains_to_do_after_event(print_chains, row_before, str(footprint))
             
             if len(chain_links)>0:
+            
+                pop_dict = {i: '' for i in range(FACTOR_POP_DICT)}
+               # pop_dict = {i: '' for i in range(1000)} # Always include all possible individuals
+
+                pop_dict.update(chain_links)
+                
                 logger_chains.info(key='event_chains',
-                            data = chain_links,
+                            data = pop_dict,
                             description='Links forming chains of events for simulated individuals')
-                #print(chain_links)
                 
         return updated_appt_footprint
         

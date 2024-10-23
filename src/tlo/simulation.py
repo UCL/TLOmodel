@@ -40,6 +40,8 @@ logger.setLevel(logging.INFO)
 logger_chains = logging.getLogger("tlo.methods.event")
 logger_chains.setLevel(logging.INFO)
 
+FACTOR_POP_DICT = 5000
+
 
 class SimulationPreviouslyInitialisedError(Exception):
     """Exception raised when trying to initialise an already initialised simulation."""
@@ -294,17 +296,18 @@ class Simulation:
         if self.generate_event_chains:
 
             pop_dict = self.population.props.to_dict(orient='index')
-            
-            print(pop_dict)
-            print(pop_dict.keys())
             for key in pop_dict.keys():
                 pop_dict[key]['person_ID'] = key
-            print("Length of properties", len(pop_dict[0].keys()))
-            #exit(-1)
-            logger.info(key='event_chains',
-                               data = pop_dict,
-                               description='Links forming chains of events for simulated individuals')
+                pop_dict[key] = str(pop_dict[key]) # Log as string to avoid issues around length of properties stored later
+                
+            pop_dict_full = {i: '' for i in range(FACTOR_POP_DICT)}
+            pop_dict_full.update(pop_dict)
 
+            print("Size for full sim", len(pop_dict_full))
+            
+            logger.info(key='event_chains',
+                               data = pop_dict_full,
+                               description='Links forming chains of events for simulated individuals')
         end = time.time()
         logger.info(key="info", data=f"make_initial_population() {end - start} s")
 
@@ -323,7 +326,7 @@ class Simulation:
         #self.generate_event_chains = generate_event_chains
         if self.generate_event_chains:
             # Eventually this can be made an option
-            self.generate_event_chains_overwrite_epi = False
+            self.generate_event_chains_overwrite_epi = True
             # For now keep these fixed, eventually they will be input from user
             self.generate_event_chains_modules_of_interest = [self.modules]
             self.generate_event_chains_ignore_events =  ['AgeUpdateEvent','HealthSystemScheduler', 'SimplifiedBirthsPoll','DirectBirth'] #['TbActiveCasePollGenerateData','HivPollingEventForDataGeneration','SimplifiedBirthsPoll', 'AgeUpdateEvent', 'HealthSystemScheduler']
@@ -480,9 +483,13 @@ class Simulation:
             prop_dict = self.population.props.loc[child_id].to_dict()
             prop_dict['event'] = 'Birth'
             prop_dict['event_date'] = self.date
-            child_dict = {child_id : prop_dict}
+            
+            pop_dict = {i: '' for i in range(FACTOR_POP_DICT)} # Always include all possible individuals
+            pop_dict[child_id] = str(prop_dict) # Convert to string to avoid issue of length
+
+            print("Length at birth", len(pop_dict))
             logger.info(key='event_chains',
-                               data = child_dict,
+                               data = pop_dict,
                                description='Links forming chains of events for simulated individuals')
         
             # TO BE REMOVED This is currently just used for debugging. Will be removed from final version of PR.
@@ -492,7 +499,7 @@ class Simulation:
             row['event_date'] = self.date
             row['when'] = 'After'
             self.event_chains = pd.concat([self.event_chains, row], ignore_index=True)
-            
+
         return child_id
 
     def find_events_for_person(self, person_id: int) -> list[tuple[Date, Event]]:

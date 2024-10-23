@@ -11,6 +11,8 @@ if TYPE_CHECKING:
 
 import pandas as pd
 
+FACTOR_POP_DICT = 5000
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -83,13 +85,14 @@ class Event:
         
         # Create an empty list to store changes for each of the individuals
         chain_links = {}
-        
+        len_of_diff = len(diff_mask)
+
         # Loop through each row of the mask
+        
         for idx, row in diff_mask.iterrows():
             changed_cols = row.index[row].tolist()
-            
+
             if changed_cols:  # Proceed only if there are changes in the row
-            
                 # Create a dictionary for this person
                 # First add event info
                 link_info = {
@@ -103,7 +106,7 @@ class Event:
                     link_info[col] = df_after.at[idx, col]
                 
                 # Append the event and changes to the individual key
-                chain_links = {idx : link_info}
+                chain_links[idx] = str(link_info)
         
         return chain_links
         
@@ -168,7 +171,7 @@ class Event:
                     if row_before[key] != row_after[key]: # Note: used fillna previously
                         link_info[key] = row_after[key]
                         
-                chain_links = {self.target : link_info}
+                chain_links[self.target] = str(link_info)
 
                 # TO BE REMOVED This is currently just used for debugging. Will be removed from final version of PR.
                 if debug_chains:
@@ -228,14 +231,18 @@ class Event:
         if self.sim.generate_event_chains:
             chain_links = self.store_chains_to_do_after_event(print_chains, row_before, df_before)
             
+            # Create empty logger for entire pop
+            pop_dict = {i: '' for i in range(FACTOR_POP_DICT)} # Always include all possible individuals
+
+            pop_dict.update(chain_links)
+
             # Log chain_links here
             if len(chain_links)>0:
                 logger_chain.info(key='event_chains',
-                            data= chain_links,
-                            description='Links forming chains of events for simulated individuals')
+                                  data= pop_dict,
+                                  description='Links forming chains of events for simulated individuals')
                 
                 #print("Chain events ", chain_links)
-            
 
 
 class RegularEvent(Event):
