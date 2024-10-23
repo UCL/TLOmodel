@@ -358,7 +358,7 @@ class HSI_Event:
             ):
                 return True
             else:
-                logger.debug(
+                logger.warning(
                     key="message",
                     data=(
                         f"The expected footprint of {self.TREATMENT_ID} is not possible with the configuration of "

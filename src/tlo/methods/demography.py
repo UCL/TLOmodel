@@ -26,7 +26,6 @@ from tlo import (
     logging,
 )
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.logging.helpers import get_dataframe_row_as_dict_for_logging
 from tlo.methods.causes import (
     Cause,
     collect_causes_from_disease_modules,
@@ -125,17 +124,12 @@ class Demography(Module):
         'date_of_death': Property(Types.DATE, 'Date of death of this individual'),
         'sex': Property(Types.CATEGORICAL, 'Male or female', categories=['M', 'F']),
         'mother_id': Property(Types.INT, 'Unique identifier of mother of this individual'),
+        'district_num_of_residence': Property(Types.INT, 'The district number in which the person is resident'),
 
         # the categories of these properties are set in `pre_initialise_population`
         'cause_of_death': Property(
             Types.CATEGORICAL,
             'The cause of death of this individual (the tlo_cause defined by the module)',
-            categories=['SET_AT_RUNTIME']
-        ),
-
-        'district_num_of_residence': Property(
-            Types.CATEGORICAL, 
-            'The district number in which the person is resident',
             categories=['SET_AT_RUNTIME']
         ),
 
@@ -225,11 +219,6 @@ class Demography(Module):
             Types.CATEGORICAL,
             'The cause of death of this individual (the tlo_cause defined by the module)',
             categories=list(self.causes_of_death.keys())
-        )
-        self.PROPERTIES['district_num_of_residence'] = Property(
-            Types.CATEGORICAL,
-            'The district (name) of residence (mapped from district_num_of_residence).',
-            categories=sorted(self.parameters['district_num_to_region_name']),
         )
         self.PROPERTIES['district_of_residence'] = Property(
             Types.CATEGORICAL,
@@ -508,7 +497,7 @@ class Demography(Module):
         data_to_log_for_each_death = {
             'age': person['age_years'],
             'sex': person['sex'],
-            'cause': str(cause),
+            'cause': cause,
             'label': self.causes_of_death[cause].label,
             'person_id': individual_id,
             'li_wealth': person['li_wealth'] if 'li_wealth' in person else -99,
@@ -524,7 +513,7 @@ class Demography(Module):
 
         # - log all the properties for the deceased person
         logger_detail.info(key='properties_of_deceased_persons',
-                           data=get_dataframe_row_as_dict_for_logging(df, individual_id),
+                           data=person.to_dict(),
                            description='values of all properties at the time of death for deceased persons')
 
         # - log the death in the Deviance module (if it is registered)
@@ -810,7 +799,7 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         num_children = pd.Series(index=range(5), data=0).add(
             df[df.is_alive & (df.age_years < 5)].groupby('age_years').size(),
             fill_value=0
-        ).astype(int)
+        )
 
         logger.info(key='num_children', data=num_children.to_dict())
 

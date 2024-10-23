@@ -184,10 +184,8 @@ class _BaseHSIGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
             if not individual_properties["is_alive"]:
                 return
             # Pre-evaluate symptoms for individual to avoid repeat accesses
-            # Use the individual_properties context here to save independent DF lookups
-            symptoms = self.sim.modules["SymptomManager"].has_what(
-                individual_details=individual_properties
-            )
+            # TODO: Use individual_properties to populate symptoms
+            symptoms = self.sim.modules["SymptomManager"].has_what(self.target)
             schedule_hsi_event = self.sim.modules["HealthSystem"].schedule_hsi_event
             for module in self.sim.modules.values():
                 if isinstance(module, GenericFirstAppointmentsMixin):
