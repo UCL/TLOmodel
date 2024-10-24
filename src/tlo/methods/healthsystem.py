@@ -3106,7 +3106,7 @@ class RescaleHRCapabilities_ByDistrict(Event, PopulationScopeEventMixin):
             matches = re.match(pattern, officer)
             # Extract ID and officer type from
             facility_id = int(matches.group(1))
-            district = self.module._facility_by_facility_id[facility_id].district
+            district = self.module._facility_by_facility_id[facility_id].district  # todo: check if district callable
             if district in HR_scaling_factor_by_district:
                 self.module._daily_capabilities[officer] *= HR_scaling_factor_by_district[district]
 
