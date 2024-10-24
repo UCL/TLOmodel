@@ -75,12 +75,16 @@ log = load_pickled_dataframes(results_folder, 0, 0) # look at one log (so can de
 info = get_scenario_info(results_folder) # get basic information about the results
 # Extract the parameters that have varied over the set of simulations
 params = extract_params(results_folder)
-final_year_of_simulation = max(log['tlo.simulation']['info']['date']).year
-first_year_of_simulation = min(log['tlo.simulation']['info']['date']).year
-draws = params.index.unique().tolist() # list of draws
+final_year_of_simulation = max(log['tlo.methods.healthsystem.summary']['hsi_event_counts']['date']).year
+first_year_of_simulation = min(log['tlo.methods.healthsystem.summary']['hsi_event_counts']['date']).year
+population_scaling_factor = log['tlo.methods.demography']['scaling_factor']['scaling_factor'].iloc[0]
+
+
+# Load basic simulation parameters
+#-------------------------------------
+draws = range(0, info['number_of_draws'])
 runs = range(0, info['runs_per_draw'])
 years = list(range(first_year_of_simulation, final_year_of_simulation + 1))
-population_scaling_factor = log['tlo.methods.demography']['scaling_factor']['scaling_factor'].iloc[0]
 
 # Load cost input files
 #------------------------
@@ -111,6 +115,42 @@ unit_price_consumable = workbook_cost["consumables"]
 unit_price_consumable = unit_price_consumable.rename(columns=unit_price_consumable.iloc[0])
 unit_price_consumable = unit_price_consumable[['Item_Code', 'Final_price_per_chosen_unit (USD, 2023)']].reset_index(drop=True).iloc[1:]
 unit_price_consumable = unit_price_consumable[unit_price_consumable['Item_Code'].notna()]
+
+# Load and prepare equipment cost parameters
+# Unit costs of equipment
+unit_cost_equipment = workbook_cost["equipment"]
+unit_cost_equipment = unit_cost_equipment.rename(columns=unit_cost_equipment.iloc[7]).reset_index(drop=True).iloc[8:]
+unit_cost_equipment = unit_cost_equipment[unit_cost_equipment['Item_code'].notna()] # drop empty row
+# Calculate necessary costs based on HSSP-III assumptions
+unit_cost_equipment['replacement_cost_annual'] = unit_cost_equipment.apply(lambda row: row['unit_purchase_cost']/(1+(1-(1+discount_rate)**(-row['Life span']+1))/discount_rate), axis=1) # Annuitised over the life span of the equipment assuming outlay at the beginning of the year
+unit_cost_equipment['service_fee_annual'] = unit_cost_equipment.apply(lambda row: row['unit_purchase_cost'] * 0.8 / 8 if row['unit_purchase_cost'] > 1000 else 0, axis=1) # 80% of the value of the item over 8 years
+unit_cost_equipment['spare_parts_annual'] = unit_cost_equipment.apply(lambda row: row['unit_purchase_cost'] * 0.2 / 8 if row['unit_purchase_cost'] > 1000 else 0, axis=1) # 20% of the value of the item over 8 years
+unit_cost_equipment['major_corrective_maintenance_cost_annual'] = unit_cost_equipment.apply(lambda row: row['unit_purchase_cost'] * 0.2 * 0.2 / 8 if row['unit_purchase_cost'] < 250000 else 0, axis=1) # 20% of the value of 20% of the items over 8 years
+# TODO consider discounting the other components
+# Quantity needed for each equipment by facility
+unit_cost_equipment = unit_cost_equipment[['Item_code','Equipment_tlo',
+                                           'replacement_cost_annual', 'service_fee_annual', 'spare_parts_annual',  'major_corrective_maintenance_cost_annual',
+                                           'Health Post_prioritised', 'Community_prioritised', 'Health Center_prioritised', 'District_prioritised', 'Central_prioritised']]
+unit_cost_equipment = unit_cost_equipment.rename(columns={col: 'Quantity_' + col.replace('_prioritised', '') for col in unit_cost_equipment.columns if col.endswith('_prioritised')})
+unit_cost_equipment = unit_cost_equipment.rename(columns={col: col.replace(' ', '_') for col in unit_cost_equipment.columns})
+
+unit_cost_equipment = pd.wide_to_long(unit_cost_equipment, stubnames=['Quantity_'],
+                          i=['Item_code', 'Equipment_tlo', 'replacement_cost_annual', 'service_fee_annual', 'spare_parts_annual', 'major_corrective_maintenance_cost_annual'],
+                          j='Facility_Level', suffix='(\d+|\w+)').reset_index()
+facility_level_mapping = {'Health_Post': '0', 'Health_Center': '1a', 'Community': '1b', 'District': '2', 'Central': '3'}
+unit_cost_equipment['Facility_Level'] = unit_cost_equipment['Facility_Level'].replace(facility_level_mapping)
+unit_cost_equipment = unit_cost_equipment.rename(columns = {'Quantity_': 'Quantity'})
+
+# Function to prepare cost dataframe ready to be merged across cross categories
+def retain_relevant_column_subset(_df, _category_specific_group):
+    columns_to_retain = ['draw', 'run', 'year', 'cost_subcategory', 'Facility_Level', _category_specific_group, 'cost']
+    _df = _df[columns_to_retain]
+    return _df
+def prepare_cost_dataframe(_df, _category_specific_group, _cost_category):
+    _df = _df.rename(columns = {_category_specific_group: 'cost_subgroup'})
+    _df['cost_category'] = _cost_category
+    return retain_relevant_column_subset(_df, 'cost_subgroup')
+
 
 # CALCULATE FINANCIAL COSTS
 #%%
@@ -204,15 +244,13 @@ used_staff_count_by_level_and_officer_type.rename(columns ={'value': 'staff_coun
 #---------------------------------------------------------------------------------------------------------------
 salary_for_all_staff = merge_cost_and_model_data(cost_df = hr_cost_parameters, model_df = available_staff_count_by_level_and_officer_type,
                                                      varnames = ['salary_usd'])
-salary_for_all_staff['Cost'] = salary_for_all_staff['salary_usd'] * salary_for_all_staff['staff_count']
-total_salary_for_all_staff = salary_for_all_staff.groupby(['draw', 'run', 'year'])['Cost'].sum()
+salary_for_all_staff['cost'] = salary_for_all_staff['salary_usd'] * salary_for_all_staff['staff_count']
 
 # 1.2 Salary cost for health workforce cadres used in the simulation (Staff count X Annual salary)
 #---------------------------------------------------------------------------------------------------------------
 salary_for_staff_used_in_scenario = merge_cost_and_model_data(cost_df = hr_cost_parameters, model_df = used_staff_count_by_level_and_officer_type,
                                                      varnames = ['salary_usd'])
-salary_for_staff_used_in_scenario['Cost'] = salary_for_staff_used_in_scenario['salary_usd'] * salary_for_staff_used_in_scenario['staff_count']
-total_salary_for_staff_used_in_scenario = salary_for_staff_used_in_scenario.groupby(['draw', 'run', 'year'])['Cost'].sum()
+salary_for_staff_used_in_scenario['cost'] = salary_for_staff_used_in_scenario['salary_usd'] * salary_for_staff_used_in_scenario['staff_count']
 # summarize(salary_for_staff_used_in_scenario, only_mean = True, collapse_columns=True)
 #.set_index(['draw', 'run', 'year', 'OfficerType', 'Facility_Level']).unstack(level=['draw', 'run'])
 #salary_for_staff_used_in_scenario = salary_for_staff_used_in_scenario.apply(lambda x: pd.to_numeric(x, errors='coerce'))
@@ -221,10 +259,9 @@ total_salary_for_staff_used_in_scenario = salary_for_staff_used_in_scenario.grou
 #---------------------------------------------------------------------------------------------------------------
 recruitment_cost = merge_cost_and_model_data(cost_df = hr_cost_parameters, model_df = used_staff_count_by_level_and_officer_type,
                                                      varnames = ['annual_attrition_rate', 'recruitment_cost_per_person_recruited_usd'])
-recruitment_cost['Cost'] = recruitment_cost['annual_attrition_rate'] * recruitment_cost['staff_count'] * \
+recruitment_cost['cost'] = recruitment_cost['annual_attrition_rate'] * recruitment_cost['staff_count'] * \
                       recruitment_cost['recruitment_cost_per_person_recruited_usd']
-recruitment_cost = recruitment_cost[['draw', 'run', 'year', 'Facility_Level', 'OfficerType', 'Cost']]
-total_recruitment_cost_for_attrited_workers = recruitment_cost.groupby(['draw', 'run', 'year'])['Cost'].sum()
+recruitment_cost = recruitment_cost[['draw', 'run', 'year', 'Facility_Level', 'OfficerType', 'cost']]
 
 # 1.4 Pre-service training cost to fill gap created by attrition
 #---------------------------------------------------------------------------------------------------------------
@@ -239,41 +276,40 @@ preservice_training_cost['Annual_cost_per_staff_recruited'] = preservice_trainin
                                                 preservice_training_cost['annual_attrition_rate']
 # Cost per student trained * 1/Rate of absorption from the local and foreign graduates * 1/Graduation rate * attrition rate
 # the inverse of attrition rate is the average expected tenure; and the preservice training cost needs to be divided by the average tenure
-preservice_training_cost['Cost'] = preservice_training_cost['Annual_cost_per_staff_recruited'] * preservice_training_cost['staff_count'] # not multiplied with attrition rate again because this is already factored into 'Annual_cost_per_staff_recruited'
-preservice_training_cost = preservice_training_cost[['draw', 'run', 'year', 'OfficerType', 'Facility_Level', 'Cost']]
-preservice_training_cost_for_attrited_workers = preservice_training_cost.groupby(['draw', 'run', 'year'])['Cost'].sum()
+preservice_training_cost['cost'] = preservice_training_cost['Annual_cost_per_staff_recruited'] * preservice_training_cost['staff_count'] # not multiplied with attrition rate again because this is already factored into 'Annual_cost_per_staff_recruited'
+preservice_training_cost = preservice_training_cost[['draw', 'run', 'year', 'OfficerType', 'Facility_Level', 'cost']]
 
 # 1.5 In-service training cost to train all staff
 #---------------------------------------------------------------------------------------------------------------
 inservice_training_cost = merge_cost_and_model_data(cost_df = hr_cost_parameters, model_df = used_staff_count_by_level_and_officer_type,
                                                      varnames = ['annual_inservice_training_cost_usd'])
-inservice_training_cost['Cost'] = inservice_training_cost['staff_count'] * inservice_training_cost['annual_inservice_training_cost_usd']
-inservice_training_cost = inservice_training_cost[['draw', 'run', 'year', 'OfficerType', 'Facility_Level', 'Cost']]
-inservice_training_cost_for_all_staff = inservice_training_cost.groupby(['draw', 'run', 'year'])['Cost'].sum()
+inservice_training_cost['cost'] = inservice_training_cost['staff_count'] * inservice_training_cost['annual_inservice_training_cost_usd']
+inservice_training_cost = inservice_training_cost[['draw', 'run', 'year', 'OfficerType', 'Facility_Level', 'cost']]
+# TODO Consider calculating economic cost of HR by multiplying salary times staff count with cadres_utilisation_rate
 
-# Create a dataframe to store financial costs
+# 1.6 Store all HR costs in one standard format dataframe
+#---------------------------------------------------------------------------------------------------------------
 # Function to melt and label the cost category
-def melt_and_label(_df, label):
-    #melted_df = pd.melt(_df.reset_index(), id_vars='year')
-    melted_df = _df.reset_index()
-    melted_df['Cost_Sub-category'] = label
-    return melted_df
+def label_rows_of_cost_dataframe(_df, label_var, label):
+    _df = _df.reset_index()
+    _df[label_var] = label
+    return _df
 
-# Initialize scenario_cost with the salary data
-scenario_cost = melt_and_label(total_salary_for_staff_used_in_scenario, 'salary_for_used_cadres')
+# Initialize HR with the salary data
+human_resource_costs = retain_relevant_column_subset(label_rows_of_cost_dataframe(salary_for_staff_used_in_scenario, 'cost_subcategory', 'salary_for_used_cadres'), 'OfficerType')
 
 # Concatenate additional cost categories
 additional_costs = [
-    (total_recruitment_cost_for_attrited_workers, 'recruitment_cost_for_attrited_workers'),
-    (preservice_training_cost_for_attrited_workers, 'preservice_training_cost_for_attrited_workers'),
-    (inservice_training_cost_for_all_staff, 'inservice_training_cost_for_all_staff')
+    (recruitment_cost , 'recruitment_cost_for_attrited_workers'),
+    (preservice_training_cost, 'preservice_training_cost_for_attrited_workers'),
+    (inservice_training_cost, 'inservice_training_cost_for_all_staff')
 ]
 # Iterate through additional costs, melt and concatenate
 for df, label in additional_costs:
-    melted = melt_and_label(df, label)
-    scenario_cost = pd.concat([scenario_cost, melted])
-scenario_cost['Cost_Category'] = 'Human Resources for Health'
-# TODO Consider calculating economic cost of HR by multiplying salary times staff count with cadres_utilisation_rate
+    labelled_df = retain_relevant_column_subset(label_rows_of_cost_dataframe(df, 'cost_subcategory', label), 'OfficerType')
+    human_resource_costs = pd.concat([human_resource_costs, labelled_df])
+
+human_resource_costs = prepare_cost_dataframe(human_resource_costs, _category_specific_group = 'OfficerType', _cost_category = 'human resources for health')
 
 # %%
 # 2. Consumables cost
@@ -327,8 +363,6 @@ cost_of_consumables_dispensed = consumables_dispensed.merge(unit_price_consumabl
 price_column = 'Final_price_per_chosen_unit (USD, 2023)'
 cost_of_consumables_dispensed[quantity_columns] = cost_of_consumables_dispensed[quantity_columns].multiply(
     cost_of_consumables_dispensed[price_column], axis=0)
-total_cost_of_consumables_dispensed = cost_of_consumables_dispensed.groupby(idx['year'])[quantity_columns].sum()
-total_cost_of_consumables_dispensed = total_cost_of_consumables_dispensed.reset_index()
 
 # 2.2 Cost of consumables stocked (quantity needed for what is dispensed)
 #---------------------------------------------------------------------------------------------------------------
@@ -370,62 +404,41 @@ cost_of_excess_consumables_stocked = cost_of_excess_consumables_stocked.merge(ex
 cost_of_excess_consumables_stocked.loc[cost_of_excess_consumables_stocked.excess_stock_proportion_of_dispensed.isna(), 'excess_stock_proportion_of_dispensed'] = average_inflow_to_outflow_ratio_ratio - 1# TODO disaggregate the average by program
 cost_of_excess_consumables_stocked[quantity_columns] = cost_of_excess_consumables_stocked[quantity_columns].multiply(cost_of_excess_consumables_stocked[idx[price_column]], axis=0)
 cost_of_excess_consumables_stocked[quantity_columns] = cost_of_excess_consumables_stocked[quantity_columns].multiply(cost_of_excess_consumables_stocked[idx['excess_stock_proportion_of_dispensed']], axis=0)
-total_cost_of_excess_consumables_stocked = cost_of_excess_consumables_stocked.groupby(idx['year'])[quantity_columns].sum()
-total_cost_of_excess_consumables_stocked = total_cost_of_excess_consumables_stocked.reset_index()
 
-# Add to financial costs dataframe
+# 2.3 Store all HR costs in one standard format dataframe
+#---------------------------------------------------------------------------------------------------------------
 # Function to melt and label the cost category
+consumables_dict = pd.read_csv(path_for_consumable_resourcefiles / 'ResourceFile_consumables_matched.csv', low_memory=False,
+                             encoding="ISO-8859-1")[['item_code', 'consumable_name_tlo']]
+consumables_dict = consumables_dict.rename(columns = {'item_code': 'Item_Code'})
+consumables_dict = dict(zip(consumables_dict['Item_Code'], consumables_dict['consumable_name_tlo']))
 def melt_and_label_consumables_cost(_df, label):
     multi_index = pd.MultiIndex.from_tuples(_df.columns)
     _df.columns = multi_index
-    melted_df = pd.melt(_df, id_vars='year').rename(columns = {'variable_0': 'draw', 'variable_1': 'run'})
-    melted_df['Cost_Sub-category'] = label
-    melted_df = melted_df.rename(columns = {'value': 'Cost'})
+    # Select 'Item_Code', 'year', and all columns where both levels of the MultiIndex are numeric (these are the (draw,run) columns with cost values)
+    selected_columns = [col for col in _df.columns if
+                        (col[0] in ['Item_Code', 'year']) or (isinstance(col[0], int) and isinstance(col[1], int))]
+    _df = _df[selected_columns]    # Subset the dataframe with the selected columns
+
+    # reshape dataframe and assign 'draw' and 'run' as the correct column headers
+    melted_df = pd.melt(_df, id_vars=['year', 'Item_Code']).rename(columns = {'variable_0': 'draw', 'variable_1': 'run'})
+    # Replace item_code with consumable_name_tlo
+    melted_df['consumable'] = melted_df['Item_Code'].map(consumables_dict)
+    melted_df['cost_subcategory'] = label
+    melted_df['Facility_Level'] = 'all' #TODO this is temporary until 'tlo.methods.healthsystem.summary' only logs consumable at the aggregate level
+    melted_df = melted_df.rename(columns = {'value': 'cost'})
     return melted_df
 
-consumable_costs = [
-    (total_cost_of_consumables_dispensed, 'cost_of_consumables_dispensed'),
-    (total_cost_of_excess_consumables_stocked, 'cost_of_excess_consumables_stocked'),
-]
-# Iterate through additional costs, melt and concatenate
-for df, label in consumable_costs:
-    new_df = melt_and_label_consumables_cost(df, label)
-    scenario_cost = pd.concat([scenario_cost, new_df], ignore_index=True)
-scenario_cost.loc[scenario_cost.Cost_Category.isna(), 'Cost_Category'] = 'Medical consumables'
-#scenario_cost['value'] = scenario_cost['value'].apply(pd.to_numeric, errors='coerce')
-#scenario_cost.to_csv(figurespath / 'scenario_cost.csv')
-
+cost_of_consumables_dispensed = retain_relevant_column_subset(melt_and_label_consumables_cost(cost_of_consumables_dispensed, 'cost_of_consumables_dispensed'), 'consumable')
+cost_of_excess_consumables_stocked = retain_relevant_column_subset(melt_and_label_consumables_cost(cost_of_excess_consumables_stocked, 'cost_of_excess_consumables_stocked'), 'consumable')
+consumable_costs = pd.concat([cost_of_consumables_dispensed, cost_of_excess_consumables_stocked])
+consumable_costs = prepare_cost_dataframe(consumable_costs, _category_specific_group = 'consumable', _cost_category = 'medical consumables')
 
 # %%
 # 3. Equipment cost
-# Total cost of equipment required as per SEL (HSSP-III) only at facility IDs where it been used in the simulation
-# Load unit costs of equipment
-unit_cost_equipment = workbook_cost["equipment"]
-unit_cost_equipment =   unit_cost_equipment.rename(columns=unit_cost_equipment.iloc[7]).reset_index(drop=True).iloc[8:]
-# Calculate necessary costs based on HSSP-III assumptions
-unit_cost_equipment['replacement_cost_annual'] = unit_cost_equipment.apply(lambda row: row['unit_purchase_cost']/(1+(1-(1+discount_rate)**(-row['Life span']+1))/discount_rate), axis=1) # 10% of the items over 8 years
-unit_cost_equipment['service_fee_annual'] = unit_cost_equipment.apply(lambda row: row['unit_purchase_cost'] * 0.8 / 8 if row['unit_purchase_cost'] > 1000 else 0, axis=1) # 80% of the value of the item over 8 years
-unit_cost_equipment['spare_parts_annual'] = unit_cost_equipment.apply(lambda row: row['unit_purchase_cost'] * 0.2 / 8 if row['unit_purchase_cost'] > 1000 else 0, axis=1) # 20% of the value of the item over 8 years
-unit_cost_equipment['upfront_repair_cost_annual'] = unit_cost_equipment.apply(lambda row: row['unit_purchase_cost'] * 0.2 * 0.2 / 8 if row['unit_purchase_cost'] < 250000 else 0, axis=1) # 20% of the value of 20% of the items over 8 years
-# TODO consider discounting the other components
-
-unit_cost_equipment = unit_cost_equipment[['Item_code','Equipment_tlo',
-                                           'service_fee_annual', 'spare_parts_annual',  'upfront_repair_cost_annual', 'replacement_cost_annual',
-                                           'Health Post_prioritised', 'Community_prioritised', 'Health Center_prioritised', 'District_prioritised', 'Central_prioritised']]
-unit_cost_equipment = unit_cost_equipment.rename(columns={col: 'Quantity_' + col.replace('_prioritised', '') for col in unit_cost_equipment.columns if col.endswith('_prioritised')})
-unit_cost_equipment = unit_cost_equipment.rename(columns={col: col.replace(' ', '_') for col in unit_cost_equipment.columns})
-unit_cost_equipment = unit_cost_equipment[unit_cost_equipment.Item_code.notna()]
-
-unit_cost_equipment = pd.wide_to_long(unit_cost_equipment, stubnames=['Quantity_'],
-                          i=['Item_code', 'Equipment_tlo', 'service_fee_annual', 'spare_parts_annual', 'upfront_repair_cost_annual', 'replacement_cost_annual'],
-                          j='Facility_Level', suffix='(\d+|\w+)').reset_index()
-facility_level_mapping = {'Health_Post': '0', 'Health_Center': '1a', 'Community': '1b', 'District': '2', 'Central': '3'}
-unit_cost_equipment['Facility_Level'] = unit_cost_equipment['Facility_Level'].replace(facility_level_mapping)
-unit_cost_equipment = unit_cost_equipment.rename(columns = {'Quantity_': 'Quantity'})
-#unit_cost_equipment_small  = unit_cost_equipment[['Item_code', 'Facility_Level', 'Quantity','service_fee_annual', 'spare_parts_annual', 'upfront_repair_cost_annual', 'replacement_cost_annual']]
-#equipment_cost_dict = unit_cost_equipment_small.groupby('Facility_Level').apply(lambda x: x.to_dict(orient='records')).to_dict()
-
-# Get list of equipment used by district and level
+#--------------------------------------------
+# Total cost of equipment required as per SEL (HSSP-III) only at facility IDs where it has been used in the simulation
+# Get list of equipment used in the simulation by district and level
 def get_equipment_used_by_district_and_facility(_df: pd.Series) -> pd.Series:
     """Summarise the parsed logged-key results for one draw (as dataframe) into a pd.Series."""
     _df = _df.pivot_table(index=['District', 'Facility_Level'],
@@ -480,34 +493,57 @@ for d in draws:
         equipment_df = equipment_df.merge(mfl[['District', 'Facility_Level','Facility_Count']], on = ['District', 'Facility_Level'], how = 'left')
         equipment_df.loc[equipment_df.Facility_Count.isna(), 'Facility_Count'] = 0
 
+        # Because levels 1b and 2 are collapsed together, we assume that the same equipment is used by level 1b as that recorded for level 2
+        def update_itemuse_for_level1b_using_level2_data(_df):
+            # Create a list of District and Item_code combinations for which use == True
+            list_of_equipment_used_at_level2 = _df[(_df.Facility_Level == '2') & (_df['whether_item_was_used'] == True)][['District', 'Item_code']]
+            # Now update the 'whether_item_was_used' for 'Facility_Level' == '1b' to match that of level '2'
+            _df.loc[
+                (_df['Facility_Level'] == '1b') &
+                (_df[['District', 'Item_code']].apply(tuple, axis=1).isin(
+                    list_of_equipment_used_at_level2.apply(tuple, axis=1))),
+                'whether_item_was_used'
+            ] = True
+
+            return _df
+
+        equipment_df = update_itemuse_for_level1b_using_level2_data(equipment_df)
+
         # Merge the two datasets to calculate cost
-        equipment_cost = pd.merge(equipment_df, unit_cost_equipment[['Item_code', 'Equipment_tlo', 'Facility_Level', 'Quantity','service_fee_annual', 'spare_parts_annual', 'upfront_repair_cost_annual', 'replacement_cost_annual']],
+        equipment_cost = pd.merge(equipment_df, unit_cost_equipment[['Item_code', 'Equipment_tlo', 'Facility_Level', 'Quantity', 'replacement_cost_annual', 'service_fee_annual', 'spare_parts_annual', 'major_corrective_maintenance_cost_annual']],
                                   on = ['Item_code', 'Facility_Level'], how = 'left', validate = "m:1")
-        categories_of_equipment_cost = ['replacement_cost', 'upfront_repair_cost', 'spare_parts', 'service_fee']
+        categories_of_equipment_cost = ['replacement_cost', 'service_fee', 'spare_parts', 'major_corrective_maintenance_cost']
         for cost_category in categories_of_equipment_cost:
             # Rename unit cost columns
             unit_cost_column = cost_category + '_annual_unit'
             equipment_cost = equipment_cost.rename(columns = {cost_category + '_annual':unit_cost_column })
             equipment_cost[cost_category + '_annual_total'] = equipment_cost[cost_category + '_annual_unit'] * equipment_cost['whether_item_was_used'] * equipment_cost['Quantity'] * equipment_cost['Facility_Count']
-        #equipment_cost['total_equipment_cost_annual'] = equipment_cost[[item  + '_annual_total' for item in categories_of_equipment_cost]].sum(axis = 1)
         equipment_cost['year'] = final_year_of_simulation - 1
         if equipment_cost_across_sim.empty:
-            equipment_cost_across_sim = equipment_cost.groupby('year')[[item  + '_annual_total' for item in categories_of_equipment_cost]].sum()
+            equipment_cost_across_sim = equipment_cost.groupby(['year', 'Facility_Level', 'Equipment_tlo'])[[item  + '_annual_total' for item in categories_of_equipment_cost]].sum()
             equipment_cost_across_sim['draw'] = d
             equipment_cost_across_sim['run'] = r
         else:
-            equipment_cost_for_current_sim = equipment_cost.groupby('year')[[item  + '_annual_total' for item in categories_of_equipment_cost]].sum()
+            equipment_cost_for_current_sim = equipment_cost.groupby(['year', 'Facility_Level', 'Equipment_tlo'])[[item  + '_annual_total' for item in categories_of_equipment_cost]].sum()
             equipment_cost_for_current_sim['draw'] = d
             equipment_cost_for_current_sim['run'] = r
             # Concatenate the results
             equipment_cost_across_sim = pd.concat([equipment_cost_across_sim, equipment_cost_for_current_sim], axis=0)
 
-equipment_costs = pd.melt(equipment_cost_across_sim,
-                  id_vars=['draw', 'run'],  # Columns to keep
+equipment_costs = pd.melt(equipment_cost_across_sim.reset_index(),
+                  id_vars=['draw', 'run', 'Facility_Level', 'Equipment_tlo'],  # Columns to keep
                   value_vars=[col for col in equipment_cost_across_sim.columns if col.endswith('_annual_total')],  # Columns to unpivot
-                  var_name='Cost_Sub-category',  # New column name for the 'sub-category' of cost
-                  value_name='value')  # New column name for the values
+                  var_name='cost_subcategory',  # New column name for the 'sub-category' of cost
+                  value_name='cost')  # New column name for the values
 
+# Assume that the annual costs are constant each year of the simulation
+equipment_costs = pd.concat([equipment_costs.assign(year=year) for year in years])
+# TODO If the logger is updated to include year, we may wish to calculate equipment costs by year - currently we assume the same annuitised equipment cost each year
+equipment_costs = equipment_costs.reset_index(drop=True)
+equipment_costs = equipment_costs.rename(columns = {'Equipment_tlo': 'Equipment'})
+equipment_costs = prepare_cost_dataframe(equipment_costs, _category_specific_group = 'Equipment', _cost_category = 'Medical Equipment')
+
+'''
 equipment_costs_summary = pd.concat(
     {
         'mean': equipment_costs.groupby(by=['draw', 'Cost_Sub-category'], sort=False)['value'].mean(),
@@ -521,14 +557,15 @@ equipment_costs_summary =  pd.melt(equipment_costs_summary.reset_index(),
                   value_vars=['mean', 'lower', 'upper'],  # Columns to unpivot
                   var_name='stat',  # New column name for the 'sub-category' of cost
                   value_name='value')
-equipment_costs_summary['Cost_Category'] = 'Equipment purchase and maintenance'
-# Assume that the annual costs are constant each year of the simulation
-equipment_costs_summary = pd.concat([equipment_costs_summary.assign(year=year) for year in years])
-equipment_costs_summary = equipment_costs_summary.reset_index(drop=True)
-scenario_cost = pd.concat([scenario_cost, equipment_costs_summary], ignore_index=True)
+'''
 
 # 4. Facility running costs
 # Average running costs by facility level and district times the number of facilities  in the simulation
+
+# %%
+# Store all costs in single dataframe
+#--------------------------------------------
+scenario_cost = pd.concat([human_resource_costs, consumable_costs, equipment_costs], ignore_index=True)
 
 # Additional costs pertaining to simulation
 # IRS costs
