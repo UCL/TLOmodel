@@ -1942,6 +1942,10 @@ class HealthSystem(Module):
         summary_by_officer = compute_fraction_of_time_used([officer, level])
         summary_by_officer.index.names = ['Officer_Type', 'Facility_Level']
 
+        # Compute raction of Time For Each Officer and District
+        summary_by_officer_district = compute_fraction_of_time_used([officer, district])
+        summary_by_officer_district.index.names = ['Officer_Type', 'District']
+
         # Compute Fraction of Time by Officer, Level and District
         summary_by_officer_level_district = compute_fraction_of_time_used([officer, level, district])
         summary_by_officer_level_district.index.names = ['Officer_Type', 'Facility_Level', 'District']
@@ -1959,6 +1963,7 @@ class HealthSystem(Module):
         self._summary_counter.record_hs_status(
             fraction_time_used_across_all_facilities=fraction_time_used_overall,
             fraction_time_used_by_officer_type_and_level=summary_by_officer["Fraction_Time_Used"].to_dict(),
+            fraction_time_used_by_officer_district=summary_by_officer_district["Fraction_Time_Used"].to_dict(),
             fraction_time_used_by_officer_level_district=summary_by_officer_level_district[
                 'Fraction_Time_Used'].to_dict(),
         )
@@ -2772,6 +2777,7 @@ class HealthSystemSummaryCounter:
 
         self._frac_time_used_overall = []  # Running record of the usage of the healthcare system
         self._sum_of_daily_frac_time_used_by_officer_type_and_level = Counter()
+        self._sum_of_daily_frac_time_used_by_officer_district = Counter()
         self._sum_of_daily_frac_time_used_by_officer_level_district = Counter()
         self._squeeze_factor_by_hsi_event_name = defaultdict(list)  # Running record the squeeze-factor applying to each
         #                                                           treatment_id. Key is of the form:
@@ -2830,6 +2836,7 @@ class HealthSystemSummaryCounter:
         self,
         fraction_time_used_across_all_facilities: float,
         fraction_time_used_by_officer_type_and_level: Dict[Tuple[str, int], float],
+        fraction_time_used_by_officer_district: Dict[Tuple[str, str], float],
         fraction_time_used_by_officer_level_district: Dict[Tuple[str, str, str], float],
     ) -> None:
         """Record a current status metric of the HealthSystem."""
@@ -2837,6 +2844,8 @@ class HealthSystemSummaryCounter:
         self._frac_time_used_overall.append(fraction_time_used_across_all_facilities)
         for officer_type_facility_level, fraction_time in fraction_time_used_by_officer_type_and_level.items():
             self._sum_of_daily_frac_time_used_by_officer_type_and_level[officer_type_facility_level] += fraction_time
+        for officer_district, fraction_time in fraction_time_used_by_officer_district.items():
+            self._sum_of_daily_frac_time_used_by_officer_district[officer_district] += fraction_time
         for officer_level_district, fraction_time in fraction_time_used_by_officer_level_district.items():
             self._sum_of_daily_frac_time_used_by_officer_level_district[officer_level_district] += fraction_time
 
@@ -2901,6 +2910,16 @@ class HealthSystemSummaryCounter:
                 self.frac_time_used_by_officer_type_and_level()),
         )
 
+        # Log mean of 'fraction time used by officer type and district' from daily entries from the previous
+        # year.
+        logger_summary.info(
+            key="Capacity_By_OfficerType_And_District",
+            description="The fraction of healthcare worker time that is used each day, averaged over this "
+                        "calendar year, for each officer type in each district.",
+            data=flatten_multi_index_series_into_dict_for_logging(
+                self.frac_time_used_by_officer_district()),
+        )
+
         # Log mean of 'fraction time used by officer type and facility level and district' from daily entries from the
         # previous year.
         logger_summary.info(
@@ -2939,6 +2958,37 @@ class HealthSystemSummaryCounter:
                 index=pd.MultiIndex.from_tuples(
                     mean_frac_time_used.keys(),
                     names=['OfficerType', 'FacilityLevel']
+                ),
+                data=mean_frac_time_used.values()
+            ).sort_index()
+
+    def frac_time_used_by_officer_district(
+        self,
+        officer_type: Optional[str]=None,
+        district: Optional[str]=None,
+    ) -> Union[float, pd.Series]:
+        """Average fraction of time used by officer type and district since last reset.
+        If `officer_type` and/or `district` is not provided (left to default to `None`) then a pd.Series with a multi-index
+        is returned giving the result for all officer_types/levels."""
+
+        if (officer_type is not None) and (district is not None):
+            return (
+                self._sum_of_daily_frac_time_used_by_officer_district[officer_type, district]
+                / len(self._frac_time_used_overall)
+                # Use len(self._frac_time_used_overall) as proxy for number of days in past year.
+            )
+        else:
+            # Return multiple in the form of a pd.Series with multiindex
+            mean_frac_time_used = {
+                (_officer_type, _district): v / len(self._frac_time_used_overall)
+                for (_officer_type, _district), v in self._sum_of_daily_frac_time_used_by_officer_district.items()
+                if (_officer_type == officer_type or officer_type is None) and (
+                    _district == district or district is None)
+            }
+            return pd.Series(
+                index=pd.MultiIndex.from_tuples(
+                    mean_frac_time_used.keys(),
+                    names=['OfficerType', 'District']
                 ),
                 data=mean_frac_time_used.values()
             ).sort_index()
