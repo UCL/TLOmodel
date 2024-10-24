@@ -1,10 +1,10 @@
+import difflib
 import os
 
 import geopandas as gpd
+import numpy as np
 import pandas as pd
 from netCDF4 import Dataset
-import difflib
-import numpy as np
 
 # Data accessed from https://dhis2.health.gov.mw/dhis-web-data-visualizer/#/YiQK65skxjz
 # Reporting rate is expected reporting vs actual reporting
