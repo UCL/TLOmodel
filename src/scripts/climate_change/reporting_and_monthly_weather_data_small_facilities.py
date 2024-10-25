@@ -71,6 +71,7 @@ general_facilities = gpd.read_file("/Users/rem76/Desktop/Climate_change_health/D
 
 facilities_with_lat_long = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/facilities_with_lat_long_region.csv")
 
+
 weather_data_by_facility = {}
 facilities_with_location = []
 for reporting_facility in monthly_reporting_by_facility["facility"]:
@@ -84,10 +85,6 @@ for reporting_facility in monthly_reporting_by_facility["facility"]:
             facilities_with_lat_long['Fname'] == match_name, "A109__Longitude"].iloc[0]
         index_for_x = ((long_data - long_for_facility)**2).argmin()
         index_for_y= ((lat_data - lat_for_facility)**2).argmin()
-        print(lat_for_facility)
-        print(long_for_facility)
-        print(index_for_x)
-        print(index_for_y)
 
         precip_data_for_facility = pr_data[:, index_for_y,index_for_x]  # across all time points
         weather_data_by_facility[reporting_facility]  = precip_data_for_facility * 86400  # to get from per second to per day
