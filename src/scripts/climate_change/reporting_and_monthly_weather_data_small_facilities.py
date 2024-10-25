@@ -8,15 +8,26 @@ from netCDF4 import Dataset
 
 # Data accessed from https://dhis2.health.gov.mw/dhis-web-data-visualizer/#/YiQK65skxjz
 # Reporting rate is expected reporting vs actual reporting
-reporting_data = pd.read_csv('/Users/rem76/Desktop/Climate_change_health/Data/Reporting_Rate/Reporting_Rate_by_smaller_facilities_2011_2024.csv') #January 2011 - January 2024
+ANC = True
+if ANC:
+    reporting_data = pd.read_csv('/Users/rem76/Desktop/Climate_change_health/Data/ANC_data/ANC_data_2011_2024.csv')
+else:
+    reporting_data = pd.read_csv('/Users/rem76/Desktop/Climate_change_health/Data/Reporting_Rate/Reporting_Rate_by_smaller_facilities_2011_2024.csv') #January 2011 - January 2024
+
 # ANALYSIS DONE IN OCTOBER 2024 - so drop October, November, December 2024
 columns_to_drop = reporting_data.columns[reporting_data.columns.str.endswith(('October 2024', 'November 2024', 'December 2024'))]
 reporting_data = reporting_data.drop(columns=columns_to_drop)
 # drop NAs
 reporting_data = reporting_data.dropna(subset = reporting_data.columns[3:], how='all') # drops 90 clinics
+
 ### now aggregate over months
 monthly_reporting_data_by_facility =  {}
-months = set(col.split(" - Reporting rate ")[1] for col in reporting_data.columns if " - Reporting rate " in col)
+
+if ANC:
+    months = set(col.split("HMIS Total Antenatal Visits ")[1] for col in reporting_data.columns if "HMIS Total Antenatal Visits " in col)
+
+else:
+    months = set(col.split(" - Reporting rate ")[1] for col in reporting_data.columns if " - Reporting rate " in col)
 
 # put in order
 months = [date.strip() for date in months] # extra spaces??
@@ -50,7 +61,6 @@ pr_data = weather_monthly_all_grids.variables['tp'][:]  # total precipitation in
 lat_data = weather_monthly_all_grids.variables['latitude'][:]
 long_data = weather_monthly_all_grids.variables['longitude'][:]
 date = weather_monthly_all_grids['date'][:]
-print(date)
 grid = 0
 regridded_weather_data = {}
 for polygon in malawi_grid["geometry"]:
@@ -109,7 +119,13 @@ monthly_reporting_by_facility.index.name = "date"
 monthly_reporting_by_facility = monthly_reporting_by_facility.loc[:, monthly_reporting_by_facility.columns.isin(facilities_with_location)]
 monthly_reporting_by_facility = monthly_reporting_by_facility[facilities_with_location]
 
-monthly_reporting_by_facility.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_by_smaller_facility_lm.csv")
+#monthly_reporting_by_facility.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_by_smaller_facility_lm.csv")
+if ANC:
+    monthly_reporting_by_facility.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_ANC_by_smaller_facility_lm.csv")
+else:
+    monthly_reporting_by_facility.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_by_smaller_facility_lm.csv")
+
+
 weather_df.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facility_lm.csv")
 
 ## Get additional data - e.g. which zone it is in, altitude
