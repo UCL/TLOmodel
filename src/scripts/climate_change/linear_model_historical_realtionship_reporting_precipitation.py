@@ -4,23 +4,35 @@ import pandas as pd
 import statsmodels.api as sm
 from statsmodels.othermod.betareg import BetaModel
 
+
+ANC = True
+daily_max = True
+min_year_for_analyis = 2011
+absolute_min_year = 2011
 # # data is from 2011 - 2024 - for facility
-monthly_reporting_by_facility = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_by_smaller_facility_lm.csv", index_col=0)
-weather_data_historical = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facility_lm.csv", index_col=0)
+if ANC:
+    monthly_reporting_by_facility = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_ANC_by_smaller_facility_lm.csv", index_col=0)
+else:
+    monthly_reporting_by_facility = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_by_smaller_facility_lm.csv", index_col=0)
 
+if daily_max:
+    weather_data_historical = pd.read_csv(
+        "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_maximum/historical_daily_max_by_facilities_with_ANC.csv",
+        index_col=0)
+else:
+    weather_data_historical = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facility_lm.csv", index_col=0)
 
-## Drop September 2024
+## Drop September 2024 -
 weather_data_historical = weather_data_historical.drop(weather_data_historical.index[-1])
 monthly_reporting_by_facility = monthly_reporting_by_facility.drop(monthly_reporting_by_facility.index[-1])
 
 ## Drop before 2017
-weather_data_historical = weather_data_historical.iloc[48:]
-monthly_reporting_by_facility = monthly_reporting_by_facility.iloc[48:]
-
+weather_data_historical = weather_data_historical.iloc[(min_year_for_analyis-absolute_min_year)*12 :]
+monthly_reporting_by_facility = monthly_reporting_by_facility.iloc[(min_year_for_analyis-absolute_min_year)*12:]
 ## Linear regression
 month_range = range(12)
 num_facilities = len(weather_data_historical.columns)
-year_range = range(2015, 2025, 1) # year as a fixed effect
+year_range = range(min_year_for_analyis, 2025, 1) # year as a fixed effect
 year_repeated = [y for y in year_range for _ in range(12)]
 year = year_repeated[:-4]
 year_flattened = year*len(weather_data_historical.columns) # to get flattened data
@@ -75,7 +87,7 @@ def create_binary_feature(threshold, weather_data_df, recent_months):
 above_below_average = create_binary_feature(
     grouped_data.groupby(['facility', 'month'])['weather_data'].transform('mean'), weather_data_historical, 0
 )
-above_below_X = create_binary_feature(2000, weather_data_historical, 12)
+above_below_X = create_binary_feature(1000, weather_data_historical, 12)
 
 # Prepare additional facility info
 expanded_facility_info = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm.csv", index_col=0)
@@ -101,6 +113,7 @@ lag_3_month = weather_data_historical.shift(3).values.flatten()
 altitude = np.array(altitude)
 altitude = np.where(altitude < 0, np.nan, altitude)
 altitude = list(altitude)
+
 X = np.column_stack([
     weather_data,
     year_flattened,
@@ -114,29 +127,26 @@ X = np.column_stack([
     facility_encoded,
     altitude
 ])
-results, y_pred, mask  = build_model(X, y, scale_y=False, beta=False, X_mask_mm = 1000)
+results, y_pred, mask  = build_model(X, y, scale_y=False, beta=False, X_mask_mm = 000)
 #results = build_model(X, y, scale_y=True, beta=True, X_mask_mm = 1000)
 
 print(results.summary())
 
-print(sum(X[:, 0] >= 1000)/len(X))
-
 
 ### Now include only significant predictors
-
 X = np.column_stack([
     weather_data,
     year_flattened,
-    #month_flattened,
-    #resid_encoded,
-    #zone_encoded,
-    #owner_encoded,
-    #ftype_encoded,
-    #lag_1_month,
-    #lag_3_month,
-    altitude
+    month_flattened,
+    # resid_encoded,
+    # zone_encoded,
+    # owner_encoded,
+    # ftype_encoded,
+    # lag_1_month,
+    # lag_3_month,
+    # altitude
 ])
-results, y_pred, mask = build_model(X, y, scale_y=False, beta=False, X_mask_mm = 1000)
+results, y_pred, mask  = build_model(X, y, scale_y=False, beta=False, X_mask_mm = 000)
 
 print(results.summary())
 
@@ -147,11 +157,12 @@ X_filtered = X[mask]
 
 print(len(y_pred))
 print(len(X_filtered))
+print(len(X_filtered)/len(X) * 100)
 
 plt.scatter(X_filtered[:, 0], y_pred)
 
-plt.title('Predicted Reporting Over Time - Facility ')
-plt.ylabel('Reporting (%)')
+plt.title(' ')
+plt.ylabel('Number of ANC visits (%)')
 plt.xlabel('Precip (mm)')
 plt.ylim(0.9,1)
 plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
