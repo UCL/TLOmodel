@@ -45,7 +45,7 @@ base_dir = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/H
 
 years = range(2011, 2025)
 month_lengths = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-window_size = 5
+window_size = 1
 max_average_by_grid = {}
 
 for year in years:
