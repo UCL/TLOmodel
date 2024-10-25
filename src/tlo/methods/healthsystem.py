@@ -1104,6 +1104,9 @@ class HealthSystem(Module):
             level = self._facility_by_facility_id[facility_id].level
             # Only rescale if rescaling factor is greater than 1 (i.e. don't reduce
             # available capabilities if these were under-used the previous year).
+            # Later, we might want to rescale capabilities by rescaling factor of officer type and facility id
+            # (i.e., officer type, district and level specific),
+            # which will need fraction of time used by officer type and facility id.
             rescaling_factor = self._summary_counter.frac_time_used_by_officer_type_and_level(
                 officer_type=officer_type, level=level
             )
