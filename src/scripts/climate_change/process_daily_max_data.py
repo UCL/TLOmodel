@@ -118,5 +118,6 @@ for year in years:
 #
 print(max_average_by_facility)
 df_of_facilities = pd.DataFrame.from_dict(max_average_by_facility, orient='index')
+df_of_facilities = df_of_facilities.iloc[:, :-3] ## THESE ARE OCT/NOV/DEC OF 2024, and for moment don't have that reporting data
 df_of_facilities = df_of_facilities.T
 df_of_facilities.to_csv(Path(base_dir) / "historical_daily_max_by_facility.csv")
