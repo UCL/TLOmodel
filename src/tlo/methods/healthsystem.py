@@ -2767,13 +2767,14 @@ class HealthSystemSummaryCounter:
         self._no_blank_appt_treatment_ids = defaultdict(int)  # As above, but for `HSI_Event`s with non-blank footprint
         self._no_blank_appt_appts = defaultdict(int)  # As above, but for `HSI_Event`s that with non-blank footprint
         self._no_blank_appt_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
-        self._no_blank_appt_by_fac_id = {_fac_id: defaultdict(int) for _fac_id in range(133)}  # 133 facilities
+        fac_ids = list(range(133)) + [-1, -99]  # 133 "real" facilities + 2 dummy facilities
+        self._no_blank_appt_by_fac_id = {_fac_id: defaultdict(int) for _fac_id in fac_ids}
 
         # Log HSI_Events that never ran to monitor shortcoming of Health System
         self._never_ran_treatment_ids = defaultdict(int)  # As above, but for `HSI_Event`s that never ran
         self._never_ran_appts = defaultdict(int)  # As above, but for `HSI_Event`s that have never ran
         self._never_ran_appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
-        self._never_ran_appts_by_fac_id = {_fac_id: defaultdict(int) for _fac_id in range(133)}  # 133 facilities
+        self._never_ran_appts_by_fac_id = {_fac_id: defaultdict(int) for _fac_id in fac_ids}
 
         self._frac_time_used_overall = []  # Running record of the usage of the healthcare system
         self._sum_of_daily_frac_time_used_by_officer_type_and_level = Counter()
