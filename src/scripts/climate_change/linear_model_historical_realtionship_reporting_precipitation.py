@@ -6,21 +6,31 @@ from statsmodels.othermod.betareg import BetaModel
 
 
 ANC = True
-daily_max = True
+daily_max = False
 min_year_for_analyis = 2011
 absolute_min_year = 2011
 # # data is from 2011 - 2024 - for facility
 if ANC:
     monthly_reporting_by_facility = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_ANC_by_smaller_facility_lm.csv", index_col=0)
+    if daily_max:
+        weather_data_historical = pd.read_csv(
+            "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_maximum/historical_daily_max_by_facilities_with_ANC.csv",
+            index_col=0)
+    else:
+        weather_data_historical = pd.read_csv(
+            "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_ANC_lm.csv",
+            index_col=0)
+
 else:
     monthly_reporting_by_facility = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_by_smaller_facility_lm.csv", index_col=0)
-
-if daily_max:
-    weather_data_historical = pd.read_csv(
-        "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_maximum/historical_daily_max_by_facilities_with_ANC.csv",
-        index_col=0)
-else:
-    weather_data_historical = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facility_lm.csv", index_col=0)
+    if daily_max:
+        weather_data_historical = pd.read_csv(
+            "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_maximum/historical_daily_max_by_facility.csv",
+            index_col=0)
+    else:
+        weather_data_historical = pd.read_csv(
+            "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facility_lm.csv",
+            index_col=0)
 
 ## Drop September 2024 -
 weather_data_historical = weather_data_historical.drop(weather_data_historical.index[-1])
@@ -48,11 +58,12 @@ facility_flattened = list(range(len(weather_data_historical.columns))) * len(mon
 # Flatten data
 weather_data = weather_data_historical.values.flatten()
 y = monthly_reporting_by_facility.values.flatten()
-
-def build_model(X, y, scale_y=True, beta=True, X_mask_mm = 0):
+def build_model(X, y, scale_y=False, beta=False, X_mask_mm = 0):
     epsilon = 1e-5
-    y_scaled = (y / 100) if scale_y else y
-    y_scaled = np.clip(y_scaled, epsilon, 1 - epsilon)
+    if scale_y:
+        y_scaled = np.clip(y / 100, epsilon, 1 - epsilon)
+    else:
+        y_scaled = y
     mask = ~np.isnan(X).any(axis=1) & ~np.isnan(y_scaled) & (X[:, 0] >= X_mask_mm)
     model = BetaModel(y_scaled[mask], X[mask]) if beta else sm.OLS(y_scaled[mask], X[mask])
     model_fit = model.fit()
@@ -127,7 +138,7 @@ X = np.column_stack([
     facility_encoded,
     altitude
 ])
-results, y_pred, mask  = build_model(X, y, scale_y=False, beta=False, X_mask_mm = 000)
+results, y_pred, mask  = build_model(X, y, X_mask_mm = 800)
 #results = build_model(X, y, scale_y=True, beta=True, X_mask_mm = 1000)
 
 print(results.summary())
@@ -145,8 +156,9 @@ X = np.column_stack([
     # lag_1_month,
     # lag_3_month,
     # altitude
+    above_below_X
 ])
-results, y_pred, mask  = build_model(X, y, scale_y=False, beta=False, X_mask_mm = 000)
+results, y_pred, mask  = build_model(X, y, X_mask_mm = 800)
 
 print(results.summary())
 
@@ -158,15 +170,30 @@ X_filtered = X[mask]
 print(len(y_pred))
 print(len(X_filtered))
 print(len(X_filtered)/len(X) * 100)
+print(len(y[mask]))
+print(len(y_pred))
 
-plt.scatter(X_filtered[:, 0], y_pred)
 
-plt.title(' ')
-plt.ylabel('Number of ANC visits (%)')
-plt.xlabel('Precip (mm)')
-plt.ylim(0.9,1)
-plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
-plt.show()
+if ANC:
+    plt.scatter(X_filtered[:, 0], y[mask], color='red', alpha=0.5)
+    plt.scatter(X_filtered[:, 0], y_pred)
+    plt.title(' ')
+    plt.ylabel('Number of ANC visits')
+    plt.xlabel('Precip (mm)')
+    plt.ylim(0,1000)
+    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
+    plt.show()
+else:
+
+    plt.scatter(X_filtered[:, 0], y[mask], color='red', alpha=0.5)
+    plt.scatter(X_filtered[:, 0], y_pred)
+    plt.title(' ')
+    plt.ylabel('Reporting (%)')
+    plt.xlabel('Precip (mm)')
+    plt.ylim(0, 100)
+    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
+    plt.show()
+
 
 
 
