@@ -6,6 +6,7 @@ import pandas as pd
 import geopandas as gpd
 import difflib
 
+ANC = False
 # facility data
 general_facilities = gpd.read_file("/Users/rem76/Desktop/Climate_change_health/Data/facilities_with_districts.shp")
 
@@ -13,7 +14,10 @@ facilities_with_lat_long = pd.read_csv("/Users/rem76/Desktop/Climate_change_heal
 
 # Data accessed from https://dhis2.health.gov.mw/dhis-web-data-visualizer/#/YiQK65skxjz
 # Reporting rate is expected reporting vs actual reporting
-reporting_data = pd.read_csv('/Users/rem76/Desktop/Climate_change_health/Data/Reporting_Rate/Reporting_Rate_by_smaller_facilities_2011_2024.csv') #January 2011 - January 2024
+if ANC:
+    reporting_data = pd.read_csv('/Users/rem76/Desktop/Climate_change_health/Data/ANC_data/ANC_data_2011_2024.csv') #January 2011 - January 2024
+else:
+    reporting_data = pd.read_csv('/Users/rem76/Desktop/Climate_change_health/Data/Reporting_Rate/Reporting_Rate_by_smaller_facilities_2011_2024.csv') #January 2011 - January 2024
 # ANALYSIS DONE IN OCTOBER 2024 - so drop October, November, December 2024
 columns_to_drop = reporting_data.columns[reporting_data.columns.str.endswith(('October 2024', 'November 2024', 'December 2024'))]
 reporting_data = reporting_data.drop(columns=columns_to_drop)
@@ -120,4 +124,9 @@ print(max_average_by_facility)
 df_of_facilities = pd.DataFrame.from_dict(max_average_by_facility, orient='index')
 df_of_facilities = df_of_facilities.iloc[:, :-3] ## THESE ARE OCT/NOV/DEC OF 2024, and for moment don't have that reporting data
 df_of_facilities = df_of_facilities.T
-df_of_facilities.to_csv(Path(base_dir) / "historical_daily_max_by_facility.csv")
+
+if ANC:
+    df_of_facilities.to_csv(Path(base_dir) / "historical_daily_max_by_facilities_with_ANC.csv")
+else:
+    df_of_facilities.to_csv(Path(base_dir) / "historical_daily_max_by_facility.csv")
+
