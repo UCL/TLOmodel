@@ -289,16 +289,17 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         self.clinical_signs_acute_malnutrition(index_under5)
 
     def initialise_simulation(self, sim):
-        """Prepares for simulation:
-        * Schedules the main polling event
-        * Schedules the main logging event
+        """Prepares for simulation. Schedules:
+        * the first growth monitoring to happen straight away, scheduled monthly to detect new cases for treatment.
+        * the main incidence polling event.
+        * the main logging event.
         """
 
-        # schedule wasting pool event
-        sim.schedule_event(WastingIncidencePollingEvent(self), sim.date + DateOffset(months=3))
-
-        # schedule wasting logging event
-        sim.schedule_event(WastingLoggingEvent(self), sim.date + DateOffset(months=12))
+        sim.modules['HealthSystem'].schedule_hsi_event(hsi_event=HSI_Wasting_GrowthMonitoring(module=self),
+                                                       topen=self.sim.date, tclose=None,
+                                                       priority=1)
+        sim.schedule_event(Wasting_IncidencePoll(self), sim.date + DateOffset(months=3))
+        sim.schedule_event(Wasting_LoggingEvent(self), sim.date + DateOffset(years=1) - DateOffset(days=1))
 
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual.
@@ -637,7 +638,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                 if self.rng.random_sample() < p['coverage_inpatient_care']:
                     # schedule HSI for supplementary feeding program for MAM
                     schedule_hsi_event(
-                        hsi_event=HSI_Wasting_InpatientCareForComplicated_SAM(
+                        hsi_event=HSI_Wasting_InpatientCare_ComplicatedSAM(
                             module=self, person_id=person_id), priority=0, topen=self.sim.date)
                 else:
                     return
@@ -661,7 +662,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             if mam_full_recovery:
                 # schedule recovery date
                 self.sim.schedule_event(
-                    event=WastingClinicalAcuteMalnutritionRecoveryEvent(module=self, person_id=person_id),
+                    event=Wasting_ClinicalAcuteMalnutritionRecovery_Event(module=self, person_id=person_id),
                     date=(df.at[person_id, 'un_am_tx_start_date'] +
                           DateOffset(weeks=p['tx_length_weeks_SuppFeedingMAM']))
                 )
@@ -684,7 +685,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             if sam_full_recovery:
                 # schedule full recovery
                 self.sim.schedule_event(
-                    event=WastingClinicalAcuteMalnutritionRecoveryEvent(module=self, person_id=person_id),
+                    event=Wasting_ClinicalAcuteMalnutritionRecovery_Event(module=self, person_id=person_id),
                     date=outcome_date
                 )
                 # cancel death date
@@ -694,11 +695,11 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                                                                            self.parameters['prob_death_after_care']])
                 if outcome == 'death':
                     self.sim.schedule_event(
-                        event=WastingSevereAcuteMalnutritionDeathEvent(module=self, person_id=person_id),
+                        event=Wasting_SevereAcuteMalnutritionDeath_Event(module=self, person_id=person_id),
                         date=outcome_date
                     )
                 else:  # recovery to MAM and follow-up treatment for MAM
-                    self.sim.schedule_event(event=WastingUpdateToMAM(module=self, person_id=person_id),
+                    self.sim.schedule_event(event=Wasting_UpdateToMAM_Event(module=self, person_id=person_id),
                                             date=outcome_date)
                     self.sim.modules['HealthSystem'].schedule_hsi_event(
                         hsi_event=HSI_Wasting_SupplementaryFeedingProgramme_MAM(module=self, person_id=person_id),
@@ -707,7 +708,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                     df.at[person_id, 'un_sam_death_date'] = pd.NaT
 
 
-class WastingIncidencePollingEvent(RegularEvent, PopulationScopeEventMixin):
+class Wasting_IncidencePoll(RegularEvent, PopulationScopeEventMixin):
     """
     Regular event that determines new cases of wasting (WHZ < -2) to the under-5 population, and schedules
     individual incident cases to represent onset. It determines those who will progress to severe wasting
@@ -745,7 +746,7 @@ class WastingIncidencePollingEvent(RegularEvent, PopulationScopeEventMixin):
         # -------------------------------------------------------------------------------------------
         # Add these incident cases to the tracker
         for person_id in mod_wasting_new_cases_idx:
-            age_group = WastingIncidencePollingEvent.AGE_GROUPS.get(df.loc[person_id].age_years, '5+y')
+            age_group = Wasting_IncidencePoll.AGE_GROUPS.get(df.loc[person_id].age_years, '5+y')
             self.module.wasting_incident_case_tracker[age_group]['-3<=WHZ<-2'].append(self.sim.date)
         # Update properties related to clinical acute malnutrition
         # (MUAC, oedema, clinical state of acute malnutrition and if SAM complications; clear symptoms if not SAM)
@@ -763,12 +764,12 @@ class WastingIncidencePollingEvent(RegularEvent, PopulationScopeEventMixin):
             # schedule severe wasting WHZ < -3 onset
             if outcome_date <= self.sim.date:
                 # schedule severe wasting (WHZ < -3) onset today
-                self.sim.schedule_event(event=WastingProgressionToSevereEvent(
+                self.sim.schedule_event(event=Wasting_ProgressionToSevere_Event(
                     module=self.module, person_id=person), date=self.sim.date)
             else:
                 # schedule severe wasting WHZ < -3 onset according to duration
                 self.sim.schedule_event(
-                    event=WastingProgressionToSevereEvent(
+                    event=Wasting_ProgressionToSevere_Event(
                         module=self.module, person_id=person), date=outcome_date)
 
         # # # MODERATE WASTING NATURAL RECOVERY # # # # # # # # # # # # # #
@@ -777,15 +778,15 @@ class WastingIncidencePollingEvent(RegularEvent, PopulationScopeEventMixin):
             outcome_date = self.module.date_of_outcome_for_untreated_wasting(person_id=person)
             if outcome_date <= self.sim.date:
                 # schedule recovery for today
-                self.sim.schedule_event(event=WastingNaturalRecoveryEvent(
+                self.sim.schedule_event(event=Wasting_NaturalRecovery_Event(
                     module=self.module, person_id=person), date=self.sim.date)
             else:
                 # schedule recovery according to duration
-                self.sim.schedule_event(event=WastingNaturalRecoveryEvent(
+                self.sim.schedule_event(event=Wasting_NaturalRecovery_Event(
                     module=self.module, person_id=person), date=outcome_date)
 
 
-class WastingProgressionToSevereEvent(Event, IndividualScopeEventMixin):
+class Wasting_ProgressionToSevere_Event(Event, IndividualScopeEventMixin):
     """
     This Event is for the onset of severe wasting (WHZ < -3).
      * Refreshes all the properties so that they pertain to this current episode of wasting
@@ -819,11 +820,11 @@ class WastingProgressionToSevereEvent(Event, IndividualScopeEventMixin):
 
             # -------------------------------------------------------------------------------------------
             # Add this severe wasting incident case to the tracker
-            age_group = WastingIncidencePollingEvent.AGE_GROUPS.get(df.loc[person_id].age_years, '5+y')
+            age_group = Wasting_IncidencePoll.AGE_GROUPS.get(df.loc[person_id].age_years, '5+y')
             m.wasting_incident_case_tracker[age_group]['WHZ<-3'].append(self.sim.date)
 
 
-class WastingSevereAcuteMalnutritionDeathEvent(Event, IndividualScopeEventMixin):
+class Wasting_SevereAcuteMalnutritionDeath_Event(Event, IndividualScopeEventMixin):
     """
     This event applies the death function
     """
@@ -849,7 +850,7 @@ class WastingSevereAcuteMalnutritionDeathEvent(Event, IndividualScopeEventMixin)
                 originating_module=self.module)
 
 
-class WastingNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
+class Wasting_NaturalRecovery_Event(Event, IndividualScopeEventMixin):
     """
     This event improves wasting by 1 SD, based on home care/improvement without interventions.
     MUAC, oedema, clinical state of acute malnutrition, and if SAM complications are updated,
@@ -882,7 +883,7 @@ class WastingNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
             df.at[person_id, 'un_am_recovery_date'] = self.sim.date
 
 
-class WastingClinicalAcuteMalnutritionRecoveryEvent(Event, IndividualScopeEventMixin):
+class Wasting_ClinicalAcuteMalnutritionRecovery_Event(Event, IndividualScopeEventMixin):
     """
     This event sets wasting properties back to normal state.
     """
@@ -912,7 +913,7 @@ class WastingClinicalAcuteMalnutritionRecoveryEvent(Event, IndividualScopeEventM
         )
 
 
-class WastingUpdateToMAM(Event, IndividualScopeEventMixin):
+class Wasting_UpdateToMAM_Event(Event, IndividualScopeEventMixin):
     """
     This event updates the properties for those cases that remained/improved from SAM to MAM following
     treatment
@@ -938,8 +939,7 @@ class WastingUpdateToMAM(Event, IndividualScopeEventMixin):
             # TODO: I think this changes the proportions below as some of the cases will be issued here
 
         else:
-            # using the probability of mam classification by anthropometric
-            # indices
+            # using the probability of mam classification by anthropometric indices
             mam_classification = rng.choice(['mam_by_muac_only', 'mam_by_muac_and_whz', 'mam_by_whz_only'],
                                             p=[p['proportion_mam_with_MUAC_[115-125)mm_and_normal_whz'],
                                                p['proportion_mam_with_MUAC_[115-125)mm_and_-3<=WHZ<-2'],
@@ -1079,7 +1079,7 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
         pass
 
 
-class HSI_Wasting_InpatientCareForComplicated_SAM(HSI_Event, IndividualScopeEventMixin):
+class HSI_Wasting_InpatientCare_ComplicatedSAM(HSI_Event, IndividualScopeEventMixin):
     """
     This is the inpatient management of SAM with medical complications
     """
@@ -1128,6 +1128,74 @@ class HSI_Wasting_InpatientCareForComplicated_SAM(HSI_Event, IndividualScopeEven
 
     def did_not_run(self):
         logger.debug(key='debug', data=f'{self.TREATMENT_ID}: did not run')
+        pass
+
+
+class HSI_Wasting_GrowthMonitoring(HSI_Event, PopulationScopeEventMixin):
+    """ Growth Monitoring is conducted every month. MAM/SAM can be diagnosed and children scheduled for appropriate
+     treatment.
+    """
+
+    def __init__(self, module):
+        super().__init__(module)
+        assert isinstance(module, Wasting)
+
+        self.TREATMENT_ID = "Undernutrition_GrowthMonitoring"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Under5OPD': 1})
+        # TODO: update the # to smt like #Under5 * prob_attend_growth_monitoring
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
+
+    def apply(self, population, squeeze_factor):
+        logger.debug(key='debug', data='This is HSI_Wasting_GrowthMonitoring')
+
+        df = population.props
+        p = self.module.parameters
+        rng = self.module.rng
+
+        wasted_not_treated = df.loc[
+            df.is_alive & (df.age_exact_years < 5) & (df.un_WHZ_category != 'WHZ>=-2') &
+            ~df.un_am_treatment_type.isin(['standard_RUTF', 'soy_RUSF', 'CSB++', 'inpatient_care'])
+        ]
+
+        self.add_equipment({'Height Pole (Stadiometer)', 'Weighing scale', 'MUAC tape'})
+
+        def schedule_events_by_coverage(idx, coverage_prob, hsi_event):
+            if len(idx) > 0:
+                random_samples = rng.random_sample(size=len(idx))
+                coverage = random_samples < coverage_prob
+                for person_id in idx[coverage]:
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(
+                        hsi_event=hsi_event(module=self.module, person_id=person_id),
+                        priority=0, topen=self.sim.date  # TODO: to any random date within the month?
+                    )
+
+        # get the clinical states
+        clinical_am = wasted_not_treated['un_clinical_acute_malnutrition']
+        complications = wasted_not_treated['un_sam_with_complications']
+
+        # MAM diagnoses
+        mam_cases_idx = np.where(clinical_am == 'MAM')[0]
+        schedule_events_by_coverage(mam_cases_idx, p['coverage_supplementary_feeding_program'],
+                                    HSI_Wasting_SupplementaryFeedingProgramme_MAM)
+        # uncomplicated SAM diagnoses
+        uncomplicated_sam_cases_idx = np.where((clinical_am == 'SAM') & (~complications))[0]
+        schedule_events_by_coverage(uncomplicated_sam_cases_idx, p['coverage_outpatient_therapeutic_care'],
+                                    HSI_Wasting_OutpatientTherapeuticProgramme_SAM)
+        # complicated SAM diagnoses
+        complicated_sam_cases_idx = np.where((clinical_am == 'SAM') & complications)[0]
+        assert len(clinical_am) == len(mam_cases_idx) + len(uncomplicated_sam_cases_idx) + len(complicated_sam_cases_idx)
+        schedule_events_by_coverage(complicated_sam_cases_idx, p['coverage_inpatient_care'],
+                                    HSI_Wasting_InpatientCare_ComplicatedSAM)
+
+        # schedule growth monitoring for next month
+        self.sim.modules['HealthSystem'].schedule_hsi_event(hsi_event=HSI_Wasting_GrowthMonitoring(module=self.module),
+                                                            topen=self.sim.date + pd.DateOffset(months=1), tclose=None,
+                                                            priority=1)
+
+    def did_not_run(self):
+        logger.debug(key="HSI_Wasting_GrowthMonitoring",
+                     data="HSI_Wasting_GrowthMonitoring: did not run"
+                     )
         pass
 
 
@@ -1247,7 +1315,7 @@ class WastingModels:
         return scaled_wasting_prevalence_lm
 
 
-class WastingLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """
         This Event logs the number of incident cases that have occurred since the previous logging event.
          Analysis scripts expect that the frequency of this logging event is once per year.
