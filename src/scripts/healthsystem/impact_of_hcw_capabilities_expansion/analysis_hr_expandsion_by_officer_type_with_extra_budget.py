@@ -24,10 +24,11 @@ from scripts.healthsystem.impact_of_hcw_capabilities_expansion.scenario_of_expan
     HRHExpansionByCadreWithExtraBudget,
 )
 from tlo import Date
-from tlo.analysis.utils import (  # SHORT_TREATMENT_ID_TO_COLOR_MAP,
+from tlo.analysis.utils import (
     APPT_TYPE_TO_COARSE_APPT_TYPE_MAP,
     CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP,
     COARSE_APPT_TYPE_TO_COLOR_MAP,
+    SHORT_TREATMENT_ID_TO_COLOR_MAP,
     bin_hsi_event_details,
     compute_mean_across_runs,
     extract_results,
@@ -419,7 +420,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         return increased_time_by_cadre_treatment
 
     # Get parameter/scenario names
-    param_names = ('s_0', 's_1', 's_2', 's_3', 's_11', 's_22')  # get_parameter_names_from_scenario_file()
+    param_names = get_parameter_names_from_scenario_file()
+    # param_names = ('s_0', 's_1', 's_2', 's_3', 's_11', 's_22')
+    # param_names = ('s_1', 's_2', 's_3', 's_11', 's_22')
 
     # Define cadres in order
     cadres = ['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy',
@@ -547,21 +550,21 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         do_scaling=True
     ).pipe(set_param_names_as_column_index_level_0)
 
-    # num_treatments = extract_results(
-    #     results_folder,
-    #     module='tlo.methods.healthsystem.summary',
-    #     key='HSI_Event_non_blank_appt_footprint',
-    #     custom_generate_series=get_num_treatments,
-    #     do_scaling=True
-    # ).pipe(set_param_names_as_column_index_level_0)
-    #
-    # num_treatments_total = extract_results(
-    #     results_folder,
-    #     module='tlo.methods.healthsystem.summary',
-    #     key='HSI_Event_non_blank_appt_footprint',
-    #     custom_generate_series=get_num_treatments_total,
-    #     do_scaling=True
-    # ).pipe(set_param_names_as_column_index_level_0)
+    num_treatments = extract_results(
+        results_folder,
+        module='tlo.methods.healthsystem.summary',
+        key='HSI_Event_non_blank_appt_footprint',
+        custom_generate_series=get_num_treatments,
+        do_scaling=True
+    ).pipe(set_param_names_as_column_index_level_0)
+
+    num_treatments_total = extract_results(
+        results_folder,
+        module='tlo.methods.healthsystem.summary',
+        key='HSI_Event_non_blank_appt_footprint',
+        custom_generate_series=get_num_treatments_total,
+        do_scaling=True
+    ).pipe(set_param_names_as_column_index_level_0)
 
     num_never_ran_appts = extract_results(
         results_folder,
@@ -606,14 +609,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # get total service demand
     assert len(num_services) == len(num_never_ran_services) == 1
     assert (num_services.columns == num_never_ran_services.columns).all()
-    # num_services_demand = num_services + num_never_ran_services
+    num_services_demand = num_services + num_never_ran_services
     # ratio_services = num_services / num_services_demand
 
     assert (num_appts.columns == num_never_ran_appts.columns).all()
     num_never_ran_appts.loc['Lab / Diagnostics', :] = 0
     num_never_ran_appts = num_never_ran_appts.reindex(num_appts.index).fillna(0.0)
     assert (num_appts.index == num_never_ran_appts.index).all()
-    # num_appts_demand = num_appts + num_never_ran_appts
+    num_appts_demand = num_appts + num_never_ran_appts
 
     hcw_time_usage = extract_results(
         results_folder,
@@ -648,12 +651,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     num_never_ran_appts_by_level_summarized = summarize(num_never_ran_appts_by_level, only_mean=True).T.reindex(param_names).reindex(
         num_dalys_summarized.index
     ).fillna(0.0)
-    # num_appts_demand_summarized = summarize(num_appts_demand, only_mean=True).T.reindex(param_names).reindex(
-    #     num_dalys_summarized.index
-    # )
-    # num_treatments_summarized = summarize(num_treatments, only_mean=True).T.reindex(param_names).reindex(
-    #     num_dalys_summarized.index
-    # )
+    num_appts_demand_summarized = summarize(num_appts_demand, only_mean=True).T.reindex(param_names).reindex(
+        num_dalys_summarized.index
+    )
+    num_treatments_summarized = summarize(num_treatments, only_mean=True).T.reindex(param_names).reindex(
+        num_dalys_summarized.index
+    )
     # num_treatments_total_summarized = summarize(num_treatments_total).loc[0].unstack().reindex(param_names).reindex(
     #     num_dalys_summarized.index
     # )
@@ -670,9 +673,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # num_never_ran_treatments_total_summarized = summarize(num_never_ran_treatments_total).loc[0].unstack().reindex(param_names).reindex(
     #     num_dalys_summarized.index
     # )
-    # num_service_demand_summarized = summarize(num_services_demand).loc[0].unstack().reindex(param_names).reindex(
-    #     num_dalys_summarized.index
-    # )
+    num_services_demand_summarized = summarize(num_services_demand).loc[0].unstack().reindex(param_names).reindex(
+        num_dalys_summarized.index
+    )
     # ratio_service_summarized = summarize(ratio_services).loc[0].unstack().reindex(param_names).reindex(
     #     num_dalys_summarized.index
     # )
@@ -806,13 +809,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     #     only_mean=True
     # ).T.reindex(num_dalys_summarized.index).drop(['s_1'])
 
-    # num_treatments_increased = summarize(
-    #     find_difference_relative_to_comparison_dataframe(
-    #         num_treatments,
-    #         comparison='s_1',
-    #     ),
-    #     only_mean=True
-    # ).T.reindex(num_dalys_summarized.index).drop(['s_1'])
+    num_treatments_increased = summarize(
+        find_difference_relative_to_comparison_dataframe(
+            num_treatments,
+            comparison='s_0',
+        ),
+        only_mean=True
+    ).T.reindex(num_dalys_summarized.index).drop(['s_0'])
 
     # num_treatments_increased_percent = summarize(
     #     find_difference_relative_to_comparison_dataframe(
@@ -823,13 +826,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     #     only_mean=True
     # ).T.reindex(num_dalys_summarized.index).drop(['s_1'])
 
-    # num_treatments_total_increased = summarize(
-    #     pd.DataFrame(
-    #         find_difference_relative_to_comparison_series(
-    #             num_treatments_total.loc[0],
-    #             comparison='s_1')
-    #     ).T
-    # ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_1'])
+    num_treatments_total_increased = summarize(
+        pd.DataFrame(
+            find_difference_relative_to_comparison_series(
+                num_treatments_total.loc[0],
+                comparison='s_0')
+        ).T
+    ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_0'])
 
     # num_treatments_total_increased_percent = summarize(
     #     pd.DataFrame(
@@ -871,11 +874,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
          ) < 1e-6
     ).all()
 
-    # assert (
-    #     (num_treatments_increased.sum(axis=1).sort_index()
-    #      - num_treatments_total_increased['mean'].sort_index()
-    #      ) < 1e-6
-    # ).all()
+    assert (
+        (num_treatments_increased.sum(axis=1).sort_index()
+         - num_treatments_total_increased['mean'].sort_index()
+         ) < 1e-6
+    ).all()
 
     # get HCW time and cost needed to run the never run appts
     def hcw_time_or_cost_gap(time_cost_df=appt_time, count_df=num_never_ran_appts_by_level_summarized):
@@ -1056,10 +1059,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     appt_color = {
         appt: COARSE_APPT_TYPE_TO_COLOR_MAP.get(appt, np.nan) for appt in num_appts_summarized.columns
     }
-    # treatment_color = {
-    #     treatment: SHORT_TREATMENT_ID_TO_COLOR_MAP.get(treatment, np.nan)
-    #     for treatment in num_treatments_summarized.columns
-    # }
+    treatment_color = {
+        treatment: SHORT_TREATMENT_ID_TO_COLOR_MAP.get(treatment, np.nan)
+        for treatment in num_treatments_summarized.columns
+    }
     cause_color = {
         cause: CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.get(cause, np.nan)
         for cause in num_dalys_by_cause_summarized.columns
@@ -1462,6 +1465,28 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.set_ylabel('Millions', fontsize='small')
     ax.set_xlabel('Extra budget allocation scenario', fontsize='small')
     xtick_labels = [substitute_labels[v] for v in num_never_ran_appts_summarized_in_millions.index]
+    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
+    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Appointment type', title_fontsize='small',
+               fontsize='small', reverse=True)
+    plt.title(name_of_plot)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
+    name_of_plot = f'Total services demand by appointment type, {target_period()}'
+    data_to_plot = num_appts_demand_summarized / 1e6
+    yerr_services = np.array([
+        (num_services_demand_summarized['mean'] - num_services_demand_summarized['lower']).values,
+        (num_services_demand_summarized['upper'] - num_services_demand_summarized['mean']).values,
+    ])/1e6
+    fig, ax = plt.subplots(figsize=(9, 6))
+    data_to_plot.plot(kind='bar', stacked=True, color=appt_color, rot=0, ax=ax)
+    ax.errorbar(range(len(param_names)), num_services_demand_summarized['mean'].values / 1e6, yerr=yerr_services,
+                fmt=".", color="black", zorder=100)
+    ax.set_ylabel('Millions', fontsize='small')
+    ax.set_xlabel('Extra budget allocation scenario', fontsize='small')
+    xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
     ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
     plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Appointment type', title_fontsize='small',
                fontsize='small', reverse=True)
@@ -1984,29 +2009,29 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # fig.show()
     # plt.close(fig)
 
-    # name_of_plot = f'Services increased by treatment type \nagainst no expansion, {target_period()}'
-    # num_treatments_increased_in_millions = num_treatments_increased / 1e6
-    # yerr_services = np.array([
-    #     (num_treatments_total_increased['mean'] - num_treatments_total_increased['lower']).values,
-    #     (num_treatments_total_increased['upper'] - num_treatments_total_increased['mean']).values,
-    # ]) / 1e6
-    # fig, ax = plt.subplots(figsize=(10, 6))
-    # num_treatments_increased_in_millions.plot(kind='bar', stacked=True, color=treatment_color, rot=0, ax=ax)
-    # ax.errorbar(range(len(param_names)-1), num_treatments_total_increased['mean'].values / 1e6, yerr=yerr_services,
-    #             fmt=".", color="black", zorder=100)
-    # ax.set_ylabel('Millions', fontsize='small')
-    # ax.set(xlabel=None)
-    # xtick_labels = [substitute_labels[v] for v in num_treatments_increased_in_millions.index]
-    # ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
-    # plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.4), title='Treatment type', title_fontsize='small',
-    #            fontsize='small', reverse=True)
-    # plt.title(name_of_plot)
-    # fig.tight_layout()
-    # fig.savefig(make_graph_file_name(
-    #     name_of_plot.replace(' ', '_').replace(',', '').replace('\n', ''))
-    # )
-    # fig.show()
-    # plt.close(fig)
+    name_of_plot = f'Services increased by treatment type \nagainst no expansion, {target_period()}'
+    data_to_plot = num_treatments_increased / 1e6
+    yerr_services = np.array([
+        (num_treatments_total_increased['mean'] - num_treatments_total_increased['lower']).values,
+        (num_treatments_total_increased['upper'] - num_treatments_total_increased['mean']).values,
+    ]) / 1e6
+    fig, ax = plt.subplots(figsize=(10, 6))
+    data_to_plot.plot(kind='bar', stacked=True, color=treatment_color, rot=0, ax=ax)
+    ax.errorbar(range(len(param_names)-1), num_treatments_total_increased['mean'].values / 1e6, yerr=yerr_services,
+                fmt=".", color="black", zorder=100)
+    ax.set_ylabel('Millions', fontsize='small')
+    ax.set(xlabel=None)
+    xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
+    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
+    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.4), title='Treatment type', title_fontsize='small',
+               fontsize='small', reverse=True)
+    plt.title(name_of_plot)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(
+        name_of_plot.replace(' ', '_').replace(',', '').replace('\n', ''))
+    )
+    fig.show()
+    plt.close(fig)
 
     name_of_plot = f'DALYs by cause averted vs no extra budget allocation, {target_period()}'
     num_dalys_by_cause_averted_in_millions = num_dalys_by_cause_averted / 1e6
