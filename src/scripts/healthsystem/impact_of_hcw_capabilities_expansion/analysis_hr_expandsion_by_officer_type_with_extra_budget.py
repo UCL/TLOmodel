@@ -422,7 +422,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # Get parameter/scenario names
     param_names = get_parameter_names_from_scenario_file()
     # param_names = ('s_0', 's_1', 's_2', 's_3', 's_11', 's_22')
-    # param_names = ('s_1', 's_2', 's_3', 's_11', 's_22')
+    param_names = ('s_1', 's_2', 's_3', 's_11', 's_22')
 
     # Define cadres in order
     cadres = ['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy',
@@ -449,57 +449,57 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # scale_up_factors[cadres] = scale_up_factors.value.tolist()
     # scale_up_factors.drop(columns='value', inplace=True)
 
-    # Get salary
-    salary = get_hr_salary(cadres)
-
-    # Get total cost for all scenarios
-    total_cost = extract_results(
-        results_folder,
-        module='tlo.methods.healthsystem.summary',
-        key='HRScaling',
-        custom_generate_series=get_total_cost,
-        do_scaling=False
-    ).pipe(set_param_names_as_column_index_level_0).stack(level=0)
-    total_cost = total_cost.iloc[:, 0].unstack().reset_index().melt(id_vars='index')
-    total_cost[cadres] = total_cost.value.tolist()
-    total_cost.drop(columns='value', inplace=True)
-    total_cost['all_cadres'] = total_cost[[c for c in total_cost.columns if c in cadres]].sum(axis=1)
-    total_cost.rename(columns={'index': 'year'}, inplace=True)
-
-    # total cost of all expansion years
-    total_cost_all_yrs = total_cost.groupby('draw').sum().drop(columns='year')
-
-    # total extra cost of all expansion years
-    extra_cost_all_yrs = total_cost_all_yrs.copy()
-    for s in param_names[1:]:
-        extra_cost_all_yrs.loc[s, :] = total_cost_all_yrs.loc[s, :] - total_cost_all_yrs.loc['s_0', :]
-    extra_cost_all_yrs.drop(index='s_0', inplace=True)
-
-    # get staff count = total cost / salary
-    staff_count = total_cost.copy()
-    for c in cadres:
-        staff_count.loc[:, c] = total_cost.loc[:, c] / salary[c].values[0]
-    staff_count.loc[:, 'all_cadres'] = staff_count[[c for c in staff_count.columns if c in cadres]].sum(axis=1)
-
-    # get extra count = staff count - staff count of no expansion s_1
-    # note that annual staff increase rate = scale up factor - 1
-    extra_staff = staff_count.copy()
-    for i in staff_count.index:
-        extra_staff.iloc[i, 2:] = staff_count.iloc[i, 2:] - staff_count.iloc[0, 2:]
-
-    # extra_staff_2029 = extra_staff.loc[extra_staff.year == 2029, :].drop(columns='year').set_index('draw').drop(
-    #     index='s_1'
-    # )
-    # staff_count_2029 = staff_count.loc[staff_count.year == 2029, :].drop(columns='year').set_index('draw')
-
-    # check total cost calculated is increased as expected
-    years = range(2019, the_target_period[1].year + 1)
-    for s in param_names[1:]:
-        assert (abs(
-            total_cost.loc[(total_cost.year == 2029) & (total_cost.draw == s), 'all_cadres'].values[0] -
-            (1 + 0.042) ** len(years) * total_cost.loc[(total_cost.year == 2019) & (total_cost.draw == 's_0'),
-                                                       'all_cadres'].values[0]
-        ) < 1e6).all()
+    # # Get salary
+    # salary = get_hr_salary(cadres)
+    #
+    # # Get total cost for all scenarios
+    # total_cost = extract_results(
+    #     results_folder,
+    #     module='tlo.methods.healthsystem.summary',
+    #     key='HRScaling',
+    #     custom_generate_series=get_total_cost,
+    #     do_scaling=False
+    # ).pipe(set_param_names_as_column_index_level_0).stack(level=0)
+    # total_cost = total_cost.iloc[:, 0].unstack().reset_index().melt(id_vars='index')
+    # total_cost[cadres] = total_cost.value.tolist()
+    # total_cost.drop(columns='value', inplace=True)
+    # total_cost['all_cadres'] = total_cost[[c for c in total_cost.columns if c in cadres]].sum(axis=1)
+    # total_cost.rename(columns={'index': 'year'}, inplace=True)
+    #
+    # # total cost of all expansion years
+    # total_cost_all_yrs = total_cost.groupby('draw').sum().drop(columns='year')
+    #
+    # # total extra cost of all expansion years
+    # extra_cost_all_yrs = total_cost_all_yrs.copy()
+    # for s in param_names[1:]:
+    #     extra_cost_all_yrs.loc[s, :] = total_cost_all_yrs.loc[s, :] - total_cost_all_yrs.loc['s_0', :]
+    # extra_cost_all_yrs.drop(index='s_0', inplace=True)
+    #
+    # # get staff count = total cost / salary
+    # staff_count = total_cost.copy()
+    # for c in cadres:
+    #     staff_count.loc[:, c] = total_cost.loc[:, c] / salary[c].values[0]
+    # staff_count.loc[:, 'all_cadres'] = staff_count[[c for c in staff_count.columns if c in cadres]].sum(axis=1)
+    #
+    # # get extra count = staff count - staff count of no expansion s_1
+    # # note that annual staff increase rate = scale up factor - 1
+    # extra_staff = staff_count.copy()
+    # for i in staff_count.index:
+    #     extra_staff.iloc[i, 2:] = staff_count.iloc[i, 2:] - staff_count.iloc[0, 2:]
+    #
+    # # extra_staff_2029 = extra_staff.loc[extra_staff.year == 2029, :].drop(columns='year').set_index('draw').drop(
+    # #     index='s_1'
+    # # )
+    # # staff_count_2029 = staff_count.loc[staff_count.year == 2029, :].drop(columns='year').set_index('draw')
+    #
+    # # check total cost calculated is increased as expected
+    # years = range(2019, the_target_period[1].year + 1)
+    # for s in param_names[1:]:
+    #     assert (abs(
+    #         total_cost.loc[(total_cost.year == 2029) & (total_cost.draw == s), 'all_cadres'].values[0] -
+    #         (1 + 0.042) ** len(years) * total_cost.loc[(total_cost.year == 2019) & (total_cost.draw == 's_0'),
+    #                                                    'all_cadres'].values[0]
+    #     ) < 1e6).all()
 
     # Absolute Number of Deaths and DALYs and Services
     num_deaths = extract_results(
@@ -691,9 +691,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         pd.DataFrame(
             find_difference_relative_to_comparison_series(
                 num_services.loc[0],
-                comparison='s_0')
+                comparison='s_1')
         ).T
-    ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_0'])
+    ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_1'])
 
     # num_services_increased_percent = summarize(
     #     pd.DataFrame(
@@ -709,56 +709,56 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         pd.DataFrame(
             find_difference_relative_to_comparison_series(
                 num_deaths.loc[0],
-                comparison='s_0')
+                comparison='s_1')
         ).T
-    ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_0'])
+    ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_1'])
 
     num_deaths_averted_percent = summarize(
         -1.0 *
         pd.DataFrame(
             find_difference_relative_to_comparison_series(
                 num_deaths.loc[0],
-                comparison='s_0',
+                comparison='s_1',
                 scaled=True)
         ).T
-    ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_0'])
+    ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_1'])
 
     num_dalys_averted = summarize(
         -1.0 *
         pd.DataFrame(
             find_difference_relative_to_comparison_series(
                 num_dalys.loc[0],
-                comparison='s_0')
+                comparison='s_1')
         ).T
-    ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_0'])
+    ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_1'])
 
     num_dalys_averted_percent = summarize(
         -1.0 *
         pd.DataFrame(
             find_difference_relative_to_comparison_series(
                 num_dalys.loc[0],
-                comparison='s_0',
+                comparison='s_1',
                 scaled=True
             )
         ).T
-    ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_0'])
+    ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_1'])
 
     num_dalys_by_cause_averted = summarize(
         -1.0 * find_difference_relative_to_comparison_dataframe(
             num_dalys_by_cause,
-            comparison='s_0',
+            comparison='s_1',
         ),
         only_mean=True
-    ).T.reindex(num_dalys_summarized.index).drop(['s_0'])
+    ).T.reindex(num_dalys_summarized.index).drop(['s_1'])
 
     num_dalys_by_cause_averted_percent = summarize(
         -1.0 * find_difference_relative_to_comparison_dataframe(
             num_dalys_by_cause,
-            comparison='s_0',
+            comparison='s_1',
             scaled=True
         ),
         only_mean=True
-    ).T.reindex(num_dalys_summarized.index).drop(['s_0'])
+    ).T.reindex(num_dalys_summarized.index).drop(['s_1'])
 
     num_dalys_by_cause_averted_CNP = num_dalys_by_cause_averted.loc['s_2', :].sort_values(ascending=False)
     # num_dalys_by_cause_averted_CP = num_dalys_by_cause_averted.loc['s_11', :].sort_values(ascending=False)
@@ -779,10 +779,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     num_appts_increased = summarize(
         find_difference_relative_to_comparison_dataframe(
             num_appts,
-            comparison='s_0',
+            comparison='s_1',
         ),
         only_mean=True
-    ).T.reindex(num_dalys_summarized.index).drop(['s_0'])
+    ).T.reindex(num_dalys_summarized.index).drop(['s_1'])
 
     # num_never_ran_appts_reduced = summarize(
     #     -1.0 * find_difference_relative_to_comparison_dataframe(
@@ -812,27 +812,27 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     num_treatments_increased = summarize(
         find_difference_relative_to_comparison_dataframe(
             num_treatments,
-            comparison='s_0',
+            comparison='s_1',
         ),
         only_mean=True
-    ).T.reindex(num_dalys_summarized.index).drop(['s_0'])
+    ).T.reindex(num_dalys_summarized.index).drop(['s_1'])
 
-    # num_treatments_increased_percent = summarize(
-    #     find_difference_relative_to_comparison_dataframe(
-    #         num_treatments,
-    #         comparison='s_1',
-    #         scaled=True
-    #     ),
-    #     only_mean=True
-    # ).T.reindex(num_dalys_summarized.index).drop(['s_1'])
+    num_treatments_increased_percent = summarize(
+        find_difference_relative_to_comparison_dataframe(
+            num_treatments,
+            comparison='s_1',
+            scaled=True
+        ),
+        only_mean=True
+    ).T.reindex(num_dalys_summarized.index).drop(['s_1'])
 
     num_treatments_total_increased = summarize(
         pd.DataFrame(
             find_difference_relative_to_comparison_series(
                 num_treatments_total.loc[0],
-                comparison='s_0')
+                comparison='s_1')
         ).T
-    ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_0'])
+    ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_1'])
 
     # num_treatments_total_increased_percent = summarize(
     #     pd.DataFrame(
@@ -1111,7 +1111,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     extra_budget_allocation['Other'] = extra_budget_allocation[
         ['Dental', 'Laboratory', 'Mental', 'Radiography']
     ].sum(axis=1)
-    name_of_plot = f'3D DALYs averted (%) vs no extra budget allocation, {target_period()}'
+    name_of_plot = f'3D DALYs averted (%) vs current allocation, {target_period()}'
     heat_data = pd.merge(num_dalys_averted_percent['mean'],
                          extra_budget_allocation[['Clinical', 'Pharmacy', 'Nursing_and_Midwifery']],
                          left_index=True, right_index=True, how='inner')
@@ -1799,7 +1799,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # plt.close(fig)
 
     # plot relative numbers for scenarios
-    name_of_plot = f'DALYs averted vs no extra budget allocation, {target_period()}'
+    name_of_plot = f'DALYs averted vs current allocation, {target_period()}'
     fig, ax = do_bar_plot_with_ci(num_dalys_averted / 1e6, num_dalys_averted_percent, annotation=True)
     ax.set_title(name_of_plot)
     ax.set_ylabel('Millions')
@@ -1809,7 +1809,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    name_of_plot = f'Deaths averted vs no extra budget allocation, {target_period()}'
+    name_of_plot = f'Deaths averted vs current allocation, {target_period()}'
     fig, ax = do_bar_plot_with_ci(num_deaths_averted / 1e6, num_deaths_averted_percent, annotation=True)
     ax.set_title(name_of_plot)
     ax.set_ylabel('Millions')
@@ -1849,24 +1849,24 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # fig.show()
     # plt.close(fig)
 
-    name_of_plot = f'Extra budget by cadre vs no extra budget allocation, {target_period()}'
-    extra_cost_by_cadre_to_plot = extra_cost_all_yrs.drop(columns='all_cadres').reindex(
-        num_dalys_summarized.index).drop(index='s_0') / 1e6
-    column_dcsa = extra_cost_by_cadre_to_plot.pop('DCSA')
-    extra_cost_by_cadre_to_plot.insert(3, "DCSA", column_dcsa)
-    fig, ax = plt.subplots(figsize=(9, 6))
-    extra_cost_by_cadre_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
-    ax.set_ylabel('Millions', fontsize='small')
-    ax.set_xlabel('Extra budget allocation scenario', fontsize='small')
-    xtick_labels = [substitute_labels[v] for v in extra_cost_by_cadre_to_plot.index]
-    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
-    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
-               fontsize='small', reverse=True)
-    plt.title(name_of_plot)
-    fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-    fig.show()
-    plt.close(fig)
+    # name_of_plot = f'Extra budget by cadre vs no extra budget allocation, {target_period()}'
+    # extra_cost_by_cadre_to_plot = extra_cost_all_yrs.drop(columns='all_cadres').reindex(
+    #     num_dalys_summarized.index).drop(index='s_0') / 1e6
+    # column_dcsa = extra_cost_by_cadre_to_plot.pop('DCSA')
+    # extra_cost_by_cadre_to_plot.insert(3, "DCSA", column_dcsa)
+    # fig, ax = plt.subplots(figsize=(9, 6))
+    # extra_cost_by_cadre_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
+    # ax.set_ylabel('Millions', fontsize='small')
+    # ax.set_xlabel('Extra budget allocation scenario', fontsize='small')
+    # xtick_labels = [substitute_labels[v] for v in extra_cost_by_cadre_to_plot.index]
+    # ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
+    # plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
+    #            fontsize='small', reverse=True)
+    # plt.title(name_of_plot)
+    # fig.tight_layout()
+    # fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    # fig.show()
+    # plt.close(fig)
 
     # # name_of_plot = f'Time used increased by cadre and treatment: C + N&M + P vs no expansion, {target_period()}'
     # # data_to_plot = time_increased_by_cadre_treatment_CNP / 1e6
@@ -1907,7 +1907,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # fig.show()
     # plt.close(fig)
 
-    name_of_plot = f'DALYs by cause averted: \nall cadres gap allocation vs no extra budget allocation, {target_period()}'
+    name_of_plot = f'DALYs by cause averted: \nall cadres gap allocation vs current allocation, {target_period()}'
     data_to_plot = num_dalys_by_cause_averted_CNP / 1e6
     # name_of_plot = f'DALYs by cause averted: C + P vs no expansion, {target_period()}'
     # data_to_plot = num_dalys_by_cause_averted_CP / 1e6
@@ -1923,7 +1923,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    name_of_plot = f'DALYs by cause averted %: \nall cadres gap allocation vs no extra budget allocation, {target_period()}'
+    name_of_plot = f'DALYs by cause averted %: \nall cadres gap allocation vs current allocation, {target_period()}'
     data_to_plot = num_dalys_by_cause_averted_percent_CNP * 100
     fig, ax = plt.subplots()
     data_to_plot.plot.bar(ax=ax, x=data_to_plot.index, y=data_to_plot.values)
@@ -2009,7 +2009,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # fig.show()
     # plt.close(fig)
 
-    name_of_plot = f'Services increased by treatment type \nagainst no expansion, {target_period()}'
+    name_of_plot = f'Services increased by treatment type vs current allocation, {target_period()}'
     data_to_plot = num_treatments_increased / 1e6
     yerr_services = np.array([
         (num_treatments_total_increased['mean'] - num_treatments_total_increased['lower']).values,
@@ -2033,7 +2033,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    name_of_plot = f'DALYs by cause averted vs no extra budget allocation, {target_period()}'
+    name_of_plot = f'DALYs by cause averted vs current allocation, {target_period()}'
     num_dalys_by_cause_averted_in_millions = num_dalys_by_cause_averted / 1e6
     yerr_dalys = np.array([
         (num_dalys_averted['mean'] - num_dalys_averted['lower']).values,
