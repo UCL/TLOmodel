@@ -974,7 +974,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _proportions_total = _counts.sum(axis=1) / _counts_all.sum(axis=1)
         _cost_gap_proportions_total = _cost_gap.sum(axis=1) / hcw_cost_gap.sum(axis=1)
 
-        return _proportions_total, _cost_gap_proportions_total, _cost_gap
+        return _proportions_total, _cost_gap_proportions_total, _cost_gap, _cost_gap_percent
 
     never_ran_appts_info_that_need_CNP = get_never_ran_appts_info_that_need_specific_cadres(
         cadres_to_find=['Clinical', 'Nursing_and_Midwifery', 'Pharmacy'])
@@ -1681,7 +1681,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # name_of_plot = f'HCW cost gap distribution of never ran appointments that require CNP only, {target_period()}'
     # cadres_to_plot = ['Clinical', 'Nursing_and_Midwifery', 'Pharmacy']
-    # data_to_plot = never_ran_appts_info_that_need_CNP[2][cadres_to_plot] * 100
+    # data_to_plot = never_ran_appts_info_that_need_CNP[3][cadres_to_plot] * 100
     # fig, ax = plt.subplots(figsize=(12, 8))
     # data_to_plot.plot(kind='bar', color=officer_category_color, rot=0, alpha=0.6, ax=ax)
     # #ax.set_ylim(0, 100)
@@ -2009,7 +2009,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # fig.show()
     # plt.close(fig)
 
-    name_of_plot = f'Services increased by treatment type \nagainst no expansion, {target_period()}'
+    name_of_plot = f'Services increased by treatment type \nvs no extra budget allocation, {target_period()}'
     data_to_plot = num_treatments_increased / 1e6
     yerr_services = np.array([
         (num_treatments_total_increased['mean'] - num_treatments_total_increased['lower']).values,
