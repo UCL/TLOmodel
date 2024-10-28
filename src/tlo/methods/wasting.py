@@ -1011,7 +1011,6 @@ class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEv
         if self.get_consumables([item_code1]):
             logger.debug(key='debug', data='consumables are available')
             # Log that the treatment is provided:
-            df.at[person_id, 'un_am_tx_start_date'] = self.sim.date
             df.at[person_id, 'un_am_discharge_date'] = self.sim.date + DateOffset(weeks=3)
             df.at[person_id, 'un_am_treatment_type'] = 'CSB++'
             self.module.do_when_am_treatment(person_id, intervention='SFP')
@@ -1066,7 +1065,6 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
         if self.get_consumables(item_code1) and self.get_consumables(item_code2):
             logger.debug(key='debug', data='consumables are available.')
             # Log that the treatment is provided:
-            df.at[person_id, 'un_am_tx_start_date'] = self.sim.date
             df.at[person_id, 'un_am_discharge_date'] = self.sim.date + DateOffset(weeks=3)
             df.at[person_id, 'un_am_treatment_type'] = 'standard_RUTF'
             self.module.do_when_am_treatment(person_id, intervention='OTC')
@@ -1118,7 +1116,6 @@ class HSI_Wasting_InpatientCare_ComplicatedSAM(HSI_Event, IndividualScopeEventMi
         if self.get_consumables(item_code1) and self.get_consumables(item_code2):
             logger.debug(key='debug', data='consumables available, so use it.')
             # Log that the treatment is provided:
-            df.at[person_id, 'un_am_tx_start_date'] = self.sim.date
             df.at[person_id, 'un_am_discharge_date'] = self.sim.date + DateOffset(weeks=4)
             df.at[person_id, 'un_am_treatment_type'] = 'inpatient_care'
             self.module.do_when_am_treatment(person_id, intervention='ITC')
