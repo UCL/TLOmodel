@@ -639,7 +639,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                     return
             # Interventions for complicated SAM
             if complications:
-                # Check for coverage of outpatient therapeutic care
+                # Check for coverage of inpatient care
                 if self.rng.random_sample() < p['coverage_inpatient_care']:
                     # schedule HSI for supplementary feeding program for MAM
                     schedule_hsi_event(
