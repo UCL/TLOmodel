@@ -1609,6 +1609,16 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         out.update({
             f'total_hivpos_{k}': v for k, v in df.loc[df.is_alive & (df['sex'] == 'F') &
                                                (df['age_years'] > 15) & (df['hv_inf'])].ce_hpv_cc_status.value_counts().items()})
+        out.update({
+            f'total_hivneg_{k}': vfork, vindf.loc[df.is_alive & (df['sex'] == 'F') &
+                                                  (df['age_years'] > 15) & (
+                                                      ~df['hv_inf'])].ce_hpv_cc_status.value_counts().items()})
+        out.update({
+            f'total_males': len(df[df.is_alive & (df['sex'] == 'M')])})
+        out.update({
+            f'total_dead': len(df[df.is_alive == False])})
+        out.update({
+            f'total_overall': len(df)})
 
         # Get the day of the year
         day_of_year = self.sim.date.timetuple().tm_yday
