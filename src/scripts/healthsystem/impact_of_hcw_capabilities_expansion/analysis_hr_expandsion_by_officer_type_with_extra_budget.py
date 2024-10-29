@@ -340,8 +340,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         return time, cost
 
-    def get_hcw_time_usage(_df):
-        """Return the number of treatments by short treatment id (total within the TARGET_PERIOD)"""
+    def get_frac_of_hcw_time_used(_df):
+        """Return the fraction of time used by cadre and facility level"""
         CNP_cols = ['date']
         for col in _df.columns[1:]:
             if ('Clinical' in col) | ('Nursing_and_Midwifery' in col) | ('Pharmacy' in col):
@@ -542,6 +542,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         do_scaling=True
         ).pipe(set_param_names_as_column_index_level_0)
 
+    num_appts_by_level = extract_results(
+        results_folder,
+        module='tlo.methods.healthsystem.summary',
+        key='HSI_Event_non_blank_appt_footprint',
+        custom_generate_series=get_num_appts_by_level,
+        do_scaling=True
+    ).pipe(set_param_names_as_column_index_level_0)
+
     num_services = extract_results(
         results_folder,
         module='tlo.methods.healthsystem.summary',
@@ -622,7 +630,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         results_folder,
         module='tlo.methods.healthsystem.summary',
         key='Capacity_By_OfficerType_And_FacilityLevel',#'Capacity',#'Capacity_By_OfficerType_And_FacilityLevel',
-        custom_generate_series=get_hcw_time_usage,
+        custom_generate_series=get_frac_of_hcw_time_used,
         do_scaling=False
     ).pipe(set_param_names_as_column_index_level_0)
 
@@ -648,9 +656,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     num_appts_summarized = summarize(num_appts, only_mean=True).T.reindex(param_names).reindex(
         num_dalys_summarized.index
     )
-    num_never_ran_appts_by_level_summarized = summarize(num_never_ran_appts_by_level, only_mean=True).T.reindex(param_names).reindex(
-        num_dalys_summarized.index
-    ).fillna(0.0)
+    num_appts_by_level_summarized = summarize(num_appts_by_level, only_mean=True).T.reindex(param_names).reindex(
+        num_dalys_summarized.index).fillna(0.0)
+    num_never_ran_appts_by_level_summarized = summarize(num_never_ran_appts_by_level, only_mean=True).T.reindex(
+        param_names).reindex(num_dalys_summarized.index).fillna(0.0)
     num_appts_demand_summarized = summarize(num_appts_demand, only_mean=True).T.reindex(param_names).reindex(
         num_dalys_summarized.index
     )
@@ -764,7 +773,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # num_dalys_by_cause_averted_CP = num_dalys_by_cause_averted.loc['s_11', :].sort_values(ascending=False)
     num_dalys_by_cause_averted_percent_CNP = num_dalys_by_cause_averted_percent.loc['s_2', :].sort_values(
         ascending=False)
-    # num_dalys_by_cause_averted__percent_CP = num_dalys_by_cause_averted_percent.loc['s_11', :].sort_values(
+    # num_dalys_by_cause_averted_percent_CP = num_dalys_by_cause_averted_percent.loc['s_11', :].sort_values(
     #     ascending=False)
 
     # num_dalys_by_cause_averted_percent = summarize(
@@ -880,6 +889,39 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
          ) < 1e-6
     ).all()
 
+    # get time used by services delivered
+    def hcw_time_or_cost_used(time_cost_df=appt_time, count_df=num_appts_by_level_summarized):
+        cols_1 = count_df.columns
+        cols_2 = time_cost_df.columns
+        # check that appts (at a level) not in appt_time (as defined) have count 0 and drop them
+        # assert (count_df[list(set(cols_1) - set(cols_2))] == 0).all().all() -> ('2', 'Tomography')
+        # replace Tomography from level 2 to level 3
+        count_df.loc[:, ('3', 'Tomography')] += count_df.loc[:, ('2', 'Tomography')]
+        count_df.loc[:, ('2', 'Tomography')] = 0
+        assert (count_df[list(set(cols_1) - set(cols_2))] == 0).all().all()
+        if len(list(set(cols_1) - set(cols_2))) > 0:
+            _count_df = count_df.drop(columns=list(set(cols_1) - set(cols_2)))
+        else:
+            _count_df = count_df.copy()
+        assert set(_count_df.columns).issubset(set(cols_2))
+        # calculate hcw time gap
+        use = pd.DataFrame(index=_count_df.index,
+                           columns=time_cost_df.index)
+        for i in use.index:
+            for j in use.columns:
+                use.loc[i, j] = _count_df.loc[i, :].mul(
+                    time_cost_df.loc[j, _count_df.columns]
+                ).sum()
+        # reorder columns to be consistent with cadres
+        use = use[['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy',
+                   'Dental', 'Laboratory', 'Mental', 'Radiography']]
+        # reorder index to be consistent with
+        use = use.reindex(num_dalys_summarized.index)
+
+        return use
+
+    hcw_time_used = hcw_time_or_cost_used(appt_time)
+
     # get HCW time and cost needed to run the never run appts
     def hcw_time_or_cost_gap(time_cost_df=appt_time, count_df=num_never_ran_appts_by_level_summarized):
         cols_1 = count_df.columns
@@ -909,6 +951,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     hcw_time_gap = hcw_time_or_cost_gap(appt_time)
     hcw_cost_gap = hcw_time_or_cost_gap(appt_cost)
+
+    # hcw time demand to meet ran + never ran services
+    # assert (hcw_time_used.index == hcw_time_gap.index).all()
+    # assert (hcw_time_used.columns == hcw_time_gap.columns).all()
+    # hcw_time_demand = hcw_time_used + hcw_time_gap
 
     # cost gap proportions of cadres within each scenario
     hcw_cost_gap_percent = pd.DataFrame(index=hcw_cost_gap.index, columns=hcw_cost_gap.columns)
