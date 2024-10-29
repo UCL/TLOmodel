@@ -17,6 +17,7 @@ from tlo.methods.causes import Cause
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
+from tlo.util import random_date
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -611,6 +612,10 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         clinical_am = individual_properties['un_clinical_acute_malnutrition']
         complications = individual_properties['un_sam_with_complications']
 
+        # No interventions if well
+        if clinical_am == 'well':
+            return
+
         # Interventions for MAM
         if clinical_am == 'MAM':
             # Check for coverage of supplementary feeding
@@ -1163,7 +1168,10 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, PopulationScopeEventMixin):
                 for person_id in idx[coverage]:
                     self.sim.modules['HealthSystem'].schedule_hsi_event(
                         hsi_event=hsi_event(module=self.module, person_id=person_id),
-                        priority=0, topen=self.sim.date  # TODO: to any random date within the month?
+                        priority=0, topen=random_date(
+                            self.sim.date,
+                            self.sim.date + pd.DateOffset(months=1) - pd.DateOffset(days=1),
+                            rng)
                     )
 
         # get the clinical states
