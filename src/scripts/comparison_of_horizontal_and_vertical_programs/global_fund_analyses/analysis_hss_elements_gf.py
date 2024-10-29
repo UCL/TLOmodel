@@ -98,8 +98,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         substitute_labels = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
         yerr = np.array([
-            (_df['mean'] - _df['lower']).values,
-            (_df['upper'] - _df['mean']).values,
+            (_df['median'] - _df['lower']).values,
+            (_df['upper'] - _df['median']).values,
         ])
 
         xticks = {(i + 0.5): k for i, k in enumerate(_df.index)}
@@ -120,7 +120,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig, ax = plt.subplots(figsize=(10, 5))
         ax.bar(
             xticks.keys(),
-            _df['mean'].values,
+            _df['median'].values,
             yerr=yerr,
             # alpha=0.8,
             ecolor='black',
@@ -281,7 +281,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     num_deaths_summarized.to_csv(results_folder / 'num_deaths_summarized.csv')
 
     # Make a separate plot for the scale-up of each program/programs
-    # remove FULL PACKAGE
+    # todo select draws
     plots = {
         'HRH scenarios': [
             'Baseline',
@@ -302,7 +302,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     #
     # cmap_SC = sns.color_palette('Spectral', len(plots['Supply chain scenarios']))
     # color_map_SC = {series: color for series, color in zip(plots['Supply chain scenarios'], cmap_SC)}
-
+    # todo new color map
     color_map = {
         'Baseline': '#9e0142',
         'Double Capacity at Primary Care': '#f98e52',
@@ -320,7 +320,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.set_title(name_of_plot)
     ax.set_ylabel('(Millions)')
     fig.tight_layout()
-    ax.axhline(num_deaths_summarized.loc['Baseline', 'mean']/1e6, color='black', linestyle='--', alpha=0.5)
+    ax.axhline(num_deaths_summarized.loc['Baseline', 'median']/1e6, color='black', linestyle='--', alpha=0.5)
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     fig.show()
     plt.close(fig)
