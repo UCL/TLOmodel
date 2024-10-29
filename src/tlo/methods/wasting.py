@@ -298,7 +298,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
         sim.modules['HealthSystem'].schedule_hsi_event(hsi_event=HSI_Wasting_GrowthMonitoring(module=self),
                                                        topen=self.sim.date, tclose=None,
-                                                       priority=1)
+                                                       priority=2)
         sim.schedule_event(Wasting_IncidencePoll(self), sim.date + DateOffset(months=3))
         sim.schedule_event(Wasting_LoggingEvent(self), sim.date + DateOffset(years=1) - DateOffset(days=1))
 
@@ -1195,7 +1195,7 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, PopulationScopeEventMixin):
         # schedule growth monitoring for next month
         self.sim.modules['HealthSystem'].schedule_hsi_event(hsi_event=HSI_Wasting_GrowthMonitoring(module=self.module),
                                                             topen=self.sim.date + pd.DateOffset(months=1), tclose=None,
-                                                            priority=1)
+                                                            priority=2)
 
     def did_not_run(self):
         logger.debug(key="HSI_Wasting_GrowthMonitoring",
