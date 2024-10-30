@@ -872,6 +872,7 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # that last screen was x years ago
 
         df.ce_selected_for_via_this_month = False
+        df.ce_selected_for_xpert_this_month = False
 
         days_since_last_screen = (self.sim.date - df.ce_date_last_screened).dt.days
         days_since_last_thermoabl = (self.sim.date - df.ce_date_thermoabl).dt.days
