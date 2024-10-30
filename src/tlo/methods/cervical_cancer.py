@@ -884,12 +884,12 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         eligible_population = (
             (df.is_alive) &
             (df.sex == 'F') &
-            (df.age_years >= 25) &
-            (df.age_years < 50) &
+            (df.age_years >= screening_min_age) &
+            (df.age_years < screening_max_age) &
             (~df.ce_current_cc_diagnosed) &
             (
                 pd.isna(df.ce_date_last_screened) |
-                (days_since_last_via > 1825) | (days_since_last_xpert > 1825) |
+                ((days_since_last_via > 1825) & (days_since_last_xpert > 1825)) |
                 ((days_since_last_screen > 730) & (days_since_last_thermoabl < 1095))
             )
         )
@@ -1612,10 +1612,7 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         out.update({
             f'total_hivpos_{k}': v for k, v in df.loc[df.is_alive & (df['sex'] == 'F') &
                                                (df['age_years'] > 15) & (df['hv_inf'])].ce_hpv_cc_status.value_counts().items()})
-        out.update({
-            f'total_hivneg_{k}': vfork, vindf.loc[df.is_alive & (df['sex'] == 'F') &
-                                                  (df['age_years'] > 15) & (
-                                                      ~df['hv_inf'])].ce_hpv_cc_status.value_counts().items()})
+
         out.update({
             f'total_males': len(df[df.is_alive & (df['sex'] == 'M')])})
         out.update({
