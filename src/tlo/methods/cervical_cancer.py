@@ -37,6 +37,8 @@ if TYPE_CHECKING:
 
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 
+screening_min_age = 25
+screening_max_age = 50
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
