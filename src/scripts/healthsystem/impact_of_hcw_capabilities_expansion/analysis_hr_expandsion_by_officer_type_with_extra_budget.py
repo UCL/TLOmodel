@@ -209,22 +209,26 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         elif by == 'expansion':  # based on how many cadres are expanded
             grouping = {
                 'no_expansion': {'s_0'},
-                'all_cadres_expansion': {'s_1', 's_2', 's_3'},
+                'all_cadres_equal_expansion': {'s_3'},
+                'all_cadres_gap_expansion': {'s_2'},
+                'all_cadres_current_expansion': {'s_1'},
                 'one_cadre_expansion': {'s_4', 's_5', 's_6', 's_7', 's_8'},
-                'two_cadres_expansion': {'s_9', 's_10', 's_11', 's_12', 's_13',
-                                         's_14', 's_15', 's_16', 's_17', 's_18'},
-                'three_cadres_expansion': {'s_19', 's_20', 's_21', 's_22', 's_23',
-                                           's_24', 's_25', 's_26', 's_27', 's_28'},
-                'four_cadres_expansion': {'s_29', 's_30', 's_31', 's_32', 's_33'}
+                'two_cadres_equal_expansion': {'s_9', 's_10', 's_11', 's_12', 's_13',
+                                               's_14', 's_15', 's_16', 's_17', 's_18'},
+                'three_cadres_equal_expansion': {'s_19', 's_20', 's_21', 's_22', 's_23',
+                                                 's_24', 's_25', 's_26', 's_27', 's_28'},
+                'four_cadres_equal_expansion': {'s_29', 's_30', 's_31', 's_32', 's_33'}
 
             }
             grouping_color = {
                 'no_expansion': 'gray',
                 'one_cadre_expansion': 'lightpink',
-                'two_cadres_expansion': 'violet',
-                'three_cadres_expansion': 'darkorchid',
-                'four_cadres_expansion': 'paleturquoise',
-                'all_cadres_expansion': 'darkturquoise'
+                'two_cadres_equal_expansion': 'violet',
+                'three_cadres_equal_expansion': 'darkorchid',
+                'four_cadres_equal_expansion': 'paleturquoise',
+                'all_cadres_equal_expansion': 'darkturquoise',
+                'all_cadres_current_expansion': 'deepskyblue',
+                'all_cadres_gap_expansion': 'royalblue',
             }
         return grouping, grouping_color
 
@@ -1144,7 +1148,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         'Other': 'gray'
     }
     # get scenario color
-    scenario_groups = scenario_grouping_coloring(by='effect')
+    # scenario_groups = scenario_grouping_coloring(by='effect')
+    scenario_groups = scenario_grouping_coloring(by='expansion')
     scenario_color = {}
     for s in param_names:
         for k in scenario_groups[1].keys():
