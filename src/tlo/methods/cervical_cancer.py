@@ -1628,6 +1628,7 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         rounded_decimal_year = round(decimal_year, 2)
 
         date_1_year_ago = self.sim.date - pd.DateOffset(days=365)
+        date_30_days_ago = self.sim.date - pd.DateOffset(days=30)
         n_deaths_past_year = df.ce_date_death.between(date_1_year_ago, self.sim.date).sum()
         n_deaths_cc_hivneg_past_year = ((~df['hv_inf']) & df.ce_date_death.between(date_1_year_ago, self.sim.date)).sum()
         n_deaths_cc_hivpos_past_year = ((df['hv_inf']) & df.ce_date_death.between(date_1_year_ago, self.sim.date)).sum()
