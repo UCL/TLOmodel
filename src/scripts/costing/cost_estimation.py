@@ -459,6 +459,31 @@ def estimate_input_cost_of_scenarios(results_folder: Path, resourcefilepath: Pat
     cost_of_consumables_dispensed = retain_relevant_column_subset(melt_and_label_consumables_cost(cost_of_consumables_dispensed, 'cost_of_consumables_dispensed'), 'consumable')
     cost_of_excess_consumables_stocked = retain_relevant_column_subset(melt_and_label_consumables_cost(cost_of_excess_consumables_stocked, 'cost_of_excess_consumables_stocked'), 'consumable')
     consumable_costs = pd.concat([cost_of_consumables_dispensed, cost_of_excess_consumables_stocked])
+
+    # 2.4 Supply chain costs
+    #---------------------------------------------------------------------------------------------------------------
+    # Assume that the cost of procurement, warehousing and distribution is a fixed proportion of consumable purchase costs
+    # The fixed proportion is based on Resource Mapping Expenditure data from 2018
+    resource_mapping_data = workbook_cost["resource_mapping_r7_summary"]
+    # Make sure values are numeric
+    expenditure_column = ['EXPENDITURE (USD) (Jul 2018 - Jun 2019)']
+    resource_mapping_data[expenditure_column] = resource_mapping_data[expenditure_column].apply(lambda x: pd.to_numeric(x, errors='coerce'))
+    supply_chain_expenditure = resource_mapping_data[resource_mapping_data['Cost Type'] == 'Supply Chain'][expenditure_column].sum()[0]
+    consumables_purchase_expenditure = resource_mapping_data[resource_mapping_data['Cost Type'] == 'Drugs and Commodities'][expenditure_column].sum()[0]
+    supply_chain_cost_proportion = supply_chain_expenditure / consumables_purchase_expenditure
+
+    # Estimate supply chain costs based on the total consumable purchase cost calculated above
+    supply_chain_costs = (consumable_costs.groupby(['draw', 'run', 'year'])[
+                              'cost'].sum() * supply_chain_cost_proportion).reset_index()
+    # Assign relevant additional columns to match the format of the rest of consumables costs
+    supply_chain_costs['Facility_Level'] = 'all'
+    supply_chain_costs['consumable'] = 'NA'
+    supply_chain_costs['cost_subcategory'] = 'supply_chain'
+    assert set(supply_chain_costs.columns) == set(consumable_costs.columns)
+
+    # Append supply chain costs to the full consumable cost dataframe
+    consumable_costs = pd.concat([consumable_costs, supply_chain_costs])
+
     consumable_costs = prepare_cost_dataframe(consumable_costs, _category_specific_group = 'consumable', _cost_category = 'medical consumables')
 
     # Only preserve the draws and runs requested
