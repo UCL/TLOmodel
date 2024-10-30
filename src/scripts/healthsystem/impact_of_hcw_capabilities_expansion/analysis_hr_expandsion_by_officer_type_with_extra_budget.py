@@ -51,26 +51,6 @@ substitute_labels = {
     's_33': 'D + N&M + P + O',
 }
 
-# group scenarios for presentation
-scenario_groups_init = {
-    'no_expansion': {'s_0'},
-    'all_cadres_expansion': {'s_1', 's_2', 's_3'},
-    'one_cadre_expansion': {'s_4', 's_5', 's_6', 's_7', 's_8'},
-    'two_cadres_expansion': {'s_9', 's_10', 's_11', 's_12', 's_13',
-                             's_14', 's_15', 's_16', 's_17', 's_18'},
-    'three_cadres_expansion': {'s_19', 's_20', 's_21', 's_22', 's_23',
-                               's_24', 's_25', 's_26', 's_27', 's_28'},
-    'four_cadres_expansion': {'s_29', 's_30', 's_31', 's_32', 's_33'}
-}
-
-# group scenarios based on whether expand Clinical/Pharmacy
-scenario_groups = {
-    'C + P + D/N&M/O/None': {'s_1', 's_2', 's_3', 's_11', 's_20', 's_22', 's_24', 's_29', 's_31', 's_32'},
-    'C + D/N&M/O/None': {'s_4', 's_9', 's_10', 's_12', 's_19', 's_21', 's_23', 's_30'},
-    'P + D/N&M/O/None': {'s_7', 's_14', 's_16', 's_18', 's_25', 's_27', 's_28', 's_33'},
-    'D/N&M/O/None': {'s_5', 's_6', 's_8', 's_13', 's_15', 's_17', 's_26', 's_0'}
-}
-
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None,
           the_target_period: Tuple[Date, Date] = None):
@@ -211,6 +191,43 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             for _idx, row in _df.iterrows()
         }, axis=1).T
 
+    # group scenarios for presentation
+    def scenario_grouping_coloring(by='effect'):
+        if by == 'effect':  # based on DALYs averted/whether to  expand Clinical + Pharmacy
+            grouping = {
+                'C + P + D/N&M/O/None': {'s_1', 's_2', 's_3', 's_11', 's_20', 's_22', 's_24', 's_29', 's_31', 's_32'},
+                'C + D/N&M/O/None': {'s_4', 's_9', 's_10', 's_12', 's_19', 's_21', 's_23', 's_30'},
+                'P + D/N&M/O/None': {'s_7', 's_14', 's_16', 's_18', 's_25', 's_27', 's_28', 's_33'},
+                'D/N&M/O/None': {'s_5', 's_6', 's_8', 's_13', 's_15', 's_17', 's_26', 's_0'}
+            }
+            grouping_color = {
+                'D/N&M/O/None': 'lightpink',
+                'P + D/N&M/O/None': 'violet',
+                'C + D/N&M/O/None': 'darkorchid',
+                'C + P + D/N&M/O/None': 'darkturquoise',
+            }
+        elif by == 'expansion':  # based on how many cadres are expanded
+            grouping = {
+                'no_expansion': {'s_0'},
+                'all_cadres_expansion': {'s_1', 's_2', 's_3'},
+                'one_cadre_expansion': {'s_4', 's_5', 's_6', 's_7', 's_8'},
+                'two_cadres_expansion': {'s_9', 's_10', 's_11', 's_12', 's_13',
+                                         's_14', 's_15', 's_16', 's_17', 's_18'},
+                'three_cadres_expansion': {'s_19', 's_20', 's_21', 's_22', 's_23',
+                                           's_24', 's_25', 's_26', 's_27', 's_28'},
+                'four_cadres_expansion': {'s_29', 's_30', 's_31', 's_32', 's_33'}
+
+            }
+            grouping_color = {
+                'no_expansion': 'gray',
+                'one_cadre_expansion': 'lightpink',
+                'two_cadres_expansion': 'violet',
+                'three_cadres_expansion': 'darkorchid',
+                'four_cadres_expansion': 'paleturquoise',
+                'all_cadres_expansion': 'darkturquoise'
+            }
+        return grouping, grouping_color
+
     def do_bar_plot_with_ci(_df, _df_percent=None, annotation=False):
         """Make a vertical bar plot for each row of _df, using the columns to identify the height of the bar and the
          extent of the error bar.
@@ -252,9 +269,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         xtick_label_detail = [substitute_labels[v] for v in xticks.values()]
         ax.set_xticklabels(xtick_label_detail, rotation=90)
 
-        legend_labels = list(scenario_groups_color.keys())
+        legend_labels = list(scenario_groups[1].keys())
         legend_handles = [plt.Rectangle((0, 0), 1, 1,
-                                        color=scenario_groups_color[label]) for label in legend_labels]
+                                        color=scenario_groups[1][label]) for label in legend_labels]
         ax.legend(legend_handles, legend_labels, loc='center left', fontsize='small', bbox_to_anchor=(1, 0.5),
                   title='Scenario groups')
 
@@ -1126,26 +1143,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         'Radiography': 'lightgray',
         'Other': 'gray'
     }
-    # scenario_groups_color_init = {
-    #     'no_expansion': 'gray',
-    #     'one_cadre_expansion': 'lightpink',
-    #     'two_cadres_expansion': 'violet',
-    #     'three_cadres_expansion': 'darkorchid',
-    #     'four_cadres_expansion': 'paleturquoise',
-    #     'all_cadres_expansion': 'darkturquoise'
-    # }
-    scenario_groups_color = {
-        'D/N&M/O/None': 'lightpink',
-        'P + D/N&M/O/None': 'violet',
-        'C + D/N&M/O/None': 'darkorchid',
-        'C + P + D/N&M/O/None': 'darkturquoise',
-    }
-
+    # get scenario color
+    scenario_groups = scenario_grouping_coloring(by='effect')
     scenario_color = {}
     for s in param_names:
-        for k in scenario_groups_color.keys():
-            if s in scenario_groups[k]:
-                scenario_color[s] = scenario_groups_color[k]
+        for k in scenario_groups[1].keys():
+            if s in scenario_groups[0][k]:
+                scenario_color[s] = scenario_groups[1][k]
 
     # representative_scenarios_color = {}
     # cmap_list = list(map(plt.get_cmap("Set3"), range(len(param_names))))
@@ -1190,9 +1194,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.invert_yaxis()
     ax.set_zlabel('Nursing and Midwifery (N&M)')
     ax.plot3D([0, 1], [0, 1], [0, 1], linestyle='-', color='orange', alpha=1.0, linewidth=2)
-    legend_labels = list(scenario_groups_color.keys()) + ['line of C = P = N&M']
+    legend_labels = list(scenario_groups[1].keys()) + ['line of C = P = N&M']
     legend_handles = [plt.Line2D([0, 0], [0, 0],
-                                 linestyle='none', marker='o', color=scenario_groups_color[label]
+                                 linestyle='none', marker='o', color=scenario_groups[1][label]
                                  ) for label in legend_labels[0:len(legend_labels) - 1]
                       ] + [plt.Line2D([0, 1], [0, 0], linestyle='-', color='orange')]
     plt.legend(legend_handles, legend_labels,
@@ -1219,9 +1223,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # ax.set_xlabel('Services increased %')
     # ax.set_ylabel('Treatments increased %')
     # ax.set_zlabel('DALYs averted %')
-    # legend_labels = list(scenario_groups_color.keys())
+    # legend_labels = list(scenario_groups[1].keys())
     # legend_handles = [plt.Line2D([0, 0], [0, 0],
-    #                              linestyle='none', marker='o', color=scenario_groups_color[label]
+    #                              linestyle='none', marker='o', color=scenario_groups[1][label]
     #                              ) for label in legend_labels
     #                   ]
     # plt.legend(legend_handles, legend_labels,
@@ -1245,9 +1249,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     #            c=colors)
     # ax.set_xlabel('Services increased %')
     # ax.set_ylabel('Treatments increased %')
-    # legend_labels = list(scenario_groups_color.keys())
+    # legend_labels = list(scenario_groups[1].keys())
     # legend_handles = [plt.Line2D([0, 0], [0, 0],
-    #                              linestyle='none', marker='o', color=scenario_groups_color[label]
+    #                              linestyle='none', marker='o', color=scenario_groups[1][label]
     #                              ) for label in legend_labels
     #                   ]
     # plt.legend(legend_handles, legend_labels,
@@ -1270,9 +1274,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     #            alpha=0.8, marker='o', c=colors)
     # ax.set_xlabel('Services increased %')
     # ax.set_ylabel('DALYs averted %')
-    # legend_labels = list(scenario_groups_color.keys())
+    # legend_labels = list(scenario_groups[1].keys())
     # legend_handles = [plt.Line2D([0, 0], [0, 0],
-    #                              linestyle='none', marker='o', color=scenario_groups_color[label]
+    #                              linestyle='none', marker='o', color=scenario_groups[1][label]
     #                              ) for label in legend_labels
     #                   ]
     # plt.legend(legend_handles, legend_labels,
@@ -1295,9 +1299,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     #            alpha=0.8, marker='o', c=colors)
     # ax.set_xlabel('Treatments increased %')
     # ax.set_ylabel('DALYs averted %')
-    # legend_labels = list(scenario_groups_color.keys())
+    # legend_labels = list(scenario_groups[1].keys())
     # legend_handles = [plt.Line2D([0, 0], [0, 0],
-    #                              linestyle='none', marker='o', color=scenario_groups_color[label]
+    #                              linestyle='none', marker='o', color=scenario_groups[1][label]
     #                              ) for label in legend_labels
     #                   ]
     # plt.legend(legend_handles, legend_labels, loc='upper center', fontsize='small', bbox_to_anchor=(0.5, -0.2), ncol=2)
@@ -1317,9 +1321,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     #            alpha=0.8, marker='o', c=colors)
     # ax.set_xlabel('Service delivery ratio increased %')
     # ax.set_ylabel('DALYs averted %')
-    # legend_labels = list(scenario_groups_color.keys())
+    # legend_labels = list(scenario_groups[1].keys())
     # legend_handles = [plt.Line2D([0, 0], [0, 0],
-    #                              linestyle='none', marker='o', color=scenario_groups_color[label]
+    #                              linestyle='none', marker='o', color=scenario_groups[1][label]
     #                              ) for label in legend_labels
     #                   ]
     # plt.legend(legend_handles, legend_labels, loc='upper center', fontsize='small', bbox_to_anchor=(0.5, -0.2), ncol=2)
