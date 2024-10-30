@@ -374,7 +374,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         return _df
 
-    def get_hcw_time_by_treatment(draw=21):
+    def get_hcw_time_by_treatment():
         appointment_time_table = pd.read_csv(
             resourcefilepath
             / 'healthsystem'
@@ -422,23 +422,38 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         )
 
         time_by_cadre_treatment_per_draw = compute_mean_across_runs(times_by_officer_category_treatment_id_per_draw_run)
-        time_by_cadre_treatment_no_expansion = pd.DataFrame.from_dict(time_by_cadre_treatment_per_draw[0],
-                                                                      orient='index')
-        time_by_cadre_treatment = pd.DataFrame.from_dict(time_by_cadre_treatment_per_draw[draw],
-                                                         orient='index')
-        time_by_cadre_treatment = time_by_cadre_treatment.reindex(time_by_cadre_treatment_no_expansion.index)
-        assert (time_by_cadre_treatment.index == time_by_cadre_treatment_no_expansion.index).all()
-        increased_time_by_cadre_treatment = time_by_cadre_treatment - time_by_cadre_treatment_no_expansion
-        increased_time_by_cadre_treatment.reset_index(drop=False, inplace=True)
-        for i in increased_time_by_cadre_treatment.index:
-            increased_time_by_cadre_treatment.loc[i, 'Cadre'] = \
-                increased_time_by_cadre_treatment.loc[i, 'index'][0]
-            increased_time_by_cadre_treatment.loc[i, 'Treatment'] = \
-                increased_time_by_cadre_treatment.loc[i, 'index'][1]
-        increased_time_by_cadre_treatment = increased_time_by_cadre_treatment.drop('index', axis=1).rename(
-            columns={0: 'value'}).pivot(index='Treatment', columns='Cadre', values='value').fillna(0.0)
 
-        return increased_time_by_cadre_treatment
+        # transform counter to dataframe
+        def format_time_by_cadre_treatment(_df):
+            _df.reset_index(drop=False, inplace=True)
+            for idx in _df.index:
+                _df.loc[idx, 'Cadre'] = _df.loc[idx, 'index'][0]
+                _df.loc[idx, 'Treatment'] = _df.loc[idx, 'index'][1]
+            _df = _df.drop('index', axis=1).rename(columns={0: 'value'}).pivot(
+                index='Treatment', columns='Cadre', values='value').fillna(0.0)
+
+            _series = _df.sum(axis=1)  # sum up cadres
+
+            return _df, _series
+
+        time_by_cadre_treatment_all_scenarios = {
+            f's_{key}': format_time_by_cadre_treatment(
+                pd.DataFrame.from_dict(time_by_cadre_treatment_per_draw[key], orient='index')
+            )[0] for key in range(len(param_names))
+        }
+
+        time_by_treatment_all_scenarios = {
+            f's_{key}': format_time_by_cadre_treatment(
+                pd.DataFrame.from_dict(time_by_cadre_treatment_per_draw[key], orient='index')
+            )[1] for key in range(len(param_names))
+
+        }
+        time_by_treatment_all_scenarios = pd.DataFrame(time_by_treatment_all_scenarios).T
+
+        time_increased_by_treatment = time_by_treatment_all_scenarios.subtract(
+            time_by_treatment_all_scenarios.loc['s_0', :], axis=1).drop('s_0', axis=0).add_suffix('*')
+
+        return time_increased_by_treatment
 
     # Get parameter/scenario names
     param_names = get_parameter_names_from_scenario_file()
@@ -716,7 +731,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                                          for col in hcw_time_usage_summarized.columns]
     hcw_time_usage_summarized.columns = hcw_time_usage_summarized.columns.str.split(pat='|', expand=True)
 
-    # get relative numbers for scenarios, compared to no_expansion scenario: s_1
+    # get relative numbers for scenarios, compared to no_expansion scenario: s_0
     num_services_increased = summarize(
         pd.DataFrame(
             find_difference_relative_to_comparison_series(
@@ -724,6 +739,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 comparison='s_0')
         ).T
     ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_0'])
+
+    hcw_time_increased_by_treatment_type = get_hcw_time_by_treatment().reindex(num_dalys_summarized.index).drop(['s_0'])
 
     # num_services_increased_percent = summarize(
     #     pd.DataFrame(
@@ -936,12 +953,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # reorder columns to be consistent with cadres
         use = use[['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy',
                    'Dental', 'Laboratory', 'Mental', 'Radiography']]
-        # reorder index to be consistent with
+        # reorder index to be consistent with descending order of DALYs averted
         use = use.reindex(num_dalys_summarized.index)
 
-        return use
+        use_increased = use.subtract(use.loc['s_0', :], axis=1).drop('s_0', axis=0)
 
-    hcw_time_used = hcw_time_or_cost_used(appt_time)
+        return use, use_increased
+
+    hcw_time_used = hcw_time_or_cost_used(time_cost_df=appt_time)[0]
+    hcw_time_increased_by_cadre = hcw_time_or_cost_used(time_cost_df=appt_time)[1]
 
     # get HCW time and cost needed to run the never run appts
     def hcw_time_or_cost_gap(time_cost_df=appt_time, count_df=num_never_ran_appts_by_level_summarized):
@@ -1041,8 +1061,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # if sum up all appt types/cadres
         _proportions_total = _counts.sum(axis=1) / _counts_all.sum(axis=1)
         _cost_gap_proportions_total = _cost_gap.sum(axis=1) / hcw_cost_gap.sum(axis=1)
+        _time_gap_proportions_total = _time_gap.sum(axis=1) / hcw_time_gap.sum(axis=1)
 
-        return _proportions_total, _cost_gap_proportions_total, _cost_gap, _cost_gap_percent
+        return (_proportions_total, _cost_gap_proportions_total, _cost_gap, _cost_gap_percent,
+                _time_gap_proportions_total, _time_gap)
 
     never_ran_appts_info_that_need_CNP = get_never_ran_appts_info_that_need_specific_cadres(
         cadres_to_find=['Clinical', 'Nursing_and_Midwifery', 'Pharmacy'])
@@ -1059,34 +1081,54 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     never_ran_appts_info_that_need_P = get_never_ran_appts_info_that_need_specific_cadres(
         cadres_to_find=['Pharmacy'])
 
-    # cost proportions within never ran appts, in total of all cadres
+    # cost/time proportions within never ran appts, in total of all cadres
     p_cost = pd.DataFrame(index=num_services_summarized.index)
-    p_cost['C + N&M + P'] = never_ran_appts_info_that_need_CNP[1]
-    p_cost['C + P'] = never_ran_appts_info_that_need_CP[1]
-    p_cost['C + N&M'] = never_ran_appts_info_that_need_CN[1]
-    p_cost['N&M + P'] = never_ran_appts_info_that_need_NP[1]
+    p_cost['C and P and N&M'] = never_ran_appts_info_that_need_CNP[1]
+    p_cost['C and P'] = never_ran_appts_info_that_need_CP[1]
+    p_cost['C and N&M'] = never_ran_appts_info_that_need_CN[1]
+    p_cost['N&M and P'] = never_ran_appts_info_that_need_NP[1]
     p_cost['Clinical (C)'] = never_ran_appts_info_that_need_C[1]
     p_cost['Pharmacy (P)'] = never_ran_appts_info_that_need_P[1]
     p_cost['Nursing_and_Midwifery (N&M)'] = never_ran_appts_info_that_need_N[1]
     p_cost['Other cases'] = 1 - p_cost[p_cost.columns[0:7]].sum(axis=1)
 
-    # absolute cost gap within never ran appts
+    p_time = pd.DataFrame(index=num_services_summarized.index)
+    p_time['C and P and N&M'] = never_ran_appts_info_that_need_CNP[4]
+    p_time['C and P'] = never_ran_appts_info_that_need_CP[4]
+    p_time['C and N&M'] = never_ran_appts_info_that_need_CN[4]
+    p_time['N&M and P'] = never_ran_appts_info_that_need_NP[4]
+    p_time['Clinical (C)'] = never_ran_appts_info_that_need_C[4]
+    p_time['Pharmacy (P)'] = never_ran_appts_info_that_need_P[4]
+    p_time['Nursing_and_Midwifery (N&M)'] = never_ran_appts_info_that_need_N[4]
+    p_time['Other cases'] = 1 - p_time[p_time.columns[0:7]].sum(axis=1)
+
+    # absolute cost/time gap within never ran appts
     a_cost = pd.DataFrame(index=num_services_summarized.index)
-    a_cost['C + N&M + P'] = never_ran_appts_info_that_need_CNP[2].sum(axis=1)
-    a_cost['C + P'] = never_ran_appts_info_that_need_CP[2].sum(axis=1)
-    a_cost['C + N&M'] = never_ran_appts_info_that_need_CN[2].sum(axis=1)
-    a_cost['N&M + P'] = never_ran_appts_info_that_need_NP[2].sum(axis=1)
+    a_cost['C and P and N&M'] = never_ran_appts_info_that_need_CNP[2].sum(axis=1)
+    a_cost['C and P'] = never_ran_appts_info_that_need_CP[2].sum(axis=1)
+    a_cost['C and N&M'] = never_ran_appts_info_that_need_CN[2].sum(axis=1)
+    a_cost['N&M and P'] = never_ran_appts_info_that_need_NP[2].sum(axis=1)
     a_cost['Clinical (C)'] = never_ran_appts_info_that_need_C[2].sum(axis=1)
     a_cost['Pharmacy (P)'] = never_ran_appts_info_that_need_P[2].sum(axis=1)
     a_cost['Nursing_and_Midwifery (N&M)'] = never_ran_appts_info_that_need_N[2].sum(axis=1)
     a_cost['Other cases'] = hcw_cost_gap.sum(axis=1) - a_cost.sum(axis=1)
 
+    a_time = pd.DataFrame(index=num_services_summarized.index)
+    a_time['C and P and N&M'] = never_ran_appts_info_that_need_CNP[5].sum(axis=1)
+    a_time['C and P'] = never_ran_appts_info_that_need_CP[5].sum(axis=1)
+    a_time['C and N&M'] = never_ran_appts_info_that_need_CN[5].sum(axis=1)
+    a_time['N&M and P'] = never_ran_appts_info_that_need_NP[5].sum(axis=1)
+    a_time['Clinical (C)'] = never_ran_appts_info_that_need_C[5].sum(axis=1)
+    a_time['Pharmacy (P)'] = never_ran_appts_info_that_need_P[5].sum(axis=1)
+    a_time['Nursing_and_Midwifery (N&M)'] = never_ran_appts_info_that_need_N[5].sum(axis=1)
+    a_time['Other cases'] = hcw_time_gap.sum(axis=1) - a_time.sum(axis=1)
+
     # appts count proportions within never ran appts, in total of all cadres
     p_count = pd.DataFrame(index=num_services_summarized.index)
-    p_count['C + N&M + P'] = never_ran_appts_info_that_need_CNP[0]
-    p_count['C + P'] = never_ran_appts_info_that_need_CP[0]
-    p_count['C + N&M'] = never_ran_appts_info_that_need_CN[0]
-    p_count['N&M + P'] = never_ran_appts_info_that_need_NP[0]
+    p_count['C and P and N&M'] = never_ran_appts_info_that_need_CNP[0]
+    p_count['C and P'] = never_ran_appts_info_that_need_CP[0]
+    p_count['C and N&M'] = never_ran_appts_info_that_need_CN[0]
+    p_count['N&M and P'] = never_ran_appts_info_that_need_NP[0]
     p_count['Clinical (C)'] = never_ran_appts_info_that_need_C[0]
     p_count['Pharmacy (P)'] = never_ran_appts_info_that_need_P[0]
     p_count['Nursing_and_Midwifery (N&M)'] = never_ran_appts_info_that_need_N[0]
@@ -1094,10 +1136,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # define color for the cadres combinations above
     cadre_comb_color = {
-        'C + N&M + P': 'royalblue',
-        'C + P': 'turquoise',
-        'C + N&M': 'gold',
-        'N&M + P': 'yellowgreen',
+        'C and P and N&M': 'royalblue',
+        'C and P': 'turquoise',
+        'C and N&M': 'gold',
+        'N&M and P': 'yellowgreen',
         'Clinical (C)': 'mediumpurple',
         'Pharmacy (P)': 'limegreen',
         'Nursing_and_Midwifery (N&M)': 'pink',
@@ -1106,7 +1148,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # Checked that Number_By_Appt_Type_Code and Number_By_Appt_Type_Code_And_Level have not exactly same results
 
-    # hcw time by cadre and treatment: draw = 21: C + N + P vs no expansion, draw = 10, C + P vs no expansion
+    # hcw time by cadre and treatment: draw = 22: C + N + P vs no expansion, draw = 11, C + P vs no expansion
     # time_increased_by_cadre_treatment_CNP = get_hcw_time_by_treatment(21)
     # time_increased_by_cadre_treatment_CP = get_hcw_time_by_treatment(10)
 
@@ -1615,23 +1657,41 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # fig.show()
     # plt.close(fig)
 
-    # name_of_plot = f'HCW time needed to deliver never ran appointments, {target_period()}'
-    # hcw_time_gap_to_plot = (hcw_time_gap / 1e6).reindex(num_dalys_summarized.index)
-    # column_dcsa = hcw_time_gap_to_plot.pop('DCSA')
-    # hcw_time_gap_to_plot.insert(3, "DCSA", column_dcsa)
-    # fig, ax = plt.subplots(figsize=(9, 6))
-    # hcw_time_gap_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
-    # ax.set_ylabel('Minutes in Millions', fontsize='small')
-    # ax.set(xlabel=None)
-    # xtick_labels = [substitute_labels[v] for v in hcw_time_gap_to_plot.index]
-    # ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
-    # plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
-    #            fontsize='small', reverse=True)
-    # plt.title(name_of_plot)
-    # fig.tight_layout()
-    # fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-    # fig.show()
-    # plt.close(fig)
+    name_of_plot = f'HCW time used by cadre in delivering services , {target_period()}'
+    data_to_plot = (hcw_time_used / 1e6).reindex(num_dalys_summarized.index)
+    column_dcsa = data_to_plot.pop('DCSA')
+    data_to_plot.insert(3, "DCSA", column_dcsa)
+    fig, ax = plt.subplots(figsize=(9, 6))
+    data_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
+    ax.set_ylabel('Minutes in Millions', fontsize='small')
+    ax.set(xlabel=None)
+    xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
+    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
+    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
+               fontsize='small', reverse=True)
+    plt.title(name_of_plot)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
+    name_of_plot = f'HCW time needed to deliver never ran appointments, {target_period()}'
+    hcw_time_gap_to_plot = (hcw_time_gap / 1e6).reindex(num_dalys_summarized.index)
+    column_dcsa = hcw_time_gap_to_plot.pop('DCSA')
+    hcw_time_gap_to_plot.insert(3, "DCSA", column_dcsa)
+    fig, ax = plt.subplots(figsize=(9, 6))
+    hcw_time_gap_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
+    ax.set_ylabel('Minutes in Millions', fontsize='small')
+    ax.set(xlabel=None)
+    xtick_labels = [substitute_labels[v] for v in hcw_time_gap_to_plot.index]
+    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
+    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
+               fontsize='small', reverse=True)
+    plt.title(name_of_plot)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
 
     name_of_plot = f'HCW cost needed by cadre to deliver never ran appointments, {target_period()}'
     hcw_cost_gap_to_plot = (hcw_cost_gap / 1e6).reindex(num_dalys_summarized.index)
@@ -1693,11 +1753,52 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
+    name_of_plot = f'Time proportions of never ran appointments that require specific cadres only, {target_period()}'
+    data_to_plot = p_time * 100
+    fig, ax = plt.subplots(figsize=(12, 8))
+    data_to_plot.plot(kind='bar', stacked=True, color=cadre_comb_color, rot=0, ax=ax)
+    ax.set_ylim(0, 100)
+    ax.set_ylabel('Percentage %')
+    ax.set_xlabel('Extra budget allocation scenario')
+    xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
+    ax.set_xticklabels(xtick_labels, rotation=90)
+    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Cadre combination', reverse=True)
+    # # plot the average proportions of all scenarios
+    # for c in data_to_plot.columns:
+    #     plt.axhline(y=data_to_plot[c].mean(),
+    #                 linestyle='--', color=cadre_comb_color[c], alpha=1.0, linewidth=2,
+    #                 label=c)
+    plt.title(name_of_plot)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
     name_of_plot = f'Cost distribution of never ran appointments that require specific cadres only, {target_period()}'
     data_to_plot = a_cost / 1e6
     fig, ax = plt.subplots(figsize=(12, 8))
     data_to_plot.plot(kind='bar', stacked=True, color=cadre_comb_color, rot=0, ax=ax)
     ax.set_ylabel('USD in millions')
+    ax.set_xlabel('Extra budget allocation scenario')
+    xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
+    ax.set_xticklabels(xtick_labels, rotation=90)
+    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Cadre combination', reverse=True)
+    # # plot the average cost of all scenarios
+    # for c in data_to_plot.columns:
+    #     plt.axhline(y=data_to_plot[c].mean(),
+    #                 linestyle='--', color=cadre_comb_color[c], alpha=1.0, linewidth=2,
+    #                 label=c)
+    plt.title(name_of_plot)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
+    name_of_plot = f'Time distribution of never ran appointments that require specific cadres only, {target_period()}'
+    data_to_plot = a_time / 1e6
+    fig, ax = plt.subplots(figsize=(12, 8))
+    data_to_plot.plot(kind='bar', stacked=True, color=cadre_comb_color, rot=0, ax=ax)
+    ax.set_ylabel('minutes in millions')
     ax.set_xlabel('Extra budget allocation scenario')
     xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
     ax.set_xticklabels(xtick_labels, rotation=90)
@@ -2080,6 +2181,44 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
     ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
     plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.4), title='Treatment type', title_fontsize='small',
+               fontsize='small', reverse=True)
+    plt.title(name_of_plot)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(
+        name_of_plot.replace(' ', '_').replace(',', '').replace('\n', ''))
+    )
+    fig.show()
+    plt.close(fig)
+
+    name_of_plot = f'HCW time-used increased by treatment type \nvs no extra budget allocation, {target_period()}'
+    data_to_plot = hcw_time_increased_by_treatment_type / 1e6
+    fig, ax = plt.subplots(figsize=(10, 6))
+    data_to_plot.plot(kind='bar', stacked=True, color=treatment_color, rot=0, ax=ax)
+    ax.set_ylabel('Million minutes', fontsize='small')
+    ax.set(xlabel=None)
+    xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
+    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
+    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.4), title='Treatment type', title_fontsize='small',
+               fontsize='small', reverse=True)
+    plt.title(name_of_plot)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(
+        name_of_plot.replace(' ', '_').replace(',', '').replace('\n', ''))
+    )
+    fig.show()
+    plt.close(fig)
+
+    name_of_plot = f'HCW time-used increased by cadre \nvs no extra budget allocation, {target_period()}'
+    data_to_plot = hcw_time_increased_by_cadre / 1e6
+    column_dcsa = data_to_plot.pop('DCSA')
+    data_to_plot.insert(3, "DCSA", column_dcsa)
+    fig, ax = plt.subplots(figsize=(9, 6))
+    data_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
+    ax.set_ylabel('Millions', fontsize='small')
+    ax.set_xlabel('Extra budget allocation scenario', fontsize='small')
+    xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
+    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
+    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
                fontsize='small', reverse=True)
     plt.title(name_of_plot)
     fig.tight_layout()
