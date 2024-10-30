@@ -1239,7 +1239,7 @@ class HSI_CervicalCancer_Biopsy(HSI_Event, IndividualScopeEventMixin):
                     tclose=None
                 )
 
-            else:
+            if in_stage4:
                 # start palliative care:
                 hs.schedule_hsi_event(
                     hsi_event=HSI_CervicalCancer_PalliativeCare(
