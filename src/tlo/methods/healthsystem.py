@@ -36,7 +36,6 @@ from tlo.methods.hsi_event import (
     HSIEventQueueItem,
     HSIEventWrapper,
 )
-from tlo.population import Population
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -1371,48 +1370,25 @@ class HealthSystem(Module):
 
             # Look up relevant attributes for HSI_Event's target
             list_targets = [_t[0] for _t in self.list_fasttrack]
+            target_attributes = pdf.loc[hsi_event.target, list_targets]
 
-            # individual hsi_event.target
-            if not isinstance(hsi_event.target, Population):
-                target_attributes = pdf.loc[hsi_event.target, list_targets]
+            # Warning: here assuming that the first fast-tracking eligibility encountered
+            # will determine the priority to be used. If different fast-tracking channels have
+            # different priorities for the same treatment, this will be a problem!
+            # First item in Lists is age-related, therefore need to invoke different logic.
+            if (
+                (pr[hsi_event.TREATMENT_ID][self.list_fasttrack[0][1]] > -1)
+                and (target_attributes['age_exact_years'] <= 5)
+            ):
+                return pr[hsi_event.TREATMENT_ID][self.list_fasttrack[0][1]]
 
-                # Warning: here assuming that the first fast-tracking eligibility encountered
-                # will determine the priority to be used. If different fast-tracking channels have
-                # different priorities for the same treatment, this will be a problem!
-                # First item in Lists is age-related, therefore need to invoke different logic.
+            # All other attributes are looked up the same way, so can do this in for loop
+            for i in range(1, len(self.list_fasttrack)):
                 if (
-                    (pr[hsi_event.TREATMENT_ID][self.list_fasttrack[0][1]] > -1)
-                    and (target_attributes['age_exact_years'] <= 5).all()
+                    (pr[hsi_event.TREATMENT_ID][self.list_fasttrack[i][1]] > - 1)
+                    and target_attributes[i]
                 ):
-                    return pr[hsi_event.TREATMENT_ID][self.list_fasttrack[0][1]]
-
-                # All other attributes are looked up the same way, so can do this in for loop
-                for i in range(1, len(self.list_fasttrack)):
-                    if (
-                        (pr[hsi_event.TREATMENT_ID][self.list_fasttrack[i][1]] > - 1)
-                        and target_attributes[i]
-                    ):
-                        return pr[hsi_event.TREATMENT_ID][self.list_fasttrack[i][1]]
-            # population hsi_event.target
-            else:
-                target_attributes = pdf.loc[:, list_targets]
-
-                # Warning: here assuming that the first fast-tracking eligibility encountered
-                # will determine the priority to be used. If different fast-tracking channels have
-                # different priorities for the same treatment, this will be a problem!
-                # First item in Lists is age-related, therefore need to invoke different logic.
-                if (
-                    (pr[hsi_event.TREATMENT_ID][self.list_fasttrack[0][1]] > -1)
-                    and (target_attributes['age_exact_years'] <= 5).all()
-                ):
-                    return pr[hsi_event.TREATMENT_ID][self.list_fasttrack[0][1]]
-
-                for i in range(1, len(self.list_fasttrack)):
-                    if (
-                        (pr[hsi_event.TREATMENT_ID][self.list_fasttrack[i][1]] > -1)
-                        and target_attributes[self.list_fasttrack[i][0]].all()
-                    ):
-                        return pr[hsi_event.TREATMENT_ID][self.list_fasttrack[i][1]]
+                    return pr[hsi_event.TREATMENT_ID][self.list_fasttrack[i][1]]
 
             return _priority_ranking
 
