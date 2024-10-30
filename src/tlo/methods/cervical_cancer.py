@@ -1655,10 +1655,17 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         else:
             prop_cc_hiv = np.nan
 
-        n_screened_via_this_month = (df.is_alive & df.ce_selected_for_via_this_month).sum()
-        n_screened_xpert_this_month = (df.is_alive & df.ce_selected_for_xpert_this_month).sum()
+
+        n_screened_via_this_month = (df.is_alive & df.ce_selected_for_via_this_month ).sum()
+        n_screened_xpert_this_month = (df.is_alive & df.ce_selected_for_xpert_this_month ).sum()
         n_ever_screened = (
-                (df['is_alive']) & (df['ce_ever_screened']) & (df['age_years'] > 15) & (df['age_years'] < 50)).sum()
+                (df['is_alive']) & (df['ce_ever_screened']) & (df['age_years'] > screening_min_age) & (df['age_years'] < screening_max_age)).sum()
+
+
+        # n_screened_via_this_month = (df.is_alive & df.ce_selected_for_via_this_month & df.ce_date_via.between(date_30_days_ago, self.sim.date)).sum()
+        # n_screened_xpert_this_month = (df.is_alive & df.ce_selected_for_xpert_this_month & df.ce_date_xpert.between(date_30_days_ago, self.sim.date)).sum()
+        # n_ever_screened = (
+        #         (df['is_alive']) & (df['ce_ever_screened']) & (df['age_years'] > 15) & (df['age_years'] < 50)).sum()
 
         n_vaginal_bleeding_stage1 = (df.is_alive & (df.sy_vaginal_bleeding == 2) &
                                      (df.ce_hpv_cc_status == 'stage1')).sum()
