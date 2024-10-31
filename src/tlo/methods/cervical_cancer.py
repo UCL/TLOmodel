@@ -705,6 +705,15 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
 
         return disability_series_for_alive_persons
 
+
+    def onset_xpert_properties(self, idx: pd.Index):
+        """Represents the screened property for the person_id given in `idx`"""
+        df = self.sim.population.props
+        if df.loc[idx, 'ce_selected_for_xpert_this_month'].any():
+            df.loc[idx, 'ce_ever_screened'] = True
+        else:
+            df.loc[idx, 'ce_ever_screened'] = False
+
     def do_at_generic_first_appt(
         self,
         person_id: int,
@@ -723,25 +732,25 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
                 topen=self.sim.date,
                 tclose=None)
 
-        if 'chosen_via_screening_for_cin_cervical_cancer' in symptoms:
-            schedule_hsi_event(
-                HSI_CervicalCancer_AceticAcidScreening(
-                    person_id=person_id,
-                    module=self
-                ),
-                priority=0,
-                topen=self.sim.date,
-                tclose=None)
-
-        if 'chosen_xpert_screening_for_hpv_cervical_cancer' in symptoms:
-            schedule_hsi_event(
-                HSI_CervicalCancer_XpertHPVScreening(
-                    person_id=person_id,
-                    module=self
-                ),
-                priority=0,
-                topen=self.sim.date,
-                tclose=None)
+        # if 'chosen_via_screening_for_cin_cervical_cancer' in symptoms:
+        #     schedule_hsi_event(
+        #         HSI_CervicalCancer_AceticAcidScreening(
+        #             person_id=person_id,
+        #             module=self
+        #         ),
+        #         priority=0,
+        #         topen=self.sim.date,
+        #         tclose=None)
+        #
+        # if 'chosen_xpert_screening_for_hpv_cervical_cancer' in symptoms:
+        #     schedule_hsi_event(
+        #         HSI_CervicalCancer_XpertHPVScreening(
+        #             person_id=person_id,
+        #             module=self
+        #         ),
+        #         priority=0,
+        #         topen=self.sim.date,
+        #         tclose=None)
 
         # else:
         # schedule_hsi_event(
@@ -906,26 +915,44 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[eligible_population, 'ce_selected_for_via_this_month'] = (
                 rng.random(size=len(df[eligible_population])) < p['prob_via_screen']
             )
+
+            for idx in df.index[df.ce_selected_for_via_this_month]:
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    hsi_event=HSI_CervicalCancer_AceticAcidScreening(module=self.module, person_id=idx),
+                    priority=0,
+                    topen=self.sim.date,
+                    tclose=None)
+
         else:
             # Use Xpert for screening from the transition year and onward
             df.loc[eligible_population, 'ce_selected_for_xpert_this_month'] = (
                 rng.random(size=len(df[eligible_population])) < p['prob_xpert_screen']
             )
 
+            for idx in df.index[df.ce_selected_for_xpert_this_month]:
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    hsi_event=HSI_CervicalCancer_XpertHPVScreening(module=self.module, person_id=idx),
+                    priority=0,
+                    topen=self.sim.date,
+                    tclose=None)
 
-        self.sim.modules['SymptomManager'].change_symptom(
-            person_id=df.loc[df['ce_selected_for_via_this_month']].index,
-            symptom_string='chosen_via_screening_for_cin_cervical_cancer',
-            add_or_remove='+',
-            disease_module=self.module
-        )
+            # xpert_select_ind_id = df.loc[df['ce_selected_for_xpert_this_month']].index
+            # self.module.onset_xpert_properties(xpert_select_ind_id)
 
-        self.sim.modules['SymptomManager'].change_symptom(
-            person_id=df.loc[df['ce_selected_for_xpert_this_month']].index,
-            symptom_string='chosen_xpert_screening_for_hpv_cervical_cancer',
-            add_or_remove='+',
-            disease_module=self.module
-        )
+
+        # self.sim.modules['SymptomManager'].change_symptom(
+        #     person_id=df.loc[df['ce_selected_for_via_this_month']].index,
+        #     symptom_string='chosen_via_screening_for_cin_cervical_cancer',
+        #     add_or_remove='+',
+        #     disease_module=self.module
+        # )
+        #
+        # self.sim.modules['SymptomManager'].change_symptom(
+        #     person_id=df.loc[df['ce_selected_for_xpert_this_month']].index,
+        #     symptom_string='chosen_xpert_screening_for_hpv_cervical_cancer',
+        #     add_or_remove='+',
+        #     disease_module=self.module
+        # )
 
 
     # -------------------- UPDATING OF SYMPTOM OF vaginal bleeding OVER TIME --------------------------------
@@ -1495,7 +1522,7 @@ class HSI_CervicalCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         hs = self.sim.modules["HealthSystem"]
 
         # Check that the person is in stage4
-        assert df.at[person_id, "ce_hpv_cc_status"] == 'stage4'
+        # assert df.at[person_id, "ce_hpv_cc_status"] == 'stage4'
 
         # Record the start of palliative care if this is first appointment
         if pd.isnull(df.at[person_id, "ce_date_palliative_care"]):
@@ -1906,7 +1933,7 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                             "ce_xpert_hpv_ever_pos", "ce_via_cin_ever_detected",  "ce_date_thermoabl","ce_date_cryotherapy",
                             "ce_biopsy"]
 
-        selected_columns = ["ce_hpv_cc_status"]
+        # selected_columns = ["ce_hpv_cc_status"]
 
         selected_rows = df[(df['sex'] == 'F') & (df['age_years'] > 15) & df['is_alive'] & (df['hv_inf'])]
 
