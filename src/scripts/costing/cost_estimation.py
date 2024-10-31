@@ -35,6 +35,7 @@ timestamp = datetime.datetime.now().strftime("_%Y_%m_%d_%H_%M")
 # Print the start time of the script
 print('Script Start', datetime.datetime.now().strftime('%H:%M'))
 
+#%%
 def estimate_input_cost_of_scenarios(results_folder: Path, resourcefilepath: Path = None, draws = None, runs = None,
                                      summarize: bool = False, cost_only_used_staff: bool = True):
     # Useful common functions
@@ -432,7 +433,7 @@ def estimate_input_cost_of_scenarios(results_folder: Path, resourcefilepath: Pat
     cost_of_excess_consumables_stocked[quantity_columns] = cost_of_excess_consumables_stocked[quantity_columns].multiply(cost_of_excess_consumables_stocked[idx[price_column]], axis=0)
     cost_of_excess_consumables_stocked[quantity_columns] = cost_of_excess_consumables_stocked[quantity_columns].multiply(cost_of_excess_consumables_stocked[idx['excess_stock_proportion_of_dispensed']], axis=0)
 
-    # 2.3 Store all HR costs in one standard format dataframe
+    # 2.3 Store all consumable costs in one standard format dataframe
     #---------------------------------------------------------------------------------------------------------------
     # Function to melt and label the cost category
     consumables_dict = pd.read_csv(path_for_consumable_resourcefiles / 'ResourceFile_consumables_matched.csv', low_memory=False,
@@ -456,8 +457,25 @@ def estimate_input_cost_of_scenarios(results_folder: Path, resourcefilepath: Pat
         melted_df = melted_df.rename(columns = {'value': 'cost'})
         return melted_df
 
-    cost_of_consumables_dispensed = retain_relevant_column_subset(melt_and_label_consumables_cost(cost_of_consumables_dispensed, 'cost_of_consumables_dispensed'), 'consumable')
-    cost_of_excess_consumables_stocked = retain_relevant_column_subset(melt_and_label_consumables_cost(cost_of_excess_consumables_stocked, 'cost_of_excess_consumables_stocked'), 'consumable')
+    def disaggregate_separately_managed_medical_supplies_from_consumable_costs(_df,
+                                                                   _consumables_dict, # This is a dictionary mapping codes to names
+                                                                   list_of_unique_medical_products):
+        reversed_consumables_dict = {value: key for key, value in _consumables_dict.items()} # reverse dictionary to map names to codes
+        new_df = _df.copy()
+        new_df['item_code'] = new_df['consumable'].map(reversed_consumables_dict)
+        cost_of_consumables = new_df[~new_df['item_code'].isin(list_of_unique_medical_products)]
+        cost_of_separately_managed_medical_supplies = new_df[new_df['item_code'].isin(list_of_unique_medical_products)]
+        cost_of_separately_managed_medical_supplies['cost_subcategory'] = cost_of_separately_managed_medical_supplies['cost_subcategory'] + 'separately_managed_medical_supplies'
+        return cost_of_consumables.drop(columns = 'item_code'), cost_of_separately_managed_medical_supplies.drop(columns = 'item_code')
+
+    separately_managed_medical_supplies = [127, 141, 161] # Oxygen, Blood, IRS
+    cost_of_consumables_dispensed, cost_of_separately_managed_medical_supplies_dispensed = disaggregate_separately_managed_medical_supplies_from_consumable_costs(_df = retain_relevant_column_subset(melt_and_label_consumables_cost(cost_of_consumables_dispensed, 'cost_of_consumables_dispensed'), 'consumable'),
+                                                                                               _consumables_dict = consumables_dict,
+                                                                                               list_of_unique_medical_products = separately_managed_medical_supplies)
+    cost_of_excess_consumables_stocked, cost_of_separately_managed_medical_supplies_excess_stock = disaggregate_separately_managed_medical_supplies_from_consumable_costs(_df = retain_relevant_column_subset(melt_and_label_consumables_cost(cost_of_excess_consumables_stocked, 'cost_of_excess_consumables_stocked'), 'consumable'),
+                                                                                                    _consumables_dict=consumables_dict,
+                                                                                                    list_of_unique_medical_products=separately_managed_medical_supplies)
+
     consumable_costs = pd.concat([cost_of_consumables_dispensed, cost_of_excess_consumables_stocked])
 
     # 2.4 Supply chain costs
@@ -473,6 +491,8 @@ def estimate_input_cost_of_scenarios(results_folder: Path, resourcefilepath: Pat
     supply_chain_cost_proportion = supply_chain_expenditure / consumables_purchase_expenditure
 
     # Estimate supply chain costs based on the total consumable purchase cost calculated above
+    # Note that  Oxygen, IRS, and Blood costs are already excluded because the unit_cost of these commodities already
+    # includes the procurement/production, storage and distribution costs
     supply_chain_costs = (consumable_costs.groupby(['draw', 'run', 'year'])[
                               'cost'].sum() * supply_chain_cost_proportion).reset_index()
     # Assign relevant additional columns to match the format of the rest of consumables costs
@@ -483,14 +503,18 @@ def estimate_input_cost_of_scenarios(results_folder: Path, resourcefilepath: Pat
 
     # Append supply chain costs to the full consumable cost dataframe
     consumable_costs = pd.concat([consumable_costs, supply_chain_costs])
+    other_costs = pd.concat([cost_of_separately_managed_medical_supplies_dispensed, cost_of_separately_managed_medical_supplies_excess_stock])
 
     consumable_costs = prepare_cost_dataframe(consumable_costs, _category_specific_group = 'consumable', _cost_category = 'medical consumables')
+    other_costs = prepare_cost_dataframe(other_costs, _category_specific_group = 'consumable', _cost_category = 'other')
 
     # Only preserve the draws and runs requested
     if draws is not None:
         consumable_costs = consumable_costs[consumable_costs.draw.isin(draws)]
+        other_costs = other_costs[other_costs.draw.isin(draws)]
     if runs is not None:
         consumable_costs = consumable_costs[consumable_costs.run.isin(runs)]
+        other_costs = other_costs[other_costs.run.isin(runs)]
 
 
     # %%
@@ -609,7 +633,7 @@ def estimate_input_cost_of_scenarios(results_folder: Path, resourcefilepath: Pat
     # %%
     # Store all costs in single dataframe
     #--------------------------------------------
-    scenario_cost = pd.concat([human_resource_costs, consumable_costs, equipment_costs], ignore_index=True)
+    scenario_cost = pd.concat([human_resource_costs, consumable_costs, equipment_costs, other_costs], ignore_index=True)
     scenario_cost['cost'] = pd.to_numeric(scenario_cost['cost'], errors='coerce')
 
     # Summarize costs

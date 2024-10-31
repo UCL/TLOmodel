@@ -35,6 +35,14 @@ timestamp = datetime.datetime.now().strftime("_%Y_%m_%d_%H_%M")
 # Print the start time of the script
 print('Script Start', datetime.datetime.now().strftime('%H:%M'))
 
+# Create folders to store results
+costing_outputs_folder = Path('./outputs/costing')
+if not os.path.exists(costing_outputs_folder):
+    os.makedirs(costing_outputs_folder)
+figurespath = costing_outputs_folder / "global_fund_roi_analysis"
+if not os.path.exists(figurespath):
+    os.makedirs(figurespath)
+
 # Load result files
 #-------------------
 #results_folder = get_scenario_outputs('htm_with_and_without_hss-2024-09-04T143044Z.py', outputfilepath)[0] # Tara's FCDO/GF scenarios version 1
@@ -59,17 +67,27 @@ district_dict = dict(zip(district_dict['District_Num'], district_dict['District'
 # Estimate standard input costs of scenario
 #-----------------------------------------------------------------------------------------------------------------------
 input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath , cost_only_used_staff=True) # summarise = True
-
-# Create folders to store results
-costing_outputs_folder = Path('./outputs/costing')
-if not os.path.exists(costing_outputs_folder):
-    os.makedirs(costing_outputs_folder)
-figurespath = costing_outputs_folder / "global_fund_roi_analysis"
-if not os.path.exists(figurespath):
-    os.makedirs(figurespath)
+input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath , draws = [0], runs = [0], cost_only_used_staff=True) # summarise = True
 
 # Add additional costs pertaining to simulation
 #-----------------------------------------------------------------------------------------------------------------------
+# Extract supply chain cost as a proportion of consumable costs to apply to malaria scale-up commodities
+# Load primary costing resourcefile
+workbook_cost = pd.read_excel((resourcefilepath / "costing/ResourceFile_Costing.xlsx"),
+                              sheet_name=None)
+# Assume that the cost of procurement, warehousing and distribution is a fixed proportion of consumable purchase costs
+# The fixed proportion is based on Resource Mapping Expenditure data from 2018
+resource_mapping_data = workbook_cost["resource_mapping_r7_summary"]
+# Make sure values are numeric
+expenditure_column = ['EXPENDITURE (USD) (Jul 2018 - Jun 2019)']
+resource_mapping_data[expenditure_column] = resource_mapping_data[expenditure_column].apply(
+    lambda x: pd.to_numeric(x, errors='coerce'))
+supply_chain_expenditure = \
+resource_mapping_data[resource_mapping_data['Cost Type'] == 'Supply Chain'][expenditure_column].sum()[0]
+consumables_purchase_expenditure = \
+resource_mapping_data[resource_mapping_data['Cost Type'] == 'Drugs and Commodities'][expenditure_column].sum()[0]
+supply_chain_cost_proportion = supply_chain_expenditure / consumables_purchase_expenditure
+
 # In this case malaria intervention scale-up costs were not included in the standard estimate_input_cost_of_scenarios function
 list_of_draws_with_malaria_scaleup_parameters = params[(params.module_param == 'Malaria:scaleup_start_year')]
 list_of_draws_with_malaria_scaleup_parameters.loc[:,'value'] = pd.to_numeric(list_of_draws_with_malaria_scaleup_parameters['value'])
@@ -81,12 +99,12 @@ districts_with_irs_scaleup = ['Kasungu', 'Mchinji', 'Lilongwe', 'Lilongwe City',
                               'Mwanza', 'Likoma', 'Nkhotakota']
 # Convert above list of district names to numeric district identifiers
 district_keys_with_irs_scaleup = [key for key, name in district_dict.items() if name in districts_with_irs_scaleup]
-#proportion_of_district_with_irs_coverage = len(districts_with_irs_scaleup)/mfl.District.nunique()
 TARGET_PERIOD_MALARIA_SCALEUP = (Date(2024, 1, 1), Date(2030, 12, 31))
 
 # Get population by district
 def get_total_population_by_district(_df):
-    years_needed = [i.year for i in TARGET_PERIOD_MALARIA_SCALEUP]
+    years_needed = [i.year for i in TARGET_PERIOD_MALARIA_SCALEUP] # we only consider the population for the malaria scale-up period
+    # because those are the years relevant for malaria scale-up costing
     _df['year'] = pd.to_datetime(_df['date']).dt.year
     assert set(_df.year.unique()).issuperset(years_needed), "Some years are not recorded."
     _df = pd.melt(_df.drop(columns = 'date'), id_vars = ['year']).rename(columns = {'variable': 'district'})
@@ -121,19 +139,18 @@ district_population_covered_by_irs_scaleup_by_year = get_number_of_people_covere
                                                                                                  list_of_districts_covered=district_keys_with_irs_scaleup,
                                                                                                  draws_included = list_of_draws_with_malaria_scaleup_implemented_in_costing_period)
 
-#years_with_no_malaria_scaleup = set(TARGET_PERIOD).symmetric_difference(set(TARGET_PERIOD_MALARIA_SCALEUP))
-#years_with_no_malaria_scaleup = sorted(list(years_with_no_malaria_scaleup))
-#years_with_no_malaria_scaleup =  [i.year for i in years_with_no_malaria_scaleup]
 irs_cost_per_person = unit_price_consumable[unit_price_consumable.Item_Code == 161]['Final_price_per_chosen_unit (USD, 2023)']
+# The above unit cost already includes implementation - project management (17%), personnel (6%), vehicles (10%), equipment (6%), monitoring and evaluation (3%), training (3%),
+# other commodities (3%) and buildings (2%) from Alonso et al (2021)
 irs_multiplication_factor = irs_cost_per_person * irs_coverage_rate
 total_irs_cost = irs_multiplication_factor.iloc[0] * district_population_covered_by_irs_scaleup_by_year # for districts and scenarios included
 total_irs_cost = total_irs_cost.groupby(level='year').sum()
-# TODO melt irs_cost
 
 # 2. Bednet costs
 bednet_coverage_rate = 0.7
 # We can assume 3-year lifespan of a bednet, each bednet covering 1.8 people.
-unit_cost_of_bednet = unit_price_consumable[unit_price_consumable.Item_Code == 160]['Final_price_per_chosen_unit (USD, 2023)']
+unit_cost_of_bednet = unit_price_consumable[unit_price_consumable.Item_Code == 160]['Final_price_per_chosen_unit (USD, 2023)'] * (1 + supply_chain_cost_proportion)
+# We add supply chain costs (procurement + distribution + warehousing) because the unit_cost does not include this
 annual_bednet_cost_per_person = unit_cost_of_bednet / 1.8 / 3
 bednet_multiplication_factor = bednet_coverage_rate * annual_bednet_cost_per_person
 
@@ -235,3 +252,9 @@ num_dalys_averted = summarize(
 chosen_cet = 77.4 # based on Ochalek et al (2018) - the paper provided the value $61 in 2016 USD terms, this value is in 2023 USD terms
 monetary_value_of_incremental_health = num_dalys_averted * chosen_cet
 max_ability_to_pay_for_implementation = monetary_value_of_incremental_health - incremental_scenario_cost # monetary value - change in costs
+
+'''
+#years_with_no_malaria_scaleup = set(TARGET_PERIOD).symmetric_difference(set(TARGET_PERIOD_MALARIA_SCALEUP))
+#years_with_no_malaria_scaleup = sorted(list(years_with_no_malaria_scaleup))
+#years_with_no_malaria_scaleup =  [i.year for i in years_with_no_malaria_scaleup]
+'''
