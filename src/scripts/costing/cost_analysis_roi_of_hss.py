@@ -29,6 +29,8 @@ from tlo.analysis.utils import (
     unflatten_flattened_multi_index_in_logging
 )
 
+from scripts.costing.cost_estimation import (estimate_input_cost_of_scenarios,
+                                             do_stacked_bar_plot_of_cost_by_category)
 # Define a timestamp for script outputs
 timestamp = datetime.datetime.now().strftime("_%Y_%m_%d_%H_%M")
 
@@ -67,7 +69,7 @@ district_dict = dict(zip(district_dict['District_Num'], district_dict['District'
 # Estimate standard input costs of scenario
 #-----------------------------------------------------------------------------------------------------------------------
 input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath , cost_only_used_staff=True) # summarise = True
-input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath , draws = [0], runs = [0], cost_only_used_staff=True) # summarise = True
+#input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath , draws = [0], runs = [0], cost_only_used_staff=True, summarize = True)
 
 # Add additional costs pertaining to simulation
 #-----------------------------------------------------------------------------------------------------------------------
@@ -173,7 +175,7 @@ def melt_and_label_malaria_scaleup_cost(_df, label):
     melted_df = pd.melt(_df, id_vars=['year']).rename(columns={'variable_0': 'draw', 'variable_1': 'run'})
     # Replace item_code with consumable_name_tlo
     melted_df['cost_subcategory'] = label
-    melted_df['cost_category'] = 'malaria scale-up'
+    melted_df['cost_category'] = 'other'
     melted_df['cost_subgroup'] = 'NA'
     melted_df['Facility_Level'] = 'all'
     melted_df = melted_df.rename(columns={'value': 'cost'})
@@ -252,6 +254,15 @@ num_dalys_averted = summarize(
 chosen_cet = 77.4 # based on Ochalek et al (2018) - the paper provided the value $61 in 2016 USD terms, this value is in 2023 USD terms
 monetary_value_of_incremental_health = num_dalys_averted * chosen_cet
 max_ability_to_pay_for_implementation = monetary_value_of_incremental_health - incremental_scenario_cost # monetary value - change in costs
+
+# Plot costs
+#-----------------------------------------------------------------------------------------------------------------------
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'medical consumables', _year = [2018], _outputfilepath = figurespath)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'human resources for health', _year = [2018], _outputfilepath = figurespath)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'medical equipment', _year = [2018], _outputfilepath = figurespath)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'other', _year = [2018], _outputfilepath = figurespath)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _year = [2018], _outputfilepath = figurespath)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'other', _year = list(range(2020, 2030)), _outputfilepath = figurespath)
 
 '''
 #years_with_no_malaria_scaleup = set(TARGET_PERIOD).symmetric_difference(set(TARGET_PERIOD_MALARIA_SCALEUP))

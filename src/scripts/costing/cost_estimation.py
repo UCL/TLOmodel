@@ -465,7 +465,8 @@ def estimate_input_cost_of_scenarios(results_folder: Path, resourcefilepath: Pat
         new_df['item_code'] = new_df['consumable'].map(reversed_consumables_dict)
         cost_of_consumables = new_df[~new_df['item_code'].isin(list_of_unique_medical_products)]
         cost_of_separately_managed_medical_supplies = new_df[new_df['item_code'].isin(list_of_unique_medical_products)]
-        cost_of_separately_managed_medical_supplies['cost_subcategory'] = cost_of_separately_managed_medical_supplies['cost_subcategory'] + 'separately_managed_medical_supplies'
+        cost_of_separately_managed_medical_supplies['cost_subcategory'] = cost_of_separately_managed_medical_supplies['cost_subcategory'].replace(
+            {'consumables_dispensed': 'separately_managed_medical_supplies_dispensed', 'consumables_stocked': 'separately_managed_medical_supplies_stocked'}, regex=True)
         return cost_of_consumables.drop(columns = 'item_code'), cost_of_separately_managed_medical_supplies.drop(columns = 'item_code')
 
     separately_managed_medical_supplies = [127, 141, 161] # Oxygen, Blood, IRS
@@ -659,43 +660,34 @@ def estimate_input_cost_of_scenarios(results_folder: Path, resourcefilepath: Pat
 ####################################################
 # 1. Stacked bar plot (Total cost + Cost categories)
 #----------------------------------------------------
-def do_stacked_bar_plot(_df, cost_category, year, actual_expenditure):
+def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all', _year = 'all', _outputfilepath: Path = None):
     # Subset and Pivot the data to have 'Cost Sub-category' as columns
     # Make a copy of the dataframe to avoid modifying the original
     _df = _df[_df.stat == 'mean'].copy()
     # Convert 'value' to millions
-    _df['value'] = _df['value'] / 1e6
-    if year == 'all':
+    _df['cost'] = _df['cost'] / 1e6
+    if _year == 'all':
         subset_df = _df
     else:
-        subset_df = _df[_df['year'].isin(year)]
-    if cost_category == 'all':
+        subset_df = _df[_df['year'].isin(_year)]
+    if _cost_category == 'all':
         subset_df = subset_df
-        pivot_df = subset_df.pivot_table(index='draw', columns='Cost_Category', values='value', aggfunc='sum')
+        pivot_df = subset_df.pivot_table(index='draw', columns='cost_category', values='cost', aggfunc='sum')
     else:
-        subset_df = subset_df[subset_df['Cost_Category'] == cost_category]
-        pivot_df = subset_df.pivot_table(index='draw', columns='Cost_Sub-category', values='value', aggfunc='sum')
+        subset_df = subset_df[subset_df['cost_category'] == _cost_category]
+        pivot_df = subset_df.pivot_table(index='draw', columns='cost_subcategory', values='cost', aggfunc='sum')
 
     # Plot a stacked bar chart
     pivot_df.plot(kind='bar', stacked=True)
-    # Add a horizontal red line to represent 2018 Expenditure as per resource mapping
-    #plt.axhline(y=actual_expenditure/1e6, color='red', linestyle='--', label='Actual expenditure recorded in 2018')
 
     # Save plot
     plt.xlabel('Scenario')
     plt.ylabel('Cost (2023 USD), millions')
     plt.legend(bbox_to_anchor=(1.05, 1), loc='upper right')
-    plt.title(f'Costs by Scenario \n (Cost Category = {cost_category} ; Year = {year})')
-    plt.savefig(figurespath / f'stacked_bar_chart_{cost_category}_year_{year}.png', dpi=100,
+    plt.title(f'Costs by Scenario \n (Cost Category = {_cost_category} ; Year = {_year})')
+    plt.savefig(_outputfilepath / f'stacked_bar_chart_{_cost_category}_year_{_year}.png', dpi=100,
                 bbox_inches='tight')
     plt.close()
-
-do_stacked_bar_plot(_df = scenario_cost, cost_category = 'Medical consumables', year = 2018, actual_expenditure = 206_747_565)
-do_stacked_bar_plot(_df = scenario_cost, cost_category = 'Human Resources for Health', year = 2018, actual_expenditure = 128_593_787)
-do_stacked_bar_plot(_df = scenario_cost, cost_category = 'Equipment purchase and maintenance', year = 2018, actual_expenditure = 6_048_481)
-do_stacked_bar_plot(_df = scenario_cost, cost_category = 'all', year = [2020], actual_expenditure = 624_054_027)
-do_stacked_bar_plot(_df = scenario_cost, cost_category = 'all', year = [2024], actual_expenditure = 624_054_027)
-do_stacked_bar_plot(_df = scenario_cost, cost_category = 'all', year = list(range(2020,2031)), actual_expenditure = np.nan)
 
 # 2. Line plots of total costs
 #----------------------------------------------------
