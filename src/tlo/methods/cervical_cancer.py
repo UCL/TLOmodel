@@ -788,7 +788,7 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # ------------------- SET INITIAL CE_HPV_CC_STATUS -------------------------------------------------------------------
         # this was done here and not at outset because baseline value of hv_inf was not accessible
 
-        given_date = pd.to_datetime('2010-02-03')
+        given_date = pd.to_datetime('2010-01-03')
 
         if self.sim.date < given_date:
 
