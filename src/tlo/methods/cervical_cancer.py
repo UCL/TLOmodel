@@ -1238,6 +1238,8 @@ class HSI_CervicalCancer_Biopsy(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
+        year = self.sim.date.year
+        p = self.sim.modules['CervicalCancer'].parameters
 
         # Use a biopsy to diagnose whether the person has cervical cancer
         # todo: request consumables needed for this and elsewhere
@@ -1249,7 +1251,10 @@ class HSI_CervicalCancer_Biopsy(HSI_Event, IndividualScopeEventMixin):
 
         df.at[person_id, "ce_biopsy"] = True
 
-        if dx_result and (df.at[person_id, 'ce_hpv_cc_status'] == 'stage1'
+        if dx_result and (df.at[person_id, 'ce_hpv_cc_status'] in (hpv_cin_options) ):
+            schedule_cin_procedure(year, p, person_id, self.sim.modules['HealthSystem'], self.module, self.sim)
+
+        elif dx_result and (df.at[person_id, 'ce_hpv_cc_status'] == 'stage1'
                         or df.at[person_id, 'ce_hpv_cc_status'] == 'stage2a'
                         or df.at[person_id, 'ce_hpv_cc_status'] == 'stage2b'
                         or df.at[person_id, 'ce_hpv_cc_status'] == 'stage3'
@@ -1310,8 +1315,19 @@ class HSI_CervicalCancer_Thermoablation_CIN(HSI_Event, IndividualScopeEventMixin
 
         random_value = self.module.rng.random()
 
-        if random_value <= p['prob_thermoabl_successful']:
-            df.at[person_id, "ce_hpv_cc_status"] = 'none'
+        if df.at[person_id, "ce_hpv_cc_status"] in (hpv_cin_options):
+            hs.schedule_hsi_event(
+                hsi_event=HSI_CervicalCancer_Biopsy(
+                    module=self.module,
+                    person_id=person_id
+                ),
+                priority=0,
+                topen=self.sim.date,
+                tclose=None
+            )
+        else:
+            if random_value <= p['prob_thermoabl_successful']:
+                df.at[person_id, "ce_hpv_cc_status"] = 'none'
 
 
 class HSI_CervicalCancer_Cryotherapy_CIN(HSI_Event, IndividualScopeEventMixin):
@@ -1335,8 +1351,19 @@ class HSI_CervicalCancer_Cryotherapy_CIN(HSI_Event, IndividualScopeEventMixin):
 
         random_value = self.module.rng.random()
 
-        if random_value <= p['prob_cryotherapy_successful']:
-            df.at[person_id, "ce_hpv_cc_status"] = 'none'
+        if df.at[person_id, "ce_hpv_cc_status"] in (hpv_cin_options):
+            hs.schedule_hsi_event(
+                hsi_event=HSI_CervicalCancer_Biopsy(
+                    module=self.module,
+                    person_id=person_id
+                ),
+                priority=0,
+                topen=self.sim.date,
+                tclose=None
+            )
+        else:
+            if random_value <= p['prob_cryotherapy_successful']:
+                df.at[person_id, "ce_hpv_cc_status"] = 'none'
 
 
 class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
